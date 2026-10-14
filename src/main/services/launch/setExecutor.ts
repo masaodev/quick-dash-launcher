@@ -175,8 +175,9 @@ export function buildSetWindowConfig(
     if (resolved.windowItem) {
       title = resolved.windowItem.windowTitle;
       processName = resolved.windowItem.processName;
-    } else if (resolved.launch?.type === 'app') {
-      processName = lastSegment(resolved.launch.path);
+    } else if (resolved.launch?.type === 'app' && /\.exe$/i.test(resolved.launch.path.trim())) {
+      // .lnk・.bat・shell:AppsFolder なども app と判定されるが、ウィンドウの exe 名とは合わないので推測しない
+      processName = lastSegment(resolved.launch.path.trim());
     } else {
       return undefined;
     }
@@ -207,11 +208,17 @@ const defaultDeps: SetExecutorDeps = {
       await showLayoutProgressWindow();
     },
     send: (eventType, progress) => {
-      const win = getLayoutProgressWindow();
-      if (!win) return;
-      const labels = { cancel: mainI18n.t('common.cancel'), close: mainI18n.t('common.close') };
-      win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], { ...progress, labels });
-      if (eventType === 'complete') markLayoutProgressFinished();
+      try {
+        const win = getLayoutProgressWindow();
+        if (win && !win.isDestroyed()) {
+          const labels = { cancel: mainI18n.t('common.cancel'), close: mainI18n.t('common.close') };
+          win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], { ...progress, labels });
+        }
+      } catch (error) {
+        itemLogger.warn({ error: String(error) }, '進み具合の表示に送れませんでした');
+      } finally {
+        if (eventType === 'complete') markLayoutProgressFinished();
+      }
     },
     onCancel: (handler) => {
       ipcMain.once(IPC_CHANNELS.LAYOUT_CANCEL, handler);
@@ -342,13 +349,29 @@ async function runSet(
             result.windowFound ? undefined : mainI18n.t('layout.windowNotFound')
           );
         }
-        if (!r.launch) return finish(index, mainI18n.t('layout.windowNotFound'));
+        if (!r.launch) {
+          // 動かすだけの行で位置が無い: 開いていれば前面に出す
+          if (!entry.window) return finish(index, mainI18n.t('layout.windowNotFound'));
+          const result = await deps.activate(
+            {
+              title: entry.window.title || ANY_WINDOW_TITLE,
+              processName: entry.window.processName,
+            },
+            r.name,
+            logger
+          );
+          return finish(
+            index,
+            result.windowFound ? undefined : mainI18n.t('layout.windowNotFound')
+          );
+        }
         const itemConfig = entry.window
           ? { title: entry.window.title || ANY_WINDOW_TITLE, processName: entry.window.processName }
           : r.itemWindowConfig;
         if (itemConfig && entry.ifOpen !== 'openNew') {
           const result = await deps.activate(itemConfig, r.name, logger);
-          if (result.activated) return finish(index);
+          // 前面に出すのを Windows に断られても、見つかっていれば開き直さない（二重に開かない）
+          if (result.windowFound) return finish(index);
         }
         await deps.launch(r.launch, logger);
         return finish(index);
@@ -400,7 +423,9 @@ async function runSet(
     waitSeconds: number
   ): Promise<bigint | null> => {
     const deadline = waitSeconds * 1000;
-    for (let elapsed = 0; elapsed < deadline; elapsed += SET_WINDOW_POLL_MS) {
+    // ウィンドウを探す時間も数える（sleep の合計だけだと、ウィンドウが多いときに長く待ちすぎる）
+    const end = Date.now() + deadline;
+    for (let elapsed = 0; elapsed < deadline && Date.now() < end; elapsed += SET_WINDOW_POLL_MS) {
       if (cancelled) return null;
       const found = findUnclaimed(config, exclude);
       if (found !== null) return found;
@@ -409,23 +434,31 @@ async function runSet(
     return null;
   };
 
-  if (parallel) {
-    await Promise.all(item.entries.map((_, i) => startEntry(i).done));
-  } else {
-    const dones: Promise<void>[] = [];
-    for (let i = 0; i < item.entries.length; i++) {
-      const { opened, done } = startEntry(i);
-      dones.push(done);
-      await opened;
-      if (i < item.entries.length - 1) await deps.sleep(GROUP_LAUNCH_DELAY_MS);
+  try {
+    if (parallel) {
+      await Promise.all(item.entries.map((_, i) => startEntry(i).done));
+    } else {
+      const dones: Promise<void>[] = [];
+      try {
+        for (let i = 0; i < item.entries.length; i++) {
+          const { opened, done } = startEntry(i);
+          dones.push(done);
+          await opened;
+          if (i < item.entries.length - 1) await deps.sleep(GROUP_LAUNCH_DELAY_MS);
+        }
+      } finally {
+        // 途中で投げても、始めた行の終わりは待つ（未処理の reject を残さない）
+        await Promise.allSettled(dones);
+      }
+      await Promise.all(dones);
     }
-    await Promise.all(dones);
+  } finally {
+    // 例外で抜けても、中止の受け口を外し、進み具合の表示を終わらせる（残るとその後のトーストが出ない）
+    removeCancel?.();
+    progress.isComplete = true;
+    progress.isCancelled = cancelled;
+    if (showProgress) deps.progress!.send('complete', progress);
   }
-
-  removeCancel?.();
-  progress.isComplete = true;
-  progress.isCancelled = cancelled;
-  if (showProgress) deps.progress!.send('complete', progress);
 
   results.sort((a, b) => a.index - b.index);
   const successCount = results.filter((r) => r.success).length;

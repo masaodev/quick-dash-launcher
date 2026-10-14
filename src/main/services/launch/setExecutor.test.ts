@@ -24,7 +24,7 @@ vi.mock('../overlayWindowService.js', () => ({
 }));
 vi.mock('../mainI18n.js', () => ({ mainI18n: { t: (key: string) => key } }));
 
-import { executeSet, type SetExecutorDeps } from './setExecutor';
+import { buildSetWindowConfig, executeSet, type SetExecutorDeps } from './setExecutor';
 
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
 
@@ -249,5 +249,41 @@ describe('executeSet', () => {
     expect(calls).toEqual(['launch:https://mail.google.com/']);
     const third = await executeSet(set, resolve, deps, logger);
     expect(third.skipped).toBeUndefined();
+  });
+
+  it('見つかったが前面に出すのを断られても、開き直さない', async () => {
+    const { deps, calls } = makeDeps();
+    deps.activate = vi.fn(async () => ({ activated: false, windowFound: true }));
+    const set: SetItem = { type: 'set', displayName: 'x', entries: [{ itemId: 'term1aaa' }] };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual([]);
+    expect(result.successCount).toBe(1);
+  });
+
+  it('位置の無い動かすだけの行は、開いていれば前面に出して成功にする', async () => {
+    const { deps, calls } = makeDeps([{ hwnd: 5n, title: 'メモ', processName: 'sticky.exe' }]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [{ window: { processName: 'sticky.exe' } }],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual(['activate:*:true']);
+    expect(result.successCount).toBe(1);
+  });
+});
+
+describe('buildSetWindowConfig', () => {
+  const launch = (path: string) => ({
+    name: 'x',
+    launch: { type: 'app' as const, path, displayName: 'x' },
+  });
+  it('開くものが exe なら exe 名で探し、.lnk などは推測しない', () => {
+    const placement = { placement: { x: 0, y: 0 } };
+    expect(buildSetWindowConfig(placement, launch('C:/Apps/Foo.exe'))?.processName).toBe('Foo.exe');
+    expect(buildSetWindowConfig(placement, launch('C:/Apps/Foo.lnk'))).toBeUndefined();
+    expect(
+      buildSetWindowConfig(placement, launch('shell:AppsFolder/Microsoft.X_8wekyb3d8bbwe!App'))
+    ).toBeUndefined();
   });
 });
