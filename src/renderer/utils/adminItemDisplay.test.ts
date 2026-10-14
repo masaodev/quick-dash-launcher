@@ -18,9 +18,10 @@ const group: JsonItem = { id: 'g1', type: 'group', displayName: 'G', itemNames: 
 describe('adminItemDisplay', () => {
   it('種類ごとの表示名が揃っていること', () => {
     expect(Object.keys(ITEM_TYPE_INFO).sort()).toEqual(
-      ['clipboard', 'dir', 'group', 'item', 'layout', 'window'].sort()
+      ['clipboard', 'dir', 'group', 'item', 'layout', 'set', 'window'].sort()
     );
     expect(getItemTypeLabel('layout')).toBe('ウィンドウ配置');
+    expect(getItemTypeLabel('set')).toBe('セット');
   });
 
   it('hasDisplayName はフォルダ取込だけ false になること', () => {

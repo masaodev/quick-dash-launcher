@@ -106,6 +106,7 @@ export const en: LocaleMessages = {
       selected: 'Selected',
       groupCount_one: ' ({{count}} item)',
       groupCount_other: ' ({{count}} items)',
+      setPlacedBadge: 'Some rows place windows',
       windowSearchBadge: 'Window search: {{title}}',
       showNote: 'Show note',
     },
@@ -163,6 +164,10 @@ export const en: LocaleMessages = {
       size: 'Size: {{width}}x{{height}}',
       processId: 'Process ID: {{value}}',
       group: 'Group: {{value}}',
+      set_one: 'Set: {{count}} item',
+      set_other: 'Set: {{count}} items',
+      setPlaced_one: 'Rows that place a window: {{count}}',
+      setPlaced_other: 'Rows that place a window: {{count}}',
       virtualDesktop: 'Virtual desktop: {{value}}',
       noActivate: "Activate: don't",
       clipboardFormats: 'Formats: {{value}}',
@@ -526,6 +531,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     timedOut: 'Timed out waiting for the window to appear',
     windowNotFound: "Couldn't find the window",
   },
+  set: {
+    errors: {
+      itemNotFound: "Couldn't find the item this row points to",
+      unsupportedType: "This kind of item can't be opened from a set",
+    },
+  },
   dataFile: {
     invalidName: 'The data file name is invalid',
     alreadyExists: 'The file already exists',
@@ -561,6 +572,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       window: 'Window action',
       clipboard: 'Clipboard',
       layout: 'Window layout',
+      set: 'Set',
       unknown: 'Unknown',
     },
     noName: '(no name)',
@@ -1464,6 +1476,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       clipboardWithPreview: 'Clipboard: {{preview}}',
       layout_one: 'Window layout: {{count}} window',
       layout_other: 'Window layout: {{count}} windows',
+      set_one: 'Set: {{count}} item',
+      set_other: 'Set: {{count}} items',
     },
     confirmNotFound: 'Nothing to confirm.',
     edit: {

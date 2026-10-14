@@ -29,6 +29,7 @@ export const ITEM_TYPE_INFO: Record<JsonItem['type'], { icon: string }> = {
   window: { icon: '🪟' },
   clipboard: { icon: '📋' },
   layout: { icon: '🖥️' },
+  set: { icon: '📦' },
 };
 
 /** 種類の表示名（今の表示言語で） */

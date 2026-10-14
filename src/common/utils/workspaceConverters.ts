@@ -17,6 +17,7 @@ import type {
   GroupItem,
   LauncherItem,
   LayoutItem,
+  SetItem,
   ToastItemType,
   WindowItem,
   WorkspaceItem,
@@ -26,6 +27,7 @@ import {
   isClipboardItem,
   isGroupItem,
   isLayoutItem,
+  isSetItem,
   isWindowInfo,
   isWindowItem,
 } from '../types/guards';
@@ -89,6 +91,17 @@ function clipboardBody(item: ClipboardItem): WorkspaceItemUpdate {
   });
 }
 
+function setBody(item: SetItem): WorkspaceItemUpdate {
+  return compact({
+    type: 'set',
+    displayName: item.displayName,
+    entries: item.entries.map((entry) => ({ ...entry })),
+    launchMode: item.launchMode,
+    customIcon: item.customIcon,
+    memo: item.memo,
+  });
+}
+
 function layoutBody(item: LayoutItem): WorkspaceItemUpdate {
   return compact({
     type: 'layout',
@@ -113,6 +126,7 @@ export function appItemToWorkspaceItemBody(item: AppItem): WorkspaceItemUpdate {
   if (isGroupItem(item)) return groupBody(item);
   if (isClipboardItem(item)) return clipboardBody(item);
   if (isLayoutItem(item)) return layoutBody(item);
+  if (isSetItem(item)) return setBody(item);
   return launcherBody(item);
 }
 
@@ -173,6 +187,18 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         targetTab: '',
         itemCategory: 'layout',
         layoutEntries: [...item.entries],
+        customIcon: item.customIcon,
+        memo: item.memo,
+      };
+    case 'set':
+      return {
+        displayName: item.displayName,
+        path: '',
+        type: 'app',
+        targetTab: '',
+        itemCategory: 'set',
+        setEntries: item.entries.map((entry) => ({ ...entry })),
+        setLaunchMode: item.launchMode,
         customIcon: item.customIcon,
         memo: item.memo,
       };
@@ -238,6 +264,15 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         customIcon: registerItem.customIcon,
         memo,
       });
+    case 'set':
+      return compact({
+        type: 'set',
+        displayName: registerItem.displayName,
+        entries: (registerItem.setEntries ?? []).map((entry) => ({ ...entry })),
+        launchMode: registerItem.setLaunchMode,
+        customIcon: registerItem.customIcon,
+        memo,
+      });
     default:
       return compact({
         type: 'item',
@@ -279,6 +314,8 @@ export function describeWorkspaceItem(item: WorkspaceItem, t: TFunction): string
         : t('workspace.describe.clipboard');
     case 'layout':
       return t('workspace.describe.layout', { count: item.entries.length });
+    case 'set':
+      return t('workspace.describe.set', { count: item.entries.length });
   }
 }
 

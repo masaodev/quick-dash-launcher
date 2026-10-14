@@ -80,6 +80,10 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       return `layout,${escapeDisplayTextField(item.displayName)},${escapeDisplayTextField(JSON.stringify(item.entries))}`;
     }
 
+    case 'set': {
+      return `set,${escapeDisplayTextField(item.displayName)},${escapeDisplayTextField(JSON.stringify(item.entries))}`;
+    }
+
     default:
       throw new Error(`Unknown item type: ${(item as JsonItem).type}`);
   }

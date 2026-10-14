@@ -10,6 +10,7 @@ import {
   isJsonWindowItem,
   isJsonClipboardItem,
   isJsonLayoutItem,
+  isJsonSetItem,
 } from '@common/types';
 import type { JsonItem } from '@common/types';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
@@ -148,6 +149,19 @@ export async function convertJsonItemToAppItems(
       type: 'layout',
       displayName: jsonItem.displayName,
       entries: entriesWithIcons,
+      sourceFile,
+      lineNumber,
+      id: jsonItem.id,
+      isEdited: false,
+      memo: jsonItem.memo,
+      customIcon: jsonItem.customIcon,
+    });
+  } else if (isJsonSetItem(jsonItem)) {
+    items.push({
+      type: 'set',
+      displayName: jsonItem.displayName,
+      entries: jsonItem.entries,
+      launchMode: jsonItem.launchMode,
       sourceFile,
       lineNumber,
       id: jsonItem.id,

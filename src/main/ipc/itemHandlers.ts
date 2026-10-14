@@ -9,7 +9,7 @@ import {
   LayoutExecutionProgress,
   LayoutEntryProgress,
 } from '@common/types';
-import type { LayoutItem, LayoutWindowEntry } from '@common/types';
+import type { LayoutItem, LayoutWindowEntry, SetItem } from '@common/types';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import {
@@ -38,6 +38,7 @@ import {
 import { runWithConcurrency } from '../utils/concurrency.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { resolveLayoutEntryIcons } from '../utils/layoutIconResolver.js';
+import { executeSet } from '../services/launch/setExecutor.js';
 import { mainI18n } from '../services/mainI18n.js';
 
 /**
@@ -525,6 +526,15 @@ export function setupItemHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.EXECUTE_LAYOUT, async (_event, item: LayoutItem) => {
     hideMainWindowOnExecute();
     await executeLayout(item);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.EXECUTE_SET, async (_event, item: SetItem, allItems: AppItem[]) => {
+    hideMainWindowOnExecute();
+    const byId = new Map<string, AppItem>();
+    for (const appItem of allItems) {
+      if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
+    }
+    await executeSet(item, (itemId) => byId.get(itemId));
   });
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {

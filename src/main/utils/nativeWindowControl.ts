@@ -145,6 +145,7 @@ const GDI_STATUS_MESSAGES: Record<number, string> = {
 
 // 定数
 const SW_RESTORE = 9;
+const SW_MAXIMIZE = 3;
 const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
 function toHwndNumber(hwnd: number | bigint): number {
@@ -553,11 +554,13 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
  *
  * @param titleMatcher タイトルマッチング関数（trueで一致）
  * @param processNameFilter プロセス名フィルタ（部分一致、省略時は検索なし）
+ * @param excludeHwnds 対象から外すウィンドウ（開く前からあったウィンドウを除いて、新しく開いたものを探すとき）
  * @returns 見つかったウィンドウのhwnd（bigint）、見つからない場合はnull
  */
 export function findWindowHwndByTitle(
   titleMatcher: (title: string) => boolean,
-  processNameFilter?: string
+  processNameFilter?: string,
+  excludeHwnds?: ReadonlySet<bigint>
 ): bigint | null {
   let foundHwnd: bigint | null = null;
   const hasProcessFilter = !!processNameFilter?.trim();
@@ -578,6 +581,7 @@ export function findWindowHwndByTitle(
 
       if (!title || title.trim() === '') return true;
       if (!isAltTabWindow(hwnd, true)) return true;
+      if (excludeHwnds?.has(koffi.address(hwnd))) return true;
 
       // タイトルマッチング
       if (!titleMatcher(title)) return true;
@@ -693,6 +697,20 @@ export function restoreWindow(hwnd: number | bigint): boolean {
     return ShowWindow(toHwndNumber(hwnd), SW_RESTORE);
   } catch (error) {
     console.error(`Error restoring window ${hwnd}:`, error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウを最大化する（今いる画面で最大化される）
+ * @param hwnd ウィンドウハンドル
+ * @returns 成功したらtrue
+ */
+export function maximizeWindow(hwnd: number | bigint): boolean {
+  try {
+    return ShowWindow(toHwndNumber(hwnd), SW_MAXIMIZE);
+  } catch (error) {
+    console.error(`Error maximizing window ${hwnd}:`, error);
     return false;
   }
 }

@@ -3,12 +3,19 @@ import type {
   AppItem,
   WindowInfo,
   GroupItem,
+  SetItem,
   WindowItem,
   LauncherItem,
   ClipboardItem,
   DirOptionsForProcessing,
 } from '@common/types';
-import { isWindowInfo, isGroupItem, isWindowItem, isClipboardItem } from '@common/types/guards';
+import {
+  isWindowInfo,
+  isGroupItem,
+  isWindowItem,
+  isClipboardItem,
+  isSetItem,
+} from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 
 // 一覧を描く部品（LauncherItemList）が useTranslation で言語の切り替えに合わせて描き直すので、
@@ -103,6 +110,21 @@ function getWindowInfoTooltip(win: WindowInfo): string {
   lines.push(t('launcher.tooltip.size', { width: win.width, height: win.height }));
   lines.push(t('launcher.tooltip.processId', { value: win.processId }));
 
+  return lines.join('\n');
+}
+
+/**
+ * SetItem用のツールチップテキストを生成
+ */
+function getSetItemTooltip(setItem: SetItem): string {
+  const lines: string[] = [t('launcher.tooltip.set', { count: setItem.entries.length })];
+  const placed = setItem.entries.filter((entry) => entry.placement).length;
+  if (placed > 0) lines.push(t('launcher.tooltip.setPlaced', { count: placed }));
+  appendMetaInfo(lines, {
+    sourceFile: setItem.sourceFile,
+    id: setItem.id,
+    lineNumber: setItem.lineNumber,
+  });
   return lines.join('\n');
 }
 
@@ -219,6 +241,10 @@ export function getTooltipText(item: AppItem): string {
 
   if (isGroupItem(item)) {
     return getGroupItemTooltip(item);
+  }
+
+  if (isSetItem(item)) {
+    return getSetItemTooltip(item);
   }
 
   if (isWindowItem(item)) {

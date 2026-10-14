@@ -108,6 +108,7 @@ export const ja = {
       selected: '選択中',
       groupCount_one: ' ({{count}}個)',
       groupCount_other: ' ({{count}}個)',
+      setPlacedBadge: '位置を合わせる行があります',
       windowSearchBadge: 'ウィンドウ検索: {{title}}',
       showNote: 'メモを表示',
     },
@@ -165,6 +166,10 @@ export const ja = {
       size: 'サイズ: {{width}}x{{height}}',
       processId: 'プロセスID: {{value}}',
       group: 'グループ: {{value}}',
+      set_one: 'セット: {{count}}件',
+      set_other: 'セット: {{count}}件',
+      setPlaced_one: '位置を合わせる行: {{count}}件',
+      setPlaced_other: '位置を合わせる行: {{count}}件',
       virtualDesktop: '仮想デスクトップ: {{value}}',
       noActivate: 'アクティブ化: しない',
       clipboardFormats: 'フォーマット: {{value}}',
@@ -529,6 +534,12 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     timedOut: 'ウィンドウ出現待機がタイムアウトしました',
     windowNotFound: 'ウィンドウが見つかりませんでした',
   },
+  set: {
+    errors: {
+      itemNotFound: '参照先のアイテムが見つかりません',
+      unsupportedType: 'この種類のアイテムはセットから開けません',
+    },
+  },
   dataFile: {
     invalidName: 'データファイル名が正しくありません',
     alreadyExists: 'ファイルは既に存在します',
@@ -564,6 +575,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       window: 'ウィンドウ操作',
       clipboard: 'クリップボード',
       layout: 'ウィンドウ配置',
+      set: 'セット',
       unknown: '不明',
     },
     noName: '(名前なし)',
@@ -1462,6 +1474,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       clipboardWithPreview: 'クリップボード: {{preview}}',
       layout_one: 'ウィンドウ配置: {{count}}件',
       layout_other: 'ウィンドウ配置: {{count}}件',
+      set_one: 'セット: {{count}}件',
+      set_other: 'セット: {{count}}件',
     },
     confirmNotFound: '確認する内容が見つかりません。',
     edit: {

@@ -27,6 +27,7 @@ import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
+import { executeSet } from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 import { executeGroup, executeLayout } from './itemHandlers.js';
@@ -41,6 +42,32 @@ export async function closeDetachedWindowsForGroup(groupId: string): Promise<voi
   for (const id of [groupId, ...descendantIds]) {
     closeDetachedGroupWindow(id);
   }
+}
+
+/**
+ * セットの行が指すワークスペースのアイテムを、実行に使う形にする（開けるのは通常アイテムとウィンドウ操作だけ）
+ */
+function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
+  if (item.type === 'item') {
+    return {
+      type: item.launcherType,
+      displayName: item.displayName,
+      path: item.path,
+      args: item.args,
+      windowConfig: item.windowConfig,
+      id: item.id,
+    };
+  }
+  if (item.type === 'window') {
+    return {
+      type: 'window',
+      displayName: item.displayName,
+      windowTitle: item.windowTitle,
+      ...pickWindowPlacement(item),
+      id: item.id,
+    };
+  }
+  return undefined;
 }
 
 /**
@@ -289,6 +316,28 @@ export function setupWorkspaceHandlers(): void {
           'Executed layout from workspace item'
         );
         return { success: true };
+      }
+
+      // セット: 行はワークスペースのアイテムを先に、データファイルのアイテムを後に探す
+      if (item.type === 'set') {
+        const workspaceService = await WorkspaceService.getInstance();
+        const workspaceItems = await workspaceService.loadItems();
+        const configFolder = PathManager.getConfigFolder();
+        const allItems = await reloadConfigFiles(configFolder, 'internal');
+        const byId = new Map<string, AppItem>();
+        for (const appItem of allItems) {
+          if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
+        }
+        for (const wsItem of workspaceItems) {
+          const converted = workspaceItemToLaunchable(wsItem);
+          if (converted) byId.set(wsItem.id, converted);
+        }
+        const result = await executeSet(item, (itemId) => byId.get(itemId));
+        logger.info(
+          { id: item.id, name: item.displayName, ...result, entries: undefined },
+          'Executed set from workspace item'
+        );
+        return { success: true, successCount: result.successCount, errorCount: result.errorCount };
       }
 
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行

@@ -5,6 +5,7 @@ import {
   isLauncherItem,
   isWindowInfo,
   isGroupItem,
+  isSetItem,
   isWindowItem,
   isClipboardItem,
 } from '@common/types/guards';
@@ -27,6 +28,7 @@ const DEFAULT_ICONS: Record<string, string> = {
   window: '🪟',
   clipboard: '📋',
   layout: '🖥️',
+  set: '📦',
 };
 
 interface ItemListProps {
@@ -346,6 +348,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const item = items[index];
             const isWindow = isWindowInfo(item);
             const isGroup = isGroupItem(item);
+            const isSet = isSetItem(item);
             const isWindowOperation = isWindowItem(item);
             const isClipboard = isClipboardItem(item);
             const isDraggable = true;
@@ -371,7 +374,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const classNames = [
               'item',
               index === selectedIndex && 'selected',
-              isGroup && 'group-item',
+              (isGroup || isSet) && 'group-item',
               isWindow && 'window-item',
               isWindowOperation && 'window-operation-item',
               isClipboard && 'clipboard-item',
@@ -424,6 +427,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                       {t('launcher.list.groupCount', {
                         count: (item as GroupItem).itemNames.length,
                       })}
+                    </span>
+                  )}
+                  {isSet && (
+                    <span className="group-count">
+                      {t('launcher.list.groupCount', { count: item.entries.length })}
+                      {item.entries.some((entry) => entry.placement) && (
+                        <span title={t('launcher.list.setPlacedBadge')}> 📍</span>
+                      )}
                     </span>
                   )}
                   {isLauncherItem(item) && item.windowConfig?.title && (

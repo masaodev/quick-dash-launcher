@@ -278,6 +278,24 @@ export async function tryActivateWindow(
     'ウィンドウが見つかりました。アクティブ化と位置・サイズ調整を実行します'
   );
 
+  return applyWindowConfig(hwnd, windowConfig, itemName, logger);
+}
+
+/**
+ * 見つけたウィンドウにウィンドウ設定を当てる（最小化の解除・ピン留め・位置とサイズ・仮想デスクトップ・前面化）
+ *
+ * @param hwnd 対象のウィンドウ
+ * @param windowConfig ウィンドウ設定（title・processName は使わない）
+ * @returns アクティブ化結果（windowFound は常に true）
+ */
+export async function applyWindowConfig(
+  hwnd: bigint | number,
+  windowConfig: WindowConfig,
+  itemName: string,
+  logger: Logger
+): Promise<WindowActivationResult> {
+  const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
+
   restoreWindow(hwnd);
 
   const needsPinning = windowConfig.pinToAllDesktops;

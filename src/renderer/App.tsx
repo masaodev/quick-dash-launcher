@@ -19,6 +19,7 @@ import {
   isWindowItem,
   isClipboardItem,
   isLayoutItem,
+  isSetItem,
   isLauncherItem,
 } from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
@@ -264,6 +265,14 @@ function App(): React.ReactElement {
           itemType: 'layout',
         });
         await window.electronAPI.executeLayout(item);
+      } else if (isSetItem(item)) {
+        // 置き場所のある行があれば、進み具合の表示が出る（トーストはその間は出ない）
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: 'set',
+          itemCount: item.entries.length,
+        });
+        await window.electronAPI.executeSet(item, mainItems);
       } else if (isLauncherItem(item)) {
         await window.electronAPI.showToastWindow({
           displayName: item.displayName,

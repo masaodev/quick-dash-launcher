@@ -14,6 +14,7 @@ export const IPC_CHANNELS = {
   EXECUTE_GROUP: 'execute-group',
   EXECUTE_WINDOW_OPERATION: 'execute-window-operation',
   EXECUTE_LAYOUT: 'execute-layout',
+  EXECUTE_SET: 'execute-set',
 
   // データ操作
   LOAD_DATA_FILES: 'load-data-files',

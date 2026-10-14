@@ -27,5 +27,7 @@ export function getDefaultIconForItem(item: WorkspaceItem): string {
       return '\u{1F4CB}';
     case 'layout':
       return '\u{1F5A5}\uFE0F';
+    case 'set':
+      return '\u{1F4E6}';
   }
 }

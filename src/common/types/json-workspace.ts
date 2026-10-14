@@ -9,13 +9,14 @@
  * 末尾のコンパイル時アサーションで語彙のずれを検出する。
  */
 
-import type { WindowConfig, LayoutWindowEntry } from './launcher';
+import type { WindowConfig, LayoutWindowEntry, SetEntry, SetLaunchMode } from './launcher';
 import type { ClipboardFormat } from './clipboard';
 import type {
   JsonClipboardItem,
   JsonGroupItem,
   JsonLauncherItem,
   JsonLayoutItem,
+  JsonSetItem,
   JsonWindowItem,
 } from './json-data';
 
@@ -215,6 +216,21 @@ export interface JsonWorkspaceLayoutItem extends JsonWorkspaceItemBase {
 }
 
 /**
+ * セットアイテム（type: "set"）
+ * 複数のアイテムをまとめて開き、必要なら決まった位置に並べる。行の itemId はワークスペースのアイテムかデータファイルのアイテムを指す
+ */
+export interface JsonWorkspaceSetItem extends JsonWorkspaceItemBase {
+  /** アイテムタイプ */
+  type: 'set';
+  /** 行の一覧（上から順に開く） */
+  entries: SetEntry[];
+  /** 開き方（省略時は順番に） */
+  launchMode?: SetLaunchMode;
+  /** カスタムアイコンファイル名（オプション） */
+  customIcon?: string;
+}
+
+/**
  * ワークスペースアイテム（Union型）
  */
 export type JsonWorkspaceItem =
@@ -222,7 +238,8 @@ export type JsonWorkspaceItem =
   | JsonWorkspaceWindowItem
   | JsonWorkspaceGroupItem
   | JsonWorkspaceClipboardItem
-  | JsonWorkspaceLayoutItem;
+  | JsonWorkspaceLayoutItem
+  | JsonWorkspaceSetItem;
 
 /** ワークスペースアイテムの type の一覧 */
 export const JSON_WORKSPACE_ITEM_TYPES = [
@@ -231,6 +248,7 @@ export const JSON_WORKSPACE_ITEM_TYPES = [
   'group',
   'clipboard',
   'layout',
+  'set',
 ] as const;
 
 // ============================================================
@@ -354,4 +372,8 @@ type _AssertClipboardParity = Expect<
 
 type _AssertLayoutParity = Expect<
   SameKeys<Omit<JsonWorkspaceLayoutItem, WorkspaceMetaKey>, Omit<JsonLayoutItem, 'updatedAt'>>
+>;
+
+type _AssertSetParity = Expect<
+  SameKeys<Omit<JsonWorkspaceSetItem, WorkspaceMetaKey>, Omit<JsonSetItem, 'updatedAt'>>
 >;

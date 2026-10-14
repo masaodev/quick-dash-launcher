@@ -55,7 +55,7 @@ interface ToastText {
 
 function buildToastText(options: ToastOptions): ToastText {
   const t = mainI18n.t.bind(mainI18n);
-  if (options.itemType === 'group') {
+  if (options.itemType === 'group' || options.itemType === 'set') {
     const names = options.itemNames ?? [];
     const count = options.itemCount || names.length;
     const shown = names.slice(0, 3).join(', ');
@@ -260,7 +260,10 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
 
   // グループ起動時は表示時間を長め（3秒）に設定
   const duration =
-    options.duration ?? (options.itemType === 'group' ? GROUP_DURATION : DEFAULT_DURATION);
+    options.duration ??
+    (options.itemType === 'group' || options.itemType === 'set'
+      ? GROUP_DURATION
+      : DEFAULT_DURATION);
   const type = options.type ?? 'success';
 
   clearToastHideTimeout();

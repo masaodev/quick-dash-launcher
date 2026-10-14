@@ -591,3 +591,60 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     expect(JSON.parse(serializeJsonDataFile(result.data))).toEqual(original);
   });
 });
+
+describe('jsonParser: セット', () => {
+  it('知っている項目だけを写し、型の合わない項目は捨てる', () => {
+    const file = parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [
+          {
+            id: 'set1aaaa',
+            type: 'set',
+            displayName: '朝の準備',
+            launchMode: 'parallel',
+            entries: [
+              { itemId: 'abcd1234' },
+              {
+                open: { path: 'C:\\Apps\\Obsidian.exe', args: '' },
+                window: { processName: 'Obsidian.exe', title: 42 },
+                placement: { x: 0, y: 0, width: 960, height: 'wide', state: 'maximized' },
+                ifOpen: 'openNew',
+                activateWindow: false,
+                waitSeconds: -1,
+                unknown: true,
+              },
+            ],
+          },
+        ],
+      })
+    );
+    expect(file.items[0]).toEqual({
+      id: 'set1aaaa',
+      type: 'set',
+      displayName: '朝の準備',
+      launchMode: 'parallel',
+      entries: [
+        { itemId: 'abcd1234' },
+        {
+          open: { path: 'C:\\Apps\\Obsidian.exe' },
+          window: { processName: 'Obsidian.exe' },
+          placement: { x: 0, y: 0, width: 960, state: 'maximized' },
+          ifOpen: 'openNew',
+          activateWindow: false,
+        },
+      ],
+    });
+  });
+
+  it('行がオブジェクトでなければエラー', () => {
+    expect(() =>
+      parseJsonDataFile(
+        JSON.stringify({
+          version: JSON_DATA_VERSION,
+          items: [{ id: 'set1aaaa', type: 'set', displayName: 'x', entries: ['bad'] }],
+        })
+      )
+    ).toThrow();
+  });
+});

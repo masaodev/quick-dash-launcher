@@ -24,6 +24,7 @@ import type {
   WindowItem,
   WindowItemConfig,
   LayoutItem,
+  SetItem,
   LayoutWindowEntry,
   AppItem,
   AppInfo,
@@ -88,6 +89,8 @@ export interface ElectronAPI {
   executeGroup: (group: GroupItem, allItems: AppItem[]) => Promise<void>;
   executeWindowOperation: (item: WindowItem) => Promise<void>;
   executeLayout: (item: LayoutItem) => Promise<void>;
+  /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
+  executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
   openConfigFolder: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;

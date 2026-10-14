@@ -72,6 +72,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_GROUP, group, allItems),
   executeWindowOperation: (item) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, item),
   executeLayout: (item) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_LAYOUT, item),
+  executeSet: (item, allItems) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_SET, item, allItems),
   openConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_FAVICON, url),
   extractIcon: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_ICON, filePath),

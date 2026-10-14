@@ -15,6 +15,7 @@ export type ToastItemType =
   | 'workspaceAdd'
   | 'clipboard'
   | 'layout'
+  | 'set'
   | 'bookmarkImport';
 
 /** トーストウィンドウへ送られる表示イベントのデータ */

@@ -39,6 +39,7 @@ import {
   validateJsonGroupItem,
   validateJsonLauncherItem,
   validateJsonLayoutItem,
+  validateJsonSetItem,
   validateJsonWindowItem,
 } from './jsonParser';
 import type { JsonItemIssue } from './jsonParser';
@@ -330,6 +331,8 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
       return validateJsonClipboardItem(body) as unknown as Record<string, unknown>;
     case 'layout':
       return validateJsonLayoutItem(body) as unknown as Record<string, unknown>;
+    case 'set':
+      return validateJsonSetItem(body) as unknown as Record<string, unknown>;
     default:
       throw new Error(
         `Unknown item type: ${String(raw.type)} (one of ${JSON_WORKSPACE_ITEM_TYPES.join(' / ')})`
@@ -347,6 +350,7 @@ const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
   group: ['itemNames'],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
   layout: ['entries', 'customIcon'],
+  set: ['entries', 'launchMode', 'customIcon'],
 };
 
 function pick(source: Record<string, unknown>, keys: string[]): Record<string, unknown> {

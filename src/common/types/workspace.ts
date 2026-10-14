@@ -18,6 +18,7 @@ import type {
   JsonWorkspaceItem,
   JsonWorkspaceLauncherItem,
   JsonWorkspaceLayoutItem,
+  JsonWorkspaceSetItem,
   JsonWorkspaceWindowItem,
 } from './json-workspace';
 
@@ -50,6 +51,7 @@ export type WorkspaceWindowItem = JsonWorkspaceWindowItem & RuntimeIcon;
 export type WorkspaceGroupItem = JsonWorkspaceGroupItem & RuntimeIcon;
 export type WorkspaceClipboardItem = JsonWorkspaceClipboardItem & RuntimeIcon;
 export type WorkspaceLayoutItem = JsonWorkspaceLayoutItem & RuntimeIcon;
+export type WorkspaceSetItem = JsonWorkspaceSetItem & RuntimeIcon;
 
 /**
  * ワークスペースに追加されたアイテム（実行時）
@@ -60,7 +62,8 @@ export type WorkspaceItem =
   | WorkspaceWindowItem
   | WorkspaceGroupItem
   | WorkspaceClipboardItem
-  | WorkspaceLayoutItem;
+  | WorkspaceLayoutItem
+  | WorkspaceSetItem;
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
