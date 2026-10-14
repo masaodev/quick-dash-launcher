@@ -226,4 +226,28 @@ describe('executeSet', () => {
     await executeSet(set, resolve, deps, logger);
     expect(deps.sleep).toHaveBeenCalledTimes(2);
   });
+
+  it('同じセットを実行中にもう一度開いても重ねて開かず、終わればまた開ける', async () => {
+    const { deps, calls } = makeDeps();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    deps.launch = vi.fn(async (item) => {
+      calls.push(`launch:${item.path}`);
+      await gate;
+    });
+    const set: SetItem = {
+      id: 'set1aaaa',
+      type: 'set',
+      displayName: '朝',
+      entries: [{ itemId: 'gmail1aa' }],
+    };
+    const first = executeSet(set, resolve, deps, logger);
+    const second = await executeSet(set, resolve, deps, logger);
+    expect(second.skipped).toBe(true);
+    release();
+    await first;
+    expect(calls).toEqual(['launch:https://mail.google.com/']);
+    const third = await executeSet(set, resolve, deps, logger);
+    expect(third.skipped).toBeUndefined();
+  });
 });

@@ -80,7 +80,12 @@ export interface SetExecutionResult {
   errorCount: number;
   cancelled: boolean;
   entries: SetEntryResult[];
+  /** 同じセットを実行中だったので、何もしなかった */
+  skipped?: boolean;
 }
+
+/** 実行中のセット（id、無ければ表示名）。Enter の二度押しなどで同じセットが重ねて開かれないようにする */
+const runningSets = new Set<string>();
 
 /** id からアイテムを探す */
 export type SetItemResolver = (itemId: string) => AppItem | undefined;
@@ -221,10 +226,30 @@ const defaultDeps: SetExecutorDeps = {
  * @param resolve 行の itemId からアイテムを探す（メイン画面・ワークスペースで探す範囲が違う）
  */
 export async function executeSet(
-  item: Pick<SetItem, 'displayName' | 'entries' | 'launchMode'>,
+  item: Pick<SetItem, 'displayName' | 'entries' | 'launchMode'> & { id?: string },
   resolve: SetItemResolver,
   deps: SetExecutorDeps = defaultDeps,
   logger: Logger = itemLogger
+): Promise<SetExecutionResult> {
+  // 1 回目のウィンドウがまだ出ていない間に 2 回目が走ると、「開いていない」と判断してもう 1 つずつ開いてしまう
+  const key = item.id ?? item.displayName;
+  if (runningSets.has(key)) {
+    logger.info({ setName: item.displayName }, '同じセットを実行中なので、重ねては開きません');
+    return { successCount: 0, errorCount: 0, cancelled: false, entries: [], skipped: true };
+  }
+  runningSets.add(key);
+  try {
+    return await runSet(item, resolve, deps, logger);
+  } finally {
+    runningSets.delete(key);
+  }
+}
+
+async function runSet(
+  item: Pick<SetItem, 'displayName' | 'entries' | 'launchMode'>,
+  resolve: SetItemResolver,
+  deps: SetExecutorDeps,
+  logger: Logger
 ): Promise<SetExecutionResult> {
   const parallel = item.launchMode === 'parallel';
   logger.info(
