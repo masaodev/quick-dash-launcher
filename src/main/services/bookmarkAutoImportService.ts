@@ -17,7 +17,7 @@ import {
   parseJsonDataFileLenient,
   serializeJsonDataFile,
 } from '@common/utils/jsonParser';
-import { summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { summarizeImportResults, withImportNotes } from '@common/utils/bookmarkImportUtils';
 import {
   applyBookmarkRuleFilters,
   buildBookmarkDisplayName,
@@ -75,13 +75,11 @@ export class BookmarkAutoImportService {
       // トースト通知
       if (totalImported > 0 || totalDeleted > 0) {
         const t = mainI18n.t.bind(mainI18n);
-        const message =
-          t('bookmarkImport.added', { count: totalImported }) +
-          (totalDeleted > 0 ? t('bookmarkImport.deleted', { count: totalDeleted }) : '') +
-          (totalManualDuplicates > 0
-            ? t('bookmarkImport.manualDuplicates', { count: totalManualDuplicates })
-            : '') +
-          (hasError ? t('bookmarkImport.partlyFailed') : '');
+        const counts =
+          totalDeleted > 0
+            ? t('bookmarkImport.addedAndDeleted', { added: totalImported, deleted: totalDeleted })
+            : t('bookmarkImport.added', { count: totalImported });
+        const message = withImportNotes(counts, totalManualDuplicates, hasError, t);
         await showToastWindow({
           itemType: 'bookmarkImport',
           displayName: t('bookmarkImport.title'),
