@@ -12,7 +12,7 @@ tests/e2e/
 │   └── .temp/           # テスト失敗時のデバッグ用（自動生成）
 ├── fixtures/            # テストフィクスチャ（TypeScriptコード）とサンプルファイル
 │   ├── electron-app.ts      # 通常のElectronアプリフィクスチャ
-│   ├── first-launch-app.ts  # 初回起動用フィクスチャ
+│   ├── first-launch-app.ts  # 初回起動用フィクスチャ（electron-app.ts を first-launch テンプレートで起動）
 │   └── bookmarks-sample.html  # ブックマークインポート用サンプル
 ├── helpers/             # ヘルパークラス
 │   ├── config-file-helper.ts  # 設定ファイル操作ヘルパー
