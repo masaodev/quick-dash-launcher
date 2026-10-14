@@ -13,7 +13,7 @@ import {
   linkEntryToWindow,
   placementText,
   toMatchableEntry,
-  windowDisplayName,
+  windowProcessLabel,
   windowPickNotes,
   SET_KIND_ICONS,
   type SetCatalogItem,
@@ -411,7 +411,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                     <RowIcon icon={w.icon} fallback="🪟" />
                     <RecordName
                       name={w.title}
-                      sub={windowDisplayName(w) !== w.title ? windowDisplayName(w) : undefined}
+                      sub={windowProcessLabel(w)}
                       notes={
                         <>
                           {newRows.has(windowKey(w)) && cannotReopen(w) && (
@@ -454,10 +454,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                     minimized.map((w) => (
                       <div key={windowKey(w)} className="set-record-row set-record-row-muted">
                         <RowIcon icon={w.icon} fallback="🪟" />
-                        <RecordName
-                          name={w.title}
-                          sub={windowDisplayName(w) !== w.title ? windowDisplayName(w) : undefined}
-                        />
+                        <RecordName name={w.title} sub={windowProcessLabel(w)} />
                       </div>
                     ))}
                 </>

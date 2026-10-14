@@ -248,12 +248,14 @@ export function placementText(entry: SetEntry, screens: readonly ScreenArea[]): 
 export type RecordChoice =
   { kind: 'skip' } | { kind: 'newRow' } | { kind: 'link'; entryIndex: number };
 
-/** ウィンドウの見た目の名前（新しい行の名前にも使う） */
+/** ウィンドウの exe 名（拡張子なし。タイトルの下に添える） */
+export function windowProcessLabel(window: WindowInfo): string | undefined {
+  return window.processName?.replace(/\.exe$/i, '') || undefined;
+}
+
+/** 記録で足す行の名前（ウィンドウタイトル。タイトルが空なら exe 名） */
 export function windowDisplayName(window: WindowInfo): string {
-  const process = window.processName?.replace(/\.exe$/i, '');
-  // エクスプローラー・ストアアプリは exe 名では区別できないのでタイトル
-  if (!process || /^(explorer|applicationframehost)$/i.test(process)) return window.title;
-  return process;
+  return window.title.trim() || windowProcessLabel(window) || '';
 }
 
 /** ウィンドウから新しい行を作る（エクスプローラー・ストアアプリは開き直せないので並べるだけ） */

@@ -3,6 +3,7 @@ import type { SetEntry, WindowInfo } from '@common/types';
 
 import {
   describeSetEntry,
+  entryFromWindow,
   entryOpensAsTab,
   linkEntryToWindow,
   setEntryNames,
@@ -104,5 +105,17 @@ describe('setEntryNames', () => {
         items
       )
     ).toEqual(['Gmail', '消した議事録', 'WFS.exe', 'notepad.exe']);
+  });
+});
+
+describe('entryFromWindow', () => {
+  it('行の名前はウィンドウタイトルにする', () => {
+    const w = win({ executablePath: 'C:/Apps/Obsidian.exe' });
+    expect(entryFromWindow(w, [w]).label).toBe('TODOキャンパス - vault - Obsidian v1.9');
+  });
+
+  it('タイトルが空なら exe 名（拡張子なし）にする', () => {
+    const w = win({ title: '  ' });
+    expect(entryFromWindow(w, [w]).label).toBe('Obsidian');
   });
 });
