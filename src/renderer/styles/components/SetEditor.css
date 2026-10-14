@@ -1,5 +1,11 @@
 /* セットの編集（行の一覧・アイテムの追加・今の位置の記録・行の詳細） */
 
+/* 登録画面の縦並びの欄（align-items: flex-start）でも、一覧と下のボタンの行は幅いっぱいに広げる */
+.set-editor > .set-editor-rows,
+.set-editor > .set-editor-footer {
+  align-self: stretch;
+}
+
 .set-editor-rows {
   border: var(--border-light);
   border-radius: var(--border-radius);
@@ -148,10 +154,15 @@
 
 .set-launch-mode {
   display: inline-flex;
+  white-space: nowrap;
   align-items: center;
   gap: var(--spacing-xs);
   margin-left: auto;
   font-size: var(--font-size-sm);
+}
+
+.set-launch-mode select {
+  width: auto;
 }
 
 /* ===== 小さな画面（追加・記録・詳細） ===== */

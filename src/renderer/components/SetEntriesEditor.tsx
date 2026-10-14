@@ -214,9 +214,10 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         >
           {t('set.editor.record')}
         </Button>
-        <label className="set-launch-mode">
+        <span className="set-launch-mode">
           {t('set.editor.launchMode')}
           <select
+            aria-label={t('set.editor.launchMode')}
             value={launchMode ?? 'sequential'}
             onChange={(e) =>
               onChange({
@@ -227,7 +228,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
             <option value="sequential">{t('set.editor.sequential')}</option>
             <option value="parallel">{t('set.editor.parallel')}</option>
           </select>
-        </label>
+        </span>
       </div>
       {error && <span className="error-message">{error}</span>}
       <small>{t('set.editor.hint')}</small>
