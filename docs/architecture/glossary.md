@@ -83,8 +83,7 @@
 | 切り離し | detach | 分離、ポップアウト、pop out | ワークスペースのグループを別のウィンドウに出すこと | `detachedGroup…` |
 | 切り離しウィンドウ | detached window | 分離ウィンドウ | 切り離したグループのウィンドウ | `DetachedPinMode` |
 | 未分類 | ungrouped | — | ワークスペースで、どのグループにも入っていないアイテム（とその欄） | `showUncategorized` |
-| アーカイブ | archive | 保管 |
- ワークスペースのグループをしまっておき、あとで戻せるようにすること | `ArchivedWorkspaceGroup` |
+| アーカイブ | archive | 保管 | ワークスペースのグループをしまっておき、あとで戻せるようにすること | `ArchivedWorkspaceGroup` |
 | 仮想デスクトップ | virtual desktop | デスクトップ（仮想デスクトップの意味で） | Windows の仮想デスクトップ | — |
 
 ### 設定と管理

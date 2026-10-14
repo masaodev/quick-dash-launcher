@@ -1,3 +1,7 @@
+/**
+ * 画面: 今の位置を記録
+ * 画面仕様: docs/screens/set-editor-modals.md#3-今の位置を記録
+ */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';

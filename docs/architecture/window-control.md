@@ -52,8 +52,7 @@
 
 - 個別アイテムの起動 (`open-item`)
 - 親フォルダを開く (`open-parent-folder`)
-- グループアイテムの実行 (`execute-group`)
-- レイアウトの実行 (`execute-layout`)
+- セットの実行 (`execute-set`)
 - ウィンドウ操作アイテムの実行 (`execute-window-operation`)
 - ウィンドウ検索でのウィンドウの切り替え (`activate-window`)
 

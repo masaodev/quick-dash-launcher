@@ -28,12 +28,13 @@ graph TD
 
     %% モーダル
     BookmarkImport[ブックマーク取込画面<br/>ルール編集と共通]
-    GroupSelect[グループアイテム選択モーダル]
+    SetPicker[セットに追加するアイテム]
+    SetRecord[今の位置を記録]
+    SetDetail[行の詳細]
     WindowSelect[ウィンドウ選択モーダル]
     AppImport[アプリ取込画面]
     BackupSnapshot[バックアップスナップショットモーダル]
     MemoView[メモ表示モーダル]
-    LayoutCapture[今のウィンドウから追加<br/>LayoutCaptureModal]
 
     %% 共通ダイアログ
     FilePicker[FilePickerDialog]
@@ -67,15 +68,21 @@ graph TD
     Detached -->|グループの削除・アーカイブ| WorkspaceConfirm
 
     %% アイテム登録・編集の遷移
-    Register -->|グループ: ＋アイテムを追加| GroupSelect
+    Register -->|セット: ＋ アイテムを追加| SetPicker
+    Register -->|セット: 📍 今の位置を記録| SetRecord
+    Register -->|セット: 行の ✏️ / ダブルクリック| SetDetail
     Register -->|ウィンドウから取得| WindowSelect
-    Register -->|ウィンドウ配置: ＋今のウィンドウから追加| LayoutCapture
     Register -->|カスタムアイコン選択| FilePicker
 
     %% ワークスペースアイテム編集の遷移
-    WorkspaceItemEdit -->|グループ: ＋アイテムを追加| GroupSelect
+    WorkspaceItemEdit -->|セット: ＋ アイテムを追加| SetPicker
+    WorkspaceItemEdit -->|セット: 📍 今の位置を記録| SetRecord
+    WorkspaceItemEdit -->|セット: 行の ✏️ / ダブルクリック| SetDetail
     WorkspaceItemEdit -->|ウィンドウから取得| WindowSelect
-    WorkspaceItemEdit -->|ウィンドウ配置: ＋今のウィンドウから追加| LayoutCapture
+
+    %% セットの小さな画面の遷移
+    SetRecord -->|ウィンドウを選ぶ / 別のウィンドウにする| WindowSelect
+    SetDetail -->|開いているウィンドウから位置を取る| WindowSelect
     WorkspaceItemEdit -->|カスタムアイコン選択| FilePicker
 
     %% ブックマーク取込画面の遷移
@@ -101,7 +108,7 @@ graph TD
     class FirstLaunch,Main,Workspace,Detached window
     class AdminSettings,AdminItems,AdminOther adminTab
     class Register,IconProgress,WorkspaceItemEdit,WorkspaceConfirm child
-    class BookmarkImport,GroupSelect,WindowSelect,AppImport,BackupSnapshot,MemoView,LayoutCapture modal
+    class BookmarkImport,SetPicker,SetRecord,SetDetail,WindowSelect,AppImport,BackupSnapshot,MemoView modal
     class FilePicker,Alert,Confirm dialog
 ```
 
@@ -184,9 +191,10 @@ graph TD
 
 | 元画面 | 遷移先 | トリガー | 戻り方 |
 | --- | --- | --- | --- |
-| **アイテム登録・編集** | **グループアイテム選択モーダル** | グループ: ＋アイテムを追加 | 戻るボタン / 選択 |
+| **アイテム登録・編集** | **セットに追加するアイテム** | セット: ＋ アイテムを追加 | キャンセル / 「n 件を追加」 / Escape |
+| **アイテム登録・編集** | **今の位置を記録** | セット: 📍 今の位置を記録 | キャンセル / 記録する / Escape |
+| **アイテム登録・編集** | **行の詳細** | セット: 行の ✏️ / 行のダブルクリック | 閉じる / Escape（どちらも直した内容を反映） |
 | **アイテム登録・編集** | **ウィンドウ選択モーダル** | ウィンドウから取得 | キャンセル / 選択 |
-| **アイテム登録・編集** | **今のウィンドウから追加（LayoutCaptureModal）** | ウィンドウ配置: ＋今のウィンドウから追加 | 閉じるボタン / Escape |
 | **アイテム登録・編集** | **FilePickerDialog** | カスタムアイコン選択 | キャンセル / 選択 |
 | **アイテム登録・編集** | **AlertDialog** | エラー/通知発生時 | OKボタン |
 | **アイテム登録・編集** | **ConfirmDialog** | 確認が必要な操作時 | OK / キャンセル |
@@ -195,10 +203,18 @@ graph TD
 
 | 元画面 | 遷移先 | トリガー | 戻り方 |
 | --- | --- | --- | --- |
-| **ワークスペースアイテム編集** | **グループアイテム選択モーダル** | グループ: ＋アイテムを追加 | 戻るボタン / 選択 |
+| **ワークスペースアイテム編集** | **セットに追加するアイテム** | セット: ＋ アイテムを追加 | キャンセル / 「n 件を追加」 / Escape |
+| **ワークスペースアイテム編集** | **今の位置を記録** | セット: 📍 今の位置を記録 | キャンセル / 記録する / Escape |
+| **ワークスペースアイテム編集** | **行の詳細** | セット: 行の ✏️ / 行のダブルクリック | 閉じる / Escape（どちらも直した内容を反映） |
 | **ワークスペースアイテム編集** | **ウィンドウ選択モーダル** | ウィンドウから取得 | キャンセル / 選択 |
-| **ワークスペースアイテム編集** | **今のウィンドウから追加（LayoutCaptureModal）** | ウィンドウ配置: ＋今のウィンドウから追加 | 閉じるボタン / Escape |
 | **ワークスペースアイテム編集** | **FilePickerDialog** | カスタムアイコン選択 | キャンセル / 選択 |
+
+### セットの小さな画面から開くモーダル
+
+| 元画面 | 遷移先 | トリガー | 戻り方 |
+| --- | --- | --- | --- |
+| **今の位置を記録** | **ウィンドウ選択モーダル** | 「ウィンドウを選ぶ」/ プルダウンの「別のウィンドウにする」 | キャンセル / 選択 |
+| **行の詳細** | **ウィンドウ選択モーダル** | 「開いているウィンドウから位置を取る」 | キャンセル / 選択 |
 
 ### ブックマーク取込画面から開くダイアログ
 
@@ -254,9 +270,10 @@ graph TD
 | **アプリ取込画面** | インストール済みアプリを選んで取り込む |
 | **バックアップスナップショットモーダル** | バックアップのスナップショット一覧を表示する |
 | **メモ表示モーダル** | アイテムのメモを表示する |
-| **グループアイテム選択モーダル** | グループに追加するアイテムを選択する |
+| **セットに追加するアイテム** | セットに行として足すアイテムを選ぶ |
+| **今の位置を記録** | 開いているウィンドウの今の位置を、セットの行に取り込む |
+| **行の詳細** | セットの 1 つの行の開くもの・動かすウィンドウ・位置・開くときの動きを直す |
 | **ウィンドウ選択モーダル** | 開いているウィンドウから選択する |
-| **今のウィンドウから追加（LayoutCaptureModal）** | 開いているウィンドウの配置を取り込む |
 
 ### 共通ダイアログ
 
@@ -287,7 +304,7 @@ graph TD
 ### モーダル仕様書
 
 - [ブックマーク取込画面仕様書](./bookmark-import-modal.md)
-- [グループアイテム選択モーダル仕様書](./group-item-selector-modal.md)
+- [セットの編集画面仕様書](./set-editor-modals.md)（セットに追加するアイテム・今の位置を記録・行の詳細）
 
 ### 共通ダイアログ・部品の仕様書
 

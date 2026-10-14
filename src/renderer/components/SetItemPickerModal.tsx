@@ -1,3 +1,7 @@
+/**
+ * 画面: セットに追加するアイテム
+ * 画面仕様: docs/screens/set-editor-modals.md#2-セットに追加するアイテム
+ */
 import React, { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';

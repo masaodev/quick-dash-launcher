@@ -88,14 +88,15 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ### 2.4. アイテムタイプ
 
-データファイルには以下の6種類のアイテムが存在します：
+データファイルには以下の5種類のアイテムが存在します：
 
 1. **通常アイテム** (`type: "item"`) - アプリケーション、URL、ファイル、フォルダを起動
 2. **フォルダ取込アイテム** (`type: "dir"`) - 指定フォルダ内のファイル/フォルダを自動取込
-3. **グループアイテム** (`type: "group"`) - 複数のアイテムをまとめて一括起動
+3. **セット** (`type: "set"`) - 複数のアイテムをまとめて開き、必要ならウィンドウを決まった位置に並べる
 4. **ウィンドウアイテム** (`type: "window"`) - 既存ウィンドウの検索・制御
 5. **クリップボードアイテム** (`type: "clipboard"`) - クリップボードの内容を保存・復元
-6. **レイアウトアイテム** (`type: "layout"`) - 複数ウィンドウの位置・サイズを一括でキャプチャ・復元
+
+旧グループ（`type: "group"`）と旧ウィンドウ配置（`type: "layout"`）は、読み込み時にセットへ変換して書き戻す（[3.3.6](#336-旧形式からの変換)）。
 
 ### 2.5. 基本的な使用例
 
@@ -122,7 +123,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ## 3. アイテムタイプ詳細
 
-フィールドの一覧・型は、型定義（`src/common/types/json-data.ts`。`WindowConfig`・`LayoutWindowEntry` は `src/common/types/launcher.ts`）を正とします（[6 章](#6-データ型定義typescript)）。この章には、各アイテムの必須フィールド・既定値・省略時の扱い・注意点と、実行時の挙動だけを書きます。
+フィールドの一覧・型は、型定義（`src/common/types/json-data.ts`。`WindowConfig`・`SetEntry` は `src/common/types/launcher.ts`）を正とします（[6 章](#6-データ型定義typescript)）。この章には、各アイテムの必須フィールド・既定値・省略時の扱い・注意点と、実行時の挙動だけを書きます。
 
 - 全アイテムが `id`（必須。8 文字の英数字、2.3）と、任意の `memo`（自由記述メモ）・`updatedAt`（更新日時、Unix タイムスタンプ ms）を持つ
 - 読み込み時の検証は `src/common/utils/jsonParser.ts` が行う。必須フィールドが欠けた・型が違うアイテムはスキップされる（5.1）。スキーマにない未知のフィールドは黙って落ちる
@@ -349,23 +350,34 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 3. **表示名生成**: prefix/suffixがあれば表示名に適用
 4. **アイコン**: 読み込み時は、キャッシュ済みのアイコンを読み込むだけ（`src/renderer/App.tsx` の `loadItems`）。キャッシュにないアイコンの取得・抽出は、利用者がアイコンの取得を操作したときに行う（`src/renderer/hooks/useIconFetcher.ts`）
 
-### 3.3. グループアイテム（JsonGroupItem）
+### 3.3. セット（JsonSetItem）
 
-複数のアイテムをまとめて一括起動するアイテムです。
+複数のアイテムをまとめて開き、必要ならウィンドウを決まった位置に並べるアイテムです（旧グループと旧ウィンドウ配置をまとめたもの）。位置は登録・編集画面の「今の位置を記録」で QDL が書くので、座標を手で書くことは想定していません。
 
 #### 3.3.1. フィールドの要点
 
-- **必須**: `type: "group"`・`displayName`（空文字不可）・`itemNames`（文字列の配列）
-- `itemNames` には、起動するアイテムの `displayName` を並べる
+- **必須**: `type: "set"`・`displayName`（空文字不可）・`entries`（行の配列。3.3.2）
+- **任意**: `launchMode`（`"sequential"`＝順番に開く／`"parallel"`＝同時に開く。省略時は順番に開く）・`customIcon`
+- 読み込み時は `entries` が配列であることだけを求める（空でもよい）。登録・編集画面と CLI では、行が 1 つ以上必要
 
-#### 3.3.2. 動作仕様
+#### 3.3.2. 行（SetEntry）
 
-グループアイテムは、複数の既存アイテムをまとめて一括起動する機能です（`executeGroup`、`src/main/ipc/itemHandlers.ts`）：
+行は「開くもの」「動かすウィンドウ」「位置」と、開くときの動きを持つ。すべて任意。
 
-1. **参照解決**: `itemNames`内のアイテム名は、既存の通常アイテム（フォルダ取込で展開した項目を含む）とウィンドウアイテムの`displayName`を参照します
-2. **実行方式**: 設定 `parallelGroupLaunch` が false（既定）のときは、リストの順に1件ずつ起動します。true のときは全件を同時に（並列で）起動します
-3. **実行間隔**: 順次起動のときだけ、各アイテムの間に100ms（`GROUP_LAUNCH_DELAY_MS`、`src/common/constants.ts`）待ちます。並列起動では待ちません
-4. **エラー処理**: 存在しないアイテム名は警告ログを出力してスキップします
+| キー | 意味 | 既定値・省略時 |
+| --- | --- | --- |
+| `itemId` | 開くもの（登録済みのアイテムの id。どのデータファイルのアイテムでもよい） | 開くものを指さない |
+| `open` | 開くもの（`{ "path": ..., "args": ... }`。この行の中だけに書くパス。`path` 必須） | 同上。`itemId` と両方あれば `itemId` を使う |
+| `label` | 行の名前。`open` の行や、アイテムが見つからない行の表示に使う | パスの最後の部分など |
+| `window` | 動かすウィンドウ（`processName`＝exe 名、部分一致／`title`＝ウィンドウタイトル、大文字小文字を区別しない全体一致で `*`・`?` を使える） | 開くものが exe ならその exe 名で探す。それ以外は探さない |
+| `placement` | 位置（`x`・`y`・`width`・`height`＝仮想スクリーン座標系の物理ピクセル、`virtualDesktopNumber`＝1 始まり、`state: "maximized"`＝最大化） | 位置を合わせず、開くだけ |
+| `ifOpen` | 動かすウィンドウが既に開いていたとき。`"move"`＝開かずに位置だけ合わせる／`"openNew"`＝もう 1 つ開く | `"move"` |
+| `activateWindow` | 位置を合わせたウィンドウを前面に出すか | `true` |
+| `waitSeconds` | 開いてからウィンドウが出るのを待つ秒数 | 30 |
+
+- `itemId` で指せるのは通常アイテム（`type: "item"`）とウィンドウアイテム（`type: "window"`）。セット・クリップボードを指した行は実行時に失敗する（`src/main/services/launch/setExecutor.ts`）
+- `itemId`・`open`・`window`・`placement` をどれも持たない行は、旧グループの見つからない名前を `label` だけ残したもの。実行時に「アイテムが見つかりません」で失敗する
+- `open` を持たず `window` と `placement` を持つ行は、何も開かずにウィンドウを動かすだけの行になる
 
 #### 3.3.3. 使用例
 
@@ -380,33 +392,65 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
       "path": "code.exe"
     },
     {
-      "id": "o1P2q3R4",
-      "type": "item",
-      "displayName": "Slack",
-      "path": "slack://"
-    },
-    {
-      "id": "s5T6u7V8",
-      "type": "item",
-      "displayName": "Chrome",
-      "path": "chrome.exe",
-      "args": "--new-window https://localhost:3000"
-    },
-    {
       "id": "w9X0y1Z2",
-      "type": "group",
+      "type": "set",
       "displayName": "開発環境",
-      "itemNames": ["Visual Studio Code", "Slack", "Chrome"]
+      "entries": [
+        {
+          "itemId": "k7L8m9N0",
+          "window": { "processName": "Code.exe" },
+          "placement": { "x": 0, "y": 0, "width": 960, "height": 1040 }
+        },
+        {
+          "open": { "path": "C:\\dev" },
+          "label": "dev"
+        },
+        {
+          "window": { "processName": "WindowsTerminal.exe" },
+          "placement": { "x": 960, "y": 0, "width": 960, "height": 1040, "virtualDesktopNumber": 1 },
+          "activateWindow": false
+        }
+      ]
     }
   ]
 }
 ```
 
-#### 3.3.4. エラーハンドリング
+1 行目は登録済みのアイテムを開いて左半分へ、2 行目はセットに書いたフォルダを開くだけ、3 行目は何も開かずに既にあるターミナルを右半分へ動かす。
 
-- **存在しないアイテム名**: 警告ログを出力し、該当アイテムをスキップ
-- **部分的な参照エラー**: エラーがあっても残りのアイテムは実行継続
-- **参照できる種類**: 通常アイテムとウィンドウアイテムだけ。グループ・クリップボード・レイアウトの名前は見つからない扱いになる（グループからグループは参照できないため、循環参照は起きない）
+#### 3.3.4. 検証
+
+`validateJsonSetItem`・`validateSetEntry`（`src/common/utils/jsonParser.ts`）が検証する。
+
+- `displayName` が空でない文字列でない、`entries` が配列でない、行がオブジェクトでないときは、セット全体が不正（5.1）
+- 行の中は知っているキーだけを写し、型の合わないものは黙って捨てる。捨てられるのは、空文字の文字列、有限の数でない数値、`path` の無い `open`、`"maximized"` 以外の `state`、`"move"`・`"openNew"` 以外の `ifOpen`、真偽値でない `activateWindow`、0 以下の `waitSeconds`、未知のキー
+- `launchMode` は `"sequential"`・`"parallel"` 以外なら捨てる（順番に開く扱い）
+
+#### 3.3.5. 動作仕様
+
+実行は `executeSet`（`src/main/services/launch/setExecutor.ts`）。
+
+1. **開き方**: 順番に開くときは、行を開いてから次の行を開くまで 100ms（`GROUP_LAUNCH_DELAY_MS`、`src/common/constants.ts`）あける。ウィンドウを待って位置を合わせる処理は並行して続け、次の行はその完了を待たない。同時に開くときは全部の行を一度に始める
+2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。それ以外は、`ifOpen` が `"move"` で `window`（無ければアイテムの `windowConfig`）に合うウィンドウがあれば前に出すだけ、無ければ開く
+3. **位置のある行**: `window` で探す（3.3.2）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。見つかったら、最小化の解除・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する
+4. **取り合わない**: 1 回の実行の中で、ある行が使うと決めたウィンドウは、ほかの行の候補から外す
+5. **探す相手が決まらない行**: `window` が無く開くものが exe でない（URL など）行は、位置があっても開くだけ
+6. **失敗**: 行ごとに失敗しても残りを続ける。位置のある行が 1 つでもあれば進み具合を画面の隅に出し（中止できる）、行ごとの結果はそこに出す。無ければ、失敗した行の名前を警告のトーストで出す
+
+#### 3.3.6. 旧形式からの変換
+
+旧グループ（`type: "group"`。`displayName`・`itemNames`＝アイテムの表示名の配列）と旧ウィンドウ配置（`type: "layout"`。`displayName`・`entries`＝ウィンドウの一覧・`customIcon`）は、データファイルの読み込みの最後に 1 回だけセットへ変換して書き戻し、読み直す（`src/main/services/data/dataFileLoader.ts`・`setMigration.ts`、変換の中身は `src/common/utils/setConversion.ts`）。ワークスペースも同じ規則で変換する（[ワークスペースファイル形式](workspace-format.md#6-旧形式からの移行)）。
+
+| 元 | 変換後 |
+| --- | --- |
+| 旧グループの `itemNames` の名前 | 全データファイルのアイテムから同じ表示名の通常アイテム・ウィンドウアイテムを探し（同じ名前が複数あれば後のもの）、`itemId` の行にする。フォルダ取込で展開したアイテムは `open`（パスと引数）と `label` の行、見つからない名前は `label` だけの行 |
+| 旧グループの開き方 | 削除した設定 `parallelGroupLaunch`（[設定ファイル形式 3.9](settings-format.md#39-旧グループの開き方削除した設定)）が true なら `launchMode: "parallel"`、それ以外は省略（順番に開く） |
+| 旧ウィンドウ配置の各ウィンドウ | `processName` と `windowTitle` を `window` に写す。タイトルは前後に `*` を付けて部分一致にする（もともと付いていれば付けない）。`x`・`y`・`width`・`height`・`virtualDesktopNumber` を `placement` に写す。`launchApp` が true で `executablePath` があれば、`executablePath`・`args` を `open` にする |
+| 旧ウィンドウ配置の開き方 | `launchMode: "parallel"` |
+
+- `id`・`displayName`・`memo`・`updatedAt` は引き継ぐ。`customIcon` は旧ウィンドウ配置だけが持っていたので、そこからだけ引き継ぐ
+- 検証に通らない旧グループ・旧ウィンドウ配置は変換せずに残す（未知の `type` として読み込みから外れる。5.1）
+- 変換は戻せないので、書き換える前に全設定ファイルのスナップショット `backup/<日時>_pre-set-migration/` を作る（`backupEnabled` に関係なく作る。`BackupService.createPreSetMigrationSnapshot`）。作れなければ変換しない
 
 ### 3.4. ウィンドウアイテム（JsonWindowItem）
 
@@ -491,7 +535,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 #### 3.4.5. 制約事項
 
-- **グループからの参照**: グループアイテムの `itemNames` から参照できます（3.3.2）
+- **セットからの参照**: セットの行の `itemId` で指せます（3.3.2）
 - **ワークスペース**: ワークスペースにも追加できます（`src/common/types/json-workspace.ts` の `type: "window"`。`windowTitle` の補正は `src/common/utils/workspaceParser.ts` も同じ）。詳細は[ワークスペースファイル形式](workspace-format.md)を参照
 
 #### 3.4.6. エラーハンドリング
@@ -562,71 +606,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 - **画像サイズ**: 最大10MBまで
 - **ファイル復元**: 保存時のパスに実在するファイルだけを復元する（存在しないものは除外）。ファイルを復元したときは、ほかの形式は書き込まない。1 件も残らなければ、保存してあるテキストなどほかの形式だけを復元する。ファイルだけをコピーしたときは、パスの一覧を text としても保存する
 - **復元できないとき**: 書き込める形式が 1 つもなければ（保存したファイルがすべて消えていたときなど）、クリップボードを変えずに失敗とする（失敗はログに残る）
-- **グループからの参照**: グループアイテムからは参照できません
-
-### 3.6. レイアウトアイテム（JsonLayoutItem）
-
-複数ウィンドウの位置・サイズを一括でキャプチャ・復元するアイテムです。アイテムの登録・編集画面で種類「🖥️ ウィンドウ配置」を選んでウィンドウをキャプチャするとQDLが生成します（ワークスペースのアイテム編集からも作れます）。通常は手で書きません。
-
-#### 3.6.1. フィールドの要点
-
-- **必須**: `type: "layout"`・`displayName`（空文字不可）・`entries`（3.6.2 の配列）
-- **任意**: `customIcon`
-- `entries` は読み込み時に配列であることだけを確かめる（中身は検証しない）。編集画面での保存時は 1 件以上が必要（3.6.4）
-
-#### 3.6.2. ウィンドウエントリ（LayoutWindowEntry）
-
-`entries` の各要素は、キャプチャした1ウィンドウ分の位置・サイズとアプリ起動設定を保持します。
-
-- **必須**: `windowTitle`（検索するウィンドウタイトル）・`launchApp`（アプリを起動するか。false のときは既存ウィンドウの位置変更だけ）
-- **任意**: `processName`（部分一致）・`executablePath`（起動する実行ファイル）・`args`・`x`・`y`・`width`・`height`・`virtualDesktopNumber`
-- `icon` は UI 表示専用のランタイム情報（base64 データ URL）で、**JSON 保存時に除去される**（`stripIconFromLayoutEntries`）。読み込み時に `executablePath` からキャッシュ済みアイコンを補う
-
-#### 3.6.3. 使用例
-
-```json
-{
-  "version": "1.0",
-  "items": [
-    {
-      "id": "n7O8p9Q0",
-      "type": "layout",
-      "displayName": "開発レイアウト",
-      "entries": [
-        {
-          "windowTitle": "Visual Studio Code",
-          "processName": "code",
-          "x": 0,
-          "y": 0,
-          "width": 960,
-          "height": 1080,
-          "launchApp": false
-        },
-        {
-          "windowTitle": "*Slack*",
-          "processName": "slack",
-          "executablePath": "C:\\Users\\Username\\AppData\\Local\\slack\\slack.exe",
-          "x": 960,
-          "y": 0,
-          "width": 960,
-          "height": 1080,
-          "launchApp": true
-        }
-      ]
-    }
-  ]
-}
-```
-
-#### 3.6.4. 検証
-
-- `validateJsonLayoutItem`（`src/common/utils/jsonParser.ts`）: `displayName` が空でない文字列であること、`entries` が配列であることを検証
-- `validateEditableItem`（`src/common/types/editableItem.ts`）: 編集画面での保存時、`entries` が空だとエラー（`layoutのentriesが空です`）
-
-#### 3.6.5. 制約事項
-
-- **グループからの参照**: グループアイテムからは参照できません（参照できるのは通常アイテムとウィンドウアイテムだけ）
-- **アイコンの非永続化**: `icon` フィールドはランタイム表示専用で、JSON保存時は常に除去されます
+- **セットからの参照**: セットの行からは指せません
 
 ## 4. 重複排除ルール
 
@@ -683,10 +663,10 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 
 ### 4.5. 重複チェックの対象
 
-重複チェックの対象は、通常アイテム（`type: "item"`）とフォルダ取込の展開分だけです（`src/main/services/data/jsonItemConverter.ts`）。グループ・ウィンドウ・クリップボード・レイアウトは重複チェックせずに追加します：
+重複チェックの対象は、通常アイテム（`type: "item"`）とフォルダ取込の展開分だけです（`src/main/services/data/jsonItemConverter.ts`）。セット・ウィンドウ・クリップボードは重複チェックせずに追加します：
 
-- 同じ名前のグループが同じタブに複数あっても、すべて表示されます
-- グループは、同じ名前でも参照するアイテムが異なる可能性があるためです
+- 同じ名前のセットが同じタブに複数あっても、すべて表示されます
+- セットは、同じ名前でも行の中身が異なる可能性があるためです
 
 ## 5. エラー処理とフォールバック
 
@@ -798,13 +778,13 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
 
 | 対象 | 場所 | 主な型 |
 | --- | --- | --- |
-| ファイルに書く JSON の形 | `src/common/types/json-data.ts` | `JsonDataFile`、`JsonItem`（union）、`JsonLauncherItem`・`JsonDirItem`・`JsonGroupItem`・`JsonWindowItem`・`JsonClipboardItem`・`JsonLayoutItem`、`JsonDirOptions`、型ガード `isJson*Item()` |
-| 表示・実行用の内部型 | `src/common/types/launcher.ts` | `LauncherItem`・`GroupItem`・`WindowItem`・`ClipboardItem`・`LayoutItem`・`AppItem`、`WindowConfig`、`LayoutWindowEntry` |
+| ファイルに書く JSON の形 | `src/common/types/json-data.ts` | `JsonDataFile`、`JsonItem`（union）、`JsonLauncherItem`・`JsonDirItem`・`JsonSetItem`・`JsonWindowItem`・`JsonClipboardItem`、`JsonDirOptions`（旧形式の `JsonGroupItem`・`JsonLayoutItem` は変換のためだけに残る）、型ガード `isJson*Item()` |
+| 表示・実行用の内部型 | `src/common/types/launcher.ts` | `LauncherItem`・`SetItem`・`WindowItem`・`ClipboardItem`・`AppItem`、`WindowConfig`、`SetEntry` |
 | 検索 | `src/common/types/search.ts` | `SearchMode`・`SearchHistoryEntry`・`SearchHistoryState` |
 
 **要点:**
 
-- `JsonItem` は `type`（`item` / `dir` / `group` / `window` / `clipboard` / `layout`）で判別する union。全アイテム共通のフィールドは `id`（8 文字の英数字）・`memo`・`updatedAt`
+- `JsonItem` は `type`（`item` / `dir` / `set` / `window` / `clipboard`）で判別する union。全アイテム共通のフィールドは `id`（8 文字の英数字）・`memo`・`updatedAt`
 - ファイル上の型（`Json*`）と画面で扱う内部型は別。読み込み時に `src/main/services/data/jsonItemConverter.ts` が JSON アイテムを内部型へ変換する（フォルダ取込の展開・`.lnk` の解析を含む）
 - 内部型の `type` は JSON 側と語彙が違う。`JsonLauncherItem`（`type: "item"`）は、パスから判定した実行タイプ（`url` / `file` / `folder` / `app` / `customUri`）を `type` に持つ `LauncherItem` になる
 - 内部型の `sourceFile`・`id` は、編集・削除のときに元のファイルとアイテムを特定するために使う（`lineNumber` は非推奨）
