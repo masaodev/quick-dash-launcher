@@ -28,6 +28,7 @@ import {
   resolveOne,
   validateAsDataItem,
 } from './cliShared.js';
+import { checkCliSetEntries } from './cliSetCommands.js';
 
 /**
  * qdl workspace … — ワークスペース（workspace.json）のワークスペース・グループ・アイテム
@@ -419,6 +420,13 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   void _g;
   void _w;
   const { merged, setKeys } = applyPatch(body as Record<string, unknown>, fields, parsed);
+  if (current.type === 'set') {
+    if (fields.path !== undefined || fields.args !== undefined) {
+      throw new CliError('usage', mainI18n.t('cli.errors.setNoPathArgs'));
+    }
+    // 行の itemId はワークスペースのアイテムも指せるので、ここでは実在までは確かめない
+    if (setKeys.includes('entries')) checkCliSetEntries(merged.entries);
+  }
   validateAsDataItem({ ...merged, id: 'CliCheck' }, setKeys);
 
   const place =

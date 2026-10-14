@@ -153,28 +153,51 @@ function duplicateKey(item: EditableJsonItem): string {
  * 指定データファイル内の重複アイテムの id（ファイル順で 2 件目以降）を返す
  */
 export function findDuplicateIds(items: EditableJsonItem[], sourceFile: string): string[] {
-  const seen = new Set<string>();
-  const duplicates: string[] = [];
+  return [...findDuplicates(items, sourceFile).keys()];
+}
+
+/** 重複（2 件目以降）の id → 残す 1 件目の id */
+function findDuplicates(items: EditableJsonItem[], sourceFile: string): Map<string, string> {
+  const firstIdByKey = new Map<string, string>();
+  const duplicates = new Map<string, string>();
   for (const item of items) {
     if (item.meta.sourceFile !== sourceFile) continue;
     const key = duplicateKey(item);
-    if (seen.has(key)) {
-      duplicates.push(item.item.id);
+    const firstId = firstIdByKey.get(key);
+    if (firstId !== undefined) {
+      duplicates.set(item.item.id, firstId);
     } else {
-      seen.add(key);
+      firstIdByKey.set(key, item.item.id);
     }
   }
   return duplicates;
 }
 
-/** 指定データファイル内の重複を除く（他のファイルは触らない） */
+/**
+ * 指定データファイル内の重複を除く（他のファイルのアイテムは消さない）
+ *
+ * 消すアイテムを指しているセットの行は、残す 1 件目の id に付け替える（どのファイルのセットでも）
+ */
 export function dedupeFileItems(
   items: EditableJsonItem[],
   sourceFile: string
 ): { items: EditableJsonItem[]; removed: number } {
-  const duplicateIds = findDuplicateIds(items, sourceFile);
-  if (duplicateIds.length === 0) return { items, removed: 0 };
-  return { items: removeItems(items, duplicateIds), removed: duplicateIds.length };
+  const duplicates = findDuplicates(items, sourceFile);
+  if (duplicates.size === 0) return { items, removed: 0 };
+  const relinked = items.map((item) => {
+    if (item.item.type !== 'set') return item;
+    const entries = item.item.entries;
+    if (!entries.some((e) => e.itemId !== undefined && duplicates.has(e.itemId))) return item;
+    return refreshEditableItem(item, {
+      ...item.item,
+      entries: entries.map((e) =>
+        e.itemId !== undefined && duplicates.has(e.itemId)
+          ? { ...e, itemId: duplicates.get(e.itemId) }
+          : e
+      ),
+    });
+  });
+  return { items: removeItems(relinked, [...duplicates.keys()]), removed: duplicates.size };
 }
 
 /** キー順に依存しない JSON 文字列（内容の比較用） */

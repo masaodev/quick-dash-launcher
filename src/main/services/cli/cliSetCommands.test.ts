@@ -107,6 +107,24 @@ describe('launcher item add --type set', () => {
   });
 });
 
+describe('セットの行を --set entries で渡すときの確認', () => {
+  it('知らないキー・空の行・無い itemId・行にできない種類は invalid', async () => {
+    const codeOf = async (json: string) =>
+      (await errorOf(runLauncherItemCommand('update', ['朝', '--set', `entries=${json}`], ctx)))
+        .code;
+    expect(await codeOf('[{"itemID":"Memo0001"}]')).toBe('invalid');
+    expect(await codeOf('[{}]')).toBe('invalid');
+    expect(await codeOf('[{"itemId":"Gone0001"}]')).toBe('invalid');
+    expect(await codeOf('[{"itemId":"Dir00001"}]')).toBe('invalid');
+    expect(store.replace).not.toHaveBeenCalled();
+  });
+
+  it('セットに --path・--args を渡すと usage（黙って捨てない）', async () => {
+    const e = await errorOf(runLauncherItemCommand('update', ['朝', '--path', 'C:/x.exe'], ctx));
+    expect(e.code).toBe('usage');
+  });
+});
+
 describe('launcher set row list', () => {
   it('行番号と名前を付けて返し、見つからないアイテムの行に missing を付ける', async () => {
     (entries[3].item as { entries: unknown[] }).entries.push({

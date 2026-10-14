@@ -130,6 +130,23 @@ describe('editableItemOperations', () => {
     expect(duplicateItems(items, ['nope'])).toBeNull();
   });
 
+  it('dedupeFileItems は、消すアイテムを指すセットの行を残す 1 件目の id に付け替えること', () => {
+    const first = launcher('a', 'C:/a.exe');
+    const second = launcher('a', 'C:/a.exe');
+    const set: JsonItem = {
+      id: 'set00001',
+      type: 'set',
+      displayName: '朝',
+      entries: [{ itemId: second.id }, { itemId: 'other001' }],
+    };
+    const { items } = dedupeFileItems(rows([first], [second], [set, OTHER]), FILE);
+    const kept = items.find((i) => i.item.id === 'set00001')!.item as Extract<
+      JsonItem,
+      { type: 'set' }
+    >;
+    expect(kept.entries).toEqual([{ itemId: first.id }, { itemId: 'other001' }]);
+  });
+
   it('findDuplicateIds / dedupeFileItems は対象ファイル内の 2 件目以降だけを除くこと', () => {
     const items = rows(
       [launcher('a', 'C:\\a.exe')],

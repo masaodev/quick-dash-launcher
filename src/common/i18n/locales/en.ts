@@ -417,10 +417,10 @@ Works with the items in the launcher (datafiles/data*.json).
                                 --type item|dir|set|window, --set key=value, --dry-run)
   item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
   item remove <id or name>      Delete an item (--dry-run)
-  set row list <set>          List the rows of a set (row numbers are 0-based)
-  set row add <set>           Add a row to a set (--item <id or name> | --path <path> [--args],
+  set row list <set>            List the rows of a set (row numbers are 0-based)
+  set row add <set>             Add a row to a set (--item <id or name> | --path <path> [--args],
                                 --label <row name> --position <0-based> --dry-run)
-  set row remove <set> <row>  Delete a row from a set (--dry-run)
+  set row remove <set> <row>    Delete a row from a set (--dry-run)
 
 A relative --path is resolved from the folder where you run qdl. With --type set, --path isn't required;
 pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
@@ -510,6 +510,13 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
         "--args can be used only with --path rows (an --item row uses the item's arguments)",
       setItemType:
         "Items of type {{type}} can't be rows of a set (only {{types}}. Use --path for the contents of an imported folder)",
+      setRowUnknownKeys:
+        'Row {{index}} has unknown keys: {{keys}} (itemId, open, label, window, placement, ifOpen, activateWindow, waitSeconds)',
+      setRowEmpty:
+        'Row {{index}} has nothing to open (itemId, open) and no window to move (window)',
+      setRowItemNotFound: "Row {{index}}: couldn't find the item with itemId {{id}}",
+      setNoPathArgs:
+        "Sets don't have --path or --args (to add a row, use qdl launcher set row add)",
       setBadPosition: '--position must be between 0 and {{max}}: {{value}}',
       setBadIndex: 'The row number must be between 0 and {{max}}: {{value}}',
       setLastEntry:
@@ -603,9 +610,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     record: {
       title: 'Record current positions',
       loading: 'Looking at the windows…',
-      linked: 'Rows with a position ({{count}})',
+      linked: 'Rows matched to a window ({{count}})',
       linkedHint: 'If one is wrong, choose "Use another window" on the right',
-      failed: 'Rows without a position ({{count}})',
+      failed: 'Rows not matched to a window ({{count}})',
       failedHint: 'You can still record',
       unlinked: 'Windows not in the set ({{count}})',
       unlinkedHint: 'Open this when you want to add rows',
@@ -620,7 +627,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       windowLabel: 'Window: {{title}}',
       reasonUrl: 'URLs are not matched automatically',
       reasonNotFound: 'No matching window',
-      reasonUnlinked: 'Set to "Don\'t record a position"',
+      reasonUnlinked: 'You chose "Don\'t record a position"',
       reasonWithOutcome: '{{reason}}. If you record now: {{outcome}}',
       outcomeKeep: 'keeps its previous position ({{place}})',
       outcomeOpenOnly: 'opens only',
@@ -666,7 +673,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       wait: 'Wait for the window to appear (seconds)',
       minimizedPicked:
         'This window is minimized, so only the window to move was taken. Restore it before taking the position',
-      registerAsItem: 'Register as an item',
     },
     placement: {
       none: 'No position',

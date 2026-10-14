@@ -69,6 +69,8 @@ interface ItemEditFieldsProps {
   typeLocked?: boolean;
   /** セットの行の追加で、ワークスペースのアイテムも選べるようにする（ワークスペースのセット） */
   setIncludesWorkspace?: boolean;
+  /** 編集中のアイテム自身の id（種類をセットに変えたとき、自分を行に選べないようにする） */
+  selfId?: string;
   /** ドロップしたファイルから登録するときはパスを書き換えさせない */
   isPathReadOnly: boolean;
   iconFetchLoading: boolean;
@@ -97,6 +99,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   placement,
   typeLocked = false,
   setIncludesWorkspace = false,
+  selfId,
   isPathReadOnly,
   iconFetchLoading,
   optionsOpen,
@@ -229,6 +232,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           onChange={(patch) => onUpdate(patch)}
           currentFile={setIncludesWorkspace ? undefined : item.targetFile || item.targetTab}
           includeWorkspace={setIncludesWorkspace}
+          selfId={selfId}
           error={errors?.setEntries}
         />
       )}

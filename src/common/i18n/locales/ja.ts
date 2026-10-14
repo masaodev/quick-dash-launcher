@@ -417,10 +417,10 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
                                 --type item|dir|set|window、--set key=value、--dry-run）
   item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
   item remove <id か表示名>     削除（--dry-run）
-  set row list <セット>       セットの行の一覧（行番号は 0 始まり）
-  set row add <セット>        セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
+  set row list <セット>         セットの行の一覧（行番号は 0 始まり）
+  set row add <セット>          セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
                                 --label <行の名前> --position <0 始まり> --dry-run）
-  set row remove <セット> <行番号>  セットの行を消す（--dry-run）
+  set row remove <セット> <行番号>    セットの行を消す（--dry-run）
 
 --path の相対パスは qdl を実行したフォルダが基準です。--type set では --path を求めず、最初の行を
 --item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
@@ -510,6 +510,13 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
         '--args は --path の行だけに指定できます（--item の行の引数はアイテムのもの）',
       setItemType:
         '種類 {{type}} のアイテムはセットの行にできません（{{types}} のみ。フォルダ取込の中身は --path で）',
+      setRowUnknownKeys:
+        '行 {{index}} に知らないキーがあります: {{keys}}（itemId・open・label・window・placement・ifOpen・activateWindow・waitSeconds）',
+      setRowEmpty:
+        '行 {{index}} に、開くもの（itemId・open）も動かすウィンドウ（window）もありません',
+      setRowItemNotFound: '行 {{index}} の itemId {{id}} のアイテムが見つかりません',
+      setNoPathArgs:
+        'セットは --path・--args を持ちません（行を足すときは qdl launcher set row add を使ってください）',
       setBadPosition: '--position は 0〜{{max}} で指定してください: {{value}}',
       setBadIndex: '行番号は 0〜{{max}} で指定してください: {{value}}',
       setLastEntry:
@@ -669,7 +676,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       wait: 'ウィンドウが出るのを待つ（秒）',
       minimizedPicked:
         '最小化中のウィンドウなので、動かすウィンドウだけ取りました。位置は元の大きさに戻してから取ってください',
-      registerAsItem: 'アイテムとして登録',
     },
     placement: {
       none: '位置なし',

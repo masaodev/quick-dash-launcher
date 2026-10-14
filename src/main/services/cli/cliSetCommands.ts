@@ -159,6 +159,66 @@ export async function entryFromOptions(
   };
 }
 
+/** 行に書けるキー（SetEntry） */
+const SET_ENTRY_KEYS = new Set([
+  'itemId',
+  'open',
+  'label',
+  'window',
+  'placement',
+  'ifOpen',
+  'activateWindow',
+  'waitSeconds',
+]);
+
+/**
+ * --set entries=… で渡された行を確かめる（読み込みの検証は知らないキーを黙って捨て、空の行を通すため）
+ *
+ * @param all メイン画面のアイテム。渡すと itemId が実在し、行にできる種類かも確かめる（ワークスペースでは渡さない）
+ */
+export function checkCliSetEntries(raw: unknown, all?: readonly LauncherEntry[]): void {
+  if (!Array.isArray(raw)) return;
+  raw.forEach((row: unknown, index) => {
+    if (typeof row !== 'object' || row === null) return;
+    const record = row as Record<string, unknown>;
+    const unknown = Object.keys(record).filter((key) => !SET_ENTRY_KEYS.has(key));
+    if (unknown.length > 0) {
+      throw new CliError(
+        'invalid',
+        mainI18n.t('cli.errors.setRowUnknownKeys', { index, keys: unknown.join(', ') })
+      );
+    }
+    const open = record.open as { path?: unknown } | undefined;
+    const window = record.window as { processName?: unknown; title?: unknown } | undefined;
+    const hasTarget =
+      (typeof record.itemId === 'string' && record.itemId !== '') ||
+      (typeof open?.path === 'string' && open.path !== '') ||
+      (typeof window?.processName === 'string' && window.processName !== '') ||
+      (typeof window?.title === 'string' && window.title !== '');
+    if (!hasTarget) {
+      throw new CliError('invalid', mainI18n.t('cli.errors.setRowEmpty', { index }));
+    }
+    if (all && typeof record.itemId === 'string' && record.itemId !== '') {
+      const target = all.find((e) => e.item.id === record.itemId);
+      if (!target) {
+        throw new CliError(
+          'invalid',
+          mainI18n.t('cli.errors.setRowItemNotFound', { index, id: record.itemId })
+        );
+      }
+      if (!(ENTRY_ITEM_TYPES as readonly string[]).includes(target.item.type)) {
+        throw new CliError(
+          'invalid',
+          mainI18n.t('cli.errors.setItemType', {
+            type: target.item.type,
+            types: ENTRY_ITEM_TYPES.join(' / '),
+          })
+        );
+      }
+    }
+  });
+}
+
 export async function runLauncherSetCommand(
   noun: string | undefined,
   verb: string | undefined,

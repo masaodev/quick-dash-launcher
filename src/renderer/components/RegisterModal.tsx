@@ -298,6 +298,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     onFetchFromWindow={() => fetchMatchingWindow(items[index])}
                     onClipboardError={showError}
                     showSeparator={items.length > 1}
+                    selfId={
+                      editingItem
+                        ? isEditableJsonItem(editingItem)
+                          ? editingItem.item.id
+                          : editingItem.jsonItemId
+                        : undefined
+                    }
                   />
                 ))}
               </div>

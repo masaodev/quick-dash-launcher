@@ -13,7 +13,7 @@ import {
   resolveOne,
   validateAsDataItem,
 } from './cliShared.js';
-import { entryFromOptions } from './cliSetCommands.js';
+import { checkCliSetEntries, entryFromOptions } from './cliSetCommands.js';
 
 /**
  * qdl launcher item … — メイン画面のアイテム（datafiles/data*.json）
@@ -263,6 +263,7 @@ async function addSet(parsed: ParsedArgs, ctx: LauncherCommandContext): Promise<
     },
     parsed
   );
+  if (setKeys.includes('entries')) checkCliSetEntries(merged.entries, entries);
   const item = validateAsDataItem(merged, setKeys);
   item.updatedAt = Date.now();
   const result = view({ item, file: targetFile }, await ctx.store.tabs());
@@ -301,6 +302,13 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
   }
 
   const rawPath = optionString(parsed, 'path');
+  if (
+    current.type === 'set' &&
+    (rawPath !== undefined || optionString(parsed, 'args') !== undefined)
+  ) {
+    // 黙って捨てて「変更しました」と返さない
+    throw new CliError('usage', mainI18n.t('cli.errors.setNoPathArgs'));
+  }
   let itemPath: string | undefined;
   if (rawPath !== undefined) {
     itemPath = resolveCliPath(rawPath, ctx.cwd);
@@ -327,6 +335,9 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
     fields,
     parsed
   );
+  if (current.type === 'set' && setKeys.includes('entries')) {
+    checkCliSetEntries(merged.entries, await ctx.store.load());
+  }
   const item = validateAsDataItem(merged, setKeys);
   item.updatedAt = Date.now();
   const tabs = await ctx.store.tabs();

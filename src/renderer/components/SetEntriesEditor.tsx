@@ -28,6 +28,8 @@ interface SetEntriesEditorProps {
   currentFile?: string;
   /** ワークスペースのアイテムも選べるようにする（ワークスペースのセット） */
   includeWorkspace?: boolean;
+  /** 編集中のアイテム自身の id（種類をセットに変えたとき、自分を行に選べないようにする） */
+  selfId?: string;
   error?: string;
 }
 
@@ -42,6 +44,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   onChange,
   currentFile,
   includeWorkspace = false,
+  selfId,
   error,
 }) => {
   const { t } = useTranslation();
@@ -57,7 +60,9 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   useEffect(() => {
     let cancelled = false;
     loadSetCatalog(currentFile, includeWorkspace)
-      .then((items) => !cancelled && setCatalog(items))
+      .then(
+        (items) => !cancelled && setCatalog(items.filter((item) => item.id !== selfId || !selfId))
+      )
       .catch((e) => logError('セットに追加できるアイテムを読めませんでした:', e));
     window.electronAPI
       .getScreenAreas()
@@ -66,7 +71,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [currentFile, includeWorkspace]);
+  }, [currentFile, includeWorkspace, selfId]);
 
   const catalogById = useMemo(() => {
     const map = new Map<string, SetCatalogItem>();
