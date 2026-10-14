@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { WorkspaceGroupView, WorkspaceGroupUpdate, GroupDropZone } from '@common/types';
 import { resolveGroupColorCss } from '@common/groupColors';
 
+import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
+
 interface WorkspaceGroupHeaderProps {
   group: WorkspaceGroupView;
   itemCount: number;
@@ -59,8 +61,9 @@ function WorkspaceGroupHeader({
   }, [draggedElement]);
 
   function handleSaveEdit(): void {
-    if (editName.trim() && editName !== group.displayName) {
-      onUpdate(group.id, { displayName: editName.trim() });
+    const name = resolveInlineName(editName, group.displayName);
+    if (name) {
+      onUpdate(group.id, { displayName: name });
     }
     onEndEdit();
   }
@@ -71,7 +74,7 @@ function WorkspaceGroupHeader({
   }
 
   function handleKeyDown(e: React.KeyboardEvent): void {
-    if (e.key === 'Enter') {
+    if (isCommitEnter(e)) {
       handleSaveEdit();
     } else if (e.key === 'Escape') {
       handleCancelEdit();

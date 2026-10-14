@@ -4,6 +4,7 @@ import type { DataFileTab } from '@common/types';
 
 import type { AdminTabStructure } from '../hooks/useAdminTabStructure';
 import { TabStructureEdits } from '../utils/tabManager';
+import { isCommitEnter } from '../utils/inlineName';
 
 type MenuEntry =
   | {
@@ -139,7 +140,7 @@ const InlineNameInput: React.FC<{
       onKeyDown={(e) => {
         // 管理画面のショートカット（Delete など）に渡さない
         e.stopPropagation();
-        if (e.key === 'Enter') finish(true);
+        if (isCommitEnter(e)) finish(true);
         else if (e.key === 'Escape') finish(false);
       }}
       onBlur={() => finish(commitOnBlur)}

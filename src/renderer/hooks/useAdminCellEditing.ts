@@ -8,6 +8,7 @@ import {
   isPathEditable,
   withEditedPath,
 } from '../utils/adminItemDisplay';
+import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
 /** 編集中のセル。名前列とパス列のどちらか */
 export interface EditingCell {
@@ -59,9 +60,11 @@ export function useAdminCellEditing(onItemEdit: (item: EditableJsonItem) => void
   /** 名前セルの入力を確定する。別のセルへ移った後の遅い blur は無視する */
   const commitNameEdit = useCallback((item: EditableJsonItem) => {
     if (!isEditing(item, 'name')) return;
-    const newName = editingValueRef.current.trim();
     const jsonItem = item.item;
-    if (hasDisplayName(jsonItem) && newName !== (jsonItem.displayName || '')) {
+    const newName = hasDisplayName(jsonItem)
+      ? resolveInlineName(editingValueRef.current, jsonItem.displayName || '')
+      : null;
+    if (hasDisplayName(jsonItem) && newName) {
       onItemEditRef.current({ ...item, item: { ...jsonItem, displayName: newName } });
     }
     stop();
@@ -82,7 +85,7 @@ export function useAdminCellEditing(onItemEdit: (item: EditableJsonItem) => void
 
   const handleNameKeyDown = useCallback(
     (e: ReactKeyboardEvent, item: EditableJsonItem) => {
-      if (e.key === 'Enter' || e.key === 'Tab') {
+      if (isCommitEnter(e) || e.key === 'Tab') {
         e.preventDefault();
         commitNameEdit(item);
         // 確定後の値でパス編集を始める（名前の変更は onItemEdit で反映済み）
@@ -97,7 +100,7 @@ export function useAdminCellEditing(onItemEdit: (item: EditableJsonItem) => void
 
   const handlePathKeyDown = useCallback(
     (e: ReactKeyboardEvent, item: EditableJsonItem) => {
-      if (e.key === 'Enter' || e.key === 'Tab') {
+      if (isCommitEnter(e) || e.key === 'Tab') {
         e.preventDefault();
         commitPathEdit(item);
       } else if (e.key === 'Escape') {

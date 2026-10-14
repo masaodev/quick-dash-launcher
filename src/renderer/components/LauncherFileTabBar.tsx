@@ -4,6 +4,7 @@ import { isWindowInfo } from '@common/types/guards';
 
 import { filterItems } from '../utils/dataParser';
 import { getCountClass } from '../utils/tabUtils';
+import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
 interface FileTabBarProps {
   /** データファイルタブの設定（タブグループのリスト） */
@@ -93,10 +94,10 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   };
 
   const handleSaveEdit = (): void => {
-    if (editingTabIndex !== null && editName.trim()) {
-      const currentName = dataFileTabs[editingTabIndex].name;
-      if (editName.trim() !== currentName) {
-        onTabRename(editingTabIndex, editName.trim());
+    if (editingTabIndex !== null) {
+      const name = resolveInlineName(editName, dataFileTabs[editingTabIndex].name);
+      if (name) {
+        onTabRename(editingTabIndex, name);
       }
     }
     setEditingTabIndex(null);
@@ -108,7 +109,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
 
   const handleEditKeyDown = (e: React.KeyboardEvent): void => {
     e.stopPropagation();
-    if (e.key === 'Enter') {
+    if (isCommitEnter(e)) {
       handleSaveEdit();
     } else if (e.key === 'Escape') {
       handleCancelEdit();

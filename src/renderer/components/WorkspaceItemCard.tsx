@@ -4,6 +4,7 @@ import type { WorkspaceItem } from '@common/types';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 
 import { getDefaultIconForItem } from '../utils/itemTypeIcons';
+import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
 type ItemDropZone = 'before' | 'after';
 
@@ -90,8 +91,9 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   // Enter とフォーカスを外したときで同じ扱い（空・変更なしなら元の名前に戻す）
   const commitEdit = () => {
-    if (editValue.trim() && editValue !== item.displayName) {
-      onUpdateDisplayName(item.id, editValue);
+    const name = resolveInlineName(editValue, item.displayName);
+    if (name) {
+      onUpdateDisplayName(item.id, name);
     } else {
       setEditValue(item.displayName);
       onStartEdit(); // 編集モード終了
@@ -99,7 +101,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (isCommitEnter(e)) {
       commitEdit();
     } else if (e.key === 'Escape') {
       setEditValue(item.displayName);
