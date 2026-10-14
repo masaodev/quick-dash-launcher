@@ -86,10 +86,10 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
 });
 
 /**
- * メイン画面の右クリック「ワークスペースに追加」は、LauncherItem 以外（グループなど）でもトーストで知らせる
+ * メイン画面の右クリック「ワークスペースに追加」は、LauncherItem 以外（セットなど）でもトーストで知らせる
  */
-test.describe('QuickDashLauncher - グループをワークスペースに追加', () => {
-  test('グループを追加するとワークスペースに入り、トーストで知らせる', async ({
+test.describe('QuickDashLauncher - セットをワークスペースに追加', () => {
+  test('セットを追加するとワークスペースに入り、トーストで知らせる', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -100,9 +100,9 @@ test.describe('QuickDashLauncher - グループをワークスペースに追加
     const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
 
     await menuHelper.sendIpcToRenderer(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, {
-      type: 'group',
+      type: 'set',
       displayName: 'E2E朝のセット',
-      itemNames: ['GitHub', 'Google'],
+      entries: [{ label: 'GitHub' }, { label: 'Google' }],
     });
 
     await expect(
