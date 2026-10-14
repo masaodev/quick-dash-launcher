@@ -545,7 +545,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   };
 
   /**
-   * AppItem（LauncherItem/GroupItem/WindowItem/ClipboardItem）をワークスペースに追加
+   * AppItem（LauncherItem/SetItem/WindowItem/ClipboardItem）をワークスペースに追加
    *
    * ウィンドウ検索結果は送り側でウィンドウ操作アイテム（タイトル＋プロセス名）に変換済み。
    * windowPosition が付いていて Ctrl を押してドロップしたときだけ、今の位置・サイズも記録する

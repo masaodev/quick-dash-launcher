@@ -161,8 +161,25 @@ describe('launcher set row add', () => {
       (await errorOf(runLauncherSetCommand('row', 'add', ['朝', '--item', 'Dir00001'], ctx))).code
     ).toBe('invalid');
     expect(
-      (await errorOf(runLauncherSetCommand('row', 'add', ['朝', '--item', '朝'], ctx))).code
+      (await errorOf(runLauncherSetCommand('row', 'add', ['朝', '--item', 'Set00001'], ctx))).code
     ).toBe('invalid');
+    // 表示名では行にできる種類だけを探す
+    expect(
+      (await errorOf(runLauncherSetCommand('row', 'add', ['朝', '--item', '朝'], ctx))).code
+    ).toBe('not_found');
+  });
+
+  it('同じ名前のセットがあっても、行にできるアイテムを選ぶ', async () => {
+    entries.push(
+      entry({
+        id: 'Set00002',
+        type: 'set',
+        displayName: 'メモ帳',
+        entries: [{ itemId: 'Win00001' }],
+      })
+    );
+    await runLauncherSetCommand('row', 'add', ['朝', '--item', 'メモ帳'], ctx);
+    expect(setEntries()).toContainEqual({ itemId: 'Memo0001' });
   });
 
   it('--dry-run では書き込まない', async () => {

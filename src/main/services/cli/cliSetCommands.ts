@@ -124,18 +124,23 @@ export async function entryFromOptions(
   if (itemKey !== undefined) {
     if (args !== undefined) throw new CliError('usage', mainI18n.t('cli.errors.setArgsWithItem'));
     const tabs = await ctx.store.tabs();
-    const target = resolveOne(
-      itemKey,
-      await ctx.store.load(),
-      mainI18n.t('cli.targets.launcherItem'),
-      (e) => e.item.id,
-      (e) => nameOf(e.item),
-      (e) => ({
-        id: e.item.id,
-        displayName: nameOf(e.item),
-        location: [tabOf(e.file, tabs) ?? e.file],
-      })
-    );
+    // 行にできる種類だけから探す（同じ名前のセットがあっても曖昧にしない）。id はどの種類でも当てて、種類の誤りを知らせる
+    const all = await ctx.store.load();
+    const byId = all.find((e) => e.item.id === itemKey);
+    const target =
+      byId ??
+      resolveOne(
+        itemKey,
+        all.filter((e) => (ENTRY_ITEM_TYPES as readonly string[]).includes(e.item.type)),
+        mainI18n.t('cli.targets.launcherItem'),
+        (e) => e.item.id,
+        (e) => nameOf(e.item),
+        (e) => ({
+          id: e.item.id,
+          displayName: nameOf(e.item),
+          location: [tabOf(e.file, tabs) ?? e.file],
+        })
+      );
     if (!(ENTRY_ITEM_TYPES as readonly string[]).includes(target.item.type)) {
       throw new CliError(
         'invalid',

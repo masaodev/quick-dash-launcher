@@ -100,9 +100,11 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
         dataFileRef: 'clipboard-data/abc.json',
         formats: ['text'],
       });
+      // 2.0 へ移した後、旧ウィンドウ配置はセットに変換される（座標の無いエントリは位置を持たない）
       expect(byName('配置')).toMatchObject({
-        type: 'layout',
-        entries: [{ windowTitle: 'a', launchApp: false }],
+        type: 'set',
+        launchMode: 'parallel',
+        entries: [{ window: { title: '*a*' } }],
       });
 
       const raw = JSON.stringify(main);
@@ -154,6 +156,8 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       await utils.reloadWithF5();
       await mainWindow.waitForTimeout(500);
       expect(listBackupFolders(configDir, '_pre-migration')).toHaveLength(1);
+      // セットへの変換前のスナップショットも 1 回だけ（F5 で増えない）
+      expect(listBackupFolders(configDir, '_pre-set-migration')).toHaveLength(1);
       expect(listBackupFolders(configDir, '_pre-external')).toEqual([]);
       expect(fs.readFileSync(path.join(configDir, 'workspace.json'), 'utf8')).toBe(
         JSON.stringify(main, null, 2)

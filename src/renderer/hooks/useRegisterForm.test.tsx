@@ -42,7 +42,7 @@ async function renderWithCapturedClipboard() {
 }
 
 describe('useRegisterForm のクリップボードの一時データ', () => {
-  it.each(['item', 'dir', 'group', 'window', 'layout'])(
+  it.each(['item', 'dir', 'set', 'window'])(
     '種別を %s に変えると、取り込んだ一時データを破棄する',
     async (category) => {
       const { result } = await renderWithCapturedClipboard();

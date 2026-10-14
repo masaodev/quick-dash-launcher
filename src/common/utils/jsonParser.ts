@@ -741,7 +741,7 @@ export function validateSetEntry(entry: unknown, index: number): SetEntry {
   }
   if (isRecord(entry.placement)) {
     const p = entry.placement;
-    result.placement = compact({
+    const placement = compact({
       x: pickNumber(p, 'x'),
       y: pickNumber(p, 'y'),
       width: pickNumber(p, 'width'),
@@ -749,6 +749,8 @@ export function validateSetEntry(entry: unknown, index: number): SetEntry {
       virtualDesktopNumber: pickNumber(p, 'virtualDesktopNumber'),
       state: p.state === 'maximized' ? ('maximized' as const) : undefined,
     });
+    // 中身の無い位置は持たない（位置のある行に数えられてしまう）
+    if (Object.keys(placement).length > 0) result.placement = placement;
   }
   if (entry.ifOpen === 'move' || entry.ifOpen === 'openNew') result.ifOpen = entry.ifOpen;
   if (typeof entry.activateWindow === 'boolean') result.activateWindow = entry.activateWindow;

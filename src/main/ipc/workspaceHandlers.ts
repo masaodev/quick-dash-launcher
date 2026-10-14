@@ -27,7 +27,7 @@ import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
-import { executeSet, notifySetFailures } from '../services/launch/setExecutor.js';
+import { executeSet, notifySetFailures, resolveSetEntry } from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 
@@ -284,7 +284,18 @@ export function setupWorkspaceHandlers(): void {
           const converted = workspaceItemToLaunchable(wsItem);
           if (converted) byId.set(wsItem.id, converted);
         }
-        const result = await executeSet(item, (itemId) => byId.get(itemId));
+        const resolve = (itemId: string) => byId.get(itemId);
+        // 行の名前はデータファイルのアイテムからも引くので、ワークスペースの画面ではなくここで知らせる
+        await showToastWindow({
+          displayName: item.displayName,
+          itemType: 'set',
+          itemCount: item.entries.length,
+          itemNames: item.entries
+            .map((entry) => resolveSetEntry(entry, resolve).name)
+            .filter((name) => name !== '')
+            .slice(0, 3),
+        });
+        const result = await executeSet(item, resolve);
         await notifySetFailures(item, result);
         logger.info(
           { id: item.id, name: item.displayName, ...result, entries: undefined },

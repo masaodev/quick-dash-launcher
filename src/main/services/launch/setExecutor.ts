@@ -63,6 +63,8 @@ interface ResolvedEntry {
   windowItem?: WindowItem;
   /** 解決できなかった理由 */
   error?: string;
+  /** 進み具合の表示に出すアイコン（指しているアイテムのもの） */
+  icon?: string;
 }
 
 /** 行の結果 */
@@ -133,6 +135,7 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
           displayName: item.displayName,
         },
         itemWindowConfig: (item as LauncherItem).windowConfig,
+        ...(item.icon ? { icon: item.icon } : {}),
       };
     }
     return {
@@ -273,6 +276,11 @@ async function runSet(
     entries: resolved.map((r, index): LayoutEntryProgress => ({
       index,
       windowTitle: r.name,
+      // 行の名前と動かすウィンドウが別のものでも分かるように、exe 名を添える
+      ...(item.entries[index].window?.processName
+        ? { processName: item.entries[index].window!.processName }
+        : {}),
+      ...(r.icon ? { icon: r.icon } : {}),
       status: 'waiting',
     })),
     isComplete: false,
@@ -340,7 +348,8 @@ async function runSet(
       if (!entry.placement) {
         if (r.windowItem) {
           const config: WindowConfig = {
-            title: r.windowItem.windowTitle,
+            // タイトルが空のウィンドウ操作は exe 名だけで探す（位置のある行と同じ）
+            title: r.windowItem.windowTitle || ANY_WINDOW_TITLE,
             ...pickWindowPlacement(r.windowItem),
           };
           const result = await deps.activate(config, r.name, logger);

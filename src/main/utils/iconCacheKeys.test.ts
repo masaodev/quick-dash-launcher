@@ -45,7 +45,6 @@ describe('classifyIconTarget', () => {
     ['カスタムURI', { type: 'customUri', path: 'obsidian://open?vault=x' }, 'customUri'],
     ['ファイル', { type: 'file', path: 'C:\\x\\a.txt' }, 'fileExtension'],
     ['フォルダ', { type: 'folder', path: 'C:\\x' }, 'none'],
-    ['グループ', { type: 'group', path: '[グループ: 2件]' }, 'none'],
   ])('%s を分類する', (_label, item, expected) => {
     expect(classifyIconTarget(item)).toBe(expected);
   });

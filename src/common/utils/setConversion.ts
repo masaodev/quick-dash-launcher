@@ -63,10 +63,12 @@ export function convertLayoutEntryToSetEntry(entry: LayoutWindowEntry): SetEntry
       : { path: entry.executablePath };
   }
   const title = entry.windowTitle ? toPartialMatchTitle(entry.windowTitle) : undefined;
-  result.window = {
-    ...(entry.processName ? { processName: entry.processName } : {}),
-    ...(title ? { title } : {}),
-  };
+  if (entry.processName || title) {
+    result.window = {
+      ...(entry.processName ? { processName: entry.processName } : {}),
+      ...(title ? { title } : {}),
+    };
+  }
   const placement: SetPlacement = {};
   if (entry.x !== undefined) placement.x = entry.x;
   if (entry.y !== undefined) placement.y = entry.y;
@@ -75,7 +77,8 @@ export function convertLayoutEntryToSetEntry(entry: LayoutWindowEntry): SetEntry
   if (entry.virtualDesktopNumber !== undefined) {
     placement.virtualDesktopNumber = entry.virtualDesktopNumber;
   }
-  result.placement = placement;
+  // 座標の無いエントリに空の位置を付けると「位置のある行」に数えられる（📍・記録し直し・進み具合の表示）
+  if (Object.keys(placement).length > 0) result.placement = placement;
   return result;
 }
 

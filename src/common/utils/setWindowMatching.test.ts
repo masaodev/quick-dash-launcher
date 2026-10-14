@@ -176,4 +176,17 @@ describe('rerecordSetPlacements', () => {
     expect(result.entries[1]).toBe(entries[1]);
     expect(result.entries[2]).toBe(entries[2]);
   });
+
+  it('今の仮想デスクトップ番号が取れないときは、前の番号を残す', () => {
+    const entries = [
+      {
+        window: { processName: 'Obsidian.exe' },
+        placement: { x: 0, y: 0, width: 10, height: 10, virtualDesktopNumber: 2 },
+      },
+    ];
+    const moved = win({ ...obsidian, x: 5, y: 0, width: 10, height: 10, desktopNumber: -1 });
+    expect(rerecordSetPlacements(entries, [moved]).entries[0].placement?.virtualDesktopNumber).toBe(
+      2
+    );
+  });
 });
