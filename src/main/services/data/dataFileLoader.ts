@@ -263,7 +263,7 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
       const first = fileReports.find((r) => r.file === report.file);
       if (!first) continue;
       if (changedFiles.has(report.file)) report.externallyChanged = true;
-      report.issues = [...first.issues, ...report.issues];
+      // issues は 2 回目のものを使う（1 回目は変換前の旧グループを「不正」と数えているので、足すと二重になる）
       report.rewritten = report.rewritten || first.rewritten;
     }
     return {
@@ -316,7 +316,11 @@ async function migrateLegacySetItemsInDataFiles(
   for (const fileName of fileNames) {
     const filePath = path.join(configFolder, fileName);
     const content = FileUtils.safeReadTextFile(filePath);
-    if (content === null) continue;
+    if (content === null) {
+      // 有るのに読めない（ロック・権限）ファイルも、壊れたファイルと同じく変換を待たせる
+      if (FileUtils.exists(filePath)) unreadable = true;
+      continue;
+    }
     try {
       const raw: unknown = JSON.parse(content);
       if (isRecord(raw) && Array.isArray(raw.items) && hasLegacySetItems(raw.items)) {

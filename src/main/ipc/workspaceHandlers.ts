@@ -27,7 +27,12 @@ import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
-import { executeSet, notifySetFailures, resolveSetEntry } from '../services/launch/setExecutor.js';
+import {
+  executeSet,
+  isSetRunning,
+  notifySetFailures,
+  resolveSetEntry,
+} from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 
@@ -286,15 +291,17 @@ export function setupWorkspaceHandlers(): void {
         }
         const resolve = (itemId: string) => byId.get(itemId);
         // 行の名前はデータファイルのアイテムからも引くので、ワークスペースの画面ではなくここで知らせる
-        await showToastWindow({
-          displayName: item.displayName,
-          itemType: 'set',
-          itemCount: item.entries.length,
-          itemNames: item.entries
-            .map((entry) => resolveSetEntry(entry, resolve).name)
-            .filter((name) => name !== '')
-            .slice(0, 3),
-        });
+        // （実行中に押し直したときは何もしないので知らせない）
+        if (!isSetRunning(item.id))
+          await showToastWindow({
+            displayName: item.displayName,
+            itemType: 'set',
+            itemCount: item.entries.length,
+            itemNames: item.entries
+              .map((entry) => resolveSetEntry(entry, resolve).name)
+              .filter((name) => name !== '')
+              .slice(0, 3),
+          });
         const result = await executeSet(item, resolve);
         await notifySetFailures(item, result);
         logger.info(

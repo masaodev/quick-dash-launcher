@@ -86,8 +86,13 @@ export interface SetExecutionResult {
   skipped?: boolean;
 }
 
-/** 実行中のセット（id、無ければ表示名）。Enter の二度押しなどで同じセットが重ねて開かれないようにする */
+/** 実行中のセットの id。Enter の二度押しなどで同じセットが重ねて開かれないようにする */
 const runningSets = new Set<string>();
+
+/** そのセットを実行中か（実行中に押し直したときに「起動します」と知らせないため） */
+export function isSetRunning(id: string | undefined): boolean {
+  return id !== undefined && runningSets.has(id);
+}
 
 /** id からアイテムを探す */
 export type SetItemResolver = (itemId: string) => AppItem | undefined;
@@ -241,17 +246,18 @@ export async function executeSet(
   deps: SetExecutorDeps = defaultDeps,
   logger: Logger = itemLogger
 ): Promise<SetExecutionResult> {
-  // 1 回目のウィンドウがまだ出ていない間に 2 回目が走ると、「開いていない」と判断してもう 1 つずつ開いてしまう
-  const key = item.id ?? item.displayName;
-  if (runningSets.has(key)) {
+  // 1 回目のウィンドウがまだ出ていない間に 2 回目が走ると、「開いていない」と判断してもう 1 つずつ開いてしまう。
+  // id の無い実行（登録画面の試しに実行）は、同じ名前の別のセットとぶつからないよう排他しない
+  const key = item.id;
+  if (key !== undefined && runningSets.has(key)) {
     logger.info({ setName: item.displayName }, '同じセットを実行中なので、重ねては開きません');
     return { successCount: 0, errorCount: 0, cancelled: false, entries: [], skipped: true };
   }
-  runningSets.add(key);
+  if (key !== undefined) runningSets.add(key);
   try {
     return await runSet(item, resolve, deps, logger);
   } finally {
-    runningSets.delete(key);
+    if (key !== undefined) runningSets.delete(key);
   }
 }
 
@@ -359,8 +365,10 @@ async function runSet(
           );
         }
         if (!r.launch) {
-          // 動かすだけの行で位置が無い: 開いていれば前面に出す
-          if (!entry.window) return finish(index, mainI18n.t('layout.windowNotFound'));
+          // 動かすだけの行で位置が無い: 開いていれば前面に出す（探す条件が空ならどのウィンドウにも合うので失敗にする）
+          if (!entry.window?.processName && !entry.window?.title) {
+            return finish(index, mainI18n.t('layout.windowNotFound'));
+          }
           const result = await deps.activate(
             {
               title: entry.window.title || ANY_WINDOW_TITLE,

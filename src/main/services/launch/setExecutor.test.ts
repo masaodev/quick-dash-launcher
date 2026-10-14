@@ -271,6 +271,33 @@ describe('executeSet', () => {
     expect(calls).toEqual(['activate:*:true']);
     expect(result.successCount).toBe(1);
   });
+  it('進み具合の表示に送れなくても、終わりを送り、次の実行を止めない', async () => {
+    const { deps } = makeDeps([{ hwnd: 1n, title: 'x', processName: 'sticky.exe' }]);
+    const sent: string[] = [];
+    let removed = false;
+    deps.progress = {
+      show: vi.fn(async () => {}),
+      send: vi.fn((event: string) => {
+        sent.push(event);
+        if (event === 'update') throw new Error('send failed');
+      }),
+      onCancel: vi.fn(() => () => {
+        removed = true;
+      }),
+    };
+    const set: SetItem = {
+      id: 'set2bbbb',
+      type: 'set',
+      displayName: 'x',
+      entries: [{ window: { processName: 'sticky.exe' }, placement: { x: 0, y: 0 } }],
+    };
+    await expect(executeSet(set, resolve, deps, logger)).rejects.toThrow('send failed');
+    expect(sent).toContain('complete');
+    expect(removed).toBe(true);
+    deps.progress = undefined;
+    const again = await executeSet(set, resolve, deps, logger);
+    expect(again.skipped).toBeUndefined();
+  });
 });
 
 describe('buildSetWindowConfig', () => {

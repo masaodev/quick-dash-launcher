@@ -253,16 +253,22 @@ export class BackupService {
    *
    * _pre-external は cleanupPreExternalSnapshots() が別枠で管理するため数に入れない
    * （数に入れると、外部編集を繰り返したときに日次スナップショットが押し出される）。
-   * _pre-set-migration は前の版に戻すときの唯一の拠り所なので消さない（作るのは 1 回だけ）
+   * _pre-set-migration は前の版に戻すときの拠り所なので、新しい 2 つは消さない
    */
   private async cleanupOldSnapshots(): Promise<void> {
     if (!this.settingsService) return;
 
     const backupRetention = await this.settingsService.get('backupRetention');
-    const snapshots = (await this.listSnapshots()).filter(
-      (s) =>
-        !s.timestamp.endsWith(PRE_EXTERNAL_SUFFIX) &&
-        !s.timestamp.endsWith(PRE_SET_MIGRATION_SUFFIX)
+    const all = await this.listSnapshots();
+    // 変換前のスナップショットは新しい 2 つ（データファイル用とワークスペース用）を残す
+    const keptSetMigrations = new Set(
+      all
+        .filter((s) => s.timestamp.endsWith(PRE_SET_MIGRATION_SUFFIX))
+        .slice(0, 2)
+        .map((s) => s.timestamp)
+    );
+    const snapshots = all.filter(
+      (s) => !s.timestamp.endsWith(PRE_EXTERNAL_SUFFIX) && !keptSetMigrations.has(s.timestamp)
     );
 
     const toDelete = snapshots.slice(backupRetention);
