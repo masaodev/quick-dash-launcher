@@ -39,6 +39,15 @@
   opacity: 0.5;
 }
 
+/* ドラッグ中に落とす先の行（上へ動かすときは上の縁、下へ動かすときは下の縁に線を出す） */
+.set-editor-row.drop-above {
+  box-shadow: inset 0 2px 0 var(--color-primary);
+}
+
+.set-editor-row.drop-below {
+  box-shadow: inset 0 -2px 0 var(--color-primary);
+}
+
 .set-editor-row.missing .set-row-name {
   color: var(--text-muted);
 }

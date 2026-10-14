@@ -212,6 +212,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const handleModalDragOver = (e: React.DragEvent): void => {
+    // 画面の中のドラッグ（セットの行の並べ替えなど）では、ファイルのドロップ先を出さない
+    if (!Array.from(e.dataTransfer.types).includes('Files')) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOverModal(true);

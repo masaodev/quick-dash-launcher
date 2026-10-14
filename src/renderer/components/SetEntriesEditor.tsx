@@ -59,6 +59,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   const [recordOpen, setRecordOpen] = useState(false);
   const [detailIndex, setDetailIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  /** ドラッグ中に、落とす先になっている行 */
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,15 +113,34 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
             return (
               <div
                 key={index}
-                className={`set-editor-row${dragIndex === index ? ' dragging' : ''}${view.missing ? ' missing' : ''}`}
+                className={`set-editor-row${dragIndex === index ? ' dragging' : ''}${
+                  dragIndex !== null && overIndex === index && dragIndex !== index
+                    ? dragIndex < index
+                      ? ' drop-below'
+                      : ' drop-above'
+                    : ''
+                }${view.missing ? ' missing' : ''}`}
                 draggable
-                onDragStart={() => setDragIndex(index)}
-                onDragEnd={() => setDragIndex(null)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragIndex !== null) move(dragIndex, index);
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = 'move';
+                  setDragIndex(index);
+                }}
+                onDragEnd={() => {
                   setDragIndex(null);
+                  setOverIndex(null);
+                }}
+                onDragOver={(e) => {
+                  if (dragIndex === null) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  if (overIndex !== index) setOverIndex(index);
+                }}
+                onDrop={(e) => {
+                  if (dragIndex === null) return;
+                  e.preventDefault();
+                  move(dragIndex, index);
+                  setDragIndex(null);
+                  setOverIndex(null);
                 }}
                 onDoubleClick={() => setDetailIndex(index)}
               >

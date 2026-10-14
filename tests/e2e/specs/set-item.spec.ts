@@ -191,4 +191,31 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
       await adminWindow.close();
     }
   });
+  test('行をドラッグで並べ替えられ、ファイルのドロップ先は出ない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.openRegisterModal(electronApp);
+    const page = utils.registerPage;
+    await page.locator('.register-modal select').nth(1).selectOption({ value: 'set' });
+    await page.locator('.register-modal button', { hasText: 'アイテムを追加' }).click();
+    const picker = page.locator('.set-picker-modal');
+    for (const name of ['GitHub', 'Google', 'メモ帳']) {
+      await picker.locator('.set-picker-row', { hasText: name }).locator('input').check();
+    }
+    await picker.locator('button', { hasText: '3 件を追加' }).click();
+    const rows = page.locator('.register-modal .set-editor-row');
+    await expect(rows).toHaveCount(3);
+    const before = await rows.allInnerTexts();
+
+    // 3 行目を 1 行目に重ねる
+    await rows.nth(2).dragTo(rows.nth(0));
+    await expect(page.locator('.drag-overlay')).toHaveCount(0);
+    const after = await rows.allInnerTexts();
+    expect(after[0]).toBe(before[2]);
+    expect(after[1]).toBe(before[0]);
+    expect(after[2]).toBe(before[1]);
+    await utils.clickCancelButton();
+  });
 });
