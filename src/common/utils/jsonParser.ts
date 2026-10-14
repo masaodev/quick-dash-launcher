@@ -732,10 +732,12 @@ export function validateSetEntry(entry: unknown, index: number): SetEntry {
   if (label) result.label = label;
 
   if (isRecord(entry.window)) {
-    result.window = compact({
+    const window = compact({
       processName: pickString(entry.window, 'processName'),
       title: pickString(entry.window, 'title'),
     });
+    // 中身の無い見つけ方は、どのウィンドウにも合ってしまうので持たない
+    if (window.processName || window.title) result.window = window;
   }
   if (isRecord(entry.placement)) {
     const p = entry.placement;

@@ -623,6 +623,24 @@ describe('jsonParser: セット', () => {
     });
   });
 
+  it('中身の無い見つけ方は持たない（どのウィンドウにも合ってしまうため）', () => {
+    const file = parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [
+          {
+            id: 'set1aaaa',
+            type: 'set',
+            displayName: 'x',
+            entries: [{ itemId: 'abcd1234', window: { processName: '', title: 1 } }],
+          },
+        ],
+      })
+    );
+    expect(file.items[0]).toMatchObject({ entries: [{ itemId: 'abcd1234' }] });
+    expect((file.items[0] as { entries: object[] }).entries[0]).not.toHaveProperty('window');
+  });
+
   it('行がオブジェクトでなければエラー', () => {
     expect(() =>
       parseJsonDataFile(
