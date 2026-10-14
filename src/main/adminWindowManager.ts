@@ -206,13 +206,6 @@ export async function toggleAdminWindow(): Promise<void> {
 }
 
 /**
- * 管理ウィンドウの表示状態を取得する
- */
-export function isAdminWindowShown(): boolean {
-  return isAdminWindowVisible;
-}
-
-/**
  * 初期表示タブを取得する
  */
 export function getInitialTab(): AdminTab {

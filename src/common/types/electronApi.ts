@@ -42,12 +42,10 @@ import type {
   RegisterItem,
   IconFetchErrorRecord,
   JsonDirOptions,
-  NotificationType,
   ToastOptions,
   ToastEventData,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
-  ClipboardPreview,
   CurrentClipboardState,
   DisplayInfo,
   AutoLaunchStatus,
@@ -62,7 +60,6 @@ import type {
   SnapshotInfo,
   BackupStatus,
   MixedOrderEntry,
-  Bounds,
   MainChildWindowRequest,
   MainChildWindowResult,
   MainChildWindowReturn,
@@ -94,8 +91,6 @@ export interface ElectronAPI {
   openConfigFolder: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;
-  extractFileIconByExtension: (filePath: string) => Promise<string | null>;
-  extractCustomUriIcon: (uri: string) => Promise<string | null>;
   getIconForItem: (
     filePath: string,
     itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard'
@@ -109,8 +104,6 @@ export interface ElectronAPI {
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
-  // アイコン取得エラー記録をクリア
-  clearIconFetchErrors: () => Promise<{ success: boolean }>;
   // アイコン取得エラー記録を取得
   getIconFetchErrors: () => Promise<IconFetchErrorRecord[]>;
   // 進捗イベントリスナー
@@ -172,9 +165,6 @@ export interface ElectronAPI {
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
   deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;
-  batchUpdateItemsById: (
-    requests: { id: string; newItem: LauncherItem }[]
-  ) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   /**
@@ -212,10 +202,8 @@ export interface ElectronAPI {
   detectInstalledBrowsers: () => Promise<BrowserInfo[]>;
   // アプリインポートAPI
   scanInstalledApps: () => Promise<AppScanResult>;
-  showEditWindow: () => Promise<void>;
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
-  isEditWindowShown: () => Promise<boolean>;
   openEditWindowWithTab: (tab: AdminTab) => Promise<void>;
   openEditWindowWithImportModal: (modal: 'bookmark' | 'app') => Promise<void>;
   getInitialTab: () => Promise<AdminTab>;
@@ -247,7 +235,6 @@ export interface ElectronAPI {
   notifyRendererReady: () => Promise<void>;
   // 検索履歴関連API
   loadSearchHistory: () => Promise<SearchHistoryEntry[]>;
-  saveSearchHistory: (entries: SearchHistoryEntry[]) => Promise<void>;
   addSearchHistoryEntry: (query: string) => Promise<void>;
   clearSearchHistory: () => Promise<void>;
   // アプリ情報関連API
@@ -275,7 +262,6 @@ export interface ElectronAPI {
     removeItem: (id: string) => Promise<{ success: boolean }>;
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
     updateItem: (id: string, updates: WorkspaceItemUpdate) => Promise<{ success: boolean }>;
-    reorderItems: (itemIds: string[]) => Promise<{ success: boolean }>;
     launchItem: (item: WorkspaceItem) => Promise<{ success: boolean }>;
     // グループ管理
     loadGroups: () => Promise<WorkspaceGroupView[]>;
@@ -287,7 +273,6 @@ export interface ElectronAPI {
     ) => Promise<WorkspaceGroupView>;
     updateGroup: (id: string, updates: WorkspaceGroupUpdate) => Promise<{ success: boolean }>;
     deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
-    reorderGroups: (groupIds: string[]) => Promise<{ success: boolean }>;
     reorderMixed: (
       parentGroupId: string | undefined,
       entries: MixedOrderEntry[]
@@ -315,7 +300,6 @@ export interface ElectronAPI {
     archiveGroup: (groupId: string) => Promise<{ success: boolean }>;
     loadArchivedGroups: () => Promise<ArchivedWorkspaceGroup[]>;
     loadArchivedItems: () => Promise<ArchivedWorkspaceItem[]>;
-    restoreGroup: (groupId: string) => Promise<{ success: boolean }>;
     deleteArchivedGroup: (groupId: string) => Promise<{ success: boolean }>;
     // ピン留め関連
     getAlwaysOnTop: () => Promise<boolean>;
@@ -331,9 +315,6 @@ export interface ElectronAPI {
     getConfirmRequest: (requestId: string) => Promise<ConfirmWindowRequest | null>;
     /** 確認ウィンドウが結果を預ける（この後 window.close する） */
     returnConfirmResult: (requestId: string, result: ConfirmWindowResult) => Promise<void>;
-    // 透過度関連
-    setOpacity: (opacityPercent: number) => Promise<boolean>;
-    getOpacity: () => Promise<number>;
     // サイズ変更関連
     setSize: (width: number, height: number) => Promise<boolean>;
     setPositionAndSize: (x: number, y: number, width: number, height: number) => Promise<boolean>;
@@ -358,12 +339,10 @@ export interface ElectronAPI {
       rootGroupId: string,
       states: Record<string, boolean>
     ) => Promise<{ success: boolean }>;
-    saveDetachedBounds: (rootGroupId: string, bounds: Bounds) => Promise<{ success: boolean }>;
     getCallerPinMode: () => Promise<number>;
     cycleCallerPinMode: () => Promise<number>;
   };
   // ウィンドウ検索API
-  getWindowList: () => Promise<WindowInfo[]>;
   getAllWindowsAllDesktops: () => Promise<WindowInfo[]>;
   getVirtualDesktopInfo: () => Promise<VirtualDesktopInfo>;
   activateWindowByHwnd: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
@@ -378,16 +357,12 @@ export interface ElectronAPI {
   closeWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   /** ウィンドウが閉じる（か隠れる）のを、まとめて最大 1 秒待つ */
   waitForWindowsClosed: (hwnds: (number | bigint)[]) => Promise<void>;
-  // システム通知API
-  showNotification: (title: string, body: string, type?: NotificationType) => Promise<void>;
   // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
   showToastWindow: (options: ToastOptions) => Promise<void>;
   // トーストウィンドウ用イベントリスナー（toast.html用）
   onShowToast: (callback: (data: ToastEventData) => void) => () => void;
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;
-  showWorkspaceWindow: () => Promise<void>;
-  hideWorkspaceWindow: () => Promise<void>;
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean) => Promise<void>;
   showLauncherContextMenu: (item: AppItem) => Promise<void>;
@@ -486,8 +461,6 @@ export interface ElectronAPI {
     checkCurrent: () => Promise<CurrentClipboardState>;
     capture: () => Promise<ClipboardCaptureResult>;
     restore: (dataFileRef: string) => Promise<ClipboardRestoreResult>;
-    deleteData: (dataFileRef: string) => Promise<boolean>;
-    getPreview: (dataFileRef: string) => Promise<ClipboardPreview | null>;
     // セッション管理（登録確定前の一時保存）
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;

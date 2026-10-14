@@ -6,7 +6,6 @@ import type {
   WorkspaceItemUpdate,
   WorkspaceGroupUpdate,
   MixedOrderEntry,
-  Bounds,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -189,15 +188,6 @@ export function setupWorkspaceHandlers(): void {
         { id, updates },
         { id }
       )
-  );
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, (_event, itemIds: string[]) =>
-    withWorkspaceChange(
-      (service) => service.reorderItems(itemIds),
-      'Reordered workspace items',
-      'Failed to reorder workspace items',
-      { count: itemIds.length }
-    )
   );
 
   /**
@@ -448,15 +438,6 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_GROUPS, (_event, groupIds: string[]) =>
-    withWorkspaceChange(
-      (service) => service.reorderGroups(groupIds),
-      'Reordered workspace groups',
-      'Failed to reorder workspace groups',
-      { count: groupIds.length }
-    )
-  );
-
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_REORDER_MIXED,
     (_event, parentGroupId: string | undefined, entries: MixedOrderEntry[]) =>
@@ -574,16 +555,6 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load archived items')
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, (_event, groupId: string) =>
-    withWorkspaceChange(
-      (service) => service.restoreGroup(groupId),
-      'Restored workspace group from archive',
-      'Failed to restore workspace group',
-      { groupId },
-      { groupId }
-    )
-  );
-
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, (_event, groupId: string) =>
     withWorkspaceChange(
       (service) => service.deleteArchivedGroup(groupId),
@@ -613,19 +584,6 @@ export function setupWorkspaceHandlers(): void {
           return { success: true };
         },
         'Failed to save detached collapsed states',
-        { rootGroupId }
-      )
-  );
-
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS,
-    (_event, rootGroupId: string, bounds: Bounds) =>
-      withWorkspaceService(
-        async (service) => {
-          await service.saveDetachedBounds(rootGroupId, bounds);
-          return { success: true };
-        },
-        'Failed to save detached bounds',
         { rootGroupId }
       )
   );

@@ -12,11 +12,7 @@ import {
   loadCachedIcons,
   type IconItem,
 } from '../services/icon/iconFetcher.js';
-import {
-  extractCustomUriIcon,
-  extractFileIconByExtension,
-  extractIcon,
-} from '../services/icon/fileIconExtractor.js';
+import { extractIcon } from '../services/icon/fileIconExtractor.js';
 import { extractUwpIcon } from '../services/icon/uwpIconExtractor.js';
 import {
   deleteCustomIcon,
@@ -46,14 +42,6 @@ export function setupIconHandlers(
       : extractIcon(filePath, iconsFolder)
   );
 
-  ipcMain.handle(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, (_event, filePath: string) =>
-    extractFileIconByExtension(filePath, extensionsFolder)
-  );
-
-  ipcMain.handle(IPC_CHANNELS.EXTRACT_CUSTOM_URI_ICON, (_event, uri: string) =>
-    extractCustomUriIcon(uri, iconsFolder)
-  );
-
   ipcMain.handle(IPC_CHANNELS.LOAD_CACHED_ICONS, (_event, items: IconItem[]) =>
     loadCachedIcons(items, folders)
   );
@@ -69,12 +57,6 @@ export function setupIconHandlers(
   ipcMain.handle(IPC_CHANNELS.ENSURE_ICONS, (_event, items: IconItem[]) =>
     ensureIcons(items, folders)
   );
-
-  // アイコン取得エラー記録をクリア
-  ipcMain.handle(IPC_CHANNELS.CLEAR_ICON_FETCH_ERRORS, async () => {
-    await (await IconFetchErrorService.getInstance()).clearAllErrors();
-    return { success: true };
-  });
 
   // アイコン取得エラー記録を取得
   ipcMain.handle(IPC_CHANNELS.GET_ICON_FETCH_ERRORS, async () =>

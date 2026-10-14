@@ -85,7 +85,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 ### `register-items` と ID ベースの更新
 
 - `register-items`: `RegisterItem[]` をデータファイルに追加する。`RegisterItem` の項目は `src/common/types/register.ts` を参照。登録先が `datafiles/` 直下の `.json` でないアイテムが 1 件でもあれば、何も書かずに例外を返す（`create-data-file`・`delete-data-file` も同じ名前の制約で、外れると `{ success: false, error }` を返す。判定は `src/common/utils/dataFileName.ts`。`create-data-file` は同じ名前のファイルが既にあるときも作らず、`alreadyExists: true` を添えて返す）
-- `update-item-by-id`・`update-dir-item-by-id`・`update-group-item-by-id`・`update-window-item-by-id`・`update-layout-item-by-id`・`delete-items-by-id`・`batch-update-items-by-id`: アイテムの `id` で対象を特定して書き換える（行番号では特定しない）。`delete-items-by-id` はクリップボードアイテムの保存データも消す
+- `update-item-by-id`・`update-dir-item-by-id`・`update-group-item-by-id`・`update-window-item-by-id`・`update-layout-item-by-id`・`delete-items-by-id`: アイテムの `id` で対象を特定して書き換える（行番号では特定しない）。`delete-items-by-id` はクリップボードアイテムの保存データも消す
 - いずれも処理後に `data-changed` を全ウィンドウへ送る
 
 ### `data-changed` (イベント)
@@ -204,7 +204,6 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 ## 通知と進捗
 
 - **トースト**: `show-toast-window` で表示する。トーストはレイアウト進捗と共用の 1 枚のオーバーレイウィンドウに出し（`src/main/services/overlayWindowService.ts`）、メインプロセスはそのウィンドウにだけ `show-toast` イベントを送る。レイアウト進捗の表示中はトーストを出さない。オプションは `ToastOptions`（同ファイル）を参照
-- **OS 標準の通知**: `show-notification`（`src/main/services/notificationService.ts`）
 - **アイコン取得の進捗**: `icon-progress-start` / `icon-progress-update` / `icon-progress-complete`。データは `IconProgress`（`src/common/types/icon.ts`）
 - **レイアウト実行の進捗**: `layout-progress-start` / `layout-progress-update` / `layout-progress-complete`。中止は `layout-cancel`（`send`）
 

@@ -75,9 +75,6 @@ const electronAPI: ElectronAPI = {
   openConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_FAVICON, url),
   extractIcon: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_ICON, filePath),
-  extractFileIconByExtension: (filePath) =>
-    ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_FILE_ICON_BY_EXTENSION, filePath),
-  extractCustomUriIcon: (uri) => ipcRenderer.invoke(IPC_CHANNELS.EXTRACT_CUSTOM_URI_ICON, uri),
   getIconForItem: (filePath, itemType) =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FOR_ITEM, filePath, itemType),
   loadCachedIcons: (items) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_CACHED_ICONS, items),
@@ -87,7 +84,6 @@ const electronAPI: ElectronAPI = {
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items) => ipcRenderer.invoke(IPC_CHANNELS.ENSURE_ICONS, items),
   // アイコン取得エラー記録をクリア
-  clearIconFetchErrors: () => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_ICON_FETCH_ERRORS),
   // アイコン取得エラー記録を取得
   getIconFetchErrors: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FETCH_ERRORS),
   onIconProgress: (eventType, callback) =>
@@ -128,8 +124,6 @@ const electronAPI: ElectronAPI = {
   getVirtualDesktopInfo: () => ipcRenderer.invoke(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO),
   updateItemById: (request) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM_BY_ID, request),
   deleteItemsById: (requests) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS_BY_ID, requests),
-  batchUpdateItemsById: (requests) =>
-    ipcRenderer.invoke(IPC_CHANNELS.BATCH_UPDATE_ITEMS_BY_ID, requests),
   // EditableJsonItem API
   loadEditableItems: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
   saveEditableItems: (editableItems, expectedHashes) =>
@@ -167,10 +161,8 @@ const electronAPI: ElectronAPI = {
   getLanguage: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_LANGUAGE),
   isFirstLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
   // 編集ウィンドウ関連API
-  showEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.SHOW_EDIT_WINDOW),
   hideEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.HIDE_EDIT_WINDOW),
   toggleEditWindow: () => ipcRenderer.invoke(IPC_CHANNELS.TOGGLE_EDIT_WINDOW),
-  isEditWindowShown: () => ipcRenderer.invoke(IPC_CHANNELS.IS_EDIT_WINDOW_SHOWN),
   openEditWindowWithTab: (tab) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, tab),
   openEditWindowWithImportModal: (modal) =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL, modal),
@@ -209,7 +201,6 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.GET_CUSTOM_ICON, customIconFileName),
   // 検索履歴関連API
   loadSearchHistory: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_SEARCH_HISTORY),
-  saveSearchHistory: (entries) => ipcRenderer.invoke(IPC_CHANNELS.SAVE_SEARCH_HISTORY, entries),
   addSearchHistoryEntry: (query) =>
     ipcRenderer.invoke(IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY, query),
   clearSearchHistory: () => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_SEARCH_HISTORY),
@@ -218,7 +209,6 @@ const electronAPI: ElectronAPI = {
   openExternalUrl: (url) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL_URL, url),
   openFolder: (folderPath) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, folderPath),
   // ウィンドウ検索API
-  getWindowList: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS),
   activateWindowByHwnd: (hwnd) => ipcRenderer.invoke(IPC_CHANNELS.ACTIVATE_WINDOW, hwnd),
   moveWindowToDesktop: (hwnd, desktopNumber) =>
     ipcRenderer.invoke(IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP, hwnd, desktopNumber),
@@ -228,16 +218,12 @@ const electronAPI: ElectronAPI = {
   closeWindow: (hwnd) => ipcRenderer.invoke(IPC_CHANNELS.CLOSE_WINDOW, hwnd),
   waitForWindowsClosed: (hwnds) => ipcRenderer.invoke(IPC_CHANNELS.WAIT_FOR_WINDOWS_CLOSED, hwnds),
   // システム通知API
-  showNotification: (title, body, type) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_NOTIFICATION, { title, body, type }),
   // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
   showToastWindow: (options) => ipcRenderer.invoke(IPC_CHANNELS.SHOW_TOAST_WINDOW, options),
   onShowToast: (callback) =>
     createEventListener<ToastEventData>(IPC_CHANNELS.EVENT_SHOW_TOAST, callback),
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW),
-  showWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SHOW_WINDOW),
-  hideWorkspaceWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW),
   // ワークスペース関連API
   workspaceAPI: {
     // ワークスペース（タブ）管理
@@ -263,7 +249,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME, id, displayName),
     updateItem: (id, updates) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_ITEM, id, updates),
-    reorderItems: (itemIds) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_ITEMS, itemIds),
     launchItem: (item) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, item),
     // グループ管理
     loadGroups: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
@@ -279,8 +264,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_GROUP, id, updates),
     deleteGroup: (id, deleteItems) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, id, deleteItems),
-    reorderGroups: (groupIds) =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_GROUPS, groupIds),
     reorderMixed: (parentGroupId, entries) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_MIXED, parentGroupId, entries),
     duplicateItem: (sourceItemId, targetGroupId, insertOrder) =>
@@ -308,7 +291,6 @@ const electronAPI: ElectronAPI = {
     archiveGroup: (groupId) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, groupId),
     loadArchivedGroups: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS),
     loadArchivedItems: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_ITEMS),
-    restoreGroup: (groupId) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESTORE_GROUP, groupId),
     deleteArchivedGroup: (groupId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, groupId),
     // ピン留め関連
@@ -321,9 +303,6 @@ const electronAPI: ElectronAPI = {
     returnConfirmResult: (requestId, result) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RETURN_CONFIRM_RESULT, requestId, result),
     // 透過度関連
-    setOpacity: (opacityPercent) =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_OPACITY, opacityPercent),
-    getOpacity: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_OPACITY),
     // サイズ変更関連
     setSize: (width, height) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_SIZE, width, height),
     setPositionAndSize: (x, y, width, height) =>
@@ -348,8 +327,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, rootGroupId),
     saveDetachedCollapsed: (rootGroupId, states) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_COLLAPSED, rootGroupId, states),
-    saveDetachedBounds: (rootGroupId, bounds) =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_BOUNDS, rootGroupId, bounds),
     getCallerPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CALLER_PIN_MODE),
     cycleCallerPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CYCLE_CALLER_PIN_MODE),
   },
@@ -516,10 +493,6 @@ const electronAPI: ElectronAPI = {
     checkCurrent: () => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_CHECK_CURRENT),
     capture: () => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_CAPTURE),
     restore: (dataFileRef) => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_RESTORE, dataFileRef),
-    deleteData: (dataFileRef) =>
-      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DELETE_DATA, dataFileRef),
-    getPreview: (dataFileRef) =>
-      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_GET_PREVIEW, dataFileRef),
     // セッション管理（登録確定前の一時保存）
     captureToSession: () => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_CAPTURE_TO_SESSION),
     commitSession: (sessionId) =>

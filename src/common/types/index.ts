@@ -102,7 +102,6 @@ export type {
   ClipboardFormat,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
-  ClipboardPreview,
   CurrentClipboardState,
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,

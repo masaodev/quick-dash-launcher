@@ -15,10 +15,6 @@ export function setupHistoryHandlers(configFolder: string): void {
     service.loadHistory()
   );
 
-  ipcMain.handle(IPC_CHANNELS.SAVE_SEARCH_HISTORY, (_event, entries: SearchHistoryEntry[]): void =>
-    service.saveHistory(entries)
-  );
-
   ipcMain.handle(IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY, (_event, query: string): void =>
     service.addHistoryEntry(query)
   );

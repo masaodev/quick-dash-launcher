@@ -32,13 +32,10 @@ export const IPC_CHANNELS = {
   // アイコン操作
   FETCH_FAVICON: 'fetch-favicon',
   EXTRACT_ICON: 'extract-icon',
-  EXTRACT_FILE_ICON_BY_EXTENSION: 'extract-file-icon-by-extension',
-  EXTRACT_CUSTOM_URI_ICON: 'extract-custom-uri-icon',
   GET_ICON_FOR_ITEM: 'get-icon-for-item',
   LOAD_CACHED_ICONS: 'load-cached-icons',
   FETCH_ICONS_COMBINED: 'fetch-icons-combined',
   ENSURE_ICONS: 'ensure-icons',
-  CLEAR_ICON_FETCH_ERRORS: 'clear-icon-fetch-errors',
   GET_ICON_FETCH_ERRORS: 'get-icon-fetch-errors',
   SELECT_CUSTOM_ICON_FILE: 'select-custom-icon-file',
   SAVE_CUSTOM_ICON: 'save-custom-icon',
@@ -73,10 +70,8 @@ export const IPC_CHANNELS = {
   CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',
   WINDOW_SET_ESCAPE_HANDLED_BY_PAGE: 'window:set-escape-handled-by-page',
   QUIT_APP: 'quit-app',
-  SHOW_EDIT_WINDOW: 'show-edit-window',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
   TOGGLE_EDIT_WINDOW: 'toggle-edit-window',
-  IS_EDIT_WINDOW_SHOWN: 'is-edit-window-shown',
   OPEN_EDIT_WINDOW_WITH_TAB: 'open-edit-window-with-tab',
   OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL: 'open-edit-window-with-import-modal',
   GET_PENDING_IMPORT_MODAL: 'get-pending-import-modal',
@@ -101,7 +96,6 @@ export const IPC_CHANNELS = {
   UPDATE_WINDOW_ITEM_BY_ID: 'update-window-item-by-id',
   UPDATE_LAYOUT_ITEM_BY_ID: 'update-layout-item-by-id',
   DELETE_ITEMS_BY_ID: 'delete-items-by-id',
-  BATCH_UPDATE_ITEMS_BY_ID: 'batch-update-items-by-id',
 
   // 設定
   SETTINGS_IS_FIRST_LAUNCH: 'settings:is-first-launch',
@@ -131,7 +125,6 @@ export const IPC_CHANNELS = {
 
   // 検索履歴
   LOAD_SEARCH_HISTORY: 'load-search-history',
-  SAVE_SEARCH_HISTORY: 'save-search-history',
   ADD_SEARCH_HISTORY_ENTRY: 'add-search-history-entry',
   CLEAR_SEARCH_HISTORY: 'clear-search-history',
 
@@ -142,12 +135,10 @@ export const IPC_CHANNELS = {
   WORKSPACE_REMOVE_ITEM: 'workspace:remove-item',
   WORKSPACE_UPDATE_DISPLAY_NAME: 'workspace:update-display-name',
   WORKSPACE_UPDATE_ITEM: 'workspace:update-item',
-  WORKSPACE_REORDER_ITEMS: 'workspace:reorder-items',
   WORKSPACE_LAUNCH_ITEM: 'workspace:launch-item',
 
   // ワークスペース - ウィンドウ制御
   WORKSPACE_TOGGLE_WINDOW: 'workspace:toggle-window',
-  WORKSPACE_SHOW_WINDOW: 'workspace:show-window',
   WORKSPACE_HIDE_WINDOW: 'workspace:hide-window',
   WORKSPACE_GET_ALWAYS_ON_TOP: 'workspace:get-always-on-top',
   WORKSPACE_TOGGLE_ALWAYS_ON_TOP: 'workspace:toggle-always-on-top',
@@ -158,15 +149,12 @@ export const IPC_CHANNELS = {
   WORKSPACE_GET_CONFIRM_REQUEST: 'workspace:get-confirm-request',
   WORKSPACE_RETURN_CONFIRM_RESULT: 'workspace:return-confirm-result',
   WORKSPACE_OPEN_ITEM_EDITOR: 'workspace:open-item-editor',
-  WORKSPACE_SET_OPACITY: 'workspace:set-opacity',
-  WORKSPACE_GET_OPACITY: 'workspace:get-opacity',
 
   // ワークスペース - グループ管理
   WORKSPACE_LOAD_GROUPS: 'workspace:load-groups',
   WORKSPACE_CREATE_GROUP: 'workspace:create-group',
   WORKSPACE_UPDATE_GROUP: 'workspace:update-group',
   WORKSPACE_DELETE_GROUP: 'workspace:delete-group',
-  WORKSPACE_REORDER_GROUPS: 'workspace:reorder-groups',
   WORKSPACE_REORDER_MIXED: 'workspace:reorder-mixed',
   WORKSPACE_DUPLICATE_ITEM: 'workspace:duplicate-item',
   WORKSPACE_MOVE_ITEM_TO_GROUP: 'workspace:move-item-to-group',
@@ -177,7 +165,6 @@ export const IPC_CHANNELS = {
   WORKSPACE_ARCHIVE_GROUP: 'workspace:archive-group',
   WORKSPACE_LOAD_ARCHIVED_GROUPS: 'workspace:load-archived-groups',
   WORKSPACE_LOAD_ARCHIVED_ITEMS: 'workspace:load-archived-items',
-  WORKSPACE_RESTORE_GROUP: 'workspace:restore-group',
   WORKSPACE_DELETE_ARCHIVED_GROUP: 'workspace:delete-archived-group',
 
   // ワークスペース - 切り離しウィンドウ
@@ -187,7 +174,6 @@ export const IPC_CHANNELS = {
   WORKSPACE_SET_CALLER_BOUNDS: 'workspace:set-caller-bounds',
   WORKSPACE_LOAD_DETACHED_STATE: 'workspace:load-detached-state',
   WORKSPACE_SAVE_DETACHED_COLLAPSED: 'workspace:save-detached-collapsed',
-  WORKSPACE_SAVE_DETACHED_BOUNDS: 'workspace:save-detached-bounds',
   WORKSPACE_GET_CALLER_PIN_MODE: 'workspace:get-caller-pin-mode',
   WORKSPACE_CYCLE_CALLER_PIN_MODE: 'workspace:cycle-caller-pin-mode',
   WORKSPACE_HIDE_ALL_DETACHED: 'workspace:hide-all-detached',
@@ -213,8 +199,6 @@ export const IPC_CHANNELS = {
   // ワークスペース - イベント
   WORKSPACE_CHANGED: 'workspace-changed',
 
-  // システム通知
-  SHOW_NOTIFICATION: 'show-notification',
   SHOW_TOAST_WINDOW: 'show-toast-window',
   EVENT_SHOW_TOAST: 'show-toast',
 
@@ -312,8 +296,6 @@ export const IPC_CHANNELS = {
   // クリップボード操作
   CLIPBOARD_CAPTURE: 'clipboard:capture',
   CLIPBOARD_RESTORE: 'clipboard:restore',
-  CLIPBOARD_DELETE_DATA: 'clipboard:delete-data',
-  CLIPBOARD_GET_PREVIEW: 'clipboard:get-preview',
   CLIPBOARD_CHECK_CURRENT: 'clipboard:check-current',
   // クリップボードセッション管理（登録確定前の一時保存）
   CLIPBOARD_CAPTURE_TO_SESSION: 'clipboard:capture-to-session',

@@ -14,10 +14,8 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
 import {
-  showAdminWindow,
   hideAdminWindow,
   toggleAdminWindow,
-  isAdminWindowShown,
   showAdminWindowWithTab,
   showAdminWindowWithImportModal,
   getInitialTab,
@@ -25,7 +23,6 @@ import {
 } from '../adminWindowManager.js';
 import {
   toggleWorkspaceWindow,
-  showWorkspaceWindow,
   hideWorkspaceWindow,
   getWorkspaceAlwaysOnTop,
   toggleWorkspaceAlwaysOnTop,
@@ -72,10 +69,8 @@ export function setupWindowHandlers(
     app.quit();
   });
 
-  ipcMain.handle(IPC_CHANNELS.SHOW_EDIT_WINDOW, () => showAdminWindow());
   ipcMain.handle(IPC_CHANNELS.HIDE_EDIT_WINDOW, () => hideAdminWindow());
   ipcMain.handle(IPC_CHANNELS.TOGGLE_EDIT_WINDOW, () => toggleAdminWindow());
-  ipcMain.handle(IPC_CHANNELS.IS_EDIT_WINDOW_SHOWN, () => isAdminWindowShown());
 
   ipcMain.handle(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, async (_event, tab: AdminTab) =>
     showAdminWindowWithTab(tab)
@@ -119,7 +114,6 @@ export function setupWindowHandlers(
   });
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_WINDOW, () => showWorkspaceWindow());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;
@@ -145,26 +139,6 @@ export function setupWindowHandlers(
     (_event, requestId: string, result: ConfirmWindowResult) =>
       setWorkspaceConfirmResult(requestId, result)
   );
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_OPACITY, async (_event, opacityPercent: number) => {
-    const validOpacity = Math.max(0, Math.min(100, opacityPercent));
-
-    const settingsService = await SettingsService.getInstance();
-    await settingsService.set('workspaceOpacity', validOpacity);
-
-    const workspace = getWorkspaceWindow();
-    if (workspace && !workspace.isDestroyed()) {
-      workspace.setOpacity(validOpacity / 100);
-    }
-
-    windowLogger.info(`Workspace opacity set to ${validOpacity}%`);
-    return true;
-  });
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_OPACITY, async () => {
-    const settingsService = await SettingsService.getInstance();
-    return await settingsService.get('workspaceOpacity');
-  });
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_SIZE, (_event, width: number, height: number) => {
     const workspace = getWorkspaceWindow();

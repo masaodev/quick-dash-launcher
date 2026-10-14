@@ -16,7 +16,6 @@ import type {
   ClipboardFormat,
   ClipboardCaptureResult,
   ClipboardRestoreResult,
-  ClipboardPreview,
   CurrentClipboardState,
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
@@ -511,37 +510,6 @@ export class ClipboardService {
     } catch (error) {
       logger.error({ error, dataFileRef }, 'クリップボードデータの削除に失敗しました');
       return false;
-    }
-  }
-
-  async getClipboardPreview(dataFileRef: string): Promise<ClipboardPreview | null> {
-    try {
-      const id = this.extractIdFromRef(dataFileRef);
-      if (!id) {
-        return null;
-      }
-
-      const filePath = PathManager.getClipboardDataFilePath(id);
-      if (!fs.existsSync(filePath)) {
-        return null;
-      }
-
-      const content = fs.readFileSync(filePath, 'utf8');
-      const data: SerializableClipboard = JSON.parse(content);
-
-      const preview = this.generatePreviewText(data);
-      const imageThumbnail = this.generateImageThumbnail(data.imageBase64);
-
-      return {
-        preview,
-        formats: data.formats,
-        dataSize: data.dataSize,
-        savedAt: data.savedAt,
-        imageThumbnail,
-      };
-    } catch (error) {
-      logger.error({ error, dataFileRef }, 'プレビュー情報の取得に失敗しました');
-      return null;
     }
   }
 

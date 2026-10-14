@@ -86,22 +86,6 @@ export interface ClipboardRestoreResult {
 }
 
 /**
- * クリップボードプレビュー情報
- */
-export interface ClipboardPreview {
-  /** プレビューテキスト */
-  preview: string;
-  /** 利用可能なフォーマット */
-  formats: ClipboardFormat[];
-  /** データサイズ（bytes） */
-  dataSize: number;
-  /** 保存日時 */
-  savedAt: number;
-  /** 画像の場合のサムネイル（Base64） */
-  imageThumbnail?: string;
-}
-
-/**
  * 現在のクリップボード状態
  */
 export interface CurrentClipboardState {
