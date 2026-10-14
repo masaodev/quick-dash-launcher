@@ -12,6 +12,7 @@ import {
   isJsonLayoutItem,
 } from '@common/types';
 import type { JsonItem } from '@common/types';
+import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { refineItemType } from '../../utils/folderPathProbe.js';
 import { resolveLayoutEntryIcons } from '../../utils/layoutIconResolver.js';
@@ -114,15 +115,7 @@ export async function convertJsonItemToAppItems(
       type: 'window',
       displayName: jsonItem.displayName,
       windowTitle: jsonItem.windowTitle,
-      processName: jsonItem.processName,
-      x: jsonItem.x,
-      y: jsonItem.y,
-      width: jsonItem.width,
-      height: jsonItem.height,
-      moveToActiveMonitorCenter: jsonItem.moveToActiveMonitorCenter,
-      virtualDesktopNumber: jsonItem.virtualDesktopNumber,
-      activateWindow: jsonItem.activateWindow,
-      pinToAllDesktops: jsonItem.pinToAllDesktops,
+      ...pickWindowPlacement(jsonItem),
       sourceFile,
       lineNumber,
       id: jsonItem.id,

@@ -1,6 +1,7 @@
 import { DESKTOP_TAB } from '@common/constants';
 import { createTitleMatcher } from '@common/utils/windowTitle';
 import type { RegisterItem, WindowConfig, WindowInfo, WindowOperationConfig } from '@common/types';
+import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 /**
  * ウィンドウリストを仮想デスクトップタブでフィルタリング
@@ -92,15 +93,7 @@ export async function fetchMatchingWindow(item: RegisterItem): Promise<WindowInf
 export function toWindowConfig(config: WindowOperationConfig): WindowConfig {
   return {
     title: config.windowTitle,
-    processName: config.processName,
-    x: config.x,
-    y: config.y,
-    width: config.width,
-    height: config.height,
-    moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
-    virtualDesktopNumber: config.virtualDesktopNumber,
-    activateWindow: config.activateWindow,
-    pinToAllDesktops: config.pinToAllDesktops,
+    ...pickWindowPlacement(config),
   };
 }
 
@@ -116,14 +109,6 @@ export function toWindowOperationConfig(
   return {
     displayName,
     windowTitle: config.title || '',
-    processName: config.processName,
-    x: config.x,
-    y: config.y,
-    width: config.width,
-    height: config.height,
-    moveToActiveMonitorCenter: config.moveToActiveMonitorCenter,
-    virtualDesktopNumber: config.virtualDesktopNumber,
-    activateWindow: config.activateWindow,
-    pinToAllDesktops: config.pinToAllDesktops,
+    ...pickWindowPlacement(config),
   };
 }
