@@ -15,6 +15,7 @@ import {
   toMatchableEntry,
   windowDisplayName,
   windowPickNotes,
+  SET_KIND_ICONS,
   type SetCatalogItem,
 } from '../utils/setEditing';
 import { logError } from '../utils/debug';
@@ -42,18 +43,27 @@ function windowKey(window: WindowInfo): string {
   return String(window.hwnd);
 }
 
-/** 記録の画面の名前の欄（太字の 1 行と、小さな 1 行。はみ出たら省略し、全体はカーソルを当てると出す） */
-const RecordName: React.FC<{ name: string; sub?: string; notes?: React.ReactNode }> = ({
-  name,
-  sub,
-  notes,
-}) => (
+/** 行やウィンドウのアイコン（取れていなければ種類の絵文字） */
+const RowIcon: React.FC<{ icon?: string; fallback: string }> = ({ icon, fallback }) => (
+  <span className="set-row-icon">{icon ? <img src={icon} alt="" /> : fallback}</span>
+);
+
+/**
+ * 記録の画面の名前の欄（1 段目は名前、2 段目は結び付いた相手のウィンドウや理由。
+ * はみ出たら省略し、全体はカーソルを当てると出す）
+ */
+const RecordName: React.FC<{
+  name: string;
+  sub?: React.ReactNode;
+  subTitle?: string;
+  notes?: React.ReactNode;
+}> = ({ name, sub, subTitle, notes }) => (
   <span className="set-record-name">
     <span className="set-record-main" title={name}>
       {name}
     </span>
     {sub && (
-      <span className="set-record-sub" title={sub}>
+      <span className="set-record-sub" title={subTitle}>
         {sub}
       </span>
     )}
@@ -61,31 +71,40 @@ const RecordName: React.FC<{ name: string; sub?: string; notes?: React.ReactNode
   </span>
 );
 
-const PlaceChip: React.FC<{ text: string }> = ({ text }) => (
-  <span className="set-chip set-chip-place set-record-place" title={text}>
+const Place: React.FC<{ text: string }> = ({ text }) => (
+  <span className="set-row-place set-record-place" title={text}>
     📍 {text}
   </span>
 );
 
-/** 畳める欄の見出し */
-const SectionToggle: React.FC<{
-  open: boolean;
-  onToggle: () => void;
+/** 欄の見出し。onToggle があれば畳める（登録画面の「詳細設定」と同じ ▶ / ▼） */
+const SectionTitle: React.FC<{
   label: string;
   hint?: string;
+  open?: boolean;
+  onToggle?: () => void;
   disabled?: boolean;
-}> = ({ open, onToggle, label, hint, disabled }) => (
-  <button
-    type="button"
-    className="set-section-title set-section-toggle"
-    aria-expanded={open}
-    disabled={disabled}
-    onClick={onToggle}
-  >
-    <span aria-hidden>{open ? '▾' : '▸'}</span> {label}
-    {hint && !open && !disabled && <span className="set-section-hint">{hint}</span>}
-  </button>
-);
+}> = ({ label, hint, open, onToggle, disabled }) =>
+  onToggle ? (
+    <button
+      type="button"
+      className="set-section-title set-section-toggle"
+      aria-expanded={open}
+      disabled={disabled}
+      onClick={onToggle}
+    >
+      <span className="toggle-icon" aria-hidden>
+        {open ? '▼' : '▶'}
+      </span>
+      {label}
+      {hint && !open && !disabled && <span className="set-section-hint">{hint}</span>}
+    </button>
+  ) : (
+    <div className="set-section-title">
+      {label}
+      {hint && <span className="set-section-hint">{hint}</span>}
+    </div>
+  );
 
 /** ウィンドウについて知らせること（タブとして開く・最小化中・管理者権限） */
 export const WindowNotes: React.FC<{ window: WindowInfo; opensAsTab: boolean }> = ({
@@ -96,7 +115,7 @@ export const WindowNotes: React.FC<{ window: WindowInfo; opensAsTab: boolean }> 
   const notes = windowPickNotes(w);
   return (
     <>
-      {opensAsTab && <span className="set-note">{t('set.record.tabNote')}</span>}
+      {opensAsTab && <span className="set-info">{t('set.record.tabNote')}</span>}
       {notes.includes('minimized') && (
         <span className="set-note">{t('set.record.minimizedNote')}</span>
       )}
@@ -110,10 +129,12 @@ export const WindowNotes: React.FC<{ window: WindowInfo; opensAsTab: boolean }> 
 /**
  * 「今の位置を記録」の確認画面
  *
- * 開いているウィンドウを行と自動で結び付けて 3 つに分けて出し、ウィンドウごとにどうするかを選ばせる
- * - 行と結び付けたウィンドウ: 結び付けたまま／外す
- * - 行に無いウィンドウ: 追加しない（既定）／行として追加／まだ結び付いていない行に結び付ける。既定は畳んでおく
- * - 位置を記録できなかった行: 理由を出す。「ウィンドウを選ぶ」で手で結び付けられる（URL の行は自動では探さないので、いつもここに出る）
+ * 開いているウィンドウを行と自動で結び付けて分けて出し、どうするかを選ばせる
+ * - 位置を取れた行: このまま／別のウィンドウにする／位置を記録しない
+ * - 位置を取れなかった行: 理由と、このまま記録するとどうなるかを出す。「ウィンドウを選ぶ」で手で結び付けられる
+ *   （URL の行は自動では探さないので、いつもここに出る）。直さなくても記録できる
+ * - 行に無いウィンドウ: 追加しない（既定）／行として追加／まだ位置を取れていない行の位置にする。既定は畳んでおく
+ * - 最小化中のウィンドウ: 位置が取れないので出すだけ。既定は畳んでおく
  */
 const SetRecordModal: React.FC<SetRecordModalProps> = ({
   isOpen,
@@ -246,12 +267,16 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const placeOf = (w: WindowInfo) =>
     placementText({ placement: { x: w.x, y: w.y, width: w.width, height: w.height } }, screens) ??
     '';
-  /** 名前の下に出す 1 行（exe 名とタイトル。タイトルが名前と同じなら出さない） */
-  const subOf = (w: WindowInfo, name: string) => {
-    const app = windowDisplayName(w);
-    const parts = [app, w.title].filter((part) => part && part !== name);
-    return [...new Set(parts)].join(' · ');
-  };
+  const iconOf = (i: number) => (
+    <RowIcon icon={views[i]?.icon} fallback={SET_KIND_ICONS[views[i]?.kind ?? 'none'] ?? '📄'} />
+  );
+  /** 結び付いた相手のウィンドウ（アプリのアイコンとタイトル） */
+  const windowLine = (w: WindowInfo) => (
+    <>
+      {w.icon && <img className="set-record-window-icon" src={w.icon} alt="" />}
+      {t('set.record.windowLabel', { title: w.title })}
+    </>
+  );
   const cannotReopen = (w: WindowInfo) =>
     /^(explorer|applicationframehost)\.exe$/i.test(w.processName ?? '');
 
@@ -274,28 +299,30 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
             <div className="set-empty">{t('set.record.loading')}</div>
           ) : (
             <div className="set-record-body">
-              <div className="set-section-title">
-                {t('set.record.linked', { count: linkedIndexes.length })}
-              </div>
+              <SectionTitle
+                label={t('set.record.linked', { count: linkedIndexes.length })}
+                hint={linkedIndexes.length > 0 ? t('set.record.linkedHint') : undefined}
+              />
               {linkedIndexes.map((i) => {
                 const w = assign.get(i)!;
                 const minimizedPick = w.windowState === 'minimized';
                 return (
                   <div key={`l${i}`} className="set-record-row">
-                    <span className="set-ok">✓</span>
+                    {iconOf(i)}
                     <RecordName
                       name={nameOf(i)}
-                      sub={subOf(w, nameOf(i))}
+                      sub={windowLine(w)}
+                      subTitle={w.title}
                       notes={<WindowNotes window={w} opensAsTab={entryOpensAsTab(views[i])} />}
                     />
                     {minimizedPick ? (
-                      <span className="set-chip set-chip-muted set-record-place">
+                      <span className="set-row-place set-record-place">
                         {entries[i].placement
                           ? t('set.record.keepPrevious')
                           : t('set.record.noPlacement')}
                       </span>
                     ) : (
-                      <PlaceChip text={placeOf(w)} />
+                      <Place text={placeOf(w)} />
                     )}
                     <select
                       className="set-record-action"
@@ -307,7 +334,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                       }}
                     >
                       <option value="keep">{t('set.record.keep')}</option>
-                      <option value="pick">{t('set.record.pickWindow')}</option>
+                      <option value="pick">{t('set.record.pickOther')}</option>
                       <option value="unlink">{t('set.record.unlink')}</option>
                     </select>
                   </div>
@@ -316,9 +343,10 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
 
               {failedIndexes.length > 0 && (
                 <>
-                  <div className="set-section-title">
-                    {t('set.record.failed', { count: failedIndexes.length })}
-                  </div>
+                  <SectionTitle
+                    label={t('set.record.failed', { count: failedIndexes.length })}
+                    hint={t('set.record.failedHint')}
+                  />
                   {failedIndexes.map((i) => {
                     const view = views[i];
                     // URL の行は自動では探さない（手で結び付ける）
@@ -329,23 +357,29 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                       !canAutoLink(view.kind);
                     const reason =
                       assign.get(i) === null
-                        ? t('set.record.unlink')
+                        ? t('set.record.reasonUnlinked')
                         : urlRow
                           ? t('set.record.reasonUrl')
                           : t('set.record.reasonNotFound');
-                    const keep =
-                      entries[i].placement && assign.get(i) !== null
-                        ? `（${t('set.record.keepPrevious')}）`
-                        : '';
+                    // このまま記録するとどうなるか（外した行と、前の位置が無い行は開くだけになる）
+                    const previous =
+                      assign.get(i) !== null && entries[i].placement
+                        ? placementText(entries[i], screens)
+                        : null;
+                    const outcome = previous
+                      ? t('set.record.outcomeKeep', { place: previous })
+                      : t('set.record.outcomeOpenOnly');
+                    const sub = t('set.record.reasonWithOutcome', { reason, outcome });
                     return (
                       <div key={`f${i}`} className="set-record-row">
-                        <span className="set-muted">{urlRow ? '–' : '!'}</span>
+                        {iconOf(i)}
                         <RecordName
                           name={nameOf(i)}
-                          sub={`${reason}${keep}`}
+                          sub={sub}
+                          subTitle={sub}
                           notes={
                             entryOpensAsTab(view) && (
-                              <span className="set-note">{t('set.record.tabNote')}</span>
+                              <span className="set-info">{t('set.record.tabNote')}</span>
                             )
                           }
                         />
@@ -364,32 +398,30 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                 </>
               )}
 
-              <SectionToggle
-                open={showUnlinked}
-                onToggle={() => setShowUnlinked((v) => !v)}
+              <SectionTitle
                 label={t('set.record.unlinked', { count: unlinkedWindows.length })}
                 hint={t('set.record.unlinkedHint')}
+                open={showUnlinked}
+                onToggle={() => setShowUnlinked((v) => !v)}
                 disabled={unlinkedWindows.length === 0}
               />
               {showUnlinked &&
                 unlinkedWindows.map((w) => (
                   <div key={windowKey(w)} className="set-record-row">
-                    <span className="set-row-icon">
-                      {w.icon ? <img src={w.icon} alt="" /> : '🪟'}
-                    </span>
+                    <RowIcon icon={w.icon} fallback="🪟" />
                     <RecordName
                       name={w.title}
-                      sub={subOf(w, w.title)}
+                      sub={windowDisplayName(w) !== w.title ? windowDisplayName(w) : undefined}
                       notes={
                         <>
                           {newRows.has(windowKey(w)) && cannotReopen(w) && (
-                            <span className="set-note">{t('set.record.placeOnlyNote')}</span>
+                            <span className="set-info">{t('set.record.placeOnlyNote')}</span>
                           )}
                           <WindowNotes window={w} opensAsTab={false} />
                         </>
                       }
                     />
-                    <PlaceChip text={placeOf(w)} />
+                    <Place text={placeOf(w)} />
                     <select
                       className="set-record-action"
                       aria-label={t('set.record.skip')}
@@ -413,16 +445,19 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
 
               {minimized.length > 0 && (
                 <>
-                  <SectionToggle
+                  <SectionTitle
+                    label={t('set.record.minimized', { count: minimized.length })}
                     open={showMinimized}
                     onToggle={() => setShowMinimized((v) => !v)}
-                    label={t('set.record.minimized', { count: minimized.length })}
                   />
                   {showMinimized &&
                     minimized.map((w) => (
-                      <div key={windowKey(w)} className="set-record-row set-muted">
-                        <span>–</span>
-                        <RecordName name={w.title} sub={subOf(w, w.title)} />
+                      <div key={windowKey(w)} className="set-record-row set-record-row-muted">
+                        <RowIcon icon={w.icon} fallback="🪟" />
+                        <RecordName
+                          name={w.title}
+                          sub={windowDisplayName(w) !== w.title ? windowDisplayName(w) : undefined}
+                        />
                       </div>
                     ))}
                 </>

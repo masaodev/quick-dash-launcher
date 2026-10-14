@@ -322,3 +322,14 @@ export function setEntryNames(entries: readonly SetEntry[], items: readonly AppI
     })
     .filter((name) => name !== '');
 }
+
+/** アイコンが取れていないときの、種類ごとの絵文字（メイン画面と同じ） */
+export const SET_KIND_ICONS: Record<string, string> = {
+  url: '🌐',
+  folder: '📁',
+  app: '⚙️',
+  file: '📄',
+  customUri: '🔗',
+  window: '🪟',
+  none: '🖥️',
+};

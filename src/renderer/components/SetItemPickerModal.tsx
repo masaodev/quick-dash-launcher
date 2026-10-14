@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
-import type { SetCatalogItem } from '../utils/setEditing';
+import { SET_KIND_ICONS, type SetCatalogItem } from '../utils/setEditing';
+import '../styles/components/WindowSelectorModal.css';
 import '../styles/components/SetEditor.css';
 
 import { Button } from './ui';
@@ -17,15 +18,6 @@ interface SetItemPickerModalProps {
   onClose: () => void;
   onAdd: (items: SetCatalogItem[]) => void;
 }
-
-const KIND_ICONS: Record<string, string> = {
-  url: '🌐',
-  folder: '📁',
-  app: '⚙️',
-  file: '📄',
-  customUri: '🔗',
-  window: '🪟',
-};
 
 /**
  * セットに追加するアイテムを選ぶ画面
@@ -98,13 +90,15 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
             onChange={() => toggle(item.key)}
           />
           <span className="set-row-icon">
-            {item.icon ? <img src={item.icon} alt="" /> : (KIND_ICONS[item.kind] ?? '📄')}
+            {item.icon ? <img src={item.icon} alt="" /> : (SET_KIND_ICONS[item.kind] ?? '📄')}
           </span>
           <span className="set-row-name">{item.displayName}</span>
+          {/* タブの名前は、ほかのタブのアイテムにだけ添える */}
           {added ? (
-            <span className="set-chip set-chip-muted">{t('set.picker.added')}</span>
+            <span className="set-row-aside">{t('set.picker.added')}</span>
           ) : (
-            <span className="set-chip set-chip-muted">{item.groupName}</span>
+            !item.sameGroup &&
+            groups.length > 1 && <span className="set-row-aside">{item.groupName}</span>
           )}
         </label>
       );
@@ -137,25 +131,36 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
           placeholder={t('set.picker.search')}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <div className="set-tab-chips" role="tablist">
-          <button
-            type="button"
-            className={group === null ? 'on' : ''}
-            onClick={() => setGroup(null)}
-          >
-            {t('set.picker.all')}
-          </button>
-          {groups.map((name) => (
+        {/* タブの絞り込み（ウィンドウを選ぶ画面の仮想デスクトップのタブと同じ形）。タブが 1 つなら出さない */}
+        {groups.length > 1 && (
+          <div className="desktop-tabs set-tabs" role="tablist">
             <button
-              key={name}
               type="button"
-              className={group === name ? 'on' : ''}
-              onClick={() => setGroup(name)}
+              role="tab"
+              aria-selected={group === null}
+              className={`desktop-tab${group === null ? ' active' : ''}`}
+              onClick={() => setGroup(null)}
             >
-              {name}
+              {t('set.picker.all')}
+              <span className="tab-count">({catalog.length})</span>
             </button>
-          ))}
-        </div>
+            {groups.map((name) => (
+              <button
+                key={name}
+                type="button"
+                role="tab"
+                aria-selected={group === name}
+                className={`desktop-tab${group === name ? ' active' : ''}`}
+                onClick={() => setGroup(name)}
+              >
+                {name}
+                <span className="tab-count">
+                  ({catalog.filter((item) => item.groupName === name).length})
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="set-picker-list">
           {catalog.length === 0 ? (
             <div className="set-empty">{t('set.picker.empty')}</div>

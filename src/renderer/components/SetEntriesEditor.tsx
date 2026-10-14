@@ -8,7 +8,9 @@ import {
   describeSetEntry,
   loadSetCatalog,
   placementText,
+  SET_KIND_ICONS,
   type SetCatalogItem,
+  type SetEntryView,
 } from '../utils/setEditing';
 import { logError } from '../utils/debug';
 import '../styles/components/SetEditor.css';
@@ -28,16 +30,6 @@ interface SetEntriesEditorProps {
   includeWorkspace?: boolean;
   error?: string;
 }
-
-const KIND_ICONS: Record<string, string> = {
-  url: '🌐',
-  folder: '📁',
-  app: '⚙️',
-  file: '📄',
-  customUri: '🔗',
-  window: '🪟',
-  none: '🖥️',
-};
 
 /**
  * セットの行の一覧（登録・編集画面の中身）
@@ -90,6 +82,16 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     }
     return keys;
   }, [entries]);
+
+  /** 行の 2 段目（開くもの。動かすだけの行は動かすウィンドウ。指す先が無い行は出さない） */
+  const rowDetails = (entry: SetEntry, view: SetEntryView): string => {
+    if (view.missing) return '';
+    if (view.holding === 'none') {
+      const target = entry.window?.processName ?? entry.window?.title ?? '';
+      return target ? t('set.editor.moveOnlyDetails', { window: target }) : '';
+    }
+    return view.path ?? '';
+  };
 
   const setEntries = (next: SetEntry[]) => onChange({ setEntries: next });
   const move = (from: number, to: number) => {
@@ -148,36 +150,27 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                   ⠿
                 </span>
                 <span className="set-row-icon">
-                  {view.icon ? <img src={view.icon} alt="" /> : (KIND_ICONS[view.kind] ?? '📄')}
+                  {view.icon ? <img src={view.icon} alt="" /> : (SET_KIND_ICONS[view.kind] ?? '📄')}
                 </span>
-                <span className="set-row-name" title={view.path}>
-                  {view.name}{' '}
-                  {view.holding === 'ref' && (
-                    <span
-                      className="set-chip set-chip-muted"
-                      title={t('set.editor.holdingRefTitle')}
-                    >
-                      {t('set.editor.holdingRef')}
+                <span className="set-row-name">
+                  <span className="set-row-title">
+                    {view.name}
+                    {view.missing ? (
+                      <span className="set-chip set-chip-danger">{t('set.editor.missing')}</span>
+                    ) : (
+                      view.holding === 'none' && (
+                        <span className="set-chip set-chip-open">{t('set.editor.moveOnly')}</span>
+                      )
+                    )}
+                  </span>
+                  {/* 2 段目はその行が開くもの（動かすだけの行は、動かすウィンドウ） */}
+                  {rowDetails(entry, view) && (
+                    <span className="set-row-details" title={rowDetails(entry, view)}>
+                      {rowDetails(entry, view)}
                     </span>
                   )}
-                  {view.holding === 'own' && (
-                    <span
-                      className="set-chip set-chip-muted"
-                      title={t('set.editor.holdingOwnTitle')}
-                    >
-                      {t('set.editor.holdingOwn')}
-                    </span>
-                  )}
-                  {view.missing && <span className="set-warn"> {t('set.editor.missing')}</span>}
                 </span>
-                <span className="set-row-tags">
-                  {view.holding === 'none' ? (
-                    <span className="set-chip set-chip-open">{t('set.editor.placeOnly')}</span>
-                  ) : (
-                    <span className="set-chip set-chip-open">{t('set.editor.open')}</span>
-                  )}
-                  {place && <span className="set-chip set-chip-place">📍 {place}</span>}
-                </span>
+                {place && <span className="set-row-place">📍 {place}</span>}
                 <span className="set-row-actions">
                   <button
                     type="button"
@@ -227,12 +220,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         <Button variant="secondary" size="sm" onClick={() => setPickerOpen(true)}>
           {t('set.editor.addItems')}
         </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="set-record-btn"
-          onClick={() => setRecordOpen(true)}
-        >
+        <Button variant="secondary" size="sm" onClick={() => setRecordOpen(true)}>
           {t('set.editor.record')}
         </Button>
         <span className="set-launch-mode">
