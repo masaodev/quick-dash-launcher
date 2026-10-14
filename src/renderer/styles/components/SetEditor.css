@@ -267,6 +267,18 @@
   overflow-y: auto;
 }
 
+/* 見つけ方の見出し（下の exe 名・タイトルの 2 行をまとめる） */
+.set-detail-section {
+  grid-column: 1 / -1;
+  margin-top: var(--spacing-xs);
+  font-weight: bold;
+  color: var(--text-secondary);
+}
+
+.set-detail-sub {
+  padding-left: var(--spacing-md);
+}
+
 .set-detail-pair {
   display: flex;
   flex-wrap: wrap;

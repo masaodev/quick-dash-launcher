@@ -121,23 +121,29 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
 
             {placeable ? (
               <>
-                <span className="set-muted">{t('set.detail.find')}</span>
-                <span className="set-detail-pair">
-                  <input
-                    type="text"
-                    aria-label={t('set.detail.processName')}
-                    placeholder={t('set.detail.processName')}
-                    value={draft.window?.processName ?? ''}
-                    onChange={(e) => updateWindow({ processName: orUndefined(e.target.value) })}
-                  />
-                  <input
-                    type="text"
-                    aria-label={t('set.detail.windowTitle')}
-                    placeholder={t('set.detail.windowTitlePlaceholder')}
-                    value={draft.window?.title ?? ''}
-                    onChange={(e) => updateWindow({ title: orUndefined(e.target.value) })}
-                  />
-                </span>
+                <span className="set-detail-section">{t('set.detail.find')}</span>
+                <label className="set-muted set-detail-sub" htmlFor="set-detail-process">
+                  {t('set.detail.processName')}
+                </label>
+                <input
+                  id="set-detail-process"
+                  type="text"
+                  placeholder={t('set.detail.processNamePlaceholder')}
+                  value={draft.window?.processName ?? ''}
+                  onChange={(e) => updateWindow({ processName: orUndefined(e.target.value) })}
+                />
+                <label className="set-muted set-detail-sub" htmlFor="set-detail-title">
+                  {t('set.detail.windowTitle')}
+                </label>
+                <input
+                  id="set-detail-title"
+                  type="text"
+                  placeholder={t('set.detail.windowTitlePlaceholder')}
+                  value={draft.window?.title ?? ''}
+                  onChange={(e) => updateWindow({ title: orUndefined(e.target.value) })}
+                />
+                <span />
+                <small className="set-muted">{t('set.detail.findHint')}</small>
 
                 <label className="set-muted" htmlFor="set-detail-ifopen">
                   {t('set.detail.ifOpen')}
