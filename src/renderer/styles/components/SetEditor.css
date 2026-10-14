@@ -22,7 +22,7 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-bottom: 1px solid var(--color-gray-300);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
 }
 
 .set-editor-row:last-child,
@@ -92,7 +92,7 @@
   background: none;
   cursor: pointer;
   padding: 0 var(--spacing-xxs);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--text-secondary);
 }
 
@@ -105,7 +105,7 @@
   display: inline-block;
   padding: 0 var(--spacing-sm);
   border-radius: 999px;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   white-space: nowrap;
 }
 
@@ -139,7 +139,7 @@
 .set-note {
   display: block;
   color: var(--text-warning);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   white-space: normal;
 }
 
@@ -151,7 +151,7 @@
 .set-empty {
   padding: var(--spacing-md);
   color: var(--text-muted);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
 }
 
 .set-editor-footer {
@@ -173,7 +173,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   margin-left: auto;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
 }
 
 .set-launch-mode select {
@@ -262,7 +262,7 @@
 
 .set-section-title {
   padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: bold;
   color: var(--text-muted);
   background-color: var(--bg-header);
@@ -270,7 +270,7 @@
 
 .set-record-row select {
   max-width: 220px;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
 }
 
 .set-detail-grid {
@@ -278,7 +278,7 @@
   grid-template-columns: max-content minmax(0, 1fr);
   gap: var(--spacing-sm) var(--spacing-md);
   align-items: center;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   overflow-y: auto;
 }
 
@@ -315,7 +315,7 @@
 
 .set-record-row {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 210px 160px;
+  grid-template-columns: 22px minmax(0, 1fr) 215px 165px;
 }
 
 .set-record-name {
@@ -337,7 +337,7 @@
 }
 
 .set-record-sub {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--text-muted);
 }
 
@@ -370,4 +370,19 @@
 .set-section-hint {
   margin-left: auto;
   font-weight: normal;
+}
+
+/* 入力欄・プルダウンも、ほかの画面と同じ大きさの文字にする */
+.set-detail-grid input,
+.set-detail-grid select,
+.set-launch-mode select,
+.set-search {
+  font-size: var(--font-size-base);
+}
+
+.set-detail-grid input,
+.set-detail-grid select {
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  box-sizing: border-box;
 }
