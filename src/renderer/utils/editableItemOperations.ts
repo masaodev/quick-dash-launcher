@@ -379,6 +379,22 @@ export function filterEditableItems(
     .split(/\s+/)
     .filter((k) => k.length > 0);
 
+  // セットは行の中身（指すアイテムの名前・行の名前・パス）でも探せるようにする（displayText は行の JSON なので名前で当たらない）
+  const nameById = new Map<string, string>();
+  for (const e of items) {
+    if ('displayName' in e.item && e.item.displayName) nameById.set(e.item.id, e.item.displayName);
+  }
+  const setText = (item: EditableJsonItem): string => {
+    if (item.item.type !== 'set') return '';
+    return item.item.entries
+      .map((e) =>
+        [e.itemId ? nameById.get(e.itemId) : undefined, e.label, e.open?.path]
+          .filter(Boolean)
+          .join(' ')
+      )
+      .join(' ');
+  };
+
   return items.filter((item) => {
     if (item.meta.sourceFile !== criteria.sourceFile) return false;
 
@@ -395,7 +411,8 @@ export function filterEditableItems(
     }
 
     // メモも検索対象にする（displayText にはメモが入らない）
-    const itemText = `${item.displayText} ${item.item.memo ?? ''}`.toLowerCase();
+    const base = item.item.type === 'set' ? item.item.displayName : item.displayText;
+    const itemText = `${base} ${item.item.memo ?? ''} ${setText(item)}`.toLowerCase();
     return keywords.every((keyword) => itemText.includes(keyword));
   });
 }

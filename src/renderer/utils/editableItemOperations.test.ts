@@ -353,6 +353,22 @@ describe('editableItemOperations', () => {
     ).toEqual(['a']);
   });
 
+  it('filterEditableItems はセットを行の中身（指すアイテムの名前・パス）で探し、JSON のキーでは当てないこと', () => {
+    const chrome = launcher('Chrome', 'C:/chrome.exe');
+    const set: JsonItem = {
+      id: 'set00002',
+      type: 'set',
+      displayName: '朝',
+      entries: [{ itemId: chrome.id }, { open: { path: 'C:/memo.txt' } }],
+    };
+    const items = rows([chrome], [set]);
+    const search = (searchQuery: string) =>
+      names(filterEditableItems(items, { sourceFile: FILE, autoImportFilter: 'all', searchQuery }));
+    expect(search('chrome')).toEqual(['Chrome', '朝']);
+    expect(search('memo.txt')).toEqual(['朝']);
+    expect(search('itemid')).toEqual([]);
+  });
+
   it('importBookmarks は重複をスキップ／上書き（既存 ID を引き継ぐ）できること', () => {
     const existing = launcher('GitHub', 'https://github.com');
     const items = rows([existing]);
