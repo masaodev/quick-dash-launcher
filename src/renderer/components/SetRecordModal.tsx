@@ -42,6 +42,51 @@ function windowKey(window: WindowInfo): string {
   return String(window.hwnd);
 }
 
+/** 記録の画面の名前の欄（太字の 1 行と、小さな 1 行。はみ出たら省略し、全体はカーソルを当てると出す） */
+const RecordName: React.FC<{ name: string; sub?: string; notes?: React.ReactNode }> = ({
+  name,
+  sub,
+  notes,
+}) => (
+  <span className="set-record-name">
+    <span className="set-record-main" title={name}>
+      {name}
+    </span>
+    {sub && (
+      <span className="set-record-sub" title={sub}>
+        {sub}
+      </span>
+    )}
+    {notes}
+  </span>
+);
+
+const PlaceChip: React.FC<{ text: string }> = ({ text }) => (
+  <span className="set-chip set-chip-place set-record-place" title={text}>
+    📍 {text}
+  </span>
+);
+
+/** 畳める欄の見出し */
+const SectionToggle: React.FC<{
+  open: boolean;
+  onToggle: () => void;
+  label: string;
+  hint?: string;
+  disabled?: boolean;
+}> = ({ open, onToggle, label, hint, disabled }) => (
+  <button
+    type="button"
+    className="set-section-title set-section-toggle"
+    aria-expanded={open}
+    disabled={disabled}
+    onClick={onToggle}
+  >
+    <span aria-hidden>{open ? '▾' : '▸'}</span> {label}
+    {hint && !open && !disabled && <span className="set-section-hint">{hint}</span>}
+  </button>
+);
+
 /** ウィンドウについて知らせること（タブとして開く・最小化中・管理者権限） */
 export const WindowNotes: React.FC<{ window: WindowInfo; opensAsTab: boolean }> = ({
   window: w,
@@ -67,7 +112,7 @@ export const WindowNotes: React.FC<{ window: WindowInfo; opensAsTab: boolean }> 
  *
  * 開いているウィンドウを行と自動で結び付けて 3 つに分けて出し、ウィンドウごとにどうするかを選ばせる
  * - 行と結び付けたウィンドウ: 結び付けたまま／外す
- * - 行に無いウィンドウ: 追加しない（既定）／新しい行として追加／まだ結び付いていない行に結び付ける
+ * - 行に無いウィンドウ: 追加しない（既定）／行として追加／まだ結び付いていない行に結び付ける。既定は畳んでおく
  * - 位置を記録できなかった行: 理由を出す。「ウィンドウを選ぶ」で手で結び付けられる（URL の行は自動では探さないので、いつもここに出る）
  */
 const SetRecordModal: React.FC<SetRecordModalProps> = ({
@@ -87,6 +132,9 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const [newRows, setNewRows] = useState<Set<string>>(new Set());
   /** 手で結び付けるウィンドウを選んでいる行 */
   const [pickingFor, setPickingFor] = useState<number | null>(null);
+  /** 「行に無いウィンドウ」「最小化中」の欄を開いているか（既定は畳む。行を足すときだけ開けばよい） */
+  const [showUnlinked, setShowUnlinked] = useState(false);
+  const [showMinimized, setShowMinimized] = useState(false);
 
   useModalKeyboard({ isOpen, modalRef, onClose });
 
@@ -198,6 +246,12 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const placeOf = (w: WindowInfo) =>
     placementText({ placement: { x: w.x, y: w.y, width: w.width, height: w.height } }, screens) ??
     '';
+  /** 名前の下に出す 1 行（exe 名とタイトル。タイトルが名前と同じなら出さない） */
+  const subOf = (w: WindowInfo, name: string) => {
+    const app = windowDisplayName(w);
+    const parts = [app, w.title].filter((part) => part && part !== name);
+    return [...new Set(parts)].join(' · ');
+  };
   const cannotReopen = (w: WindowInfo) =>
     /^(explorer|applicationframehost)\.exe$/i.test(w.processName ?? '');
 
@@ -229,21 +283,24 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                 return (
                   <div key={`l${i}`} className="set-record-row">
                     <span className="set-ok">✓</span>
-                    <span className="set-row-name">
-                      {nameOf(i)} <span className="set-muted">— {w.title}</span>
-                      <WindowNotes window={w} opensAsTab={entryOpensAsTab(views[i])} />
-                    </span>
+                    <RecordName
+                      name={nameOf(i)}
+                      sub={subOf(w, nameOf(i))}
+                      notes={<WindowNotes window={w} opensAsTab={entryOpensAsTab(views[i])} />}
+                    />
                     {minimizedPick ? (
-                      <span className="set-chip set-chip-muted">
+                      <span className="set-chip set-chip-muted set-record-place">
                         {entries[i].placement
                           ? t('set.record.keepPrevious')
                           : t('set.record.noPlacement')}
                       </span>
                     ) : (
-                      <span className="set-chip set-chip-place">📍 {placeOf(w)}</span>
+                      <PlaceChip text={placeOf(w)} />
                     )}
                     <select
+                      className="set-record-action"
                       value="keep"
+                      aria-label={t('set.record.keep')}
                       onChange={(e) => {
                         if (e.target.value === 'unlink') setWindowFor(i, null);
                         if (e.target.value === 'pick') setPickingFor(i);
@@ -257,89 +314,117 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                 );
               })}
 
-              <div className="set-section-title">
-                {t('set.record.unlinked', { count: unlinkedWindows.length })}
-              </div>
-              {unlinkedWindows.map((w) => (
-                <div key={windowKey(w)} className="set-record-row">
-                  <span className="set-row-icon">
-                    {w.icon ? <img src={w.icon} alt="" /> : '🪟'}
-                  </span>
-                  <span className="set-row-name">
-                    {windowDisplayName(w)} <span className="set-muted">— {w.title}</span>
-                    {newRows.has(windowKey(w)) && cannotReopen(w) && (
-                      <span className="set-note">{t('set.record.placeOnlyNote')}</span>
-                    )}
-                    <WindowNotes window={w} opensAsTab={false} />
-                  </span>
-                  <span className="set-chip set-chip-place">📍 {placeOf(w)}</span>
-                  <select
-                    value={newRows.has(windowKey(w)) ? 'newRow' : 'skip'}
-                    onChange={(e) => onUnlinkedChoice(w, e.target.value)}
-                  >
-                    <option value="skip">{t('set.record.skip')}</option>
-                    <option value="newRow">{t('set.record.newRow')}</option>
-                    {linkableIndexes.map((i) => (
-                      <option key={i} value={String(i)}>
-                        {t('set.record.linkTo', { name: nameOf(i) })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-
-              <div className="set-section-title">
-                {t('set.record.failed', { count: failedIndexes.length })}
-              </div>
-              {failedIndexes.map((i) => {
-                const view = views[i];
-                // URL の行は自動では探さない（手で結び付ける）
-                const urlRow =
-                  !entries[i].window &&
-                  view.kind !== 'window' &&
-                  view.kind !== 'none' &&
-                  !canAutoLink(view.kind);
-                const reason =
-                  assign.get(i) === null
-                    ? t('set.record.unlink')
-                    : urlRow
-                      ? t('set.record.reasonUrl')
-                      : t('set.record.reasonNotFound');
-                return (
-                  <div key={`f${i}`} className="set-record-row">
-                    <span className="set-muted">{urlRow ? '–' : '!'}</span>
-                    <span className="set-row-name">
-                      {nameOf(i)}{' '}
-                      <span className="set-muted">
-                        — {reason}
-                        {entries[i].placement && assign.get(i) !== null
-                          ? `（${t('set.record.keepPrevious')}）`
-                          : ''}
-                      </span>
-                      {entryOpensAsTab(view) && (
-                        <span className="set-note">{t('set.record.tabNote')}</span>
-                      )}
-                    </span>
-                    <Button variant="secondary" size="sm" onClick={() => setPickingFor(i)}>
-                      {t('set.record.pickWindow')}
-                    </Button>
+              {failedIndexes.length > 0 && (
+                <>
+                  <div className="set-section-title">
+                    {t('set.record.failed', { count: failedIndexes.length })}
                   </div>
-                );
-              })}
+                  {failedIndexes.map((i) => {
+                    const view = views[i];
+                    // URL の行は自動では探さない（手で結び付ける）
+                    const urlRow =
+                      !entries[i].window &&
+                      view.kind !== 'window' &&
+                      view.kind !== 'none' &&
+                      !canAutoLink(view.kind);
+                    const reason =
+                      assign.get(i) === null
+                        ? t('set.record.unlink')
+                        : urlRow
+                          ? t('set.record.reasonUrl')
+                          : t('set.record.reasonNotFound');
+                    const keep =
+                      entries[i].placement && assign.get(i) !== null
+                        ? `（${t('set.record.keepPrevious')}）`
+                        : '';
+                    return (
+                      <div key={`f${i}`} className="set-record-row">
+                        <span className="set-muted">{urlRow ? '–' : '!'}</span>
+                        <RecordName
+                          name={nameOf(i)}
+                          sub={`${reason}${keep}`}
+                          notes={
+                            entryOpensAsTab(view) && (
+                              <span className="set-note">{t('set.record.tabNote')}</span>
+                            )
+                          }
+                        />
+                        <span />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="set-record-action"
+                          onClick={() => setPickingFor(i)}
+                        >
+                          {t('set.record.pickWindow')}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              <SectionToggle
+                open={showUnlinked}
+                onToggle={() => setShowUnlinked((v) => !v)}
+                label={t('set.record.unlinked', { count: unlinkedWindows.length })}
+                hint={t('set.record.unlinkedHint')}
+                disabled={unlinkedWindows.length === 0}
+              />
+              {showUnlinked &&
+                unlinkedWindows.map((w) => (
+                  <div key={windowKey(w)} className="set-record-row">
+                    <span className="set-row-icon">
+                      {w.icon ? <img src={w.icon} alt="" /> : '🪟'}
+                    </span>
+                    <RecordName
+                      name={w.title}
+                      sub={subOf(w, w.title)}
+                      notes={
+                        <>
+                          {newRows.has(windowKey(w)) && cannotReopen(w) && (
+                            <span className="set-note">{t('set.record.placeOnlyNote')}</span>
+                          )}
+                          <WindowNotes window={w} opensAsTab={false} />
+                        </>
+                      }
+                    />
+                    <PlaceChip text={placeOf(w)} />
+                    <select
+                      className="set-record-action"
+                      aria-label={t('set.record.skip')}
+                      value={newRows.has(windowKey(w)) ? 'newRow' : 'skip'}
+                      onChange={(e) => onUnlinkedChoice(w, e.target.value)}
+                    >
+                      <option value="skip">{t('set.record.skip')}</option>
+                      <option value="newRow">{t('set.record.newRow')}</option>
+                      {linkableIndexes.length > 0 && (
+                        <optgroup label={t('set.record.linkGroup')}>
+                          {linkableIndexes.map((i) => (
+                            <option key={i} value={String(i)}>
+                              {nameOf(i)}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                  </div>
+                ))}
 
               {minimized.length > 0 && (
                 <>
-                  <div className="set-section-title">
-                    {t('set.record.minimized', { count: minimized.length })}
-                  </div>
-                  {minimized.map((w) => (
-                    <div key={windowKey(w)} className="set-record-row set-muted">
-                      <span>–</span>
-                      <span className="set-row-name">
-                        {windowDisplayName(w)} — {w.title}
-                      </span>
-                    </div>
-                  ))}
+                  <SectionToggle
+                    open={showMinimized}
+                    onToggle={() => setShowMinimized((v) => !v)}
+                    label={t('set.record.minimized', { count: minimized.length })}
+                  />
+                  {showMinimized &&
+                    minimized.map((w) => (
+                      <div key={windowKey(w)} className="set-record-row set-muted">
+                        <span>–</span>
+                        <RecordName name={w.title} sub={subOf(w, w.title)} />
+                      </div>
+                    ))}
                 </>
               )}
             </div>

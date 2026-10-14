@@ -305,3 +305,69 @@
   flex: 1;
   min-width: 120px;
 }
+
+/* ===== 今の位置を記録 ===== */
+
+/* 名前・位置・どうするかを列でそろえるので、ほかの小さな画面より広くする */
+.set-record-modal {
+  max-width: 860px;
+}
+
+.set-record-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 210px 160px;
+}
+
+.set-record-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.set-record-main,
+.set-record-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-record-main {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.set-record-sub {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.set-record-place {
+  justify-self: end;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.set-record-row .set-record-action {
+  width: 100%;
+  max-width: none;
+}
+
+.set-section-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  width: 100%;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.set-section-toggle:disabled {
+  cursor: default;
+}
+
+.set-section-hint {
+  margin-left: auto;
+  font-weight: normal;
+}
