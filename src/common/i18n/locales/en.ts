@@ -571,6 +571,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       detail: 'Row details',
       entriesRequired: 'Add at least one row to the set',
       hint: 'Rows open from the top. To place windows, arrange them first and press "Record current positions".',
+      hintParallel:
+        'All rows open at once. To place windows, arrange them first and press "Record current positions".',
     },
     record: {
       title: 'Record current positions',

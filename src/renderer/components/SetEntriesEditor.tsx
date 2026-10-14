@@ -231,7 +231,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         </span>
       </div>
       {error && <span className="error-message">{error}</span>}
-      <small>{t('set.editor.hint')}</small>
+      <small>{t(launchMode === 'parallel' ? 'set.editor.hintParallel' : 'set.editor.hint')}</small>
 
       <SetItemPickerModal
         isOpen={pickerOpen}

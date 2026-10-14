@@ -574,6 +574,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       detail: '行の詳細',
       entriesRequired: 'セットに行を 1 つ以上入れてください',
       hint: '上の行から順に開きます。並べたいときは、ウィンドウを並べてから「今の位置を記録」を押します。',
+      hintParallel:
+        '全部の行を一度に開きます。並べたいときは、ウィンドウを並べてから「今の位置を記録」を押します。',
     },
     record: {
       title: '今の位置を記録',
