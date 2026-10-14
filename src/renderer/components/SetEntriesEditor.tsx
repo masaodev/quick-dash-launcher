@@ -1,0 +1,264 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { SetEntry, SetLaunchMode } from '@common/types';
+import type { ScreenArea } from '@common/utils/placementLabel';
+
+import {
+  catalogItemToEntry,
+  describeSetEntry,
+  loadSetCatalog,
+  placementText,
+  type SetCatalogItem,
+} from '../utils/setEditing';
+import { logError } from '../utils/debug';
+import '../styles/components/SetEditor.css';
+
+import SetItemPickerModal from './SetItemPickerModal';
+import SetRecordModal from './SetRecordModal';
+import SetEntryDetailModal from './SetEntryDetailModal';
+import { Button } from './ui';
+
+interface SetEntriesEditorProps {
+  entries: SetEntry[];
+  launchMode?: SetLaunchMode;
+  onChange: (patch: { setEntries?: SetEntry[]; setLaunchMode?: SetLaunchMode }) => void;
+  /** セットを置くデータファイル（同じタブのアイテムを先に並べる）。ワークスペースなら undefined */
+  currentFile?: string;
+  /** ワークスペースのアイテムも選べるようにする（ワークスペースのセット） */
+  includeWorkspace?: boolean;
+  error?: string;
+}
+
+const KIND_ICONS: Record<string, string> = {
+  url: '🌐',
+  folder: '📁',
+  app: '⚙️',
+  file: '📄',
+  customUri: '🔗',
+  window: '🪟',
+  none: '🖥️',
+};
+
+/**
+ * セットの行の一覧（登録・編集画面の中身）
+ *
+ * アイテムの追加・今の位置の記録・行の詳細はここから開く。行はドラッグか上下のボタンで並べ替える
+ */
+const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
+  entries,
+  launchMode,
+  onChange,
+  currentFile,
+  includeWorkspace = false,
+  error,
+}) => {
+  const { t } = useTranslation();
+  const [catalog, setCatalog] = useState<SetCatalogItem[]>([]);
+  const [screens, setScreens] = useState<ScreenArea[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [recordOpen, setRecordOpen] = useState(false);
+  const [detailIndex, setDetailIndex] = useState<number | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSetCatalog(currentFile, includeWorkspace)
+      .then((items) => !cancelled && setCatalog(items))
+      .catch((e) => logError('セットに追加できるアイテムを読めませんでした:', e));
+    window.electronAPI
+      .getScreenAreas()
+      .then((areas) => !cancelled && setScreens(areas))
+      .catch((e) => logError('画面の情報を取得できませんでした:', e));
+    return () => {
+      cancelled = true;
+    };
+  }, [currentFile, includeWorkspace]);
+
+  const catalogById = useMemo(() => {
+    const map = new Map<string, SetCatalogItem>();
+    for (const item of catalog) if (item.id) map.set(item.id, item);
+    return map;
+  }, [catalog]);
+
+  const addedKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const entry of entries) {
+      if (entry.itemId) keys.add(entry.itemId);
+      else if (entry.open) keys.add(`dir:${entry.open.path}`);
+    }
+    return keys;
+  }, [entries]);
+
+  const setEntries = (next: SetEntry[]) => onChange({ setEntries: next });
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= entries.length || from === to) return;
+    const next = [...entries];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setEntries(next);
+  };
+
+  return (
+    <div className="form-group vertical-layout set-editor">
+      <label>{t('set.editor.rows')}</label>
+      <div className="set-editor-rows">
+        {entries.length === 0 ? (
+          <div className="set-empty">{t('set.editor.empty')}</div>
+        ) : (
+          entries.map((entry, index) => {
+            const view = describeSetEntry(entry, catalogById);
+            const place = placementText(entry, screens);
+            return (
+              <div
+                key={index}
+                className={`set-editor-row${dragIndex === index ? ' dragging' : ''}${view.missing ? ' missing' : ''}`}
+                draggable
+                onDragStart={() => setDragIndex(index)}
+                onDragEnd={() => setDragIndex(null)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragIndex !== null) move(dragIndex, index);
+                  setDragIndex(null);
+                }}
+                onDoubleClick={() => setDetailIndex(index)}
+              >
+                <span className="set-drag-handle" aria-hidden>
+                  ⠿
+                </span>
+                <span className="set-row-icon">
+                  {view.icon ? <img src={view.icon} alt="" /> : (KIND_ICONS[view.kind] ?? '📄')}
+                </span>
+                <span className="set-row-name" title={view.path}>
+                  {view.name}{' '}
+                  {view.holding === 'ref' && (
+                    <span
+                      className="set-chip set-chip-muted"
+                      title={t('set.editor.holdingRefTitle')}
+                    >
+                      {t('set.editor.holdingRef')}
+                    </span>
+                  )}
+                  {view.holding === 'own' && (
+                    <span
+                      className="set-chip set-chip-muted"
+                      title={t('set.editor.holdingOwnTitle')}
+                    >
+                      {t('set.editor.holdingOwn')}
+                    </span>
+                  )}
+                  {view.missing && <span className="set-warn"> {t('set.editor.missing')}</span>}
+                </span>
+                <span className="set-row-tags">
+                  {view.holding === 'none' ? (
+                    <span className="set-chip set-chip-open">{t('set.editor.placeOnly')}</span>
+                  ) : (
+                    <span className="set-chip set-chip-open">{t('set.editor.open')}</span>
+                  )}
+                  {place && <span className="set-chip set-chip-place">📍 {place}</span>}
+                </span>
+                <span className="set-row-actions">
+                  <button
+                    type="button"
+                    className="set-icon-btn"
+                    title={t('set.editor.moveUp')}
+                    aria-label={t('set.editor.moveUp')}
+                    disabled={index === 0}
+                    onClick={() => move(index, index - 1)}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    className="set-icon-btn"
+                    title={t('set.editor.moveDown')}
+                    aria-label={t('set.editor.moveDown')}
+                    disabled={index === entries.length - 1}
+                    onClick={() => move(index, index + 1)}
+                  >
+                    ▼
+                  </button>
+                  <button
+                    type="button"
+                    className="set-icon-btn"
+                    title={t('set.editor.detail')}
+                    aria-label={t('set.editor.detail')}
+                    onClick={() => setDetailIndex(index)}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    type="button"
+                    className="close-btn close-btn-sm close-btn-danger"
+                    title={t('set.editor.remove')}
+                    aria-label={t('set.editor.remove')}
+                    onClick={() => setEntries(entries.filter((_, i) => i !== index))}
+                  >
+                    ×
+                  </button>
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
+      <div className="set-editor-footer">
+        <Button variant="secondary" size="sm" onClick={() => setPickerOpen(true)}>
+          {t('set.editor.addItems')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="set-record-btn"
+          onClick={() => setRecordOpen(true)}
+        >
+          {t('set.editor.record')}
+        </Button>
+        <label className="set-launch-mode">
+          {t('set.editor.launchMode')}
+          <select
+            value={launchMode ?? 'sequential'}
+            onChange={(e) =>
+              onChange({
+                setLaunchMode: e.target.value === 'parallel' ? 'parallel' : undefined,
+              })
+            }
+          >
+            <option value="sequential">{t('set.editor.sequential')}</option>
+            <option value="parallel">{t('set.editor.parallel')}</option>
+          </select>
+        </label>
+      </div>
+      {error && <span className="error-message">{error}</span>}
+      <small>{t('set.editor.hint')}</small>
+
+      <SetItemPickerModal
+        isOpen={pickerOpen}
+        catalog={catalog}
+        addedKeys={addedKeys}
+        onClose={() => setPickerOpen(false)}
+        onAdd={(items) => setEntries([...entries, ...items.map(catalogItemToEntry)])}
+      />
+      <SetRecordModal
+        isOpen={recordOpen}
+        entries={entries}
+        catalog={catalogById}
+        screens={screens}
+        onClose={() => setRecordOpen(false)}
+        onConfirm={setEntries}
+      />
+      <SetEntryDetailModal
+        entry={detailIndex !== null ? (entries[detailIndex] ?? null) : null}
+        catalog={catalogById}
+        screens={screens}
+        onClose={() => setDetailIndex(null)}
+        onChange={(entry) => {
+          if (detailIndex === null) return;
+          setEntries(entries.map((e, i) => (i === detailIndex ? entry : e)));
+        }}
+      />
+    </div>
+  );
+};
+
+export default SetEntriesEditor;

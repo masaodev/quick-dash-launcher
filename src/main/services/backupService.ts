@@ -450,6 +450,19 @@ export class BackupService {
     }
   }
 
+  /**
+   * グループ・ウィンドウ配置をセットに変換する前に全対象をスナップショットする（_pre-set-migration）
+   *
+   * 不可逆な形式変更なので backupEnabled に関係なく作る。失敗したら呼び出し側は変換しない
+   */
+  public async createPreSetMigrationSnapshot(): Promise<void> {
+    const { copiedCount } = await this.copyTargetsToSnapshot('pre-set-migration');
+    if (copiedCount === 0) {
+      throw new Error(mainI18n.t('backupErrors.preMigrationCopyFailed', { file: 'datafiles' }));
+    }
+    logger.info('セットへの変換前のスナップショットを作成しました');
+  }
+
   private async createForcedSnapshot(suffix: string): Promise<string> {
     const { snapshotFolder } = await this.copyTargetsToSnapshot(suffix);
     logger.info({ snapshotFolder, suffix }, '強制スナップショットを作成しました');

@@ -5,8 +5,8 @@ import { FileUtils } from '@common/utils/fileUtils';
 import { parseJsonDataFileLenient, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonItemIssue } from '@common/utils/jsonParser';
 import { isJsonLauncherItem } from '@common/types';
-import type { AppItem, JsonItem } from '@common/types';
-import { isLauncherItem, isWindowInfo } from '@common/types/guards';
+import type { AppItem, JsonDataFile, JsonItem } from '@common/types';
+import { isLauncherItem, isRecord, isWindowInfo } from '@common/types/guards';
 
 import { SettingsService } from '../settingsService.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
@@ -35,6 +35,11 @@ import {
   markDataFileCorrupted,
 } from './corruptedDataFiles.js';
 import { convertJsonItemToAppItems } from './jsonItemConverter.js';
+import {
+  buildGroupNameResolver,
+  convertLegacySetItems,
+  hasLegacySetItems,
+} from './setMigration.js';
 
 /**
  * JSONファイルからAppItem配列を読み込む
@@ -249,6 +254,11 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
     }
   }
 
+  // 旧形式のグループ・ウィンドウ配置をセットに変換したら、変換後の内容で読み直す（2 回目は変換するものが無い）
+  if (await migrateLegacySetItemsInDataFiles(configFolder, allFiles, items)) {
+    return loadDataFilesWithReport(configFolder);
+  }
+
   // displayNameでソート
   items.sort((a, b) => {
     const aName = isWindowInfo(a) ? a.title : a.displayName;
@@ -269,6 +279,67 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
   );
 
   return { items, fileReports, externallyChanged };
+}
+
+/**
+ * データファイルの中の旧形式のグループ・ウィンドウ配置をセットに変換して書き戻す
+ *
+ * グループの名前は、読み込んだ全タブのアイテムから解決する（旧来の実行と同じ範囲）。
+ * 戻せない変換なので、書き換える前に全設定ファイルのスナップショット（_pre-set-migration）を残す。
+ * スナップショットを作れなければ変換しない
+ *
+ * @returns 書き換えたファイルがあれば true
+ */
+async function migrateLegacySetItemsInDataFiles(
+  configFolder: string,
+  fileNames: readonly string[],
+  loadedItems: readonly AppItem[]
+): Promise<boolean> {
+  const targets: { filePath: string; raw: Record<string, unknown> & { items: unknown[] } }[] = [];
+  for (const fileName of fileNames) {
+    const filePath = path.join(configFolder, fileName);
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (content === null) continue;
+    try {
+      const raw: unknown = JSON.parse(content);
+      if (isRecord(raw) && Array.isArray(raw.items) && hasLegacySetItems(raw.items)) {
+        targets.push({ filePath, raw: raw as Record<string, unknown> & { items: unknown[] } });
+      }
+    } catch {
+      // 壊れたファイルは通常の読み込みが報告する
+    }
+  }
+  if (targets.length === 0) return false;
+
+  try {
+    const backupService = await BackupService.getInstance();
+    await backupService.createPreSetMigrationSnapshot();
+  } catch (error) {
+    dataLogger.error(
+      { error },
+      'セットへの変換前のスナップショットを作れなかったので、変換しません'
+    );
+    return false;
+  }
+
+  const settingsService = await SettingsService.getInstance();
+  const parallel = await settingsService.getLegacyParallelGroupLaunch();
+  const resolveName = buildGroupNameResolver(loadedItems);
+  let rewritten = false;
+  for (const { filePath, raw } of targets) {
+    const converted = convertLegacySetItems(
+      raw.items,
+      resolveName,
+      parallel ? 'parallel' : 'sequential'
+    );
+    if (!converted.changed) continue;
+    const data = { ...raw, items: converted.items } as unknown as JsonDataFile;
+    if (writeDataFile(filePath, serializeJsonDataFile(data))) {
+      rewritten = true;
+      dataLogger.info({ filePath }, 'グループ・ウィンドウ配置をセットに変換しました');
+    }
+  }
+  return rewritten;
 }
 
 let reloadInFlight: Promise<AppItem[]> | null = null;

@@ -4,12 +4,11 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   isLauncherItem,
   isWindowInfo,
-  isGroupItem,
   isSetItem,
   isWindowItem,
   isClipboardItem,
 } from '@common/types/guards';
-import { LauncherItem, GroupItem, AppItem, WindowInfo } from '@common/types';
+import { LauncherItem, AppItem, WindowInfo } from '@common/types';
 import { windowInfoToWindowItem } from '@common/utils/windowInfoConverter';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
@@ -24,10 +23,8 @@ const DEFAULT_ICONS: Record<string, string> = {
   app: '⚙️',
   file: '📄',
   customUri: '🔗',
-  group: '📦',
   window: '🪟',
   clipboard: '📋',
-  layout: '🖥️',
   set: '📦',
 };
 
@@ -347,7 +344,6 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const index = virtualRow.index;
             const item = items[index];
             const isWindow = isWindowInfo(item);
-            const isGroup = isGroupItem(item);
             const isSet = isSetItem(item);
             const isWindowOperation = isWindowItem(item);
             const isClipboard = isClipboardItem(item);
@@ -374,7 +370,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const classNames = [
               'item',
               index === selectedIndex && 'selected',
-              (isGroup || isSet) && 'group-item',
+              isSet && 'group-item',
               isWindow && 'window-item',
               isWindowOperation && 'window-operation-item',
               isClipboard && 'clipboard-item',
@@ -422,13 +418,6 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 <span className="item-icon">{getItemIcon(item)}</span>
                 <span className="item-name">
                   {itemName}
-                  {isGroup && (
-                    <span className="group-count">
-                      {t('launcher.list.groupCount', {
-                        count: (item as GroupItem).itemNames.length,
-                      })}
-                    </span>
-                  )}
                   {isSet && (
                     <span className="group-count">
                       {t('launcher.list.groupCount', { count: item.entries.length })}

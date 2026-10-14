@@ -14,14 +14,11 @@ import type {
   JsonDataFile,
   JsonItem,
   JsonDirOptions,
-  LayoutWindowEntry,
+  SetItemFields,
   WindowItemConfig,
 } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
-import {
-  stripIconFromLayoutEntries,
-  convertRegisterItemToJsonItem,
-} from '@common/utils/dataConverters';
+import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { PathManager } from '../../config/pathManager.js';
@@ -85,24 +82,6 @@ export function updateDirItemById(
   });
 }
 
-/** IDでgroupアイテムを更新する */
-export function updateGroupItemById(
-  configFolder: string,
-  id: string,
-  displayName: string,
-  itemNames: string[],
-  memo?: string
-): void {
-  replaceItemById(configFolder, {
-    id,
-    type: 'group',
-    displayName,
-    itemNames,
-    memo: memo || undefined,
-    updatedAt: Date.now(),
-  });
-}
-
 /** IDでwindowアイテムを更新する */
 export function updateWindowItemById(
   configFolder: string,
@@ -123,19 +102,20 @@ export function updateWindowItemById(
   });
 }
 
-/** IDでlayoutアイテムを更新する */
-export function updateLayoutItemById(
+/** IDでsetアイテムを更新する */
+export function updateSetItemById(
   configFolder: string,
   id: string,
-  displayName: string,
-  entries: LayoutWindowEntry[],
+  set: SetItemFields,
   memo?: string
 ): void {
   replaceItemById(configFolder, {
     id,
-    type: 'layout',
-    displayName,
-    entries: stripIconFromLayoutEntries(entries),
+    type: 'set',
+    displayName: set.displayName,
+    entries: set.entries.map((entry) => ({ ...entry })),
+    ...(set.launchMode ? { launchMode: set.launchMode } : {}),
+    ...(set.customIcon ? { customIcon: set.customIcon } : {}),
     memo: memo || undefined,
     updatedAt: Date.now(),
   });
@@ -143,7 +123,7 @@ export function updateLayoutItemById(
 
 /**
  * 複数のアイテムを設定ファイルに登録する（各タブ対応）
- * 単一アイテム、フォルダ取込アイテム、グループアイテムに対応し、targetFile（旧 targetTab）で
+ * 単一アイテム、フォルダ取込アイテム、セットなどに対応し、targetFile（旧 targetTab）で
  * 指定されたデータファイルに追記する
  *
  * @param configFolder - 設定フォルダのパス
@@ -154,7 +134,7 @@ export function updateLayoutItemById(
  * registerItems('/path/to/config', [
  *   { name: 'VSCode', type: 'app', path: 'code.exe', targetTab: 'datafiles/data.json', itemCategory: 'item' },
  *   { name: 'Documents', type: 'folder', path: '/docs', targetTab: 'datafiles/data2.json', itemCategory: 'dir', dirOptions: {...} },
- *   { name: 'DevTools', type: 'app', path: '', targetTab: 'datafiles/data.json', itemCategory: 'group', groupItemNames: ['VSCode', 'Chrome'] }
+ *   { name: 'DevTools', type: 'app', path: '', targetTab: 'datafiles/data.json', itemCategory: 'set', setEntries: [{ itemId: 'Ab12Cd34' }] }
  * ]);
  */
 export function registerItems(configFolder: string, items: RegisterItem[]): void {

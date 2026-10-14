@@ -5,23 +5,21 @@
 import { DEFAULT_DATA_FILE } from '../types';
 import type { DataFileTab, JsonDirOptions, JsonItem, ClipboardFormat } from '../types';
 import type { RegisterItem, WindowOperationConfig } from '../types/register.js';
-import type { LayoutWindowEntry, LayoutWindowEntryWithoutIcon } from '../types/launcher.js';
+import type { SetEntry, SetLaunchMode } from '../types/launcher.js';
 import type { EditingAppItem, EditingWindowItem } from '../types/editingItem.js';
 import type { EditableJsonItem } from '../types/editableItem.js';
 import {
   isEditingLauncherItem,
-  isEditingGroupItem,
   isEditingWindowItem,
   isEditingClipboardItem,
-  isEditingLayoutItem,
+  isEditingSetItem,
 } from '../types/editingItem.js';
 import {
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
-  isJsonLayoutItem,
+  isJsonSetItem,
   DIR_OPTIONS_DEFAULTS,
   type DirOptionsForProcessing,
   type JsonWindowItem,
@@ -30,15 +28,6 @@ import {
 import { generateId } from './jsonParser.js';
 import { normalizeWindowTitleForProcessOnly } from './windowTitle.js';
 import { pickWindowPlacement } from './windowPlacement.js';
-
-/**
- * LayoutWindowEntryの配列からiconフィールドを除去する（JSON保存用）
- */
-export function stripIconFromLayoutEntries(
-  entries: LayoutWindowEntry[]
-): LayoutWindowEntryWithoutIcon[] {
-  return entries.map(({ icon: _icon, ...rest }) => rest);
-}
 
 /** 展開したアイテムが持つ取込の設定を、編集フォームのフォルダ取込のオプションにする */
 function toJsonDirOptions(options: DirOptionsForProcessing | undefined): JsonDirOptions {
@@ -81,22 +70,6 @@ function createBaseRegisterItem(
   return { displayName, path: '', type: 'app', targetTab, targetFile };
 }
 
-/** グループ用RegisterItemを作成する */
-function createGroupRegisterItem(
-  displayName: string,
-  itemNames: string[],
-  targetTab: string,
-  targetFile: string | undefined,
-  memo?: string
-): RegisterItem {
-  return {
-    ...createBaseRegisterItem(displayName, targetTab, targetFile),
-    itemCategory: 'group',
-    groupItemNames: [...itemNames],
-    memo,
-  };
-}
-
 /** ウィンドウ操作用RegisterItemを作成する */
 function createWindowRegisterItem(
   displayName: string,
@@ -113,10 +86,11 @@ function createWindowRegisterItem(
   };
 }
 
-/** レイアウト用RegisterItemを作成する */
-function createLayoutRegisterItem(
+/** セット用RegisterItemを作成する */
+function createSetRegisterItem(
   displayName: string,
-  entries: LayoutWindowEntry[],
+  entries: SetEntry[],
+  launchMode: SetLaunchMode | undefined,
   targetTab: string,
   targetFile: string | undefined,
   memo?: string,
@@ -124,8 +98,9 @@ function createLayoutRegisterItem(
 ): RegisterItem {
   return {
     ...createBaseRegisterItem(displayName, targetTab, targetFile),
-    itemCategory: 'layout',
-    layoutEntries: [...entries],
+    itemCategory: 'set',
+    setEntries: entries.map((entry) => ({ ...entry })),
+    setLaunchMode: launchMode,
     customIcon,
     memo,
   };
@@ -167,16 +142,6 @@ export function convertEditingAppItemToRegisterItem(
 ): RegisterItem {
   const defaultTab = getDefaultTab(item.sourceFile, tabs);
 
-  if (isEditingGroupItem(item)) {
-    return createGroupRegisterItem(
-      item.displayName,
-      item.itemNames,
-      defaultTab,
-      item.sourceFile,
-      item.memo
-    );
-  }
-
   if (isEditingWindowItem(item)) {
     return createWindowRegisterItem(
       item.displayName,
@@ -203,10 +168,11 @@ export function convertEditingAppItemToRegisterItem(
     );
   }
 
-  if (isEditingLayoutItem(item)) {
-    return createLayoutRegisterItem(
+  if (isEditingSetItem(item)) {
+    return createSetRegisterItem(
       item.displayName,
       item.entries,
+      item.launchMode,
       defaultTab,
       item.sourceFile,
       item.memo,
@@ -276,16 +242,6 @@ export function convertEditableJsonItemToRegisterItem(
     };
   }
 
-  if (isJsonGroupItem(jsonItem)) {
-    return createGroupRegisterItem(
-      jsonItem.displayName,
-      jsonItem.itemNames,
-      defaultTab,
-      sourceFile,
-      jsonItem.memo
-    );
-  }
-
   if (isJsonWindowItem(jsonItem)) {
     return createWindowRegisterItem(
       jsonItem.displayName,
@@ -296,10 +252,11 @@ export function convertEditableJsonItemToRegisterItem(
     );
   }
 
-  if (isJsonLayoutItem(jsonItem)) {
-    return createLayoutRegisterItem(
+  if (isJsonSetItem(jsonItem)) {
+    return createSetRegisterItem(
       jsonItem.displayName,
       jsonItem.entries,
+      jsonItem.launchMode,
       defaultTab,
       sourceFile,
       jsonItem.memo,
@@ -394,17 +351,6 @@ export function convertRegisterItemToJsonItem(
     };
   }
 
-  if (registerItem.itemCategory === 'group') {
-    return {
-      id,
-      type: 'group',
-      displayName: registerItem.displayName,
-      itemNames: registerItem.groupItemNames || [],
-      ...(memo && { memo }),
-      updatedAt: now,
-    };
-  }
-
   if (registerItem.itemCategory === 'window') {
     const config = registerItem.windowOperationConfig;
     if (!config) {
@@ -441,12 +387,13 @@ export function convertRegisterItemToJsonItem(
     };
   }
 
-  if (registerItem.itemCategory === 'layout') {
+  if (registerItem.itemCategory === 'set') {
     return {
       id,
-      type: 'layout' as const,
+      type: 'set' as const,
       displayName: registerItem.displayName,
-      entries: stripIconFromLayoutEntries(registerItem.layoutEntries || []),
+      entries: (registerItem.setEntries || []).map((entry) => ({ ...entry })),
+      ...(registerItem.setLaunchMode && { launchMode: registerItem.setLaunchMode }),
       ...(registerItem.customIcon && { customIcon: registerItem.customIcon }),
       ...(memo && { memo }),
       updatedAt: now,

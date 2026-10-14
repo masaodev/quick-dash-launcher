@@ -363,7 +363,7 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
   const current = findItem(key, s);
-  if (current.type === 'clipboard' || current.type === 'layout') {
+  if (current.type === 'clipboard') {
     throw new CliError('invalid', mainI18n.t('cli.errors.typeNotEditable', { type: current.type }));
   }
 

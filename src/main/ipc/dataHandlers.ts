@@ -8,7 +8,7 @@ import { isValidDataFileName } from '@common/utils/dataFileName';
 import { serializeJsonDataFile, createEmptyJsonDataFile } from '@common/utils/jsonParser';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { DEFAULT_DATA_FILE } from '@common/types';
-import type { JsonDirOptions, LayoutWindowEntry, WindowItemConfig } from '@common/types';
+import type { JsonDirOptions, SetItemFields, WindowItemConfig } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -23,8 +23,7 @@ import { loadEditableItems, saveEditableItems } from '../services/data/editableI
 import {
   registerItems,
   updateDirItemById,
-  updateGroupItemById,
-  updateLayoutItemById,
+  updateSetItemById,
   updateWindowItemById,
 } from '../services/data/dataItemWriter.js';
 import { mainI18n } from '../services/mainI18n.js';
@@ -165,14 +164,6 @@ export function setupDataHandlers(configFolder: string) {
   );
 
   ipcMain.handle(
-    IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID,
-    async (_event, id: string, displayName: string, itemNames: string[], memo?: string) => {
-      updateGroupItemById(configFolder, id, displayName, itemNames, memo);
-      notifyDataChanged();
-    }
-  );
-
-  ipcMain.handle(
     IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID,
     async (_event, id: string, config: WindowItemConfig, memo?: string) => {
       updateWindowItemById(configFolder, id, config, memo);
@@ -181,15 +172,9 @@ export function setupDataHandlers(configFolder: string) {
   );
 
   ipcMain.handle(
-    IPC_CHANNELS.UPDATE_LAYOUT_ITEM_BY_ID,
-    async (
-      _event,
-      id: string,
-      displayName: string,
-      entries: LayoutWindowEntry[],
-      memo?: string
-    ) => {
-      updateLayoutItemById(configFolder, id, displayName, entries, memo);
+    IPC_CHANNELS.UPDATE_SET_ITEM_BY_ID,
+    async (_event, id: string, set: SetItemFields, memo?: string) => {
+      updateSetItemById(configFolder, id, set, memo);
       notifyDataChanged();
     }
   );

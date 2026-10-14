@@ -48,7 +48,7 @@ export interface LauncherCommandContext {
   changed(message: string): void;
 }
 
-const EDITABLE_TYPES = ['item', 'dir', 'group', 'window'] as const;
+const EDITABLE_TYPES = ['item', 'dir', 'set', 'window'] as const;
 
 function itemName(item: JsonItem): string {
   return 'displayName' in item && item.displayName

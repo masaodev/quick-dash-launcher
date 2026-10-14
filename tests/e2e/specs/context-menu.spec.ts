@@ -273,9 +273,9 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
     });
     configHelper.addItemToFile('data.json', {
       id: 'e2elay01',
-      type: 'layout',
-      displayName: 'E2Eウィンドウ配置',
-      entries: [{ windowTitle: 'E2E存在しないウィンドウ', launchApp: false }],
+      type: 'set',
+      displayName: 'E2Eセット',
+      entries: [{ window: { title: 'E2E存在しないウィンドウ' }, placement: { x: 0, y: 0 } }],
     });
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
@@ -315,10 +315,16 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
     expect(labels).toContain('📂 親フォルダを開く');
   });
 
-  for (const name of ['E2Eウィンドウ操作', 'E2Eウィンドウ配置']) {
-    test(`${name}にはパス系の項目が出ない`, async ({ electronApp, mainWindow }) => {
-      const labels = await captureMenuLabels(electronApp, mainWindow, name);
-      expect(labels).toEqual(['✏️ 編集', '⭐ ワークスペースに追加']);
-    });
-  }
+  test('ウィンドウ操作にはパス系の項目が出ない', async ({ electronApp, mainWindow }) => {
+    const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eウィンドウ操作');
+    expect(labels).toEqual(['✏️ 編集', '⭐ ワークスペースに追加']);
+  });
+
+  test('置き場所のあるセットには「今の位置を記録し直す」が出て、パス系の項目は出ない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eセット');
+    expect(labels).toEqual(['✏️ 編集', '📍 今の位置を記録し直す', '⭐ ワークスペースに追加']);
+  });
 });

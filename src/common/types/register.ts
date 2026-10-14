@@ -7,7 +7,6 @@
 import type {
   WindowConfig,
   LauncherItem,
-  LayoutWindowEntry,
   WindowItemConfig,
   SetEntry,
   SetLaunchMode,
@@ -38,9 +37,8 @@ export interface RegisterItem {
   icon?: string;
   customIcon?: string;
   windowConfig?: WindowConfig;
-  itemCategory: 'item' | 'dir' | 'group' | 'window' | 'clipboard' | 'layout' | 'set';
+  itemCategory: 'item' | 'dir' | 'window' | 'clipboard' | 'set';
   dirOptions?: JsonDirOptions;
-  groupItemNames?: string[];
   windowOperationConfig?: WindowOperationConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
@@ -54,8 +52,6 @@ export interface RegisterItem {
   clipboardPreview?: string;
   /** クリップボードセッションID（clipboard専用、登録確定前の一時保存用） */
   clipboardSessionId?: string;
-  /** レイアウト内のウィンドウエントリ一覧（layout専用） */
-  layoutEntries?: LayoutWindowEntry[];
   /** セットの行（set専用） */
   setEntries?: SetEntry[];
   /** セットの開き方（set専用） */

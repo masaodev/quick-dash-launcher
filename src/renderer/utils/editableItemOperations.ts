@@ -472,8 +472,8 @@ export function importApps(
 }
 
 /** 種類セルのプルダウンでその場で切り替えられる種類（それ以外は詳細編集から） */
-export type InlineItemType = 'item' | 'dir' | 'group';
-export const INLINE_ITEM_TYPES: InlineItemType[] = ['item', 'dir', 'group'];
+export type InlineItemType = 'item' | 'dir';
+export const INLINE_ITEM_TYPES: InlineItemType[] = ['item', 'dir'];
 
 export function isInlineItemType(type: string): type is InlineItemType {
   return (INLINE_ITEM_TYPES as string[]).includes(type);
@@ -496,8 +496,6 @@ export function changeItemType(jsonItem: JsonItem, newType: InlineItemType): Jso
       return { ...common, type: 'item', displayName, path };
     case 'dir':
       return { ...common, type: 'dir', path };
-    case 'group':
-      return { ...common, type: 'group', displayName, itemNames: [] };
   }
 }
 
@@ -509,11 +507,6 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
       const argsPart = jsonItem.args || '';
       if (!pathPart) return i18next.t('itemManager.pathSummary.noPath');
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
-    }
-    case 'group': {
-      const itemNames = jsonItem.itemNames || [];
-      if (itemNames.length === 0) return i18next.t('itemManager.pathSummary.noItems');
-      return itemNames.join(', ');
     }
     case 'window': {
       const windowTitle = jsonItem.windowTitle || '';
@@ -544,13 +537,13 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
       if (!formats && !preview) return i18next.t('itemManager.pathSummary.noData');
       return preview ? `[${formats}] ${preview}` : `[${formats}]`;
     }
-    case 'layout': {
+    case 'set': {
       const entries = jsonItem.entries || [];
-      if (entries.length === 0) return i18next.t('itemManager.pathSummary.noEntries');
-      return i18next.t('itemManager.pathSummary.layoutWindows', {
-        count: entries.length,
-        titles: entries.map((e) => e.windowTitle).join(', '),
-      });
+      if (entries.length === 0) return i18next.t('itemManager.pathSummary.noItems');
+      const placed = entries.filter((e) => e.placement).length;
+      return placed > 0
+        ? i18next.t('itemManager.pathSummary.setRowsPlaced', { count: entries.length, placed })
+        : i18next.t('itemManager.pathSummary.setRows', { count: entries.length });
     }
     default:
       return i18next.t('itemManager.pathSummary.unknownType');

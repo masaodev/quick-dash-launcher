@@ -131,22 +131,6 @@ export function validateEditableItem(item: JsonItem, t: TFunction): ValidationRe
       return { isValid: true };
     }
 
-    case 'group': {
-      if (!item.displayName || !item.displayName.trim()) {
-        return {
-          isValid: false,
-          error: t('validation.emptyTypedField', { type: 'group', field: 'displayName' }),
-        };
-      }
-      if (!item.itemNames || item.itemNames.length === 0) {
-        return {
-          isValid: false,
-          error: t('validation.emptyTypedField', { type: 'group', field: 'itemNames' }),
-        };
-      }
-      return { isValid: true };
-    }
-
     case 'window': {
       if (!item.displayName || !item.displayName.trim()) {
         return {
@@ -185,17 +169,17 @@ export function validateEditableItem(item: JsonItem, t: TFunction): ValidationRe
       return { isValid: true };
     }
 
-    case 'layout': {
+    case 'set': {
       if (!item.displayName || !item.displayName.trim()) {
         return {
           isValid: false,
-          error: t('validation.emptyTypedField', { type: 'layout', field: 'displayName' }),
+          error: t('validation.emptyTypedField', { type: 'set', field: 'displayName' }),
         };
       }
       if (!item.entries || item.entries.length === 0) {
         return {
           isValid: false,
-          error: t('validation.emptyTypedField', { type: 'layout', field: 'entries' }),
+          error: t('validation.emptyTypedField', { type: 'set', field: 'entries' }),
         };
       }
       return { isValid: true };

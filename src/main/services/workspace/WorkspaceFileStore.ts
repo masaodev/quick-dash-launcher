@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import logger from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { stripIconFromLayoutEntries } from '@common/utils/dataConverters';
 import { generateUniqueId } from '@common/utils/jsonParser';
 import {
   createEmptyWorkspaceArchiveFile,
@@ -27,6 +26,7 @@ import type {
   WorkspaceItem,
 } from '@common/types';
 import { JSON_WORKSPACE_VERSION } from '@common/types';
+import { isRecord } from '@common/types/guards';
 
 import {
   detectExternalChange,
@@ -40,6 +40,11 @@ import {
   prefetchFolderProbes,
   refineItemType,
 } from '../../utils/folderPathProbe.js';
+import {
+  convertLegacySetItems,
+  hasLegacySetItems,
+  type GroupNameResolver,
+} from '../data/setMigration.js';
 
 import { isLegacyWorkspaceFile, migrateWorkspaceV1 } from './workspaceMigration.js';
 import { coerceWorkspaceUiState, type WorkspaceUiStateStore } from './WorkspaceUiStateStore.js';
@@ -114,6 +119,11 @@ export interface WorkspaceFileStorePaths {
 export interface WorkspaceFileStoreHooks {
   /** 旧形式からの移行前に全設定ファイルのスナップショットを作る（失敗したら移行しない） */
   createPreMigrationSnapshot: () => Promise<void>;
+  /**
+   * グループ・ウィンドウ配置をセットに変換する前の準備（スナップショットを作り、グループの名前の解決表を返す）。
+   * 省略すると変換しない（テスト）。失敗したら変換しない
+   */
+  prepareSetMigration?: () => Promise<{ resolveName: GroupNameResolver; parallel: boolean }>;
   /** 補完・移行に使う現在時刻 */
   now?: () => number;
 }
@@ -189,11 +199,7 @@ function toJsonItem<T extends JsonWorkspaceItem>(
   item: T & { icon?: string; launcherType?: string }
 ): T {
   const { icon: _icon, launcherType: _launcherType, ...rest } = item;
-  const json = rest as unknown as T;
-  if (json.type === 'layout') {
-    return orderWorkspaceItemKeys({ ...json, entries: stripIconFromLayoutEntries(json.entries) });
-  }
-  return orderWorkspaceItemKeys(json);
+  return orderWorkspaceItemKeys(rest as unknown as T);
 }
 
 function clone<T>(value: T): T {
@@ -337,6 +343,48 @@ export class WorkspaceFileStore {
       this.importLegacyDetachedIfPresent();
     }
 
+    // 旧形式のグループ・ウィンドウ配置 → セット（戻せないので、変換前に全設定ファイルのスナップショットを残す）
+    let forceRewriteMain = false;
+    let forceRewriteArchive = false;
+    if (
+      mainReport.status === 'ok' &&
+      archiveReport.status === 'ok' &&
+      this.hooks.prepareSetMigration &&
+      mainContent !== null &&
+      archiveContent !== null
+    ) {
+      try {
+        const main = JSON.parse(mainContent) as unknown;
+        const archive = JSON.parse(archiveContent) as unknown;
+        const mainItems = isRecord(main) && Array.isArray(main.items) ? main.items : undefined;
+        const archiveItems =
+          isRecord(archive) && Array.isArray(archive.items) ? archive.items : undefined;
+        if (hasLegacySetItems(mainItems) || hasLegacySetItems(archiveItems)) {
+          const { resolveName, parallel } = await this.hooks.prepareSetMigration();
+          const mode = parallel ? 'parallel' : 'sequential';
+          if (mainItems && isRecord(main)) {
+            const converted = convertLegacySetItems(mainItems, resolveName, mode);
+            if (converted.changed) {
+              mainContent = JSON.stringify({ ...main, items: converted.items });
+              forceRewriteMain = true;
+            }
+          }
+          if (archiveItems && isRecord(archive)) {
+            const converted = convertLegacySetItems(archiveItems, resolveName, mode);
+            if (converted.changed) {
+              archiveContent = JSON.stringify({ ...archive, items: converted.items });
+              forceRewriteArchive = true;
+            }
+          }
+        }
+      } catch (error) {
+        logger.error(
+          { error },
+          'ワークスペースのグループ・ウィンドウ配置をセットに変換できませんでした'
+        );
+      }
+    }
+
     // 寛容パース
     const ctx = createWorkspaceParseContext(
       this.now(),
@@ -355,7 +403,7 @@ export class WorkspaceFileStore {
         };
         this.invalidMain = parsed.invalid;
         this.corruptedFiles.delete(WORKSPACE_FILE_KEY);
-        if (parsed.modified) {
+        if (parsed.modified || forceRewriteMain) {
           mainReport.rewritten = writeDataFile(
             this.paths.main,
             serializeWorkspaceFile(parsed.data, parsed.invalid)
@@ -381,7 +429,7 @@ export class WorkspaceFileStore {
         };
         this.invalidArchive = parsed.invalid;
         this.corruptedFiles.delete(WORKSPACE_ARCHIVE_FILE_KEY);
-        if (parsed.modified) {
+        if (parsed.modified || forceRewriteArchive) {
           archiveReport.rewritten = writeDataFile(
             this.paths.archive,
             serializeWorkspaceArchiveFile(parsed.data, parsed.invalid)

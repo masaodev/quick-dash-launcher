@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { WindowInfo, GroupItem, WindowItem, LauncherItem, ClipboardItem } from '@common/types';
+import type { WindowInfo, SetItem, WindowItem, LauncherItem, ClipboardItem } from '@common/types';
 
 import { getTooltipText } from '../../../src/renderer/utils/tooltipTextGenerator';
 
@@ -88,66 +88,22 @@ describe('tooltipTextGenerator', () => {
     });
   });
 
-  describe('GroupItem', () => {
-    it('グループアイテムの情報が正しくフォーマットされる', () => {
-      const item: GroupItem = {
-        displayName: 'TestGroup',
-        type: 'group',
-        itemNames: ['item1', 'item2', 'item3'],
-        sourceFile: 'data.json',
-        lineNumber: 10,
-      };
-
-      const result = getTooltipText(item);
-
-      expect(result).toContain('グループ: item1, item2, item3');
-      expect(result).toContain('データファイル: data.json');
-      expect(result).toContain('行番号: 10');
-    });
-
-    it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
-      const item: GroupItem = {
-        displayName: 'TestGroup',
-        type: 'group',
-        itemNames: ['item1', 'item2'],
+  describe('SetItem', () => {
+    it('行の数と位置を合わせる行の数、データファイルを出す', () => {
+      const item: SetItem = {
+        displayName: 'TestSet',
+        type: 'set',
+        entries: [{ itemId: 'a' }, { window: { processName: 'x.exe' }, placement: { x: 0, y: 0 } }],
         sourceFile: 'data.json',
         id: 'abc12345',
-        lineNumber: 10,
       };
 
       const result = getTooltipText(item);
 
+      expect(result).toContain('セット: 2件');
+      expect(result).toContain('位置を合わせる行: 1件');
+      expect(result).toContain('データファイル: data.json');
       expect(result).toContain('ID: abc12345');
-      expect(result).not.toContain('行番号:');
-    });
-
-    it('IDがなく行番号のみの場合、行番号が表示される（後方互換性）', () => {
-      const item: GroupItem = {
-        displayName: 'TestGroup',
-        type: 'group',
-        itemNames: ['item1', 'item2'],
-        sourceFile: 'data.json',
-        lineNumber: 10,
-      };
-
-      const result = getTooltipText(item);
-
-      expect(result).toContain('行番号: 10');
-      expect(result).not.toContain('ID:');
-    });
-
-    it('メタ情報がない場合', () => {
-      const item: GroupItem = {
-        displayName: 'TestGroup',
-        type: 'group',
-        itemNames: ['item1', 'item2'],
-      };
-
-      const result = getTooltipText(item);
-
-      expect(result).toContain('グループ: item1, item2');
-      expect(result).not.toContain('データファイル:');
-      expect(result).not.toContain('行番号:');
     });
   });
 

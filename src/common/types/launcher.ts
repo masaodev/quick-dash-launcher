@@ -86,29 +86,6 @@ export interface LauncherItem {
 }
 
 /**
- * 複数のアイテムをまとめて一括起動するためのグループアイテム
- * 既存のアイテム名を参照して、順次実行する
- */
-export interface GroupItem {
-  /** グループの表示名 */
-  displayName: string;
-  /** アイテムタイプ（常に'group'） */
-  type: 'group';
-  /** グループ内で参照するアイテム名のリスト */
-  itemNames: string[];
-  /** 元のデータファイル */
-  sourceFile?: string;
-  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
-  lineNumber?: number;
-  /** JSONアイテムのID（JSON形式の場合） */
-  id?: string;
-  /** 編集モードで変更されたかどうか */
-  isEdited?: boolean;
-  /** 自由記述メモ（オプション） */
-  memo?: string;
-}
-
-/**
  * ウィンドウ操作アイテム
  * 既存のウィンドウを検索・アクティブ化し、位置・サイズを制御する
  *
@@ -206,8 +183,7 @@ export interface ClipboardItem {
 }
 
 /**
- * レイアウト内の個別ウィンドウエントリ
- * キャプチャしたウィンドウの位置・サイズ情報とアプリ起動設定を持つ
+ * 旧形式のウィンドウ配置（レイアウト）の 1 ウィンドウ分（読み込み時にセットの行に変換する）
  */
 export interface LayoutWindowEntry {
   /** ウィンドウタイトル（検索用） */
@@ -236,31 +212,6 @@ export interface LayoutWindowEntry {
 
 /** LayoutWindowEntry から icon を除いた型（JSON保存用） */
 export type LayoutWindowEntryWithoutIcon = Omit<LayoutWindowEntry, 'icon'>;
-
-/**
- * ウィンドウレイアウト一括操作アイテム
- * 複数ウィンドウの位置・サイズを一括でキャプチャ・復元する
- */
-export interface LayoutItem {
-  /** アイテムタイプ（常に'layout'） */
-  type: 'layout';
-  /** レイアウトの表示名 */
-  displayName: string;
-  /** レイアウト内のウィンドウエントリ一覧 */
-  entries: LayoutWindowEntry[];
-  /** 元のデータファイル */
-  sourceFile?: string;
-  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
-  lineNumber?: number;
-  /** JSONアイテムのID（JSON形式の場合） */
-  id?: string;
-  /** 編集モードで変更されたかどうか */
-  isEdited?: boolean;
-  /** 自由記述メモ（オプション） */
-  memo?: string;
-  /** カスタムアイコンのファイル名（オプション） */
-  customIcon?: string;
-}
 
 // レイアウト実行の進捗型
 export type LayoutEntryStatus = 'waiting' | 'launching' | 'success' | 'failed';
@@ -367,9 +318,11 @@ export interface SetItem {
   memo?: string;
 }
 
+/** ID でセットを更新するときの設定値 */
+export type SetItemFields = Pick<SetItem, 'displayName' | 'entries' | 'launchMode' | 'customIcon'>;
+
 /**
  * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItem、GroupItem、WindowItem、ClipboardItem、LayoutItem、WindowInfo（ウィンドウ検索結果）を扱える
+ * 通常のLauncherItem、WindowItem、ClipboardItem、SetItem、WindowInfo（ウィンドウ検索結果）を扱える
  */
-export type AppItem =
-  LauncherItem | GroupItem | WindowItem | ClipboardItem | LayoutItem | SetItem | WindowInfo;
+export type AppItem = LauncherItem | WindowItem | ClipboardItem | SetItem | WindowInfo;

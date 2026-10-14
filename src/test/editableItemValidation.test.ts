@@ -226,64 +226,36 @@ describe('validateEditableItem', () => {
     });
   });
 
-  describe('groupアイテムのバリデーション', () => {
-    it('有効なgroupアイテムを承認する', () => {
+  describe('setアイテムのバリデーション', () => {
+    it('有効なsetアイテムを承認する', () => {
       const item: JsonItem = {
         id: 'test-18',
-        type: 'group',
+        type: 'set',
         displayName: 'Work',
-        itemNames: ['Gmail', 'Slack'],
+        entries: [{ itemId: 'abcd1234' }],
       };
       const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(true);
       expect(result.error).toBeUndefined();
     });
 
-    it('displayNameが空の場合、エラーを返す', () => {
-      const item: JsonItem = {
-        id: 'test-19',
-        type: 'group',
-        displayName: '',
-        itemNames: ['Gmail', 'Slack'],
-      };
-      const result = validateEditableItem(item, t);
-      expect(result.isValid).toBe(false);
-      expect(result.error).toBe('groupのdisplayNameが空です');
-    });
-
     it('displayNameが空白のみの場合、エラーを返す', () => {
       const item: JsonItem = {
         id: 'test-20',
-        type: 'group',
+        type: 'set',
         displayName: '   ',
-        itemNames: ['Gmail', 'Slack'],
+        entries: [{ itemId: 'abcd1234' }],
       };
       const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
-      expect(result.error).toBe('groupのdisplayNameが空です');
+      expect(result.error).toBe('setのdisplayNameが空です');
     });
 
-    it('itemNamesが空配列の場合、エラーを返す', () => {
-      const item: JsonItem = {
-        id: 'test-21',
-        type: 'group',
-        displayName: 'Work',
-        itemNames: [],
-      };
+    it('行が無い場合、エラーを返す', () => {
+      const item: JsonItem = { id: 'test-21', type: 'set', displayName: 'Work', entries: [] };
       const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
-      expect(result.error).toBe('groupのitemNamesが空です');
-    });
-
-    it('itemNamesが1つの場合でも有効', () => {
-      const item: JsonItem = {
-        id: 'test-22',
-        type: 'group',
-        displayName: 'Single',
-        itemNames: ['OnlyOne'],
-      };
-      const result = validateEditableItem(item, t);
-      expect(result.isValid).toBe(true);
+      expect(result.error).toBe('setのentriesが空です');
     });
   });
 

@@ -9,17 +9,16 @@
 export type {
   WindowConfig,
   LauncherItem,
-  GroupItem,
   WindowItem,
   WindowItemConfig,
   ClipboardItem,
-  LayoutItem,
   LayoutWindowEntry,
   LayoutWindowEntryWithoutIcon,
   LayoutEntryStatus,
   LayoutEntryProgress,
   LayoutExecutionProgress,
   SetItem,
+  SetItemFields,
   SetEntry,
   SetWindowMatch,
   SetPlacement,
@@ -34,9 +33,7 @@ export type {
   WorkspaceItem,
   WorkspaceLauncherItem,
   WorkspaceWindowItem,
-  WorkspaceGroupItem,
   WorkspaceClipboardItem,
-  WorkspaceLayoutItem,
   WorkspaceSetItem,
   WorkspaceItemUpdate,
   WorkspaceGroup,
@@ -58,9 +55,7 @@ export type {
   JsonWorkspaceItem,
   JsonWorkspaceLauncherItem,
   JsonWorkspaceWindowItem,
-  JsonWorkspaceGroupItem,
   JsonWorkspaceClipboardItem,
-  JsonWorkspaceLayoutItem,
   JsonWorkspaceSetItem,
   JsonWorkspaceArchiveFile,
   JsonArchivedWorkspaceGroup,
@@ -96,10 +91,8 @@ export type {
 export {
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
-  isJsonLayoutItem,
   isJsonSetItem,
   JSON_DATA_VERSION,
   JSON_ID_LENGTH,
@@ -181,16 +174,14 @@ export type { RegisterItem, WindowOperationConfig } from './register';
 export type {
   EditingItemMeta,
   EditingLauncherItem,
-  EditingGroupItem,
   EditingWindowItem,
-  EditingLayoutItem,
+  EditingSetItem,
   EditingAppItem,
 } from './editingItem';
 export {
   isEditingLauncherItem,
-  isEditingGroupItem,
   isEditingWindowItem,
-  isEditingLayoutItem,
+  isEditingSetItem,
   isEditableJsonItem,
 } from './editingItem';
 
@@ -215,12 +206,4 @@ export type { ToastItemType, ToastEventData, NotificationType, ToastOptions } fr
 export type { SnapshotInfo, BackupStatus } from './backup';
 
 // 型ガード関数
-export {
-  isWindowInfo,
-  isLauncherItem,
-  isGroupItem,
-  isWindowItem,
-  isClipboardItem,
-  isLayoutItem,
-  isSetItem,
-} from './guards';
+export { isWindowInfo, isLauncherItem, isWindowItem, isClipboardItem, isSetItem } from './guards';

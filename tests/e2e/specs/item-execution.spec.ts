@@ -91,12 +91,12 @@ test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作
 });
 
 /**
- * ウィンドウ配置アイテムを実行したときのトースト（🖥️「ウィンドウ配置を実行します」）
+ * セットを実行したときのトースト（📦「N件のアイテムを起動します」）
  *
- * 実際の配置はしないよう、メインプロセスのウィンドウ配置ハンドラを差し替える
+ * 実際に開いたり並べたりしないよう、メインプロセスのセットの実行ハンドラを差し替える
  */
-test.describe('QuickDashLauncher - ウィンドウ配置の実行', () => {
-  test('ウィンドウ配置用のアイコンと文言でトーストが出る', async ({
+test.describe('QuickDashLauncher - セットの実行', () => {
+  test('セット用のアイコンと件数でトーストが出る', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -104,21 +104,21 @@ test.describe('QuickDashLauncher - ウィンドウ配置の実行', () => {
     const utils = new TestUtils(mainWindow);
     configHelper.addItemToFile('data.json', {
       id: 'e2elay01',
-      type: 'layout',
-      displayName: 'E2Eウィンドウ配置',
-      entries: [{ windowTitle: 'E2E存在しないウィンドウ', launchApp: false }],
+      type: 'set',
+      displayName: 'E2Eセット',
+      entries: [{ window: { title: 'E2E存在しないウィンドウ' }, placement: { x: 0, y: 0 } }],
     });
     await utils.waitForPageLoad();
     await mainWindow.reload();
     await utils.waitForPageLoad();
 
     await electronApp.evaluate(({ ipcMain }) => {
-      ipcMain.removeHandler('execute-layout');
-      ipcMain.handle('execute-layout', () => undefined);
+      ipcMain.removeHandler('execute-set');
+      ipcMain.handle('execute-set', () => undefined);
     });
 
-    await utils.searchFor('E2Eウィンドウ配置');
-    await expect(mainWindow.locator('.item', { hasText: 'E2Eウィンドウ配置' })).toBeVisible();
+    await utils.searchFor('E2Eセット');
+    await expect(mainWindow.locator('.item', { hasText: 'E2Eセット' })).toBeVisible();
     await mainWindow.keyboard.press('Enter');
 
     await expect
@@ -133,7 +133,7 @@ test.describe('QuickDashLauncher - ウィンドウ配置の実行', () => {
         },
         { timeout: 5000 }
       )
-      .toMatch(/🖥️[\s\S]*E2Eウィンドウ配置[\s\S]*ウィンドウ配置を実行します/);
+      .toMatch(/📦[\s\S]*E2Eセット[\s\S]*1件のアイテムを起動します/);
   });
 });
 

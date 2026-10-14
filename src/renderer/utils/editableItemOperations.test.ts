@@ -281,16 +281,8 @@ describe('editableItemOperations', () => {
     const dir = changeItemType(item, 'dir');
     expect(dir).toMatchObject({ id: item.id, type: 'dir', path: 'C:\\a', memo: 'm' });
     expect('displayName' in dir).toBe(false);
-    const group = changeItemType(dir, 'group');
-    expect(group).toMatchObject({
-      id: item.id,
-      type: 'group',
-      displayName: '',
-      itemNames: [],
-      memo: 'm',
-    });
-    const back = changeItemType(group, 'item');
-    expect(back).toMatchObject({ id: item.id, type: 'item', displayName: '', path: '' });
+    const back = changeItemType(dir, 'item');
+    expect(back).toMatchObject({ id: item.id, type: 'item', displayName: '', path: 'C:\\a' });
     expect(changeItemType(item, 'item')).toBe(item);
   });
 

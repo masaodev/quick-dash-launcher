@@ -11,9 +11,7 @@ export const IPC_CHANNELS = {
   // アイテム操作
   OPEN_ITEM: 'open-item',
   OPEN_PARENT_FOLDER: 'open-parent-folder',
-  EXECUTE_GROUP: 'execute-group',
   EXECUTE_WINDOW_OPERATION: 'execute-window-operation',
-  EXECUTE_LAYOUT: 'execute-layout',
   EXECUTE_SET: 'execute-set',
 
   // データ操作
@@ -93,9 +91,8 @@ export const IPC_CHANNELS = {
   // 編集操作（IDベース）
   UPDATE_ITEM_BY_ID: 'update-item-by-id',
   UPDATE_DIR_ITEM_BY_ID: 'update-dir-item-by-id',
-  UPDATE_GROUP_ITEM_BY_ID: 'update-group-item-by-id',
   UPDATE_WINDOW_ITEM_BY_ID: 'update-window-item-by-id',
-  UPDATE_LAYOUT_ITEM_BY_ID: 'update-layout-item-by-id',
+  UPDATE_SET_ITEM_BY_ID: 'update-set-item-by-id',
   DELETE_ITEMS_BY_ID: 'delete-items-by-id',
 
   // 設定
@@ -109,6 +106,7 @@ export const IPC_CHANNELS = {
   SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY: 'settings:change-item-search-hotkey',
   SETTINGS_SET_HOTKEY_RECORDING: 'settings:set-hotkey-recording',
   SETTINGS_GET_DISPLAYS: 'settings:get-displays',
+  GET_SCREEN_AREAS: 'get-screen-areas',
   SETTINGS_GET_AUTO_LAUNCH_STATUS: 'settings:get-auto-launch-status',
   /** 今の表示言語（設定 language と OS の表示言語から決めたもの。'ja' | 'en'） */
   SETTINGS_GET_LANGUAGE: 'settings:get-language',

@@ -52,10 +52,9 @@ export interface AdminItemManagerRowProps {
 const TYPE_OPTIONS: ReadonlyArray<{ type: JsonItem['type']; opensDetail: boolean }> = [
   { type: 'item', opensDetail: false },
   { type: 'dir', opensDetail: false },
-  { type: 'group', opensDetail: false },
+  { type: 'set', opensDetail: true },
   { type: 'window', opensDetail: true },
   { type: 'clipboard', opensDetail: true },
-  { type: 'layout', opensDetail: true },
 ];
 
 /**
@@ -204,10 +203,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
 
     // パスをセルで編集できない種類は、詳細編集へ誘導する
     if (!isPathEditable(jsonItem)) {
-      const hint =
-        jsonItem.type === 'group'
-          ? t('itemManager.row.groupDetailOnly')
-          : t('itemManager.row.detailOnly', { type: getItemTypeName(jsonItem) });
+      const hint = t('itemManager.row.detailOnly', { type: getItemTypeName(jsonItem) });
       return (
         <div
           className="readonly-cell"

@@ -2,20 +2,13 @@ import i18next from 'i18next';
 import type {
   AppItem,
   WindowInfo,
-  GroupItem,
   SetItem,
   WindowItem,
   LauncherItem,
   ClipboardItem,
   DirOptionsForProcessing,
 } from '@common/types';
-import {
-  isWindowInfo,
-  isGroupItem,
-  isWindowItem,
-  isClipboardItem,
-  isSetItem,
-} from '@common/types/guards';
+import { isWindowInfo, isWindowItem, isClipboardItem, isSetItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 
 // 一覧を描く部品（LauncherItemList）が useTranslation で言語の切り替えに合わせて描き直すので、
@@ -129,22 +122,6 @@ function getSetItemTooltip(setItem: SetItem): string {
 }
 
 /**
- * GroupItem用のツールチップテキストを生成
- */
-function getGroupItemTooltip(groupItem: GroupItem): string {
-  const lines: string[] = [];
-  lines.push(t('launcher.tooltip.group', { value: groupItem.itemNames.join(', ') }));
-
-  appendMetaInfo(lines, {
-    sourceFile: groupItem.sourceFile,
-    id: groupItem.id,
-    lineNumber: groupItem.lineNumber,
-  });
-
-  return lines.join('\n');
-}
-
-/**
  * WindowItem用のツールチップテキストを生成
  */
 function getWindowItemTooltip(windowItem: WindowItem): string {
@@ -237,10 +214,6 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
 export function getTooltipText(item: AppItem): string {
   if (isWindowInfo(item)) {
     return getWindowInfoTooltip(item);
-  }
-
-  if (isGroupItem(item)) {
-    return getGroupItemTooltip(item);
   }
 
   if (isSetItem(item)) {

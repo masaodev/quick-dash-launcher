@@ -15,10 +15,8 @@ import type {
 } from '@common/types';
 import {
   isWindowInfo,
-  isGroupItem,
   isWindowItem,
   isClipboardItem,
-  isLayoutItem,
   isSetItem,
   isLauncherItem,
 } from '@common/types/guards';
@@ -182,7 +180,7 @@ function App(): React.ReactElement {
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
-      (item) => !isWindowInfo(item) && !isGroupItem(item) && !isWindowItem(item)
+      (item) => !isWindowInfo(item) && !isSetItem(item) && !isWindowItem(item)
     ) as LauncherItem[];
     const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
 
@@ -239,15 +237,7 @@ function App(): React.ReactElement {
 
   const executeAppItem = useCallback(
     async (item: AppItem): Promise<void> => {
-      if (isGroupItem(item)) {
-        await window.electronAPI.showToastWindow({
-          displayName: item.displayName,
-          itemType: 'group',
-          itemCount: item.itemNames.length,
-          itemNames: item.itemNames.slice(0, 3),
-        });
-        await window.electronAPI.executeGroup(item, mainItems);
-      } else if (isWindowItem(item)) {
+      if (isWindowItem(item)) {
         await window.electronAPI.showToastWindow({
           displayName: item.displayName,
           itemType: 'windowOperation',
@@ -259,12 +249,6 @@ function App(): React.ReactElement {
           itemType: 'clipboard',
         });
         await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
-      } else if (isLayoutItem(item)) {
-        await window.electronAPI.showToastWindow({
-          displayName: item.displayName,
-          itemType: 'layout',
-        });
-        await window.electronAPI.executeLayout(item);
       } else if (isSetItem(item)) {
         // 置き場所のある行があれば、進み具合の表示が出る（トーストはその間は出ない）
         await window.electronAPI.showToastWindow({
@@ -362,7 +346,7 @@ function App(): React.ReactElement {
     (item: AppItem) => {
       if (isWindowInfo(item)) return;
 
-      if (isGroupItem(item) || isWindowItem(item)) {
+      if (isSetItem(item) || isWindowItem(item)) {
         void openEditWindow({
           ...item,
           sourceFile: item.sourceFile || DEFAULT_DATA_FILE,

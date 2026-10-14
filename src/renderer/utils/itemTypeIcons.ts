@@ -19,14 +19,10 @@ export function getDefaultIconForItem(item: WorkspaceItem): string {
         default:
           return '\u{1F4C4}';
       }
-    case 'group':
-      return '\u{1F4E6}';
     case 'window':
       return '\u{1FA9F}';
     case 'clipboard':
       return '\u{1F4CB}';
-    case 'layout':
-      return '\u{1F5A5}\uFE0F';
     case 'set':
       return '\u{1F4E6}';
   }

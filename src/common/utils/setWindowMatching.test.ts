@@ -5,6 +5,7 @@ import {
   decideWindowMatch,
   matchesWindow,
   placementFromWindow,
+  rerecordSetPlacements,
   type MatchableEntry,
   type MatchableWindow,
 } from './setWindowMatching';
@@ -153,5 +154,26 @@ describe('placementFromWindow', () => {
       virtualDesktopNumber: 2,
       state: 'maximized',
     });
+  });
+});
+
+describe('rerecordSetPlacements', () => {
+  it('置き場所のある行だけ取り直し、見つからない行は前の位置のまま', () => {
+    const entries = [
+      {
+        itemId: 'a',
+        window: { processName: 'Obsidian.exe' },
+        placement: { x: 0, y: 0, width: 10, height: 10 },
+      },
+      { itemId: 'b' },
+      { window: { processName: 'gone.exe' }, placement: { x: 1, y: 1, width: 1, height: 1 } },
+    ];
+    const moved = win({ ...obsidian, x: 960, y: 0, width: 960, height: 1040 });
+    const result = rerecordSetPlacements(entries, [moved]);
+    expect(result.changed).toBe(1);
+    expect(result.notFound).toBe(1);
+    expect(result.entries[0].placement).toEqual({ x: 960, y: 0, width: 960, height: 1040 });
+    expect(result.entries[1]).toBe(entries[1]);
+    expect(result.entries[2]).toBe(entries[2]);
   });
 });

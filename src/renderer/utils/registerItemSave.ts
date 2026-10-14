@@ -33,13 +33,6 @@ export async function saveRegisterItems(
     await window.electronAPI.registerItems([item]);
   } else if (item.itemCategory === 'dir') {
     await window.electronAPI.updateDirItemById(itemId, item.path, item.dirOptions, item.memo);
-  } else if (item.itemCategory === 'group') {
-    await window.electronAPI.updateGroupItemById(
-      itemId,
-      item.displayName,
-      item.groupItemNames || [],
-      item.memo
-    );
   } else if (item.itemCategory === 'window') {
     const cfg = item.windowOperationConfig;
     if (!cfg) throw new Error('windowOperationConfig is required for window items');
@@ -48,11 +41,15 @@ export async function saveRegisterItems(
       { ...cfg, displayName: item.displayName },
       item.memo
     );
-  } else if (item.itemCategory === 'layout') {
-    await window.electronAPI.updateLayoutItemById(
+  } else if (item.itemCategory === 'set') {
+    await window.electronAPI.updateSetItemById(
       itemId,
-      item.displayName,
-      item.layoutEntries || [],
+      {
+        displayName: item.displayName,
+        entries: item.setEntries || [],
+        launchMode: item.setLaunchMode,
+        customIcon: item.customIcon,
+      },
       item.memo
     );
   } else {

@@ -36,7 +36,6 @@ const ACTION_KEYS = {
   folder: 'toast.actions.folder',
   customUri: 'toast.actions.customUri',
   windowOperation: 'toast.actions.windowOperation',
-  layout: 'toast.actions.layout',
   windowActivate: 'toast.actions.windowActivate',
   windowClose: 'toast.actions.windowClose',
   windowPin: 'toast.actions.windowPin',
@@ -47,15 +46,15 @@ const ACTION_KEYS = {
 
 /** overlay.html に渡す、表示言語に合わせた文言 */
 interface ToastText {
-  /** 区切り線の下の 1 行（グループは「N件のアイテムを起動します」） */
+  /** 区切り線の下の 1 行（セットは「N件のアイテムを起動します」） */
   action: string;
-  /** グループの中身（先頭の 3 件。残りは「… 他 N 件」） */
+  /** セットの中身（先頭の 3 件。残りは「… 他 N 件」） */
   groupItems?: string;
 }
 
 function buildToastText(options: ToastOptions): ToastText {
   const t = mainI18n.t.bind(mainI18n);
-  if (options.itemType === 'group' || options.itemType === 'set') {
+  if (options.itemType === 'set') {
     const names = options.itemNames ?? [];
     const count = options.itemCount || names.length;
     const shown = names.slice(0, 3).join(', ');
@@ -258,12 +257,9 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
     return;
   }
 
-  // グループ起動時は表示時間を長め（3秒）に設定
+  // セットの起動時は表示時間を長め（3秒）に設定
   const duration =
-    options.duration ??
-    (options.itemType === 'group' || options.itemType === 'set'
-      ? GROUP_DURATION
-      : DEFAULT_DURATION);
+    options.duration ?? (options.itemType === 'set' ? GROUP_DURATION : DEFAULT_DURATION);
   const type = options.type ?? 'success';
 
   clearToastHideTimeout();

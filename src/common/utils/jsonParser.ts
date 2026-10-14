@@ -449,14 +449,10 @@ export function validateJsonItem(item: unknown, index: number): JsonItem {
       return validateJsonLauncherItem(obj);
     case 'dir':
       return validateJsonDirItem(obj);
-    case 'group':
-      return validateJsonGroupItem(obj);
     case 'window':
       return validateJsonWindowItem(obj);
     case 'clipboard':
       return validateJsonClipboardItem(obj);
-    case 'layout':
-      return validateJsonLayoutItem(obj);
     case 'set':
       return validateJsonSetItem(obj);
     default:

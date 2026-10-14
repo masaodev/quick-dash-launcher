@@ -30,7 +30,6 @@ import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { executeSet } from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
-import { executeGroup, executeLayout } from './itemHandlers.js';
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -247,32 +246,6 @@ export function setupWorkspaceHandlers(): void {
         throw new Error(`ウィンドウが見つかりませんでした: ${windowTitle}`);
       }
 
-      // groupタイプの場合：グループ内のアイテムを実行
-      if (item.type === 'group') {
-        logger.info(
-          { groupName: item.displayName, itemNames: item.itemNames },
-          'Group item launch requested'
-        );
-
-        if (!item.itemNames || item.itemNames.length === 0) {
-          logger.warn({ groupName: item.displayName }, 'Group has no items to execute');
-          return { success: true, message: 'グループにアイテムが登録されていません' };
-        }
-
-        const configFolder = PathManager.getConfigFolder();
-        // 外部変更の検知・スナップショットを取りこぼさないよう、F5 と同じ読み込みを通す
-        const allItems = await reloadConfigFiles(configFolder, 'internal');
-
-        logger.info(
-          { groupName: item.displayName, itemCount: item.itemNames.length },
-          'Executing group from workspace'
-        );
-
-        // メイン画面と同じ実行処理を使う（並列起動の設定・アイテム間の待ち・既存ウィンドウのアクティブ化）
-        const { successCount, errorCount } = await executeGroup(item, allItems);
-        return { success: true, successCount, errorCount };
-      }
-
       // クリップボードタイプの場合
       if (item.type === 'clipboard') {
         if (!item.dataFileRef) {
@@ -293,27 +266,6 @@ export function setupWorkspaceHandlers(): void {
         logger.info(
           { id: item.id, name: item.displayName },
           'Restored clipboard from workspace item'
-        );
-        return { success: true };
-      }
-
-      // レイアウトタイプの場合
-      if (item.type === 'layout') {
-        if (item.entries.length === 0) {
-          logger.warn({ id: item.id, name: item.displayName }, 'Layout has no entries');
-          throw new Error('レイアウトにエントリが登録されていません');
-        }
-
-        await executeLayout({
-          type: 'layout',
-          displayName: item.displayName,
-          entries: item.entries,
-          memo: item.memo,
-        });
-
-        logger.info(
-          { id: item.id, name: item.displayName, entryCount: item.entries.length },
-          'Executed layout from workspace item'
         );
         return { success: true };
       }

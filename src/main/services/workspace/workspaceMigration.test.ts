@@ -6,6 +6,8 @@ import {
   parseWorkspaceFileLenient,
 } from '@common/utils/workspaceParser';
 
+import { convertLegacySetItems } from '../data/setMigration';
+
 import { isLegacyWorkspaceFile, migrateGroupColor, migrateWorkspaceV1 } from './workspaceMigration';
 
 const NOW = 1_700_000_000_000;
@@ -299,9 +301,15 @@ describe('workspaceMigration: v1 → 2.0', () => {
     });
   });
 
-  it('変換結果は寛容パースを問題なしで通ること', () => {
+  it('変換結果は（グループ・ウィンドウ配置をセットに変えたうえで）寛容パースを問題なしで通ること', () => {
     const ctx = createWorkspaceParseContext(NOW);
-    const parsedMain = parseWorkspaceFileLenient(JSON.stringify(result.main), ctx);
+    // 読み込みでは 2.0 への変換のあと、グループ・ウィンドウ配置をセットに変える（WorkspaceFileStore）
+    const main = {
+      ...result.main,
+      items: convertLegacySetItems(result.main.items as unknown[], () => undefined, 'sequential')
+        .items,
+    };
+    const parsedMain = parseWorkspaceFileLenient(JSON.stringify(main), ctx);
     expect(parsedMain.issues).toEqual([]);
     expect(parsedMain.data.items).toHaveLength(6);
     const parsedArchive = parseWorkspaceArchiveFileLenient(JSON.stringify(result.archive), ctx);

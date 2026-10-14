@@ -5,7 +5,7 @@
  * RawDataLine（CSV形式）を廃止し、AppItemベースで直接扱う。
  */
 
-import type { LauncherItem, GroupItem, WindowItem, ClipboardItem, LayoutItem } from './launcher';
+import type { LauncherItem, WindowItem, ClipboardItem, SetItem } from './launcher';
 import type { DirOptionsForProcessing } from './json-data';
 import type { EditableJsonItem } from './editableItem';
 
@@ -33,12 +33,6 @@ export interface EditingLauncherItem extends Omit<LauncherItem, 'sourceFile'>, E
 }
 
 /**
- * 編集用GroupItem
- * sourceFileを必須にするため、Omitで除外してから再定義
- */
-export interface EditingGroupItem extends Omit<GroupItem, 'sourceFile'>, EditingItemMeta {}
-
-/**
  * 編集用WindowItem
  * sourceFileを必須にするため、Omitで除外してから再定義
  */
@@ -51,38 +45,27 @@ export interface EditingWindowItem extends Omit<WindowItem, 'sourceFile'>, Editi
 export interface EditingClipboardItem extends Omit<ClipboardItem, 'sourceFile'>, EditingItemMeta {}
 
 /**
- * 編集用LayoutItem
+ * 編集用SetItem
  * sourceFileを必須にするため、Omitで除外してから再定義
  */
-export interface EditingLayoutItem extends Omit<LayoutItem, 'sourceFile'>, EditingItemMeta {}
+export interface EditingSetItem extends Omit<SetItem, 'sourceFile'>, EditingItemMeta {}
 
 /**
  * 編集用アイテムの統合型
  *
  * RegisterModal、useRegisterWindow、useRegisterFormで使用される。
- * LauncherItem/GroupItem/WindowItem/ClipboardItemのいずれかに、
+ * LauncherItem/WindowItem/ClipboardItem/SetItemのいずれかに、
  * 編集に必要なメタデータ（sourceFile, jsonItemId）を付加したもの。
  */
 export type EditingAppItem =
-  | EditingLauncherItem
-  | EditingGroupItem
-  | EditingWindowItem
-  | EditingClipboardItem
-  | EditingLayoutItem;
+  EditingLauncherItem | EditingWindowItem | EditingClipboardItem | EditingSetItem;
 
 /**
  * EditingLauncherItemかどうかを判定
  */
 export function isEditingLauncherItem(item: EditingAppItem): item is EditingLauncherItem {
-  const specialTypes = ['group', 'window', 'clipboard', 'layout'] as const;
+  const specialTypes = ['window', 'clipboard', 'set'] as const;
   return !specialTypes.includes(item.type as (typeof specialTypes)[number]);
-}
-
-/**
- * EditingGroupItemかどうかを判定
- */
-export function isEditingGroupItem(item: EditingAppItem): item is EditingGroupItem {
-  return item.type === 'group';
 }
 
 /**
@@ -100,10 +83,10 @@ export function isEditingClipboardItem(item: EditingAppItem): item is EditingCli
 }
 
 /**
- * EditingLayoutItemかどうかを判定
+ * EditingSetItemかどうかを判定
  */
-export function isEditingLayoutItem(item: EditingAppItem): item is EditingLayoutItem {
-  return item.type === 'layout';
+export function isEditingSetItem(item: EditingAppItem): item is EditingSetItem {
+  return item.type === 'set';
 }
 
 /**

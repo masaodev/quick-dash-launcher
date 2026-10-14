@@ -32,10 +32,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     await window.electronAPI.showToastWindow({
       displayName: item.displayName,
       itemType: toToastItemType(item),
-      ...(item.type === 'group' && {
-        itemCount: item.itemNames.length,
-        itemNames: item.itemNames.slice(0, 3),
-      }),
+      ...(item.type === 'set' && { itemCount: item.entries.length }),
       ...(item.type === 'item' && {
         path: item.path,
         icon: item.icon,

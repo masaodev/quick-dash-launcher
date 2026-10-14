@@ -164,11 +164,11 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
 });
 
 /**
- * データファイルを読むのは F5 だけではない（ワークスペースからのグループ起動も読み直す）。
+ * データファイルを読むのは F5 だけではない（ワークスペースからのセットの起動も読み直す）。
  * どの経路で読んでも、外部変更の検知と変更前スナップショットを取りこぼさない
  */
 test.describe('QuickDashLauncher - 外部変更の検知（F5 以外の読み込み）', () => {
-  test('ワークスペースからグループを起動しても、変更前スナップショットが残る', async ({
+  test('ワークスペースからセットを起動しても、変更前スナップショットが残る', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -188,7 +188,7 @@ test.describe('QuickDashLauncher - 外部変更の検知（F5 以外の読み込
       configHelper.addSimpleItem('data.json', '外部で追加', 'https://example.com/outside');
     });
 
-    await test.step('ワークスペースからグループを起動する（中身は存在しない名前なので何も起動しない）', async () => {
+    await test.step('ワークスペースからセットを起動する（参照先が無いので何も起動しない）', async () => {
       const isWorkspace = async (win: Page) =>
         (await win.title()) === 'Workspace' || win.url().includes('workspace.html');
       let workspaceWindow: Page | undefined;
@@ -203,9 +203,9 @@ test.describe('QuickDashLauncher - 外部変更の検知（F5 以外の読み込
       await workspaceWindow.evaluate(() =>
         window.electronAPI.workspaceAPI.launchItem({
           id: 'e2egroup',
-          type: 'group',
-          displayName: 'E2Eグループ',
-          itemNames: ['E2E存在しないアイテム'],
+          type: 'set',
+          displayName: 'E2Eセット',
+          entries: [{ itemId: 'zzzzzzzz' }],
           workspaceId: 'default',
           order: 0,
           addedAt: Date.now(),

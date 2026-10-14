@@ -30,13 +30,7 @@ export interface JsonDataFile {
  * JSONデータファイル内のアイテム型（Union型）
  */
 export type JsonItem =
-  | JsonLauncherItem
-  | JsonDirItem
-  | JsonGroupItem
-  | JsonWindowItem
-  | JsonClipboardItem
-  | JsonLayoutItem
-  | JsonSetItem;
+  JsonLauncherItem | JsonDirItem | JsonWindowItem | JsonClipboardItem | JsonSetItem;
 
 // ============================================================
 // 共通フィールド
@@ -162,8 +156,8 @@ export interface JsonDirItem extends JsonItemBase {
 // ============================================================
 
 /**
- * グループアイテム
- * 複数のアイテムをまとめて一括起動する
+ * 旧形式のグループ（読み込み時にセットに変換する。JsonItem には含めない）
+ * 複数のアイテムを表示名で参照してまとめて起動していた
  */
 export interface JsonGroupItem extends JsonItemBase {
   /** アイテムタイプ */
@@ -251,8 +245,8 @@ export interface JsonClipboardItem extends JsonItemBase {
 // ============================================================
 
 /**
- * レイアウトアイテム
- * 複数ウィンドウの位置・サイズを一括でキャプチャ・復元する
+ * 旧形式のウィンドウ配置（レイアウト）（読み込み時にセットに変換する。JsonItem には含めない）
+ * 複数ウィンドウの位置・サイズを一括でキャプチャ・復元していた
  */
 export interface JsonLayoutItem extends JsonItemBase {
   /** アイテムタイプ */
@@ -311,13 +305,6 @@ export function isJsonDirItem(item: JsonItem): item is JsonDirItem {
 }
 
 /**
- * JsonGroupItemかどうかを判定
- */
-export function isJsonGroupItem(item: JsonItem): item is JsonGroupItem {
-  return item.type === 'group';
-}
-
-/**
  * JsonWindowItemかどうかを判定
  */
 export function isJsonWindowItem(item: JsonItem): item is JsonWindowItem {
@@ -329,13 +316,6 @@ export function isJsonWindowItem(item: JsonItem): item is JsonWindowItem {
  */
 export function isJsonClipboardItem(item: JsonItem): item is JsonClipboardItem {
   return item.type === 'clipboard';
-}
-
-/**
- * JsonLayoutItemかどうかを判定
- */
-export function isJsonLayoutItem(item: JsonItem): item is JsonLayoutItem {
-  return item.type === 'layout';
 }
 
 /**

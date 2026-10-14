@@ -68,10 +68,7 @@ const electronAPI: ElectronAPI = {
   loadDataFiles: (trigger) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
   openItem: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item),
   openParentFolder: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
-  executeGroup: (group, allItems) =>
-    ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_GROUP, group, allItems),
   executeWindowOperation: (item) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, item),
-  executeLayout: (item) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_LAYOUT, item),
   executeSet: (item, allItems) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_SET, item, allItems),
   openConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_FAVICON, url),
@@ -132,12 +129,10 @@ const electronAPI: ElectronAPI = {
   // IDベースのアイテム更新
   updateDirItemById: (id, dirPath, options, memo) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID, id, dirPath, options, memo),
-  updateGroupItemById: (id, displayName, itemNames, memo) =>
-    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_GROUP_ITEM_BY_ID, id, displayName, itemNames, memo),
   updateWindowItemById: (id, config, memo) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config, memo),
-  updateLayoutItemById: (id, displayName, entries, memo) =>
-    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_LAYOUT_ITEM_BY_ID, id, displayName, entries, memo),
+  updateSetItemById: (id, set, memo) =>
+    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_SET_ITEM_BY_ID, id, set, memo),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),
   parseBookmarkFileWithFolders: (filePath) =>
     ipcRenderer.invoke(IPC_CHANNELS.PARSE_BOOKMARK_FILE_WITH_FOLDERS, filePath),
@@ -158,6 +153,7 @@ const electronAPI: ElectronAPI = {
   setHotkeyRecording: (recording) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, recording),
   getDisplays: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DISPLAYS),
+  getScreenAreas: () => ipcRenderer.invoke(IPC_CHANNELS.GET_SCREEN_AREAS),
   getAutoLaunchStatus: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS),
   getLanguage: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_LANGUAGE),
   isFirstLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),

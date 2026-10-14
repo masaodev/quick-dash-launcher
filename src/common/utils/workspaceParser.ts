@@ -36,9 +36,7 @@ import {
   generateUniqueId,
   isValidId,
   validateJsonClipboardItem,
-  validateJsonGroupItem,
   validateJsonLauncherItem,
-  validateJsonLayoutItem,
   validateJsonSetItem,
   validateJsonWindowItem,
 } from './jsonParser';
@@ -325,12 +323,8 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
     }
     case 'window':
       return validateJsonWindowItem(body) as unknown as Record<string, unknown>;
-    case 'group':
-      return validateJsonGroupItem(body) as unknown as Record<string, unknown>;
     case 'clipboard':
       return validateJsonClipboardItem(body) as unknown as Record<string, unknown>;
-    case 'layout':
-      return validateJsonLayoutItem(body) as unknown as Record<string, unknown>;
     case 'set':
       return validateJsonSetItem(body) as unknown as Record<string, unknown>;
     default:
@@ -347,9 +341,7 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
 const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
   item: ['path', 'args', 'originalPath', 'customIcon', 'windowConfig'],
   window: ['windowTitle', ...WINDOW_PLACEMENT_KEYS],
-  group: ['itemNames'],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
-  layout: ['entries', 'customIcon'],
   set: ['entries', 'launchMode', 'customIcon'],
 };
 

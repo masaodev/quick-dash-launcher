@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
-import type { JsonLauncherItem, JsonDirItem, JsonGroupItem, JsonWindowItem } from '@common/types';
+import type { JsonLauncherItem, JsonDirItem, JsonWindowItem } from '@common/types';
 
 describe('displayTextConverter', () => {
   describe('jsonItemToDisplayText', () => {
@@ -135,30 +135,6 @@ describe('displayTextConverter', () => {
         expect(result).toBe(
           'dir,C:\\Documents,depth=3,types=both,filter=*.md,exclude=node_modules,prefix=[DOC],suffix=.bak'
         );
-      });
-    });
-
-    describe('groupアイテム', () => {
-      it('基本的なgroupアイテムを変換できる', () => {
-        const item: JsonGroupItem = {
-          id: 'test-11',
-          type: 'group',
-          displayName: 'Work',
-          itemNames: ['Gmail', 'Slack', 'VSCode'],
-        };
-        const result = jsonItemToDisplayText(item);
-        expect(result).toBe('group,Work,Gmail,Slack,VSCode');
-      });
-
-      it('1つのアイテムを持つgroupアイテムを変換できる', () => {
-        const item: JsonGroupItem = {
-          id: 'test-12',
-          type: 'group',
-          displayName: 'Single',
-          itemNames: ['OnlyOne'],
-        };
-        const result = jsonItemToDisplayText(item);
-        expect(result).toBe('group,Single,OnlyOne');
       });
     });
 

@@ -392,10 +392,8 @@
         file: '📄',
         folder: '📁',
         customUri: '🔗',
-        group: '📦',
         set: '📦',
         windowOperation: '🪟',
-        layout: '🖥️',
         windowActivate: '🔄',
         windowClose: '✖️',
         windowPin: '📌',
@@ -450,7 +448,7 @@
         const text = data.text || { action: data.message || '' };
         let html = `<div class="toast-title">${escapeHtml(displayName)}</div>`;
 
-        if (itemType === 'group' || itemType === 'set') {
+        if (itemType === 'set') {
           html += `<div class="toast-items">${escapeHtml(text.groupItems || '')}</div>`;
           html += '<div class="toast-separator"></div>';
           html += `<div class="toast-action">${escapeHtml(text.action)}</div>`;

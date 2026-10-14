@@ -5,7 +5,7 @@
  * - 無ければ開くものから推測する（exe はパス、フォルダはエクスプローラーのタイトル、ファイルはタイトルに含まれる名前）
  * - URL・カスタム URI はどのウィンドウか決まらないので結び付けない
  */
-import type { SetPlacement, SetWindowMatch } from '../types/launcher';
+import type { SetEntry, SetPlacement, SetWindowMatch } from '../types/launcher';
 import type { WindowInfo } from '../types/window';
 
 import { ANY_WINDOW_TITLE, createTitleMatcher } from './windowTitle';
@@ -185,4 +185,56 @@ export function placementFromWindow(window: MatchableWindow): SetPlacement {
   }
   if (window.windowState === 'maximized') placement.state = 'maximized';
   return placement;
+}
+
+/** 記録し直した結果 */
+export interface RerecordResult {
+  entries: SetEntry[];
+  /** 位置が変わった行の数 */
+  changed: number;
+  /** ウィンドウが見つからず、前の位置のままの行の数 */
+  notFound: number;
+}
+
+function samePlacement(a: SetPlacement | undefined, b: SetPlacement): boolean {
+  return (
+    !!a &&
+    a.x === b.x &&
+    a.y === b.y &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.virtualDesktopNumber === b.virtualDesktopNumber &&
+    a.state === b.state
+  );
+}
+
+/**
+ * 置き場所のある行の位置を、今開いているウィンドウから取り直す（メイン画面の右クリック「今の位置を記録し直す」）
+ *
+ * 行の見つけ方で探す（1 つのウィンドウは 1 行とだけ）。行の追加・削除はしない。見つからない行は前の位置のまま
+ */
+export function rerecordSetPlacements(
+  entries: readonly SetEntry[],
+  windows: readonly MatchableWindow[]
+): RerecordResult {
+  const candidates = windows.filter((w) => w.windowState !== 'minimized');
+  const used = new Set<MatchableWindow>();
+  let changed = 0;
+  let notFound = 0;
+  const result = entries.map((entry) => {
+    if (!entry.placement || !entry.window) return entry;
+    const found = candidates.find((w) => !used.has(w) && matchesWindow(entry.window!, w));
+    if (!found) {
+      notFound++;
+      return entry;
+    }
+    used.add(found);
+    const placement = placementFromWindow(found);
+    // 仮想デスクトップは行に指定があるときだけ取り直す（指定の無い行は「変えない」のまま）
+    if (entry.placement.virtualDesktopNumber === undefined) delete placement.virtualDesktopNumber;
+    if (samePlacement(entry.placement, placement)) return entry;
+    changed++;
+    return { ...entry, placement };
+  });
+  return { entries: result, changed, notFound };
 }

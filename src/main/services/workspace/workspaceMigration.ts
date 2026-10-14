@@ -29,7 +29,6 @@ import {
   isValidGroupColor,
 } from '@common/groupColors';
 import { generateUniqueId, isValidId } from '@common/utils/jsonParser';
-import { stripIconFromLayoutEntries } from '@common/utils/dataConverters';
 import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
 import { isRecord } from '@common/types/guards';
 import type { LayoutWindowEntry } from '@common/types/launcher';
@@ -260,7 +259,9 @@ export function migrateWorkspaceV1(
     }
     if (type === 'layout') {
       const entries = Array.isArray(item.layoutEntries ?? item.entries)
-        ? stripIconFromLayoutEntries((item.layoutEntries ?? item.entries) as LayoutWindowEntry[])
+        ? ((item.layoutEntries ?? item.entries) as LayoutWindowEntry[]).map(
+            ({ icon: _icon, ...rest }) => rest
+          )
         : [];
       return { ...base, type: 'layout', entries, customIcon: item.customIcon };
     }

@@ -28,8 +28,7 @@ function isInputElement(element: Element | null): boolean {
 }
 
 /** モーダル・ダイアログの外枠（重ねて開いたダイアログを見分けるため） */
-const OVERLAY_SELECTOR =
-  '.modal-overlay, .window-selector-modal-overlay, .layout-capture-modal-overlay';
+const OVERLAY_SELECTOR = '.modal-overlay, .window-selector-modal-overlay';
 
 /**
  * このモーダルより後に描かれた（上に重なった）ダイアログが開いているか

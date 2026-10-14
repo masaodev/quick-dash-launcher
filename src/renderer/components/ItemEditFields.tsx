@@ -4,8 +4,8 @@ import React from 'react';
 import type {
   ClipboardFormat,
   DataFileTab,
-  LayoutWindowEntry,
   RegisterItem,
+  SetEntry,
   WindowConfig,
   WindowInfo,
 } from '@common/types';
@@ -19,8 +19,7 @@ import CustomIconEditor from './CustomIconEditor';
 import UrlConverterMenu from './UrlConverterMenu';
 import IconFetchButton from './IconFetchButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
-import LayoutEntryEditor from './LayoutEntryEditor';
-import { Button } from './ui';
+import SetEntriesEditor from './SetEntriesEditor';
 
 /** フォームの 1 項目に入れられる値 */
 export type ItemFieldValue =
@@ -31,18 +30,18 @@ export type ItemFieldValue =
   | WindowConfig
   | RegisterItem['windowOperationConfig']
   | ClipboardFormat[]
-  | LayoutWindowEntry[];
+  | SetEntry[];
 
 export interface ItemEditFieldErrors {
   displayName?: string;
   path?: string;
-  groupItemNames?: string;
+  setEntries?: string;
 }
 
 function getDisplayNamePlaceholder(itemCategory: string): string {
   switch (itemCategory) {
-    case 'group':
-      return i18next.t('register.placeholders.group');
+    case 'set':
+      return i18next.t('register.placeholders.set');
     case 'clipboard':
       return i18next.t('register.placeholders.clipboard');
     default:
@@ -57,8 +56,6 @@ interface ItemEditFieldsProps {
   onUpdate: (fields: Partial<RegisterItem>) => void;
   onPathBlur: () => void;
   onFetchIcon: () => void;
-  onAddGroupItem: () => void;
-  onRemoveGroupItem: (groupItemNameIndex: number) => void;
   /** 保存先（タブ・データファイル）の選択。省略すると出さない（ワークスペースは保存先が決まっている） */
   placement?: {
     availableTabs: DataFileTab[];
@@ -67,8 +64,8 @@ interface ItemEditFieldsProps {
   };
   /** 種別を表示だけにする（ワークスペースのアイテムは種別を変えない） */
   typeLocked?: boolean;
-  /** グループのアイテム欄の説明（省略時はメインのデータ向けの説明） */
-  groupItemsHint?: string;
+  /** セットの行の追加で、ワークスペースのアイテムも選べるようにする（ワークスペースのセット） */
+  setIncludesWorkspace?: boolean;
   /** ドロップしたファイルから登録するときはパスを書き換えさせない */
   isPathReadOnly: boolean;
   iconFetchLoading: boolean;
@@ -79,8 +76,6 @@ interface ItemEditFieldsProps {
   onCustomIconDelete: () => void;
   onOpenWindowSelector: () => void;
   onFetchFromWindow: () => Promise<WindowInfo | null>;
-  onLayoutCapture: () => void;
-  onLayoutEntryWindowSelect: (entryIndex: number) => void;
   onClipboardError: (message: string) => void;
   showSeparator: boolean;
 }
@@ -96,11 +91,9 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   onUpdate,
   onPathBlur,
   onFetchIcon,
-  onAddGroupItem,
-  onRemoveGroupItem,
   placement,
   typeLocked = false,
-  groupItemsHint,
+  setIncludesWorkspace = false,
   isPathReadOnly,
   iconFetchLoading,
   optionsOpen,
@@ -110,18 +103,15 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   onCustomIconDelete,
   onOpenWindowSelector,
   onFetchFromWindow,
-  onLayoutCapture,
-  onLayoutEntryWindowSelect,
   onClipboardError,
   showSeparator,
 }) => {
   const { t } = useTranslation();
   const selectedTab = placement?.availableTabs.find((tab) => tab.files.includes(item.targetTab));
   const hasPath =
-    item.itemCategory !== 'group' &&
+    item.itemCategory !== 'set' &&
     item.itemCategory !== 'window' &&
-    item.itemCategory !== 'clipboard' &&
-    item.itemCategory !== 'layout';
+    item.itemCategory !== 'clipboard';
 
   const customIconEditor = (
     <CustomIconEditor
@@ -182,10 +172,9 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
         >
           <option value="item">{t('register.types.item')}</option>
           <option value="dir">{t('register.types.dir')}</option>
-          <option value="group">{t('register.types.group')}</option>
+          <option value="set">{t('register.types.set')}</option>
           <option value="window">{t('register.types.window')}</option>
           <option value="clipboard">{t('register.types.clipboard')}</option>
-          <option value="layout">{t('register.types.layout')}</option>
         </select>
       </div>
 
@@ -230,42 +219,15 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
         </div>
       )}
 
-      {item.itemCategory === 'group' && (
-        <div className="form-group vertical-layout">
-          <label>{t('register.groupItems')}</label>
-          <div className="group-item-list">
-            {item.groupItemNames && item.groupItemNames.length > 0 ? (
-              <div className="selected-items">
-                {item.groupItemNames.map((itemName, nameIndex) => (
-                  <div key={nameIndex} className="item-chip">
-                    <span>{itemName}</span>
-                    <button
-                      type="button"
-                      className="close-btn close-btn-sm close-btn-danger remove-group-item-btn"
-                      onClick={() => onRemoveGroupItem(nameIndex)}
-                      title={t('register.removeGroupItem')}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="no-group-items">{t('register.noGroupItems')}</div>
-            )}
-            <Button
-              variant="secondary"
-              size="sm"
-              type="button"
-              className="add-group-item-btn"
-              onClick={() => onAddGroupItem()}
-            >
-              {t('register.addGroupItem')}
-            </Button>
-          </div>
-          {errors?.groupItemNames && <span className="error-message">{errors.groupItemNames}</span>}
-          <small>{groupItemsHint ?? t('register.groupItemsHint')}</small>
-        </div>
+      {item.itemCategory === 'set' && (
+        <SetEntriesEditor
+          entries={item.setEntries ?? []}
+          launchMode={item.setLaunchMode}
+          onChange={(patch) => onUpdate(patch)}
+          currentFile={setIncludesWorkspace ? undefined : item.targetFile || item.targetTab}
+          includeWorkspace={setIncludesWorkspace}
+          error={errors?.setEntries}
+        />
       )}
 
       {(item.itemCategory === 'item' || item.itemCategory === 'dir') && (
@@ -389,20 +351,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
         </>
       )}
 
-      {item.itemCategory === 'layout' && (
-        <>
-          <LayoutEntryEditor
-            entries={item.layoutEntries || []}
-            onChange={(entries) => onUpdate({ layoutEntries: entries })}
-            onCaptureClick={onLayoutCapture}
-            onSelectWindow={onLayoutEntryWindowSelect}
-          />
-          {errors?.path && <span className="error-message">{errors.path}</span>}
-        </>
-      )}
-
-      {/* グループはカスタムアイコンを保存できない（データファイルの形式に項目がない）ので出さない */}
-      {(item.itemCategory === 'clipboard' || item.itemCategory === 'layout') && customIconEditor}
+      {(item.itemCategory === 'clipboard' || item.itemCategory === 'set') && customIconEditor}
 
       <div className="form-group">
         <label>{t('register.note')}</label>

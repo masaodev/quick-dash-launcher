@@ -107,7 +107,7 @@ describe('useAdminCellEditing', () => {
     const onItemEdit = vi.fn();
     const item = launcher('a1', 'GitHub', 'https://github.com');
     const group = toEditableItem(
-      { id: 'g1', type: 'group', displayName: 'G', itemNames: ['a'] } as JsonItem,
+      { id: 'g1', type: 'set', displayName: 'G', entries: [{ itemId: 'a1' }] } as JsonItem,
       FILE
     );
     const { result } = renderHook(() => useAdminCellEditing(onItemEdit));

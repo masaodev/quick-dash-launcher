@@ -5,7 +5,6 @@ export type ToastItemType =
   | 'folder'
   | 'app'
   | 'customUri'
-  | 'group'
   | 'windowOperation'
   | 'windowActivate'
   | 'windowClose'
@@ -14,7 +13,6 @@ export type ToastItemType =
   | 'windowMoveDesktop'
   | 'workspaceAdd'
   | 'clipboard'
-  | 'layout'
   | 'set'
   | 'bookmarkImport';
 

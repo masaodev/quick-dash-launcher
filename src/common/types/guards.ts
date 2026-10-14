@@ -4,15 +4,7 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type {
-  AppItem,
-  GroupItem,
-  LauncherItem,
-  WindowItem,
-  ClipboardItem,
-  LayoutItem,
-  SetItem,
-} from './launcher';
+import type { AppItem, LauncherItem, WindowItem, ClipboardItem, SetItem } from './launcher';
 import type { WindowInfo } from './window';
 
 /** 配列でないオブジェクト（JSON の読み込みで、キーを持つ値か確かめる） */
@@ -53,29 +45,10 @@ export function isWindowInfo(item: AppItem): item is WindowInfo {
 export function isLauncherItem(item: AppItem): item is LauncherItem {
   return (
     !isWindowInfo(item) &&
-    item.type !== 'group' &&
     item.type !== 'window' &&
     item.type !== 'clipboard' &&
-    item.type !== 'layout' &&
     item.type !== 'set'
   );
-}
-
-/**
- * GroupItemかどうかを判定する型ガード
- *
- * @param item - 判定対象のAppItem
- * @returns GroupItemの場合true
- *
- * @example
- * const item: AppItem = getItem();
- * if (isGroupItem(item)) {
- *   // ここではitemはGroupItem型として扱われる
- *   console.log(item.itemNames);
- * }
- */
-export function isGroupItem(item: AppItem): item is GroupItem {
-  return !isWindowInfo(item) && item.type === 'group';
 }
 
 /**
@@ -110,16 +83,6 @@ export function isWindowItem(item: AppItem): item is WindowItem {
  */
 export function isClipboardItem(item: AppItem): item is ClipboardItem {
   return !isWindowInfo(item) && item.type === 'clipboard';
-}
-
-/**
- * LayoutItemかどうかを判定する型ガード
- *
- * @param item - 判定対象のAppItem
- * @returns LayoutItemの場合true
- */
-export function isLayoutItem(item: AppItem): item is LayoutItem {
-  return !isWindowInfo(item) && item.type === 'layout';
 }
 
 /**

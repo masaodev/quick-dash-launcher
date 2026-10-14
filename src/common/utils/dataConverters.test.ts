@@ -1,18 +1,19 @@
 import { describe, it, expect } from 'vitest';
 
-import type { EditableJsonItem, JsonLayoutItem } from '../types';
+import type { EditableJsonItem, JsonSetItem } from '../types';
 
 import {
   convertEditableJsonItemToRegisterItem,
   convertRegisterItemToJsonItem,
 } from './dataConverters';
 
-describe('dataConverters のレイアウト', () => {
-  const layout: JsonLayoutItem = {
+describe('dataConverters のセット', () => {
+  const layout: JsonSetItem = {
     id: 'Lay0ut01',
-    type: 'layout',
+    type: 'set',
     displayName: '作業レイアウト',
-    entries: [{ windowTitle: 'メモ帳', launchApp: false, x: 0, y: 0, width: 800, height: 600 }],
+    entries: [{ window: { title: 'メモ帳' }, placement: { x: 0, y: 0, width: 800, height: 600 } }],
+    launchMode: 'parallel',
     customIcon: 'layout-icon.png',
     memo: 'メモ',
   };
@@ -35,9 +36,10 @@ describe('dataConverters のレイアウト', () => {
 
     expect(saved).toMatchObject({
       id: layout.id,
-      type: 'layout',
+      type: 'set',
       displayName: layout.displayName,
       entries: layout.entries,
+      launchMode: 'parallel',
       customIcon: 'layout-icon.png',
       memo: 'メモ',
     });
