@@ -144,7 +144,11 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                   setDragIndex(null);
                   setOverIndex(null);
                 }}
-                onDoubleClick={() => setDetailIndex(index)}
+                onDoubleClick={(e) => {
+                  // ▲ ▼ × を素早く押したときのダブルクリックで、詳細を開かない
+                  if ((e.target as Element).closest('button')) return;
+                  setDetailIndex(index);
+                }}
               >
                 <span className="set-drag-handle" aria-hidden>
                   ⠿
@@ -154,7 +158,10 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                 </span>
                 <span className="set-row-name">
                   <span className="set-row-title">
-                    {view.name}
+                    {/* 名前だけを省略し、印は長い名前でも隠さない */}
+                    <span className="set-row-title-text" title={view.name}>
+                      {view.name}
+                    </span>
                     {view.missing ? (
                       <span className="set-chip set-chip-danger">{t('set.editor.missing')}</span>
                     ) : (

@@ -628,6 +628,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       reasonWithOutcome: '{{reason}}。このまま記録すると: {{outcome}}',
       outcomeKeep: '前の位置のまま（{{place}}）',
       outcomeOpenOnly: '開くだけ',
+      outcomeFrontOnly: '開いていれば前面に出すだけ',
       keepPrevious: '前の位置のまま',
       placeOnlyNote: '開き直せないので、動かすだけの行になります',
       noPlacement: '位置は記録しない',

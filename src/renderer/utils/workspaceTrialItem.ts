@@ -3,7 +3,7 @@ import type { RegisterItem, WorkspaceItem } from '@common/types';
 /**
  * ワークスペースのアイテム編集の「試しに実行」に渡すアイテムを、編集中の内容から作る
  *
- * 起動に使う欄（パス・引数・ウィンドウ設定・クリップボードの中身）を編集中の値に差し替える。
+ * 起動に使う欄（パス・引数・ウィンドウ設定・クリップボードの中身・セットの行と開き方）を編集中の値に差し替える。
  * クリップボードを取り直して未保存のときは、まだファイルが無いので保存済みの中身で試す
  */
 export function toTrialWorkspaceItem(saved: WorkspaceItem, editing: RegisterItem): WorkspaceItem {
@@ -15,6 +15,14 @@ export function toTrialWorkspaceItem(saved: WorkspaceItem, editing: RegisterItem
       args: editing.args || undefined,
       windowConfig: editing.windowConfig,
       launcherType: editing.type === 'clipboard' ? saved.launcherType : editing.type,
+    };
+  }
+  if (saved.type === 'set' && editing.itemCategory === 'set') {
+    return {
+      ...saved,
+      displayName: editing.displayName,
+      entries: editing.setEntries ?? saved.entries,
+      launchMode: editing.setLaunchMode ?? saved.launchMode,
     };
   }
   if (saved.type === 'clipboard' && editing.itemCategory === 'clipboard') {

@@ -625,6 +625,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       reasonWithOutcome: '{{reason}}. If you record now: {{outcome}}',
       outcomeKeep: 'keeps its previous position ({{place}})',
       outcomeOpenOnly: 'opens only',
+      outcomeFrontOnly: 'brings it to the front if it is open',
       keepPrevious: 'Keeps its previous position',
       placeOnlyNote: "This window can't be reopened, so the row will only move it",
       noPlacement: 'No position recorded',

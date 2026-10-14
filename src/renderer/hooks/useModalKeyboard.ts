@@ -99,6 +99,8 @@ export function useModalKeyboard({
       }
 
       if (event.key === 'Tab') {
+        // 上に重ねた画面があれば、その画面のフォーカスの閉じ込めに任せる（先に止めると上の画面の端で下へ抜ける）
+        if (hasOverlayAbove(modal)) return;
         const focusableElements = modal.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );

@@ -60,7 +60,8 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
     if (draft) onChange(draft);
     onClose();
   };
-  useModalKeyboard({ isOpen: entry !== null, modalRef, onClose: close });
+  // draft が入って画面を描いてからフォーカスを移す（先に呼ぶと ref が空でフォーカスが下の画面に残る）
+  useModalKeyboard({ isOpen: entry !== null && draft !== null, modalRef, onClose: close });
 
   if (!entry || !draft) return null;
 
@@ -275,15 +276,18 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
       <WindowSelectorModal
         isOpen={picking}
         onClose={() => setPicking(false)}
-        onSelect={(w) => {
+        onSelect={async (w) => {
+          setPicking(false);
+          // 同じ exe のウィンドウがほかにもあればタイトルも残すので、開いているウィンドウ全体と比べる
+          const all = await window.electronAPI.getAllWindowsAllDesktops().catch(() => [w]);
+          const match = decideWindowMatch(w, all.length > 0 ? all : [w]);
           // 最小化中は座標が画面の外になるので、動かすウィンドウだけ取る
           update(
             w.windowState === 'minimized'
-              ? { window: decideWindowMatch(w, [w]) }
-              : { window: decideWindowMatch(w, [w]), placement: placementFromWindow(w) }
+              ? { window: match }
+              : { window: match, placement: placementFromWindow(w) }
           );
           setPickNotes(windowPickNotes(w));
-          setPicking(false);
         }}
       />
     </>,

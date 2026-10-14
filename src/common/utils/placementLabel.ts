@@ -128,7 +128,9 @@ export function computePlacementLabel(
 
   if (placement.state === 'maximized') return withScreen({ kind: 'maximized' as const });
 
-  const area = sorted[index].workArea;
+  // 作業領域が取れていない（幅か高さが 0）ときは画面全体で計算する（割り算が NaN にならないように）
+  const work = sorted[index].workArea;
+  const area = work.width > 0 && work.height > 0 ? work : sorted[index].bounds;
   const l = (x - area.x) / area.width;
   const t = (y - area.y) / area.height;
   const r = (x + width - area.x) / area.width;

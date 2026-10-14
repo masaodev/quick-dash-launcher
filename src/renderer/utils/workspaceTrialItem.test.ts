@@ -54,4 +54,27 @@ describe('toTrialWorkspaceItem', () => {
     });
     expect(result.type === 'clipboard' && result.dataFileRef).toBe('clipboard-data/a.json');
   });
+
+  it('セットは編集中の行と開き方で試す', () => {
+    const saved: WorkspaceItem = {
+      id: 's1',
+      type: 'set',
+      displayName: '朝',
+      entries: [{ itemId: 'aaaa1111' }],
+      order: 0,
+      workspaceId: 'ws1',
+      addedAt: 0,
+    };
+    const result = toTrialWorkspaceItem(saved, {
+      ...editingBase,
+      itemCategory: 'set',
+      setEntries: [{ itemId: 'bbbb2222' }, { open: { path: 'C:/a.txt' } }],
+      setLaunchMode: 'parallel',
+    });
+    expect(result).toMatchObject({
+      type: 'set',
+      entries: [{ itemId: 'bbbb2222' }, { open: { path: 'C:/a.txt' } }],
+      launchMode: 'parallel',
+    });
+  });
 });

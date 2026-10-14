@@ -20,6 +20,20 @@ function TestModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** 重ねる画面（登録画面の上に開くセットの小さな画面など） */
+function Layer({ id }: { id: string }) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalKeyboard({ isOpen: true, modalRef, onClose: vi.fn() });
+  return (
+    <div className="modal-overlay">
+      <div ref={modalRef} tabIndex={-1}>
+        <button data-testid={`${id}-first`}>1</button>
+        <button data-testid={`${id}-last`}>2</button>
+      </div>
+    </div>
+  );
+}
+
 describe('useModalKeyboard', () => {
   it('テキストエリアでの Enter は止めない（改行できる）こと', () => {
     render(<TestModal onClose={vi.fn()} />);
@@ -85,5 +99,17 @@ describe('useModalKeyboard', () => {
 
     fireEvent.keyDown(screen.getByTestId('modal'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('上に重ねた画面の最後の要素での Tab は、その画面の先頭へ折り返す（下の画面へ抜けない）', () => {
+    render(
+      <>
+        <Layer id="lower" />
+        <Layer id="upper" />
+      </>
+    );
+    screen.getByTestId('upper-last').focus();
+    fireEvent.keyDown(screen.getByTestId('upper-last'), { key: 'Tab' });
+    expect(document.activeElement).toBe(screen.getByTestId('upper-first'));
   });
 });

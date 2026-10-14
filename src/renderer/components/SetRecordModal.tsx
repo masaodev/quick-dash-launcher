@@ -256,6 +256,9 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
       }
       if (assign.has(i) && w === null) {
         const { window: _w, placement: _p, ...rest } = entry;
+        // 開くものの無い行（動かすだけ）は、動かすウィンドウまで外すと何もできない行になるので、位置だけ外す
+        if (!entry.itemId && !entry.open)
+          return { ...rest, ...(entry.window ? { window: entry.window } : {}) };
         return rest;
       }
       return entry;
@@ -372,7 +375,9 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                         : null;
                     const outcome = previous
                       ? t('set.record.outcomeKeep', { place: previous })
-                      : t('set.record.outcomeOpenOnly');
+                      : view.holding === 'none'
+                        ? t('set.record.outcomeFrontOnly')
+                        : t('set.record.outcomeOpenOnly');
                     const sub = t('set.record.reasonWithOutcome', { reason, outcome });
                     return (
                       <div key={`f${i}`} className="set-record-row">

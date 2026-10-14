@@ -214,6 +214,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const handleModalDragOver = (e: React.DragEvent): void => {
     // 画面の中のドラッグ（セットの行の並べ替えなど）では、ファイルのドロップ先を出さない
     if (!Array.from(e.dataTransfer.types).includes('Files')) return;
+    // セットはドロップで先頭のアイテムを置き換えると行が消えるので、受けない（ワークスペースと同じ）
+    if (items[0]?.itemCategory === 'set') return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOverModal(true);
@@ -237,7 +239,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     const paths = getPathsFromDropEvent(e);
     if (paths.length === 0) return;
 
-    if (items.length > 0) {
+    if (items.length > 0 && items[0].itemCategory !== 'set') {
       await replaceFirstItemFromPath(paths[0]);
     }
   };

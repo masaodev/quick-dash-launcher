@@ -86,7 +86,7 @@
   min-width: 0;
 }
 
-.set-row-title,
+.set-row-title-text,
 .set-row-details {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -94,8 +94,15 @@
 }
 
 .set-row-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
+}
+
+.set-row-title .set-chip {
+  flex-shrink: 0;
 }
 
 .set-row-details {
