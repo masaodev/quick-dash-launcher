@@ -95,12 +95,17 @@ export function useWindowOperations({
       });
       return;
     }
-    const partial =
-      failed.length > 0 ? t('launcher.windowActions.partlyFailed', { count: failed.length }) : '';
+    const message =
+      failed.length > 0
+        ? t('launcher.windowActions.withPartlyFailed', {
+            message: successMessage,
+            count: failed.length,
+          })
+        : successMessage;
     await window.electronAPI.showToastWindow({
       displayName: displayNameOf(done),
       itemType,
-      message: `${successMessage}${partial}`,
+      message,
     });
     await refreshWindowsKeepingSelection();
   }

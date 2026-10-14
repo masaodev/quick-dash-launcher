@@ -143,17 +143,17 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     });
 
     if (rule.lastResult?.success) {
-      const duplicates = rule.lastResult.manualDuplicateCount
-        ? t('bookmarkAutoImport.lastResultDuplicates', {
-            count: rule.lastResult.manualDuplicateCount,
-          })
-        : '';
-      return t('bookmarkAutoImport.lastResult', {
+      const counts = {
         date: dateStr,
         imported: rule.lastResult.importedCount,
         deleted: rule.lastResult.deletedCount,
-        duplicates,
-      });
+      };
+      return rule.lastResult.manualDuplicateCount
+        ? t('bookmarkAutoImport.lastResultWithDuplicates', {
+            ...counts,
+            count: rule.lastResult.manualDuplicateCount,
+          })
+        : t('bookmarkAutoImport.lastResult', counts);
     } else if (rule.lastResult) {
       return t('bookmarkAutoImport.lastError', {
         date: dateStr,
