@@ -20,7 +20,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | --- | --- | --- |
 | メイン | メインプロセスの `BrowserWindow` | 独立（開き元） |
 | ワークスペース | メインのレンダラーが `window.open` で生成 | **メインと共有** |
-| オーバーレイ（トースト・レイアウト進捗） | メインのレンダラーが `window.open` で生成 | **メインと共有** |
+| オーバーレイ（トースト・セットの進み具合） | メインのレンダラーが `window.open` で生成 | **メインと共有** |
 | 切り離しグループウィンドウ | ワークスペースのレンダラーが `window.open` で生成 | **メインと共有** |
 | ワークスペースアイテムの編集ウィンドウ | ワークスペースのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有** |
 | メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果） | メインのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有**（管理画面から開いた場合は管理と共有） |
@@ -74,7 +74,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 
 - **データファイル**: 読み込み・変換・保存は `src/main/services/data/` に分かれる（読み込みと外部変更の検知、JSON アイテムから表示用アイテムへの変換、管理画面の一覧の保存と楽観ロック、破損ファイルの記録）
 - **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
-- **トースト通知**: トーストとレイアウト進捗は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する
+- **トースト通知**: トーストとセットの進み具合は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する
 - **子ウィンドウ**: メインのレンダラーを共有する子ウィンドウは `childWindowService.ts` で開く（[ウィンドウとレンダラープロセスの対応](#ウィンドウとレンダラープロセスの対応)）
 - **配布形式**: 開発版・Store 版・ポータブル版・インストーラー版の判定は `utils/appDistribution.ts`。自動起動はこれで分かれ、Store 版は WinRT の StartupTask、それ以外はスタートアップフォルダのショートカットを使う（`services/autoLaunchService.ts`）
 - **CLI の組み込み**: 設定 `cliEnabled` が有効なら、起動のたびに同梱の `qdl.exe` を置き場へ入れ替えて PATH を保つ（`services/cli/cliInstallService.ts`）
@@ -92,7 +92,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 - **変換**: JSON アイテムを表示用の `AppItem` に変換する（`services/data/jsonItemConverter.ts`）。フォルダ取込（`type: "dir"`）はフォルダを走査して展開し、`.lnk` はリンク先を解析する（`services/data/directoryScanner.ts`）。タブ単位で重複を除き、表示名でソートする。種別はパスから決めるが、見た目だけでは分からないもの（ドット入りのフォルダ名・拡張子の無いファイル）は `utils/folderPathProbe.ts` がディスクの状態と記録（`config/path-type-cache.json`）で補う（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
 - **保存**: QDL 自身の書き込みは `services/dataFileTracker.ts` の `writeDataFile()` を通し、書いた内容を記憶する。管理画面の一覧保存は読み込み時のハッシュと照合する楽観ロック付き（`editableItemsStore.ts`）。メイン画面からの登録・編集は都度ディスクを読み直して ID で差し替える（`dataItemWriter.ts`）。破損中のファイルへの保存・登録は拒否する
 - **外部変更**: ファイル監視はしない。読み込んだ内容が記憶と違えば QDL の外で編集されたとみなし、変更前の内容をスナップショット（`backup/*_pre-external/`。`backupEnabled` が true のとき）に残す。読み込み結果はレポートにまとめてメモリに持ち、CLI の `reload`・`check` が返す（`services/loadReportService.ts`）
-- **形式の移行**: データファイルには形式の移行がなく、`version` の補完だけを行う。ワークスペースファイルは旧形式（`version` なし）を検知すると、移行前スナップショット（`_pre-migration`）を作ってから 2.0 に変換して書き戻す（`services/workspace/WorkspaceFileStore.ts`・`workspaceMigration.ts`）
+- **形式の移行**: データファイルは `version` を補完し、旧グループ（`type: "group"`）・旧ウィンドウ配置（`type: "layout"`）を見つけたら、スナップショット（`_pre-set-migration`）を作ってからセット（`type: "set"`）に変換して書き戻す（`services/data/setMigration.ts`）。ワークスペースファイルも、2.0 への移行の後に同じ変換をする。ワークスペースファイルは旧形式（`version` なし）を検知すると、移行前スナップショット（`_pre-migration`）を作ってから 2.0 に変換して書き戻す（`services/workspace/WorkspaceFileStore.ts`・`workspaceMigration.ts`）
 
 パスはいずれも `src/main/`・`src/common/` からの相対。
 

@@ -60,7 +60,6 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspacePositionY": 0,
   "workspaceVisibleOnAllDesktops": true,
   "detachedVisibleOnAllDesktops": true,
-  "parallelGroupLaunch": false,
   "showKeyboardHints": true,
   "itemSearchHotkey": "Ctrl+Alt+Space",
   "backupIncludeClipboard": false,
@@ -195,11 +194,11 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **primaryLeft** | @deprecated プライマリディスプレイの左端に配置（後方互換性のため、displayLeftに移行） |
 | **primaryRight** | @deprecated プライマリディスプレイの右端に配置（後方互換性のため、displayRightに移行） |
 
-### 3.9. グループ起動設定
+### 3.9. 旧グループの開き方（削除した設定）
 
-| フィールド | 型 | デフォルト値 | 説明 |
-| --- | --- | --- | --- |
-| **parallelGroupLaunch** | boolean | false | グループアイテムを並列起動するか<br>true: 全アイテムを同時起動<br>false: 順次起動（各アイテムの間に100ms待つ） |
+`parallelGroupLaunch`（旧グループを並列起動するか）は、旧グループをセットにまとめたときに設定から削除した。開き方はセットごとに持つ（`launchMode`。[データファイル形式 3.3](data-format.md#33-セットjsonsetitem)）。
+
+古い `settings.json` に残っている値は消さず、旧グループをセットに変換するときに読む（true なら同時に開く、それ以外は順番に開く。`SettingsService.getLegacyParallelGroupLaunch`）。
 
 ### 3.10. 追加ホットキー設定
 

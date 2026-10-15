@@ -59,10 +59,6 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       return parts.join(',');
     }
 
-    case 'group': {
-      return `group,${item.displayName},${item.itemNames.join(',')}`;
-    }
-
     case 'window': {
       const { id: _id, type: _type, ...config } = item;
       return `window,${escapeDisplayTextField(JSON.stringify(config))}`;
@@ -76,8 +72,8 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       return parts.map(escapeDisplayTextField).join(',');
     }
 
-    case 'layout': {
-      return `layout,${escapeDisplayTextField(item.displayName)},${escapeDisplayTextField(JSON.stringify(item.entries))}`;
+    case 'set': {
+      return `set,${escapeDisplayTextField(item.displayName)},${escapeDisplayTextField(JSON.stringify(item.entries))}`;
     }
 
     default:

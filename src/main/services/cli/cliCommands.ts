@@ -7,6 +7,7 @@ import { CLI_EXIT, cliResponse } from './cliProtocol.js';
 import type { CliRequest, CliResponse } from './cliProtocol.js';
 import { runLauncherItemCommand } from './cliLauncherCommands.js';
 import type { LauncherStore } from './cliLauncherCommands.js';
+import { runLauncherSetCommand } from './cliSetCommands.js';
 import { runWorkspaceCommand } from './cliWorkspaceCommands.js';
 import type { WorkspaceStore } from './cliWorkspaceCommands.js';
 
@@ -132,14 +133,19 @@ async function dispatch(
     case 'launcher': {
       const [noun, verb, ...args] = rest;
       if (wantsHelp || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.launcher'));
-      if (noun !== 'item')
-        throw new CliError('usage', mainI18n.t('cli.errors.unknownLauncherNoun', { noun }));
-      return runLauncherItemCommand(verb, args, {
+      const launcherCtx = {
         store: ctx.launcher,
         cwd: req.cwd,
         syncBeforeWrite: ctx.syncBeforeWrite,
-        changed: (message) => ctx.changed('launcher', message),
-      });
+        changed: (message: string) => ctx.changed('launcher', message),
+      };
+      if (noun === 'set') {
+        const [setVerb, ...setArgs] = args;
+        return runLauncherSetCommand(verb, setVerb, setArgs, launcherCtx);
+      }
+      if (noun !== 'item')
+        throw new CliError('usage', mainI18n.t('cli.errors.unknownLauncherNoun', { noun }));
+      return runLauncherItemCommand(verb, args, launcherCtx);
     }
 
     case 'workspace': {

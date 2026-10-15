@@ -176,8 +176,8 @@ describe('useKeyboardShortcuts', () => {
     }
   );
 
-  it('グループの Shift+Enter は実行せず、親フォルダが無いことを知らせる', async () => {
-    const group = { type: 'group', displayName: '朝のセット', itemNames: ['GitHub'] } as AppItem;
+  it('セットの Shift+Enter は実行せず、親フォルダが無いことを知らせる', async () => {
+    const group = { type: 'set', displayName: '朝のセット', entries: [] } as AppItem;
     const { params, handleKeyDown } = setup([group]);
 
     await handleKeyDown(keyEvent('Enter', { shiftKey: true }));

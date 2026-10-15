@@ -27,9 +27,14 @@ import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
+import {
+  executeSet,
+  isSetRunning,
+  notifySetFailures,
+  resolveSetEntry,
+} from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
-import { executeGroup, executeLayout } from './itemHandlers.js';
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -41,6 +46,32 @@ export async function closeDetachedWindowsForGroup(groupId: string): Promise<voi
   for (const id of [groupId, ...descendantIds]) {
     closeDetachedGroupWindow(id);
   }
+}
+
+/**
+ * セットの行が指すワークスペースのアイテムを、実行に使う形にする（開けるのは通常アイテムとウィンドウ操作だけ）
+ */
+function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
+  if (item.type === 'item') {
+    return {
+      type: item.launcherType,
+      displayName: item.displayName,
+      path: item.path,
+      args: item.args,
+      windowConfig: item.windowConfig,
+      id: item.id,
+    };
+  }
+  if (item.type === 'window') {
+    return {
+      type: 'window',
+      displayName: item.displayName,
+      windowTitle: item.windowTitle,
+      ...pickWindowPlacement(item),
+      id: item.id,
+    };
+  }
+  return undefined;
 }
 
 /**
@@ -206,7 +237,8 @@ export function setupWorkspaceHandlers(): void {
             ...pickWindowPlacement(item),
           },
           item.displayName,
-          logger
+          logger,
+          { followDesktop: true }
         );
 
         if (activationResult.activated) {
@@ -218,32 +250,6 @@ export function setupWorkspaceHandlers(): void {
           'Window operation failed: Window not found'
         );
         throw new Error(`ウィンドウが見つかりませんでした: ${windowTitle}`);
-      }
-
-      // groupタイプの場合：グループ内のアイテムを実行
-      if (item.type === 'group') {
-        logger.info(
-          { groupName: item.displayName, itemNames: item.itemNames },
-          'Group item launch requested'
-        );
-
-        if (!item.itemNames || item.itemNames.length === 0) {
-          logger.warn({ groupName: item.displayName }, 'Group has no items to execute');
-          return { success: true, message: 'グループにアイテムが登録されていません' };
-        }
-
-        const configFolder = PathManager.getConfigFolder();
-        // 外部変更の検知・スナップショットを取りこぼさないよう、F5 と同じ読み込みを通す
-        const allItems = await reloadConfigFiles(configFolder, 'internal');
-
-        logger.info(
-          { groupName: item.displayName, itemCount: item.itemNames.length },
-          'Executing group from workspace'
-        );
-
-        // メイン画面と同じ実行処理を使う（並列起動の設定・アイテム間の待ち・既存ウィンドウのアクティブ化）
-        const { successCount, errorCount } = await executeGroup(item, allItems);
-        return { success: true, successCount, errorCount };
       }
 
       // クリップボードタイプの場合
@@ -270,29 +276,51 @@ export function setupWorkspaceHandlers(): void {
         return { success: true };
       }
 
-      // レイアウトタイプの場合
-      if (item.type === 'layout') {
-        if (item.entries.length === 0) {
-          logger.warn({ id: item.id, name: item.displayName }, 'Layout has no entries');
-          throw new Error('レイアウトにエントリが登録されていません');
+      // セット: 行はワークスペースのアイテムを先に、データファイルのアイテムを後に探す
+      if (item.type === 'set') {
+        const workspaceService = await WorkspaceService.getInstance();
+        const workspaceItems = await workspaceService.loadItems();
+        const configFolder = PathManager.getConfigFolder();
+        const allItems = await reloadConfigFiles(configFolder, 'internal');
+        const byId = new Map<string, AppItem>();
+        for (const appItem of allItems) {
+          if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
         }
-
-        await executeLayout({
-          type: 'layout',
-          displayName: item.displayName,
-          entries: item.entries,
-          memo: item.memo,
-        });
-
+        for (const wsItem of workspaceItems) {
+          const converted = workspaceItemToLaunchable(wsItem);
+          if (converted) byId.set(wsItem.id, converted);
+        }
+        const resolve = (itemId: string) => byId.get(itemId);
+        // 行の名前はデータファイルのアイテムからも引くので、ワークスペースの画面ではなくここで知らせる
+        // （実行中に押し直したときは何もしないので知らせない）
+        if (!isSetRunning(item.id))
+          await showToastWindow({
+            displayName: item.displayName,
+            itemType: 'set',
+            itemCount: item.entries.length,
+            itemNames: item.entries
+              .map((entry) => resolveSetEntry(entry, resolve).name)
+              .filter((name) => name !== '')
+              .slice(0, 3),
+          });
+        const result = await executeSet(item, resolve);
+        await notifySetFailures(item, result);
         logger.info(
-          { id: item.id, name: item.displayName, entryCount: item.entries.length },
-          'Executed layout from workspace item'
+          { id: item.id, name: item.displayName, ...result, entries: undefined },
+          'Executed set from workspace item'
         );
-        return { success: true };
+        return { success: true, successCount: result.successCount, errorCount: result.errorCount };
       }
 
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-      const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, logger);
+      const activationResult = await tryActivateWindow(
+        item.windowConfig,
+        item.displayName,
+        logger,
+        {
+          followDesktop: true,
+        }
+      );
 
       if (activationResult.activated) {
         // ウィンドウアクティブ化成功

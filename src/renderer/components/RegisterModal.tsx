@@ -12,7 +12,6 @@ import type {
   LauncherItem,
 } from '@common/types';
 import { isEditableJsonItem, isJsonLauncherItem } from '@common/types';
-import { mergeWindowInfoIntoLayoutEntry } from '@common/utils/layoutUtils';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
@@ -22,10 +21,8 @@ import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 import { canTryExecute, tryExecuteRegisterItem } from '../utils/registerItemExecution';
 import { fetchMatchingWindow } from '../utils/windowFilter';
 
-import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
 import WindowSelectorModal from './WindowSelectorModal';
-import LayoutCaptureModal from './LayoutCaptureModal';
 import ItemEditFields from './ItemEditFields';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
@@ -73,12 +70,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
   const [windowSelectorItemIndex, setWindowSelectorItemIndex] = useState<number | null>(null);
-  const [layoutCaptureOpen, setLayoutCaptureOpen] = useState(false);
-  const [layoutCaptureItemIndex, setLayoutCaptureItemIndex] = useState<number | null>(null);
-  const [layoutEntryWindowSelectorIndex, setLayoutEntryWindowSelectorIndex] = useState<{
-    itemIndex: number;
-    entryIndex: number;
-  } | null>(null);
   const [optionsSectionOpen, setOptionsSectionOpen] = useState<boolean[]>([]);
   const [isDraggingOverModal, setIsDraggingOverModal] = useState(false);
 
@@ -110,16 +101,11 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     errors,
     availableTabs,
     dataFileLabels,
-    selectorModalOpen,
-    editingItemIndex,
     iconFetchLoading,
     handleItemChange,
     validateAndRegister,
     handleCancel,
-    handleSelectGroupItem,
     updateItem,
-    setEditingItemIndex,
-    setSelectorModalOpen,
     replaceFirstItemFromPath,
   } = form;
 
@@ -186,23 +172,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const onWindowSelected = (window: WindowInfo): void => {
-    // レイアウトエントリのウィンドウ選択
-    if (layoutEntryWindowSelectorIndex !== null) {
-      const { itemIndex, entryIndex } = layoutEntryWindowSelectorIndex;
-      const item = items[itemIndex];
-      if (!item) return;
-      const currentEntries = [...(item.layoutEntries || [])];
-      if (entryIndex < currentEntries.length) {
-        currentEntries[entryIndex] = mergeWindowInfoIntoLayoutEntry(
-          currentEntries[entryIndex],
-          window
-        );
-        updateItem(itemIndex, { layoutEntries: currentEntries });
-      }
-      setLayoutEntryWindowSelectorIndex(null);
-      return;
-    }
-
     if (windowSelectorItemIndex === null) return;
 
     const item = items[windowSelectorItemIndex];
@@ -243,6 +212,10 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   const handleModalDragOver = (e: React.DragEvent): void => {
+    // 画面の中のドラッグ（セットの行の並べ替えなど）では、ファイルのドロップ先を出さない
+    if (!Array.from(e.dataTransfer.types).includes('Files')) return;
+    // セットはドロップで先頭のアイテムを置き換えると行が消えるので、受けない（ワークスペースと同じ）
+    if (items[0]?.itemCategory === 'set') return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOverModal(true);
@@ -266,7 +239,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     const paths = getPathsFromDropEvent(e);
     if (paths.length === 0) return;
 
-    if (items.length > 0) {
+    if (items.length > 0 && items[0].itemCategory !== 'set') {
       await replaceFirstItemFromPath(paths[0]);
     }
   };
@@ -308,8 +281,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     onUpdate={(fields) => updateItem(index, fields)}
                     onPathBlur={() => form.handlePathBlur(index)}
                     onFetchIcon={() => form.handleFetchIcon(index)}
-                    onAddGroupItem={() => form.handleAddGroupItem(index)}
-                    onRemoveGroupItem={(nameIndex) => form.handleRemoveGroupItem(index, nameIndex)}
                     placement={{
                       availableTabs,
                       dataFileLabels,
@@ -325,16 +296,15 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     onCustomIconDelete={() => onCustomIconDeleted(index)}
                     onOpenWindowSelector={() => openWindowSelector(index)}
                     onFetchFromWindow={() => fetchMatchingWindow(items[index])}
-                    onLayoutCapture={() => {
-                      setLayoutCaptureItemIndex(index);
-                      setLayoutCaptureOpen(true);
-                    }}
-                    onLayoutEntryWindowSelect={(entryIndex) => {
-                      setLayoutEntryWindowSelectorIndex({ itemIndex: index, entryIndex });
-                      setWindowSelectorOpen(true);
-                    }}
                     onClipboardError={showError}
                     showSeparator={items.length > 1}
+                    selfId={
+                      editingItem
+                        ? isEditableJsonItem(editingItem)
+                          ? editingItem.item.id
+                          : editingItem.jsonItemId
+                        : undefined
+                    }
                   />
                 ))}
               </div>
@@ -370,19 +340,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         </div>
       </div>
 
-      {editingItemIndex !== null && (
-        <GroupItemSelectorModal
-          isOpen={selectorModalOpen}
-          onClose={() => {
-            setSelectorModalOpen(false);
-            setEditingItemIndex(null);
-          }}
-          onSelect={handleSelectGroupItem}
-          targetFile={items[editingItemIndex]?.targetFile || items[editingItemIndex]?.targetTab}
-          excludeNames={items[editingItemIndex]?.groupItemNames || []}
-        />
-      )}
-
       <FilePickerDialog
         isOpen={filePickerState.isOpen}
         onClose={closeCustomIconPicker}
@@ -396,17 +353,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         isOpen={windowSelectorOpen}
         onClose={() => setWindowSelectorOpen(false)}
         onSelect={onWindowSelected}
-      />
-
-      <LayoutCaptureModal
-        isOpen={layoutCaptureOpen}
-        onClose={() => setLayoutCaptureOpen(false)}
-        onCapture={(entries) => {
-          if (layoutCaptureItemIndex !== null) {
-            const existing = items[layoutCaptureItemIndex]?.layoutEntries || [];
-            updateItem(layoutCaptureItemIndex, { layoutEntries: [...existing, ...entries] });
-          }
-        }}
       />
     </>
   );

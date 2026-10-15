@@ -7,28 +7,25 @@ import i18next from 'i18next';
 import type {
   JsonItem,
   JsonLauncherItem,
-  JsonGroupItem,
   JsonWindowItem,
-  JsonLayoutItem,
+  JsonSetItem,
   JsonClipboardItem,
 } from '@common/types';
 import {
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
-  isJsonLayoutItem,
+  isJsonSetItem,
 } from '@common/types';
 
 /** 種類ごとのアイコン（表示名は辞書の itemManager.types） */
 export const ITEM_TYPE_INFO: Record<JsonItem['type'], { icon: string }> = {
   item: { icon: '📄' },
-  group: { icon: '📦' },
   dir: { icon: '🗂️' },
   window: { icon: '🪟' },
   clipboard: { icon: '📋' },
-  layout: { icon: '🖥️' },
+  set: { icon: '📦' },
 };
 
 /** 種類の表示名（今の表示言語で） */
@@ -48,15 +45,14 @@ export function getItemTypeName(jsonItem: JsonItem): string {
 
 // displayNameを持つアイテム型
 export type JsonItemWithDisplayName =
-  JsonLauncherItem | JsonGroupItem | JsonWindowItem | JsonLayoutItem | JsonClipboardItem;
+  JsonLauncherItem | JsonWindowItem | JsonSetItem | JsonClipboardItem;
 
 /** displayName を持つ種類か（フォルダ取込だけが持たない） */
 export function hasDisplayName(jsonItem: JsonItem): jsonItem is JsonItemWithDisplayName {
   return (
     (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
-    (jsonItem.type === 'group' && isJsonGroupItem(jsonItem)) ||
     (jsonItem.type === 'window' && isJsonWindowItem(jsonItem)) ||
-    (jsonItem.type === 'layout' && isJsonLayoutItem(jsonItem)) ||
+    (jsonItem.type === 'set' && isJsonSetItem(jsonItem)) ||
     (jsonItem.type === 'clipboard' && isJsonClipboardItem(jsonItem))
   );
 }

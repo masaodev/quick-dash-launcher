@@ -20,7 +20,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ### 1.2. 設計方針
 
-- **アイテムの語彙はデータファイルと同じ**: `type`（`item` / `window` / `group` / `clipboard` / `layout`）と型ごとのフィールド名は `datafiles/data*.json` の `JsonItem` と一致する。ワークスペース側は所属（`workspaceId` / `groupId`）と並び順（`order` / `addedAt`）を足し、`updatedAt` / `autoImportRuleId` を除いたもの（`type: item` のみ `originalPath` を追加で持つ）。一致は `src/common/types/json-workspace.ts` のコンパイル時アサーションで担保
+- **アイテムの語彙はデータファイルと同じ**: `type`（`item` / `window` / `clipboard` / `set`）と型ごとのフィールド名は `datafiles/data*.json` の `JsonItem` と一致する。ワークスペース側は所属（`workspaceId` / `groupId`）と並び順（`order` / `addedAt`）を足し、`updatedAt` / `autoImportRuleId` を除いたもの（`type: item` のみ `originalPath` を追加で持つ）。一致は `src/common/types/json-workspace.ts` のコンパイル時アサーションで担保
 - **ファイルには判定結果を保存しない**: `url / file / app / …` の起動種別は保存せず、読込時に `path` から判定する（実行時の `launcherType`）
 - **UI 状態はデータに混ぜない**: 折りたたみ・ウィンドウ位置は `workspace-ui-state.json` に分離
 - **色は CSS 変数名ではなくトークン**: `primary` などの名前で保存し、レンダラーで `var(--group-color-<token>)` に解決する（`src/common/groupColors.ts`）
@@ -109,7 +109,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | **id** | string | ✓ | 8 文字英数字。無い・不正・重複なら採番（`idAssigned`） |
-| **type** | string | ✓ | `item` / `window` / `group` / `clipboard` / `layout` |
+| **type** | string | ✓ | `item` / `window` / `clipboard` / `set` |
 | **displayName** | string | ✓ | 表示名 |
 | **memo** | string | - | 自由記述 |
 | **workspaceId** | string | ✓ | 所属ワークスペース |
@@ -117,11 +117,12 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | **order** | number | ✓* | 同じグループ内での並び順 |
 | **addedAt** | number | ✓* | 追加日時（ms） |
 
-型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`window`＝[3.4](data-format.md#34-ウィンドウアイテムjsonwindowitem)、`group`＝[3.3](data-format.md#33-グループアイテムjsongroupitem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`layout`＝[3.6](data-format.md#36-レイアウトアイテムjsonlayoutitem)）を参照。ワークスペースに固有の違いは次のとおり。
+型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`window`＝[3.4](data-format.md#34-ウィンドウアイテムjsonwindowitem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`set`＝[3.3](data-format.md#33-セットjsonsetitem)）を参照。ワークスペースに固有の違いは次のとおり。
 
 - `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri）は `originalPath` があればそれ、なければ `path` から判定する。ドット入りのフォルダ名と拡張子の無いファイルの扱い（末尾の区切り文字・読み込み時のディスク確認・`path-type-cache.json`）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
 - データファイルの `updatedAt`・`autoImportRuleId` は持たない
-- `clipboard`・`layout` は QDL が生成する。手で書かない
+- `clipboard` は QDL が生成する。手で書かない
+- `set` の行の `itemId` は、ワークスペースのアイテムの id か、データファイルのアイテムの id を指す。実行時はワークスペースのアイテムを先に探す（`src/main/ipc/workspaceHandlers.ts`）
 
 アイテム本体の検証はデータファイルの検証関数（`validateJson*Item`）を共用しており、判定はデータファイルと一致する。
 
@@ -199,13 +200,19 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 | `type: "windowOperation"`、`path: "[ウィンドウ操作: <title>]"` | `type: "window"`、`windowTitle: "<title>"`。タイトル空で `processName` だけなら `windowTitle: "*"` |
 | `windowX / windowY / windowWidth / windowHeight` | `x / y / width / height` |
 | `clipboardDataRef / clipboardFormats / clipboardSavedAt` | `dataFileRef / formats / savedAt` |
-| `layoutEntries` | `entries`（`icon` は除去） |
+| `layoutEntries` | `entries`（`icon` は除去。このあと下のセットへの変換で `set` になる） |
 | `path: "[グループ: N件]"` 等の表示用文字列 | 保存しない（表示時に組み立てる） |
 | `originalName`, `label`, `icon` | 削除 |
 | `groups[].collapsed` | `workspace-ui-state.json` の `collapsedGroups` |
 | `groups[].name`（さらに古い形式） | `displayName` |
 | `color: "var(--color-primary)"` / パレットの hex | 色トークン（`primary` / `teal` など）。その他の hex はそのまま |
 | `workspace-detached.json` | `workspace-ui-state.json` の `detachedWindows`（移行後に削除） |
+
+**旧グループ・旧ウィンドウ配置からセットへの変換**: 2.0 への移行のあと、`workspace.json` / `workspace-archive.json` の `type: "group"` と `type: "layout"` を `type: "set"` に変換して書き戻す（`WorkspaceFileStore`・`src/main/services/data/setMigration.ts`）。変換の規則はデータファイルと同じ（[データファイル形式 3.3.6](data-format.md#336-旧形式からの変換)）で、所属・並び順（`workspaceId` / `groupId` / `order` / `addedAt` / `archivedAt` / `archivedGroupId`）はそのまま残す。データファイルとの違いは次のとおり。
+
+- 旧グループの名前は、データファイルの通常アイテム・ウィンドウアイテムの表示名から探して `itemId` の行にする。データファイルは読み込み処理に通さずに中身だけを読むので、フォルダ取込で展開したアイテムの名前は見つからない行になる（`src/main/services/workspace/WorkspaceService.ts`）
+- 2 ファイルとも読めた（`corrupted` でない）ときだけ変換する
+- 変換の前に `backup/<日時>_pre-set-migration/` のスナップショットを作る（`backupEnabled` に関係なく作る）。作れなければ変換せず、旧形式のアイテムは未知の `type` として `invalid` になる（ファイルには残る）
 
 ---
 

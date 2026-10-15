@@ -4,30 +4,19 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   isLauncherItem,
   isWindowInfo,
-  isGroupItem,
+  isSetItem,
   isWindowItem,
   isClipboardItem,
 } from '@common/types/guards';
-import { LauncherItem, GroupItem, AppItem, WindowInfo } from '@common/types';
+import { LauncherItem, AppItem, WindowInfo } from '@common/types';
 import { windowInfoToWindowItem } from '@common/utils/windowInfoConverter';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
+import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 
 import MemoViewModal from './MemoViewModal';
 import '../styles/components/MemoViewModal.css';
-
-const DEFAULT_ICONS: Record<string, string> = {
-  url: '🌐',
-  folder: '📁',
-  app: '⚙️',
-  file: '📄',
-  customUri: '🔗',
-  group: '📦',
-  window: '🪟',
-  clipboard: '📋',
-  layout: '🖥️',
-};
 
 interface ItemListProps {
   items: AppItem[];
@@ -49,6 +38,8 @@ interface ItemListProps {
   onMoveWindows?: (wins: WindowInfo[], desktopNumber: number) => Promise<void>;
   /** ウィンドウ検索の複数選択（Ctrl+クリック・Shift+クリック・選んだ行の右クリック） */
   windowSelection?: WindowListSelection;
+  /** id からアイテムの名前を引く（セットのツールチップに行の名前を出す。絞り込みの外のアイテムも引く） */
+  nameOfItem?: (itemId: string) => string | undefined;
 }
 
 export interface WindowListSelection {
@@ -78,6 +69,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onPinWindows,
   onMoveWindows,
   windowSelection,
+  nameOfItem,
 }) => {
   const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
@@ -277,7 +269,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       return '🪟';
     }
 
-    return DEFAULT_ICONS[item.type] || '❓';
+    return ITEM_TYPE_ICONS[item.type] || '❓';
   }
 
   // ドラッグ&ドロップハンドラー（ワークスペースへの追加用）
@@ -345,7 +337,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const index = virtualRow.index;
             const item = items[index];
             const isWindow = isWindowInfo(item);
-            const isGroup = isGroupItem(item);
+            const isSet = isSetItem(item);
             const isWindowOperation = isWindowItem(item);
             const isClipboard = isClipboardItem(item);
             const isDraggable = true;
@@ -371,7 +363,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const classNames = [
               'item',
               index === selectedIndex && 'selected',
-              isGroup && 'group-item',
+              isSet && 'group-item',
               isWindow && 'window-item',
               isWindowOperation && 'window-operation-item',
               isClipboard && 'clipboard-item',
@@ -409,7 +401,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 }}
                 onMouseEnter={() => onItemSelect(index)}
                 onContextMenu={(e) => handleContextMenu(e, item)}
-                title={getTooltipText(item)}
+                title={getTooltipText(item, nameOfItem)}
               >
                 {isMarked && (
                   <span className="item-mark" aria-label={t('launcher.list.selected')}>
@@ -419,11 +411,12 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 <span className="item-icon">{getItemIcon(item)}</span>
                 <span className="item-name">
                   {itemName}
-                  {isGroup && (
+                  {isSet && (
                     <span className="group-count">
-                      {t('launcher.list.groupCount', {
-                        count: (item as GroupItem).itemNames.length,
-                      })}
+                      {t('launcher.list.groupCount', { count: item.entries.length })}
+                      {item.entries.some((entry) => entry.placement) && (
+                        <span title={t('launcher.list.setPlacedBadge')}> 📍</span>
+                      )}
                     </span>
                   )}
                   {isLauncherItem(item) && item.windowConfig?.title && (

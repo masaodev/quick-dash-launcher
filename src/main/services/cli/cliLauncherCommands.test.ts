@@ -109,13 +109,13 @@ describe('launcher item add', () => {
     expect(ctx.changed).not.toHaveBeenCalled();
   });
 
-  it('グループアイテムは --set の JSON で itemNames を渡す', async () => {
+  it('セットは --set の JSON で entries を渡す', async () => {
     const r = await runLauncherItemCommand(
       'add',
-      ['--type', 'group', '--name', '朝', '--set', 'itemNames=["メモ帳","議事録"]'],
+      ['--type', 'set', '--name', '朝', '--set', 'entries=[{"itemId":"Memo0001"}]'],
       ctx
     );
-    expect(r).toMatchObject({ type: 'group', itemNames: ['メモ帳', '議事録'] });
+    expect(r).toMatchObject({ type: 'set', entries: [{ itemId: 'Memo0001' }] });
   });
 
   it('その種類に無い項目を --set すると、黙って落とさずに invalid', async () => {
@@ -139,10 +139,8 @@ describe('launcher item add', () => {
     expect(window.message).toContain(
       'キー windowTitle がありません（--set windowTitle=… で渡してください）'
     );
-    const group = await errorOf(
-      runLauncherItemCommand('add', ['--type', 'group', '--name', 'g'], ctx)
-    );
-    expect(group.message).toContain(`--set itemNames='["…"]'`);
+    const set = await errorOf(runLauncherItemCommand('add', ['--type', 'set', '--name', 'g'], ctx));
+    expect(set.message).toContain('--item');
     const path = await errorOf(
       runLauncherItemCommand('update', ['Memo0001', '--unset', 'path'], ctx)
     );

@@ -33,7 +33,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **フォルダ**: `config/datafiles/`
 - **ファイル**: `datafiles/data.json` (必須), `datafiles/data2.json`, `datafiles/data3.json`, ... (オプション)
 - **内容**: ランチャーに表示するアイテムの定義
-- **アイテムタイプ**: `item` (通常), `dir` (フォルダ取込), `group` (グループ), `window` (ウィンドウ操作), `clipboard` (クリップボード), `layout` (レイアウト)
+- **アイテムタイプ**: `item` (通常), `dir` (フォルダ取込), `set` (セット), `window` (ウィンドウ操作), `clipboard` (クリップボード)。旧形式の `group`（旧グループ）・`layout`（旧ウィンドウ配置）は読み込み時に `set` に変換される
 
 ---
 
@@ -41,11 +41,11 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 **→ [ワークスペースファイル形式](workspace-format.md)**
 
-- **workspace.json**（version 2.0）: ワークスペース（タブ）・グループ・アイテム。アイテムはデータファイルと同じ語彙（`type: item / window / group / clipboard / layout`）
+- **workspace.json**（version 2.0）: ワークスペース（タブ）・グループ・アイテム。アイテムはデータファイルと同じ語彙（`type: item / window / clipboard / set`）
 - **workspace-archive.json**（version 2.0）: アーカイブされたグループとアイテム
 - **workspace-ui-state.json**: グループの折りたたみ・切り離しウィンドウの位置（QDL 管理）
 
-ワークスペースアイテムはメイン画面のアイテムをコピーし、独立して管理されます。旧形式（version なし）は起動時に 1 回だけ 2.0 に変換され、変換前は `backup/*_pre-migration/` に残ります。
+ワークスペースアイテムはメイン画面のアイテムをコピーし、独立して管理されます。旧形式（version なし）は起動時に 1 回だけ 2.0 に変換され、変換前は `backup/*_pre-migration/` に残ります。旧グループ・旧ウィンドウ配置は読み込み時にセットに変換され、変換前は `backup/*_pre-set-migration/` に残ります。
 
 ---
 
@@ -86,7 +86,8 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **リストア前自動バックアップ**: リストア実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
 - **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
-- **同じ秒に作ったとき**: サフィックス付き（`_pre-restore`・`_pre-external`・`_pre-migration`）のフォルダは、同じ名前がすでにあれば `YYYY-MM-DDTHH-MM-SS-2_pre-external/` のように連番を付けて別に作る（上書きしない）。一覧では連番の大きい方を新しいものとして並べる
+- **セット変換前スナップショット**: データファイル・ワークスペースファイルの旧グループ・旧ウィンドウ配置をセットに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-set-migration/` を作成（`backupEnabled` に関係なく作る。作れなければ変換しない）
+- **同じ秒に作ったとき**: サフィックス付き（`_pre-restore`・`_pre-external`・`_pre-migration`・`_pre-set-migration`）のフォルダは、同じ名前がすでにあれば `YYYY-MM-DDTHH-MM-SS-2_pre-external/` のように連番を付けて別に作る（上書きしない）。一覧では連番の大きい方を新しいものとして並べる
 
 ### ログ
 

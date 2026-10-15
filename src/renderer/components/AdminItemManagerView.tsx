@@ -337,12 +337,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleChangeType = (item: EditableJsonItem, newType: JsonItem['type']) => {
     if (isInlineItemType(newType)) {
       editing.recordEdit({ ...item, item: changeItemType(item.item, newType) });
-      if (newType === 'group') {
-        showInfo(t('itemManager.groupSelectHint'));
-      }
       return;
     }
-    // ウィンドウ操作・クリップボード・ウィンドウ配置は必須データを詳細編集で入れる
+    // セット・ウィンドウ操作・クリップボードは必須データを詳細編集で入れる
     void openDetailEditor(item, newType);
   };
 

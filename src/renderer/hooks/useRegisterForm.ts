@@ -7,7 +7,7 @@ import type {
   DataFileTab,
   WindowConfig,
   ClipboardFormat,
-  LayoutWindowEntry,
+  SetEntry,
 } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 import { DIR_OPTIONS_DEFAULTS } from '@common/types';
@@ -51,10 +51,8 @@ export function useRegisterForm(
   const [availableTabs, setAvailableTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<{
-    [index: number]: { displayName?: string; path?: string; groupItemNames?: string };
+    [index: number]: { displayName?: string; path?: string; setEntries?: string };
   }>({});
-  const [selectorModalOpen, setSelectorModalOpen] = useState(false);
-  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [iconFetchLoading, setIconFetchLoading] = useState<boolean[]>([]);
   const { showWarning, showError } = useToast();
 
@@ -169,18 +167,10 @@ export function useRegisterForm(
       | WindowConfig
       | RegisterItem['windowOperationConfig']
       | ClipboardFormat[]
-      | LayoutWindowEntry[]
+      | SetEntry[]
   ) => {
     const newItems = [...items];
-    if (field === 'groupItemNames') {
-      const itemNames = (value as string)
-        .split(',')
-        .map((name) => name.trim())
-        .filter((name) => name);
-      newItems[index] = { ...newItems[index], groupItemNames: itemNames };
-    } else {
-      newItems[index] = { ...newItems[index], [field]: value };
-    }
+    newItems[index] = { ...newItems[index], [field]: value };
 
     if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
       clearErrorField(index, field === 'windowOperationConfig' ? 'displayName' : field);
@@ -191,7 +181,6 @@ export function useRegisterForm(
       const clearCommonFields = () => {
         delete item.folderProcessing;
         delete item.dirOptions;
-        delete item.groupItemNames;
         delete item.windowOperationConfig;
       };
       const clearClipboardFields = () => {
@@ -212,13 +201,12 @@ export function useRegisterForm(
         case 'dir':
           item.folderProcessing = 'expand';
           item.dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
-          delete item.groupItemNames;
           clearClipboardFields();
           break;
-        case 'group':
+        case 'set':
           clearCommonFields();
-          item.groupItemNames ??= [];
           clearClipboardFields();
+          item.setEntries ??= [];
           break;
         case 'window':
           clearCommonFields();
@@ -229,11 +217,6 @@ export function useRegisterForm(
           clearCommonFields();
           item.path = '';
           item.type = 'clipboard';
-          break;
-        case 'layout':
-          clearCommonFields();
-          clearClipboardFields();
-          item.layoutEntries ??= [];
           break;
         default:
           clearCommonFields();
@@ -279,27 +262,20 @@ export function useRegisterForm(
       newErrors[i] = {};
 
       if (item.itemCategory !== 'dir' && !item.displayName.trim()) {
-        newErrors[i].displayName =
-          item.itemCategory === 'group'
-            ? t('register.errors.groupNameRequired')
-            : t('register.errors.displayNameRequired');
+        newErrors[i].displayName = t('register.errors.displayNameRequired');
       }
 
       if (
-        item.itemCategory !== 'group' &&
+        item.itemCategory !== 'set' &&
         item.itemCategory !== 'window' &&
         item.itemCategory !== 'clipboard' &&
-        item.itemCategory !== 'layout' &&
         !item.path.trim()
       ) {
         newErrors[i].path = t('register.errors.pathRequired');
       }
 
-      if (item.itemCategory === 'group') {
-        const itemNames = item.groupItemNames || [];
-        if (itemNames.length === 0) {
-          newErrors[i].groupItemNames = t('register.errors.groupItemsRequired');
-        }
+      if (item.itemCategory === 'set' && (item.setEntries ?? []).length === 0) {
+        newErrors[i].setEntries = t('set.editor.entriesRequired');
       }
 
       if (item.itemCategory === 'window') {
@@ -313,12 +289,6 @@ export function useRegisterForm(
       if (item.itemCategory === 'clipboard') {
         if (!item.clipboardSessionId && !item.clipboardDataRef) {
           newErrors[i].path = t('register.errors.clipboardRequired');
-        }
-      }
-
-      if (item.itemCategory === 'layout') {
-        if (!item.layoutEntries || item.layoutEntries.length === 0) {
-          newErrors[i].path = t('register.errors.layoutRequired');
         }
       }
     }
@@ -353,30 +323,15 @@ export function useRegisterForm(
     onClose();
   };
 
-  const handleAddGroupItem = (index: number) => {
-    setEditingItemIndex(index);
-    setSelectorModalOpen(true);
-  };
-
-  const handleSelectGroupItem = (itemName: string) => {
-    if (editingItemIndex === null) return;
-
-    const currentGroupItemNames = items[editingItemIndex].groupItemNames || [];
-    updateItem(editingItemIndex, { groupItemNames: [...currentGroupItemNames, itemName] });
-    clearErrorField(editingItemIndex, 'groupItemNames');
-  };
-
-  const handleRemoveGroupItem = (itemIndex: number, groupItemNameIndex: number) => {
-    const currentGroupItemNames = items[itemIndex].groupItemNames || [];
-    updateItem(itemIndex, {
-      groupItemNames: currentGroupItemNames.filter((_, i) => i !== groupItemNameIndex),
-    });
-  };
-
   const updateItem = (index: number, updatedFields: Partial<RegisterItem>) => {
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], ...updatedFields };
-    setItems(newItems);
+    setItems((prev) => {
+      const newItems = [...prev];
+      newItems[index] = { ...newItems[index], ...updatedFields };
+      return newItems;
+    });
+    if (updatedFields.setEntries && updatedFields.setEntries.length > 0) {
+      clearErrorField(index, 'setEntries');
+    }
   };
 
   const handleTargetTabChange = (index: number, targetTab: string) => {
@@ -449,21 +404,14 @@ export function useRegisterForm(
     errors,
     availableTabs,
     dataFileLabels,
-    selectorModalOpen,
-    editingItemIndex,
     iconFetchLoading,
     handleItemChange,
     handlePathBlur,
     validateAndRegister,
     handleCancel,
-    handleAddGroupItem,
-    handleSelectGroupItem,
-    handleRemoveGroupItem,
     updateItem,
     handleTargetTabChange,
     handleFetchIcon,
-    setEditingItemIndex,
-    setSelectorModalOpen,
     replaceFirstItemFromPath,
   };
 }

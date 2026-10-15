@@ -153,28 +153,51 @@ function duplicateKey(item: EditableJsonItem): string {
  * 指定データファイル内の重複アイテムの id（ファイル順で 2 件目以降）を返す
  */
 export function findDuplicateIds(items: EditableJsonItem[], sourceFile: string): string[] {
-  const seen = new Set<string>();
-  const duplicates: string[] = [];
+  return [...findDuplicates(items, sourceFile).keys()];
+}
+
+/** 重複（2 件目以降）の id → 残す 1 件目の id */
+function findDuplicates(items: EditableJsonItem[], sourceFile: string): Map<string, string> {
+  const firstIdByKey = new Map<string, string>();
+  const duplicates = new Map<string, string>();
   for (const item of items) {
     if (item.meta.sourceFile !== sourceFile) continue;
     const key = duplicateKey(item);
-    if (seen.has(key)) {
-      duplicates.push(item.item.id);
+    const firstId = firstIdByKey.get(key);
+    if (firstId !== undefined) {
+      duplicates.set(item.item.id, firstId);
     } else {
-      seen.add(key);
+      firstIdByKey.set(key, item.item.id);
     }
   }
   return duplicates;
 }
 
-/** 指定データファイル内の重複を除く（他のファイルは触らない） */
+/**
+ * 指定データファイル内の重複を除く（他のファイルのアイテムは消さない）
+ *
+ * 消すアイテムを指しているセットの行は、残す 1 件目の id に付け替える（どのファイルのセットでも）
+ */
 export function dedupeFileItems(
   items: EditableJsonItem[],
   sourceFile: string
 ): { items: EditableJsonItem[]; removed: number } {
-  const duplicateIds = findDuplicateIds(items, sourceFile);
-  if (duplicateIds.length === 0) return { items, removed: 0 };
-  return { items: removeItems(items, duplicateIds), removed: duplicateIds.length };
+  const duplicates = findDuplicates(items, sourceFile);
+  if (duplicates.size === 0) return { items, removed: 0 };
+  const relinked = items.map((item) => {
+    if (item.item.type !== 'set') return item;
+    const entries = item.item.entries;
+    if (!entries.some((e) => e.itemId !== undefined && duplicates.has(e.itemId))) return item;
+    return refreshEditableItem(item, {
+      ...item.item,
+      entries: entries.map((e) =>
+        e.itemId !== undefined && duplicates.has(e.itemId)
+          ? { ...e, itemId: duplicates.get(e.itemId) }
+          : e
+      ),
+    });
+  });
+  return { items: removeItems(relinked, [...duplicates.keys()]), removed: duplicates.size };
 }
 
 /** キー順に依存しない JSON 文字列（内容の比較用） */
@@ -356,6 +379,22 @@ export function filterEditableItems(
     .split(/\s+/)
     .filter((k) => k.length > 0);
 
+  // セットは行の中身（指すアイテムの名前・行の名前・パス）でも探せるようにする（displayText は行の JSON なので名前で当たらない）
+  const nameById = new Map<string, string>();
+  for (const e of items) {
+    if ('displayName' in e.item && e.item.displayName) nameById.set(e.item.id, e.item.displayName);
+  }
+  const setText = (item: EditableJsonItem): string => {
+    if (item.item.type !== 'set') return '';
+    return item.item.entries
+      .map((e) =>
+        [e.itemId ? nameById.get(e.itemId) : undefined, e.label, e.open?.path]
+          .filter(Boolean)
+          .join(' ')
+      )
+      .join(' ');
+  };
+
   return items.filter((item) => {
     if (item.meta.sourceFile !== criteria.sourceFile) return false;
 
@@ -372,7 +411,8 @@ export function filterEditableItems(
     }
 
     // メモも検索対象にする（displayText にはメモが入らない）
-    const itemText = `${item.displayText} ${item.item.memo ?? ''}`.toLowerCase();
+    const base = item.item.type === 'set' ? item.item.displayName : item.displayText;
+    const itemText = `${base} ${item.item.memo ?? ''} ${setText(item)}`.toLowerCase();
     return keywords.every((keyword) => itemText.includes(keyword));
   });
 }
@@ -472,8 +512,8 @@ export function importApps(
 }
 
 /** 種類セルのプルダウンでその場で切り替えられる種類（それ以外は詳細編集から） */
-export type InlineItemType = 'item' | 'dir' | 'group';
-export const INLINE_ITEM_TYPES: InlineItemType[] = ['item', 'dir', 'group'];
+export type InlineItemType = 'item' | 'dir';
+export const INLINE_ITEM_TYPES: InlineItemType[] = ['item', 'dir'];
 
 export function isInlineItemType(type: string): type is InlineItemType {
   return (INLINE_ITEM_TYPES as string[]).includes(type);
@@ -496,8 +536,6 @@ export function changeItemType(jsonItem: JsonItem, newType: InlineItemType): Jso
       return { ...common, type: 'item', displayName, path };
     case 'dir':
       return { ...common, type: 'dir', path };
-    case 'group':
-      return { ...common, type: 'group', displayName, itemNames: [] };
   }
 }
 
@@ -509,11 +547,6 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
       const argsPart = jsonItem.args || '';
       if (!pathPart) return i18next.t('itemManager.pathSummary.noPath');
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
-    }
-    case 'group': {
-      const itemNames = jsonItem.itemNames || [];
-      if (itemNames.length === 0) return i18next.t('itemManager.pathSummary.noItems');
-      return itemNames.join(', ');
     }
     case 'window': {
       const windowTitle = jsonItem.windowTitle || '';
@@ -544,13 +577,13 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
       if (!formats && !preview) return i18next.t('itemManager.pathSummary.noData');
       return preview ? `[${formats}] ${preview}` : `[${formats}]`;
     }
-    case 'layout': {
+    case 'set': {
       const entries = jsonItem.entries || [];
-      if (entries.length === 0) return i18next.t('itemManager.pathSummary.noEntries');
-      return i18next.t('itemManager.pathSummary.layoutWindows', {
-        count: entries.length,
-        titles: entries.map((e) => e.windowTitle).join(', '),
-      });
+      if (entries.length === 0) return i18next.t('itemManager.pathSummary.noItems');
+      const placed = entries.filter((e) => e.placement).length;
+      return placed > 0
+        ? i18next.t('itemManager.pathSummary.setRowsPlaced', { count: entries.length, placed })
+        : i18next.t('itemManager.pathSummary.setRows', { count: entries.length });
     }
     default:
       return i18next.t('itemManager.pathSummary.unknownType');

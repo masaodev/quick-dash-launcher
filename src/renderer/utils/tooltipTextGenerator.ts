@@ -2,14 +2,16 @@ import i18next from 'i18next';
 import type {
   AppItem,
   WindowInfo,
-  GroupItem,
+  SetItem,
   WindowItem,
   LauncherItem,
   ClipboardItem,
   DirOptionsForProcessing,
 } from '@common/types';
-import { isWindowInfo, isGroupItem, isWindowItem, isClipboardItem } from '@common/types/guards';
+import { isWindowInfo, isWindowItem, isClipboardItem, isSetItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
+
+import { setEntriesSummary } from './setEditing';
 
 // 一覧を描く部品（LauncherItemList）が useTranslation で言語の切り替えに合わせて描き直すので、
 // ここでは描くときの言語で i18next.t から引く
@@ -107,18 +109,23 @@ function getWindowInfoTooltip(win: WindowInfo): string {
 }
 
 /**
- * GroupItem用のツールチップテキストを生成
+ * SetItem用のツールチップテキストを生成
  */
-function getGroupItemTooltip(groupItem: GroupItem): string {
-  const lines: string[] = [];
-  lines.push(t('launcher.tooltip.group', { value: groupItem.itemNames.join(', ') }));
-
+function getSetItemTooltip(
+  setItem: SetItem,
+  nameOf: (itemId: string) => string | undefined
+): string {
+  const lines: string[] = [t('launcher.tooltip.set', { count: setItem.entries.length })];
+  // 旧グループのツールチップと同じく、中身の名前を出す（先頭 3 行）
+  const summary = setEntriesSummary(setItem.entries, nameOf);
+  if (summary) lines.push(summary);
+  const placed = setItem.entries.filter((entry) => entry.placement).length;
+  if (placed > 0) lines.push(t('launcher.tooltip.setPlaced', { count: placed }));
   appendMetaInfo(lines, {
-    sourceFile: groupItem.sourceFile,
-    id: groupItem.id,
-    lineNumber: groupItem.lineNumber,
+    sourceFile: setItem.sourceFile,
+    id: setItem.id,
+    lineNumber: setItem.lineNumber,
   });
-
   return lines.join('\n');
 }
 
@@ -212,13 +219,16 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
  * AppItem用のツールチップテキストを生成
  * アイテムタイプに応じて適切な生成関数を呼び出す
  */
-export function getTooltipText(item: AppItem): string {
+export function getTooltipText(
+  item: AppItem,
+  nameOf: (itemId: string) => string | undefined = () => undefined
+): string {
   if (isWindowInfo(item)) {
     return getWindowInfoTooltip(item);
   }
 
-  if (isGroupItem(item)) {
-    return getGroupItemTooltip(item);
+  if (isSetItem(item)) {
+    return getSetItemTooltip(item, nameOf);
   }
 
   if (isWindowItem(item)) {

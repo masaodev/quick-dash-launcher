@@ -13,6 +13,7 @@ import { findWindowByTitle } from './windowMatcher.js';
 import {
   activateWindow,
   restoreWindow,
+  getWindowShowState,
   setWindowBounds,
   getWindowBounds,
   getForegroundLockTimeout,
@@ -22,7 +23,17 @@ import {
   moveWindowToVirtualDesktop,
   isWindowOnDesktopNumber,
   pinWindow,
+  switchToWindowDesktop,
 } from './virtualDesktop/index.js';
+
+/** ウィンドウ設定を当てるときの動き */
+export interface ApplyWindowOptions {
+  /**
+   * 前面に出すウィンドウが別の仮想デスクトップにあれば、そのデスクトップへ切り替える
+   * （アイテム・ウィンドウ操作アイテムで前に出すとき。セットの実行中は利用者のデスクトップを変えない）
+   */
+  followDesktop?: boolean;
+}
 
 /**
  * ウィンドウ位置・サイズ設定の定数
@@ -48,6 +59,11 @@ export interface WindowActivationResult {
   activated: boolean;
   /** ウィンドウが見つかったかどうか */
   windowFound: boolean;
+  /**
+   * 位置（x・y）を当てられなかった（管理者権限で動くウィンドウなど）。位置を当てなかったときと、
+   * 当てられたときは付けない。大きさは見ない（大きさが固定のウィンドウで誤って失敗にしないため）
+   */
+  positionNotApplied?: true;
 }
 
 /**
@@ -147,9 +163,14 @@ async function setBoundsWithRetry(
   itemName: string,
   windowConfig: WindowConfig,
   logger: Logger
-): Promise<boolean> {
+): Promise<{ applied: boolean; positionApplied: boolean }> {
   const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
   const { MAX_RETRIES, RETRY_DELAY_MS } = WINDOW_BOUNDS_CONFIG;
+  /**
+   * 最後に確かめた位置（x・y）が当たっていたか（読み直せなかったら当たっていないとみなす）。
+   * x・y を指定していない（大きさだけ）なら、位置は問わないので当たっている扱いから始める
+   */
+  let positionApplied = targetBounds.x === undefined && targetBounds.y === undefined;
   const delay = () => new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -171,9 +192,13 @@ async function setBoundsWithRetry(
       continue;
     }
 
+    positionApplied = areBoundsWithinTolerance(actualBounds, {
+      x: targetBounds.x,
+      y: targetBounds.y,
+    });
     if (areBoundsWithinTolerance(actualBounds, targetBounds)) {
       logger.info({ ...logCtx, attempt, actualBounds }, 'ウィンドウの位置・サイズを設定しました');
-      return true;
+      return { applied: true, positionApplied: true };
     }
 
     logger.warn(
@@ -184,7 +209,7 @@ async function setBoundsWithRetry(
   }
 
   logger.error(logCtx, 'ウィンドウの位置・サイズ設定に失敗しました（全試行終了）');
-  return false;
+  return { applied: false, positionApplied };
 }
 
 /**
@@ -259,7 +284,8 @@ async function waitForDesktopMove(
 export async function tryActivateWindow(
   windowConfig: WindowConfig | undefined,
   itemName: string,
-  logger: Logger
+  logger: Logger,
+  options: ApplyWindowOptions = {}
 ): Promise<WindowActivationResult> {
   if (!windowConfig) {
     return { activated: false, windowFound: false };
@@ -278,7 +304,28 @@ export async function tryActivateWindow(
     'ウィンドウが見つかりました。アクティブ化と位置・サイズ調整を実行します'
   );
 
-  restoreWindow(hwnd);
+  return applyWindowConfig(hwnd, windowConfig, itemName, logger, options);
+}
+
+/**
+ * 見つけたウィンドウにウィンドウ設定を当てる（最小化の解除・ピン留め・位置とサイズ・仮想デスクトップ・前面化）
+ *
+ * @param hwnd 対象のウィンドウ
+ * @param windowConfig ウィンドウ設定（title・processName は使わない）
+ * @returns アクティブ化結果（windowFound は常に true）
+ */
+export async function applyWindowConfig(
+  hwnd: bigint | number,
+  windowConfig: WindowConfig,
+  itemName: string,
+  logger: Logger,
+  options: ApplyWindowOptions = {}
+): Promise<WindowActivationResult> {
+  const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
+  /** 位置を当てたときの結果（当てなければ undefined） */
+  let positionApplied: boolean | undefined;
+  const positionResult = () =>
+    positionApplied === false ? { positionNotApplied: true as const } : {};
 
   const needsPinning = windowConfig.pinToAllDesktops;
   if (needsPinning) {
@@ -298,6 +345,12 @@ export async function tryActivateWindow(
     windowConfig.y !== undefined ||
     windowConfig.width !== undefined ||
     windowConfig.height !== undefined;
+
+  // 最小化中は元に戻す。最大化中は、位置・サイズを当てるときだけ戻す（前に出すだけなら最大化のまま）
+  const showState = getWindowShowState(hwnd);
+  if (showState === 'minimized' || (showState === 'maximized' && needsBoundsChange)) {
+    restoreWindow(hwnd);
+  }
 
   // ウィンドウの位置・サイズを設定（指定されている場合）
   const baseBounds: PartialBounds = {
@@ -326,7 +379,8 @@ export async function tryActivateWindow(
       }
     }
 
-    await setBoundsWithRetry(hwnd, targetBounds, itemName, windowConfig, logger);
+    positionApplied = (await setBoundsWithRetry(hwnd, targetBounds, itemName, windowConfig, logger))
+      .positionApplied;
   }
 
   // virtualDesktopNumberが指定されている場合のみ、そのデスクトップに移動
@@ -345,7 +399,9 @@ export async function tryActivateWindow(
 
       if (needsBoundsChange) {
         await waitForDesktopMove(hwnd, targetDesktopNumber, itemName, windowConfig, logger);
-        await setBoundsWithRetry(hwnd, baseBounds, itemName, windowConfig, logger);
+        positionApplied = (
+          await setBoundsWithRetry(hwnd, baseBounds, itemName, windowConfig, logger)
+        ).positionApplied;
       }
     } else {
       logger.warn(desktopLogCtx, '仮想デスクトップへの移動に失敗しました');
@@ -354,7 +410,13 @@ export async function tryActivateWindow(
 
   if (windowConfig.activateWindow === false) {
     logger.info(logCtx, 'activateWindow=falseのため、ウィンドウのアクティブ化をスキップしました');
-    return { activated: true, windowFound: true };
+    return { activated: true, windowFound: true, ...positionResult() };
+  }
+
+  // 別の仮想デスクトップにあるウィンドウは、前面に出しても見えないので、そのデスクトップへ切り替える
+  if (options.followDesktop && targetDesktopNumber === undefined && !needsPinning) {
+    if (switchToWindowDesktop(hwnd))
+      logger.info(logCtx, 'ウィンドウのある仮想デスクトップへ切り替えました');
   }
 
   const success = activateWindow(hwnd);
@@ -370,5 +432,5 @@ export async function tryActivateWindow(
         : 'ウィンドウを前面に出せませんでした'
     );
   }
-  return { activated: success, windowFound: true };
+  return { activated: success, windowFound: true, ...positionResult() };
 }

@@ -36,7 +36,6 @@ const ACTION_KEYS = {
   folder: 'toast.actions.folder',
   customUri: 'toast.actions.customUri',
   windowOperation: 'toast.actions.windowOperation',
-  layout: 'toast.actions.layout',
   windowActivate: 'toast.actions.windowActivate',
   windowClose: 'toast.actions.windowClose',
   windowPin: 'toast.actions.windowPin',
@@ -47,15 +46,15 @@ const ACTION_KEYS = {
 
 /** overlay.html に渡す、表示言語に合わせた文言 */
 interface ToastText {
-  /** 区切り線の下の 1 行（グループは「N件のアイテムを起動します」） */
+  /** 区切り線の下の 1 行（セットは「N件のアイテムを起動します」） */
   action: string;
-  /** グループの中身（先頭の 3 件。残りは「… 他 N 件」） */
+  /** セットの中身（先頭の 3 件。残りは「… 他 N 件」） */
   groupItems?: string;
 }
 
 function buildToastText(options: ToastOptions): ToastText {
   const t = mainI18n.t.bind(mainI18n);
-  if (options.itemType === 'group') {
+  if (options.itemType === 'set') {
     const names = options.itemNames ?? [];
     const count = options.itemCount || names.length;
     const shown = names.slice(0, 3).join(', ');
@@ -93,6 +92,8 @@ let overlayWindow: BrowserWindow | null = null;
 let isWindowReady = false;
 let pendingEnsure: Promise<BrowserWindow> | null = null;
 let currentMode: OverlayMode | null = null;
+/** 進み具合の表示が終わった（失敗・中止で「閉じる」を待っている）か。終わった表示はトーストに場所を譲る */
+let progressFinished = false;
 let toastHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // 非表示のまま放置されたウィンドウを破棄して DOM・描画面のメモリを解放する
@@ -247,20 +248,31 @@ function applyProgressMode(win: BrowserWindow): void {
   win.setMovable(true);
   applyBounds(win, PROGRESS_WIDTH, PROGRESS_HEIGHT, x, y);
   currentMode = 'progress';
+  progressFinished = false;
+}
+
+/** 進み具合の表示が終わったことを覚える（このあとのトーストは表示を置き換えてよい） */
+export function markLayoutProgressFinished(): void {
+  progressFinished = true;
 }
 
 /**
  * トースト通知を表示する
  */
 export async function showToastWindow(options: ToastOptions): Promise<void> {
-  // 進捗表示中はウィンドウを奪わない（トーストは破棄する）
-  if (currentMode === 'progress' && isWindowValid() && overlayWindow!.isVisible()) {
+  // 進捗表示中はウィンドウを奪わない（トーストは破棄する）。終わった表示はトーストに置き換える
+  if (
+    currentMode === 'progress' &&
+    !progressFinished &&
+    isWindowValid() &&
+    overlayWindow!.isVisible()
+  ) {
     return;
   }
 
-  // グループ起動時は表示時間を長め（3秒）に設定
+  // セットの起動時は表示時間を長め（3秒）に設定
   const duration =
-    options.duration ?? (options.itemType === 'group' ? GROUP_DURATION : DEFAULT_DURATION);
+    options.duration ?? (options.itemType === 'set' ? GROUP_DURATION : DEFAULT_DURATION);
   const type = options.type ?? 'success';
 
   clearToastHideTimeout();

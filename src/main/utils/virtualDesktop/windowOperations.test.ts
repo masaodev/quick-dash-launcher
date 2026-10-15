@@ -9,6 +9,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const dll = vi.hoisted(() => ({
   moveWindowToDesktopNumber: vi.fn(),
   getDesktopCount: vi.fn(),
+  getCurrentDesktopNumber: vi.fn(),
+  pinWindow: vi.fn(),
+  isPinnedWindow: vi.fn(),
 }));
 const registry = vi.hoisted(() => ({
   isVirtualDesktopSupported: vi.fn(),
@@ -18,17 +21,23 @@ const registry = vi.hoisted(() => ({
 vi.mock('./dllLoader.js', () => ({
   getMoveWindowToDesktopNumber: () => dll.moveWindowToDesktopNumber,
   getGetDesktopCount: () => dll.getDesktopCount,
-  getGetCurrentDesktopNumber: () => null,
+  getGetCurrentDesktopNumber: () => dll.getCurrentDesktopNumber,
   getIsWindowOnDesktopNumber: () => null,
   getGetWindowDesktopNumber: () => null,
-  getPinWindow: () => null,
+  getPinWindow: () => dll.pinWindow,
   getUnPinWindow: () => null,
-  getIsPinnedWindow: () => null,
+  getIsPinnedWindow: () => dll.isPinnedWindow,
   getGetDesktopName: () => null,
 }));
 vi.mock('./registryAccess.js', () => registry);
 
-import { getDesktopCount, moveWindowToVirtualDesktop } from './windowOperations.js';
+import {
+  getCurrentDesktopNumber,
+  getDesktopCount,
+  isPinnedWindow,
+  moveWindowToVirtualDesktop,
+  pinWindow,
+} from './windowOperations.js';
 
 describe('windowOperations', () => {
   beforeEach(() => {
@@ -73,6 +82,11 @@ describe('windowOperations', () => {
       expect(moveWindowToVirtualDesktop(100, 1)).toBe(false);
     });
 
+    it('DLL の戻り値 -1（失敗）は false', () => {
+      dll.moveWindowToDesktopNumber.mockReturnValue(-1);
+      expect(moveWindowToVirtualDesktop(100, 1)).toBe(false);
+    });
+
     it('仮想デスクトップ非対応なら false', () => {
       registry.isVirtualDesktopSupported.mockReturnValue(false);
       expect(moveWindowToVirtualDesktop(100, 1)).toBe(false);
@@ -94,6 +108,31 @@ describe('windowOperations', () => {
     it('どちらも取れなければ -1', () => {
       dll.getDesktopCount.mockReturnValue(0);
       expect(getDesktopCount()).toBe(-1);
+    });
+  });
+
+  describe('DLL の -1（失敗）を真とみなさない', () => {
+    it('pinWindow は 1 で true、-1 と 0 で false', () => {
+      dll.pinWindow.mockReturnValue(1);
+      expect(pinWindow(100)).toBe(true);
+      dll.pinWindow.mockReturnValue(-1);
+      expect(pinWindow(100)).toBe(false);
+      dll.pinWindow.mockReturnValue(0);
+      expect(pinWindow(100)).toBe(false);
+    });
+
+    it('isPinnedWindow は -1（調べられない）を固定中としない', () => {
+      dll.isPinnedWindow.mockReturnValue(-1);
+      expect(isPinnedWindow(100)).toBe(false);
+      dll.isPinnedWindow.mockReturnValue(1);
+      expect(isPinnedWindow(100)).toBe(true);
+    });
+
+    it('getCurrentDesktopNumber は DLL の -1 で -1（0 にしない）', () => {
+      dll.getCurrentDesktopNumber.mockReturnValue(-1);
+      expect(getCurrentDesktopNumber()).toBe(-1);
+      dll.getCurrentDesktopNumber.mockReturnValue(1);
+      expect(getCurrentDesktopNumber()).toBe(2);
     });
   });
 });

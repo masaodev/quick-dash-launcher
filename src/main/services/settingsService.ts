@@ -61,7 +61,6 @@ export class SettingsService {
     workspaceVisibleOnAllDesktops: true,
     detachedVisibleOnAllDesktops: true,
     backupIncludeClipboard: false,
-    parallelGroupLaunch: false,
     showKeyboardHints: true,
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
@@ -152,6 +151,20 @@ export class SettingsService {
     }
 
     logger.info({ settings }, 'Multiple settings updated');
+  }
+
+  /**
+   * 旧設定「グループアイテムを並列起動」の値（グループをセットに変換するときの開き方に写す）
+   *
+   * 設定の項目からは消したので、保存されている値をそのまま読む
+   */
+  public async getLegacyParallelGroupLaunch(): Promise<boolean> {
+    const store = await this.ensureStore();
+    try {
+      return (store.store as unknown as Record<string, unknown>).parallelGroupLaunch === true;
+    } catch {
+      return false;
+    }
   }
 
   public async getAll(): Promise<AppSettings> {

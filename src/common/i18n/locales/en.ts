@@ -106,6 +106,7 @@ export const en: LocaleMessages = {
       selected: 'Selected',
       groupCount_one: ' ({{count}} item)',
       groupCount_other: ' ({{count}} items)',
+      setPlacedBadge: 'Some rows place windows',
       windowSearchBadge: 'Window search: {{title}}',
       showNote: 'Show note',
     },
@@ -162,7 +163,13 @@ export const en: LocaleMessages = {
       position: 'Position: ({{x}}, {{y}})',
       size: 'Size: {{width}}x{{height}}',
       processId: 'Process ID: {{value}}',
-      group: 'Group: {{value}}',
+      set_one: 'Set: {{count}} item',
+      set_other: 'Set: {{count}} items',
+      setRows: 'Rows: {{names}}',
+      setRowsMore_one: 'Rows: {{names}}, and {{count}} more',
+      setRowsMore_other: 'Rows: {{names}}, and {{count}} more',
+      setPlaced_one: 'Rows that place a window: {{count}}',
+      setPlaced_other: 'Rows that place a window: {{count}}',
       virtualDesktop: 'Virtual desktop: {{value}}',
       noActivate: "Activate: don't",
       clipboardFormats: 'Formats: {{value}}',
@@ -351,7 +358,6 @@ export const en: LocaleMessages = {
       folder: 'Opening folder...',
       customUri: 'Opening...',
       windowOperation: 'Running window action',
-      layout: 'Applying window layout',
       windowActivate: 'Switched to the window',
       windowClose: 'Window closed',
       windowPin: 'Now shown on all desktops',
@@ -389,6 +395,7 @@ QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and 
 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
+  launcher set row list|add|remove       Rows of a set in the launcher
   workspace list                           List workspaces
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove   Groups in workspaces
@@ -404,18 +411,24 @@ Commands that write accept --dry-run to check the result without writing.
 Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 CLI and app versions don't match
 `,
       launcher: `Usage: qdl launcher item <action> [arguments]
+       qdl launcher set row <action> <set> [arguments]
 
 Works with the items in the launcher (datafiles/data*.json).
 
-Actions:
-  list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
-  add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
-                           --type item|dir|group|window, --set key=value, --dry-run)
-  update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
-  remove <id or name>      Delete an item (--dry-run)
+  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
+  item add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
+                                --type item|dir|set|window, --set key=value, --dry-run)
+  item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
+  item remove <id or name>      Delete an item (--dry-run)
+  set row list <set>            List the rows of a set (row numbers are 0-based)
+  set row add <set>             Add a row to a set (--item <id or name> | --path <path> [--args],
+                                --label <row name> --position <0-based> --dry-run)
+  set row remove <set> <row>    Delete a row from a set (--dry-run)
 
-A relative --path is resolved from the folder where you run qdl. For --type dir|group|window, pass the
-required fields with --set (for example --set itemNames='["Notes","Browser"]', --set windowTitle=Notepad).
+A relative --path is resolved from the folder where you run qdl. With --type set, --path isn't required;
+pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
+more rows with set row add. The window to move and its position are set with "Record current positions"
+on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
 `,
       workspace: `Usage: qdl workspace <target> <action> [arguments]
 
@@ -449,6 +462,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       extraArgs: 'Too many arguments: {{args}}',
       idOrName: '<id or name>',
       idOrGroupName: '<id or name>',
+      setIdOrName: '<set id or name>',
+      entryIndex: '<row number>',
     },
     errors: {
       relativePath: "Can't resolve the relative path (the current folder is unknown): {{value}}",
@@ -463,7 +478,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       notFound: 'Couldn\'t find the {{what}} "{{key}}" (use the id or the exact display name)',
       ambiguous: '{{count}} matches for the {{what}} "{{key}}". Use the id',
       unknownCommand: 'Unknown command: {{command}}',
-      unknownLauncherNoun: 'Unknown command: launcher {{noun}} (only launcher item)',
+      unknownLauncherNoun:
+        'Unknown command: launcher {{noun}} (only launcher item and launcher set)',
+      missingSetNoun: 'Specify row after launcher set',
+      missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
       missingVerb: 'Specify an action (list / add / update / remove)',
       missingWorkspaceNoun: 'After workspace, specify list, item, or group',
@@ -484,7 +502,28 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       dirHasNoName: "Folder imports (dir) don't have a display name",
       needName: 'Specify --name',
       needPath: 'Specify --path',
-      argsOnlyItem: '--args can be used only with regular items (item)',
+      argsOnlyItem: '--args can be used only with regular items (item) and rows of a set (set)',
+      itemOnlySet: '--item and --label can be used only with sets (--type set)',
+      setItemAndPath: 'Specify either --item or --path, not both',
+      setNeedTarget: 'Specify what the row opens with --item <id or name> or --path <path>',
+      setNeedFirstEntry:
+        'A set needs at least one row. Specify the first row with --item <id or name> or --path <path>',
+      setEntriesTwice: 'Use either --item/--path or --set entries=…, not both',
+      setArgsWithItem:
+        "--args can be used only with --path rows (an --item row uses the item's arguments)",
+      setItemType:
+        "Items of type {{type}} can't be rows of a set (only {{types}}. Use --path for the contents of an imported folder)",
+      setRowUnknownKeys:
+        'Row {{index}} has unknown keys: {{keys}} (itemId, open, label, window, placement, ifOpen, activateWindow, waitSeconds)',
+      setRowEmpty:
+        'Row {{index}} has nothing to open (itemId, open) and no window to move (window)',
+      setRowItemNotFound: "Row {{index}}: couldn't find the item with itemId {{id}}",
+      setNoPathArgs:
+        "Sets don't have --path or --args (to add a row, use qdl launcher set row add)",
+      setBadPosition: '--position must be between 0 and {{max}}: {{value}}',
+      setBadIndex: 'The row number must be between 0 and {{max}}: {{value}}',
+      setLastEntry:
+        "Can't delete the last row of a set. To delete the whole set, use qdl launcher item remove",
       typeNotEditable: "Items of type {{type}} can't be changed from the CLI (use the app instead)",
       needChanges: 'Specify what to change ({{options}})',
       noPath: "Type {{type}} doesn't have --path",
@@ -496,6 +535,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     targets: {
       launcherItem: 'launcher item',
+      set: 'set',
       workspace: 'workspace',
       group: 'group',
       workspaceItem: 'workspace item',
@@ -510,6 +550,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       groupAdded: 'CLI: Added the group "{{name}}" to the workspace',
       groupUpdated: 'CLI: Changed the group "{{name}}" in the workspace',
       groupRemoved: 'CLI: Deleted the group "{{name}}" from the workspace',
+      setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
+      setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },
     enabled: 'QuickDashLauncher CLI is turned on. Use qdl from a new terminal window.',
     disabled: 'QuickDashLauncher CLI is turned off (qdl was removed from PATH).',
@@ -525,6 +567,192 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     cancelled: 'Canceled',
     timedOut: 'Timed out waiting for the window to appear',
     windowNotFound: "Couldn't find the window",
+  },
+  set: {
+    run: {
+      titleNotMatched: 'No window with a matching title ({{exe}} is open)',
+      notOpen: "Not open, so it wasn't moved",
+      couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
+      desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
+    },
+    errors: {
+      itemNotFound: "Couldn't find the item this row points to",
+      unsupportedType: "This kind of item can't be opened from a set",
+      someFailed_one: "Couldn't open {{count}} row: {{names}}",
+      someFailed_other: "Couldn't open {{count}} rows: {{names}}",
+    },
+    picker: {
+      title: 'Items to add to the set',
+      search: 'Search by name (all tabs)',
+      all: 'All',
+      sameGroup: 'Same tab as this set',
+      others: 'Other tabs',
+      workspace: 'Workspace',
+      selected_one: '{{count}} selected',
+      selected_other: '{{count}} selected',
+      add_one: 'Add {{count}} item',
+      add_other: 'Add {{count}} items',
+      empty: 'There are no items to add',
+      noResults: 'No results',
+      added: 'Added',
+      chooseTitle: 'Item to open in this row',
+      choose: 'Choose',
+    },
+    editor: {
+      rows: 'Rows',
+      empty: 'Nothing here yet. Add items with the button below.',
+      addItems: '+ Add items',
+      record: '📍 Record current positions',
+      launchMode: 'How to open',
+      sequential: 'One after another',
+      parallel: 'All at once',
+      moveOnly: 'Move only',
+      moveOnlyDetails: "Doesn't open anything; moves the {{window}} window",
+      missing: "Couldn't find the item",
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      remove: 'Remove row',
+      detail: 'Row details',
+      entriesRequired: 'Add at least one row to the set',
+      hint: 'Rows open from the top. To place windows, arrange them first and press "Record current positions".',
+      hintParallel:
+        'All rows open at once. To place windows, arrange them first and press "Record current positions".',
+      moveOnlyHint:
+        'Move-only rows move the window only while it is open (add something to open in Row details ✏️).',
+    },
+    record: {
+      title: 'Record current positions',
+      loading: 'Looking at the windows…',
+      linked: 'Rows matched to a window ({{count}})',
+      linkedHint: 'If one is wrong, choose "Use another window" on the right',
+      failed: 'Rows not matched to a window ({{count}})',
+      failedHint: 'You can still record',
+      unlinked: 'Windows not in the set ({{count}})',
+      unlinkedHint: 'Open this when you want to add rows',
+      minimized: 'Minimized windows ({{count}})',
+      keep: 'Keep',
+      pickOther: 'Use another window',
+      unlink: "Don't record a position",
+      skip: "Don't add",
+      newRow: 'Add as a row',
+      linkGroup: 'Use for this row',
+      pickWindow: 'Choose a window',
+      windowLabel: 'Window: {{title}}',
+      reasonUrl: 'URLs are not matched automatically',
+      reasonNotFound: 'No matching window',
+      reasonUnlinked: 'You chose "Don\'t record a position"',
+      reasonWithOutcome: '{{reason}}. If you record now: {{outcome}}',
+      outcomeKeep: 'keeps its previous position ({{place}})',
+      outcomeOpenOnly: 'opens only',
+      outcomeFrontOnly: 'brings it to the front if it is open',
+      keepPrevious: 'Keeps its previous position',
+      newRowNote:
+        'Rows added here are "Move only": they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️. Rows look for a window with the whole title; if the title changes (switching tabs, updates), search by part of it in Row details ✏️.',
+      noPlacement: 'No position recorded',
+      tabNote: 'If it opens as a tab in an existing window, that whole window moves',
+      minimizedNote: 'Minimized, so its position is not recorded. Restore it first, then record',
+      elevatedNote: 'Runs as administrator, so QDL may not be able to move it',
+      confirm: 'Record',
+    },
+    detail: {
+      title: 'Row details: {{name}}',
+      open: 'What to open',
+      openRef: 'The item "{{name}}" (changes to the item apply to this set too)',
+      openOwn: 'A path written in this set',
+      openNone: "Nothing (doesn't open; only moves the window)",
+      openMissing: "Couldn't find the item (deleted or not loaded)",
+      openKindNone: 'Nothing (move only)',
+      openKindItem: 'Item',
+      openKindNoneDisabled: 'A row with no window to move needs something to open',
+      openKindPath: 'Path',
+      item: 'Item',
+      itemNote: 'Changes to the item apply to this set too.',
+      pickItem: 'Choose an item',
+      otherItem: 'Use another item',
+      pathNote: 'A path written in this set (no item is created).',
+      path: 'Path',
+      args: 'Arguments',
+      find: 'Window to move',
+      processName: 'Exe name',
+      processNamePlaceholder: 'Example: notepad.exe',
+      windowTitle: 'Window title',
+      windowTitlePlaceholder: 'Leave empty to accept any title',
+      anyTitle: 'Any title',
+      anyTitleHint: 'Search by exe name only (any title)',
+      titleParts: 'Search by part:',
+      revertTitle: '↺ Revert',
+      matchNone: 'Matching windows now: 0',
+      matchOne: 'Matching windows now: 1 ({{title}})',
+      matchMany: 'Matching windows now: {{count}} (other windows match too)',
+      findHint:
+        'When the set opens, the window matching these two is moved to the recorded position. The exe name can be partial; the title must match as a whole (* matches any text, e.g. *Obsidian).',
+      placement: 'Position',
+      recorded: 'Recorded position',
+      noPlacement: 'Not recorded yet',
+      takeFromWindow: 'Take the position from an open window',
+      clearPlacement: 'Remove position',
+      desktop: 'Virtual desktop',
+      desktopKeep: "Don't change",
+      behavior: 'When opening',
+      ifOpen: 'If already open',
+      ifOpenMove: "Don't open; just move it",
+      ifOpenNew: 'Open another one',
+      activate: 'Bring to front',
+      activateYes: 'Yes',
+      activateNo: 'No',
+      wait: 'Wait for the window to appear (seconds)',
+      minimizedPicked:
+        'This window is minimized, so only the window to move was taken. Restore it before taking the position',
+    },
+    placement: {
+      none: 'No position',
+      offscreen: 'A screen that is not connected',
+      maximized: 'Maximized',
+      onScreen: 'Screen {{screen}} · {{place}}',
+      onDesktop: '{{place}} · Desktop {{desktop}}',
+      onAllDesktops: '{{place}} · All desktops',
+      region: '{{region}} {{width}}×{{height}}',
+      shapes: {
+        full: 'Full',
+        leftHalf: 'Left half',
+        rightHalf: 'Right half',
+        topLeft: 'Top left',
+        topRight: 'Top right',
+        bottomLeft: 'Bottom left',
+        bottomRight: 'Bottom right',
+        leftThird: 'Left third',
+        centerThird: 'Center third',
+        rightThird: 'Right third',
+        leftTwoThirds: 'Left two-thirds',
+        rightTwoThirds: 'Right two-thirds',
+      },
+      regions: {
+        topLeft: 'Near top left',
+        top: 'Near top',
+        topRight: 'Near top right',
+        left: 'Near left',
+        center: 'Center',
+        right: 'Near right',
+        bottomLeft: 'Near bottom left',
+        bottom: 'Near bottom',
+        bottomRight: 'Near bottom right',
+      },
+    },
+    redo: {
+      menu: '📍 Record positions again',
+      title: 'Record positions again: {{name}}',
+      changed: 'Rows that change ({{count}})',
+      unchanged: 'Rows that stay ({{count}})',
+      notFound: 'Rows not found ({{count}})',
+      overwrite: 'Overwrite',
+      saved: 'Recorded the positions again',
+      savedCount_one: 'Recorded the positions again ({{count}} row changed)',
+      savedCount_other: 'Recorded the positions again ({{count}} rows changed)',
+      notFoundCount_one: '{{count}} row was not found and keeps its previous position',
+      notFoundCount_other: '{{count}} rows were not found and keep their previous positions',
+      nothing: 'No rows have a position',
+      noChange: 'Nothing changes',
+    },
   },
   dataFile: {
     invalidName: 'The data file name is invalid',
@@ -556,11 +784,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
   itemManager: {
     types: {
       item: 'Single item',
-      group: 'Group',
       dir: 'Folder import',
       window: 'Window action',
       clipboard: 'Clipboard',
-      layout: 'Window layout',
+      set: 'Set',
       unknown: 'Unknown',
     },
     noName: '(no name)',
@@ -570,9 +797,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       noWindowTitle: '(no window title)',
       noFolderPath: '(no folder path)',
       noData: '(no data)',
-      noEntries: '(no entries)',
-      layoutWindows_one: '{{count}} window: {{titles}}',
-      layoutWindows_other: '{{count}} windows: {{titles}}',
+      setRows_one: '{{count}} row',
+      setRows_other: '{{count}} rows',
+      setRowsPlaced_one: '{{count}} row ({{placed}} placed)',
+      setRowsPlaced_other: '{{count}} rows ({{placed}} placed)',
       unknownType: '(unknown type)',
     },
     toolbar: {
@@ -619,7 +847,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     row: {
       typeSelectTitle:
-        'Changes the type. Single item, folder import, and group switch right away; window action, clipboard, and window layout (places several windows at saved positions) open Edit details.',
+        'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows), window action, and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
       namePlaceholder: 'Enter a name (Enter moves to the path)',
       invalid: 'This item has a problem: {{error}}',
@@ -630,7 +858,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       pathMissingTitle: "The path wasn't found (it might have been moved or deleted)",
       dirPathPlaceholder: 'Enter a folder path',
       pathPlaceholder: 'Enter a path or URL',
-      groupDetailOnly: 'Choose the items in a group in ✏️ Edit details (double-click to open)',
       detailOnly: 'Edit {{type}} items in ✏️ Edit details (double-click to open)',
       pathTitle: '{{text}}\n{{missing}}Select to edit the path. Edit arguments in ✏️ Edit details.',
       pathTitleMissing: "The path wasn't found. ",
@@ -662,7 +889,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
         'Checked {{checked}} items and found {{missing}} broken links{{unknownNote}}. To see only those, select 🧰 Tools > Show broken links only.',
     },
     movedTo: 'Moved "{{name}}" to {{file}} (save to keep this change)',
-    groupSelectHint: 'Choose the items in a group in ✏️ Edit details',
     saved: 'Changes saved',
     saveConfirm: 'Save your changes?',
     saveConfirmInvalid_one:
@@ -998,25 +1224,18 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     types: {
       item: '📄 Single item',
       dir: '🗂️ Folder import',
-      group: '📦 Group',
+      set: '📦 Set',
       window: '🪟 Window action',
       clipboard: '📋 Clipboard',
-      layout: '🖥️ Window layout',
     },
     displayName: 'Display name:',
     placeholders: {
-      group: 'Enter a group name',
+      set: 'Enter a name for the set',
       clipboard: 'Enter a display name for the clipboard item',
       item: 'Enter a display name',
     },
     path: 'Path:',
     pathPlaceholder: 'Enter a file path, URL, or custom URI',
-    groupItems: 'Items in the group:',
-    removeGroupItem: 'Remove',
-    noGroupItems: 'No items added',
-    addGroupItem: '+ Add item',
-    groupItemsHint:
-      'Choose from the items in the same data file. They open in order when the group runs.',
     itemOptions: 'Options (arguments, icon)',
     dirOptions: 'Folder import options',
     args: 'Arguments:',
@@ -1025,13 +1244,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     note: 'Note:',
     notePlaceholder: 'Add a note (optional)',
     errors: {
-      groupNameRequired: 'Enter a group name',
       displayNameRequired: 'Enter a display name',
       pathRequired: 'Enter a path',
-      groupItemsRequired: 'Add items to the group',
       windowRequired: 'Enter a window title or process name',
       clipboardRequired: 'Capture the clipboard',
-      layoutRequired: 'Capture the windows',
       clipboardSaveFailed: "Couldn't save the clipboard data",
       iconNotFound: "Couldn't get the icon",
       iconFetchError: 'An error occurred while getting the icon',
@@ -1144,25 +1360,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       separator: ', ',
     },
   },
-  layoutEditor: {
-    windows: 'Windows to place:',
-    noEntries: 'No windows added yet',
-    collapse: 'Collapse',
-    expand: 'Show details',
-    x: 'X',
-    y: 'Y',
-    width: 'Width',
-    height: 'Height',
-    launch: 'Open',
-    delete: 'Delete',
-    windowTitle: 'Window title:',
-    processName: 'Process name:',
-    executablePath: 'Executable path:',
-    args: 'Arguments:',
-    desktopNumber: 'Virtual desktop number:',
-    selectWindow: 'Choose window',
-    addFromCurrent: '+ Add from open windows',
-  },
   windowPicker: {
     loadFailed: "Couldn't get the list of windows",
     all: 'All',
@@ -1181,13 +1378,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     selected_one: '{{count}} selected',
     selected_other: '{{count}} selected',
     add: 'Add',
-  },
-  groupSelector: {
-    title: 'Choose group items',
-    searchPlaceholder: 'Search display names...',
-    noResults: 'No results',
-    noItems: 'This data file has no items',
-    added: 'Added',
   },
   customIcon: {
     label: 'Custom icon:',
@@ -1458,20 +1648,16 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     describe: {
       window: 'Window action: {{title}}',
       windowWithProcess: 'Window action: {{title}} ({{process}})',
-      group_one: 'Group: {{count}} item',
-      group_other: 'Group: {{count}} items',
       clipboard: 'Clipboard',
       clipboardWithPreview: 'Clipboard: {{preview}}',
-      layout_one: 'Window layout: {{count}} window',
-      layout_other: 'Window layout: {{count}} windows',
+      set_one: 'Set: {{count}} item',
+      set_other: 'Set: {{count}} items',
     },
     confirmNotFound: 'Nothing to confirm.',
     edit: {
       title: 'Edit workspace item',
       notFound: "The item wasn't found",
       pageNotFound: "The item to edit wasn't found. It may have been deleted.",
-      groupItemsHint:
-        'Choose from the items in your data files. They open in order when the group runs.',
       updateFailed: "Couldn't update the workspace item",
       remove: 'Remove from workspace',
       removeFailed: "Couldn't remove the item from the workspace",
@@ -1523,12 +1709,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
-    },
-    groupLaunch: {
-      heading: 'Group launch',
-      parallel: 'Open group items at the same time',
-      parallelDescription:
-        "When on, items in a group open all at once instead of one by one. This is faster, but the order isn't guaranteed.",
     },
     windowSize: {
       heading: 'Window size',

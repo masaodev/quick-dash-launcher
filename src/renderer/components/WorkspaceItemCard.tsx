@@ -4,6 +4,7 @@ import type { WorkspaceItem } from '@common/types';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 
 import { getDefaultIconForItem } from '../utils/itemTypeIcons';
+import { setEntriesSummary } from '../utils/setEditing';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
 type ItemDropZone = 'before' | 'after';
@@ -21,6 +22,8 @@ interface WorkspaceItemCardProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, dropZone?: ItemDropZone) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
+  /** id からワークスペースのアイテムの名前を引く（セットのツールチップに行の名前を出す） */
+  nameOfItem?: (itemId: string) => string | undefined;
 }
 
 const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
@@ -36,6 +39,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   onDragOver,
   onDrop,
   onContextMenu,
+  nameOfItem,
 }) => {
   const { t, i18n } = useTranslation();
   const [editValue, setEditValue] = useState(item.displayName);
@@ -111,6 +115,10 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   const getTooltipText = (): string => {
     const lines: string[] = [describeWorkspaceItem(item, t)];
+    if (item.type === 'set') {
+      const summary = setEntriesSummary(item.entries, nameOfItem ?? (() => undefined));
+      if (summary) lines.push(summary);
+    }
 
     if (item.type === 'item') {
       if (item.originalPath) {

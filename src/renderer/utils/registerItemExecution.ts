@@ -1,15 +1,10 @@
 import type { LauncherItem, RegisterItem } from '@common/types';
-import { buildLayoutItemFromRegisterItem } from '@common/utils/layoutUtils';
 import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
 
 import { debugLog, logError } from './debug';
 
 /** 「試しに実行」ボタンを出さない種別 */
-const NON_EXECUTABLE_CATEGORIES: ReadonlyArray<RegisterItem['itemCategory']> = [
-  'dir',
-  'group',
-  'clipboard',
-];
+const NON_EXECUTABLE_CATEGORIES: ReadonlyArray<RegisterItem['itemCategory']> = ['dir', 'clipboard'];
 
 /** 登録フォームの内容を保存前に「試しに実行」できる種別か */
 export function canTryExecute(item: RegisterItem | undefined): boolean {
@@ -20,9 +15,8 @@ export function canTryExecute(item: RegisterItem | undefined): boolean {
 export function toLauncherItem(item: RegisterItem): LauncherItem | null {
   switch (item.itemCategory) {
     case 'dir':
-    case 'group':
+    case 'set':
     case 'window':
-    case 'layout':
       return null;
     case 'clipboard':
       return {
@@ -67,10 +61,18 @@ export async function tryExecuteRegisterItem(item: RegisterItem): Promise<void> 
         displayName: item.displayName,
         type: 'window',
       });
-    } else if (item.itemCategory === 'layout') {
-      await window.electronAPI.executeLayout(buildLayoutItemFromRegisterItem(item));
-    } else if (item.itemCategory === 'group') {
-      debugLog('グループアイテムは実行ボタンからは実行できません');
+    } else if (item.itemCategory === 'set') {
+      // 行は全タブのアイテムから探す（保存前の内容で試す）
+      const allItems = await window.electronAPI.loadDataFiles('internal');
+      await window.electronAPI.executeSet(
+        {
+          type: 'set',
+          displayName: item.displayName,
+          entries: item.setEntries ?? [],
+          launchMode: item.setLaunchMode,
+        },
+        allItems
+      );
     } else if (item.itemCategory === 'dir') {
       debugLog('フォルダ取込アイテムは実行ボタンからは実行できません');
     } else {

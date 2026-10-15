@@ -9,15 +9,9 @@
  * 末尾のコンパイル時アサーションで語彙のずれを検出する。
  */
 
-import type { WindowConfig, LayoutWindowEntry } from './launcher';
+import type { WindowConfig, SetEntry, SetLaunchMode } from './launcher';
 import type { ClipboardFormat } from './clipboard';
-import type {
-  JsonClipboardItem,
-  JsonGroupItem,
-  JsonLauncherItem,
-  JsonLayoutItem,
-  JsonWindowItem,
-} from './json-data';
+import type { JsonClipboardItem, JsonLauncherItem, JsonSetItem, JsonWindowItem } from './json-data';
 
 // ============================================================
 // workspace.json
@@ -172,17 +166,6 @@ export interface JsonWorkspaceWindowItem extends JsonWorkspaceItemBase {
 }
 
 /**
- * グループアイテム（type: "group"）
- * データファイル側のアイテムを表示名で参照し、まとめて起動する
- */
-export interface JsonWorkspaceGroupItem extends JsonWorkspaceItemBase {
-  /** アイテムタイプ */
-  type: 'group';
-  /** 起動するアイテムの表示名リスト（データファイルの type: "item" / "window" の displayName） */
-  itemNames: string[];
-}
-
-/**
  * クリップボードアイテム（type: "clipboard"）
  * QDL が画面操作で生成する。手で書かない
  */
@@ -202,14 +185,16 @@ export interface JsonWorkspaceClipboardItem extends JsonWorkspaceItemBase {
 }
 
 /**
- * レイアウトアイテム（type: "layout"）
- * QDL が画面操作で生成する。手で書かない
+ * セットアイテム（type: "set"）
+ * 複数のアイテムをまとめて開き、必要なら決まった位置に並べる。行の itemId はワークスペースのアイテムかデータファイルのアイテムを指す
  */
-export interface JsonWorkspaceLayoutItem extends JsonWorkspaceItemBase {
+export interface JsonWorkspaceSetItem extends JsonWorkspaceItemBase {
   /** アイテムタイプ */
-  type: 'layout';
-  /** レイアウト内のウィンドウエントリ一覧 */
-  entries: LayoutWindowEntry[];
+  type: 'set';
+  /** 行の一覧（上から順に開く） */
+  entries: SetEntry[];
+  /** 開き方（省略時は順番に） */
+  launchMode?: SetLaunchMode;
   /** カスタムアイコンファイル名（オプション） */
   customIcon?: string;
 }
@@ -220,18 +205,11 @@ export interface JsonWorkspaceLayoutItem extends JsonWorkspaceItemBase {
 export type JsonWorkspaceItem =
   | JsonWorkspaceLauncherItem
   | JsonWorkspaceWindowItem
-  | JsonWorkspaceGroupItem
   | JsonWorkspaceClipboardItem
-  | JsonWorkspaceLayoutItem;
+  | JsonWorkspaceSetItem;
 
 /** ワークスペースアイテムの type の一覧 */
-export const JSON_WORKSPACE_ITEM_TYPES = [
-  'item',
-  'window',
-  'group',
-  'clipboard',
-  'layout',
-] as const;
+export const JSON_WORKSPACE_ITEM_TYPES = ['item', 'window', 'clipboard', 'set'] as const;
 
 // ============================================================
 // workspace-archive.json
@@ -344,14 +322,10 @@ type _AssertWindowParity = Expect<
   SameKeys<Omit<JsonWorkspaceWindowItem, WorkspaceMetaKey>, Omit<JsonWindowItem, 'updatedAt'>>
 >;
 
-type _AssertGroupParity = Expect<
-  SameKeys<Omit<JsonWorkspaceGroupItem, WorkspaceMetaKey>, Omit<JsonGroupItem, 'updatedAt'>>
->;
-
 type _AssertClipboardParity = Expect<
   SameKeys<Omit<JsonWorkspaceClipboardItem, WorkspaceMetaKey>, Omit<JsonClipboardItem, 'updatedAt'>>
 >;
 
-type _AssertLayoutParity = Expect<
-  SameKeys<Omit<JsonWorkspaceLayoutItem, WorkspaceMetaKey>, Omit<JsonLayoutItem, 'updatedAt'>>
+type _AssertSetParity = Expect<
+  SameKeys<Omit<JsonWorkspaceSetItem, WorkspaceMetaKey>, Omit<JsonSetItem, 'updatedAt'>>
 >;

@@ -1,24 +1,8 @@
 import { ipcMain, shell } from 'electron';
 import { itemLogger } from '@common/logger';
-import {
-  LauncherItem,
-  GroupItem,
-  WindowItem,
-  AppItem,
-  WindowConfig,
-  LayoutExecutionProgress,
-  LayoutEntryProgress,
-} from '@common/types';
-import type { LayoutItem, LayoutWindowEntry } from '@common/types';
-import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
-import { isLauncherItem, isWindowItem } from '@common/types/guards';
-import {
-  IPC_CHANNELS,
-  LAYOUT_PROGRESS_CHANNELS,
-  type ProgressEventType,
-} from '@common/ipcChannels';
-import { PathUtils } from '@common/utils/pathUtils';
-import { createTitleMatcher } from '@common/utils/windowTitle';
+import { LauncherItem, WindowItem, AppItem, WindowConfig } from '@common/types';
+import type { SetItem } from '@common/types';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
@@ -26,18 +10,9 @@ import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { launchItem } from '../utils/itemLauncher.js';
-import { SettingsService } from '../services/settingsService.js';
-import { findWindowByTitle } from '../utils/windowMatcher.js';
-import { findWindowHwndByTitle } from '../utils/nativeWindowControl.js';
-import {
-  showLayoutProgressWindow,
-  hideLayoutProgressWindow,
-  getLayoutProgressWindow,
-  showToastWindow,
-} from '../services/overlayWindowService.js';
-import { runWithConcurrency } from '../utils/concurrency.js';
+import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
-import { resolveLayoutEntryIcons } from '../utils/layoutIconResolver.js';
+import { executeSet, notifySetFailures } from '../services/launch/setExecutor.js';
 import { mainI18n } from '../services/mainI18n.js';
 
 /**
@@ -64,7 +39,14 @@ async function openItem(item: LauncherItem): Promise<void> {
   );
 
   // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-  const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, itemLogger);
+  const activationResult = await tryActivateWindow(
+    item.windowConfig,
+    item.displayName,
+    itemLogger,
+    {
+      followDesktop: true,
+    }
+  );
 
   if (activationResult.activated) {
     return;
@@ -120,387 +102,6 @@ async function notifyParentFolder(item: LauncherItem, message: string): Promise<
   });
 }
 
-/**
- * グループ内の1つのアイテムを実行する
- */
-async function executeGroupItem(
-  groupName: string,
-  itemName: string,
-  item: LauncherItem | WindowItem | undefined
-): Promise<{ success: boolean; itemName: string }> {
-  if (!item) {
-    itemLogger.warn({ groupName, itemName }, 'グループ内のアイテムが見つかりません');
-    return { success: false, itemName };
-  }
-
-  try {
-    if (isWindowItem(item)) {
-      const windowConfig = createWindowConfig(item);
-      const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);
-
-      if (!result.windowFound) {
-        itemLogger.warn(
-          { groupName, itemName, windowTitle: item.windowTitle },
-          'グループ内のウィンドウ操作アイテム: ウィンドウが見つかりませんでした'
-        );
-      }
-    } else {
-      await openItem(item);
-    }
-
-    itemLogger.info({ groupName, itemName }, 'グループアイテムを実行しました');
-    return { success: true, itemName };
-  } catch (error) {
-    itemLogger.error(
-      {
-        groupName,
-        itemName,
-        error: error instanceof Error ? error.message : String(error),
-      },
-      'グループアイテムの実行に失敗しました'
-    );
-    return { success: false, itemName };
-  }
-}
-
-/**
- * グループ内のアイテムを実行する（並列または順次）
- *
- * メイン画面とワークスペースの両方から使う。設定の「並列で起動」、順次のときのアイテム間の待ち、
- * ウィンドウ設定つきアイテムの既存ウィンドウのアクティブ化（openItem）が効く
- */
-export async function executeGroup(
-  group: Pick<GroupItem, 'displayName' | 'itemNames'>,
-  allItems: AppItem[]
-): Promise<{ successCount: number; errorCount: number }> {
-  itemLogger.info(
-    { groupName: group.displayName, itemCount: group.itemNames.length, itemNames: group.itemNames },
-    'グループを実行中'
-  );
-
-  const settingsService = await SettingsService.getInstance();
-  const parallelLaunch = await settingsService.get('parallelGroupLaunch');
-
-  // アイテム名からLauncherItemまたはWindowItemを検索するマップを作成
-  const itemMap = new Map<string, LauncherItem | WindowItem>();
-  for (const item of allItems) {
-    if (isLauncherItem(item) || isWindowItem(item)) {
-      itemMap.set(item.displayName, item);
-    }
-  }
-
-  const mode = parallelLaunch ? '並列' : '順次';
-  itemLogger.info({ groupName: group.displayName }, `${mode}起動モードでグループを実行`);
-
-  let results: { success: boolean; itemName: string }[];
-
-  if (parallelLaunch) {
-    results = await Promise.all(
-      group.itemNames.map((itemName) =>
-        executeGroupItem(group.displayName, itemName, itemMap.get(itemName))
-      )
-    );
-  } else {
-    results = [];
-    for (let i = 0; i < group.itemNames.length; i++) {
-      const itemName = group.itemNames[i];
-      results.push(await executeGroupItem(group.displayName, itemName, itemMap.get(itemName)));
-
-      if (i < group.itemNames.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, GROUP_LAUNCH_DELAY_MS));
-      }
-    }
-  }
-
-  const successCount = results.filter((r) => r.success).length;
-  const errorCount = results.length - successCount;
-  itemLogger.info(
-    {
-      groupName: group.displayName,
-      total: group.itemNames.length,
-      success: successCount,
-      error: errorCount,
-      mode,
-    },
-    'グループ実行完了'
-  );
-  return { successCount, errorCount };
-}
-
-/** レイアウトのウィンドウ出現待機の設定 */
-const LAYOUT_WAIT_CONFIG = {
-  /** 最大待機時間（ミリ秒） */
-  MAX_WAIT_MS: 30000,
-  /** ポーリング間隔（ミリ秒） */
-  POLL_INTERVAL_MS: 2000,
-};
-
-/** レイアウト並列実行の同時実行数 */
-const LAYOUT_CONCURRENCY = 3;
-
-/** レイアウトキャンセルフラグ */
-let layoutCancelled = false;
-
-/**
- * レイアウト進捗をミニウィンドウに送信する
- */
-function sendLayoutProgress(eventType: ProgressEventType, progress: LayoutExecutionProgress): void {
-  const win = getLayoutProgressWindow();
-  if (!win) return;
-  // overlay.html のボタンの文言（表示言語に合わせる）
-  const labels = { cancel: mainI18n.t('common.cancel'), close: mainI18n.t('common.close') };
-
-  if (eventType === 'start') {
-    win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], { ...progress, labels });
-  } else {
-    // update/completeではiconを除外してIPC転送量を削減
-    const lightweight = {
-      ...progress,
-      labels,
-      entries: progress.entries.map(({ icon: _icon, ...rest }) => rest),
-    };
-    win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], lightweight);
-  }
-}
-
-/**
- * レイアウトエントリの失敗を記録して進捗を通知する
- */
-function failLayoutEntry(
-  progress: LayoutExecutionProgress,
-  index: number,
-  errorMessage: string
-): void {
-  progress.entries[index].status = 'failed';
-  progress.entries[index].errorMessage = errorMessage;
-  sendLayoutProgress('update', progress);
-}
-
-/**
- * レイアウト用にウィンドウタイトルを部分一致パターンに正規化する
- * ワイルドカードが含まれていない場合、前後に * を付加して部分一致にする。
- * 片方のみにワイルドカードがある場合（例: "title*"）、もう片方にも * を付加する。
- * これにより、サクラエディタの編集中マーク（"* filename.txt - sakura"）等の
- * タイトル変動に対応する。
- */
-function toPartialMatchTitle(windowTitle: string): string {
-  if (!windowTitle) return windowTitle;
-  let result = windowTitle;
-  if (!result.startsWith('*')) {
-    result = `*${result}`;
-  }
-  if (!result.endsWith('*')) {
-    result = `${result}*`;
-  }
-  return result;
-}
-
-/**
- * ウィンドウが出現するまで待機する（キャンセル対応）
- * titleMatcherをループ外でプリコンパイルし、ポーリング毎の正規表現再生成を回避
- */
-async function waitForWindow(windowTitle: string, processName?: string): Promise<boolean> {
-  const titleMatcher = createTitleMatcher(windowTitle);
-  const startTime = Date.now();
-  while (Date.now() - startTime < LAYOUT_WAIT_CONFIG.MAX_WAIT_MS) {
-    if (layoutCancelled) return false;
-    const found = findWindowHwndByTitle(titleMatcher, processName);
-    if (found) return true;
-    await new Promise((resolve) => setTimeout(resolve, LAYOUT_WAIT_CONFIG.POLL_INTERVAL_MS));
-  }
-  return false;
-}
-
-/**
- * レイアウトの各エントリを実行する
- */
-async function executeLayoutEntry(
-  entry: LayoutWindowEntry,
-  index: number,
-  progress: LayoutExecutionProgress
-): Promise<void> {
-  // キャンセルチェック
-  if (layoutCancelled) {
-    failLayoutEntry(progress, index, mainI18n.t('layout.cancelled'));
-    return;
-  }
-
-  // ステータスを「起動中」に更新
-  progress.entries[index].status = 'launching';
-  sendLayoutProgress('update', progress);
-
-  // レイアウト用にタイトルを部分一致パターンに正規化
-  const searchTitle = toPartialMatchTitle(entry.windowTitle);
-
-  const windowConfig: WindowConfig = {
-    title: searchTitle,
-    processName: entry.processName,
-    x: entry.x,
-    y: entry.y,
-    width: entry.width,
-    height: entry.height,
-    virtualDesktopNumber: entry.virtualDesktopNumber,
-  };
-
-  if (entry.launchApp && entry.executablePath) {
-    // まず既存ウィンドウを検索
-    const existingWindow = findWindowByTitle(searchTitle, entry.processName);
-    if (!existingWindow) {
-      // アプリ起動
-      // executablePathにはカスタムURI（ms-todo: 等）も入り得る。appとして扱うと
-      // shell.openPathでファイルパスとして開こうとして失敗するため型を判別する
-      await launchItem(
-        {
-          type: PathUtils.isCustomUriScheme(entry.executablePath) ? 'customUri' : 'app',
-          path: entry.executablePath,
-          args: entry.args,
-          displayName: entry.windowTitle,
-        },
-        itemLogger
-      );
-
-      // ウィンドウ出現待機
-      const appeared = await waitForWindow(searchTitle, entry.processName);
-      if (!appeared) {
-        const errorMsg = layoutCancelled
-          ? mainI18n.t('layout.cancelled')
-          : mainI18n.t('layout.timedOut');
-        itemLogger.warn({ windowTitle: entry.windowTitle }, `レイアウト: ${errorMsg}`);
-        failLayoutEntry(progress, index, errorMsg);
-        return;
-      }
-    }
-  }
-
-  // キャンセルチェック
-  if (layoutCancelled) {
-    failLayoutEntry(progress, index, mainI18n.t('layout.cancelled'));
-    return;
-  }
-
-  // ウィンドウの位置・サイズ設定
-  const result = await tryActivateWindow(windowConfig, entry.windowTitle, itemLogger);
-  if (!result.windowFound) {
-    itemLogger.warn(
-      { windowTitle: entry.windowTitle },
-      'レイアウト: ウィンドウが見つかりませんでした'
-    );
-    failLayoutEntry(progress, index, mainI18n.t('layout.windowNotFound'));
-    return;
-  }
-
-  progress.entries[index].status = 'success';
-  sendLayoutProgress('update', progress);
-}
-
-/**
- * レイアウトを実行する（並列処理・進捗通知・キャンセル対応）
- */
-export async function executeLayout(item: LayoutItem): Promise<void> {
-  itemLogger.info(
-    { displayName: item.displayName, entryCount: item.entries.length },
-    'レイアウトを実行中'
-  );
-
-  // ミニウィンドウを表示
-  await showLayoutProgressWindow();
-
-  // キャンセルフラグをリセット
-  layoutCancelled = false;
-
-  // キャンセルリスナーを登録
-  const cancelHandler = () => {
-    layoutCancelled = true;
-    itemLogger.info({ displayName: item.displayName }, 'レイアウト実行がキャンセルされました');
-  };
-  ipcMain.once(IPC_CHANNELS.LAYOUT_CANCEL, cancelHandler);
-
-  // 進捗オブジェクトを初期化
-  const entryProgresses: LayoutEntryProgress[] = item.entries.map((entry, i) => ({
-    index: i,
-    windowTitle: entry.windowTitle,
-    processName: entry.processName,
-    icon: entry.icon,
-    status: 'waiting' as const,
-  }));
-
-  const progress: LayoutExecutionProgress = {
-    layoutName: item.displayName,
-    entries: entryProgresses,
-    isComplete: false,
-    isCancelled: false,
-  };
-
-  // 進捗開始を通知
-  sendLayoutProgress('start', progress);
-
-  // アイコン未設定のエントリは背後で解決する。
-  // アイコンは進捗表示にしか使わないため、解決を待ってレイアウトの起動を遅らせない
-  void resolveLayoutEntryIcons(item.entries)
-    .then((icons) => {
-      if (icons.size === 0) return;
-
-      let updated = false;
-      item.entries.forEach((entry, i) => {
-        if (progress.entries[i].icon || !entry.executablePath) return;
-        const icon = icons.get(entry.executablePath);
-        if (icon) {
-          progress.entries[i].icon = icon;
-          updated = true;
-        }
-      });
-
-      // 完了後に送るとオーバーレイが再表示されてしまうため、実行中のみ描き直す
-      if (updated && !progress.isComplete && !layoutCancelled) {
-        sendLayoutProgress('start', progress);
-      }
-    })
-    .catch((error) => {
-      itemLogger.warn({ error }, 'レイアウトエントリのアイコン解決に失敗');
-    });
-
-  // 各エントリの実行タスクを作成
-  const tasks = item.entries.map((entry, i) => async () => {
-    try {
-      await executeLayoutEntry(entry, i, progress);
-    } catch (error) {
-      itemLogger.error(
-        {
-          entryIndex: i,
-          windowTitle: entry.windowTitle,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        'レイアウトエントリの実行に失敗しました'
-      );
-      failLayoutEntry(progress, i, error instanceof Error ? error.message : String(error));
-    }
-  });
-
-  // 並列実行（同時実行数制限あり）
-  await runWithConcurrency(tasks, LAYOUT_CONCURRENCY, () => layoutCancelled);
-
-  // キャンセルリスナーを削除
-  ipcMain.removeListener(IPC_CHANNELS.LAYOUT_CANCEL, cancelHandler);
-
-  // 完了通知
-  progress.isComplete = true;
-  progress.isCancelled = layoutCancelled;
-  sendLayoutProgress('complete', progress);
-
-  const successCount = progress.entries.filter((e) => e.status === 'success').length;
-  const failedCount = progress.entries.filter((e) => e.status === 'failed').length;
-  itemLogger.info(
-    {
-      displayName: item.displayName,
-      total: item.entries.length,
-      success: successCount,
-      failed: failedCount,
-      cancelled: layoutCancelled,
-    },
-    'レイアウト実行完了'
-  );
-}
-
 export function setupItemHandlers(): void {
   // 各実行ハンドラでは、起動処理の前にメインウィンドウを閉じる
   // （blur待ちにすると起動の遅いアプリでウィンドウが残り、Enter連打で多重起動するため）
@@ -514,17 +115,14 @@ export function setupItemHandlers(): void {
     await openParentFolder(item);
   });
 
-  ipcMain.handle(
-    IPC_CHANNELS.EXECUTE_GROUP,
-    async (_event, group: GroupItem, allItems: AppItem[]) => {
-      hideMainWindowOnExecute();
-      await executeGroup(group, allItems);
-    }
-  );
-
-  ipcMain.handle(IPC_CHANNELS.EXECUTE_LAYOUT, async (_event, item: LayoutItem) => {
+  ipcMain.handle(IPC_CHANNELS.EXECUTE_SET, async (_event, item: SetItem, allItems: AppItem[]) => {
     hideMainWindowOnExecute();
-    await executeLayout(item);
+    const byId = new Map<string, AppItem>();
+    for (const appItem of allItems) {
+      if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
+    }
+    const result = await executeSet(item, (itemId) => byId.get(itemId));
+    await notifySetFailures(item, result);
   });
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {
@@ -549,7 +147,9 @@ export function setupItemHandlers(): void {
     hideMainWindowOnExecute();
 
     const windowConfig = createWindowConfig(item);
-    const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);
+    const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger, {
+      followDesktop: true,
+    });
 
     if (!result.windowFound) {
       itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');

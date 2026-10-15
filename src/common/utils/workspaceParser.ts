@@ -36,9 +36,8 @@ import {
   generateUniqueId,
   isValidId,
   validateJsonClipboardItem,
-  validateJsonGroupItem,
   validateJsonLauncherItem,
-  validateJsonLayoutItem,
+  validateJsonSetItem,
   validateJsonWindowItem,
 } from './jsonParser';
 import type { JsonItemIssue } from './jsonParser';
@@ -324,12 +323,10 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
     }
     case 'window':
       return validateJsonWindowItem(body) as unknown as Record<string, unknown>;
-    case 'group':
-      return validateJsonGroupItem(body) as unknown as Record<string, unknown>;
     case 'clipboard':
       return validateJsonClipboardItem(body) as unknown as Record<string, unknown>;
-    case 'layout':
-      return validateJsonLayoutItem(body) as unknown as Record<string, unknown>;
+    case 'set':
+      return validateJsonSetItem(body) as unknown as Record<string, unknown>;
     default:
       throw new Error(
         `Unknown item type: ${String(raw.type)} (one of ${JSON_WORKSPACE_ITEM_TYPES.join(' / ')})`
@@ -344,9 +341,8 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
 const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
   item: ['path', 'args', 'originalPath', 'customIcon', 'windowConfig'],
   window: ['windowTitle', ...WINDOW_PLACEMENT_KEYS],
-  group: ['itemNames'],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
-  layout: ['entries', 'customIcon'],
+  set: ['entries', 'launchMode', 'customIcon'],
 };
 
 function pick(source: Record<string, unknown>, keys: string[]): Record<string, unknown> {

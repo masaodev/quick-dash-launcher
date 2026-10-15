@@ -8,8 +8,7 @@
 tests/
 ├── README.md                    # このファイル
 ├── dev/                        # 開発用設定（手動実行用）
-│   ├── full/                  # 全機能を含むセット（npm run dev:test が使用）
-│   └── with-groups/          # グループ起動のデモ（QUICK_DASH_CONFIG_DIR で指定して起動）
+│   └── full/                  # 全機能を含む設定（npm run dev:test が使用）
 ├── e2e/                        # E2Eテスト関連
 │   ├── specs/                # テストスペック（*.spec.ts）
 │   ├── helpers/              # テストヘルパー

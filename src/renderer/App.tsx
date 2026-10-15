@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_DATA_FILE } from '@common/types';
+import { DESKTOP_TAB } from '@common/constants';
 import type {
   LauncherItem,
   AppItem,
@@ -15,10 +16,9 @@ import type {
 } from '@common/types';
 import {
   isWindowInfo,
-  isGroupItem,
   isWindowItem,
   isClipboardItem,
-  isLayoutItem,
+  isSetItem,
   isLauncherItem,
 } from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
@@ -37,6 +37,7 @@ import AlertDialog from './components/AlertDialog';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
+import { indexById, setEntryNames } from './utils/setEditing';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
@@ -55,6 +56,14 @@ function App(): React.ReactElement {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<AppItem[]>([]);
+  /** セットのツールチップで行の名前を引く（絞り込みの外のアイテムも引けるよう、全アイテムから） */
+  const nameOfMainItem = useMemo(() => {
+    const byId = indexById(mainItems);
+    return (itemId: string) => {
+      const item = byId.get(itemId);
+      return item && 'displayName' in item ? item.displayName : undefined;
+    };
+  }, [mainItems]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
@@ -160,6 +169,15 @@ function App(): React.ReactElement {
         if (version !== windowListVersionRef.current) return;
         setWindowList(windows);
         setDesktopInfo(info);
+        // 選んでいたタブが無くなった（デスクトップを減らした・全デスクトップ表示のウィンドウが無くなった）ら、
+        // 今のデスクトップのタブ（無ければ「すべて」）に戻す。そのままだと選んだタブが無く、一覧が空になる
+        setActiveDesktopTab((tab) => {
+          const gone =
+            (tab > 0 && tab > info.desktopCount) ||
+            (tab === DESKTOP_TAB.PINNED && !windows.some((w) => w.isPinned === true));
+          if (!gone) return tab;
+          return info.supported && info.currentDesktop > 0 ? info.currentDesktop : DESKTOP_TAB.ALL;
+        });
         if (resetSelection) setSelectedIndex(0);
       });
     },
@@ -181,7 +199,7 @@ function App(): React.ReactElement {
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
-      (item) => !isWindowInfo(item) && !isGroupItem(item) && !isWindowItem(item)
+      (item) => !isWindowInfo(item) && !isSetItem(item) && !isWindowItem(item)
     ) as LauncherItem[];
     const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
 
@@ -238,15 +256,7 @@ function App(): React.ReactElement {
 
   const executeAppItem = useCallback(
     async (item: AppItem): Promise<void> => {
-      if (isGroupItem(item)) {
-        await window.electronAPI.showToastWindow({
-          displayName: item.displayName,
-          itemType: 'group',
-          itemCount: item.itemNames.length,
-          itemNames: item.itemNames.slice(0, 3),
-        });
-        await window.electronAPI.executeGroup(item, mainItems);
-      } else if (isWindowItem(item)) {
+      if (isWindowItem(item)) {
         await window.electronAPI.showToastWindow({
           displayName: item.displayName,
           itemType: 'windowOperation',
@@ -258,12 +268,15 @@ function App(): React.ReactElement {
           itemType: 'clipboard',
         });
         await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
-      } else if (isLayoutItem(item)) {
+      } else if (isSetItem(item)) {
+        // 置き場所のある行があれば、進み具合の表示が出る（トーストはその間は出ない）
         await window.electronAPI.showToastWindow({
           displayName: item.displayName,
-          itemType: 'layout',
+          itemType: 'set',
+          itemCount: item.entries.length,
+          itemNames: setEntryNames(item.entries, mainItems).slice(0, 3),
         });
-        await window.electronAPI.executeLayout(item);
+        await window.electronAPI.executeSet(item, mainItems);
       } else if (isLauncherItem(item)) {
         await window.electronAPI.showToastWindow({
           displayName: item.displayName,
@@ -353,7 +366,7 @@ function App(): React.ReactElement {
     (item: AppItem) => {
       if (isWindowInfo(item)) return;
 
-      if (isGroupItem(item) || isWindowItem(item)) {
+      if (isSetItem(item) || isWindowItem(item)) {
         void openEditWindow({
           ...item,
           sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
@@ -690,6 +703,7 @@ function App(): React.ReactElement {
 
       <LauncherItemList
         items={filteredItems}
+        nameOfItem={nameOfMainItem}
         selectedIndex={selectedIndex}
         onItemExecute={handleExecuteItem}
         onItemSelect={setSelectedIndex}

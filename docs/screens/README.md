@@ -43,7 +43,7 @@
 | **管理ウィンドウ** | Ctrl+E または設定メニューから | [admin-window.md](./admin-window.md) |
 | **ワークスペースウィンドウ** | Ctrl+W<br>メインウィンドウの ⚙️ メニュー「🗂️ ワークスペースを表示」<br>設定「メインウィンドウ表示時にワークスペースを自動表示」が有効なとき、メイン画面の表示時に自動表示 | [workspace-window.md](./workspace-window.md) |
 | **グループの切り離しウィンドウ** | ワークスペースウィンドウのグループヘッダーをウィンドウの外へドラッグしてドロップしたとき<br>前回開いていたものはワークスペースウィンドウの初回表示時に復元 | [workspace-window.md](./workspace-window.md#519-グループを切り離す)（`src/main/detachedGroupWindowManager.ts`。構成は [システム概要](../architecture/overview.md#ウィンドウとレンダラープロセスの対応)、連動非表示は [ウィンドウ制御](../architecture/window-control.md#ウィンドウ非表示の判定)） |
-| **オーバーレイウィンドウ** | 独立トーストの表示時、レイアウト実行の進捗表示時（1 枚を共用） | なし（`overlay.html`・`src/main/services/overlayWindowService.ts`。説明は [トースト通知](../features/toast-notifications.md#独立トースト)） |
+| **オーバーレイウィンドウ** | 独立トーストの表示時、位置を記録した行があるセットを開いたときの進み具合の表示時（1 枚を共用） | なし（`overlay.html`・`src/main/services/overlayWindowService.ts`。説明は [トースト通知](../features/toast-notifications.md#独立トースト)） |
 
 ### 子ウィンドウ
 
@@ -64,9 +64,10 @@
 | **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの一括取込メニュー「インストール済みアプリを追加」<br>メインウィンドウの ➕ の「💻 インストール済みアプリを追加」 | [app-import-modal.md](./app-import-modal.md) |
 | **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | [admin-window.md](./admin-window.md#551-スナップショット一覧) |
 | **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | [main-window.md](./main-window.md#5101-メモを表示) |
-| **グループアイテム選択モーダル** | アイテム登録・編集、ワークスペースアイテム編集でグループの「+ アイテムを追加」クリック時 | [group-item-selector-modal.md](./group-item-selector-modal.md) |
-| **ウィンドウ選択モーダル** | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
-| **今のウィンドウから追加（LayoutCaptureModal）** | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ配置で「+ 今のウィンドウから追加」クリック時 | [register-modal.md](./register-modal.md#5161-今のウィンドウから追加) |
+| **セットに追加するアイテム**（`SetItemPickerModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ アイテムを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) |
+| **今の位置を記録**（`SetRecordModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「📍 今の位置を記録」クリック時 | [set-editor-modals.md](./set-editor-modals.md#3-今の位置を記録) |
+| **行の詳細**（`SetEntryDetailModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの行の「✏️」クリック・行のダブルクリック時 | [set-editor-modals.md](./set-editor-modals.md#4-行の詳細) |
+| **ウィンドウ選択モーダル** | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時<br>今の位置を記録の「ウィンドウを選ぶ」「別のウィンドウにする」、行の詳細の「開いているウィンドウから位置を取る」 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
 
 ### 共通ダイアログ
 
@@ -82,8 +83,9 @@
 
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
-| **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダを開く、編集） | [context-menu.md](./context-menu.md) |
+| **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダを開く、編集、セットの今の位置を記録し直す） | [context-menu.md](./context-menu.md) |
 | **URLコンバーターメニュー**（`UrlConverterMenu`） | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「🔗 URL変換」 | [register-modal.md](./register-modal.md#533-url変換ボタンをクリック) |
+| **セットの欄**（`SetEntriesEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📦 セット」のとき（行の一覧・開き方） | [register-modal.md](./register-modal.md#58-セットの行を編集) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
 | **ホットキー入力** | 起動ホットキー・アイテム検索ホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
 | **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-クリップボードを取り込む) |
@@ -98,7 +100,7 @@
 - [横断的機能一覧](../features/README.md) - 複数画面にまたがる機能の説明
 - [アイコンシステム](../features/icons.md) - アイコン取得・管理機能
 - [キーボードショートカット](../features/keyboard-shortcuts.md) - ショートカット完全リスト
-- [グループ起動](../features/group-launch.md) - グループ機能の詳細
+- [セット](../features/set.md) - セットの機能の詳細
 - [ワークスペース](../features/workspace.md) - ワークスペース機能全体
 
 ### ドキュメント体系

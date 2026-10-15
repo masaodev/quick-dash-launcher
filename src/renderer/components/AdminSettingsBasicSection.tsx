@@ -188,22 +188,6 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           <div className="setting-description">{t('settings.display.dataFileTabsDescription')}</div>
         </div>
       </div>
-
-      <div className="settings-section">
-        <h3>{t('settings.groupLaunch.heading')}</h3>
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.parallelGroupLaunch}
-              onChange={(e) => handleSettingChange('parallelGroupLaunch', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.groupLaunch.parallel')}
-          </label>
-          <div className="setting-description">{t('settings.groupLaunch.parallelDescription')}</div>
-        </div>
-      </div>
     </>
   );
 };

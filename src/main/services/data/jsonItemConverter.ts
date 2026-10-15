@@ -6,16 +6,14 @@ import {
   AppItem,
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
-  isJsonLayoutItem,
+  isJsonSetItem,
 } from '@common/types';
 import type { JsonItem } from '@common/types';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { refineItemType } from '../../utils/folderPathProbe.js';
-import { resolveLayoutEntryIcons } from '../../utils/layoutIconResolver.js';
 
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 
@@ -99,17 +97,6 @@ export async function convertJsonItemToAppItems(
     for (const scannedItem of scannedItems) {
       addIfUnique(scannedItem);
     }
-  } else if (isJsonGroupItem(jsonItem)) {
-    items.push({
-      displayName: jsonItem.displayName,
-      type: 'group',
-      itemNames: jsonItem.itemNames,
-      sourceFile,
-      lineNumber,
-      id: jsonItem.id,
-      isEdited: false,
-      memo: jsonItem.memo,
-    });
   } else if (isJsonWindowItem(jsonItem)) {
     items.push({
       type: 'window',
@@ -137,17 +124,12 @@ export async function convertJsonItemToAppItems(
       isEdited: false,
       memo: jsonItem.memo,
     });
-  } else if (isJsonLayoutItem(jsonItem)) {
-    // executablePathからアイコンを復元（既存キャッシュ機構を利用）
-    const icons = await resolveLayoutEntryIcons(jsonItem.entries);
-    const entriesWithIcons = jsonItem.entries.map((entry) => {
-      const icon = entry.executablePath ? icons.get(entry.executablePath) : undefined;
-      return icon ? { ...entry, icon } : entry;
-    });
+  } else if (isJsonSetItem(jsonItem)) {
     items.push({
-      type: 'layout',
+      type: 'set',
       displayName: jsonItem.displayName,
-      entries: entriesWithIcons,
+      entries: jsonItem.entries,
+      launchMode: jsonItem.launchMode,
       sourceFile,
       lineNumber,
       id: jsonItem.id,

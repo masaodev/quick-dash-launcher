@@ -14,24 +14,16 @@ import type { TFunction } from 'i18next';
 import type {
   AppItem,
   ClipboardItem,
-  GroupItem,
   LauncherItem,
-  LayoutItem,
+  SetItem,
   ToastItemType,
   WindowItem,
   WorkspaceItem,
   WorkspaceItemUpdate,
 } from '../types';
-import {
-  isClipboardItem,
-  isGroupItem,
-  isLayoutItem,
-  isWindowInfo,
-  isWindowItem,
-} from '../types/guards';
+import { isClipboardItem, isSetItem, isWindowInfo, isWindowItem } from '../types/guards';
 import type { RegisterItem, WindowOperationConfig } from '../types/register';
 
-import { stripIconFromLayoutEntries } from './dataConverters';
 import { windowInfoToWindowItem } from './windowInfoConverter';
 import { pickWindowPlacement } from './windowPlacement.js';
 
@@ -67,15 +59,6 @@ function windowBody(item: WindowItem): WorkspaceItemUpdate {
   });
 }
 
-function groupBody(item: GroupItem): WorkspaceItemUpdate {
-  return compact({
-    type: 'group',
-    displayName: item.displayName,
-    itemNames: [...item.itemNames],
-    memo: item.memo,
-  });
-}
-
 function clipboardBody(item: ClipboardItem): WorkspaceItemUpdate {
   return compact({
     type: 'clipboard',
@@ -89,11 +72,12 @@ function clipboardBody(item: ClipboardItem): WorkspaceItemUpdate {
   });
 }
 
-function layoutBody(item: LayoutItem): WorkspaceItemUpdate {
+function setBody(item: SetItem): WorkspaceItemUpdate {
   return compact({
-    type: 'layout',
+    type: 'set',
     displayName: item.displayName,
-    entries: stripIconFromLayoutEntries(item.entries),
+    entries: item.entries.map((entry) => ({ ...entry })),
+    launchMode: item.launchMode,
     customIcon: item.customIcon,
     memo: item.memo,
   });
@@ -110,9 +94,8 @@ export function appItemToWorkspaceItemBody(item: AppItem): WorkspaceItemUpdate {
     return windowBody(windowInfoToWindowItem(item));
   }
   if (isWindowItem(item)) return windowBody(item);
-  if (isGroupItem(item)) return groupBody(item);
   if (isClipboardItem(item)) return clipboardBody(item);
-  if (isLayoutItem(item)) return layoutBody(item);
+  if (isSetItem(item)) return setBody(item);
   return launcherBody(item);
 }
 
@@ -141,16 +124,6 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         memo: item.memo,
       };
     }
-    case 'group':
-      return {
-        displayName: item.displayName,
-        path: '',
-        type: 'app',
-        targetTab: '',
-        itemCategory: 'group',
-        groupItemNames: [...item.itemNames],
-        memo: item.memo,
-      };
     case 'clipboard':
       return {
         displayName: item.displayName,
@@ -165,14 +138,15 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         customIcon: item.customIcon,
         memo: item.memo,
       };
-    case 'layout':
+    case 'set':
       return {
         displayName: item.displayName,
         path: '',
         type: 'app',
         targetTab: '',
-        itemCategory: 'layout',
-        layoutEntries: [...item.entries],
+        itemCategory: 'set',
+        setEntries: item.entries.map((entry) => ({ ...entry })),
+        setLaunchMode: item.launchMode,
         customIcon: item.customIcon,
         memo: item.memo,
       };
@@ -212,13 +186,6 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         memo,
       });
     }
-    case 'group':
-      return compact({
-        type: 'group',
-        displayName: registerItem.displayName,
-        itemNames: [...(registerItem.groupItemNames ?? [])],
-        memo,
-      });
     case 'clipboard':
       return compact({
         type: 'clipboard',
@@ -230,11 +197,12 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         customIcon: registerItem.customIcon,
         memo,
       });
-    case 'layout':
+    case 'set':
       return compact({
-        type: 'layout',
+        type: 'set',
         displayName: registerItem.displayName,
-        entries: stripIconFromLayoutEntries(registerItem.layoutEntries ?? []),
+        entries: (registerItem.setEntries ?? []).map((entry) => ({ ...entry })),
+        launchMode: registerItem.setLaunchMode,
         customIcon: registerItem.customIcon,
         memo,
       });
@@ -271,14 +239,12 @@ export function describeWorkspaceItem(item: WorkspaceItem, t: TFunction): string
             process: item.processName,
           })
         : t('workspace.describe.window', { title: item.windowTitle });
-    case 'group':
-      return t('workspace.describe.group', { count: item.itemNames.length });
     case 'clipboard':
       return item.preview
         ? t('workspace.describe.clipboardWithPreview', { preview: item.preview })
         : t('workspace.describe.clipboard');
-    case 'layout':
-      return t('workspace.describe.layout', { count: item.entries.length });
+    case 'set':
+      return t('workspace.describe.set', { count: item.entries.length });
   }
 }
 

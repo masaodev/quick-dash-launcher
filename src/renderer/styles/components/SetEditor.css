@@ -1,0 +1,606 @@
+/* セットの編集（行の一覧・アイテムの追加・今の位置の記録・行の詳細）
+ *
+ * 色の役割: 青＝操作・お知らせの印、灰色＝情報（位置・開くもの）、注意の茶色＝うまく動かないかもしれないとき、
+ * 赤＝問題・消す。ボタンは <Button> のまま使い、ここでは色を変えない（css-design.md）
+ */
+
+/* 登録画面の縦並びの欄（align-items: flex-start）でも、一覧と下のボタンの行は幅いっぱいに広げる */
+.set-editor > .set-editor-rows,
+.set-editor > .set-editor-footer {
+  align-self: stretch;
+}
+
+.set-editor-rows {
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-section);
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.set-editor-row,
+.set-picker-row,
+.set-record-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-bottom: 1px solid var(--color-gray-300);
+  font-size: var(--font-size-base);
+  background-color: var(--bg-app);
+}
+
+.set-editor-row:last-child,
+.set-picker-row:last-child,
+.set-record-row:last-child {
+  border-bottom: none;
+}
+
+.set-editor-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.set-editor-row.dragging {
+  opacity: 0.5;
+}
+
+/* ドラッグ中に落とす先の行（上へ動かすときは上の縁、下へ動かすときは下の縁に線を出す） */
+.set-editor-row.drop-above {
+  box-shadow: inset 0 2px 0 var(--color-primary);
+}
+
+.set-editor-row.drop-below {
+  box-shadow: inset 0 -2px 0 var(--color-primary);
+}
+
+.set-editor-row.missing .set-row-title {
+  color: var(--text-muted);
+}
+
+.set-drag-handle {
+  cursor: grab;
+  color: var(--text-disabled);
+}
+
+/* アイコン（メイン画面の一覧と同じ 24px） */
+.set-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  flex-shrink: 0;
+  font-size: var(--font-size-lg);
+}
+
+.set-row-icon img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* 名前の欄（1 段目は名前と印、2 段目は開くもの。ウィンドウを選ぶ画面と同じ 12px の灰色） */
+.set-row-name {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.set-row-title-text,
+.set-row-details {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-row-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.set-row-title .set-chip {
+  flex-shrink: 0;
+}
+
+.set-row-details {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* 位置（メイン画面のセットの行の 📍 と同じく、灰色の小さな文字） */
+.set-row-place {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* 行の横に添える灰色の文字（アイテムの追加の「追加済み」・タブの名前） */
+.set-row-aside {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.set-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+  flex-shrink: 0;
+}
+
+/* 行の操作（アイテム管理の行の ✏️ と同じ 28px 角・枠なし） */
+.set-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--border-radius);
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.set-icon-btn:hover:not(:disabled) {
+  background-color: var(--color-gray-400);
+}
+
+.set-icon-btn:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+/* 楕円の印（お知らせは青、問題は赤） */
+.set-chip {
+  display: inline-block;
+  margin-left: var(--spacing-xs);
+  padding: 0 var(--spacing-sm);
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  font-weight: normal;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+.set-chip-open {
+  background-color: var(--color-primary-50);
+  color: var(--color-primary);
+}
+
+.set-chip-danger {
+  background-color: var(--bg-danger-light);
+  color: var(--color-danger);
+}
+
+.set-muted {
+  color: var(--text-muted);
+}
+
+/* うまく動かないかもしれないときの注意（最小化中・管理者権限） */
+.set-note {
+  display: block;
+  color: var(--text-warning);
+  font-size: var(--font-size-sm);
+  white-space: normal;
+}
+
+/* お知らせ（タブとして開くなど。注意ほど目立たせない） */
+.set-info {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  white-space: normal;
+}
+
+.set-empty {
+  padding: var(--spacing-md);
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
+}
+
+.set-editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.set-launch-mode {
+  display: inline-flex;
+  white-space: nowrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.set-launch-mode select {
+  width: auto;
+  font-size: var(--font-size-base);
+}
+
+/* ===== 小さな画面（追加・記録・詳細） ===== */
+
+.set-picker-modal,
+.set-record-modal,
+.set-detail-modal {
+  width: 90%;
+  max-width: 640px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
+}
+
+.set-modal-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.set-modal-header h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+}
+
+.set-search {
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+}
+
+/* タブの絞り込みは、ウィンドウを選ぶ画面の .desktop-tabs をそのまま使う */
+.set-tabs {
+  margin-bottom: 0;
+}
+
+.set-picker-list,
+.set-record-body {
+  flex: 1;
+  min-height: 200px;
+  overflow-y: auto;
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-section);
+}
+
+.set-picker-row {
+  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.set-picker-row .set-row-name {
+  flex-direction: row;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.set-picker-row.checked {
+  background-color: var(--bg-selected);
+}
+
+.set-picker-row.added {
+  cursor: default;
+  color: var(--text-disabled);
+}
+
+/* 欄の見出し（取込画面などの小さな見出しと同じ 12px） */
+.set-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  background-color: var(--bg-header);
+  border-bottom: var(--border-light);
+}
+
+/* 畳める見出し（登録画面の .options-toggle と同じ ▶ / ▼） */
+.set-section-toggle {
+  width: 100%;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.set-section-toggle:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.set-section-toggle:disabled {
+  cursor: default;
+  color: var(--text-disabled);
+}
+
+.set-section-toggle .toggle-icon {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.set-section-hint {
+  margin-left: auto;
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+/* ===== 今の位置を記録 ===== */
+
+/* ウィンドウを選ぶ画面と同じ最大 800px */
+.set-record-modal {
+  max-width: 800px;
+}
+
+/* アイコン・名前・位置・どうするか。名前の列を優先し、位置の列は中身の幅にする */
+.set-record-row {
+  display: grid;
+  /* 最後の列は「行に無いウィンドウ」の ✏️（ほかの欄の行は空。列をそろえるため幅は全部の行で取る） */
+  grid-template-columns: var(--icon-size-sm) minmax(0, 1fr) auto 170px 28px;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.set-record-row-muted {
+  color: var(--text-muted);
+}
+
+.set-record-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.set-record-main,
+.set-record-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-record-main {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.set-record-row-muted .set-record-main {
+  color: var(--text-muted);
+}
+
+.set-record-sub {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* 結び付いた相手のウィンドウのアイコン（2 段目の文字の大きさに合わせる） */
+.set-record-window-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: var(--spacing-xs);
+  vertical-align: -2px;
+}
+
+.set-record-place {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.set-record-row .set-record-action {
+  width: 100%;
+  max-width: none;
+}
+
+.set-record-row select {
+  height: var(--input-height);
+  font-size: var(--font-size-base);
+}
+
+/* ===== 行の詳細 ===== */
+
+/* ラベルの列（いちばん長い「ウィンドウが出るのを待つ（秒）」）と、位置のボタン 2 つが 1 行に入る幅 */
+.set-detail-modal {
+  max-width: 760px;
+}
+
+.set-detail-groups {
+  display: grid;
+  /* ラベルは登録画面と同じく最低 120px。4 つの枠で列をそろえ、いちばん長いラベルに合わせて折り返さない */
+  grid-template-columns: minmax(120px, max-content) minmax(0, 1fr);
+  gap: var(--spacing-sm);
+  overflow-y: auto;
+}
+
+/* 登録画面の .window-config-group / -title と同じ、枠で囲んで見出しを付ける形 */
+.set-detail-group {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: var(--spacing-sm) var(--spacing-md);
+  align-items: center;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-section);
+  font-size: var(--font-size-base);
+}
+
+.set-detail-group-title {
+  grid-column: 1 / -1;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-gray-300);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.set-detail-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.set-detail-text {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.set-detail-hint {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.set-detail-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.set-detail-group input,
+.set-detail-group select {
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  box-sizing: border-box;
+  font-size: var(--font-size-base);
+}
+
+/* 行の詳細の「開くもの」の選び方（なし／アイテム／パス） */
+.set-detail-radios {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.set-detail-radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.set-detail-picked {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.set-detail-picked .set-row-name {
+  flex: 1;
+  min-width: 0;
+}
+
+/* タイトル欄まわり: 欄 → 一部だけで探す候補 → 今合うウィンドウ */
+.set-title-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.set-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.set-title-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 欄に対する操作なので欄の右に置き、候補より目立たせない文字だけのボタン */
+.set-title-revert {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--border-radius);
+  background: none;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.set-title-revert:hover {
+  background-color: var(--bg-hover);
+}
+
+.set-title-parts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* 候補は印（.set-chip）と同じ大きさの丸い形 */
+.set-title-part {
+  padding: 0 var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: 999px;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.set-title-part:hover {
+  border-color: var(--color-primary);
+  background-color: var(--bg-hover);
+}
+
+.set-title-match {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.set-title-match.one {
+  color: var(--text-success);
+}
+
+.set-title-match.many {
+  color: var(--text-error);
+}
+
+/* ラジオは入力欄の高さ・余白を当てない */
+.set-detail-radios input {
+  height: auto;
+  margin: 0;
+  padding: 0;
+}
+
+/* 下に候補などが続く欄の見出しは、欄の高さにそろえる */
+.set-detail-label-top {
+  align-self: start;
+  line-height: var(--input-height-sm);
+}
+
+/* 記録の画面の ✏️ は、行として追加していないあいだ薄くする（絵文字は文字色が効かない） */
+.set-record-row .set-icon-btn:disabled {
+  opacity: 0.35;
+}

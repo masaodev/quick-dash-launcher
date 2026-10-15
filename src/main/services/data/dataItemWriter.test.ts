@@ -19,7 +19,7 @@ vi.mock('@common/logger', () => ({
 }));
 
 import { getCorruptedDataFiles, clearDataFileCorrupted } from './corruptedDataFiles';
-import { registerItems, updateGroupItemById, updateWindowItemById } from './dataItemWriter';
+import { registerItems, updateSetItemById, updateWindowItemById } from './dataItemWriter';
 
 function writeFile(fileName: string, content: string): void {
   fs.writeFileSync(path.join(tempRoot.dir, fileName), content, 'utf8');
@@ -53,21 +53,26 @@ describe('dataItemWriter', () => {
       JSON.stringify({
         version: '1.0',
         items: [
-          { id: 'bbbbbbbb', type: 'group', displayName: 'G', itemNames: ['A'] },
+          { id: 'bbbbbbbb', type: 'set', displayName: 'G', entries: [{ itemId: 'aaaaaaaa' }] },
           { id: 'cccccccc', type: 'item', displayName: 'C', path: 'C:\\c.exe' },
         ],
       })
     );
 
-    updateGroupItemById(tempRoot.dir, 'bbbbbbbb', 'G2', ['A', 'C'], '');
+    updateSetItemById(
+      tempRoot.dir,
+      'bbbbbbbb',
+      { displayName: 'G2', entries: [{ itemId: 'aaaaaaaa' }, { itemId: 'cccccccc' }] },
+      ''
+    );
 
     const items = readItems('datafiles/data2.json');
     expect(items).toHaveLength(2);
     expect(items[0]).toMatchObject({
       id: 'bbbbbbbb',
-      type: 'group',
+      type: 'set',
       displayName: 'G2',
-      itemNames: ['A', 'C'],
+      entries: [{ itemId: 'aaaaaaaa' }, { itemId: 'cccccccc' }],
     });
     // 空のメモは保存しない
     expect(items[0]).not.toHaveProperty('memo');
@@ -94,9 +99,9 @@ describe('dataItemWriter', () => {
   it('ID が見つからなければエラーにすること', () => {
     writeFile('datafiles/data.json', JSON.stringify({ version: '1.0', items: [] }));
 
-    expect(() => updateGroupItemById(tempRoot.dir, 'zzzzzzzz', 'G', [])).toThrow(
-      'ID zzzzzzzz のアイテムが見つかりません'
-    );
+    expect(() =>
+      updateSetItemById(tempRoot.dir, 'zzzzzzzz', { displayName: 'G', entries: [] })
+    ).toThrow('ID zzzzzzzz のアイテムが見つかりません');
   });
 
   it('破損したファイルへの登録は中止し、ファイルを上書きしないこと', () => {
@@ -118,6 +123,21 @@ describe('dataItemWriter', () => {
       '{ broken'
     );
     expect(getCorruptedDataFiles()).toContain('datafiles/data.json');
+  });
+
+  it('keepId があれば、その id で登録すること（保存先を変えた編集でセットの行を切らない）', () => {
+    writeFile('datafiles/data2.json', JSON.stringify({ version: '1.0', items: [] }));
+    registerItems(tempRoot.dir, [
+      {
+        displayName: 'X',
+        path: 'C:/x.exe',
+        type: 'app',
+        targetTab: 'datafiles/data2.json',
+        itemCategory: 'item',
+        keepId: 'Keep0001',
+      },
+    ]);
+    expect(readItems('datafiles/data2.json').map((i) => i.id)).toEqual(['Keep0001']);
   });
 
   it('登録先ファイルごとに追記すること', () => {

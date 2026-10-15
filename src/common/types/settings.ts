@@ -127,8 +127,6 @@ export interface AppSettings {
   workspaceVisibleOnAllDesktops: boolean;
   /** 切り離しウィンドウを全仮想デスクトップに表示（デフォルト: true） */
   detachedVisibleOnAllDesktops: boolean;
-  /** グループアイテムを並列起動する（デフォルト: false） */
-  parallelGroupLaunch: boolean;
   /** メインウィンドウの下に、気づきにくいキー操作のヒントを表示する（デフォルト: true） */
   showKeyboardHints: boolean;
   /** ウィンドウ検索で起動のホットキー（デフォルト: 'Ctrl+Alt+Space'、空の場合は無効） */

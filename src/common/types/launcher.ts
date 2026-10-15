@@ -86,29 +86,6 @@ export interface LauncherItem {
 }
 
 /**
- * 複数のアイテムをまとめて一括起動するためのグループアイテム
- * 既存のアイテム名を参照して、順次実行する
- */
-export interface GroupItem {
-  /** グループの表示名 */
-  displayName: string;
-  /** アイテムタイプ（常に'group'） */
-  type: 'group';
-  /** グループ内で参照するアイテム名のリスト */
-  itemNames: string[];
-  /** 元のデータファイル */
-  sourceFile?: string;
-  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
-  lineNumber?: number;
-  /** JSONアイテムのID（JSON形式の場合） */
-  id?: string;
-  /** 編集モードで変更されたかどうか */
-  isEdited?: boolean;
-  /** 自由記述メモ（オプション） */
-  memo?: string;
-}
-
-/**
  * ウィンドウ操作アイテム
  * 既存のウィンドウを検索・アクティブ化し、位置・サイズを制御する
  *
@@ -206,8 +183,7 @@ export interface ClipboardItem {
 }
 
 /**
- * レイアウト内の個別ウィンドウエントリ
- * キャプチャしたウィンドウの位置・サイズ情報とアプリ起動設定を持つ
+ * 旧形式のウィンドウ配置（レイアウト）の 1 ウィンドウ分（読み込み時にセットの行に変換する）
  */
 export interface LayoutWindowEntry {
   /** ウィンドウタイトル（検索用） */
@@ -237,33 +213,9 @@ export interface LayoutWindowEntry {
 /** LayoutWindowEntry から icon を除いた型（JSON保存用） */
 export type LayoutWindowEntryWithoutIcon = Omit<LayoutWindowEntry, 'icon'>;
 
-/**
- * ウィンドウレイアウト一括操作アイテム
- * 複数ウィンドウの位置・サイズを一括でキャプチャ・復元する
- */
-export interface LayoutItem {
-  /** アイテムタイプ（常に'layout'） */
-  type: 'layout';
-  /** レイアウトの表示名 */
-  displayName: string;
-  /** レイアウト内のウィンドウエントリ一覧 */
-  entries: LayoutWindowEntry[];
-  /** 元のデータファイル */
-  sourceFile?: string;
-  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
-  lineNumber?: number;
-  /** JSONアイテムのID（JSON形式の場合） */
-  id?: string;
-  /** 編集モードで変更されたかどうか */
-  isEdited?: boolean;
-  /** 自由記述メモ（オプション） */
-  memo?: string;
-  /** カスタムアイコンのファイル名（オプション） */
-  customIcon?: string;
-}
-
 // レイアウト実行の進捗型
-export type LayoutEntryStatus = 'waiting' | 'launching' | 'success' | 'failed';
+/** skipped: 動かすだけの行で、ウィンドウが開いていなかったので何もしなかった（失敗とは数えない） */
+export type LayoutEntryStatus = 'waiting' | 'launching' | 'success' | 'failed' | 'skipped';
 
 export interface LayoutEntryProgress {
   index: number;
@@ -282,8 +234,96 @@ export interface LayoutExecutionProgress {
 }
 
 /**
- * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItem、GroupItem、WindowItem、ClipboardItem、LayoutItem、WindowInfo（ウィンドウ検索結果）を扱える
+ * セットの行の「見つけ方」。どのウィンドウをこの行のウィンドウとみなすか
+ *
+ * 結び付けた相手の hwnd は開き直すたびに変わるので持たず、次にどう探すかだけを持つ
  */
-export type AppItem =
-  LauncherItem | GroupItem | WindowItem | ClipboardItem | LayoutItem | WindowInfo;
+export interface SetWindowMatch {
+  /** exe のファイル名（部分一致。例: WindowsTerminal.exe） */
+  processName?: string;
+  /** ウィンドウタイトル（ワイルドカード可）。省略時はプロセス名だけで探す */
+  title?: string;
+}
+
+/** セットの行の「置き場所」 */
+export interface SetPlacement {
+  /** X座標（仮想スクリーン座標系） */
+  x?: number;
+  /** Y座標（仮想スクリーン座標系） */
+  y?: number;
+  /** 幅 */
+  width?: number;
+  /** 高さ */
+  height?: number;
+  /** 仮想デスクトップ番号（1から開始） */
+  virtualDesktopNumber?: number;
+  /** 最大化して置くとき 'maximized'（通常の大きさなら省略） */
+  state?: 'maximized';
+}
+
+/** セットの行の中だけで持つ「開くもの」 */
+export interface SetOpenTarget {
+  /** ファイル・フォルダ・exe・URL・カスタム URI */
+  path: string;
+  /** コマンドライン引数 */
+  args?: string;
+}
+
+/** セットの行。開くもの（itemId か open）・見つけ方・置き場所を持つ */
+export interface SetEntry {
+  /** 登録済みのアイテムの id（どのデータファイルのアイテムでもよい） */
+  itemId?: string;
+  /** この行の中だけで持つ開くもの（itemId と同時には持たない） */
+  open?: SetOpenTarget;
+  /** 行の名前。open の行や、参照先が見つからない行の表示に使う */
+  label?: string;
+  /** 見つけ方 */
+  window?: SetWindowMatch;
+  /** 置き場所。無ければ開くだけ */
+  placement?: SetPlacement;
+  /** ウィンドウが開いていたとき: move＝開き直さず位置だけ合わせる（既定）／openNew＝もう 1 つ開く */
+  ifOpen?: 'move' | 'openNew';
+  /** 置いたウィンドウを前面に出すか（既定 true） */
+  activateWindow?: boolean;
+  /** 開いてからウィンドウが出るのを待つ秒数（既定 30） */
+  waitSeconds?: number;
+}
+
+/** セットの開き方: sequential＝順番に（既定）／parallel＝同時に */
+export type SetLaunchMode = 'sequential' | 'parallel';
+
+/**
+ * セットアイテム
+ * 複数のアイテムをまとめて開き、必要なら決まった位置に並べる（グループとウィンドウ配置を統合した種別）
+ */
+export interface SetItem {
+  /** アイテムタイプ（常に'set'） */
+  type: 'set';
+  /** セットの表示名 */
+  displayName: string;
+  /** 行の一覧（上から順に開く） */
+  entries: SetEntry[];
+  /** 開き方（省略時は順番に） */
+  launchMode?: SetLaunchMode;
+  /** カスタムアイコンのファイル名（オプション） */
+  customIcon?: string;
+  /** 元のデータファイル */
+  sourceFile?: string;
+  /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
+  lineNumber?: number;
+  /** JSONアイテムのID（JSON形式の場合） */
+  id?: string;
+  /** 編集モードで変更されたかどうか */
+  isEdited?: boolean;
+  /** 自由記述メモ（オプション） */
+  memo?: string;
+}
+
+/** ID でセットを更新するときの設定値 */
+export type SetItemFields = Pick<SetItem, 'displayName' | 'entries' | 'launchMode' | 'customIcon'>;
+
+/**
+ * アプリケーションで扱うすべてのアイテムの統合型
+ * 通常のLauncherItem、WindowItem、ClipboardItem、SetItem、WindowInfo（ウィンドウ検索結果）を扱える
+ */
+export type AppItem = LauncherItem | WindowItem | ClipboardItem | SetItem | WindowInfo;

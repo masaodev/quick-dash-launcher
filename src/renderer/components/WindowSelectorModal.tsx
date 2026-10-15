@@ -5,6 +5,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
+import { desktopLabel } from '@common/utils/desktopLabel';
 
 import '../styles/components/WindowSelectorModal.css';
 import { logError } from '../utils/debug';
@@ -159,8 +160,10 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
         tabList.push({
           id: i,
           label: isCurrent
-            ? t('windowPicker.currentDesktop', { number: i })
-            : t('windowPicker.desktop', { number: i }),
+            ? t('windowPicker.currentDesktop', {
+                number: desktopLabel(i, desktopInfo.desktopNames),
+              })
+            : t('windowPicker.desktop', { number: desktopLabel(i, desktopInfo.desktopNames) }),
           count,
         });
       }

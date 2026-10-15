@@ -203,11 +203,11 @@ test.describe('画面仕様書の画面イメージ', () => {
     await register.locator('.dir-options').waitFor({ state: 'visible' });
     await shot(register, 'dir-options-editor');
 
-    // グループ → アイテム選択
-    await typeSelect.selectOption({ value: 'group' });
+    // セット → アイテムの追加
+    await typeSelect.selectOption({ value: 'set' });
     await register.locator('.register-modal button', { hasText: 'アイテムを追加' }).click();
-    await register.locator('.group-item-selector-modal').waitFor({ state: 'visible' });
-    await shot(register, 'group-item-selector-modal');
+    await register.locator('.set-picker-modal').waitFor({ state: 'visible' });
+    await shot(register, 'set-item-picker-modal');
   });
 
   test('アイコン取得結果', async ({ electronApp, mainWindow }) => {

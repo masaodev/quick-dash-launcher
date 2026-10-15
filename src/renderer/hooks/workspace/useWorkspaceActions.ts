@@ -29,18 +29,17 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   const api = window.electronAPI.workspaceAPI;
 
   const handleLaunch = withErrorHandling(async (item: WorkspaceItem) => {
-    await window.electronAPI.showToastWindow({
-      displayName: item.displayName,
-      itemType: toToastItemType(item),
-      ...(item.type === 'group' && {
-        itemCount: item.itemNames.length,
-        itemNames: item.itemNames.slice(0, 3),
-      }),
-      ...(item.type === 'item' && {
-        path: item.path,
-        icon: item.icon,
-      }),
-    });
+    // セットは行の名前を本体側で引いて知らせる（データファイルのアイテムはこの画面に無い）
+    if (item.type !== 'set') {
+      await window.electronAPI.showToastWindow({
+        displayName: item.displayName,
+        itemType: toToastItemType(item),
+        ...(item.type === 'item' && {
+          path: item.path,
+          icon: item.icon,
+        }),
+      });
+    }
     await api.launchItem(item);
   }, 'Failed to launch workspace item:');
 

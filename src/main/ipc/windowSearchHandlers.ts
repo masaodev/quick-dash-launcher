@@ -6,6 +6,7 @@ import {
   getAllWindows,
   activateWindow,
   restoreWindow,
+  getWindowShowState,
   closeWindow,
   waitForWindowsGone,
 } from '../utils/nativeWindowControl';
@@ -18,6 +19,8 @@ import {
   unPinWindow,
   isPinnedWindow,
   getAllDesktopNames,
+  switchToWindowDesktop,
+  isDllLoaded,
 } from '../utils/virtualDesktop/index.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { getOverlayWindow } from '../services/overlayWindowService.js';
@@ -75,7 +78,8 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
 
   ipcMain.handle(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, (): VirtualDesktopInfo => {
     try {
-      if (!isVirtualDesktopSupported()) {
+      // DLL が読めないとデスクトップの番号も移動も扱えない（レジストリだけでは、件数 0 のタブが並ぶ）
+      if (!isVirtualDesktopSupported() || !isDllLoaded()) {
         return { supported: false, desktopCount: -1, currentDesktop: -1 };
       }
       return {
@@ -92,7 +96,10 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
 
   ipcMain.handle(IPC_CHANNELS.ACTIVATE_WINDOW, (_event, hwnd: number | bigint): OperationResult => {
     try {
-      restoreWindow(hwnd);
+      // 最大化中に SW_RESTORE を送ると最大化が解けるので、最小化中だけ戻す
+      if (getWindowShowState(hwnd) === 'minimized') restoreWindow(hwnd);
+      // 別の仮想デスクトップのウィンドウは、そのデスクトップへ切り替えてから前に出す（そのままでは見えない）
+      switchToWindowDesktop(hwnd);
       const success = activateWindow(hwnd);
 
       // アイテムの実行と同じ隠し方にする（固定・モーダル・初回起動中は隠さない。

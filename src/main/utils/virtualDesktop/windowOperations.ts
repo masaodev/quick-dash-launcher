@@ -16,15 +16,17 @@ import {
   getUnPinWindow,
   getIsPinnedWindow,
   getGetDesktopName,
+  getGoToDesktopNumber,
 } from './dllLoader.js';
 import { isVirtualDesktopSupported, getVirtualDesktopGUIDs } from './registryAccess.js';
 
 /**
  * DLL関数の戻り値をbooleanに変換
- * boolean型の場合はそのまま、数値の場合は0以外をtrueとして扱う
+ * boolean型の場合はそのまま、数値の場合は正の数だけをtrueとして扱う
+ * （同梱のDLLは成功・真で1、偽で0、失敗で-1を返す。-1を真とみなすと、失敗が成功になる）
  */
 function toBooleanResult(result: boolean | number): boolean {
-  return typeof result === 'boolean' ? result : result !== 0;
+  return typeof result === 'boolean' ? result : result > 0;
 }
 
 /**
@@ -56,6 +58,7 @@ export function getCurrentDesktopNumber(): number {
   try {
     const desktopIndex = fn();
     debugLog('[WindowOps] 現在のデスクトップインデックス:', desktopIndex);
+    if (desktopIndex < 0) return -1;
     return desktopIndex + 1;
   } catch (error) {
     console.error('[WindowOps] getCurrentDesktopNumber例外発生:', error);
@@ -112,6 +115,46 @@ export function moveWindowToVirtualDesktop(hwnd: number | bigint, desktopNumber:
     console.error('[WindowOps] moveWindowToVirtualDesktop例外発生:', error);
     return false;
   }
+}
+
+/**
+ * 指定の仮想デスクトップへ切り替える（利用者の見ているデスクトップが変わる）
+ * @param desktopNumber デスクトップ番号（1から開始）
+ * @returns 成功したらtrue
+ */
+export function goToDesktop(desktopNumber: number): boolean {
+  const fn = getDllFunction(getGoToDesktopNumber);
+  if (!fn || desktopNumber < 1) return false;
+  try {
+    return toBooleanResult(fn(desktopNumber - 1));
+  } catch (error) {
+    console.error('[WindowOps] goToDesktop例外発生:', error);
+    return false;
+  }
+}
+
+/**
+ * ウィンドウが別の仮想デスクトップにあれば、今のデスクトップへ移す
+ * （表示したまま別のデスクトップへ切り替えた QDL のウィンドウを、ホットキーなどで呼び寄せるとき）
+ * @returns 移したらtrue（同じデスクトップ・全デスクトップに表示中・番号が取れないときはfalse）
+ */
+export function moveWindowToCurrentDesktop(hwnd: number | bigint): boolean {
+  const windowDesktop = getWindowDesktopNumber(hwnd);
+  const currentDesktop = getCurrentDesktopNumber();
+  if (windowDesktop < 1 || currentDesktop < 1 || windowDesktop === currentDesktop) return false;
+  return moveWindowToVirtualDesktop(hwnd, currentDesktop);
+}
+
+/**
+ * ウィンドウが別の仮想デスクトップにあれば、そのデスクトップへ切り替える
+ * （前面に出しても、別のデスクトップのままでは利用者に見えないため）
+ * @returns 切り替えたらtrue（同じデスクトップ・全デスクトップに表示中・番号が取れないときはfalse）
+ */
+export function switchToWindowDesktop(hwnd: number | bigint): boolean {
+  const windowDesktop = getWindowDesktopNumber(hwnd);
+  const currentDesktop = getCurrentDesktopNumber();
+  if (windowDesktop < 1 || currentDesktop < 1 || windowDesktop === currentDesktop) return false;
+  return goToDesktop(windowDesktop);
 }
 
 /**

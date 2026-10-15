@@ -15,9 +15,11 @@ import type {
   VirtualDesktopInfo,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { isLauncherItem } from '@common/types/guards';
+import { desktopLabel } from '@common/utils/desktopLabel';
+import { isLauncherItem, isSetItem } from '@common/types/guards';
 
 import { mainI18n } from '../services/mainI18n.js';
+import { rerecordSetPositions } from '../services/launch/setRerecord.js';
 
 /** メニューの文言（開くたびに作るので、今の表示言語になる） */
 const t = mainI18n.t.bind(mainI18n);
@@ -164,7 +166,7 @@ function setupLauncherContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      // パス系の項目はパスを持つアイテムだけ（グループ・クリップボード・ウィンドウ操作・ウィンドウ配置には出さない）
+      // パス系の項目はパスを持つアイテムだけ（セット・クリップボード・ウィンドウ操作には出さない）
       const hasPathMenu = isLauncherItem(item);
       const hasParentFolder = hasPathMenu && item.type !== 'url' && item.type !== 'customUri';
       const isShortcut = hasPathMenu && item.originalPath !== undefined;
@@ -192,6 +194,18 @@ function setupLauncherContextMenuHandler(): void {
       }
 
       if (hasPathMenu) {
+        menu.append(createSeparator());
+      }
+
+      // 置き場所のある行を持つセットは、今の画面から位置を取り直せる
+      if (isSetItem(item) && item.entries.some((entry) => entry.placement)) {
+        menu.append(createSeparator());
+        menu.append(
+          new MenuItem({
+            label: t('set.redo.menu'),
+            click: () => void rerecordSetPositions(item),
+          })
+        );
         menu.append(createSeparator());
       }
 
@@ -546,9 +560,10 @@ function setupWindowContextMenuHandler(): void {
 
         for (let i = 1; i <= desktopInfo.desktopCount; i++) {
           const isCurrentDesktop = windowInfo.desktopNumber === i;
+          const number = desktopLabel(i, desktopInfo.desktopNames);
           const label = isCurrentDesktop
-            ? t('menu.window.currentDesktop', { number: i })
-            : t('menu.window.desktop', { number: i });
+            ? t('menu.window.currentDesktop', { number })
+            : t('menu.window.desktop', { number });
 
           virtualDesktopSubmenu.append(
             new MenuItem({
@@ -626,7 +641,7 @@ function setupWindowsContextMenuHandler(): void {
         for (let i = 1; i <= desktopInfo.desktopCount; i++) {
           submenu.append(
             createMenuItem(
-              t('menu.window.desktop', { number: i }),
+              t('menu.window.desktop', { number: desktopLabel(i, desktopInfo.desktopNames) }),
               event.sender,
               IPC_CHANNELS.EVENT_WINDOWS_MENU_MOVE_TO_DESKTOP,
               i

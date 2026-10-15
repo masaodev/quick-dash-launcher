@@ -1,5 +1,6 @@
 import { ipcMain, BrowserWindow, screen } from 'electron';
 import type { AppSettings, DisplayInfo } from '@common/types';
+import type { ScreenArea } from '@common/utils/placementLabel';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -327,6 +328,14 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     logger.info({ displayCount: displayInfos.length }, 'ディスプレイ一覧を取得');
     return displayInfos;
   });
+
+  // ウィンドウの座標（GetWindowRect）は物理ピクセルなので、画面の範囲も物理ピクセルに直して返す
+  ipcMain.handle(IPC_CHANNELS.GET_SCREEN_AREAS, (): ScreenArea[] =>
+    screen.getAllDisplays().map((display) => ({
+      bounds: screen.dipToScreenRect(null, display.bounds),
+      workArea: screen.dipToScreenRect(null, display.workArea),
+    }))
+  );
 
   logger.info('Settings IPC handlers registered');
 }

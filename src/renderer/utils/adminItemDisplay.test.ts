@@ -13,14 +13,14 @@ import {
 
 const item: JsonItem = { id: 'a1', type: 'item', displayName: 'a', path: 'C:\\a' };
 const dir: JsonItem = { id: 'd1', type: 'dir', path: 'C:\\dir' };
-const group: JsonItem = { id: 'g1', type: 'group', displayName: 'G', itemNames: ['a'] };
+const group: JsonItem = { id: 'g1', type: 'set', displayName: 'G', entries: [{ itemId: 'a1' }] };
 
 describe('adminItemDisplay', () => {
   it('種類ごとの表示名が揃っていること', () => {
     expect(Object.keys(ITEM_TYPE_INFO).sort()).toEqual(
-      ['clipboard', 'dir', 'group', 'item', 'layout', 'window'].sort()
+      ['clipboard', 'dir', 'item', 'set', 'window'].sort()
     );
-    expect(getItemTypeLabel('layout')).toBe('ウィンドウ配置');
+    expect(getItemTypeLabel('set')).toBe('セット');
   });
 
   it('hasDisplayName はフォルダ取込だけ false になること', () => {

@@ -4,7 +4,13 @@
  * RegisterModal、フォルダ取込、ウィンドウ操作アイテムで使用される型定義を提供します。
  */
 
-import type { WindowConfig, LauncherItem, LayoutWindowEntry, WindowItemConfig } from './launcher';
+import type {
+  WindowConfig,
+  LauncherItem,
+  WindowItemConfig,
+  SetEntry,
+  SetLaunchMode,
+} from './launcher';
 import type { JsonDirOptions } from './json-data';
 import type { ClipboardFormat } from './clipboard';
 
@@ -31,9 +37,8 @@ export interface RegisterItem {
   icon?: string;
   customIcon?: string;
   windowConfig?: WindowConfig;
-  itemCategory: 'item' | 'dir' | 'group' | 'window' | 'clipboard' | 'layout';
+  itemCategory: 'item' | 'dir' | 'window' | 'clipboard' | 'set';
   dirOptions?: JsonDirOptions;
-  groupItemNames?: string[];
   windowOperationConfig?: WindowOperationConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
@@ -47,6 +52,10 @@ export interface RegisterItem {
   clipboardPreview?: string;
   /** クリップボードセッションID（clipboard専用、登録確定前の一時保存用） */
   clipboardSessionId?: string;
-  /** レイアウト内のウィンドウエントリ一覧（layout専用） */
-  layoutEntries?: LayoutWindowEntry[];
+  /** セットの行（set専用） */
+  setEntries?: SetEntry[];
+  /** セットの開き方（set専用） */
+  setLaunchMode?: SetLaunchMode;
+  /** 登録し直すときに引き継ぐ id（保存先のファイルを変えた編集。セットの行が id で指しているので変えない） */
+  keepId?: string;
 }

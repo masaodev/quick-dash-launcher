@@ -39,9 +39,9 @@ const windowItem: WorkspaceItem = {
 };
 const groupItem: WorkspaceItem = {
   ...meta,
-  type: 'group',
+  type: 'set',
   displayName: 'セット',
-  itemNames: ['a', 'b'],
+  entries: [{ itemId: 'aaaaaaaa' }, { open: { path: 'C:\b.exe' } }],
 };
 const clipboardItem: WorkspaceItem = {
   ...meta,
@@ -54,9 +54,10 @@ const clipboardItem: WorkspaceItem = {
 };
 const layoutItem: WorkspaceItem = {
   ...meta,
-  type: 'layout',
+  type: 'set',
   displayName: '配置',
-  entries: [{ windowTitle: 'a', launchApp: false, icon: 'data:image/png;base64,AAAA' }],
+  launchMode: 'parallel',
+  entries: [{ window: { title: 'a' }, placement: { x: 0, y: 0 } }],
 };
 
 describe('workspaceConverters: appItemToWorkspaceItemBody', () => {
@@ -109,15 +110,17 @@ describe('workspaceConverters: appItemToWorkspaceItemBody', () => {
       memo: 'm3',
     });
 
-    const layoutApp: AppItem = {
-      type: 'layout',
+    const setApp: AppItem = {
+      type: 'set',
       displayName: '配置',
-      entries: [{ windowTitle: 'a', launchApp: false, icon: 'data:image/png;base64,AAAA' }],
+      entries: [{ window: { title: 'a' }, placement: { x: 0, y: 0 } }],
+      launchMode: 'parallel',
     };
-    expect(appItemToWorkspaceItemBody(layoutApp)).toEqual({
-      type: 'layout',
+    expect(appItemToWorkspaceItemBody(setApp)).toEqual({
+      type: 'set',
       displayName: '配置',
-      entries: [{ windowTitle: 'a', launchApp: false }],
+      entries: [{ window: { title: 'a' }, placement: { x: 0, y: 0 } }],
+      launchMode: 'parallel',
     });
   });
 
@@ -185,11 +188,11 @@ describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
     });
   });
 
-  it('group / clipboard / layout がデータファイルと同じフィールド名で往復すること', () => {
+  it('set / clipboard がデータファイルと同じフィールド名で往復すること', () => {
     expect(registerItemToWorkspaceItemUpdate(workspaceItemToRegisterItem(groupItem))).toEqual({
-      type: 'group',
+      type: 'set',
       displayName: 'セット',
-      itemNames: ['a', 'b'],
+      entries: [{ itemId: 'aaaaaaaa' }, { open: { path: 'C:\b.exe' } }],
     });
     expect(registerItemToWorkspaceItemUpdate(workspaceItemToRegisterItem(clipboardItem))).toEqual({
       type: 'clipboard',
@@ -200,9 +203,10 @@ describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
       formats: ['text'],
     });
     expect(registerItemToWorkspaceItemUpdate(workspaceItemToRegisterItem(layoutItem))).toEqual({
-      type: 'layout',
+      type: 'set',
       displayName: '配置',
-      entries: [{ windowTitle: 'a', launchApp: false }],
+      launchMode: 'parallel',
+      entries: [{ window: { title: 'a' }, placement: { x: 0, y: 0 } }],
     });
   });
 
@@ -222,22 +226,20 @@ describe('workspaceConverters: 表示', () => {
     const t = createI18n('ja').t;
     expect(describeWorkspaceItem(launcher, t)).toBe('https://github.com/');
     expect(describeWorkspaceItem(windowItem, t)).toBe('ウィンドウ操作: *Chrome（chrome.exe）');
-    expect(describeWorkspaceItem(groupItem, t)).toBe('グループ: 2件');
+    expect(describeWorkspaceItem(groupItem, t)).toBe('セット: 2件');
     expect(describeWorkspaceItem(clipboardItem, t)).toBe('クリップボード: hello');
-    expect(describeWorkspaceItem(layoutItem, t)).toBe('ウィンドウ配置: 1件');
   });
 
   it('describeWorkspaceItem は表示言語が英語なら英語の 1 行を返すこと', () => {
     const t = createI18n('en').t;
     expect(describeWorkspaceItem(windowItem, t)).toBe('Window action: *Chrome (chrome.exe)');
-    expect(describeWorkspaceItem(groupItem, t)).toBe('Group: 2 items');
-    expect(describeWorkspaceItem(layoutItem, t)).toBe('Window layout: 1 window');
+    expect(describeWorkspaceItem(groupItem, t)).toBe('Set: 2 items');
+    expect(describeWorkspaceItem(layoutItem, t)).toBe('Set: 1 item');
   });
 
   it('toToastItemType は通常アイテムに launcherType、ウィンドウ操作に windowOperation を返すこと', () => {
     expect(toToastItemType(launcher)).toBe('url');
     expect(toToastItemType(windowItem)).toBe('windowOperation');
-    expect(toToastItemType(groupItem)).toBe('group');
-    expect(toToastItemType(layoutItem)).toBe('layout');
+    expect(toToastItemType(groupItem)).toBe('set');
   });
 });

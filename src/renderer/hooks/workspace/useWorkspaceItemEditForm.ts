@@ -14,7 +14,7 @@ import { useToast } from '../useToast';
 interface FormErrors {
   displayName?: string;
   path?: string;
-  groupItemNames?: string;
+  setEntries?: string;
 }
 
 /**
@@ -31,7 +31,6 @@ export function useWorkspaceItemEditForm(
   const [item, setItem] = useState<RegisterItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [selectorModalOpen, setSelectorModalOpen] = useState(false);
   const [iconFetchLoading, setIconFetchLoading] = useState(false);
   const { showError, showWarning } = useToast();
 
@@ -51,8 +50,6 @@ export function useWorkspaceItemEditForm(
       return;
     }
 
-    let cancelled = false;
-
     if (editingItem) {
       setLoading(true);
       const registerItem = workspaceItemToRegisterItem(editingItem);
@@ -64,65 +61,15 @@ export function useWorkspaceItemEditForm(
         });
       }
 
-      // JSON保存時にアイコンが除去されるため、executablePathから再取得する
-      const entries = registerItem.layoutEntries;
-      if (registerItem.itemCategory === 'layout' && entries?.length) {
-        const enrichLayoutIcons = async () => {
-          const pathsToResolve = [
-            ...new Set(
-              entries.filter((e) => e.executablePath && !e.icon).map((e) => e.executablePath!)
-            ),
-          ];
-
-          const iconMap = new Map<string, string | null>();
-          await Promise.all(
-            pathsToResolve.map(async (path) => {
-              try {
-                iconMap.set(path, await window.electronAPI.extractIcon(path));
-              } catch {
-                iconMap.set(path, null);
-              }
-            })
-          );
-
-          if (cancelled) return;
-          const enrichedEntries = entries.map((entry) => {
-            if (entry.executablePath && !entry.icon) {
-              const icon = iconMap.get(entry.executablePath);
-              return icon ? { ...entry, icon } : entry;
-            }
-            return entry;
-          });
-          setItem((prev) => (prev ? { ...prev, layoutEntries: enrichedEntries } : null));
-        };
-        enrichLayoutIcons().catch((err) => {
-          logError('Failed to enrich layout entry icons:', err);
-        });
-      }
-
       setLoading(false);
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, [isOpen, editingItem, loadCustomIconPreview]);
 
   const handleFieldChange = useCallback(
     (field: keyof RegisterItem, value: ItemFieldValue) => {
       if (!item) return;
 
-      let newItem: RegisterItem;
-
-      if (field === 'groupItemNames') {
-        const itemNames = (value as string)
-          .split(',')
-          .map((name) => name.trim())
-          .filter((name) => name);
-        newItem = { ...item, groupItemNames: itemNames };
-      } else {
-        newItem = { ...item, [field]: value };
-      }
+      const newItem: RegisterItem = { ...item, [field]: value };
 
       if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
         clearErrorField(field === 'windowOperationConfig' ? 'displayName' : field);
@@ -147,27 +94,20 @@ export function useWorkspaceItemEditForm(
     const newErrors: FormErrors = {};
 
     if (!item.displayName.trim()) {
-      newErrors.displayName =
-        item.itemCategory === 'group'
-          ? t('register.errors.groupNameRequired')
-          : t('register.errors.displayNameRequired');
+      newErrors.displayName = t('register.errors.displayNameRequired');
     }
 
     if (
-      item.itemCategory !== 'group' &&
+      item.itemCategory !== 'set' &&
       item.itemCategory !== 'window' &&
       item.itemCategory !== 'clipboard' &&
-      item.itemCategory !== 'layout' &&
       !item.path?.trim()
     ) {
       newErrors.path = t('register.errors.pathRequired');
     }
 
-    if (item.itemCategory === 'group') {
-      const itemNames = item.groupItemNames || [];
-      if (itemNames.length === 0) {
-        newErrors.groupItemNames = t('register.errors.groupItemsRequired');
-      }
+    if (item.itemCategory === 'set' && !item.setEntries?.length) {
+      newErrors.setEntries = t('set.editor.entriesRequired');
     }
 
     if (item.itemCategory === 'window') {
@@ -180,11 +120,6 @@ export function useWorkspaceItemEditForm(
 
     if (item.itemCategory === 'clipboard' && !item.clipboardSessionId && !item.clipboardDataRef) {
       newErrors.path = t('register.errors.clipboardRequired');
-    }
-
-    // 登録画面と同じく、ウィンドウが 1 つも無いレイアウトは保存させない
-    if (item.itemCategory === 'layout' && !item.layoutEntries?.length) {
-      newErrors.path = t('register.errors.layoutRequired');
     }
 
     setErrors(newErrors);
@@ -300,50 +235,15 @@ export function useWorkspaceItemEditForm(
     [item]
   );
 
-  const handleAddGroupItem = useCallback(() => {
-    setSelectorModalOpen(true);
-  }, []);
-
-  const handleSelectGroupItem = useCallback(
-    (itemName: string) => {
-      if (!item) return;
-
-      const currentGroupItemNames = item.groupItemNames || [];
-      setItem({
-        ...item,
-        groupItemNames: [...currentGroupItemNames, itemName],
-      });
-
-      clearErrorField('groupItemNames');
-    },
-    [item]
-  );
-
-  const handleRemoveGroupItem = useCallback(
-    (groupItemNameIndex: number) => {
-      if (!item) return;
-
-      const currentGroupItemNames = item.groupItemNames || [];
-      const updatedGroupItemNames = currentGroupItemNames.filter(
-        (_, i) => i !== groupItemNameIndex
-      );
-      setItem({
-        ...item,
-        groupItemNames: updatedGroupItemNames,
-      });
-    },
-    [item]
-  );
-
   const updateItem = useCallback((updatedFields: Partial<RegisterItem>) => {
     setItem((prev) => (prev ? { ...prev, ...updatedFields } : null));
+    if (updatedFields.setEntries?.length) clearErrorField('setEntries');
   }, []);
 
   return {
     item,
     loading,
     errors,
-    selectorModalOpen,
     iconFetchLoading,
     handleFieldChange,
     handlePathBlur,
@@ -352,10 +252,6 @@ export function useWorkspaceItemEditForm(
     handleDelete,
     handleFetchIcon,
     replacePathFromDrop,
-    handleAddGroupItem,
-    handleSelectGroupItem,
-    handleRemoveGroupItem,
     updateItem,
-    setSelectorModalOpen,
   };
 }

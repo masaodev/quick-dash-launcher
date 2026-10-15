@@ -35,7 +35,7 @@ export interface IconTargetItem {
  * - `executable`: その他の実行ファイル。ファイル名ベース
  * - `customUri`: カスタムURIスキーマ
  * - `fileExtension`: 通常のファイル。拡張子ベース
- * - `none`: 取得対象外（folder / group / windowOperation / clipboard / layout）
+ * - `none`: 取得対象外（folder / set / windowOperation / clipboard）
  */
 export type IconTargetKind =
   'favicon' | 'uwp' | 'shortcut' | 'script' | 'executable' | 'customUri' | 'fileExtension' | 'none';

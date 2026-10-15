@@ -9,16 +9,21 @@
 export type {
   WindowConfig,
   LauncherItem,
-  GroupItem,
   WindowItem,
   WindowItemConfig,
   ClipboardItem,
-  LayoutItem,
   LayoutWindowEntry,
   LayoutWindowEntryWithoutIcon,
   LayoutEntryStatus,
   LayoutEntryProgress,
   LayoutExecutionProgress,
+  SetItem,
+  SetItemFields,
+  SetEntry,
+  SetWindowMatch,
+  SetPlacement,
+  SetOpenTarget,
+  SetLaunchMode,
   AppItem,
 } from './launcher';
 
@@ -28,9 +33,8 @@ export type {
   WorkspaceItem,
   WorkspaceLauncherItem,
   WorkspaceWindowItem,
-  WorkspaceGroupItem,
   WorkspaceClipboardItem,
-  WorkspaceLayoutItem,
+  WorkspaceSetItem,
   WorkspaceItemUpdate,
   WorkspaceGroup,
   WorkspaceGroupView,
@@ -51,9 +55,8 @@ export type {
   JsonWorkspaceItem,
   JsonWorkspaceLauncherItem,
   JsonWorkspaceWindowItem,
-  JsonWorkspaceGroupItem,
   JsonWorkspaceClipboardItem,
-  JsonWorkspaceLayoutItem,
+  JsonWorkspaceSetItem,
   JsonWorkspaceArchiveFile,
   JsonArchivedWorkspaceGroup,
   JsonArchivedWorkspaceItem,
@@ -82,15 +85,15 @@ export type {
   JsonWindowItem,
   JsonClipboardItem,
   JsonLayoutItem,
+  JsonSetItem,
   DirOptionsForProcessing,
 } from './json-data';
 export {
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonGroupItem,
   isJsonWindowItem,
   isJsonClipboardItem,
-  isJsonLayoutItem,
+  isJsonSetItem,
   JSON_DATA_VERSION,
   JSON_ID_LENGTH,
   DIR_OPTIONS_DEFAULTS,
@@ -171,16 +174,14 @@ export type { RegisterItem, WindowOperationConfig } from './register';
 export type {
   EditingItemMeta,
   EditingLauncherItem,
-  EditingGroupItem,
   EditingWindowItem,
-  EditingLayoutItem,
+  EditingSetItem,
   EditingAppItem,
 } from './editingItem';
 export {
   isEditingLauncherItem,
-  isEditingGroupItem,
   isEditingWindowItem,
-  isEditingLayoutItem,
+  isEditingSetItem,
   isEditableJsonItem,
 } from './editingItem';
 
@@ -205,11 +206,4 @@ export type { ToastItemType, ToastEventData, NotificationType, ToastOptions } fr
 export type { SnapshotInfo, BackupStatus } from './backup';
 
 // 型ガード関数
-export {
-  isWindowInfo,
-  isLauncherItem,
-  isGroupItem,
-  isWindowItem,
-  isClipboardItem,
-  isLayoutItem,
-} from './guards';
+export { isWindowInfo, isLauncherItem, isWindowItem, isClipboardItem, isSetItem } from './guards';

@@ -2,6 +2,8 @@
  * ワークスペースサービスのファサードクラス
  * 各種マネージャークラスに処理を委譲する
  */
+import * as path from 'path';
+
 import type {
   AppItem,
   DetachedWindowState,
@@ -16,9 +18,13 @@ import type {
 } from '@common/types';
 import logger from '@common/logger';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
+import { FileUtils } from '@common/utils/fileUtils';
+import { isRecord } from '@common/types/guards';
 
 import PathManager from '../../config/pathManager.js';
 import { BackupService } from '../backupService.js';
+import { SettingsService } from '../settingsService.js';
+import type { GroupNameResolver } from '../data/setMigration.js';
 import type { LoadReportFile } from '../loadReportService.js';
 import { markKnownFolderPath, withFolderMarker } from '../../utils/folderPathProbe.js';
 
@@ -38,6 +44,37 @@ import { applyOrders } from './orderUtils.js';
  *
  * ファイルの読み込みは初期化時と reload()（メイン画面の F5）のときだけ。
  */
+/**
+ * ワークスペースのグループが指していたデータファイルのアイテムを、名前から引く表を作る
+ *
+ * データファイルを読み込み処理に通さず（外部変更の検知などの副作用を避けて）中身だけ読む。
+ * フォルダ取込で展開したアイテムは読み込まないと分からないので引けない（参照先の無い行になる）
+ */
+function readDataFileNameResolver(): GroupNameResolver {
+  const map = new Map<string, { itemId: string }>();
+  for (const fileName of PathManager.getDataFiles()) {
+    const content = FileUtils.safeReadTextFile(path.join(PathManager.getConfigFolder(), fileName));
+    if (content === null) continue;
+    try {
+      const raw: unknown = JSON.parse(content);
+      if (!isRecord(raw) || !Array.isArray(raw.items)) continue;
+      for (const item of raw.items) {
+        if (
+          isRecord(item) &&
+          (item.type === 'item' || item.type === 'window') &&
+          typeof item.displayName === 'string' &&
+          typeof item.id === 'string'
+        ) {
+          map.set(item.displayName, { itemId: item.id });
+        }
+      }
+    } catch {
+      // 壊れたファイルは読み飛ばす
+    }
+  }
+  return (name) => map.get(name);
+}
+
 export class WorkspaceService {
   private store: WorkspaceFileStore | null = null;
   private uiState: WorkspaceUiStateStore | null = null;
@@ -71,6 +108,17 @@ export class WorkspaceService {
           createPreMigrationSnapshot: async () => {
             const backupService = await BackupService.getInstance();
             await backupService.createPreMigrationSnapshot();
+          },
+          prepareSetMigration: async () => {
+            const settingsService = await SettingsService.getInstance();
+            return {
+              resolveName: readDataFileNameResolver(),
+              parallel: await settingsService.getLegacyParallelGroupLaunch(),
+              snapshot: async () => {
+                const backupService = await BackupService.getInstance();
+                await backupService.createPreSetMigrationSnapshot();
+              },
+            };
           },
         }
       );

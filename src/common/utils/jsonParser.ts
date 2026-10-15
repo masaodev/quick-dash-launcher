@@ -13,8 +13,11 @@ import type {
   JsonWindowItem,
   JsonClipboardItem,
   JsonLayoutItem,
+  JsonSetItem,
+  SetEntry,
 } from '@common/types';
 import type { ClipboardFormat } from '@common/types/clipboard';
+import { isRecord } from '@common/types/guards';
 import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
 import { getFallbackT } from '@common/i18n';
 import type { TFunction } from 'i18next';
@@ -446,14 +449,12 @@ export function validateJsonItem(item: unknown, index: number): JsonItem {
       return validateJsonLauncherItem(obj);
     case 'dir':
       return validateJsonDirItem(obj);
-    case 'group':
-      return validateJsonGroupItem(obj);
     case 'window':
       return validateJsonWindowItem(obj);
     case 'clipboard':
       return validateJsonClipboardItem(obj);
-    case 'layout':
-      return validateJsonLayoutItem(obj);
+    case 'set':
+      return validateJsonSetItem(obj);
     default:
       throw new Error(`Unknown item type: ${obj.type}`);
   }
@@ -665,6 +666,104 @@ export function validateJsonLayoutItem(obj: Record<string, unknown>): JsonLayout
   validateTypedFields(obj, item, ['updatedAt'], 'number');
 
   return item;
+}
+
+/**
+ * JsonSetItemを検証
+ *
+ * 行は知っている項目だけを写す（型の合わない項目は捨てる）。行がオブジェクトでなければエラー
+ */
+export function validateJsonSetItem(obj: Record<string, unknown>): JsonSetItem {
+  if (typeof obj.displayName !== 'string' || !obj.displayName) {
+    throw new Error('displayName is required and must be a non-empty string');
+  }
+  if (!Array.isArray(obj.entries)) {
+    throw new Error('entries is required and must be an array');
+  }
+
+  const item: JsonSetItem = {
+    id: obj.id as string,
+    type: 'set',
+    displayName: obj.displayName,
+    entries: obj.entries.map((entry, i) => validateSetEntry(entry, i)),
+  };
+
+  if (obj.launchMode === 'sequential' || obj.launchMode === 'parallel') {
+    item.launchMode = obj.launchMode;
+  }
+  validateOptionalString(obj, item, 'customIcon');
+  validateOptionalString(obj, item, 'memo');
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
+
+  return item;
+}
+
+function pickString(obj: Record<string, unknown>, key: string): string | undefined {
+  const value = obj[key];
+  return typeof value === 'string' && value !== '' ? value : undefined;
+}
+
+function pickNumber(obj: Record<string, unknown>, key: string): number | undefined {
+  const value = obj[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+/** 仮想デスクトップ番号（1 以上の整数だけ。0・負の数・小数は指定なしとして読む） */
+function pickDesktopNumber(obj: Record<string, unknown>): number | undefined {
+  const value = pickNumber(obj, 'virtualDesktopNumber');
+  return value !== undefined && Number.isInteger(value) && value >= 1 ? value : undefined;
+}
+
+/** 値が undefined のキーを除く（保存したときに余計なキーを書かない） */
+function compact<T extends object>(obj: T): T {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+}
+
+/**
+ * セットの行を検証する
+ */
+export function validateSetEntry(entry: unknown, index: number): SetEntry {
+  if (!isRecord(entry)) {
+    throw new Error(`entries[${index}] must be an object`);
+  }
+  const result: SetEntry = {};
+
+  const itemId = pickString(entry, 'itemId');
+  if (itemId) result.itemId = itemId;
+  if (isRecord(entry.open)) {
+    const path = pickString(entry.open, 'path');
+    if (path) result.open = compact({ path, args: pickString(entry.open, 'args') });
+  }
+  const label = pickString(entry, 'label');
+  if (label) result.label = label;
+
+  if (isRecord(entry.window)) {
+    const window = compact({
+      processName: pickString(entry.window, 'processName'),
+      title: pickString(entry.window, 'title'),
+    });
+    // 中身の無い見つけ方は、どのウィンドウにも合ってしまうので持たない
+    if (window.processName || window.title) result.window = window;
+  }
+  if (isRecord(entry.placement)) {
+    const p = entry.placement;
+    const placement = compact({
+      x: pickNumber(p, 'x'),
+      y: pickNumber(p, 'y'),
+      width: pickNumber(p, 'width'),
+      height: pickNumber(p, 'height'),
+      virtualDesktopNumber: pickDesktopNumber(p),
+      state: p.state === 'maximized' ? ('maximized' as const) : undefined,
+    });
+    // 中身の無い位置は持たない（位置のある行に数えられてしまう）
+    if (Object.keys(placement).length > 0) result.placement = placement;
+  }
+  if (entry.ifOpen === 'move' || entry.ifOpen === 'openNew') result.ifOpen = entry.ifOpen;
+  if (typeof entry.activateWindow === 'boolean') result.activateWindow = entry.activateWindow;
+  const waitSeconds = pickNumber(entry, 'waitSeconds');
+  if (waitSeconds !== undefined && waitSeconds > 0) result.waitSeconds = waitSeconds;
+
+  return result;
 }
 
 /**

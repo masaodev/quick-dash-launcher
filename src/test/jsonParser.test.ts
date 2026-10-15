@@ -13,13 +13,7 @@ import {
   serializeJsonDataFile,
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
-import type {
-  JsonDataFile,
-  JsonLauncherItem,
-  JsonDirItem,
-  JsonGroupItem,
-  JsonWindowItem,
-} from '@common/types';
+import type { JsonDataFile, JsonLauncherItem, JsonDirItem, JsonWindowItem } from '@common/types';
 import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
 
 /** 旧版（v0.8.0-beta.5 まで）がファイルに書いていた $schema */
@@ -170,7 +164,7 @@ describe('jsonParser: パースとシリアライズ', () => {
       expect(item.options?.filter).toBe('*.exe');
     });
 
-    it('JsonGroupItemを正しくパースできること', () => {
+    it('旧形式のグループは不正なアイテムとして扱うこと（セットへの変換は読み込み時に別に行う）', () => {
       const json = JSON.stringify({
         version: '1.0',
         items: [
@@ -182,11 +176,7 @@ describe('jsonParser: パースとシリアライズ', () => {
           },
         ],
       });
-      const result = parseJsonDataFile(json);
-      const item = result.items[0] as JsonGroupItem;
-      expect(item.type).toBe('group');
-      expect(item.displayName).toBe('開発環境スタート');
-      expect(item.itemNames).toEqual(['VS Code', 'GitHub', 'Terminal']);
+      expect(() => parseJsonDataFile(json)).toThrow();
     });
 
     it('JsonWindowItemを正しくパースできること', () => {
@@ -340,13 +330,9 @@ describe('jsonParser: 完全なJSONファイルの処理', () => {
         },
         {
           id: 'i9j0k1l2',
-          type: 'group',
+          type: 'set',
           displayName: 'claude用_quick dash wt 5つ+main',
-          itemNames: [
-            'claude code用_quick dash main',
-            'claude code用_quick dash wt1',
-            'claude code用_quick dash wt2',
-          ],
+          entries: [{ itemId: 'a1b2c3d4' }, { itemId: 'e5f6g7h8' }],
         },
         {
           id: 'm3n4o5p6',
@@ -384,7 +370,7 @@ describe('jsonParser: 完全なJSONファイルの処理', () => {
     // 各タイプの検証
     expect(result.items[0].type).toBe('window');
     expect(result.items[1].type).toBe('dir');
-    expect(result.items[3].type).toBe('group');
+    expect(result.items[3].type).toBe('set');
     expect(result.items[4].type).toBe('item');
   });
 });
@@ -589,5 +575,108 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     const result = parseJsonDataFileLenient(JSON.stringify(original));
 
     expect(JSON.parse(serializeJsonDataFile(result.data))).toEqual(original);
+  });
+});
+
+describe('jsonParser: セット', () => {
+  it('知っている項目だけを写し、型の合わない項目は捨てる', () => {
+    const file = parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [
+          {
+            id: 'set1aaaa',
+            type: 'set',
+            displayName: '朝の準備',
+            launchMode: 'parallel',
+            entries: [
+              { itemId: 'abcd1234' },
+              {
+                open: { path: 'C:\\Apps\\Obsidian.exe', args: '' },
+                window: { processName: 'Obsidian.exe', title: 42 },
+                placement: { x: 0, y: 0, width: 960, height: 'wide', state: 'maximized' },
+                ifOpen: 'openNew',
+                activateWindow: false,
+                waitSeconds: -1,
+                unknown: true,
+              },
+            ],
+          },
+        ],
+      })
+    );
+    expect(file.items[0]).toEqual({
+      id: 'set1aaaa',
+      type: 'set',
+      displayName: '朝の準備',
+      launchMode: 'parallel',
+      entries: [
+        { itemId: 'abcd1234' },
+        {
+          open: { path: 'C:\\Apps\\Obsidian.exe' },
+          window: { processName: 'Obsidian.exe' },
+          placement: { x: 0, y: 0, width: 960, state: 'maximized' },
+          ifOpen: 'openNew',
+          activateWindow: false,
+        },
+      ],
+    });
+  });
+
+  it('仮想デスクトップ番号は 1 以上の整数だけ読む（0・負の数・小数は指定なし）', () => {
+    const file = parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [
+          {
+            id: 'set1aaaa',
+            type: 'set',
+            displayName: 'x',
+            entries: [0, -1, 1.5, 2].map((n) => ({
+              itemId: 'abcd1234',
+              placement: { x: 0, y: 0, width: 1, height: 1, virtualDesktopNumber: n },
+            })),
+          },
+        ],
+      })
+    );
+    const entries = (
+      file.items[0] as { entries: { placement?: { virtualDesktopNumber?: number } }[] }
+    ).entries;
+    expect(entries.map((e) => e.placement?.virtualDesktopNumber)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      2,
+    ]);
+  });
+
+  it('中身の無い見つけ方は持たない（どのウィンドウにも合ってしまうため）', () => {
+    const file = parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [
+          {
+            id: 'set1aaaa',
+            type: 'set',
+            displayName: 'x',
+            entries: [{ itemId: 'abcd1234', window: { processName: '', title: 1 } }],
+          },
+        ],
+      })
+    );
+    expect(file.items[0]).toMatchObject({ entries: [{ itemId: 'abcd1234' }] });
+    expect((file.items[0] as { entries: object[] }).entries[0]).not.toHaveProperty('window');
+  });
+
+  it('行がオブジェクトでなければエラー', () => {
+    expect(() =>
+      parseJsonDataFile(
+        JSON.stringify({
+          version: JSON_DATA_VERSION,
+          items: [{ id: 'set1aaaa', type: 'set', displayName: 'x', entries: ['bad'] }],
+        })
+      )
+    ).toThrow();
   });
 });

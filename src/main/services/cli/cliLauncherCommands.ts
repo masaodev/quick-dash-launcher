@@ -5,7 +5,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { mainI18n } from '../mainI18n.js';
 
 import { CliError, expectPositionals, optionFlag, optionString, parseArgs } from './cliArgs.js';
-import type { CliCandidate } from './cliArgs.js';
+import type { CliCandidate, ParsedArgs } from './cliArgs.js';
 import {
   applyPatch,
   matchesGrep,
@@ -13,6 +13,7 @@ import {
   resolveOne,
   validateAsDataItem,
 } from './cliShared.js';
+import { checkCliSetEntries, entryFromOptions } from './cliSetCommands.js';
 
 /**
  * qdl launcher item … — メイン画面のアイテム（datafiles/data*.json）
@@ -48,7 +49,7 @@ export interface LauncherCommandContext {
   changed(message: string): void;
 }
 
-const EDITABLE_TYPES = ['item', 'dir', 'group', 'window'] as const;
+const EDITABLE_TYPES = ['item', 'dir', 'set', 'window'] as const;
 
 function itemName(item: JsonItem): string {
   return 'displayName' in item && item.displayName
@@ -166,7 +167,7 @@ async function list(args: readonly string[], ctx: LauncherCommandContext): Promi
 
 async function add(args: readonly string[], ctx: LauncherCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, {
-    values: ['name', 'path', 'args', 'memo', 'file', 'tab', 'type'],
+    values: ['name', 'path', 'args', 'memo', 'file', 'tab', 'type', 'item', 'label'],
     flags: ['dry-run'],
     allowSet: true,
   });
@@ -177,6 +178,10 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
       'usage',
       mainI18n.t('cli.errors.badType', { types: EDITABLE_TYPES.join(' / '), type })
     );
+  }
+  if (type === 'set') return addSet(parsed, ctx);
+  if (optionString(parsed, 'item') !== undefined || optionString(parsed, 'label') !== undefined) {
+    throw new CliError('usage', mainI18n.t('cli.errors.itemOnlySet'));
   }
   const name = optionString(parsed, 'name');
   const rawPath = optionString(parsed, 'path');
@@ -224,6 +229,51 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
   return result;
 }
 
+/**
+ * セットを足す。最初の行は --item か --path（--args）で渡す（--set entries='[…]' でもよい）。
+ * 2 行目からは qdl launcher set row add で足す
+ */
+async function addSet(parsed: ParsedArgs, ctx: LauncherCommandContext): Promise<unknown> {
+  const name = optionString(parsed, 'name');
+  if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
+  const first = await entryFromOptions(parsed, ctx);
+  if (first && parsed.sets.some(([key]) => key === 'entries')) {
+    throw new CliError('usage', mainI18n.t('cli.errors.setEntriesTwice'));
+  }
+  if (!first && !parsed.sets.some(([key]) => key === 'entries')) {
+    throw new CliError('usage', mainI18n.t('cli.errors.setNeedFirstEntry'));
+  }
+
+  const targetFile = await resolveTargetFile(
+    ctx,
+    optionString(parsed, 'file'),
+    optionString(parsed, 'tab')
+  );
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const entries = await ctx.store.load();
+  const id = ctx.store.newId(new Set(entries.map((e) => e.item.id)));
+
+  const { merged, setKeys } = applyPatch(
+    { id, type: 'set' },
+    {
+      displayName: name,
+      memo: optionString(parsed, 'memo'),
+      entries: first ? [first] : undefined,
+    },
+    parsed
+  );
+  if (setKeys.includes('entries')) checkCliSetEntries(merged.entries, entries);
+  const item = validateAsDataItem(merged, setKeys);
+  item.updatedAt = Date.now();
+  const result = view({ item, file: targetFile }, await ctx.store.tabs());
+  if (dryRun) return { dryRun: true, item: result };
+
+  ctx.store.append(targetFile, item);
+  ctx.changed(mainI18n.t('cli.changed.launcherAdded', { name: itemName(item) }));
+  return result;
+}
+
 async function findEntry(key: string, ctx: LauncherCommandContext): Promise<LauncherEntry> {
   const tabs = await ctx.store.tabs();
   return resolveOne(
@@ -252,6 +302,13 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
   }
 
   const rawPath = optionString(parsed, 'path');
+  if (
+    current.type === 'set' &&
+    (rawPath !== undefined || optionString(parsed, 'args') !== undefined)
+  ) {
+    // 黙って捨てて「変更しました」と返さない
+    throw new CliError('usage', mainI18n.t('cli.errors.setNoPathArgs'));
+  }
   let itemPath: string | undefined;
   if (rawPath !== undefined) {
     itemPath = resolveCliPath(rawPath, ctx.cwd);
@@ -278,6 +335,9 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
     fields,
     parsed
   );
+  if (current.type === 'set' && setKeys.includes('entries')) {
+    checkCliSetEntries(merged.entries, await ctx.store.load());
+  }
   const item = validateAsDataItem(merged, setKeys);
   item.updatedAt = Date.now();
   const tabs = await ctx.store.tabs();

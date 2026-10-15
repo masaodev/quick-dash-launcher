@@ -454,7 +454,7 @@ export class ConfigFileHelper {
    * アイテムがpathを持つかチェック（型ガード用ヘルパー）
    */
   private hasPath(item: JsonItem): item is JsonItem & { path: string } {
-    return item.type !== 'group';
+    return item.type === 'item' || item.type === 'dir';
   }
 
   /**

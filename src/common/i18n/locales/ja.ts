@@ -108,6 +108,7 @@ export const ja = {
       selected: '選択中',
       groupCount_one: ' ({{count}}個)',
       groupCount_other: ' ({{count}}個)',
+      setPlacedBadge: '位置を合わせる行があります',
       windowSearchBadge: 'ウィンドウ検索: {{title}}',
       showNote: 'メモを表示',
     },
@@ -164,7 +165,13 @@ export const ja = {
       position: '位置: ({{x}}, {{y}})',
       size: 'サイズ: {{width}}x{{height}}',
       processId: 'プロセスID: {{value}}',
-      group: 'グループ: {{value}}',
+      set_one: 'セット: {{count}}件',
+      set_other: 'セット: {{count}}件',
+      setRows: '行: {{names}}',
+      setRowsMore_one: '行: {{names}} ほか{{count}}件',
+      setRowsMore_other: '行: {{names}} ほか{{count}}件',
+      setPlaced_one: '位置を合わせる行: {{count}}件',
+      setPlaced_other: '位置を合わせる行: {{count}}件',
       virtualDesktop: '仮想デスクトップ: {{value}}',
       noActivate: 'アクティブ化: しない',
       clipboardFormats: 'フォーマット: {{value}}',
@@ -351,7 +358,6 @@ export const ja = {
       folder: 'フォルダを開いています...',
       customUri: '起動中...',
       windowOperation: 'ウィンドウ操作を実行します',
-      layout: 'ウィンドウ配置を実行します',
       windowActivate: 'ウィンドウをアクティブ化しました',
       windowClose: 'ウィンドウを閉じました',
       windowPin: 'ウィンドウをすべてのデスクトップに表示しました',
@@ -389,6 +395,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 
 コマンド:
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
+  launcher set row list|add|remove       メインウィンドウのセットの行
   workspace list                           ワークスペースの一覧
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove   ワークスペースのグループ
@@ -404,18 +411,24 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 CLI と本体の版の不一致
 `,
       launcher: `使い方: qdl launcher item <操作> [引数]
+        qdl launcher set row <操作> <セット> [引数]
 
 メインウィンドウのアイテム（datafiles/data*.json）を扱います。
 
-操作:
-  list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
-  add                      追加（--name・--path は必須。--args --memo、--file | --tab、
-                           --type item|dir|group|window、--set key=value、--dry-run）
-  update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
-  remove <id か表示名>     削除（--dry-run）
+  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
+  item add                      追加（--name・--path は必須。--args --memo、--file | --tab、
+                                --type item|dir|set|window、--set key=value、--dry-run）
+  item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
+  item remove <id か表示名>     削除（--dry-run）
+  set row list <セット>         セットの行の一覧（行番号は 0 始まり）
+  set row add <セット>          セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
+                                --label <行の名前> --position <0 始まり> --dry-run）
+  set row remove <セット> <行番号>    セットの行を消す（--dry-run）
 
---path の相対パスは qdl を実行したフォルダが基準です。--type dir|group|window のときに要るキーは
---set で渡します（例 --set itemNames='["メモ","ブラウザ"]'、--set windowTitle=メモ帳）。
+--path の相対パスは qdl を実行したフォルダが基準です。--type set では --path を求めず、最初の行を
+--item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
+足します。動かすウィンドウと位置は、画面の「今の位置を記録」で付けます。--type dir|window のときに
+要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
 `,
       workspace: `使い方: qdl workspace <もの> <操作> [引数]
 
@@ -449,6 +462,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       extraArgs: '余分な引数があります: {{args}}',
       idOrName: '<id か表示名>',
       idOrGroupName: '<id か名前>',
+      setIdOrName: '<セットの id か表示名>',
+      entryIndex: '<行番号>',
     },
     errors: {
       relativePath: '相対パスを解決できません（実行したフォルダが分かりません）: {{value}}',
@@ -463,7 +478,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
-      unknownLauncherNoun: '不明なコマンドです: launcher {{noun}}（launcher item のみ）',
+      unknownLauncherNoun:
+        '不明なコマンドです: launcher {{noun}}（launcher item と launcher set のみ）',
+      missingSetNoun: 'launcher set の後に row を指定してください',
+      missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
       missingVerb: '操作を指定してください（list / add / update / remove）',
       missingWorkspaceNoun: 'workspace の後に list / item / group を指定してください',
@@ -484,7 +502,28 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       dirHasNoName: 'フォルダ取込（dir）は表示名を持ちません',
       needName: '--name を指定してください',
       needPath: '--path を指定してください',
-      argsOnlyItem: '--args は通常のアイテム（item）だけに指定できます',
+      argsOnlyItem: '--args は通常のアイテム（item）とセット（set）の行だけに指定できます',
+      itemOnlySet: '--item と --label はセット（--type set）だけに指定できます',
+      setItemAndPath: '--item と --path はどちらか一方を指定してください',
+      setNeedTarget: '行に入れるものを --item <id か表示名> か --path <パス> で指定してください',
+      setNeedFirstEntry:
+        'セットには行が 1 つ以上要ります。最初の行を --item <id か表示名> か --path <パス> で指定してください',
+      setEntriesTwice: '--item・--path と --set entries=… はどちらか一方にしてください',
+      setArgsWithItem:
+        '--args は --path の行だけに指定できます（--item の行の引数はアイテムのもの）',
+      setItemType:
+        '種類 {{type}} のアイテムはセットの行にできません（{{types}} のみ。フォルダ取込の中身は --path で）',
+      setRowUnknownKeys:
+        '行 {{index}} に知らないキーがあります: {{keys}}（itemId・open・label・window・placement・ifOpen・activateWindow・waitSeconds）',
+      setRowEmpty:
+        '行 {{index}} に、開くもの（itemId・open）も動かすウィンドウ（window）もありません',
+      setRowItemNotFound: '行 {{index}} の itemId {{id}} のアイテムが見つかりません',
+      setNoPathArgs:
+        'セットは --path・--args を持ちません（行を足すときは qdl launcher set row add を使ってください）',
+      setBadPosition: '--position は 0〜{{max}} で指定してください: {{value}}',
+      setBadIndex: '行番号は 0〜{{max}} で指定してください: {{value}}',
+      setLastEntry:
+        'セットの最後の行は消せません。セットごと消すときは qdl launcher item remove を使ってください',
       typeNotEditable:
         '種類 {{type}} のアイテムは CLI では変更できません（画面で操作してください）',
       needChanges: '変えるものを指定してください（{{options}}）',
@@ -497,6 +536,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     targets: {
       launcherItem: 'メインウィンドウのアイテム',
+      set: 'セット',
       workspace: 'ワークスペース',
       group: 'グループ',
       workspaceItem: 'ワークスペースのアイテム',
@@ -511,6 +551,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       groupAdded: 'CLI: ワークスペースにグループ「{{name}}」を追加しました',
       groupUpdated: 'CLI: ワークスペースのグループ「{{name}}」を変更しました',
       groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
+      setEntryAdded: 'CLI: セット「{{set}}」に「{{name}}」の行を追加しました',
+      setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },
     enabled:
       'QuickDashLauncher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます',
@@ -528,6 +570,192 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     cancelled: 'キャンセルされました',
     timedOut: 'ウィンドウ出現待機がタイムアウトしました',
     windowNotFound: 'ウィンドウが見つかりませんでした',
+  },
+  set: {
+    run: {
+      titleNotMatched: 'タイトルが合うウィンドウがありません（{{exe}} は開いています）',
+      notOpen: '開いていないので動かしませんでした',
+      couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
+      desktopNotFound: 'デスクトップ {{number}} がありません。位置だけ合わせました',
+    },
+    errors: {
+      itemNotFound: 'アイテムが見つかりません',
+      unsupportedType: 'この種類のアイテムはセットから開けません',
+      someFailed_one: '{{count}} 件を開けませんでした: {{names}}',
+      someFailed_other: '{{count}} 件を開けませんでした: {{names}}',
+    },
+    picker: {
+      title: 'セットに追加するアイテム',
+      search: '名前で検索（すべてのタブ）',
+      all: 'すべて',
+      sameGroup: 'このセットと同じタブ',
+      others: 'ほかのタブ',
+      workspace: 'ワークスペース',
+      selected_one: '{{count}} 件を選択中',
+      selected_other: '{{count}} 件を選択中',
+      add_one: '{{count}} 件を追加',
+      add_other: '{{count}} 件を追加',
+      empty: '追加できるアイテムがありません',
+      noResults: '検索結果がありません',
+      added: '追加済み',
+      chooseTitle: 'この行で開くアイテム',
+      choose: '選ぶ',
+    },
+    editor: {
+      rows: '行',
+      empty: 'まだ何も入っていません。下のボタンでアイテムを追加します。',
+      addItems: '＋ アイテムを追加',
+      record: '📍 今の位置を記録',
+      launchMode: '開き方',
+      sequential: '順番に開く',
+      parallel: '同時に開く',
+      moveOnly: '動かすだけ',
+      moveOnlyDetails: '開かずに、{{window}} のウィンドウを動かす',
+      missing: 'アイテムが見つかりません',
+      moveUp: '上へ',
+      moveDown: '下へ',
+      remove: '行を削除',
+      detail: '行の詳細',
+      entriesRequired: 'セットに行を 1 つ以上入れてください',
+      hint: '上の行から順に開きます。並べたいときは、ウィンドウを並べてから「今の位置を記録」を押します。',
+      hintParallel:
+        '全部の行を一度に開きます。並べたいときは、ウィンドウを並べてから「今の位置を記録」を押します。',
+      moveOnlyHint:
+        '「動かすだけ」の行は、ウィンドウが開いているときだけ動かします（開くものは行の詳細 ✏️ で足せます）。',
+    },
+    record: {
+      title: '今の位置を記録',
+      loading: 'ウィンドウを調べています…',
+      linked: '位置を取れた行（{{count}}）',
+      linkedHint: '違っていたら、右のプルダウンで「別のウィンドウにする」を選びます',
+      failed: '位置を取れなかった行（{{count}}）',
+      failedHint: 'このままでも記録できます',
+      unlinked: '行に無いウィンドウ（{{count}}）',
+      unlinkedHint: '新しく行を足すときに開きます',
+      minimized: '最小化中のウィンドウ（{{count}}）',
+      keep: 'このまま',
+      pickOther: '別のウィンドウにする',
+      unlink: '位置を記録しない',
+      skip: '追加しない',
+      newRow: '行として追加',
+      linkGroup: 'この行の位置にする',
+      pickWindow: 'ウィンドウを選ぶ',
+      windowLabel: 'ウィンドウ: {{title}}',
+      reasonUrl: 'URL は自動では探せません',
+      reasonNotFound: '合うウィンドウがありません',
+      reasonUnlinked: '「位置を記録しない」にしました',
+      reasonWithOutcome: '{{reason}}。このまま記録すると: {{outcome}}',
+      outcomeKeep: '前の位置のまま（{{place}}）',
+      outcomeOpenOnly: '開くだけ',
+      outcomeFrontOnly: '開いていれば前面に出すだけ',
+      keepPrevious: '前の位置のまま',
+      newRowNote:
+        '足した行は「動かすだけ」です（開いているウィンドウを動かすだけ）。閉じていても開きたいときは、行の詳細 ✏️ で開くもの（アイテムかパス）を足します。タイトルは全体が同じウィンドウを探します。タブの切り替えや更新でタイトルが変わるものは、行の詳細 ✏️ で一部だけにできます。',
+      noPlacement: '位置は記録しない',
+      tabNote: '既にあるウィンドウにタブで開くと、そのウィンドウごと動きます',
+      minimizedNote: '最小化中なので位置は記録しません。元の大きさに戻してから記録してください',
+      elevatedNote: '管理者権限で動いているため、QDL から動かせないことがあります',
+      confirm: '記録する',
+    },
+    detail: {
+      title: '行の詳細: {{name}}',
+      open: '開くもの',
+      openRef: 'アイテム「{{name}}」（アイテムを直すと、このセットにも効きます）',
+      openOwn: 'このセットに書いたパス',
+      openNone: 'なし（開かずに、ウィンドウを動かすだけ）',
+      openMissing: 'アイテムが見つかりません（消されたか、読み込めていません）',
+      openKindNone: 'なし（動かすだけ）',
+      openKindItem: 'アイテム',
+      openKindNoneDisabled: '動かすウィンドウが無い行は、開くものが要ります',
+      openKindPath: 'パス',
+      item: 'アイテム',
+      itemNote: 'アイテムを直すと、このセットにも効きます。',
+      pickItem: 'アイテムを選ぶ',
+      otherItem: '別のアイテムにする',
+      pathNote: 'このセットに書いたパス（アイテムは作りません）。',
+      path: 'パス',
+      args: '引数',
+      find: '動かすウィンドウ',
+      processName: 'exe 名',
+      processNamePlaceholder: '例: notepad.exe',
+      windowTitle: 'ウィンドウタイトル',
+      windowTitlePlaceholder: '空ならタイトルは問わない',
+      anyTitle: 'タイトルを問わない',
+      anyTitleHint: 'exe 名だけで探します（タイトルは問いません）',
+      titleParts: '一部だけで探す:',
+      revertTitle: '↺ 元に戻す',
+      matchNone: '今合うウィンドウ: 0 件',
+      matchOne: '今合うウィンドウ: 1 件（{{title}}）',
+      matchMany: '今合うウィンドウ: {{count}} 件（別のウィンドウにも当たります）',
+      findHint:
+        'このセットを開いたとき、この 2 つに合うウィンドウを記録した位置へ動かします。exe 名は一部でもよく、タイトルは全体が同じものを探します（* は任意の文字。例: *Obsidian）。',
+      placement: '位置',
+      recorded: '記録した位置',
+      noPlacement: 'まだ記録していません',
+      takeFromWindow: '開いているウィンドウから位置を取る',
+      clearPlacement: '位置を外す',
+      desktop: '仮想デスクトップ',
+      desktopKeep: '変えない',
+      behavior: '開くときの動き',
+      ifOpen: '開いていたら',
+      ifOpenMove: '開かずに、位置だけ合わせる',
+      ifOpenNew: 'もう 1 つ開く',
+      activate: '前面に出す',
+      activateYes: '出す',
+      activateNo: '出さない',
+      wait: 'ウィンドウが出るのを待つ（秒）',
+      minimizedPicked:
+        '最小化中のウィンドウなので、動かすウィンドウだけ取りました。位置は元の大きさに戻してから取ってください',
+    },
+    placement: {
+      none: '位置なし',
+      offscreen: '今は無い画面',
+      maximized: '最大化',
+      onScreen: '画面 {{screen}}・{{place}}',
+      onDesktop: '{{place}}・デスクトップ {{desktop}}',
+      onAllDesktops: '{{place}}・全デスクトップ',
+      region: '{{region}} {{width}}×{{height}}',
+      shapes: {
+        full: '全体',
+        leftHalf: '左半分',
+        rightHalf: '右半分',
+        topLeft: '左上',
+        topRight: '右上',
+        bottomLeft: '左下',
+        bottomRight: '右下',
+        leftThird: '左 1/3',
+        centerThird: '中央 1/3',
+        rightThird: '右 1/3',
+        leftTwoThirds: '左 2/3',
+        rightTwoThirds: '右 2/3',
+      },
+      regions: {
+        topLeft: '左上寄り',
+        top: '上寄り',
+        topRight: '右上寄り',
+        left: '左寄り',
+        center: '中央',
+        right: '右寄り',
+        bottomLeft: '左下寄り',
+        bottom: '下寄り',
+        bottomRight: '右下寄り',
+      },
+    },
+    redo: {
+      menu: '📍 今の位置を記録し直す',
+      title: '位置を記録し直す: {{name}}',
+      changed: '変わる行（{{count}}）',
+      unchanged: '変わらない行（{{count}}）',
+      notFound: '見つからなかった行（{{count}}）',
+      overwrite: '上書きする',
+      saved: '位置を記録し直しました',
+      savedCount_one: '位置を記録し直しました（変わった行 {{count}}）',
+      savedCount_other: '位置を記録し直しました（変わった行 {{count}}）',
+      notFoundCount_one: '見つからなかった行 {{count}} 件は前の位置のままです',
+      notFoundCount_other: '見つからなかった行 {{count}} 件は前の位置のままです',
+      nothing: '位置を記録した行がありません',
+      noChange: '変わる行はありません',
+    },
   },
   dataFile: {
     invalidName: 'データファイル名が正しくありません',
@@ -559,11 +787,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   itemManager: {
     types: {
       item: '単一アイテム',
-      group: 'グループ',
       dir: 'フォルダ取込',
       window: 'ウィンドウ操作',
       clipboard: 'クリップボード',
-      layout: 'ウィンドウ配置',
+      set: 'セット',
       unknown: '不明',
     },
     noName: '(名前なし)',
@@ -573,9 +800,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       noWindowTitle: '(ウィンドウタイトルなし)',
       noFolderPath: '(フォルダパスなし)',
       noData: '(データなし)',
-      noEntries: '(エントリなし)',
-      layoutWindows_one: '{{count}}個のウィンドウ: {{titles}}',
-      layoutWindows_other: '{{count}}個のウィンドウ: {{titles}}',
+      setRows_one: '{{count}} 行',
+      setRows_other: '{{count}} 行',
+      setRowsPlaced_one: '{{count}} 行（位置を合わせる行 {{placed}}）',
+      setRowsPlaced_other: '{{count}} 行（位置を合わせる行 {{placed}}）',
       unknownType: '(不明な型)',
     },
     toolbar: {
@@ -623,7 +851,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     row: {
       typeSelectTitle:
-        '種類を変更します。単一アイテム・フォルダ取込・グループはその場で切り替わり、ウィンドウ操作・クリップボード・ウィンドウ配置（複数のウィンドウを保存した位置に一括で並べる）は詳細編集が開きます',
+        '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・ウィンドウ操作・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
       namePlaceholder: '名前を入力（Enter でパスへ）',
       invalid: '入力に不備があります: {{error}}',
@@ -634,7 +862,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       pathMissingTitle: 'パスが見つかりません（移動・削除された可能性があります）',
       dirPathPlaceholder: 'フォルダのパスを入力',
       pathPlaceholder: 'パスまたは URL を入力',
-      groupDetailOnly: 'グループに含めるアイテムは ✏️ 詳細編集で選びます（ダブルクリックで開く）',
       detailOnly: '{{type}}は ✏️ 詳細編集から編集します（ダブルクリックで開く）',
       pathTitle: '{{text}}\n{{missing}}クリックしてパスを編集。引数は ✏️ 詳細編集から',
       pathTitleMissing: 'パスが見つかりません。',
@@ -666,7 +893,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
         '{{checked}} 件を確認し、リンク切れが {{missing}} 件ありました{{unknownNote}}。「🧰 ツール ▼ リンク切れのみ表示」で絞り込めます',
     },
     movedTo: '「{{name}}」を {{file}} へ移動しました（保存で確定）',
-    groupSelectHint: 'グループに含めるアイテムは ✏️ 詳細編集で選びます',
     saved: '変更を保存しました',
     saveConfirm: '変更を保存しますか？',
     saveConfirmInvalid_one:
@@ -1000,25 +1226,18 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     types: {
       item: '📄 単一アイテム',
       dir: '🗂️ フォルダ取込',
-      group: '📦 グループ',
+      set: '📦 セット',
       window: '🪟 ウィンドウ操作',
       clipboard: '📋 クリップボード',
-      layout: '🖥️ ウィンドウ配置',
     },
     displayName: '表示名:',
     placeholders: {
-      group: 'グループ名を入力',
+      set: 'セットの名前を入力',
       clipboard: 'クリップボードアイテムの表示名を入力',
       item: '表示名を入力',
     },
     path: 'パス:',
     pathPlaceholder: 'ファイルパス、URL、またはカスタムURIを入力',
-    groupItems: 'グループアイテムリスト:',
-    removeGroupItem: '削除',
-    noGroupItems: 'アイテムが追加されていません',
-    addGroupItem: '+ アイテムを追加',
-    groupItemsHint:
-      '同じファイル内の既存アイテムから選択してください。グループ実行時に順番に起動されます。',
     itemOptions: 'オプション設定（引数・アイコン）',
     dirOptions: 'フォルダ取込のオプション',
     args: '引数:',
@@ -1027,13 +1246,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     note: 'メモ:',
     notePlaceholder: '自由にメモを入力（任意）',
     errors: {
-      groupNameRequired: 'グループ名を入力してください',
       displayNameRequired: '表示名を入力してください',
       pathRequired: 'パスを入力してください',
-      groupItemsRequired: 'グループアイテムを追加してください',
       windowRequired: 'ウィンドウタイトルまたはプロセス名を入力してください',
       clipboardRequired: 'クリップボードをキャプチャしてください',
-      layoutRequired: 'ウィンドウをキャプチャしてください',
       clipboardSaveFailed: 'クリップボードデータの保存に失敗しました',
       iconNotFound: 'アイコンを取得できませんでした',
       iconFetchError: 'アイコン取得中にエラーが発生しました',
@@ -1146,25 +1362,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       separator: ', ',
     },
   },
-  layoutEditor: {
-    windows: '並べるウィンドウ:',
-    noEntries: 'まだウィンドウを追加していません',
-    collapse: '折りたたむ',
-    expand: '詳細を展開',
-    x: 'X座標',
-    y: 'Y座標',
-    width: '幅',
-    height: '高さ',
-    launch: '起動',
-    delete: '削除',
-    windowTitle: 'ウィンドウタイトル:',
-    processName: 'プロセス名:',
-    executablePath: '実行ファイルパス:',
-    args: '引数:',
-    desktopNumber: '仮想デスクトップ番号:',
-    selectWindow: 'ウィンドウを選択',
-    addFromCurrent: '+ 今のウィンドウから追加',
-  },
   windowPicker: {
     loadFailed: '開いているウィンドウの取得に失敗しました',
     all: 'すべて',
@@ -1183,13 +1380,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     selected_one: '{{count}} 件選択中',
     selected_other: '{{count}} 件選択中',
     add: '追加',
-  },
-  groupSelector: {
-    title: 'グループアイテムを選択',
-    searchPlaceholder: '表示名で検索...',
-    noResults: '検索結果がありません',
-    noItems: 'このファイルにはアイテムがありません',
-    added: '追加済み',
   },
   customIcon: {
     label: 'カスタムアイコン:',
@@ -1456,20 +1646,16 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     describe: {
       window: 'ウィンドウ操作: {{title}}',
       windowWithProcess: 'ウィンドウ操作: {{title}}（{{process}}）',
-      group_one: 'グループ: {{count}}件',
-      group_other: 'グループ: {{count}}件',
       clipboard: 'クリップボード',
       clipboardWithPreview: 'クリップボード: {{preview}}',
-      layout_one: 'ウィンドウ配置: {{count}}件',
-      layout_other: 'ウィンドウ配置: {{count}}件',
+      set_one: 'セット: {{count}}件',
+      set_other: 'セット: {{count}}件',
     },
     confirmNotFound: '確認する内容が見つかりません。',
     edit: {
       title: 'ワークスペースアイテムの編集',
       notFound: 'アイテムが見つかりません',
       pageNotFound: '編集するアイテムが見つかりません（削除された可能性があります）。',
-      groupItemsHint:
-        'メインデータの既存アイテムから選択してください。グループ実行時に順番に起動されます。',
       updateFailed: 'ワークスペースアイテムの更新に失敗しました',
       remove: 'ワークスペースから削除',
       removeFailed: 'ワークスペースからの削除に失敗しました',
@@ -1532,12 +1718,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
-    },
-    groupLaunch: {
-      heading: 'グループ起動',
-      parallel: 'グループアイテムを並列起動',
-      parallelDescription:
-        '有効にすると、グループ内のアイテムを順次実行せずに並列で起動します。起動速度が向上しますが、順序が保証されません。',
     },
     windowSize: {
       heading: 'ウィンドウサイズ',

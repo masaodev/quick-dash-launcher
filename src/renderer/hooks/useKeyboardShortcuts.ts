@@ -292,11 +292,11 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
           }
           await window.electronAPI.openParentFolder(selectedItem as LauncherItem);
         } else if (e.shiftKey && !isWindowInfo(selectedItem)) {
-          // グループ・ウィンドウ操作・クリップボード・ウィンドウ配置にも親フォルダは無い。
+          // セット・ウィンドウ操作・クリップボードにも親フォルダは無い。
           // Enter と同じく実行すると思わぬ起動になるので、実行せずに URL と同じ文言で知らせる
-          //（グループのトーストは中身の一覧を出す形なので、名前を本文に入れたシンプルな形にする）
+          //（セットのトーストは中身の一覧を出す形なので、名前を本文に入れたシンプルな形にする）
           await window.electronAPI.showToastWindow(
-            selectedItem.type === 'group'
+            selectedItem.type === 'set'
               ? {
                   type: 'info',
                   message: t('launcher.messages.noContainingFolderNamed', {

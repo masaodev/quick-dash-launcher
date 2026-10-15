@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { WorkspaceItem, WorkspaceItemUpdate, WindowInfo, WindowConfig } from '@common/types';
-import {
-  mergeWindowInfoIntoLayoutEntry,
-  buildLayoutItemFromRegisterItem,
-} from '@common/utils/layoutUtils';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
@@ -16,10 +12,8 @@ import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 import { fetchMatchingWindow } from '../utils/windowFilter';
 import { toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
 
-import GroupItemSelectorModal from './GroupItemSelectorModal';
 import FilePickerDialog from './FilePickerDialog';
 import WindowSelectorModal from './WindowSelectorModal';
-import LayoutCaptureModal from './LayoutCaptureModal';
 import ItemEditFields from './ItemEditFields';
 import { Button } from './ui';
 import '../styles/components/UrlConverterMenu.css';
@@ -53,10 +47,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
-  const [layoutCaptureOpen, setLayoutCaptureOpen] = useState(false);
-  const [layoutEntryWindowSelectorIndex, setLayoutEntryWindowSelectorIndex] = useState<
-    number | null
-  >(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const { showError } = useToast();
@@ -76,7 +66,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     item,
     loading,
     errors,
-    selectorModalOpen,
     iconFetchLoading,
     handleFieldChange,
     handlePathBlur,
@@ -85,14 +74,10 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     handleDelete,
     handleFetchIcon,
     replacePathFromDrop,
-    handleAddGroupItem,
-    handleSelectGroupItem,
-    handleRemoveGroupItem,
     updateItem,
-    setSelectorModalOpen,
   } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave);
 
-  // 上に重ねたグループのアイテム選択の Escape は useModalKeyboard がそちらに任せる
+  // 上に重ねたダイアログ（セットのアイテムの追加など）の Escape は useModalKeyboard がそちらに任せる
   useModalKeyboard({ isOpen, modalRef, onClose: handleCancel });
 
   useEffect(() => {
@@ -129,21 +114,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
 
   const onWindowSelected = (windowInfo: WindowInfo) => {
     if (!item) return;
-
-    // レイアウトエントリのウィンドウ選択
-    if (layoutEntryWindowSelectorIndex !== null) {
-      const currentEntries = [...(item.layoutEntries || [])];
-      if (layoutEntryWindowSelectorIndex < currentEntries.length) {
-        currentEntries[layoutEntryWindowSelectorIndex] = mergeWindowInfoIntoLayoutEntry(
-          currentEntries[layoutEntryWindowSelectorIndex],
-          windowInfo
-        );
-        handleFieldChange('layoutEntries', currentEntries);
-      }
-      setLayoutEntryWindowSelectorIndex(null);
-      setWindowSelectorOpen(false);
-      return;
-    }
 
     if (item.itemCategory === 'window') {
       const currentConfig = item.windowOperationConfig;
@@ -196,9 +166,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           windowTitle: item.windowOperationConfig.windowTitle,
           ...pickWindowPlacement(item.windowOperationConfig),
         });
-      } else if (item.itemCategory === 'layout') {
-        await window.electronAPI.executeLayout(buildLayoutItemFromRegisterItem(item));
-      } else if (item.itemCategory !== 'group') {
+      } else {
         // 保存済みの内容ではなく、編集中の内容で試す
         await window.electronAPI.workspaceAPI.launchItem(toTrialWorkspaceItem(editingItem, item));
       }
@@ -270,10 +238,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   onUpdate={updateItem}
                   onPathBlur={handlePathBlur}
                   onFetchIcon={handleFetchIcon}
-                  onAddGroupItem={handleAddGroupItem}
-                  onRemoveGroupItem={handleRemoveGroupItem}
                   typeLocked
-                  groupItemsHint={t('workspace.edit.groupItemsHint')}
+                  setIncludesWorkspace
                   isPathReadOnly={false}
                   iconFetchLoading={iconFetchLoading}
                   optionsOpen={optionsOpen}
@@ -283,22 +249,15 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   onCustomIconDelete={onCustomIconDeleted}
                   onOpenWindowSelector={() => setWindowSelectorOpen(true)}
                   onFetchFromWindow={fetchFromWindow}
-                  onLayoutCapture={() => setLayoutCaptureOpen(true)}
-                  onLayoutEntryWindowSelect={(entryIndex) => {
-                    setLayoutEntryWindowSelectorIndex(entryIndex);
-                    setWindowSelectorOpen(true);
-                  }}
                   onClipboardError={showError}
                   showSeparator={false}
                 />
               </div>
 
               <div className="modal-actions">
-                {item.itemCategory !== 'group' && (
-                  <Button variant="secondary" onClick={handleExecute}>
-                    {t('register.tryRun')}
-                  </Button>
-                )}
+                <Button variant="secondary" onClick={handleExecute}>
+                  {t('register.tryRun')}
+                </Button>
                 <div className="modal-actions-right">
                   <Button variant="danger" onClick={handleDelete}>
                     {t('workspace.edit.remove')}
@@ -324,13 +283,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         </div>
       </div>
 
-      <GroupItemSelectorModal
-        isOpen={selectorModalOpen}
-        onClose={() => setSelectorModalOpen(false)}
-        onSelect={handleSelectGroupItem}
-        excludeNames={item?.groupItemNames || []}
-      />
-
       <FilePickerDialog
         isOpen={filePickerState.isOpen}
         onClose={closeCustomIconPicker}
@@ -344,17 +296,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         isOpen={windowSelectorOpen}
         onClose={() => setWindowSelectorOpen(false)}
         onSelect={onWindowSelected}
-      />
-
-      <LayoutCaptureModal
-        isOpen={layoutCaptureOpen}
-        onClose={() => setLayoutCaptureOpen(false)}
-        onCapture={(entries) => {
-          if (!item) return;
-          const currentEntries = item.layoutEntries || [];
-          handleFieldChange('layoutEntries', [...currentEntries, ...entries]);
-          setLayoutCaptureOpen(false);
-        }}
       />
     </>
   );

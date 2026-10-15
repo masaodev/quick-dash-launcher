@@ -68,7 +68,10 @@ async function processDataFiles(
     if (result) {
       const newContent = serializeJsonDataFile(result);
       // アトミック書き込み＋トラッカーへ記憶（外部変更検知の誤検知を防ぐ）
-      writeDataFile(filePath, newContent);
+      // 書けなかったら止める（保存先を変える編集が、消せていないのに同じ id で登録し直さないように）
+      if (!writeDataFile(filePath, newContent)) {
+        throw new Error(`データファイルに書き込めませんでした: ${fileName}`);
+      }
     }
   }
 }

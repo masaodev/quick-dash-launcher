@@ -265,6 +265,9 @@
       .entry-item.waiting {
         border-left: 3px solid #ccc;
       }
+      .entry-item.skipped {
+        border-left: 3px solid #bbb;
+      }
 
       .entry-icon {
         width: 18px;
@@ -293,6 +296,9 @@
       }
       .status-icon.failed {
         color: #f44336;
+      }
+      .status-icon.skipped {
+        color: #999;
       }
 
       @keyframes spin {
@@ -326,6 +332,10 @@
         font-size: 10px;
         font-style: italic;
         margin-top: 2px;
+      }
+      /* 飛ばした行の理由は失敗ではないので灰色 */
+      .entry-item.skipped .entry-error {
+        color: #888;
       }
 
       .progress-actions {
@@ -392,9 +402,8 @@
         file: '📄',
         folder: '📁',
         customUri: '🔗',
-        group: '📦',
+        set: '📦',
         windowOperation: '🪟',
-        layout: '🖥️',
         windowActivate: '🔄',
         windowClose: '✖️',
         windowPin: '📌',
@@ -449,7 +458,7 @@
         const text = data.text || { action: data.message || '' };
         let html = `<div class="toast-title">${escapeHtml(displayName)}</div>`;
 
-        if (itemType === 'group') {
+        if (itemType === 'set') {
           html += `<div class="toast-items">${escapeHtml(text.groupItems || '')}</div>`;
           html += '<div class="toast-separator"></div>';
           html += `<div class="toast-action">${escapeHtml(text.action)}</div>`;
@@ -517,6 +526,7 @@
         launching: '<span class="status-icon launching">⟳</span>',
         success: '<span class="status-icon success">✓</span>',
         failed: '<span class="status-icon failed">✗</span>',
+        skipped: '<span class="status-icon skipped">－</span>',
       };
 
       let renderedEntryCount = 0;
@@ -550,7 +560,8 @@
 
         const successCount = data.entries.filter((e) => e.status === 'success').length;
         const failedCount = data.entries.filter((e) => e.status === 'failed').length;
-        const completedCount = successCount + failedCount;
+        const skippedCount = data.entries.filter((e) => e.status === 'skipped').length;
+        const completedCount = successCount + failedCount + skippedCount;
         const totalCount = data.entries.length;
         const percent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
@@ -626,7 +637,10 @@
 
       window.electronAPI.onLayoutProgress('complete', (data) => {
         updateUI(data);
-        const allSuccess = data.entries.every((e) => e.status === 'success');
+        // 飛ばした行（動かすだけの行で、ウィンドウが開いていなかった）は失敗ではないので、自動で閉じる
+        const allSuccess = data.entries.every(
+          (e) => e.status === 'success' || e.status === 'skipped'
+        );
         if (allSuccess && !data.isCancelled) {
           autoCloseTimer = setTimeout(() => {
             autoCloseTimer = null;

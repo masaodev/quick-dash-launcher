@@ -159,6 +159,10 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     useWorkspaceItemGroups(items, groups);
 
   const itemsMap = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
+  const nameOfWorkspaceItem = React.useCallback(
+    (itemId: string) => itemsMap.get(itemId)?.displayName,
+    [itemsMap]
+  );
 
   const groupsMap = React.useMemo(
     () => new Map(groups.map((group) => [group.id, group])),
@@ -545,7 +549,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   };
 
   /**
-   * AppItem（LauncherItem/GroupItem/WindowItem/ClipboardItem）をワークスペースに追加
+   * AppItem（LauncherItem/SetItem/WindowItem/ClipboardItem）をワークスペースに追加
    *
    * ウィンドウ検索結果は送り側でウィンドウ操作アイテム（タイトル＋プロセス名）に変換済み。
    * windowPosition が付いていて Ctrl を押してドロップしたときだけ、今の位置・サイズも記録する
@@ -734,6 +738,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
               }
               return (
                 <WorkspaceItemCard
+                  nameOfItem={nameOfWorkspaceItem}
                   key={child.item.id}
                   item={child.item}
                   isEditing={editingItemId === child.item.id}
@@ -800,6 +805,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
               <div className="workspace-group-items">
                 {filteredUncategorizedItems.map((item) => (
                   <WorkspaceItemCard
+                    nameOfItem={nameOfWorkspaceItem}
                     key={item.id}
                     item={item}
                     isEditing={editingItemId === item.id}

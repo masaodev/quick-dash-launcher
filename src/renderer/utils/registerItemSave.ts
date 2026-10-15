@@ -30,16 +30,10 @@ export async function saveRegisterItems(
 
   if (isFileChanged) {
     await window.electronAPI.deleteItemsById([{ id: itemId }]);
-    await window.electronAPI.registerItems([item]);
+    // id を引き継ぐ（変えるとセットの行が「アイテムが見つかりません」になる）
+    await window.electronAPI.registerItems([{ ...item, keepId: itemId }]);
   } else if (item.itemCategory === 'dir') {
     await window.electronAPI.updateDirItemById(itemId, item.path, item.dirOptions, item.memo);
-  } else if (item.itemCategory === 'group') {
-    await window.electronAPI.updateGroupItemById(
-      itemId,
-      item.displayName,
-      item.groupItemNames || [],
-      item.memo
-    );
   } else if (item.itemCategory === 'window') {
     const cfg = item.windowOperationConfig;
     if (!cfg) throw new Error('windowOperationConfig is required for window items');
@@ -48,11 +42,15 @@ export async function saveRegisterItems(
       { ...cfg, displayName: item.displayName },
       item.memo
     );
-  } else if (item.itemCategory === 'layout') {
-    await window.electronAPI.updateLayoutItemById(
+  } else if (item.itemCategory === 'set') {
+    await window.electronAPI.updateSetItemById(
       itemId,
-      item.displayName,
-      item.layoutEntries || [],
+      {
+        displayName: item.displayName,
+        entries: item.setEntries || [],
+        launchMode: item.setLaunchMode,
+        customIcon: item.customIcon,
+      },
       item.memo
     );
   } else {
