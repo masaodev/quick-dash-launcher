@@ -22,6 +22,15 @@ import IconFetchButton from './IconFetchButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
 import SetEntriesEditor from './SetEntriesEditor';
 
+/** 種別ごとの絵文字（登録画面の見出しに添える） */
+export const ITEM_CATEGORY_ICONS: Readonly<Record<RegisterItem['itemCategory'], string>> = {
+  item: '📄',
+  dir: '🗂️',
+  set: '📦',
+  window: '🪟',
+  clipboard: '📋',
+};
+
 /** 行の無いセットに渡す空の配列（描き直しのたびに新しい配列を渡すと、記録の画面が選んだ内容をやり直す） */
 const NO_SET_ENTRIES: SetEntry[] = [];
 
@@ -66,6 +75,8 @@ interface ItemEditFieldsProps {
     dataFileLabels: Record<string, string>;
     onTargetTabChange: (targetTab: string) => void;
   };
+  /** 保存先とアイコンを呼び出し側（登録画面の上の帯・見出し）で出すので、ここでは出さない */
+  headerInParent?: boolean;
   /** 種別を表示だけにする（ワークスペースのアイテムは種別を変えない） */
   typeLocked?: boolean;
   /** セットの行の追加で、ワークスペースのアイテムも選べるようにする（ワークスペースのセット） */
@@ -98,6 +109,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   onPathBlur,
   onFetchIcon,
   placement,
+  headerInParent = false,
   typeLocked = false,
   setIncludesWorkspace = false,
   selfId,
@@ -151,11 +163,13 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
 
   return (
     <div className="register-item">
-      <div className="item-header">
-        {item.icon && <img src={item.icon} alt="" className="item-icon" />}
-      </div>
+      {!headerInParent && (
+        <div className="item-header">
+          {item.icon && <img src={item.icon} alt="" className="item-icon" />}
+        </div>
+      )}
 
-      {placement && (
+      {placement && !headerInParent && (
         <div className="form-row">
           <div className="form-group">
             <label>{t('register.targetTab')}</label>
@@ -189,7 +203,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
         </div>
       )}
 
-      <div className="form-group">
+      <div className="form-group register-kind">
         <label>{t('register.type')}</label>
         <select
           value={item.itemCategory}
@@ -204,6 +218,14 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           <option value="window">{t('register.types.window')}</option>
           <option value="clipboard">{t('register.types.clipboard')}</option>
         </select>
+        <div className="register-kind-desc">
+          <span className="register-kind-desc-main">
+            {t(`register.typeDescriptions.${item.itemCategory}.main`)}
+          </span>
+          <span className="register-kind-desc-sub">
+            {t(`register.typeDescriptions.${item.itemCategory}.sub`)}
+          </span>
+        </div>
       </div>
 
       {item.itemCategory !== 'dir' && (

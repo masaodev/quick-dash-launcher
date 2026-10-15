@@ -30,10 +30,123 @@
 
 .register-item {
   margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-md);
-  border: var(--border-light);
+}
+
+/* 保存先: 入力欄の前提なので、画面の上の帯に分ける */
+.register-dest {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: calc(-1 * var(--spacing-xl)) calc(-1 * var(--spacing-xl)) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background-color: var(--bg-header);
+  border-bottom: var(--border-light);
+}
+
+.register-dest-label,
+.register-dest-mode {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.register-dest-mode {
+  margin-left: auto;
+}
+
+.register-dest-sep {
+  color: var(--text-disabled);
+}
+
+.register-dest select {
+  width: 200px;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  border: var(--border-normal);
   border-radius: var(--border-radius);
-  background-color: var(--bg-section);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.register-dest select:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* 見出しに種別のアイコン（取れていればアイテムのアイコン）を添える */
+.register-modal h2.register-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.register-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  font-size: var(--font-size-base);
+  background-color: var(--bg-selected);
+  border-radius: var(--border-radius-lg);
+}
+
+.register-title-icon img {
+  width: calc(var(--icon-size-sm) - var(--spacing-xs));
+  height: calc(var(--icon-size-sm) - var(--spacing-xs));
+  object-fit: contain;
+}
+
+/* 種別: プルダウンを小さくし、右に説明（2 行固定。種別を変えても高さが変わらない） */
+.register-item .form-group.register-kind {
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px dashed var(--color-gray-400);
+}
+
+.register-item .form-group.register-kind select {
+  flex: none;
+  width: 200px;
+}
+
+.register-kind-desc {
+  flex: 1;
+  min-width: 0;
+  height: var(--input-height-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 var(--spacing-md);
+  line-height: var(--line-height-normal);
+  background-color: var(--bg-selected);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.register-kind-desc span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.register-kind-desc-main {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.register-kind-desc-sub {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* フッター: 押す前に登録先を見せる */
+.register-dest-echo {
+  align-self: center;
+  margin-right: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
 }
 
 .item-header {
