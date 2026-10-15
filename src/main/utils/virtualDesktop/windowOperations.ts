@@ -21,10 +21,11 @@ import { isVirtualDesktopSupported, getVirtualDesktopGUIDs } from './registryAcc
 
 /**
  * DLL関数の戻り値をbooleanに変換
- * boolean型の場合はそのまま、数値の場合は0以外をtrueとして扱う
+ * boolean型の場合はそのまま、数値の場合は正の数だけをtrueとして扱う
+ * （同梱のDLLは成功・真で1、偽で0、失敗で-1を返す。-1を真とみなすと、失敗が成功になる）
  */
 function toBooleanResult(result: boolean | number): boolean {
-  return typeof result === 'boolean' ? result : result !== 0;
+  return typeof result === 'boolean' ? result : result > 0;
 }
 
 /**
@@ -56,6 +57,7 @@ export function getCurrentDesktopNumber(): number {
   try {
     const desktopIndex = fn();
     debugLog('[WindowOps] 現在のデスクトップインデックス:', desktopIndex);
+    if (desktopIndex < 0) return -1;
     return desktopIndex + 1;
   } catch (error) {
     console.error('[WindowOps] getCurrentDesktopNumber例外発生:', error);
