@@ -138,6 +138,8 @@ export interface ElectronAPI {
   getPathKind: (filePath: string) => Promise<PathKind>;
   /** 既定のブラウザの exe と表示名（取れなければ null。登録・編集画面の「変換」） */
   getDefaultBrowser: () => Promise<DefaultBrowser | null>;
+  /** 拡張子（例 .md）に関連付けられたプログラムの exe と表示名（取れなければ null。登録・編集画面の「変換」） */
+  getFileHandler: (extension: string) => Promise<DefaultBrowser | null>;
   /**
    * パスが実在するかをまとめて確認する（押したときだけ呼ぶ）。環境変数（%VAR%）は展開して調べ、
    * 応答しないパスは時間切れで unknown にする

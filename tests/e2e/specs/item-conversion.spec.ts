@@ -9,13 +9,18 @@ const URL = 'https://example.com/';
 const SP_EXCEL = 'https://contoso.sharepoint.com/sites/x/Shared%20Documents/book.xlsx';
 
 /**
- * 既定のブラウザを Chrome として返す（試す PC の既定のブラウザに左右されないように）。
- * 変換メニューは既定のブラウザを最初の 1 回だけ問い合わせるので、登録画面を開く前に差し替える
+ * 既定のブラウザを Chrome、.md の関連付けを Chrome、それ以外の拡張子を関連付けなしとして返す
+ * （試す PC の設定に左右されないように）。
+ * 変換メニューは既定のブラウザ・関連付けを最初の 1 回だけ問い合わせるので、登録画面を開く前に差し替える
  */
 async function stubDefaultBrowser(electronApp: ElectronApplication): Promise<void> {
   await electronApp.evaluate(({ ipcMain }, exePath) => {
     ipcMain.removeHandler('browser:get-default');
     ipcMain.handle('browser:get-default', () => ({ exePath, name: 'Google Chrome' }));
+    ipcMain.removeHandler('file:get-handler');
+    ipcMain.handle('file:get-handler', (_event, extension: string) =>
+      extension === '.md' ? { exePath, name: 'Google Chrome' } : null
+    );
   }, CHROME_EXE);
 }
 
@@ -116,6 +121,34 @@ test.describe('QuickDashLauncher - 登録画面の変換', () => {
     ]);
     await page.locator('.item-converter-option', { hasText: '読み取り専用' }).click();
     await expect(pathInput(page)).toHaveValue(`ms-excel:ofv|u|${SP_EXCEL}`);
+  });
+
+  test('関連付けがブラウザのファイルを新しいウィンドウで開く形に変換し、ファイルに戻せる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await stubDefaultBrowser(electronApp);
+    const page = await utils.openRegisterModal(electronApp);
+    const mdPath = String.raw`C:\Users\me\tasks\全体ビュー.md`;
+    await utils.fillRegisterForm({ name: '全体ビュー', path: mdPath });
+
+    await convertButton(page).click();
+    await expect(page.locator('.item-converter-option-label')).toHaveText([
+      '新しいウィンドウで開く形にする',
+      'アプリのウィンドウで開く形にする',
+    ]);
+    await page
+      .locator('.item-converter-option', { hasText: '新しいウィンドウで開く形にする' })
+      .click();
+    await expect(pathInput(page)).toHaveValue(CHROME_EXE);
+    await expect(argsInput(page)).toHaveValue(
+      '--new-window file:///C:/Users/me/tasks/全体ビュー.md'
+    );
+
+    await chooseConversion(page, 'ファイルに戻す');
+    await expect(pathInput(page)).toHaveValue(mdPath);
+    await expect(argsInput(page)).toHaveValue('');
   });
 
   test('変換できない入力ではボタンを押せない', async ({ electronApp, mainWindow }) => {

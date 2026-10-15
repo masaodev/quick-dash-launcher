@@ -1,7 +1,7 @@
 /**
- * 既定のブラウザ（https を開くプログラム）を Windows に問い合わせる
+ * 既定のブラウザ（https を開くプログラム）と、拡張子に関連付けられたプログラムを Windows に問い合わせる
  *
- * 登録・編集画面の「変換」で、URL をブラウザの新しいウィンドウなどで開く形にするときに使う。
+ * 登録・編集画面の「変換」で、URL や関連付けがブラウザのファイルを、ブラウザの新しいウィンドウなどで開く形にするときに使う。
  * レジストリを自分で読むと UserChoice と UserChoiceLatest（Windows 11 の新しい版）の両方を見る必要があるので、
  * AssocQueryStringW に任せる
  */
@@ -24,10 +24,10 @@ const AssocQueryStringW = shlwapi.func('AssocQueryStringW', 'long', [
   koffi.inout(koffi.pointer('uint32')), // pcchOut
 ]);
 
-function queryHttps(kind: number): string | null {
+function queryAssoc(flags: number, assoc: string, kind: number): string | null {
   const size = [BUFFER_CHARS];
   const buffer = Buffer.alloc(BUFFER_CHARS * 2);
-  const hr = AssocQueryStringW(ASSOCF_IS_PROTOCOL, kind, 'https', 'open', buffer, size);
+  const hr = AssocQueryStringW(flags, kind, assoc, 'open', buffer, size);
   if (hr !== 0) return null;
   // 返る文字数は終端の NUL を含む
   const value = buffer
@@ -37,14 +37,26 @@ function queryHttps(kind: number): string | null {
   return value || null;
 }
 
-/** 既定のブラウザの exe と表示名。取れなければ null */
-export function getDefaultBrowser(): DefaultBrowser | null {
+/** 関連付けのプログラムの exe と表示名。取れなければ null */
+function queryProgram(flags: number, assoc: string): DefaultBrowser | null {
   try {
-    const exePath = queryHttps(ASSOCSTR_EXECUTABLE);
+    const exePath = queryAssoc(flags, assoc, ASSOCSTR_EXECUTABLE);
     if (!exePath) return null;
-    const name = queryHttps(ASSOCSTR_FRIENDLYAPPNAME) ?? exePath.split('\\').pop() ?? exePath;
+    const name =
+      queryAssoc(flags, assoc, ASSOCSTR_FRIENDLYAPPNAME) ?? exePath.split('\\').pop() ?? exePath;
     return { exePath, name };
   } catch {
     return null;
   }
+}
+
+/** 既定のブラウザ（https を開くプログラム）の exe と表示名。取れなければ null */
+export function getDefaultBrowser(): DefaultBrowser | null {
+  return queryProgram(ASSOCF_IS_PROTOCOL, 'https');
+}
+
+/** 拡張子（例 .md）に関連付けられたプログラムの exe と表示名。取れなければ null */
+export function getFileHandler(extension: string): DefaultBrowser | null {
+  if (!/^\.[^\\/\s]+$/.test(extension)) return null;
+  return queryProgram(0, extension);
 }

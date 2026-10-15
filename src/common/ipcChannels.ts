@@ -29,6 +29,8 @@ export const IPC_CHANNELS = {
   CHECK_PATHS_EXIST: 'check-paths-exist',
   /** 既定のブラウザの exe と表示名（登録・編集画面の「変換」） */
   GET_DEFAULT_BROWSER: 'browser:get-default',
+  /** 拡張子に関連付けられたプログラムの exe と表示名（登録・編集画面の「変換」） */
+  GET_FILE_HANDLER: 'file:get-handler',
 
   // アイコン操作
   FETCH_FAVICON: 'fetch-favicon',

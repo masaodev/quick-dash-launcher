@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { getConversionGroups, isSupportedBrowser } from '@common/itemConversions';
+import {
+  getConversionFileExtension,
+  getConversionGroups,
+  isSupportedBrowser,
+} from '@common/itemConversions';
 import type { ConversionGroup, DefaultBrowser } from '@common/itemConversions';
 
 const CHROME: DefaultBrowser = {
@@ -134,5 +138,55 @@ describe('getConversionGroups', () => {
     expect(getConversionGroups(CHROME.exePath, '--new-window', CHROME)).toEqual([]);
     expect(getConversionGroups(CHROME.exePath, '', CHROME)).toEqual([]);
     expect(getConversionGroups('', '', CHROME)).toEqual([]);
+  });
+});
+
+describe('ファイル（関連付けがブラウザ）の変換', () => {
+  const MD = String.raw`C:\Users\me\tasks\全体ビュー.md`;
+  const MD_URL = 'file:///C:/Users/me/tasks/全体ビュー.md';
+
+  it('関連付けを調べる拡張子を返す（実行ファイル・URL・フォルダは返さない）', () => {
+    expect(getConversionFileExtension(MD)).toBe('.md');
+    expect(getConversionFileExtension(String.raw`\\server\share\a.HTML`)).toBe('.html');
+    expect(getConversionFileExtension(CHROME.exePath)).toBeUndefined();
+    expect(getConversionFileExtension(URL)).toBeUndefined();
+    expect(getConversionFileExtension(String.raw`C:\Users\me`)).toBeUndefined();
+    // ブラウザでファイルを開く形からも、元のファイルの拡張子を返す
+    expect(getConversionFileExtension(CHROME.exePath, `--new-window ${MD_URL}`)).toBe('.md');
+  });
+
+  it('関連付けのブラウザで新しいウィンドウ・アプリのウィンドウの形を出す（シークレットは出さない）', () => {
+    const groups = getConversionGroups(MD, '', EDGE, CHROME);
+    expect(groups.map((g) => [g.kind, g.title])).toEqual([['browser', 'Google Chrome']]);
+    expect(flatten(groups)).toEqual([
+      `${CHROME.exePath}|--new-window ${MD_URL}`,
+      `${CHROME.exePath}|--app=${MD_URL}`,
+    ]);
+  });
+
+  it('関連付けがブラウザでない・分からないファイルには候補が無い', () => {
+    expect(getConversionGroups(MD, '', CHROME, null)).toEqual([]);
+  });
+
+  it('ブラウザでファイルを開く形からは、ファイルに戻すと別の形を出す', () => {
+    const groups = getConversionGroups(CHROME.exePath, `--new-window ${MD_URL}`, EDGE, CHROME);
+    expect(groups.map((g) => g.kind)).toEqual(['file', 'browser']);
+    expect(flatten(groups)).toEqual([`${MD}|`, `${CHROME.exePath}|--app=${MD_URL}`]);
+  });
+
+  it('空白・# を含むパスは符号化し、戻すと元のパスになる', () => {
+    const path = String.raw`C:\My Docs\a#1 b.md`;
+    const toWindow = getConversionGroups(path, '', null, CHROME)[0].candidates[0];
+    expect(toWindow.args).toBe('--new-window file:///C:/My%20Docs/a%231%20b.md');
+    const back = getConversionGroups(toWindow.path, toWindow.args, null, CHROME)[0].candidates[0];
+    expect(back).toMatchObject({ kind: 'toFile', path, args: '' });
+  });
+
+  it('UNC のパスは file://server/… にし、戻せる', () => {
+    const path = String.raw`\\server\share\memo.md`;
+    const toApp = getConversionGroups(path, '', null, CHROME)[0].candidates[1];
+    expect(toApp.args).toBe('--app=file://server/share/memo.md');
+    const back = getConversionGroups(toApp.path, toApp.args, null, CHROME)[0].candidates[0];
+    expect(back).toMatchObject({ kind: 'toFile', path });
   });
 });

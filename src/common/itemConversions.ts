@@ -3,6 +3,7 @@
  *
  * いまの入力（パスと引数）から元の URL を読み取り、別の開き方の書き方に変換する候補を作る。
  * 開き方は 3 系統: URL のまま（既定のブラウザのタブ）・ブラウザの exe に引数で URL を渡す形・Office の URI。
+ * 関連付けがブラウザのファイル（.md を Chrome で開く など）も、file:/// の URL にしてブラウザの形に変換できる。
  * アイテムは開き方を状態として持たない。変換は入力の書き換えだけで、いまの書き方は候補から外す。
  */
 
@@ -56,6 +57,7 @@ const BROWSER_FLAGS: Record<string, BrowserFlags> = {
 /** 変換の候補 1 つ */
 export type ConversionCandidate =
   | { kind: 'toUrl'; path: string; args: string }
+  | { kind: 'toFile'; path: string; args: string }
   | {
       kind: 'browser';
       mode: BrowserOpenMode;
@@ -75,8 +77,8 @@ export type ConversionCandidate =
 
 /** 候補の見出しごとのまとまり */
 export interface ConversionGroup {
-  /** url＝URL に戻す・browser＝ブラウザ・office＝Office アプリ */
-  kind: 'url' | 'browser' | 'office';
+  /** url＝URL に戻す・file＝ファイルに戻す・browser＝ブラウザ・office＝Office アプリ */
+  kind: 'url' | 'file' | 'browser' | 'office';
   /** browser のときのブラウザ名、office のときのルール名 */
   title?: string;
   candidates: ConversionCandidate[];
@@ -84,16 +86,62 @@ export interface ConversionGroup {
 
 /** いまの入力を読み取った結果 */
 interface ParsedInput {
-  /** 元の URL */
+  /** 元の URL（ファイルなら file:/// の URL） */
   url: string;
   /** いまの書き方（候補から外す） */
   current:
     | { kind: 'url' }
+    | { kind: 'file' }
     | { kind: 'browser'; exePath: string; mode: BrowserOpenMode; otherArgs: string[] }
     | { kind: 'office'; prefix: string };
 }
 
 const HTTP_URL = /^https?:\/\//i;
+const FILE_URL = /^file:\/\//i;
+/** ブラウザの引数として読み取る URL（http・https・file） */
+const BROWSER_URL = /^(https?|file):\/\//i;
+/** ドライブ文字か UNC で始まるローカルのパス */
+const LOCAL_PATH = /^([a-z]:[\\/]|\\\\[^\\])/i;
+/** ファイルの関連付けを調べない拡張子（実行ファイル・ショートカット） */
+const EXECUTABLE_EXTENSIONS = new Set(['.exe', '.bat', '.cmd', '.com', '.lnk']);
+
+/** 変換の候補を出せるローカルのファイルなら拡張子（小文字。例 .md）を返す */
+function getConvertibleFileExtension(path: string): string | undefined {
+  const trimmed = (path ?? '').trim();
+  if (!LOCAL_PATH.test(trimmed)) return undefined;
+  const name = trimmed.split(/[\\/]/).pop() ?? '';
+  const dot = name.lastIndexOf('.');
+  if (dot <= 0 || dot === name.length - 1) return undefined;
+  const ext = name.slice(dot).toLowerCase();
+  return EXECUTABLE_EXTENSIONS.has(ext) ? undefined : ext;
+}
+
+/** ローカルのパスを file:/// の URL にする（URL の中で意味を持つ文字だけ符号化し、日本語は読めるまま残す） */
+function toFileUrl(localPath: string): string {
+  const slashed = localPath
+    .replace(/\\/g, '/')
+    .replace(/%/g, '%25')
+    .replace(/ /g, '%20')
+    .replace(/#/g, '%23')
+    .replace(/\?/g, '%3F');
+  // UNC（//server/share）は file://server/share、ドライブは file:///C:/
+  return slashed.startsWith('//') ? `file:${slashed}` : `file:///${slashed}`;
+}
+
+/** file:/// の URL をローカルのパスに戻す */
+function fromFileUrl(fileUrl: string): string {
+  const rest = fileUrl.replace(/^file:/i, '');
+  // file:///C:/… はドライブ、file://server/… は UNC
+  const slashed = rest.startsWith('///') ? rest.slice(3) : rest;
+  let decoded = slashed;
+  try {
+    decoded = decodeURIComponent(slashed);
+  } catch {
+    // 符号化が崩れているときはそのまま使う
+  }
+  return decoded.replace(/\//g, '\\');
+}
+
 const OFFICE_URI = /^ms-(excel|word|powerpoint):/i;
 
 function exeFileName(exePath: string): string {
@@ -131,13 +179,13 @@ function parseBrowserArgs(exePath: string, args: string): ParsedInput | undefine
   for (const { raw, value: arg } of splitArgs(args)) {
     if (!url && flags.appWindow && arg.startsWith(flags.appWindow)) {
       const value = arg.slice(flags.appWindow.length);
-      if (HTTP_URL.test(value)) {
+      if (BROWSER_URL.test(value)) {
         url = value;
         mode = 'appWindow';
         continue;
       }
     }
-    if (!url && HTTP_URL.test(arg)) {
+    if (!url && BROWSER_URL.test(arg)) {
       url = arg;
       continue;
     }
@@ -171,7 +219,20 @@ function parseInput(path: string, args: string): ParsedInput | undefined {
     if (!match) return undefined;
     return { url: trimmed.slice(match[0].length), current: { kind: 'office', prefix: match[0] } };
   }
+  if (getConvertibleFileExtension(trimmed)) {
+    return { url: toFileUrl(trimmed), current: { kind: 'file' } };
+  }
   return parseBrowserArgs(trimmed, args);
+}
+
+/**
+ * 入力がファイル（またはブラウザでファイルを開く形）なら、そのファイルの拡張子（小文字。例 .md）を返す。
+ * 呼び出し側はこの拡張子の関連付けを調べ、getConversionGroups の fileHandler に渡す
+ */
+export function getConversionFileExtension(path: string, args?: string): string | undefined {
+  const parsed = parseInput(path ?? '', args ?? '');
+  if (!parsed || !FILE_URL.test(parsed.url)) return undefined;
+  return getConvertibleFileExtension(fromFileUrl(parsed.url));
 }
 
 /** ブラウザの形の候補（新しいウィンドウ・アプリのウィンドウ・シークレット） */
@@ -182,12 +243,14 @@ function browserCandidates(
   otherArgs: string[],
   skipMode?: BrowserOpenMode
 ): ConversionCandidate[] {
+  // ファイルはシークレットで開かない（拡張機能が既定で動かず、.md などを整形して見られない）
+  const allowPrivate = !FILE_URL.test(url);
   const flags = getBrowserFlags(exePath);
   if (!flags) return [];
   const modeArgs: Record<BrowserOpenMode, string[] | undefined> = {
     newWindow: [flags.newWindow, url],
     appWindow: flags.appWindow ? [flags.appWindow + url] : undefined,
-    private: [flags.private, url],
+    private: allowPrivate ? [flags.private, url] : undefined,
   };
   const modes: BrowserOpenMode[] = ['newWindow', 'appWindow', 'private'];
   return modes.flatMap((mode) => {
@@ -214,30 +277,42 @@ function browserNameFromExe(exePath: string): string {
 /**
  * いまの入力から変換の候補を作る（見出しごと）。候補が無ければ空配列
  *
- * @param defaultBrowser 既定のブラウザ。分からない・対応していないときは null（ブラウザの形を出さない）
+ * @param defaultBrowser 既定のブラウザ。分からない・対応していないときは null（URL にブラウザの形を出さない）
+ * @param fileHandler ファイルの関連付けのアプリ（getConversionFileExtension の拡張子で調べたもの）。
+ *   ブラウザでない・分からないときは null（ファイルにブラウザの形を出さない）
  */
 export function getConversionGroups(
   path: string,
   args: string | undefined,
-  defaultBrowser: DefaultBrowser | null
+  defaultBrowser: DefaultBrowser | null,
+  fileHandler: DefaultBrowser | null = null
 ): ConversionGroup[] {
   const parsed = parseInput(path ?? '', args ?? '');
   if (!parsed) return [];
   const { url, current } = parsed;
+  const isFile = FILE_URL.test(url);
   const groups: ConversionGroup[] = [];
 
-  if (current.kind !== 'url') {
+  if (isFile && current.kind !== 'file') {
+    groups.push({
+      kind: 'file',
+      candidates: [{ kind: 'toFile', path: fromFileUrl(url), args: '' }],
+    });
+  } else if (!isFile && current.kind !== 'url') {
     groups.push({ kind: 'url', candidates: [{ kind: 'toUrl', path: url, args: '' }] });
   }
+
+  // ファイルは関連付けのブラウザ、URL は既定のブラウザで開く形にする
+  const targetBrowser = isFile ? fileHandler : defaultBrowser;
 
   // いまブラウザの形なら、同じブラウザの別の形（ほかの引数は残す）
   const sameBrowser =
     current.kind === 'browser' &&
-    !!defaultBrowser &&
-    current.exePath.toLowerCase() === defaultBrowser.exePath.toLowerCase();
+    !!targetBrowser &&
+    current.exePath.toLowerCase() === targetBrowser.exePath.toLowerCase();
   if (current.kind === 'browser') {
     const name =
-      sameBrowser && defaultBrowser ? defaultBrowser.name : browserNameFromExe(current.exePath);
+      sameBrowser && targetBrowser ? targetBrowser.name : browserNameFromExe(current.exePath);
     const candidates = browserCandidates(
       current.exePath,
       name,
@@ -248,11 +323,11 @@ export function getConversionGroups(
     if (candidates.length > 0) groups.push({ kind: 'browser', title: name, candidates });
   }
 
-  // 既定のブラウザの形（いまが同じブラウザなら上で出した）
-  if (defaultBrowser && !sameBrowser) {
-    const candidates = browserCandidates(defaultBrowser.exePath, defaultBrowser.name, url, []);
+  // 既定（ファイルなら関連付け）のブラウザの形（いまが同じブラウザなら上で出した）
+  if (targetBrowser && !sameBrowser) {
+    const candidates = browserCandidates(targetBrowser.exePath, targetBrowser.name, url, []);
     if (candidates.length > 0) {
-      groups.push({ kind: 'browser', title: defaultBrowser.name, candidates });
+      groups.push({ kind: 'browser', title: targetBrowser.name, candidates });
     }
   }
 
