@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_DATA_FILE } from '@common/types';
+import { DESKTOP_TAB } from '@common/constants';
 import type {
   LauncherItem,
   AppItem,
@@ -168,6 +169,15 @@ function App(): React.ReactElement {
         if (version !== windowListVersionRef.current) return;
         setWindowList(windows);
         setDesktopInfo(info);
+        // 選んでいたタブが無くなった（デスクトップを減らした・全デスクトップ表示のウィンドウが無くなった）ら、
+        // 今のデスクトップのタブ（無ければ「すべて」）に戻す。そのままだと選んだタブが無く、一覧が空になる
+        setActiveDesktopTab((tab) => {
+          const gone =
+            (tab > 0 && tab > info.desktopCount) ||
+            (tab === DESKTOP_TAB.PINNED && !windows.some((w) => w.isPinned === true));
+          if (!gone) return tab;
+          return info.supported && info.currentDesktop > 0 ? info.currentDesktop : DESKTOP_TAB.ALL;
+        });
         if (resetSelection) setSelectedIndex(0);
       });
     },
