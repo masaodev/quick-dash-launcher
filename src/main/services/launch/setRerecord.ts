@@ -13,6 +13,7 @@ import { parseJsonDataFileLenient } from '@common/utils/jsonParser';
 import { rerecordSetPlacements } from '@common/utils/setWindowMatching';
 
 import { getAllWindows } from '../../utils/nativeWindowControl.js';
+import { getDesktopCount } from '../../utils/virtualDesktop/index.js';
 import { PathManager } from '../../config/pathManager.js';
 import { updateSetItemById } from '../data/dataItemWriter.js';
 import { notifyDataChanged } from '../../ipc/notifications.js';
@@ -42,7 +43,7 @@ export async function rerecordSetPositions(shown: SetItem): Promise<void> {
   const t = mainI18n.t.bind(mainI18n);
 
   const windows = getAllWindows({ includeAllVirtualDesktops: true });
-  const result = rerecordSetPlacements(item.entries, windows);
+  const result = rerecordSetPlacements(item.entries, windows, getDesktopCount());
   itemLogger.info(
     { setName: item.displayName, changed: result.changed, notFound: result.notFound },
     'セットの位置を記録し直しました'

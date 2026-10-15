@@ -228,7 +228,19 @@ describe('rerecordSetPlacements', () => {
     expect(result.entries[2]).toBe(entries[2]);
   });
 
-  it('今の仮想デスクトップ番号が取れないときは、前の番号を残す', () => {
+  it('編集画面の記録と同じく、今のデスクトップの番号を入れる（空だった行にも）', () => {
+    const entries = [
+      { window: { processName: 'Obsidian.exe' }, placement: { x: 0, y: 0, width: 10, height: 10 } },
+    ];
+    const moved = win({ ...obsidian, x: 5, y: 0, width: 10, height: 10, desktopNumber: 2 });
+    const desktopOf = (count: number) =>
+      rerecordSetPlacements(entries, [moved], count).entries[0].placement?.virtualDesktopNumber;
+    expect(desktopOf(2)).toBe(2);
+    // デスクトップが 1 つなら入れない
+    expect(desktopOf(1)).toBeUndefined();
+  });
+
+  it('全デスクトップに表示中で番号が取れなければ、前の番号を消して空にする', () => {
     const entries = [
       {
         window: { processName: 'Obsidian.exe' },
@@ -236,8 +248,8 @@ describe('rerecordSetPlacements', () => {
       },
     ];
     const moved = win({ ...obsidian, x: 5, y: 0, width: 10, height: 10, desktopNumber: -1 });
-    expect(rerecordSetPlacements(entries, [moved]).entries[0].placement?.virtualDesktopNumber).toBe(
-      2
-    );
+    expect(
+      rerecordSetPlacements(entries, [moved], 2).entries[0].placement?.virtualDesktopNumber
+    ).toBeUndefined();
   });
 });

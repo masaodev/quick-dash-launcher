@@ -254,7 +254,8 @@ function samePlacement(a: SetPlacement | undefined, b: SetPlacement): boolean {
  */
 export function rerecordSetPlacements(
   entries: readonly SetEntry[],
-  windows: readonly MatchableWindow[]
+  windows: readonly MatchableWindow[],
+  desktopCount?: number
 ): RerecordResult {
   const candidates = windows.filter((w) => w.windowState !== 'minimized');
   const used = new Set<MatchableWindow>();
@@ -272,13 +273,9 @@ export function rerecordSetPlacements(
       return entry;
     }
     used.add(found);
-    const placement = placementFromWindow(found);
-    // 仮想デスクトップは行に指定があるときだけ取り直す（指定の無い行は「変えない」のまま）
-    if (entry.placement.virtualDesktopNumber === undefined) delete placement.virtualDesktopNumber;
-    // 今の番号が取れない（全デスクトップにピン留め中など）ときは、前の番号を残す
-    else if (placement.virtualDesktopNumber === undefined) {
-      placement.virtualDesktopNumber = entry.placement.virtualDesktopNumber;
-    }
+    // 編集画面の「今の位置を記録」と同じく、今の状態をそのまま記録する（仮想デスクトップの番号が空だった行にも
+    // 今のデスクトップの番号を入れる。全デスクトップに表示中で番号が無ければ空、デスクトップが 1 つなら入れない）
+    const placement = placementFromWindow(found, desktopCount);
     if (samePlacement(entry.placement, placement)) return entry;
     changed++;
     return { ...entry, placement };
