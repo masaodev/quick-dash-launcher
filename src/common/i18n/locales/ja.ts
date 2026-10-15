@@ -712,6 +712,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       offscreen: '今は無い画面',
       maximized: '最大化',
       onScreen: '画面 {{screen}}・{{place}}',
+      onDesktop: '{{place}}・デスクトップ {{desktop}}',
+      onAllDesktops: '{{place}}・全デスクトップ',
       region: '{{region}} {{width}}×{{height}}',
       shapes: {
         full: '全体',

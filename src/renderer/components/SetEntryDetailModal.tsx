@@ -77,6 +77,8 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   const [pickNotes, setPickNotes] = useState<Array<'minimized' | 'elevated'>>([]);
   /** 今開いているウィンドウ（タイトル欄の「今合うウィンドウ」を数える） */
   const [windows, setWindows] = useState<WindowInfo[]>([]);
+  /** 仮想デスクトップの数（2 未満なら、ウィンドウから位置を取るときに番号を記録しない） */
+  const [desktopCount, setDesktopCount] = useState(0);
 
   useEffect(() => {
     setDraft(entry);
@@ -91,6 +93,14 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
       })
       .catch(() => {
         if (alive) setWindows([]);
+      });
+    window.electronAPI
+      .getVirtualDesktopInfo()
+      .then((info) => {
+        if (alive) setDesktopCount(info.supported ? info.desktopCount : 0);
+      })
+      .catch(() => {
+        if (alive) setDesktopCount(0);
       });
     return () => {
       alive = false;
@@ -400,14 +410,17 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                     id="set-detail-desktop"
                     type="number"
                     min={1}
+                    step={1}
                     placeholder={t('set.detail.desktopKeep')}
                     value={draft.placement.virtualDesktopNumber ?? ''}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      // 1 以上の整数だけ（0・負の数・小数は「変えない」と同じ空にする）
+                      const n = Number(e.target.value);
                       updatePlacement({
                         virtualDesktopNumber:
-                          e.target.value === '' ? undefined : Number(e.target.value),
-                      })
-                    }
+                          e.target.value !== '' && Number.isInteger(n) && n >= 1 ? n : undefined,
+                      });
+                    }}
                   />
                 </>
               )}
@@ -497,7 +510,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
           update(
             w.windowState === 'minimized'
               ? { window: match }
-              : { window: match, placement: placementFromWindow(w) }
+              : { window: match, placement: placementFromWindow(w, desktopCount) }
           );
           setPickNotes(windowPickNotes(w));
         }}

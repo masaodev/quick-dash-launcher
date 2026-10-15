@@ -16,6 +16,7 @@ import {
   entryFromWindow,
   linkEntryToWindow,
   placementText,
+  windowPlacementText,
   toMatchableEntry,
   windowProcessLabel,
   windowPickNotes,
@@ -155,6 +156,8 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   const [windows, setWindows] = useState<WindowInfo[] | null>(null);
+  /** 仮想デスクトップの数（2 未満なら番号を記録も表示もしない） */
+  const [desktopCount, setDesktopCount] = useState(0);
   /** 行の添字 → 結び付けたウィンドウ（null は「外す」を選んだ） */
   const [assign, setAssign] = useState<Map<number, WindowInfo | null>>(new Map());
   /** 新しい行として追加するウィンドウ */
@@ -184,10 +187,16 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
     setShowMinimized(false);
     setEditing(null);
     let cancelled = false;
-    window.electronAPI
-      .getAllWindowsAllDesktops()
-      .then((all) => {
+    Promise.all([
+      window.electronAPI.getAllWindowsAllDesktops(),
+      window.electronAPI
+        .getVirtualDesktopInfo()
+        .then((info) => (info.supported ? info.desktopCount : 0))
+        .catch(() => 0),
+    ])
+      .then(([all, count]) => {
         if (cancelled) return;
+        setDesktopCount(count);
         const list = all.filter((w) => !isOwnWindow(w));
         const result = autoLinkWindows(
           entries.map((entry, i) => toMatchableEntry(entry, i, catalog)),
@@ -268,7 +277,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
         // 前の見つけ方がこのウィンドウに当てはまらなければ（手で結び付けた・付け替えた）、決め直す
         const base =
           entry.window && matchesWindow(entry.window, w) ? entry : { ...entry, window: undefined };
-        return linkEntryToWindow(base, w);
+        return linkEntryToWindow(base, w, desktopCount);
       }
       if (assign.has(i) && w === null) {
         const { window: _w, placement: _p, ...rest } = entry;
@@ -288,12 +297,10 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
 
   /** 新しく足す行（行の詳細で直していればその内容） */
   const newRowEntry = (w: WindowInfo): SetEntry =>
-    newRowEdits.get(windowKey(w)) ?? entryFromWindow(w);
+    newRowEdits.get(windowKey(w)) ?? entryFromWindow(w, desktopCount);
 
   const nameOf = (i: number) => views[i]?.name || `#${i + 1}`;
-  const placeOf = (w: WindowInfo) =>
-    placementText({ placement: { x: w.x, y: w.y, width: w.width, height: w.height } }, screens) ??
-    '';
+  const placeOf = (w: WindowInfo) => windowPlacementText(w, screens, desktopCount);
   const iconOf = (i: number) => (
     <RowIcon icon={views[i]?.icon} fallback={SET_KIND_ICONS[views[i]?.kind ?? 'none'] ?? '📄'} />
   );

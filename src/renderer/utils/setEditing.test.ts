@@ -8,8 +8,10 @@ import {
   linkEntryToWindow,
   setEntryNames,
   setEntriesSummary,
+  placementText,
   titleParts,
   windowPickNotes,
+  windowPlacementText,
 } from './setEditing';
 
 function win(over: Partial<WindowInfo>): WindowInfo {
@@ -174,5 +176,43 @@ describe('setEntriesSummary', () => {
 
   it('名前が 1 つも分からなければ空（ツールチップに出さない）', () => {
     expect(setEntriesSummary([{ itemId: 'nobody11' }], nameOf)).toBe('');
+  });
+});
+
+describe('仮想デスクトップの記録と表示', () => {
+  const screens = [
+    {
+      bounds: { x: 0, y: 0, width: 1920, height: 1080 },
+      workArea: { x: 0, y: 0, width: 1920, height: 1040 },
+    },
+  ];
+
+  it('デスクトップが 2 つ以上なら番号を記録し、1 つなら記録しない', () => {
+    const w = win({ desktopNumber: 2 });
+    expect(entryFromWindow(w, 3).placement?.virtualDesktopNumber).toBe(2);
+    expect(entryFromWindow(w, 1).placement?.virtualDesktopNumber).toBeUndefined();
+    expect(
+      linkEntryToWindow({ itemId: 'a' }, w, 1).placement?.virtualDesktopNumber
+    ).toBeUndefined();
+  });
+
+  it('行の置き場所の表示に番号を添える', () => {
+    const entry: SetEntry = {
+      placement: { x: 960, y: 0, width: 960, height: 1040, virtualDesktopNumber: 2 },
+    };
+    expect(placementText(entry, screens)).toMatch(/2$/);
+    expect(
+      placementText({ placement: { ...entry.placement, virtualDesktopNumber: undefined } }, screens)
+    ).not.toMatch(/2$/);
+  });
+
+  it('記録の画面のウィンドウは、デスクトップが 2 つ以上のときだけ番号・全デスクトップを添える', () => {
+    const plain = windowPlacementText(win({ desktopNumber: 2 }), screens, 1);
+    expect(windowPlacementText(win({ desktopNumber: 2 }), screens, 3)).not.toBe(plain);
+    expect(windowPlacementText(win({ desktopNumber: 2 }), screens, 3)).toMatch(/2$/);
+    const pinned = windowPlacementText(win({ desktopNumber: -1, isPinned: true }), screens, 3);
+    expect(pinned).not.toBe(plain);
+    expect(pinned).not.toMatch(/-1/);
+    expect(windowPlacementText(win({ isPinned: true }), screens, 1)).toBe(plain);
   });
 });

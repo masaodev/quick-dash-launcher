@@ -709,6 +709,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       offscreen: 'A screen that is not connected',
       maximized: 'Maximized',
       onScreen: 'Screen {{screen}} · {{place}}',
+      onDesktop: '{{place}} · Desktop {{desktop}}',
+      onAllDesktops: '{{place}} · All desktops',
       region: '{{region}} {{width}}×{{height}}',
       shapes: {
         full: 'Full',

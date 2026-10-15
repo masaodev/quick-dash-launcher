@@ -205,15 +205,21 @@ export function decideWindowMatch(window: MatchableWindow): SetWindowMatch {
   return title ? { processName: window.processName, title } : { processName: window.processName };
 }
 
-/** ウィンドウの今の位置から置き場所を作る（最大化中なら state を付ける） */
-export function placementFromWindow(window: MatchableWindow): SetPlacement {
+/**
+ * ウィンドウの今の位置から置き場所を作る（最大化中なら state を付ける）
+ *
+ * @param desktopCount 仮想デスクトップの数。2 未満なら番号を記録しない（デスクトップ 1 つで記録したセットを、
+ *   後でデスクトップを増やして別のデスクトップから開いたとき、見えないデスクトップ 1 へ引き戻さない）
+ */
+export function placementFromWindow(window: MatchableWindow, desktopCount?: number): SetPlacement {
   const placement: SetPlacement = {
     x: window.x,
     y: window.y,
     width: window.width,
     height: window.height,
   };
-  if (window.desktopNumber !== undefined && window.desktopNumber > 0) {
+  const singleDesktop = desktopCount !== undefined && desktopCount < 2;
+  if (!singleDesktop && window.desktopNumber !== undefined && window.desktopNumber > 0) {
     placement.virtualDesktopNumber = window.desktopNumber;
   }
   if (window.windowState === 'maximized') placement.state = 'maximized';

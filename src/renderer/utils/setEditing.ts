@@ -245,10 +245,45 @@ export function formatPlacementLabel(label: PlacementLabel): string {
   }
 }
 
-/** 行の置き場所の表示（置き場所が無ければ undefined） */
+/** 行の置き場所の表示（置き場所が無ければ undefined。仮想デスクトップの番号があれば添える） */
 export function placementText(entry: SetEntry, screens: readonly ScreenArea[]): string | undefined {
   if (!entry.placement) return undefined;
-  return formatPlacementLabel(computePlacementLabel(entry.placement, screens));
+  const place = formatPlacementLabel(computePlacementLabel(entry.placement, screens));
+  const desktop = entry.placement.virtualDesktopNumber;
+  return desktop === undefined ? place : i18next.t('set.placement.onDesktop', { place, desktop });
+}
+
+/**
+ * 開いているウィンドウの今の位置の表示（記録の画面）
+ *
+ * デスクトップが 2 つ以上あるときだけ、いるデスクトップ（全デスクトップに表示中ならそのこと）を添える
+ */
+export function windowPlacementText(
+  window: WindowInfo,
+  screens: readonly ScreenArea[],
+  desktopCount: number
+): string {
+  const multi = desktopCount >= 2;
+  const desktop =
+    multi && !window.isPinned && window.desktopNumber !== undefined && window.desktopNumber > 0
+      ? window.desktopNumber
+      : undefined;
+  const text =
+    placementText(
+      {
+        placement: {
+          x: window.x,
+          y: window.y,
+          width: window.width,
+          height: window.height,
+          ...(desktop !== undefined ? { virtualDesktopNumber: desktop } : {}),
+        },
+      },
+      screens
+    ) ?? '';
+  return multi && window.isPinned
+    ? i18next.t('set.placement.onAllDesktops', { place: text })
+    : text;
 }
 
 /** 記録の画面でウィンドウごとに選ぶこと */
@@ -271,10 +306,10 @@ export function windowDisplayName(window: WindowInfo): string {
  * ほかのアプリの起動の引数は取れないので、exe を開く行にすると開いていたファイルが開かない。
  * 位置を記録するのが主なので開くものは持たず、要るときは行の詳細で足してもらう
  */
-export function entryFromWindow(window: WindowInfo): SetEntry {
+export function entryFromWindow(window: WindowInfo, desktopCount?: number): SetEntry {
   return {
     window: decideWindowMatch(window),
-    placement: placementFromWindow(window),
+    placement: placementFromWindow(window, desktopCount),
     label: windowDisplayName(window),
   };
 }
@@ -294,12 +329,18 @@ export function titleParts(title: string): string[] {
  *
  * 最小化中のウィンドウは座標が画面の外になるので、見つけ方だけ決めて置き場所は前のままにする
  */
-export function linkEntryToWindow(entry: SetEntry, window: WindowInfo): SetEntry {
+export function linkEntryToWindow(
+  entry: SetEntry,
+  window: WindowInfo,
+  desktopCount?: number
+): SetEntry {
   const linked: SetEntry = {
     ...entry,
     window: entry.window ?? decideWindowMatch(window),
   };
-  if (window.windowState !== 'minimized') linked.placement = placementFromWindow(window);
+  if (window.windowState !== 'minimized') {
+    linked.placement = placementFromWindow(window, desktopCount);
+  }
   return linked;
 }
 
