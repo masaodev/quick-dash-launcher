@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { DESKTOP_TAB } from '@common/constants';
+import { desktopLabel } from '@common/utils/desktopLabel';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 import { getCountClass } from '../utils/tabUtils';
@@ -79,8 +80,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
     for (let i = 1; i <= desktopInfo.desktopCount; i++) {
       const count = filteredWindows.filter((w) => w.desktopNumber === i).length;
       const isCurrent = i === desktopInfo.currentDesktop;
-      const desktopName = desktopInfo.desktopNames?.[i];
-      const baseLabel = desktopName || `${i}`;
+      const baseLabel = desktopLabel(i, desktopInfo.desktopNames);
       tabList.push({
         id: i,
         label: isCurrent ? t('launcher.desktopTabs.current', { name: baseLabel }) : baseLabel,

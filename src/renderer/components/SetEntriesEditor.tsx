@@ -56,6 +56,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   /** ドラッグ中に、落とす先になっている行 */
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  /** 仮想デスクトップの名前（置き場所の表示に添える） */
+  const [desktopNames, setDesktopNames] = useState<Record<number, string | undefined>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +70,10 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
       .getScreenAreas()
       .then((areas) => !cancelled && setScreens(areas))
       .catch((e) => logError('画面の情報を取得できませんでした:', e));
+    window.electronAPI
+      .getVirtualDesktopInfo()
+      .then((info) => !cancelled && setDesktopNames(info.desktopNames ?? {}))
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -116,7 +122,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         ) : (
           entries.map((entry, index) => {
             const view = describeSetEntry(entry, catalogById);
-            const place = placementText(entry, screens);
+            const place = placementText(entry, screens, desktopNames);
             return (
               <div
                 key={index}

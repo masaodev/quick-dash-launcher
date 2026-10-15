@@ -79,6 +79,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   const [windows, setWindows] = useState<WindowInfo[]>([]);
   /** 仮想デスクトップの数（2 未満なら、ウィンドウから位置を取るときに番号を記録しない） */
   const [desktopCount, setDesktopCount] = useState(0);
+  const [desktopNames, setDesktopNames] = useState<Record<number, string | undefined>>({});
 
   useEffect(() => {
     setDraft(entry);
@@ -97,7 +98,9 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
     window.electronAPI
       .getVirtualDesktopInfo()
       .then((info) => {
-        if (alive) setDesktopCount(info.supported ? info.desktopCount : 0);
+        if (!alive) return;
+        setDesktopCount(info.supported ? info.desktopCount : 0);
+        setDesktopNames(info.desktopNames ?? {});
       })
       .catch(() => {
         if (alive) setDesktopCount(0);
@@ -369,7 +372,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               <span className="set-detail-pair">
                 <span className="set-row-place">
                   {draft.placement
-                    ? `📍 ${placementText(draft, screens)}`
+                    ? `📍 ${placementText(draft, screens, desktopNames)}`
                     : t('set.detail.noPlacement')}
                 </span>
                 <Button variant="secondary" size="sm" onClick={() => setPicking(true)}>

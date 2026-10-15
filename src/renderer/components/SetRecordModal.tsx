@@ -158,6 +158,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const [windows, setWindows] = useState<WindowInfo[] | null>(null);
   /** 仮想デスクトップの数（2 未満なら番号を記録も表示もしない） */
   const [desktopCount, setDesktopCount] = useState(0);
+  const [desktopNames, setDesktopNames] = useState<Record<number, string | undefined>>({});
   /** 行の添字 → 結び付けたウィンドウ（null は「外す」を選んだ） */
   const [assign, setAssign] = useState<Map<number, WindowInfo | null>>(new Map());
   /** 新しい行として追加するウィンドウ */
@@ -189,14 +190,12 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
     let cancelled = false;
     Promise.all([
       window.electronAPI.getAllWindowsAllDesktops(),
-      window.electronAPI
-        .getVirtualDesktopInfo()
-        .then((info) => (info.supported ? info.desktopCount : 0))
-        .catch(() => 0),
+      window.electronAPI.getVirtualDesktopInfo().catch(() => null),
     ])
-      .then(([all, count]) => {
+      .then(([all, info]) => {
         if (cancelled) return;
-        setDesktopCount(count);
+        setDesktopCount(info?.supported ? info.desktopCount : 0);
+        setDesktopNames(info?.desktopNames ?? {});
         const list = all.filter((w) => !isOwnWindow(w));
         const result = autoLinkWindows(
           entries.map((entry, i) => toMatchableEntry(entry, i, catalog)),
@@ -300,7 +299,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
     newRowEdits.get(windowKey(w)) ?? entryFromWindow(w, desktopCount);
 
   const nameOf = (i: number) => views[i]?.name || `#${i + 1}`;
-  const placeOf = (w: WindowInfo) => windowPlacementText(w, screens, desktopCount);
+  const placeOf = (w: WindowInfo) => windowPlacementText(w, screens, desktopCount, desktopNames);
   const iconOf = (i: number) => (
     <RowIcon icon={views[i]?.icon} fallback={SET_KIND_ICONS[views[i]?.kind ?? 'none'] ?? '📄'} />
   );
@@ -396,7 +395,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                     // このまま記録するとどうなるか（外した行と、前の位置が無い行は開くだけになる）
                     const previous =
                       assign.get(i) !== null && entries[i].placement
-                        ? placementText(entries[i], screens)
+                        ? placementText(entries[i], screens, desktopNames)
                         : null;
                     const outcome = previous
                       ? t('set.record.outcomeKeep', { place: previous })

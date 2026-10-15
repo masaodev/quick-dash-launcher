@@ -15,6 +15,7 @@ import type {
   VirtualDesktopInfo,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { desktopLabel } from '@common/utils/desktopLabel';
 import { isLauncherItem, isSetItem } from '@common/types/guards';
 
 import { mainI18n } from '../services/mainI18n.js';
@@ -559,9 +560,10 @@ function setupWindowContextMenuHandler(): void {
 
         for (let i = 1; i <= desktopInfo.desktopCount; i++) {
           const isCurrentDesktop = windowInfo.desktopNumber === i;
+          const number = desktopLabel(i, desktopInfo.desktopNames);
           const label = isCurrentDesktop
-            ? t('menu.window.currentDesktop', { number: i })
-            : t('menu.window.desktop', { number: i });
+            ? t('menu.window.currentDesktop', { number })
+            : t('menu.window.desktop', { number });
 
           virtualDesktopSubmenu.append(
             new MenuItem({
@@ -639,7 +641,7 @@ function setupWindowsContextMenuHandler(): void {
         for (let i = 1; i <= desktopInfo.desktopCount; i++) {
           submenu.append(
             createMenuItem(
-              t('menu.window.desktop', { number: i }),
+              t('menu.window.desktop', { number: desktopLabel(i, desktopInfo.desktopNames) }),
               event.sender,
               IPC_CHANNELS.EVENT_WINDOWS_MENU_MOVE_TO_DESKTOP,
               i

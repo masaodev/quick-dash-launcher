@@ -18,6 +18,7 @@ import {
   type MatchableEntry,
   type SetTargetKind,
 } from '@common/utils/setWindowMatching';
+import { desktopLabel } from '@common/utils/desktopLabel';
 
 import { ITEM_TYPE_ICONS } from './itemTypeIcons';
 
@@ -246,11 +247,17 @@ export function formatPlacementLabel(label: PlacementLabel): string {
 }
 
 /** 行の置き場所の表示（置き場所が無ければ undefined。仮想デスクトップの番号があれば添える） */
-export function placementText(entry: SetEntry, screens: readonly ScreenArea[]): string | undefined {
+export function placementText(
+  entry: SetEntry,
+  screens: readonly ScreenArea[],
+  desktopNames?: Readonly<Record<number, string | undefined>>
+): string | undefined {
   if (!entry.placement) return undefined;
   const place = formatPlacementLabel(computePlacementLabel(entry.placement, screens));
   const desktop = entry.placement.virtualDesktopNumber;
-  return desktop === undefined ? place : i18next.t('set.placement.onDesktop', { place, desktop });
+  return desktop === undefined
+    ? place
+    : i18next.t('set.placement.onDesktop', { place, desktop: desktopLabel(desktop, desktopNames) });
 }
 
 /**
@@ -261,7 +268,8 @@ export function placementText(entry: SetEntry, screens: readonly ScreenArea[]): 
 export function windowPlacementText(
   window: WindowInfo,
   screens: readonly ScreenArea[],
-  desktopCount: number
+  desktopCount: number,
+  desktopNames?: Readonly<Record<number, string | undefined>>
 ): string {
   const multi = desktopCount >= 2;
   const desktop =
@@ -277,9 +285,12 @@ export function windowPlacementText(
           width: window.width,
           height: window.height,
           ...(desktop !== undefined ? { virtualDesktopNumber: desktop } : {}),
+          // 記録すると「最大化」になるので、記録の画面でも同じ言葉で出す
+          ...(window.windowState === 'maximized' ? { state: 'maximized' as const } : {}),
         },
       },
-      screens
+      screens,
+      desktopNames
     ) ?? '';
   return multi && window.isPinned
     ? i18next.t('set.placement.onAllDesktops', { place: text })

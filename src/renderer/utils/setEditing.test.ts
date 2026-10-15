@@ -215,4 +215,9 @@ describe('仮想デスクトップの記録と表示', () => {
     expect(pinned).not.toMatch(/-1/);
     expect(windowPlacementText(win({ isPinned: true }), screens, 1)).toBe(plain);
   });
+
+  it('記録の画面の最大化中のウィンドウは、記録した後の行と同じ表示にする', () => {
+    const w = win({ windowState: 'maximized', x: -8, y: -8, width: 1936, height: 1056 });
+    expect(windowPlacementText(w, screens, 1)).toBe(placementText(entryFromWindow(w, 1), screens));
+  });
 });
