@@ -53,6 +53,7 @@ export const en: LocaleMessages = {
       cancel: 'Cancel',
     },
     dropToAdd: 'Drop a file or URL to add it',
+    dropWorkspaceItemToAdd: 'Drop to add it to the launcher',
     dropPathUnavailable: "Couldn't get the file path.\nDrag the file directly from File Explorer.",
     hints: {
       closeMarked: 'Close {{count}}',
@@ -301,6 +302,7 @@ export const en: LocaleMessages = {
     },
     workspaceItem: {
       rename: '🏷️ Rename',
+      registerToMain: '🚀 Add to the launcher',
       moveToWorkspace: '📁 Move to workspace',
       removeFromGroup: '📤 Remove from group',
       remove: '🗑️ Remove from workspace',

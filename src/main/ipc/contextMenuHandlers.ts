@@ -20,6 +20,7 @@ import { isLauncherItem, isSetItem } from '@common/types/guards';
 
 import { mainI18n } from '../services/mainI18n.js';
 import { rerecordSetPositions } from '../services/launch/setRerecord.js';
+import { getMainWindow, showMainWindow } from '../windowManager.js';
 
 /** メニューの文言（開くたびに作るので、今の表示言語になる） */
 const t = mainI18n.t.bind(mainI18n);
@@ -258,6 +259,17 @@ function buildMoveToWorkspaceSubmenu(
   return new MenuItem({ label, submenu });
 }
 
+/**
+ * ワークスペースのアイテムをメインウィンドウに登録する（登録画面はメインウィンドウが子ウィンドウで開く）
+ * 登録画面はメインウィンドウを親にして開くので、先にメインウィンドウを出す
+ */
+async function registerWorkspaceItemToMain(item: WorkspaceItem): Promise<void> {
+  await showMainWindow();
+  const mainWindow = getMainWindow();
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send(IPC_CHANNELS.EVENT_REGISTER_WORKSPACE_ITEM_TO_MAIN, item);
+}
+
 /** WorkspaceContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceContextMenuHandler(): void {
   ipcMain.handle(
@@ -333,6 +345,15 @@ function setupWorkspaceContextMenuHandler(): void {
         menu.append(createSeparator());
         placementItems.forEach((menuItem) => menu.append(menuItem));
       }
+
+      // メインウィンドウの「ワークスペースに追加」の逆向き
+      menu.append(createSeparator());
+      menu.append(
+        new MenuItem({
+          label: t('menu.workspaceItem.registerToMain'),
+          click: () => void registerWorkspaceItemToMain(item),
+        })
+      );
 
       if (isLauncher) {
         menu.append(createSeparator());

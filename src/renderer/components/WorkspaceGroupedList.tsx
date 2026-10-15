@@ -14,6 +14,7 @@ import type {
 import { isWindowItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 import { resolveGroupColorCss } from '@common/groupColors';
+import { WORKSPACE_ITEM_DRAG_TYPE } from '@common/constants';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import {
   canCreateSubgroup,
@@ -325,7 +326,10 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
     // ドラッグ元の現在の親グループIDを記録（グループ間移動判定に使用）
     if (kind === 'item') {
-      e.dataTransfer.setData('currentGroupId', itemsMap.get(id)?.groupId || '');
+      const item = itemsMap.get(id);
+      e.dataTransfer.setData('currentGroupId', item?.groupId || '');
+      // メインウィンドウに落とすと、このアイテムを初期値にして登録画面を開く（別のウィンドウなので ID では引けない）
+      if (item) e.dataTransfer.setData(WORKSPACE_ITEM_DRAG_TYPE, JSON.stringify(item));
     } else {
       e.dataTransfer.setData('currentParentGroupId', groupsMap.get(id)?.parentGroupId || '');
     }

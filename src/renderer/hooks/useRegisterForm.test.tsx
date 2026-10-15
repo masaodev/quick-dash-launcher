@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import type { RegisterItem } from '@common/types';
 
 import { useRegisterForm } from './useRegisterForm';
 
@@ -29,7 +30,16 @@ const droppedPaths: string[] = [];
 
 async function renderWithCapturedClipboard() {
   const hook = renderHook(() =>
-    useRegisterForm(true, null, droppedPaths, 'datafiles/data.json', async () => {}, noop, noop)
+    useRegisterForm(
+      true,
+      null,
+      droppedPaths,
+      undefined,
+      'datafiles/data.json',
+      async () => {},
+      noop,
+      noop
+    )
   );
   await waitFor(() => expect(hook.result.current.items).toHaveLength(1));
   await act(async () => {
@@ -40,6 +50,46 @@ async function renderWithCapturedClipboard() {
   });
   return hook;
 }
+
+describe('useRegisterForm の初期値のアイテム（ワークスペースからの登録）', () => {
+  const prefill: RegisterItem[] = [
+    {
+      displayName: 'メモ',
+      path: '',
+      type: 'clipboard',
+      targetTab: '',
+      itemCategory: 'clipboard',
+      clipboardDataRef: 'clipboard-data/abc.json',
+      clipboardFormats: ['text'],
+      customIcon: 'memo.png',
+    },
+  ];
+
+  it('渡したアイテムを、保存先を今のタブにして初期値にし、カスタムアイコンのプレビューを読む', async () => {
+    const loadIcon = vi.fn(async () => {});
+    const { result } = renderHook(() =>
+      useRegisterForm(
+        true,
+        null,
+        droppedPaths,
+        prefill,
+        'datafiles/data.json',
+        loadIcon,
+        noop,
+        noop
+      )
+    );
+    await waitFor(() => expect(result.current.items).toHaveLength(1));
+    expect(result.current.items[0]).toMatchObject({
+      displayName: 'メモ',
+      itemCategory: 'clipboard',
+      clipboardDataRef: 'clipboard-data/abc.json',
+      targetTab: 'datafiles/data.json',
+      targetFile: 'datafiles/data.json',
+    });
+    expect(loadIcon).toHaveBeenCalledWith(0, 'memo.png');
+  });
+});
 
 describe('useRegisterForm のクリップボードの一時データ', () => {
   it.each(['item', 'dir', 'set', 'window'])(

@@ -102,8 +102,13 @@ function App(): React.ReactElement {
     useSearchHistory();
   // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
   const activeTabRef = useRef<string | undefined>(undefined);
-  const { isRegisterWindowOpen, openRegisterWindow, openEditWindow, openWithDroppedPaths } =
-    useRegisterWindow(useCallback(() => activeTabRef.current, []));
+  const {
+    isRegisterWindowOpen,
+    openRegisterWindow,
+    openEditWindow,
+    openWithDroppedPaths,
+    openWithWorkspaceItem,
+  } = useRegisterWindow(useCallback(() => activeTabRef.current, []));
   const {
     handleCopyPath,
     handleCopyParentPath,
@@ -126,10 +131,11 @@ function App(): React.ReactElement {
   activeTabRef.current = activeTab;
   const showKeyboardHints = useShowKeyboardHints();
 
-  const { isDraggingOver } = useDragAndDrop(
+  const { isDraggingOver, dragOverKind } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
     showErrorAlert,
-    isRegisterWindowOpen
+    isRegisterWindowOpen,
+    openWithWorkspaceItem
   );
 
   const loadIconFetchErrors = useCallback(async () => {
@@ -515,12 +521,20 @@ function App(): React.ReactElement {
       showSuccess(t(messageKeys[result.action]));
     });
 
+    // ワークスペースの右クリック「メインウィンドウに登録」（メインプロセスがこの画面を出してから送ってくる）
+    const cleanupRegisterWorkspaceItem = window.electronAPI.onRegisterWorkspaceItemToMain(
+      (item) => {
+        void openWithWorkspaceItem(item);
+      }
+    );
+
     return () => {
       cleanupWindowShown();
       cleanupWindowShownItemSearch();
       cleanupWindowHidden();
       cleanupDataChanged();
       cleanupChildResult();
+      cleanupRegisterWorkspaceItem();
     };
   }, []);
 
@@ -766,7 +780,11 @@ function App(): React.ReactElement {
 
       {isDraggingOver && (
         <div className="drag-overlay">
-          <div className="drag-message">{t('launcher.dropToAdd')}</div>
+          <div className="drag-message">
+            {dragOverKind === 'workspaceItem'
+              ? t('launcher.dropWorkspaceItemToAdd')
+              : t('launcher.dropToAdd')}
+          </div>
         </div>
       )}
 

@@ -40,6 +40,7 @@ export function useRegisterForm(
   isOpen: boolean,
   editingItem: EditingAppItem | EditableJsonItem | null | undefined,
   droppedPaths: string[],
+  prefillItems: RegisterItem[] | undefined,
   currentTab: string | undefined,
   loadCustomIconPreview: (index: number, customIconFileName: string) => Promise<void>,
   onClose: () => void,
@@ -56,8 +57,12 @@ export function useRegisterForm(
   const [iconFetchLoading, setIconFetchLoading] = useState<boolean[]>([]);
   const { showWarning, showError } = useToast();
 
-  const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
-    useModalInitializer();
+  const {
+    initializeFromEditingItem,
+    initializeFromDroppedPaths,
+    initializeFromPrefillItems,
+    createEmptyTemplateItem,
+  } = useModalInitializer();
 
   const clearErrorField = (index: number, field: string) => {
     setErrors((prev) => {
@@ -131,6 +136,15 @@ export function useRegisterForm(
           settings.dataFileTabs,
           loadCustomIconPreview
         );
+      } else if (prefillItems && prefillItems.length > 0) {
+        debugInfo('RegisterModal opened with prefill items:', prefillItems);
+        setLoading(true);
+        newItems = await initializeFromPrefillItems(
+          prefillItems,
+          currentTab,
+          settings.dataFileTabs,
+          loadCustomIconPreview
+        );
       } else if (droppedPaths && droppedPaths.length > 0) {
         debugInfo('RegisterModal opened with paths:', droppedPaths);
         setLoading(true);
@@ -154,7 +168,7 @@ export function useRegisterForm(
       setLoading(false);
     };
     loadAvailableTabsAndInitialize();
-  }, [isOpen, droppedPaths, editingItem, currentTab]);
+  }, [isOpen, droppedPaths, prefillItems, editingItem, currentTab]);
 
   const handleItemChange = async (
     index: number,

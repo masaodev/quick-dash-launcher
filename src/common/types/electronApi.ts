@@ -416,6 +416,8 @@ export interface ElectronAPI {
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuEditItem: (callback: (itemId: string) => void) => () => void;
+  /** ワークスペースの「メインウィンドウに登録」（メインウィンドウで受ける） */
+  onRegisterWorkspaceItemToMain: (callback: (item: WorkspaceItem) => void) => () => void;
   onWorkspaceMenuShowMemo: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => () => void;
@@ -456,6 +458,8 @@ export interface ElectronAPI {
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;
     discardSession: (sessionId: string) => Promise<boolean>;
+    /** 実データのファイルを複製し、新しい参照を返す（読めなければ null） */
+    duplicateData: (dataFileRef: string) => Promise<string | null>;
   };
   // バックアップAPI
   backupAPI: {

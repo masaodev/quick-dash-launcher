@@ -18,4 +18,7 @@ export function setupClipboardHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION, (_e, id: string) =>
     service.discardSession(id)
   );
+  ipcMain.handle(IPC_CHANNELS.CLIPBOARD_DUPLICATE_DATA, (_e, ref: string) =>
+    service.duplicateClipboardData(ref)
+  );
 }

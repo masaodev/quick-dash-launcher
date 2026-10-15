@@ -5,6 +5,7 @@ import type {
   AppItem,
   WindowInfo,
   MainChildWindowResult,
+  WorkspaceItem,
   ToastEventData,
   AdminTab,
 } from '@common/types';
@@ -412,6 +413,11 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, callback),
   onWorkspaceMenuEditItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, callback),
+  onRegisterWorkspaceItemToMain: (callback) =>
+    createEventListener<WorkspaceItem>(
+      IPC_CHANNELS.EVENT_REGISTER_WORKSPACE_ITEM_TO_MAIN,
+      callback
+    ),
   onWorkspaceMenuShowMemo: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_SHOW_MEMO, callback),
   onWorkspaceMenuCopyPath: (callback) =>
@@ -496,6 +502,8 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, sessionId),
     discardSession: (sessionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION, sessionId),
+    duplicateData: (dataFileRef) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DUPLICATE_DATA, dataFileRef),
   },
   // バックアップAPI
   backupAPI: {

@@ -491,6 +491,36 @@ export class ClipboardService {
     }
   }
 
+  /**
+   * 実データのファイルを新しい ID で複製し、その参照を返す（読めなければ null）
+   *
+   * メインウィンドウとワークスペースの間でクリップボードアイテムを写すときに使う。
+   * 参照をそのまま写すと 1 つのファイルを共有し、片方で消すともう片方が復元できなくなる
+   */
+  duplicateClipboardData(dataFileRef: string): string | null {
+    try {
+      const id = this.extractIdFromRef(dataFileRef);
+      if (!id) {
+        logger.warn({ dataFileRef }, '無効なデータファイル参照です');
+        return null;
+      }
+
+      const filePath = PathManager.getClipboardDataFilePath(id);
+      if (!fs.existsSync(filePath)) {
+        logger.warn({ dataFileRef }, '複製元のクリップボードデータがありません');
+        return null;
+      }
+
+      const data: SerializableClipboard = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const newRef = this.saveClipboardDataToFile(data);
+      logger.info({ from: dataFileRef, to: newRef }, 'クリップボードデータを複製しました');
+      return newRef;
+    } catch (error) {
+      logger.error({ error, dataFileRef }, 'クリップボードデータの複製に失敗しました');
+      return null;
+    }
+  }
+
   async deleteClipboardData(dataFileRef: string): Promise<boolean> {
     try {
       const id = this.extractIdFromRef(dataFileRef);

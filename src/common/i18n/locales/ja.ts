@@ -54,6 +54,7 @@ export const ja = {
       cancel: 'やめる',
     },
     dropToAdd: 'ファイル / URLをドロップして登録',
+    dropWorkspaceItemToAdd: 'ドロップしてメインウィンドウに登録',
     dropPathUnavailable:
       'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。',
     hints: {
@@ -301,6 +302,7 @@ export const ja = {
     },
     workspaceItem: {
       rename: '🏷️ 表示名を変更',
+      registerToMain: '🚀 メインウィンドウに登録',
       moveToWorkspace: '📁 ワークスペースを移動',
       removeFromGroup: '📤 グループから削除',
       remove: '🗑️ ワークスペースから削除',

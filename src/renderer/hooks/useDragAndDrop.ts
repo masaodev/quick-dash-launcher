@@ -1,21 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { WorkspaceItem } from '@common/types';
+import { WORKSPACE_ITEM_DRAG_TYPE } from '@common/constants';
 
-import { debugLog } from '../utils/debug';
+import { debugLog, logError } from '../utils/debug';
 import { getPathsFromDropEvent, getUrlsFromDropEvent } from '../utils/fileDropUtils';
 
-/** ファイルのドラッグ&ドロップイベントを管理するフック */
+/** ドラッグ中のもの（ファイル・URL か、ワークスペースのアイテムか） */
+export type DragOverKind = 'files' | 'workspaceItem';
+
+/** dataTransfer.types は小文字になる */
+function isWorkspaceItemDrag(e: DragEvent): boolean {
+  return !!e.dataTransfer?.types.includes(WORKSPACE_ITEM_DRAG_TYPE.toLowerCase());
+}
+
+/** ファイル・URL とワークスペースのアイテムのドラッグ&ドロップイベントを管理するフック */
 export function useDragAndDrop(
   onFilesDropped: (paths: string[]) => void,
   onDropError: (message: string) => void,
-  isModalOpen: boolean = false
-): { isDraggingOver: boolean } {
+  isModalOpen: boolean = false,
+  onWorkspaceItemDropped?: (item: WorkspaceItem) => void
+): { isDraggingOver: boolean; dragOverKind: DragOverKind | null } {
   const { t } = useTranslation();
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [dragOverKind, setDragOverKind] = useState<DragOverKind | null>(null);
 
   useEffect(() => {
     if (isModalOpen) {
-      setIsDraggingOver(false);
+      setDragOverKind(null);
       return;
     }
 
@@ -24,19 +35,41 @@ export function useDragAndDrop(
       e.stopPropagation();
     }
 
+    // dragenter・dragleave は子要素をまたぐたびに対で起きる。数えて、ウィンドウの外へ出たとき（0 に戻ったとき）だけ消す
+    // （dragleave のたびに消すと、出たり消えたりしてちらつく）
+    let enterDepth = 0;
+
+    function handleDragEnter(e: DragEvent): void {
+      preventDefaultAndStop(e);
+      enterDepth += 1;
+    }
+
     function handleDragOver(e: DragEvent): void {
       preventDefaultAndStop(e);
-      setIsDraggingOver(true);
+      setDragOverKind(onWorkspaceItemDropped && isWorkspaceItemDrag(e) ? 'workspaceItem' : 'files');
     }
 
     function handleDragLeave(e: DragEvent): void {
       preventDefaultAndStop(e);
-      setIsDraggingOver(false);
+      enterDepth = Math.max(0, enterDepth - 1);
+      if (enterDepth === 0) setDragOverKind(null);
     }
 
     function handleDrop(e: DragEvent): void {
       preventDefaultAndStop(e);
-      setIsDraggingOver(false);
+      enterDepth = 0;
+      setDragOverKind(null);
+
+      // ワークスペースのアイテム（ファイル・URL より先に見る。テキストとしても読めるため）
+      const workspaceItemData = e.dataTransfer?.getData(WORKSPACE_ITEM_DRAG_TYPE);
+      if (workspaceItemData && onWorkspaceItemDropped) {
+        try {
+          onWorkspaceItemDropped(JSON.parse(workspaceItemData) as WorkspaceItem);
+        } catch (error) {
+          logError('ワークスペースのアイテムを読み取れませんでした:', error);
+        }
+        return;
+      }
 
       // ファイルパスの抽出を試行
       const paths = getPathsFromDropEvent(e);
@@ -60,16 +93,18 @@ export function useDragAndDrop(
       }
     }
 
+    document.addEventListener('dragenter', handleDragEnter);
     document.addEventListener('dragover', handleDragOver);
     document.addEventListener('dragleave', handleDragLeave);
     document.addEventListener('drop', handleDrop);
 
     return () => {
+      document.removeEventListener('dragenter', handleDragEnter);
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('dragleave', handleDragLeave);
       document.removeEventListener('drop', handleDrop);
     };
-  }, [onFilesDropped, onDropError, isModalOpen, t]);
+  }, [onFilesDropped, onDropError, onWorkspaceItemDropped, isModalOpen, t]);
 
-  return { isDraggingOver };
+  return { isDraggingOver: dragOverKind !== null, dragOverKind };
 }

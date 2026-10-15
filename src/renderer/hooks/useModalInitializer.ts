@@ -117,6 +117,32 @@ export function useModalInitializer() {
     }
   };
 
+  /** 渡されたアイテムを初期値にする（保存先は今のタブ。カスタムアイコンはプレビューを読み込む） */
+  const initializeFromPrefillItems = async (
+    prefillItems: RegisterItem[],
+    currentTab: string | undefined,
+    tabs: DataFileTab[],
+    onLoadCustomIcon: (index: number, customIconFileName: string) => Promise<void>
+  ): Promise<RegisterItem[]> => {
+    const defaultTab = getDefaultTab(currentTab, tabs);
+    const newItems = prefillItems.map((item) => ({
+      ...item,
+      targetTab: defaultTab,
+      targetFile: defaultTab,
+    }));
+    await Promise.all(
+      newItems.map(async (item, index) => {
+        if (!item.customIcon) return;
+        try {
+          await onLoadCustomIcon(index, item.customIcon);
+        } catch (error) {
+          logError('Failed to load custom icon preview:', error);
+        }
+      })
+    );
+    return newItems;
+  };
+
   const createEmptyTemplateItem = (
     currentTab: string | undefined,
     tabs: DataFileTab[]
@@ -137,6 +163,7 @@ export function useModalInitializer() {
   return {
     initializeFromEditingItem,
     initializeFromDroppedPaths,
+    initializeFromPrefillItems,
     createEmptyTemplateItem,
   };
 }

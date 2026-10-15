@@ -1,8 +1,24 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('electron', () => ({ clipboard: {}, nativeImage: {} }));
 vi.mock('clipboard-files', () => ({ default: { readFiles: () => [] } }));
 vi.mock('@common/logger', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+
+const { clipboardDir } = vi.hoisted(() => {
+  const os = require('os') as typeof import('os');
+  const path = require('path') as typeof import('path');
+  const fs = require('fs') as typeof import('fs');
+  return { clipboardDir: fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-clipboard-test-')) };
+});
+vi.mock('../config/pathManager.js', () => ({
+  default: {
+    getClipboardDataFilePath: (id: string) =>
+      (require('path') as typeof import('path')).join(clipboardDir, `${id}.json`),
+  },
+}));
 
 import { ClipboardService } from './clipboardService';
 
@@ -88,5 +104,26 @@ describe('ClipboardService のデータファイル参照', () => {
     expect(extractId('clipboard-data/sub/x.json')).toBeNull();
     expect(extractId('other/clipboard-data/x.json')).toBeNull();
     expect(extractId('clipboard-data/x.txt')).toBeNull();
+  });
+});
+
+describe('ClipboardService の実データの複製', () => {
+  const data = { formats: ['text'], text: 'こんにちは', dataSize: 15, savedAt: 1 };
+
+  it('新しい ID のファイルに同じ内容を書き、その参照を返す', () => {
+    fs.writeFileSync(path.join(clipboardDir, 'source1.json'), JSON.stringify(data));
+    const newRef = service.duplicateClipboardData('clipboard-data/source1.json');
+    expect(newRef).toMatch(/^clipboard-data\/[A-Za-z0-9_-]+\.json$/);
+    expect(newRef).not.toBe('clipboard-data/source1.json');
+    const newId = newRef!.replace(/^clipboard-data\//, '').replace(/\.json$/, '');
+    const copied = JSON.parse(fs.readFileSync(path.join(clipboardDir, `${newId}.json`), 'utf8'));
+    expect(copied).toEqual(data);
+    // 元のファイルは残る
+    expect(fs.existsSync(path.join(clipboardDir, 'source1.json'))).toBe(true);
+  });
+
+  it('元のファイルが無い・参照の形が違うときは null', () => {
+    expect(service.duplicateClipboardData('clipboard-data/missing.json')).toBeNull();
+    expect(service.duplicateClipboardData('clipboard-data/../settings.json')).toBeNull();
   });
 });

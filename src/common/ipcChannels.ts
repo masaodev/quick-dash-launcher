@@ -242,6 +242,8 @@ export const IPC_CHANNELS = {
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',
   EVENT_WORKSPACE_MENU_RENAME_ITEM: 'workspace-menu-rename-item',
   EVENT_WORKSPACE_MENU_EDIT_ITEM: 'workspace-menu-edit-item',
+  // 「メインウィンドウに登録」: メインプロセス → メインウィンドウ（ワークスペースのアイテムを初期値にして登録画面を開く）
+  EVENT_REGISTER_WORKSPACE_ITEM_TO_MAIN: 'register-workspace-item-to-main',
   EVENT_WORKSPACE_MENU_SHOW_MEMO: 'workspace-menu-show-memo',
   EVENT_WORKSPACE_MENU_COPY_PATH: 'workspace-menu-copy-path',
   EVENT_WORKSPACE_MENU_COPY_PARENT_PATH: 'workspace-menu-copy-parent-path',
@@ -300,6 +302,8 @@ export const IPC_CHANNELS = {
   CLIPBOARD_CAPTURE_TO_SESSION: 'clipboard:capture-to-session',
   CLIPBOARD_COMMIT_SESSION: 'clipboard:commit-session',
   CLIPBOARD_DISCARD_SESSION: 'clipboard:discard-session',
+  // 実データの複製（メインウィンドウとワークスペースの間で写すとき）
+  CLIPBOARD_DUPLICATE_DATA: 'clipboard:duplicate-data',
 } as const;
 
 /**
