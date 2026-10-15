@@ -762,6 +762,14 @@ export function getForegroundLockTimeout(): number | null {
 }
 
 /**
+ * 最小化・最大化の状態を調べる（hwnd を数値で受ける版）
+ * @returns 'normal' | 'minimized' | 'maximized'
+ */
+export function getWindowShowState(hwnd: number | bigint): 'normal' | 'minimized' | 'maximized' {
+  return getWindowState(toHwndNumber(hwnd));
+}
+
+/**
  * ウィンドウを復元（最小化を解除して通常の状態に戻す）
  * @param hwnd ウィンドウハンドル
  * @returns 成功したらtrue

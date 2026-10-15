@@ -39,7 +39,14 @@ async function openItem(item: LauncherItem): Promise<void> {
   );
 
   // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-  const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, itemLogger);
+  const activationResult = await tryActivateWindow(
+    item.windowConfig,
+    item.displayName,
+    itemLogger,
+    {
+      followDesktop: true,
+    }
+  );
 
   if (activationResult.activated) {
     return;
@@ -140,7 +147,9 @@ export function setupItemHandlers(): void {
     hideMainWindowOnExecute();
 
     const windowConfig = createWindowConfig(item);
-    const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger);
+    const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger, {
+      followDesktop: true,
+    });
 
     if (!result.windowFound) {
       itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');

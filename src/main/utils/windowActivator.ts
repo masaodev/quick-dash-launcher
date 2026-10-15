@@ -13,6 +13,7 @@ import { findWindowByTitle } from './windowMatcher.js';
 import {
   activateWindow,
   restoreWindow,
+  getWindowShowState,
   setWindowBounds,
   getWindowBounds,
   getForegroundLockTimeout,
@@ -22,7 +23,17 @@ import {
   moveWindowToVirtualDesktop,
   isWindowOnDesktopNumber,
   pinWindow,
+  switchToWindowDesktop,
 } from './virtualDesktop/index.js';
+
+/** ウィンドウ設定を当てるときの動き */
+export interface ApplyWindowOptions {
+  /**
+   * 前面に出すウィンドウが別の仮想デスクトップにあれば、そのデスクトップへ切り替える
+   * （アイテム・ウィンドウ操作アイテムで前に出すとき。セットの実行中は利用者のデスクトップを変えない）
+   */
+  followDesktop?: boolean;
+}
 
 /**
  * ウィンドウ位置・サイズ設定の定数
@@ -273,7 +284,8 @@ async function waitForDesktopMove(
 export async function tryActivateWindow(
   windowConfig: WindowConfig | undefined,
   itemName: string,
-  logger: Logger
+  logger: Logger,
+  options: ApplyWindowOptions = {}
 ): Promise<WindowActivationResult> {
   if (!windowConfig) {
     return { activated: false, windowFound: false };
@@ -292,7 +304,7 @@ export async function tryActivateWindow(
     'ウィンドウが見つかりました。アクティブ化と位置・サイズ調整を実行します'
   );
 
-  return applyWindowConfig(hwnd, windowConfig, itemName, logger);
+  return applyWindowConfig(hwnd, windowConfig, itemName, logger, options);
 }
 
 /**
@@ -306,15 +318,14 @@ export async function applyWindowConfig(
   hwnd: bigint | number,
   windowConfig: WindowConfig,
   itemName: string,
-  logger: Logger
+  logger: Logger,
+  options: ApplyWindowOptions = {}
 ): Promise<WindowActivationResult> {
   const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
   /** 位置を当てたときの結果（当てなければ undefined） */
   let positionApplied: boolean | undefined;
   const positionResult = () =>
     positionApplied === false ? { positionNotApplied: true as const } : {};
-
-  restoreWindow(hwnd);
 
   const needsPinning = windowConfig.pinToAllDesktops;
   if (needsPinning) {
@@ -334,6 +345,12 @@ export async function applyWindowConfig(
     windowConfig.y !== undefined ||
     windowConfig.width !== undefined ||
     windowConfig.height !== undefined;
+
+  // 最小化中は元に戻す。最大化中は、位置・サイズを当てるときだけ戻す（前に出すだけなら最大化のまま）
+  const showState = getWindowShowState(hwnd);
+  if (showState === 'minimized' || (showState === 'maximized' && needsBoundsChange)) {
+    restoreWindow(hwnd);
+  }
 
   // ウィンドウの位置・サイズを設定（指定されている場合）
   const baseBounds: PartialBounds = {
@@ -394,6 +411,12 @@ export async function applyWindowConfig(
   if (windowConfig.activateWindow === false) {
     logger.info(logCtx, 'activateWindow=falseのため、ウィンドウのアクティブ化をスキップしました');
     return { activated: true, windowFound: true, ...positionResult() };
+  }
+
+  // 別の仮想デスクトップにあるウィンドウは、前面に出しても見えないので、そのデスクトップへ切り替える
+  if (options.followDesktop && targetDesktopNumber === undefined && !needsPinning) {
+    if (switchToWindowDesktop(hwnd))
+      logger.info(logCtx, 'ウィンドウのある仮想デスクトップへ切り替えました');
   }
 
   const success = activateWindow(hwnd);

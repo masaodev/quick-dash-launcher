@@ -237,7 +237,8 @@ export function setupWorkspaceHandlers(): void {
             ...pickWindowPlacement(item),
           },
           item.displayName,
-          logger
+          logger,
+          { followDesktop: true }
         );
 
         if (activationResult.activated) {
@@ -312,7 +313,14 @@ export function setupWorkspaceHandlers(): void {
       }
 
       // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-      const activationResult = await tryActivateWindow(item.windowConfig, item.displayName, logger);
+      const activationResult = await tryActivateWindow(
+        item.windowConfig,
+        item.displayName,
+        logger,
+        {
+          followDesktop: true,
+        }
+      );
 
       if (activationResult.activated) {
         // ウィンドウアクティブ化成功
