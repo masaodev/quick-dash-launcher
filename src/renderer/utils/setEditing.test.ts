@@ -171,4 +171,8 @@ describe('setEntriesSummary', () => {
       '行: Gmail ほか1件'
     );
   });
+
+  it('名前が 1 つも分からなければ空（ツールチップに出さない）', () => {
+    expect(setEntriesSummary([{ itemId: 'nobody11' }], nameOf)).toBe('');
+  });
 });

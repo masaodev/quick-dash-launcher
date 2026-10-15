@@ -662,6 +662,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       openMissing: "Couldn't find the item (deleted or not loaded)",
       openKindNone: 'Nothing (move only)',
       openKindItem: 'Item',
+      openKindNoneDisabled: 'A row with no window to move needs something to open',
       openKindPath: 'Path',
       item: 'Item',
       itemNote: 'Changes to the item apply to this set too.',

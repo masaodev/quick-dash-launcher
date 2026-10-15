@@ -246,6 +246,24 @@ describe('executeSet', () => {
     expect(sent[sent.length - 1].entries[0].errorMessage).toBe('set.run.titleNotMatched');
   });
 
+  it('同じ窓に当たる行が 2 つで窓が 1 つなら、2 行目は「開いていない」で飛ばす（タイトル違いとは出さない）', async () => {
+    const { deps } = makeDeps([{ hwnd: 7n, title: 'メモ', processName: 'sticky.exe' }]);
+    const sent: LayoutExecutionProgress[] = [];
+    deps.progress = {
+      show: vi.fn(async () => {}),
+      send: vi.fn((_event, progress) => {
+        sent.push(structuredClone(progress));
+      }),
+      onCancel: vi.fn(() => () => {}),
+    };
+    const row = { window: { processName: 'sticky.exe', title: 'メモ' }, placement: { x: 0, y: 0 } };
+    const set: SetItem = { type: 'set', displayName: 'x', entries: [row, row] };
+    await executeSet(set, resolve, deps, logger);
+    const last = sent[sent.length - 1].entries;
+    expect(last.map((e) => e.status)).toEqual(['success', 'skipped']);
+    expect(last[1].errorMessage).toBe('set.run.notOpen');
+  });
+
   it('位置を当てられなかったウィンドウは「動かせませんでした」で失敗にする', async () => {
     const { deps } = makeDeps([{ hwnd: 3n, title: 'admin', processName: 'mmc.exe' }]);
     deps.applyConfig = vi.fn(async () => ({

@@ -346,6 +346,8 @@ export function setEntriesSummary(
   nameOf: (itemId: string) => string | undefined
 ): string {
   const names = setEntryNamesBy(entries, nameOf).slice(0, 3);
+  // 名前が 1 つも分からなければ出さない（「行:  ほか N 件」にしない）
+  if (names.length === 0) return '';
   const rest = entries.length - names.length;
   const joined = names.join(i18next.t('common.listSeparator'));
   return rest > 0

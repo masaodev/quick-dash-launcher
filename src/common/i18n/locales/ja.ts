@@ -665,6 +665,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       openMissing: 'アイテムが見つかりません（消されたか、読み込めていません）',
       openKindNone: 'なし（動かすだけ）',
       openKindItem: 'アイテム',
+      openKindNoneDisabled: '動かすウィンドウが無い行は、開くものが要ります',
       openKindPath: 'パス',
       item: 'アイテム',
       itemNote: 'アイテムを直すと、このセットにも効きます。',

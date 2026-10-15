@@ -155,8 +155,11 @@ async function setBoundsWithRetry(
 ): Promise<{ applied: boolean; positionApplied: boolean }> {
   const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
   const { MAX_RETRIES, RETRY_DELAY_MS } = WINDOW_BOUNDS_CONFIG;
-  /** 最後に確かめた位置（x・y）が当たっていたか（読み直せなかったら当たっていないとみなす） */
-  let positionApplied = false;
+  /**
+   * 最後に確かめた位置（x・y）が当たっていたか（読み直せなかったら当たっていないとみなす）。
+   * x・y を指定していない（大きさだけ）なら、位置は問わないので当たっている扱いから始める
+   */
+  let positionApplied = targetBounds.x === undefined && targetBounds.y === undefined;
   const delay = () => new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {

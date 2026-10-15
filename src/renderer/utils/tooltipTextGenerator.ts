@@ -117,7 +117,8 @@ function getSetItemTooltip(
 ): string {
   const lines: string[] = [t('launcher.tooltip.set', { count: setItem.entries.length })];
   // 旧グループのツールチップと同じく、中身の名前を出す（先頭 3 行）
-  if (setItem.entries.length > 0) lines.push(setEntriesSummary(setItem.entries, nameOf));
+  const summary = setEntriesSummary(setItem.entries, nameOf);
+  if (summary) lines.push(summary);
   const placed = setItem.entries.filter((entry) => entry.placement).length;
   if (placed > 0) lines.push(t('launcher.tooltip.setPlaced', { count: placed }));
   appendMetaInfo(lines, {

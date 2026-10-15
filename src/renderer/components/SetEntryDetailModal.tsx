@@ -115,9 +115,16 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   }, [initialTitle, entryWindow, windows]);
 
   const close = () => {
-    // 「パス」を選んで空のままなら、開くものは無し（動かすだけ）にする
     if (draft) {
-      onChange(draft.open && draft.open.path.trim() === '' ? { ...draft, open: undefined } : draft);
+      // 「パス」を選んで空のままなら、開くものは無し（動かすだけ）にする
+      let next: SetEntry =
+        draft.open && draft.open.path.trim() === '' ? { ...draft, open: undefined } : draft;
+      // 開くものも動かすウィンドウも位置も無い行は何もできない（名前だけ残った行と同じ形になる）ので、
+      // 開くものを外した・選ばなかったときは元の開くものに戻す
+      if (!next.itemId && !next.open && !next.window && !next.placement && entry) {
+        next = { ...next, itemId: entry.itemId, open: entry.open };
+      }
+      onChange(next);
     }
     onClose();
   };
@@ -147,7 +154,10 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
       update({ open: undefined });
     }
   };
-  const hasItem = !!draft.itemId || isUnresolvedEntry(draft);
+  // 名前だけ残った行（アイテムが見つからない）は、開いたときからその形のときだけ「アイテム」の行として出す
+  const hasItem = !!draft.itemId || (isUnresolvedEntry(entry) && isUnresolvedEntry(draft));
+  /** 動かすウィンドウが無い行は、開くものが無いと何もできないので「なし」を選べない */
+  const noneDisabled = !draft.window && openKind !== 'none';
 
   return createPortal(
     <>
@@ -173,11 +183,19 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                 aria-label={t('set.detail.open')}
               >
                 {(['none', 'item', 'path'] as const).map((kind) => (
-                  <label key={kind}>
+                  <label
+                    key={kind}
+                    title={
+                      kind === 'none' && noneDisabled
+                        ? t('set.detail.openKindNoneDisabled')
+                        : undefined
+                    }
+                  >
                     <input
                       type="radio"
                       name="set-detail-open-kind"
                       checked={openKind === kind}
+                      disabled={kind === 'none' && noneDisabled}
                       onChange={() => changeOpenKind(kind)}
                     />
                     {t(

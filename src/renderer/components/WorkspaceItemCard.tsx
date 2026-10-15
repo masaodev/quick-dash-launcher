@@ -115,8 +115,9 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   const getTooltipText = (): string => {
     const lines: string[] = [describeWorkspaceItem(item, t)];
-    if (item.type === 'set' && item.entries.length > 0) {
-      lines.push(setEntriesSummary(item.entries, nameOfItem ?? (() => undefined)));
+    if (item.type === 'set') {
+      const summary = setEntriesSummary(item.entries, nameOfItem ?? (() => undefined));
+      if (summary) lines.push(summary);
     }
 
     if (item.type === 'item') {

@@ -353,7 +353,9 @@ async function runSet(
       !!match?.processName &&
       !!match.title &&
       match.title !== ANY_WINDOW_TITLE &&
-      deps.findWindow({ title: ANY_WINDOW_TITLE, processName: match.processName }) !== null;
+      // ほかの行が取ったウィンドウは除く（同じ窓に当たる行が 2 つあるとき、取られただけなのにタイトル違いと出さない）
+      deps.findWindow({ title: ANY_WINDOW_TITLE, processName: match.processName }, claimed) !==
+        null;
     update(
       index,
       'skipped',
