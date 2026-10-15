@@ -161,8 +161,11 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const [newRows, setNewRows] = useState<Set<string>>(new Set());
   /** 記録する前に行の詳細で直した、新しい行（ウィンドウのキー → 行） */
   const [newRowEdits, setNewRowEdits] = useState<Map<string, SetEntry>>(new Map());
-  /** 行の詳細を開いている新しい行（ウィンドウのキー） */
-  const [editingKey, setEditingKey] = useState<string | null>(null);
+  /**
+   * 行の詳細を開いている新しい行（ウィンドウのキーと、開いたときの行）。行は開くときに 1 回だけ作って持つ
+   * （描き直しのたびに作ると、行の詳細が別の行とみなして下書きを作り直す）
+   */
+  const [editing, setEditing] = useState<{ key: string; entry: SetEntry } | null>(null);
   /** 手で結び付けるウィンドウを選んでいる行 */
   const [pickingFor, setPickingFor] = useState<number | null>(null);
   /** 「行に無いウィンドウ」「最小化中」の欄を開いているか（既定は畳む。行を足すときだけ開けばよい） */
@@ -176,6 +179,10 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
       setWindows(null);
       return;
     }
+    // 開くたびに前回の選び方を残さない（欄は畳んだ状態から。画面仕様 3.2）
+    setShowUnlinked(false);
+    setShowMinimized(false);
+    setEditing(null);
     let cancelled = false;
     window.electronAPI
       .getAllWindowsAllDesktops()
@@ -282,8 +289,6 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   /** 新しく足す行（行の詳細で直していればその内容） */
   const newRowEntry = (w: WindowInfo): SetEntry =>
     newRowEdits.get(windowKey(w)) ?? entryFromWindow(w);
-  const editingWindow =
-    editingKey !== null ? (windows ?? []).find((w) => windowKey(w) === editingKey) : undefined;
 
   const nameOf = (i: number) => views[i]?.name || `#${i + 1}`;
   const placeOf = (w: WindowInfo) =>
@@ -465,7 +470,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                       title={t('set.editor.detail')}
                       aria-label={t('set.editor.detail')}
                       disabled={!newRows.has(windowKey(w))}
-                      onClick={() => setEditingKey(windowKey(w))}
+                      onClick={() => setEditing({ key: windowKey(w), entry: newRowEntry(w) })}
                     >
                       ✏️
                     </button>
@@ -505,14 +510,14 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
       </div>
 
       <SetEntryDetailModal
-        entry={editingWindow ? newRowEntry(editingWindow) : null}
+        entry={editing?.entry ?? null}
         catalog={catalog}
         catalogList={catalogList}
         screens={screens}
-        onClose={() => setEditingKey(null)}
+        onClose={() => setEditing(null)}
         onChange={(entry) => {
-          if (editingKey === null) return;
-          setNewRowEdits((prev) => new Map(prev).set(editingKey, entry));
+          if (editing === null) return;
+          setNewRowEdits((prev) => new Map(prev).set(editing.key, entry));
         }}
       />
       <WindowSelectorModal
