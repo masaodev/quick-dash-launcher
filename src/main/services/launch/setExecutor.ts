@@ -73,6 +73,8 @@ export interface SetEntryResult {
   /** 行の名前（失敗を知らせるときに使う） */
   name: string;
   success: boolean;
+  /** 動かすだけの行で、ウィンドウが開いていなかったので何もしなかった（success は true） */
+  skipped?: boolean;
   error?: string;
 }
 
@@ -330,6 +332,11 @@ async function runSet(
     });
     update(index, error ? 'failed' : 'success', error);
   };
+  /** 動かすだけの行で、ウィンドウが開いていなかった（失敗とは数えず、理由だけ添える） */
+  const skip = (index: number) => {
+    results.push({ index, name: resolved[index].name, success: true, skipped: true });
+    update(index, 'skipped', mainI18n.t('set.run.notOpen'));
+  };
 
   /**
    * 1 行を実行する。opened は「開く」まで済んだら解決し（順番に開くときの次の行の合図）、
@@ -377,10 +384,7 @@ async function runSet(
             r.name,
             logger
           );
-          return finish(
-            index,
-            result.windowFound ? undefined : mainI18n.t('layout.windowNotFound')
-          );
+          return result.windowFound ? finish(index) : skip(index);
         }
         const itemConfig = entry.window
           ? { title: entry.window.title || ANY_WINDOW_TITLE, processName: entry.window.processName }
@@ -404,7 +408,10 @@ async function runSet(
 
       let hwnd = entry.ifOpen === 'openNew' ? null : findUnclaimed(config);
       if (hwnd === null) {
-        if (!r.launch) return finish(index, mainI18n.t('layout.windowNotFound'));
+        // 動かすだけの行（ウィンドウ操作アイテムを指す行を除く）は、開いていなければ飛ばす
+        if (!r.launch) {
+          return r.windowItem ? finish(index, mainI18n.t('layout.windowNotFound')) : skip(index);
+        }
         // もう 1 つ開くときは、開く前からあるウィンドウを除いて新しいものを待つ
         const before = new Set<bigint>();
         if (entry.ifOpen === 'openNew') {

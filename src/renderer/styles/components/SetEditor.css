@@ -482,3 +482,119 @@
   box-sizing: border-box;
   font-size: var(--font-size-base);
 }
+
+/* 行の詳細の「開くもの」の選び方（なし／アイテム／パス） */
+.set-detail-radios {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.set-detail-radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.set-detail-picked {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.set-detail-picked .set-row-name {
+  flex: 1;
+  min-width: 0;
+}
+
+/* タイトル欄まわり: 欄 → 一部だけで探す候補 → 今合うウィンドウ */
+.set-title-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.set-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.set-title-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 欄に対する操作なので欄の右に置き、候補より目立たせない文字だけのボタン */
+.set-title-revert {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--border-radius);
+  background: none;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.set-title-revert:hover {
+  background-color: var(--bg-hover);
+}
+
+.set-title-parts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* 候補は印（.set-chip）と同じ大きさの丸い形 */
+.set-title-part {
+  padding: 0 var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: 999px;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.set-title-part:hover {
+  border-color: var(--color-primary);
+  background-color: var(--bg-hover);
+}
+
+.set-title-match {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.set-title-match.one {
+  color: var(--text-success);
+}
+
+.set-title-match.many {
+  color: var(--text-error);
+}
+
+/* ラジオは入力欄の高さ・余白を当てない */
+.set-detail-radios input {
+  height: auto;
+  margin: 0;
+  padding: 0;
+}
+
+/* 下に候補などが続く欄の見出しは、欄の高さにそろえる */
+.set-detail-label-top {
+  align-self: start;
+  line-height: var(--input-height-sm);
+}

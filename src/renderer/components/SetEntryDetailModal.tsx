@@ -2,29 +2,48 @@
  * 画面: セットの行の詳細
  * 画面仕様: docs/screens/set-editor-modals.md#4-行の詳細
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import type { SetEntry } from '@common/types';
+import type { SetEntry, WindowInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
-import { decideWindowMatch, placementFromWindow } from '@common/utils/setWindowMatching';
+import {
+  decideWindowMatch,
+  isUnresolvedEntry,
+  matchesWindow,
+  placementFromWindow,
+} from '@common/utils/setWindowMatching';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
+  catalogItemToEntry,
   describeSetEntry,
   entryOpensAsTab,
   placementText,
+  SET_KIND_ICONS,
+  titleParts,
   windowPickNotes,
   type SetCatalogItem,
 } from '../utils/setEditing';
 import '../styles/components/SetEditor.css';
 
+import SetItemPickerModal from './SetItemPickerModal';
 import WindowSelectorModal from './WindowSelectorModal';
 import { Button } from './ui';
+
+/** 行が開くものの持ち方（画面の選択肢） */
+type OpenKind = 'none' | 'item' | 'path';
+
+function openKindOf(entry: SetEntry): OpenKind {
+  if (entry.itemId || isUnresolvedEntry(entry)) return 'item';
+  return entry.open ? 'path' : 'none';
+}
 
 interface SetEntryDetailModalProps {
   entry: SetEntry | null;
   catalog: ReadonlyMap<string, SetCatalogItem>;
+  /** 行が開くアイテムを選ぶときの一覧（追加の画面と同じ並び） */
+  catalogList: SetCatalogItem[];
   screens: readonly ScreenArea[];
   onClose: () => void;
   onChange: (entry: SetEntry) => void;
@@ -41,6 +60,7 @@ function orUndefined(value: string): string | undefined {
 const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   entry,
   catalog,
+  catalogList,
   screens,
   onClose,
   onChange,
@@ -49,15 +69,54 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<SetEntry | null>(entry);
   const [picking, setPicking] = useState(false);
+  const [pickingItem, setPickingItem] = useState(false);
+  /** 「アイテム」を選んだが、まだアイテムを選んでいない間も選択肢を保つ */
+  const [openKind, setOpenKind] = useState<OpenKind>(entry ? openKindOf(entry) : 'none');
   /** 最後に選んだウィンドウについて知らせること */
   const [pickNotes, setPickNotes] = useState<Array<'minimized' | 'elevated'>>([]);
+  /** 今開いているウィンドウ（タイトル欄の「今合うウィンドウ」を数える） */
+  const [windows, setWindows] = useState<WindowInfo[]>([]);
 
   useEffect(() => {
     setDraft(entry);
+    setOpenKind(entry ? openKindOf(entry) : 'none');
     setPickNotes([]);
+    if (!entry) return;
+    let alive = true;
+    window.electronAPI
+      .getAllWindowsAllDesktops()
+      .then((all) => {
+        if (alive) setWindows(all);
+      })
+      .catch(() => {
+        if (alive) setWindows([]);
+      });
+    return () => {
+      alive = false;
+    };
   }, [entry]);
+
+  /** 開いたときのタイトル（元に戻す先・候補の元） */
+  const initialTitle = entry?.window?.title;
+  const draftWindow = draft?.window;
+  const matched = useMemo(
+    () => (draftWindow ? windows.filter((w) => matchesWindow(draftWindow, w)) : []),
+    [draftWindow, windows]
+  );
+  // 候補は開いたときのタイトルから作る。* を含む（もう一部だけにしてある）なら、今合う 1 つのウィンドウのタイトルから
+  const entryWindow = entry?.window;
+  const parts = useMemo(() => {
+    if (!initialTitle) return [];
+    if (!/[*?]/.test(initialTitle) || !entryWindow) return titleParts(initialTitle);
+    const now = windows.filter((w) => matchesWindow(entryWindow, w));
+    return now.length === 1 ? titleParts(now[0].title) : titleParts(initialTitle);
+  }, [initialTitle, entryWindow, windows]);
+
   const close = () => {
-    if (draft) onChange(draft);
+    // 「パス」を選んで空のままなら、開くものは無し（動かすだけ）にする
+    if (draft) {
+      onChange(draft.open && draft.open.path.trim() === '' ? { ...draft, open: undefined } : draft);
+    }
     onClose();
   };
   // draft が入って画面を描いてからフォーカスを移す（先に呼ぶと ref が空でフォーカスが下の画面に残る）
@@ -74,6 +133,19 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   };
   const updatePlacement = (patch: Partial<NonNullable<SetEntry['placement']>>) =>
     update({ placement: { ...(draft.placement ?? {}), ...patch } });
+  const changeOpenKind = (kind: OpenKind) => {
+    setOpenKind(kind);
+    if (kind === 'path') {
+      // パスに切り替えた最初は空にする（exe などを勝手に入れない）
+      update({ itemId: undefined, open: draft.open ?? { path: '' } });
+    } else if (kind === 'none') {
+      update({ itemId: undefined, open: undefined });
+    } else {
+      // アイテムは選ぶまで開くもの無し（動かすだけ）のまま
+      update({ open: undefined });
+    }
+  };
+  const hasItem = !!draft.itemId || isUnresolvedEntry(draft);
 
   return createPortal(
     <>
@@ -93,16 +165,67 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
           <div className="set-detail-groups">
             <div className="set-detail-group">
               <div className="set-detail-group-title">{t('set.detail.open')}</div>
-              <p className="set-detail-text">
-                {view.missing
-                  ? t('set.detail.openMissing')
-                  : view.holding === 'ref'
-                    ? t('set.detail.openRef', { name: view.name })
-                    : view.holding === 'own'
-                      ? t('set.detail.openOwn')
-                      : t('set.detail.openNone')}
-              </p>
-              {draft.open && (
+              <div
+                className="set-detail-radios"
+                role="radiogroup"
+                aria-label={t('set.detail.open')}
+              >
+                {(['none', 'item', 'path'] as const).map((kind) => (
+                  <label key={kind}>
+                    <input
+                      type="radio"
+                      name="set-detail-open-kind"
+                      checked={openKind === kind}
+                      onChange={() => changeOpenKind(kind)}
+                    />
+                    {t(
+                      kind === 'none'
+                        ? 'set.detail.openKindNone'
+                        : kind === 'item'
+                          ? 'set.detail.openKindItem'
+                          : 'set.detail.openKindPath'
+                    )}
+                  </label>
+                ))}
+              </div>
+              {openKind === 'item' && (
+                <>
+                  <span className="set-detail-label">{t('set.detail.item')}</span>
+                  {hasItem ? (
+                    <span className="set-detail-picked">
+                      <span className="set-row-icon">
+                        {view.icon ? (
+                          <img src={view.icon} alt="" />
+                        ) : (
+                          (SET_KIND_ICONS[view.kind] ?? '📄')
+                        )}
+                      </span>
+                      <span className="set-row-name" title={view.path}>
+                        <span className="set-row-title-text">{view.name}</span>
+                        {view.path && <span className="set-row-details">{view.path}</span>}
+                      </span>
+                      <Button variant="secondary" size="sm" onClick={() => setPickingItem(true)}>
+                        {t('set.detail.otherItem')}
+                      </Button>
+                    </span>
+                  ) : (
+                    <span>
+                      <Button variant="secondary" size="sm" onClick={() => setPickingItem(true)}>
+                        {t('set.detail.pickItem')}
+                      </Button>
+                    </span>
+                  )}
+                  {hasItem && (
+                    <>
+                      <span />
+                      <small className="set-detail-hint">
+                        {view.missing ? t('set.detail.openMissing') : t('set.detail.itemNote')}
+                      </small>
+                    </>
+                  )}
+                </>
+              )}
+              {openKind === 'path' && draft.open && (
                 <>
                   <label className="set-detail-label" htmlFor="set-detail-path">
                     {t('set.detail.path')}
@@ -110,6 +233,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                   <input
                     id="set-detail-path"
                     type="text"
+                    placeholder={t('register.pathPlaceholder')}
                     value={draft.open.path}
                     onChange={(e) => update({ open: { ...draft.open!, path: e.target.value } })}
                   />
@@ -119,11 +243,14 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                   <input
                     id="set-detail-args"
                     type="text"
+                    placeholder={t('register.argsPlaceholder')}
                     value={draft.open.args ?? ''}
                     onChange={(e) =>
                       update({ open: { ...draft.open!, args: orUndefined(e.target.value) } })
                     }
                   />
+                  <span />
+                  <small className="set-detail-hint">{t('set.detail.pathNote')}</small>
                 </>
               )}
             </div>
@@ -140,16 +267,58 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                 value={draft.window?.processName ?? ''}
                 onChange={(e) => updateWindow({ processName: orUndefined(e.target.value) })}
               />
-              <label className="set-detail-label" htmlFor="set-detail-title">
+              <label className="set-detail-label set-detail-label-top" htmlFor="set-detail-title">
                 {t('set.detail.windowTitle')}
               </label>
-              <input
-                id="set-detail-title"
-                type="text"
-                placeholder={t('set.detail.windowTitlePlaceholder')}
-                value={draft.window?.title ?? ''}
-                onChange={(e) => updateWindow({ title: orUndefined(e.target.value) })}
-              />
+              {/* 欄 → 一部だけで探す候補 → 今合うウィンドウ の順。元に戻すは欄に対する操作なので欄の右 */}
+              <div className="set-title-field">
+                <div className="set-title-row">
+                  <input
+                    id="set-detail-title"
+                    type="text"
+                    placeholder={t('set.detail.windowTitlePlaceholder')}
+                    value={draft.window?.title ?? ''}
+                    onChange={(e) => updateWindow({ title: orUndefined(e.target.value) })}
+                  />
+                  {initialTitle && draft.window?.title !== initialTitle && (
+                    <button
+                      type="button"
+                      className="set-title-revert"
+                      onClick={() => updateWindow({ title: initialTitle })}
+                    >
+                      {t('set.detail.revertTitle')}
+                    </button>
+                  )}
+                </div>
+                {parts.length > 0 && (
+                  <div className="set-title-parts">
+                    <span>{t('set.detail.titleParts')}</span>
+                    {parts.map((part) => (
+                      <button
+                        key={part}
+                        type="button"
+                        className="set-title-part"
+                        onClick={() => updateWindow({ title: `*${part}*` })}
+                      >
+                        {part}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {draft.window && (
+                  <span
+                    className={`set-title-match${
+                      matched.length === 1 ? ' one' : matched.length > 1 ? ' many' : ''
+                    }`}
+                  >
+                    {matched.length === 0
+                      ? t('set.detail.matchNone')
+                      : matched.length === 1
+                        ? t('set.detail.matchOne', { title: matched[0].title })
+                        : t('set.detail.matchMany', { count: matched.length })}
+                  </span>
+                )}
+              </div>
               <span />
               <small className="set-detail-hint">{t('set.detail.findHint')}</small>
             </div>
@@ -273,6 +442,19 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
           </div>
         </div>
       </div>
+      <SetItemPickerModal
+        isOpen={pickingItem}
+        single
+        catalog={catalogList}
+        addedKeys={new Set()}
+        onClose={() => setPickingItem(false)}
+        onAdd={([item]) => {
+          if (!item) return;
+          // 指す先だけを差し替え、動かすウィンドウ・位置・行の名前は残す
+          const target = catalogItemToEntry(item);
+          update({ itemId: target.itemId, open: target.open });
+        }}
+      />
       <WindowSelectorModal
         isOpen={picking}
         onClose={() => setPicking(false)}

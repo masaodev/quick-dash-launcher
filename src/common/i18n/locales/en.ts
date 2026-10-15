@@ -566,6 +566,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     windowNotFound: "Couldn't find the window",
   },
   set: {
+    run: {
+      notOpen: "Not open, so it wasn't moved",
+    },
     errors: {
       itemNotFound: "Couldn't find the item this row points to",
       unsupportedType: "This kind of item can't be opened from a set",
@@ -586,6 +589,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       empty: 'There are no items to add',
       noResults: 'No results',
       added: 'Added',
+      chooseTitle: 'Item to open in this row',
+      choose: 'Choose',
     },
     editor: {
       rows: 'Rows',
@@ -606,6 +611,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       hint: 'Rows open from the top. To place windows, arrange them first and press "Record current positions".',
       hintParallel:
         'All rows open at once. To place windows, arrange them first and press "Record current positions".',
+      moveOnlyHint:
+        'Move-only rows move the window only while it is open (add something to open in Row details ✏️).',
     },
     record: {
       title: 'Record current positions',
@@ -633,7 +640,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       outcomeOpenOnly: 'opens only',
       outcomeFrontOnly: 'brings it to the front if it is open',
       keepPrevious: 'Keeps its previous position',
-      placeOnlyNote: "This window can't be reopened, so the row will only move it",
+      newRowNote:
+        'Rows added here are "Move only": they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️.',
       noPlacement: 'No position recorded',
       tabNote: 'If it opens as a tab in an existing window, that whole window moves',
       minimizedNote: 'Minimized, so its position is not recorded. Restore it first, then record',
@@ -647,6 +655,14 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       openOwn: 'A path written in this set',
       openNone: "Nothing (doesn't open; only moves the window)",
       openMissing: "Couldn't find the item (deleted or not loaded)",
+      openKindNone: 'Nothing (move only)',
+      openKindItem: 'Item',
+      openKindPath: 'Path',
+      item: 'Item',
+      itemNote: 'Changes to the item apply to this set too.',
+      pickItem: 'Choose an item',
+      otherItem: 'Use another item',
+      pathNote: 'A path written in this set (no item is created).',
       path: 'Path',
       args: 'Arguments',
       find: 'Window to move',
@@ -654,6 +670,11 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       processNamePlaceholder: 'Example: notepad.exe',
       windowTitle: 'Window title',
       windowTitlePlaceholder: 'Leave empty to accept any title',
+      titleParts: 'Search by part:',
+      revertTitle: '↺ Revert',
+      matchNone: 'Matching windows now: 0',
+      matchOne: 'Matching windows now: 1 ({{title}})',
+      matchMany: 'Matching windows now: {{count}} (other windows match too)',
       findHint:
         'When the set opens, the window matching these two is moved to the recorded position. The exe name can be partial; the title must match as a whole (* matches any text, e.g. *Obsidian).',
       placement: 'Position',

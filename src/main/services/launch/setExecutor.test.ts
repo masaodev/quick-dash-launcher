@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { Logger } from 'pino';
-import type { AppItem, SetItem, WindowConfig } from '@common/types';
+import type { AppItem, LayoutExecutionProgress, SetItem, WindowConfig } from '@common/types';
 
 vi.mock('electron', () => ({ ipcMain: { once: vi.fn(), removeListener: vi.fn() } }));
 vi.mock('@common/logger', () => ({
@@ -199,7 +199,7 @@ describe('executeSet', () => {
     ]);
   });
 
-  it('参照先が無い行と、並べるだけでウィンドウが無い行は失敗になる', async () => {
+  it('参照先が無い行は失敗、動かすだけでウィンドウが開いていない行は失敗にせず飛ばす', async () => {
     const { deps } = makeDeps();
     const set: SetItem = {
       type: 'set',
@@ -207,13 +207,37 @@ describe('executeSet', () => {
       entries: [
         { itemId: 'missing1', label: '消したアイテム' },
         { window: { processName: 'sticky.exe' }, placement: { x: 0, y: 0 } },
+        { window: { processName: 'sticky.exe' } },
       ],
     };
     const result = await executeSet(set, resolve, deps, logger);
-    expect(result.entries.map((e) => e.error)).toEqual([
-      'set.errors.itemNotFound',
-      'layout.windowNotFound',
+    expect(result.entries).toEqual([
+      { index: 0, name: '消したアイテム', success: false, error: 'set.errors.itemNotFound' },
+      { index: 1, name: 'sticky.exe', success: true, skipped: true },
+      { index: 2, name: 'sticky.exe', success: true, skipped: true },
     ]);
+    expect(result.errorCount).toBe(1);
+  });
+
+  it('飛ばした行は、進み具合の表示に skipped と理由で出す', async () => {
+    const { deps } = makeDeps();
+    const sent: LayoutExecutionProgress[] = [];
+    deps.progress = {
+      show: vi.fn(async () => {}),
+      send: vi.fn((_event, progress) => {
+        sent.push(structuredClone(progress));
+      }),
+      onCancel: vi.fn(() => () => {}),
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [{ window: { processName: 'sticky.exe' }, placement: { x: 0, y: 0 } }],
+    };
+    await executeSet(set, resolve, deps, logger);
+    const last = sent[sent.length - 1].entries[0];
+    expect(last.status).toBe('skipped');
+    expect(last.errorMessage).toBe('set.run.notOpen');
   });
 
   it('順番に開くときは、行の間で待つ', async () => {

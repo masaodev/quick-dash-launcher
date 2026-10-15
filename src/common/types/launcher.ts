@@ -214,7 +214,8 @@ export interface LayoutWindowEntry {
 export type LayoutWindowEntryWithoutIcon = Omit<LayoutWindowEntry, 'icon'>;
 
 // レイアウト実行の進捗型
-export type LayoutEntryStatus = 'waiting' | 'launching' | 'success' | 'failed';
+/** skipped: 動かすだけの行で、ウィンドウが開いていなかったので何もしなかった（失敗とは数えない） */
+export type LayoutEntryStatus = 'waiting' | 'launching' | 'success' | 'failed' | 'skipped';
 
 export interface LayoutEntryProgress {
   index: number;

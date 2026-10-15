@@ -21,12 +21,15 @@ interface SetItemPickerModalProps {
   addedKeys: ReadonlySet<string>;
   onClose: () => void;
   onAdd: (items: SetCatalogItem[]) => void;
+  /** 1 つだけ選ぶ（行の詳細で、行が開くアイテムを選ぶとき） */
+  single?: boolean;
 }
 
 /**
  * セットに追加するアイテムを選ぶ画面
  *
- * どのタブのアイテムも選べる。同じタブのアイテムを先に並べ、上のタブの切り替えで 1 つのタブに絞れる
+ * どのタブのアイテムも選べる。同じタブのアイテムを先に並べ、上のタブの切り替えで 1 つのタブに絞れる。
+ * single のときは行の詳細から開き、行が開くアイテムを 1 つだけ選ぶ
  */
 const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
   isOpen,
@@ -34,6 +37,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
   addedKeys,
   onClose,
   onAdd,
+  single = false,
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -71,6 +75,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
 
   const toggle = (key: string) => {
     setSelected((prev) => {
+      if (single) return prev.has(key) ? new Set() : new Set([key]);
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -88,7 +93,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
           className={`set-picker-row${added ? ' added' : ''}${checked ? ' checked' : ''}`}
         >
           <input
-            type="checkbox"
+            type={single ? 'radio' : 'checkbox'}
             checked={checked}
             disabled={added}
             onChange={() => toggle(item.key)}
@@ -121,11 +126,13 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
         ref={modalRef}
         tabIndex={-1}
         role="dialog"
-        aria-label={t('set.picker.title')}
+        aria-label={t(single ? 'set.picker.chooseTitle' : 'set.picker.title')}
       >
         <div className="set-modal-header">
-          <h3>{t('set.picker.title')}</h3>
-          <span className="set-muted">{t('set.picker.selected', { count: selected.size })}</span>
+          <h3>{t(single ? 'set.picker.chooseTitle' : 'set.picker.title')}</h3>
+          {!single && (
+            <span className="set-muted">{t('set.picker.selected', { count: selected.size })}</span>
+          )}
         </div>
         <input
           type="text"
@@ -188,7 +195,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
             {t('common.cancel')}
           </Button>
           <Button variant="primary" disabled={selected.size === 0} onClick={confirm}>
-            {t('set.picker.add', { count: selected.size })}
+            {single ? t('set.picker.choose') : t('set.picker.add', { count: selected.size })}
           </Button>
         </div>
       </div>

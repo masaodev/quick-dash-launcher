@@ -569,6 +569,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     windowNotFound: 'ウィンドウが見つかりませんでした',
   },
   set: {
+    run: {
+      notOpen: '開いていないので動かしませんでした',
+    },
     errors: {
       itemNotFound: 'アイテムが見つかりません',
       unsupportedType: 'この種類のアイテムはセットから開けません',
@@ -589,6 +592,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       empty: '追加できるアイテムがありません',
       noResults: '検索結果がありません',
       added: '追加済み',
+      chooseTitle: 'この行で開くアイテム',
+      choose: '選ぶ',
     },
     editor: {
       rows: '行',
@@ -609,6 +614,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       hint: '上の行から順に開きます。並べたいときは、ウィンドウを並べてから「今の位置を記録」を押します。',
       hintParallel:
         '全部の行を一度に開きます。並べたいときは、ウィンドウを並べてから「今の位置を記録」を押します。',
+      moveOnlyHint:
+        '「動かすだけ」の行は、ウィンドウが開いているときだけ動かします（開くものは行の詳細 ✏️ で足せます）。',
     },
     record: {
       title: '今の位置を記録',
@@ -636,7 +643,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       outcomeOpenOnly: '開くだけ',
       outcomeFrontOnly: '開いていれば前面に出すだけ',
       keepPrevious: '前の位置のまま',
-      placeOnlyNote: '開き直せないので、動かすだけの行になります',
+      newRowNote:
+        '足した行は「動かすだけ」です（開いているウィンドウを動かすだけ）。閉じていても開きたいときは、行の詳細 ✏️ で開くもの（アイテムかパス）を足します。',
       noPlacement: '位置は記録しない',
       tabNote: '既にあるウィンドウにタブで開くと、そのウィンドウごと動きます',
       minimizedNote: '最小化中なので位置は記録しません。元の大きさに戻してから記録してください',
@@ -650,6 +658,14 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       openOwn: 'このセットに書いたパス',
       openNone: 'なし（開かずに、ウィンドウを動かすだけ）',
       openMissing: 'アイテムが見つかりません（消されたか、読み込めていません）',
+      openKindNone: 'なし（動かすだけ）',
+      openKindItem: 'アイテム',
+      openKindPath: 'パス',
+      item: 'アイテム',
+      itemNote: 'アイテムを直すと、このセットにも効きます。',
+      pickItem: 'アイテムを選ぶ',
+      otherItem: '別のアイテムにする',
+      pathNote: 'このセットに書いたパス（アイテムは作りません）。',
       path: 'パス',
       args: '引数',
       find: '動かすウィンドウ',
@@ -657,6 +673,11 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       processNamePlaceholder: '例: notepad.exe',
       windowTitle: 'ウィンドウタイトル',
       windowTitlePlaceholder: '空ならタイトルは問わない',
+      titleParts: '一部だけで探す:',
+      revertTitle: '↺ 元に戻す',
+      matchNone: '今合うウィンドウ: 0 件',
+      matchOne: '今合うウィンドウ: 1 件（{{title}}）',
+      matchMany: '今合うウィンドウ: {{count}} 件（別のウィンドウにも当たります）',
       findHint:
         'このセットを開いたとき、この 2 つに合うウィンドウを記録した位置へ動かします。exe 名は一部でもよく、タイトルは全体が同じものを探します（* は任意の文字。例: *Obsidian）。',
       placement: '位置',

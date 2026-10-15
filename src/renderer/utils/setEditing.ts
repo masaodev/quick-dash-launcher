@@ -260,22 +260,28 @@ export function windowDisplayName(window: WindowInfo): string {
   return window.title.trim() || windowProcessLabel(window) || '';
 }
 
-/** ウィンドウから新しい行を作る（エクスプローラー・ストアアプリは開き直せないので並べるだけ） */
+/**
+ * ウィンドウから新しい行を作る（動かすだけの行）
+ *
+ * ほかのアプリの起動の引数は取れないので、exe を開く行にすると開いていたファイルが開かない。
+ * 位置を記録するのが主なので開くものは持たず、要るときは行の詳細で足してもらう
+ */
 export function entryFromWindow(window: WindowInfo, allWindows: readonly WindowInfo[]): SetEntry {
-  const entry: SetEntry = {
+  return {
     window: decideWindowMatch(window, allWindows),
     placement: placementFromWindow(window),
     label: windowDisplayName(window),
   };
-  const process = window.processName?.toLowerCase();
-  if (
-    window.executablePath &&
-    process !== 'explorer.exe' &&
-    process !== 'applicationframehost.exe'
-  ) {
-    entry.open = { path: window.executablePath };
-  }
-  return entry;
+}
+
+/** タイトルを「 - 」「 | 」「 — 」で分けた部品（一部だけで探す候補。区切りが無ければ空） */
+export function titleParts(title: string): string[] {
+  const parts = title
+    .replace(/[*?]/g, '')
+    .split(/\s+[-|—–]\s+/)
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+  return parts.length >= 2 ? [...new Set(parts)] : [];
 }
 
 /**

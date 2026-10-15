@@ -252,7 +252,14 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         </span>
       </div>
       {error && <span className="error-message">{error}</span>}
-      <small>{t(launchMode === 'parallel' ? 'set.editor.hintParallel' : 'set.editor.hint')}</small>
+      <small>
+        {t(launchMode === 'parallel' ? 'set.editor.hintParallel' : 'set.editor.hint')}
+        {/* 動かすだけの行があるときだけ、閉じていると動かないことと、開くものの足し方を添える */}
+        {entries.some((entry) => {
+          const view = describeSetEntry(entry, catalogById);
+          return view.holding === 'none' && !view.missing;
+        }) && t('set.editor.moveOnlyHint')}
+      </small>
 
       <SetItemPickerModal
         isOpen={pickerOpen}
@@ -272,6 +279,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
       <SetEntryDetailModal
         entry={detailIndex !== null ? (entries[detailIndex] ?? null) : null}
         catalog={catalogById}
+        catalogList={catalog}
         screens={screens}
         onClose={() => setDetailIndex(null)}
         onChange={(entry) => {

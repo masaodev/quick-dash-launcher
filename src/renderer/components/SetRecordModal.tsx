@@ -284,8 +284,6 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
       {t('set.record.windowLabel', { title: w.title })}
     </>
   );
-  const cannotReopen = (w: WindowInfo) =>
-    /^(explorer|applicationframehost)\.exe$/i.test(w.processName ?? '');
 
   return createPortal(
     <>
@@ -424,14 +422,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                     <RecordName
                       name={w.title}
                       sub={windowProcessLabel(w)}
-                      notes={
-                        <>
-                          {newRows.has(windowKey(w)) && cannotReopen(w) && (
-                            <span className="set-info">{t('set.record.placeOnlyNote')}</span>
-                          )}
-                          <WindowNotes window={w} opensAsTab={false} />
-                        </>
-                      }
+                      notes={<WindowNotes window={w} opensAsTab={false} />}
                     />
                     <Place text={placeOf(w)} />
                     <select
@@ -473,6 +464,8 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
               )}
             </div>
           )}
+          {/* 行として足すウィンドウがあるときだけ、足した行が動かすだけになることを 1 回だけ知らせる */}
+          {newRows.size > 0 && <span className="set-info">{t('set.record.newRowNote')}</span>}
 
           <div className="modal-actions">
             <Button variant="secondary" onClick={onClose}>

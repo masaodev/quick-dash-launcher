@@ -7,6 +7,7 @@ import {
   entryOpensAsTab,
   linkEntryToWindow,
   setEntryNames,
+  titleParts,
   windowPickNotes,
 } from './setEditing';
 
@@ -117,5 +118,32 @@ describe('entryFromWindow', () => {
   it('タイトルが空なら exe 名（拡張子なし）にする', () => {
     const w = win({ title: '  ' });
     expect(entryFromWindow(w, [w]).label).toBe('Obsidian');
+  });
+
+  it('開くものは持たない（動かすだけの行。ほかのアプリの起動の引数は取れない）', () => {
+    const w = win({ executablePath: 'C:/Program Files (x86)/sakura/sakura.exe' });
+    const entry = entryFromWindow(w, [w]);
+    expect(entry.open).toBeUndefined();
+    expect(entry.itemId).toBeUndefined();
+    expect(entry.window).toEqual({ processName: 'Obsidian.exe' });
+  });
+});
+
+describe('titleParts', () => {
+  it('「 - 」「 | 」「 — 」で分ける', () => {
+    expect(titleParts('一時メモ.txt - サクラエディタ32bit 2.4.3.7173')).toEqual([
+      '一時メモ.txt',
+      'サクラエディタ32bit 2.4.3.7173',
+    ]);
+    expect(titleParts('Inbox | Mail — Edge')).toEqual(['Inbox', 'Mail', 'Edge']);
+  });
+
+  it('区切りが無ければ候補を出さない（空白の無いハイフンは区切りにしない）', () => {
+    expect(titleParts('メモ帳')).toEqual([]);
+    expect(titleParts('foo-bar.txt')).toEqual([]);
+  });
+
+  it('ワイルドカードは除き、同じ部品は 1 つにする', () => {
+    expect(titleParts('*一時メモ.txt* - a - a')).toEqual(['一時メモ.txt', 'a']);
   });
 });
