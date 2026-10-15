@@ -573,6 +573,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       titleNotMatched: 'No window with a matching title ({{exe}} is open)',
       notOpen: "Not open, so it wasn't moved",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
+      desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
     },
     errors: {
       itemNotFound: "Couldn't find the item this row points to",

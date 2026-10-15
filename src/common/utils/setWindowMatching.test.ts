@@ -69,6 +69,35 @@ describe('matchesWindow', () => {
 });
 
 describe('autoLinkWindows', () => {
+  it('合うウィンドウが複数のデスクトップにあれば、行の置く先のデスクトップのものと結び付ける', () => {
+    const onDesk1 = win({
+      hwnd: 51,
+      title: 'a.png - ペイント',
+      processName: 'mspaint.exe',
+      desktopNumber: 1,
+    });
+    const onDesk2 = win({
+      hwnd: 52,
+      title: 'b.png - ペイント',
+      processName: 'mspaint.exe',
+      desktopNumber: 2,
+    });
+    const entries = [
+      {
+        index: 0,
+        window: { processName: 'mspaint.exe', title: '*' },
+        target: { kind: 'none' as const },
+        desktopNumber: 2,
+      },
+    ];
+    expect(autoLinkWindows(entries, [onDesk1, onDesk2]).links.get(0)).toBe(onDesk2);
+    expect(
+      autoLinkWindows([{ ...entries[0], desktopNumber: undefined }], [onDesk1, onDesk2]).links.get(
+        0
+      )
+    ).toBe(onDesk1);
+  });
+
   it('開くものから推測して結び付け、URL の行と見つからない行を分ける', () => {
     const entries: MatchableEntry[] = [
       { index: 0, target: { kind: 'url', path: 'https://mail.google.com/' } },
@@ -153,6 +182,33 @@ describe('placementFromWindow', () => {
 });
 
 describe('rerecordSetPlacements', () => {
+  it('合うウィンドウが複数のデスクトップにあれば、行のデスクトップのものから取り直す', () => {
+    const onDesk1 = win({
+      hwnd: 61,
+      title: 'a',
+      processName: 'mspaint.exe',
+      desktopNumber: 1,
+      x: 1,
+    });
+    const onDesk2 = win({
+      hwnd: 62,
+      title: 'a',
+      processName: 'mspaint.exe',
+      desktopNumber: 2,
+      x: 2,
+    });
+    const { entries } = rerecordSetPlacements(
+      [
+        {
+          window: { processName: 'mspaint.exe' },
+          placement: { x: 0, y: 0, width: 1, height: 1, virtualDesktopNumber: 2 },
+        },
+      ],
+      [onDesk1, onDesk2]
+    );
+    expect(entries[0].placement?.x).toBe(2);
+  });
+
   it('置き場所のある行だけ取り直し、見つからない行は前の位置のまま', () => {
     const entries = [
       {

@@ -37,6 +37,7 @@ import { fitPlacementToScreens, type ScreenArea } from '@common/utils/placementL
 
 import { applyWindowConfig, tryActivateWindow } from '../../utils/windowActivator.js';
 import { findWindowHwndByTitle, maximizeWindow } from '../../utils/nativeWindowControl.js';
+import { getDesktopCount, getWindowDesktopNumber } from '../../utils/virtualDesktop/index.js';
 import { launchItem, type LaunchableItem } from '../../utils/itemLauncher.js';
 import {
   getLayoutProgressWindow,
@@ -51,6 +52,8 @@ import { mainI18n } from '../mainI18n.js';
 export const SET_DEFAULT_WAIT_SECONDS = 30;
 /** ウィンドウを探す間隔（ミリ秒） */
 export const SET_WINDOW_POLL_MS = 500;
+/** 置く先のデスクトップにあるウィンドウを探すとき、ほかのデスクトップの候補を飛ばす上限 */
+const MAX_DESKTOP_CANDIDATES = 20;
 
 /** 行の指す先を解決したもの */
 interface ResolvedEntry {
@@ -110,6 +113,10 @@ export interface SetExecutorDeps {
   sleep: (ms: number) => Promise<void>;
   /** 画面の範囲（物理ピクセル。どの画面にも入らない位置を主画面に収めるのに使う） */
   screens?: () => ScreenArea[];
+  /** ウィンドウのいる仮想デスクトップ番号（1 から。全デスクトップに表示中・取れないときは -1） */
+  desktopOf?: (hwnd: bigint) => number;
+  /** 仮想デスクトップの数（取れないときは 0 以下） */
+  desktopCount?: () => number;
   progress?: {
     show: () => Promise<void>;
     send: (event: ProgressEventType, progress: LayoutExecutionProgress) => void;
@@ -216,6 +223,8 @@ const defaultDeps: SetExecutorDeps = {
   activate: tryActivateWindow,
   maximize: (hwnd) => maximizeWindow(hwnd),
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  desktopOf: (hwnd) => getWindowDesktopNumber(hwnd),
+  desktopCount: () => getDesktopCount(),
   // ウィンドウの座標（GetWindowRect）は物理ピクセルなので、画面の範囲も物理ピクセルに直す
   screens: () =>
     screen.getAllDisplays().map((display) => ({
@@ -324,7 +333,19 @@ async function runSet(
   const findUnclaimed = (config: WindowConfig, exclude?: ReadonlySet<bigint>) => {
     const skip = new Set<bigint>(claimed);
     for (const hwnd of exclude ?? []) skip.add(hwnd);
-    const found = deps.findWindow(config, skip);
+    let found = deps.findWindow(config, skip);
+    // 合うウィンドウが複数あれば、置く先のデスクトップにあるものを先に使う（ほかのデスクトップから引き抜かない）
+    const want = config.virtualDesktopNumber;
+    if (found !== null && want !== undefined && deps.desktopOf) {
+      const first = found;
+      let candidate: bigint | null = found;
+      for (let i = 0; i < MAX_DESKTOP_CANDIDATES; i++) {
+        if (candidate === null || deps.desktopOf(candidate) === want) break;
+        skip.add(candidate);
+        candidate = deps.findWindow(config, skip);
+      }
+      found = candidate ?? first;
+    }
     if (found !== null) claimed.add(found);
     return found;
   };
@@ -451,7 +472,22 @@ async function runSet(
           '記録した位置がどの画面にも入らないので、主画面に収めます'
         );
       }
-      const config = buildSetWindowConfig({ ...entry, placement: fitted }, r);
+      // 今は無い仮想デスクトップ（デスクトップを減らした後など）: 位置だけ合わせて知らせる
+      const desktopCount = deps.desktopCount?.() ?? 0;
+      const missingDesktop =
+        fitted.virtualDesktopNumber !== undefined &&
+        desktopCount > 0 &&
+        fitted.virtualDesktopNumber > desktopCount
+          ? fitted.virtualDesktopNumber
+          : undefined;
+      const config = buildSetWindowConfig(
+        {
+          ...entry,
+          placement:
+            missingDesktop === undefined ? fitted : { ...fitted, virtualDesktopNumber: undefined },
+        },
+        r
+      );
       if (!config) {
         // 見つけ方を決められない（URL など）: 開くだけにする
         if (r.launch) await deps.launch(r.launch, logger);
@@ -483,9 +519,12 @@ async function runSet(
       const applied = await deps.applyConfig(hwnd, config, r.name, logger);
       if (entry.placement.state === 'maximized') deps.maximize(hwnd);
       // 管理者権限で動くウィンドウなどは、位置を当てても動かない（大きさは見ない）
+      if (applied.positionNotApplied) return finish(index, mainI18n.t('set.run.couldNotMove'));
       return finish(
         index,
-        applied.positionNotApplied ? mainI18n.t('set.run.couldNotMove') : undefined
+        missingDesktop === undefined
+          ? undefined
+          : mainI18n.t('set.run.desktopNotFound', { number: missingDesktop })
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

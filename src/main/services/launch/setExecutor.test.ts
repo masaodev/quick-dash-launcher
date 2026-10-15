@@ -15,6 +15,10 @@ vi.mock('../../utils/nativeWindowControl.js', () => ({
   maximizeWindow: vi.fn(),
 }));
 vi.mock('../../utils/itemLauncher.js', () => ({ launchItem: vi.fn() }));
+vi.mock('../../utils/virtualDesktop/index.js', () => ({
+  getDesktopCount: vi.fn(() => -1),
+  getWindowDesktopNumber: vi.fn(() => -1),
+}));
 vi.mock('../overlayWindowService.js', () => ({
   getLayoutProgressWindow: vi.fn(),
   showLayoutProgressWindow: vi.fn(),
@@ -87,6 +91,68 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
 const resolve = (id: string) => items[id];
 
 describe('executeSet', () => {
+  it('合うウィンドウが複数のデスクトップにあれば、置く先のデスクトップのものを動かす', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'a.png - ペイント', processName: 'mspaint.exe' },
+      { hwnd: 2n, title: 'b.png - ペイント', processName: 'mspaint.exe' },
+    ]);
+    deps.desktopOf = (hwnd) => (hwnd === 2n ? 2 : 1);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'デスクトップ 2',
+      entries: [
+        {
+          window: { processName: 'mspaint.exe', title: '*' },
+          placement: { x: 0, y: 0, width: 100, height: 100, virtualDesktopNumber: 2 },
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual(['place:2']);
+  });
+
+  it('置く先のデスクトップに合うウィンドウが無ければ、最初に見つかったものを動かす', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'a.png - ペイント', processName: 'mspaint.exe' },
+      { hwnd: 2n, title: 'b.png - ペイント', processName: 'mspaint.exe' },
+    ]);
+    deps.desktopOf = () => 1;
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'デスクトップ 3',
+      entries: [
+        {
+          window: { processName: 'mspaint.exe', title: '*' },
+          placement: { x: 0, y: 0, width: 100, height: 100, virtualDesktopNumber: 3 },
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual(['place:1']);
+  });
+
+  it('今は無いデスクトップの行は、番号を外して位置だけ合わせ、失敗として知らせる', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'a.png - ペイント', processName: 'mspaint.exe' },
+    ]);
+    deps.desktopCount = () => 2;
+    const set: SetItem = {
+      type: 'set',
+      displayName: '減らした後',
+      entries: [
+        {
+          window: { processName: 'mspaint.exe', title: '*a.png*' },
+          placement: { x: 0, y: 0, width: 100, height: 100, virtualDesktopNumber: 5 },
+        },
+      ],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    const applied = vi.mocked(deps.applyConfig).mock.calls[0][1];
+    expect(applied.virtualDesktopNumber).toBeUndefined();
+    expect(applied.x).toBe(0);
+    expect(result.entries[0]).toMatchObject({ success: false, error: 'set.run.desktopNotFound' });
+  });
+
   it('名前だけ残した行（旧グループで見つからなかった名前）は、参照先が見つからないとして失敗し、残りは続ける', async () => {
     const { deps, calls } = makeDeps();
     const set: SetItem = {

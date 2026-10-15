@@ -203,7 +203,12 @@ export function toMatchableEntry(
 ): MatchableEntry {
   const view = describeSetEntry(entry, catalog);
   const kind = view.kind === 'window' ? 'none' : view.kind;
-  return { index, window: entry.window, target: { kind, path: view.path } };
+  return {
+    index,
+    window: entry.window,
+    target: { kind, path: view.path },
+    desktopNumber: entry.placement?.virtualDesktopNumber,
+  };
 }
 
 /** 既にあるウィンドウにタブとして開くことがある行か（フォルダ・Web の URL） */

@@ -576,6 +576,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       titleNotMatched: 'タイトルが合うウィンドウがありません（{{exe}} は開いています）',
       notOpen: '開いていないので動かしませんでした',
       couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
+      desktopNotFound: 'デスクトップ {{number}} がありません。位置だけ合わせました',
     },
     errors: {
       itemNotFound: 'アイテムが見つかりません',

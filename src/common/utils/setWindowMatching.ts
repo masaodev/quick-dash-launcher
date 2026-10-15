@@ -36,6 +36,24 @@ export interface MatchableEntry {
   window?: SetWindowMatch;
   /** 開くものの種類とパス */
   target: { kind: SetTargetKind; path?: string };
+  /** 置く先の仮想デスクトップ番号（合うウィンドウが複数あれば、このデスクトップのものを先に使う） */
+  desktopNumber?: number;
+}
+
+/**
+ * 条件に合うウィンドウを一覧の前から探す。番号があれば、そのデスクトップにあるものを先に使う
+ * （同じアプリのウィンドウが複数のデスクトップにあるとき、ほかのデスクトップのものを取らない）
+ */
+function findPreferringDesktop(
+  windows: readonly MatchableWindow[],
+  desktopNumber: number | undefined,
+  predicate: (w: MatchableWindow) => boolean
+): MatchableWindow | undefined {
+  if (desktopNumber !== undefined) {
+    const onDesktop = windows.find((w) => w.desktopNumber === desktopNumber && predicate(w));
+    if (onDesktop) return onDesktop;
+  }
+  return windows.find(predicate);
 }
 
 function lower(value: string | undefined): string {
@@ -153,7 +171,11 @@ export function autoLinkWindows(
       unlinkedEntries.push({ index: entry.index, reason: 'url' });
       continue;
     }
-    const found = candidates.find((w) => !used.has(w) && entryMatchesWindow(entry, w));
+    const found = findPreferringDesktop(
+      candidates,
+      entry.desktopNumber,
+      (w) => !used.has(w) && entryMatchesWindow(entry, w)
+    );
     if (found) {
       used.add(found);
       links.set(entry.index, found);
@@ -234,7 +256,11 @@ export function rerecordSetPlacements(
   let notFound = 0;
   const result = entries.map((entry) => {
     if (!entry.placement || !entry.window) return entry;
-    const found = candidates.find((w) => !used.has(w) && matchesWindow(entry.window!, w));
+    const found = findPreferringDesktop(
+      candidates,
+      entry.placement.virtualDesktopNumber,
+      (w) => !used.has(w) && matchesWindow(entry.window!, w)
+    );
     if (!found) {
       notFound++;
       return entry;
