@@ -25,6 +25,9 @@ export {
   isPinnedWindow,
   getDesktopName,
   getAllDesktopNames,
+  goToDesktop,
+  moveWindowToCurrentDesktop,
+  switchToWindowDesktop,
 } from './windowOperations.js';
 
 // DLLローダー（内部使用向け）

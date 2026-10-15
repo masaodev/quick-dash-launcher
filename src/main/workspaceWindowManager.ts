@@ -5,7 +5,11 @@ import type { WorkspacePositionMode } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
 import PathManager from './config/pathManager.js';
-import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
+import {
+  moveWindowToCurrentDesktop,
+  pinWindow,
+  unPinWindow,
+} from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import {
@@ -146,6 +150,8 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
 
     if (workspaceWindow) {
       await setWorkspacePosition();
+      // 表示中でも別の仮想デスクトップにあると show() では出てこない（自動表示のとき）
+      moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
       workspaceWindow.show();
       if (!options?.skipFocus) {
         workspaceWindow.focus();
@@ -187,6 +193,19 @@ export function closeWorkspaceWindow(): void {
 
 /** ワークスペースウィンドウの表示状態を切り替える */
 export async function toggleWorkspaceWindow(): Promise<void> {
+  // 表示したまま別の仮想デスクトップにある（全デスクトップに表示しない設定のとき）なら、隠さずに今のデスクトップへ呼び寄せる。
+  // 隠すと、Windows がフォーカスの移り先のデスクトップへ切り替えてしまうことがある
+  if (
+    isWorkspaceWindowVisible &&
+    workspaceWindow &&
+    !workspaceWindow.isDestroyed() &&
+    moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE())
+  ) {
+    workspaceWindow.show();
+    workspaceWindow.focus();
+    windowLogger.info('ワークスペースウィンドウを今の仮想デスクトップへ移しました');
+    return;
+  }
   if (isWorkspaceWindowVisible) {
     hideWorkspaceWindow();
   } else {

@@ -320,8 +320,9 @@ function setupDetachedWindow(
 
   attachSnapHandler(win, () => detachedWindowSnapEnabled);
 
-  // 仮想デスクトップ固定の適用（ウィンドウ表示後に実行する必要がある）
-  win.once('show', () => {
+  // 仮想デスクトップ固定の適用（ウィンドウ表示後に実行する必要がある）。
+  // 隠すと固定が外れる（メインと一緒に隠して出し直すと 1 つのデスクトップにしか出なくなった）ので、表示のたびに当て直す
+  win.on('show', () => {
     SettingsService.getInstance()
       .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
       .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))

@@ -29,11 +29,7 @@ import {
   showAllDetachedGroupWindows,
 } from './detachedGroupWindowManager.js';
 import { getWorkspaceWindow } from './workspaceWindowManager.js';
-import {
-  getCurrentDesktopNumber,
-  getWindowDesktopNumber,
-  moveWindowToVirtualDesktop,
-} from './utils/virtualDesktop/index.js';
+import { moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 
@@ -743,14 +739,8 @@ export function hideMainWindowOnExecute(): void {
  */
 function bringMainWindowToCurrentDesktop(): boolean {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
-  const hwnd = mainWindow.getNativeWindowHandle().readBigUInt64LE();
-  const windowDesktop = getWindowDesktopNumber(hwnd);
-  const currentDesktop = getCurrentDesktopNumber();
-  if (windowDesktop < 1 || currentDesktop < 1 || windowDesktop === currentDesktop) return false;
-  const moved = moveWindowToVirtualDesktop(hwnd, currentDesktop);
-  windowLogger.info(
-    `メインウィンドウをデスクトップ ${windowDesktop} から ${currentDesktop} へ移しました: ${moved}`
-  );
+  const moved = moveWindowToCurrentDesktop(mainWindow.getNativeWindowHandle().readBigUInt64LE());
+  if (moved) windowLogger.info('メインウィンドウを今の仮想デスクトップへ移しました');
   return moved;
 }
 
@@ -760,12 +750,6 @@ function bringMainWindowToCurrentDesktop(): boolean {
  */
 export async function hideMainWindow(): Promise<void> {
   if (!mainWindow) return;
-
-  // 表示したまま別の仮想デスクトップへ切り替えた（ピン留め中など）ときは、隠さずに今のデスクトップへ呼び寄せる
-  if (bringMainWindowToCurrentDesktop()) {
-    await activateMainWindowWithFocus();
-    return;
-  }
 
   if (windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible') {
     await activateMainWindowWithFocus();
