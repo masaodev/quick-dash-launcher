@@ -1,6 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { getConversionGroups, isSupportedBrowser } from '@common/itemConversions';
+import {
+  getConversionFileExtension,
+  getConversionGroups,
+  isSupportedBrowser,
+} from '@common/itemConversions';
 import type { ConversionCandidate, DefaultBrowser } from '@common/itemConversions';
 
 import { useToast } from '../hooks/useToast';
@@ -15,6 +19,18 @@ function loadDefaultBrowser(): Promise<DefaultBrowser | null> {
   return defaultBrowserPromise;
 }
 
+/** 拡張子ごとの関連付けのプログラム（既定のブラウザと同じく、画面を開くたびには聞き直さない） */
+const fileHandlerPromises = new Map<string, Promise<DefaultBrowser | null>>();
+
+function loadFileHandler(extension: string): Promise<DefaultBrowser | null> {
+  let promise = fileHandlerPromises.get(extension);
+  if (!promise) {
+    promise = window.electronAPI.getFileHandler(extension).catch(() => null);
+    fileHandlerPromises.set(extension, promise);
+  }
+  return promise;
+}
+
 interface ItemConverterMenuProps {
   path: string;
   args?: string;
@@ -26,6 +42,7 @@ interface ItemConverterMenuProps {
 function candidatePreview(candidate: ConversionCandidate): string {
   switch (candidate.kind) {
     case 'toUrl':
+    case 'toFile':
       return candidate.path;
     case 'browser':
       return `${candidate.path.split('\\').pop()} ${candidate.args}`;
@@ -55,10 +72,33 @@ const ItemConverterMenu: React.FC<ItemConverterMenuProps> = ({ path, args, onCon
     };
   }, []);
 
+  // ファイル（関連付けがブラウザのもの）は、その拡張子の関連付けのプログラムで開く形にする
+  const fileExtension = getConversionFileExtension(path, args);
+  const [fileHandler, setFileHandler] = useState<{
+    extension: string;
+    handler: DefaultBrowser | null;
+  } | null>(null);
+  useEffect(() => {
+    if (!fileExtension) return;
+    let cancelled = false;
+    loadFileHandler(fileExtension).then((handler) => {
+      if (!cancelled) setFileHandler({ extension: fileExtension, handler });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fileExtension]);
+
   const supportedBrowser = isSupportedBrowser(defaultBrowser) ? defaultBrowser : null;
+  const fileBrowser =
+    fileHandler &&
+    fileHandler.extension === fileExtension &&
+    isSupportedBrowser(fileHandler.handler)
+      ? fileHandler.handler
+      : null;
   const groups = useMemo(
-    () => getConversionGroups(path, args, supportedBrowser),
-    [path, args, supportedBrowser]
+    () => getConversionGroups(path, args, supportedBrowser, fileBrowser),
+    [path, args, supportedBrowser, fileBrowser]
   );
 
   useEffect(() => {
@@ -92,6 +132,8 @@ const ItemConverterMenu: React.FC<ItemConverterMenuProps> = ({ path, args, onCon
     switch (candidate.kind) {
       case 'toUrl':
         return t('itemConverter.options.toUrl');
+      case 'toFile':
+        return t('itemConverter.options.toFile');
       case 'browser':
         return candidate.mode === 'private'
           ? t(`itemConverter.options.${candidate.privateName}`)
@@ -105,6 +147,8 @@ const ItemConverterMenu: React.FC<ItemConverterMenuProps> = ({ path, args, onCon
     switch (candidate.kind) {
       case 'toUrl':
         return t('itemConverter.descriptions.toUrl');
+      case 'toFile':
+        return t('itemConverter.descriptions.toFile');
       case 'browser':
         return candidate.mode === 'appWindow'
           ? t('itemConverter.descriptions.appWindow')
@@ -120,6 +164,8 @@ const ItemConverterMenu: React.FC<ItemConverterMenuProps> = ({ path, args, onCon
     switch (candidate.kind) {
       case 'toUrl':
         return t('itemConverter.converted.toUrl');
+      case 'toFile':
+        return t('itemConverter.converted.toFile');
       case 'browser':
         return t('itemConverter.converted.browser', { name: candidate.browserName });
       case 'office':
@@ -155,9 +201,11 @@ const ItemConverterMenu: React.FC<ItemConverterMenuProps> = ({ path, args, onCon
                 <div className="item-converter-menu-header">
                   {group.kind === 'url'
                     ? t('itemConverter.groups.url')
-                    : group.kind === 'browser'
-                      ? t('itemConverter.groups.browser', { name: group.title ?? '' })
-                      : group.title}
+                    : group.kind === 'file'
+                      ? t('itemConverter.groups.file')
+                      : group.kind === 'browser'
+                        ? t('itemConverter.groups.browser', { name: group.title ?? '' })
+                        : group.title}
                 </div>
                 {group.candidates.map((candidate, index) => {
                   const description = optionDescription(candidate);

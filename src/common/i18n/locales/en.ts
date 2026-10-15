@@ -1394,10 +1394,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     unsupportedBrowser: 'Your default browser ({{name}}) is not supported',
     groups: {
       url: 'URL',
+      file: 'File',
       browser: 'Browser ({{name}})',
     },
     options: {
       toUrl: 'Back to the URL',
+      toFile: 'Back to the file',
       newWindow: 'Open in a new window',
       appWindow: 'Open in an app window',
       incognito: 'Open in an incognito window',
@@ -1409,6 +1411,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     descriptions: {
       toUrl: 'Opens in a new tab of your default browser',
+      toFile: 'Opens in the associated app',
       appWindow: 'Opens in a window without tabs or an address bar',
       sharePointEdit: 'The standard way SharePoint opens files for editing',
       edit: 'Opens in the {{app}} app for editing',
@@ -1416,6 +1419,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     converted: {
       toUrl: 'Changed back to the URL',
+      toFile: 'Changed back to the file',
       browser: 'Converted to open in {{name}}',
       office: 'Converted to open in the {{app}} app',
     },

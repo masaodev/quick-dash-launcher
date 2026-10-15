@@ -1395,10 +1395,12 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     unsupportedBrowser: '既定のブラウザ（{{name}}）には対応していません',
     groups: {
       url: 'URL',
+      file: 'ファイル',
       browser: 'ブラウザ（{{name}}）',
     },
     options: {
       toUrl: 'URL に戻す',
+      toFile: 'ファイルに戻す',
       newWindow: '新しいウィンドウで開く形にする',
       appWindow: 'アプリのウィンドウで開く形にする',
       incognito: 'シークレット ウィンドウで開く形にする',
@@ -1410,6 +1412,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     descriptions: {
       toUrl: '既定のブラウザの新しいタブで開きます',
+      toFile: '関連付けられたアプリで開きます',
       appWindow: 'タブとアドレスバーの無いウィンドウで開きます',
       sharePointEdit: 'SharePointで使用される標準的な編集用の開き方',
       edit: '{{app}}アプリで編集用に開く',
@@ -1417,6 +1420,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     converted: {
       toUrl: 'URL に戻しました',
+      toFile: 'ファイルに戻しました',
       browser: '{{name}} で開く形に変換しました',
       office: '{{app}} アプリで開く形に変換しました',
     },
