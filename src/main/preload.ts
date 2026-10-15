@@ -114,6 +114,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_ESCAPE_HANDLED_BY_PAGE, handled),
   registerItems: (items) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   getPathKind: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PATH_GET_KIND, filePath),
+  getDefaultBrowser: () => ipcRenderer.invoke(IPC_CHANNELS.GET_DEFAULT_BROWSER),
   checkPathsExist: (paths) => ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),

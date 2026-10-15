@@ -25,7 +25,7 @@ import FilePickerDialog from './FilePickerDialog';
 import WindowSelectorModal from './WindowSelectorModal';
 import ItemEditFields from './ItemEditFields';
 import { Button } from './ui';
-import '../styles/components/UrlConverterMenu.css';
+import '../styles/components/ItemConverterMenu.css';
 
 interface RegisterModalProps {
   isOpen: boolean;
