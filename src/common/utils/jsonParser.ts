@@ -708,6 +708,12 @@ function pickNumber(obj: Record<string, unknown>, key: string): number | undefin
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
+/** 仮想デスクトップ番号（1 以上の整数だけ。0・負の数・小数は指定なしとして読む） */
+function pickDesktopNumber(obj: Record<string, unknown>): number | undefined {
+  const value = pickNumber(obj, 'virtualDesktopNumber');
+  return value !== undefined && Number.isInteger(value) && value >= 1 ? value : undefined;
+}
+
 /** 値が undefined のキーを除く（保存したときに余計なキーを書かない） */
 function compact<T extends object>(obj: T): T {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
@@ -746,7 +752,7 @@ export function validateSetEntry(entry: unknown, index: number): SetEntry {
       y: pickNumber(p, 'y'),
       width: pickNumber(p, 'width'),
       height: pickNumber(p, 'height'),
-      virtualDesktopNumber: pickNumber(p, 'virtualDesktopNumber'),
+      virtualDesktopNumber: pickDesktopNumber(p),
       state: p.state === 'maximized' ? ('maximized' as const) : undefined,
     });
     // 中身の無い位置は持たない（位置のある行に数えられてしまう）

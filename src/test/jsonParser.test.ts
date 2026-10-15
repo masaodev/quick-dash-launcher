@@ -623,6 +623,34 @@ describe('jsonParser: セット', () => {
     });
   });
 
+  it('仮想デスクトップ番号は 1 以上の整数だけ読む（0・負の数・小数は指定なし）', () => {
+    const file = parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [
+          {
+            id: 'set1aaaa',
+            type: 'set',
+            displayName: 'x',
+            entries: [0, -1, 1.5, 2].map((n) => ({
+              itemId: 'abcd1234',
+              placement: { x: 0, y: 0, width: 1, height: 1, virtualDesktopNumber: n },
+            })),
+          },
+        ],
+      })
+    );
+    const entries = (
+      file.items[0] as { entries: { placement?: { virtualDesktopNumber?: number } }[] }
+    ).entries;
+    expect(entries.map((e) => e.placement?.virtualDesktopNumber)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      2,
+    ]);
+  });
+
   it('中身の無い見つけ方は持たない（どのウィンドウにも合ってしまうため）', () => {
     const file = parseJsonDataFile(
       JSON.stringify({
