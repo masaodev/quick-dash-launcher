@@ -1230,6 +1230,33 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       window: '🪟 Window action',
       clipboard: '📋 Clipboard',
     },
+    typeDescriptions: {
+      item: {
+        main: 'Opens one file, folder, URL, or app',
+        sub: 'Can also switch to its window if it is already open',
+      },
+      dir: {
+        main: 'Lists the contents of a folder one by one',
+        sub: 'Follows along automatically when the contents change',
+      },
+      set: {
+        main: 'Opens several items together',
+        sub: 'Can arrange the windows at the positions you recorded',
+      },
+      window: {
+        main: 'Finds an open window and brings it forward or moves it',
+        sub: 'Launches nothing (does nothing if the window is not found)',
+      },
+      clipboard: {
+        main: 'Saves what you have copied right now',
+        sub: 'Paste text, images, and more again later',
+      },
+    },
+    destination: 'Save to',
+    modeAdd: 'New',
+    modeEdit: 'Edit',
+    destEcho: 'Add to {{dest}}',
+    destEchoEdit: 'Save to {{dest}}',
     displayName: 'Display name:',
     placeholders: {
       set: 'Enter a name for the set',

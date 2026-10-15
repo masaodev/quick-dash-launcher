@@ -23,7 +23,8 @@ import { fetchMatchingWindow } from '../utils/windowFilter';
 
 import FilePickerDialog from './FilePickerDialog';
 import WindowSelectorModal from './WindowSelectorModal';
-import ItemEditFields from './ItemEditFields';
+import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
+import RegisterPlacementBar, { describePlacement } from './RegisterPlacementBar';
 import { Button } from './ui';
 import '../styles/components/ItemConverterMenu.css';
 
@@ -250,6 +251,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
   if (!isOpen) return null;
 
+  // 1 件のときは保存先を上の帯に、種別のアイコンを見出しに出す（複数件は各アイテムの欄に出す）
+  const singleItem = !loading && items.length === 1 ? items[0] : undefined;
+
   return (
     <>
       <div
@@ -265,7 +269,29 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
         >
-          <h2>{editingItem ? t('register.editTitle') : t('register.addTitle')}</h2>
+          {singleItem && (
+            <RegisterPlacementBar
+              item={singleItem}
+              availableTabs={availableTabs}
+              dataFileLabels={dataFileLabels}
+              onTargetTabChange={(targetTab) => form.handleTargetTabChange(0, targetTab)}
+              onTargetFileChange={(targetFile) => handleItemChange(0, 'targetFile', targetFile)}
+              modeLabel={editingItem ? t('register.modeEdit') : t('register.modeAdd')}
+            />
+          )}
+
+          <h2 className="register-title">
+            {singleItem && (
+              <span className="register-title-icon" aria-hidden>
+                {singleItem.icon ? (
+                  <img src={singleItem.icon} alt="" />
+                ) : (
+                  ITEM_CATEGORY_ICONS[singleItem.itemCategory]
+                )}
+              </span>
+            )}
+            {editingItem ? t('register.editTitle') : t('register.addTitle')}
+          </h2>
 
           {editingItem && isAutoImportItem(editingItem) && (
             <div className="auto-import-warning">{t('register.autoImportWarning')}</div>
@@ -285,6 +311,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     onUpdate={(fields) => updateItem(index, fields)}
                     onPathBlur={() => form.handlePathBlur(index)}
                     onFetchIcon={() => form.handleFetchIcon(index)}
+                    headerInParent={!!singleItem}
                     placement={{
                       availableTabs,
                       dataFileLabels,
@@ -320,6 +347,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                   </Button>
                 )}
                 <div className="modal-actions-right">
+                  {singleItem && (
+                    <span className="register-dest-echo">
+                      {t(editingItem ? 'register.destEchoEdit' : 'register.destEcho', {
+                        dest: describePlacement(singleItem, availableTabs, dataFileLabels),
+                      })}
+                    </span>
+                  )}
                   {editingItem && onDelete && (
                     <Button variant="danger" onClick={handleDelete}>
                       {t('register.delete')}

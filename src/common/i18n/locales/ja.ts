@@ -1232,6 +1232,33 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       window: '🪟 ウィンドウ操作',
       clipboard: '📋 クリップボード',
     },
+    typeDescriptions: {
+      item: {
+        main: 'ファイル・フォルダ・URL・アプリを 1 つ開きます',
+        sub: '起動済みなら、そのウィンドウへ切り替えることもできます',
+      },
+      dir: {
+        main: 'フォルダの中身を 1 件ずつ一覧に並べます',
+        sub: '中身が増えたり減ったりしても、自動で追従します',
+      },
+      set: {
+        main: '複数のアイテムをまとめて開きます',
+        sub: '開いたウィンドウを、記録した位置に並べられます',
+      },
+      window: {
+        main: '開いているウィンドウを探して、前面に出す・動かします',
+        sub: '何も起動しません（見つからなければ何もしません）',
+      },
+      clipboard: {
+        main: 'いまコピーしている内容を保存しておきます',
+        sub: 'テキスト・画像などを、あとから貼り直せます',
+      },
+    },
+    destination: '保存先',
+    modeAdd: '新規登録',
+    modeEdit: '編集',
+    destEcho: '{{dest}} に登録',
+    destEchoEdit: '{{dest}} に保存',
     displayName: '表示名:',
     placeholders: {
       set: 'セットの名前を入力',
