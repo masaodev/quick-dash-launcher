@@ -33,9 +33,9 @@ describe('linkEntryToWindow', () => {
 
   it('見つけ方を決め、置き場所を今の位置にする', () => {
     const w = win({});
-    expect(linkEntryToWindow(entry, w, [w])).toEqual({
+    expect(linkEntryToWindow(entry, w)).toEqual({
       ...entry,
-      window: { processName: 'Obsidian.exe' },
+      window: { processName: 'Obsidian.exe', title: 'TODOキャンパス - vault - Obsidian v1.9' },
       placement: { x: 960, y: 0, width: 960, height: 1040 },
     });
   });
@@ -43,11 +43,11 @@ describe('linkEntryToWindow', () => {
   it('最小化中のウィンドウは見つけ方だけ決め、置き場所は前のままにする', () => {
     const w = win({ windowState: 'minimized', x: -32000, y: -32000, width: 160, height: 28 });
     const before: SetEntry = { ...entry, placement: { x: 0, y: 0, width: 960, height: 1040 } };
-    expect(linkEntryToWindow(before, w, [w])).toEqual({
+    expect(linkEntryToWindow(before, w)).toEqual({
       ...before,
-      window: { processName: 'Obsidian.exe' },
+      window: { processName: 'Obsidian.exe', title: 'TODOキャンパス - vault - Obsidian v1.9' },
     });
-    expect(linkEntryToWindow(entry, w, [w]).placement).toBeUndefined();
+    expect(linkEntryToWindow(entry, w).placement).toBeUndefined();
   });
 });
 
@@ -113,20 +113,23 @@ describe('setEntryNames', () => {
 describe('entryFromWindow', () => {
   it('行の名前はウィンドウタイトルにする', () => {
     const w = win({ executablePath: 'C:/Apps/Obsidian.exe' });
-    expect(entryFromWindow(w, [w]).label).toBe('TODOキャンパス - vault - Obsidian v1.9');
+    expect(entryFromWindow(w).label).toBe('TODOキャンパス - vault - Obsidian v1.9');
   });
 
   it('タイトルが空なら exe 名（拡張子なし）にする', () => {
     const w = win({ title: '  ' });
-    expect(entryFromWindow(w, [w]).label).toBe('Obsidian');
+    expect(entryFromWindow(w).label).toBe('Obsidian');
   });
 
   it('開くものは持たない（動かすだけの行。ほかのアプリの起動の引数は取れない）', () => {
     const w = win({ executablePath: 'C:/Program Files (x86)/sakura/sakura.exe' });
-    const entry = entryFromWindow(w, [w]);
+    const entry = entryFromWindow(w);
     expect(entry.open).toBeUndefined();
     expect(entry.itemId).toBeUndefined();
-    expect(entry.window).toEqual({ processName: 'Obsidian.exe' });
+    expect(entry.window).toEqual({
+      processName: 'Obsidian.exe',
+      title: 'TODOキャンパス - vault - Obsidian v1.9',
+    });
   });
 });
 

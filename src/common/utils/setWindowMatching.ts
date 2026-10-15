@@ -38,9 +38,6 @@ export interface MatchableEntry {
   target: { kind: SetTargetKind; path?: string };
 }
 
-/** exe 名だけでは区別できないので、いつもタイトルも保存する exe（小文字） */
-const ALWAYS_WITH_TITLE = new Set(['explorer.exe', 'applicationframehost.exe']);
-
 function lower(value: string | undefined): string {
   return (value ?? '').toLowerCase();
 }
@@ -174,20 +171,16 @@ export function autoLinkWindows(
 }
 
 /**
- * 記録するウィンドウの見つけ方を決める
+ * 記録するウィンドウの見つけ方を決める（exe 名とタイトル全体）
  *
- * その exe のウィンドウが 1 つだけなら exe 名だけ（タイトルが変わるアプリでも見失わない）。
- * 2 つ以上あるとき、またはエクスプローラー・ストアアプリ（exe 名が共通）のときはタイトルも保存する
+ * 記録したときに開いていたウィンドウの数で保存する中身が変わらないよう、いつもタイトル全体を保存する
+ * （利用者は「そのページ・そのファイルのウィンドウ」をその位置に置きたい）。タイトルが変わるものは、
+ * 行の詳細の候補で一部だけ・タイトルを問わない（*）にしてもらう
  */
-export function decideWindowMatch(
-  window: MatchableWindow,
-  allWindows: readonly MatchableWindow[]
-): SetWindowMatch {
-  const processName = window.processName;
-  if (!processName) return { title: window.title };
-  const sameExe = allWindows.filter((w) => lower(w.processName) === lower(processName)).length;
-  if (sameExe <= 1 && !ALWAYS_WITH_TITLE.has(processName.toLowerCase())) return { processName };
-  return { processName, title: window.title };
+export function decideWindowMatch(window: MatchableWindow): SetWindowMatch {
+  const title = window.title.trim() ? window.title : undefined;
+  if (!window.processName) return { title: window.title };
+  return title ? { processName: window.processName, title } : { processName: window.processName };
 }
 
 /** ウィンドウの今の位置から置き場所を作る（最大化中なら state を付ける） */

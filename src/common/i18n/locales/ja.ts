@@ -573,6 +573,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   },
   set: {
     run: {
+      titleNotMatched: 'タイトルが合うウィンドウがありません（{{exe}} は開いています）',
       notOpen: '開いていないので動かしませんでした',
       couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
     },
@@ -647,11 +648,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       outcomeOpenOnly: '開くだけ',
       outcomeFrontOnly: '開いていれば前面に出すだけ',
       keepPrevious: '前の位置のまま',
-      fullTitle: 'タイトル全体',
-      fullTitleHint:
-        'タイトル全体が同じウィンドウを探します。アプリの更新などでタイトルが変わると見つからなくなるので、✏️（行の詳細）で一部だけで探すようにできます',
       newRowNote:
-        '足した行は「動かすだけ」です（開いているウィンドウを動かすだけ）。閉じていても開きたいときは、行の詳細 ✏️ で開くもの（アイテムかパス）を足します。',
+        '足した行は「動かすだけ」です（開いているウィンドウを動かすだけ）。閉じていても開きたいときは、行の詳細 ✏️ で開くもの（アイテムかパス）を足します。タイトルは全体が同じウィンドウを探します。タブの切り替えや更新でタイトルが変わるものは、行の詳細 ✏️ で一部だけにできます。',
       noPlacement: '位置は記録しない',
       tabNote: '既にあるウィンドウにタブで開くと、そのウィンドウごと動きます',
       minimizedNote: '最小化中なので位置は記録しません。元の大きさに戻してから記録してください',
@@ -680,6 +678,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       processNamePlaceholder: '例: notepad.exe',
       windowTitle: 'ウィンドウタイトル',
       windowTitlePlaceholder: '空ならタイトルは問わない',
+      anyTitle: 'タイトルを問わない',
+      anyTitleHint: 'exe 名だけで探します（タイトルは問いません）',
       titleParts: '一部だけで探す:',
       revertTitle: '↺ 元に戻す',
       matchNone: '今合うウィンドウ: 0 件',

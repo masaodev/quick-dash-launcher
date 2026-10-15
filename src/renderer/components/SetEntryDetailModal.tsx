@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { SetEntry, WindowInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
+import { ANY_WINDOW_TITLE } from '@common/utils/windowTitle';
 import {
   decideWindowMatch,
   isUnresolvedEntry,
@@ -106,10 +107,11 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   // 候補は開いたときのタイトルから作る。* を含む（もう一部だけにしてある）なら、今合う 1 つのウィンドウのタイトルから
   const entryWindow = entry?.window;
   const parts = useMemo(() => {
-    if (!initialTitle) return [];
-    if (!/[*?]/.test(initialTitle) || !entryWindow) return titleParts(initialTitle);
-    const now = windows.filter((w) => matchesWindow(entryWindow, w));
-    return now.length === 1 ? titleParts(now[0].title) : titleParts(initialTitle);
+    if (initialTitle && !/[*?]/.test(initialTitle)) return titleParts(initialTitle);
+    // タイトルが空か、もう一部だけにしてある: 今合う 1 つのウィンドウのタイトルから作る
+    const now = entryWindow ? windows.filter((w) => matchesWindow(entryWindow, w)) : [];
+    if (now.length === 1) return titleParts(now[0].title);
+    return initialTitle ? titleParts(initialTitle) : [];
   }, [initialTitle, entryWindow, windows]);
 
   const close = () => {
@@ -290,9 +292,19 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                     </button>
                   )}
                 </div>
-                {parts.length > 0 && (
+                {(parts.length > 0 || draft.window?.processName) && (
                   <div className="set-title-parts">
                     <span>{t('set.detail.titleParts')}</span>
+                    {draft.window?.processName && (
+                      <button
+                        type="button"
+                        className="set-title-part"
+                        title={t('set.detail.anyTitleHint')}
+                        onClick={() => updateWindow({ title: ANY_WINDOW_TITLE })}
+                      >
+                        {t('set.detail.anyTitle')}
+                      </button>
+                    )}
                     {parts.map((part) => (
                       <button
                         key={part}
@@ -460,11 +472,9 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
       <WindowSelectorModal
         isOpen={picking}
         onClose={() => setPicking(false)}
-        onSelect={async (w) => {
+        onSelect={(w) => {
           setPicking(false);
-          // 同じ exe のウィンドウがほかにもあればタイトルも残すので、開いているウィンドウ全体と比べる
-          const all = await window.electronAPI.getAllWindowsAllDesktops().catch(() => [w]);
-          const match = decideWindowMatch(w, all.length > 0 ? all : [w]);
+          const match = decideWindowMatch(w);
           // 最小化中は座標が画面の外になるので、動かすウィンドウだけ取る
           update(
             w.windowState === 'minimized'

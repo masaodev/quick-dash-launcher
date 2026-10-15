@@ -219,6 +219,33 @@ describe('executeSet', () => {
     expect(result.errorCount).toBe(1);
   });
 
+  it('同じ exe のウィンドウはあってタイトルだけ合わないときは、そう知らせて飛ばす', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 6n, title: '別のタブ - Google Chrome', processName: 'chrome.exe' },
+    ]);
+    const sent: LayoutExecutionProgress[] = [];
+    deps.progress = {
+      show: vi.fn(async () => {}),
+      send: vi.fn((_event, progress) => {
+        sent.push(structuredClone(progress));
+      }),
+      onCancel: vi.fn(() => () => {}),
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        {
+          window: { processName: 'chrome.exe', title: 'YouTube - Google Chrome' },
+          placement: { x: 0, y: 0 },
+        },
+      ],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(result.entries[0]).toMatchObject({ success: true, skipped: true });
+    expect(sent[sent.length - 1].entries[0].errorMessage).toBe('set.run.titleNotMatched');
+  });
+
   it('位置を当てられなかったウィンドウは「動かせませんでした」で失敗にする', async () => {
     const { deps } = makeDeps([{ hwnd: 3n, title: 'admin', processName: 'mmc.exe' }]);
     deps.applyConfig = vi.fn(async () => ({

@@ -266,9 +266,9 @@ export function windowDisplayName(window: WindowInfo): string {
  * ほかのアプリの起動の引数は取れないので、exe を開く行にすると開いていたファイルが開かない。
  * 位置を記録するのが主なので開くものは持たず、要るときは行の詳細で足してもらう
  */
-export function entryFromWindow(window: WindowInfo, allWindows: readonly WindowInfo[]): SetEntry {
+export function entryFromWindow(window: WindowInfo): SetEntry {
   return {
-    window: decideWindowMatch(window, allWindows),
+    window: decideWindowMatch(window),
     placement: placementFromWindow(window),
     label: windowDisplayName(window),
   };
@@ -289,14 +289,10 @@ export function titleParts(title: string): string[] {
  *
  * 最小化中のウィンドウは座標が画面の外になるので、見つけ方だけ決めて置き場所は前のままにする
  */
-export function linkEntryToWindow(
-  entry: SetEntry,
-  window: WindowInfo,
-  allWindows: readonly WindowInfo[]
-): SetEntry {
+export function linkEntryToWindow(entry: SetEntry, window: WindowInfo): SetEntry {
   const linked: SetEntry = {
     ...entry,
-    window: entry.window ?? decideWindowMatch(window, allWindows),
+    window: entry.window ?? decideWindowMatch(window),
   };
   if (window.windowState !== 'minimized') linked.placement = placementFromWindow(window);
   return linked;

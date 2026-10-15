@@ -342,10 +342,27 @@ async function runSet(
     });
     update(index, error ? 'failed' : 'success', error);
   };
-  /** 動かすだけの行で、ウィンドウが開いていなかった（失敗とは数えず、理由だけ添える） */
+  /**
+   * 動かすだけの行で、ウィンドウが見つからなかった（失敗とは数えず、理由だけ添える）。
+   * 同じ exe のウィンドウはあるならタイトルが合わないだけなので、そう知らせる（タブの切り替えなど）
+   */
   const skip = (index: number) => {
     results.push({ index, name: resolved[index].name, success: true, skipped: true });
-    update(index, 'skipped', mainI18n.t('set.run.notOpen'));
+    const match = item.entries[index].window;
+    const exeOpen =
+      !!match?.processName &&
+      !!match.title &&
+      match.title !== ANY_WINDOW_TITLE &&
+      deps.findWindow({ title: ANY_WINDOW_TITLE, processName: match.processName }) !== null;
+    update(
+      index,
+      'skipped',
+      exeOpen
+        ? mainI18n.t('set.run.titleNotMatched', {
+            exe: match!.processName!.replace(/\.exe$/i, ''),
+          })
+        : mainI18n.t('set.run.notOpen')
+    );
   };
 
   /**

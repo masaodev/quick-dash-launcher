@@ -172,12 +172,6 @@
   color: var(--color-primary);
 }
 
-/* 見直す目安（タイトル全体で探す行） */
-.set-chip-warn {
-  background-color: var(--bg-warning-light);
-  color: var(--text-warning);
-}
-
 .set-chip-danger {
   background-color: var(--bg-danger-light);
   color: var(--color-danger);

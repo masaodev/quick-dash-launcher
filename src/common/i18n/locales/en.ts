@@ -570,6 +570,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
   },
   set: {
     run: {
+      titleNotMatched: 'No window with a matching title ({{exe}} is open)',
       notOpen: "Not open, so it wasn't moved",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
     },
@@ -644,11 +645,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       outcomeOpenOnly: 'opens only',
       outcomeFrontOnly: 'brings it to the front if it is open',
       keepPrevious: 'Keeps its previous position',
-      fullTitle: 'Full title',
-      fullTitleHint:
-        'Looks for a window with exactly this title. If the title changes (for example after an app update), the window will not be found, so you can search by part of it in ✏️ (Row details)',
       newRowNote:
-        'Rows added here are "Move only": they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️.',
+        'Rows added here are "Move only": they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️. Rows look for a window with the whole title; if the title changes (switching tabs, updates), search by part of it in Row details ✏️.',
       noPlacement: 'No position recorded',
       tabNote: 'If it opens as a tab in an existing window, that whole window moves',
       minimizedNote: 'Minimized, so its position is not recorded. Restore it first, then record',
@@ -677,6 +675,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       processNamePlaceholder: 'Example: notepad.exe',
       windowTitle: 'Window title',
       windowTitlePlaceholder: 'Leave empty to accept any title',
+      anyTitle: 'Any title',
+      anyTitleHint: 'Search by exe name only (any title)',
       titleParts: 'Search by part:',
       revertTitle: '↺ Revert',
       matchNone: 'Matching windows now: 0',

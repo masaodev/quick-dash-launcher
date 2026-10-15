@@ -261,7 +261,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
         // 前の見つけ方がこのウィンドウに当てはまらなければ（手で結び付けた・付け替えた）、決め直す
         const base =
           entry.window && matchesWindow(entry.window, w) ? entry : { ...entry, window: undefined };
-        return linkEntryToWindow(base, w, all);
+        return linkEntryToWindow(base, w);
       }
       if (assign.has(i) && w === null) {
         const { window: _w, placement: _p, ...rest } = entry;
@@ -281,12 +281,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
 
   /** 新しく足す行（行の詳細で直していればその内容） */
   const newRowEntry = (w: WindowInfo): SetEntry =>
-    newRowEdits.get(windowKey(w)) ?? entryFromWindow(w, windows ?? []);
-  /** タイトル全体で探す新しい行か（アプリの更新などでタイトルが変わると見つからなくなる） */
-  const searchesFullTitle = (w: WindowInfo) => {
-    const title = newRowEntry(w).window?.title;
-    return !!title && !/[*?]/.test(title);
-  };
+    newRowEdits.get(windowKey(w)) ?? entryFromWindow(w);
   const editingWindow =
     editingKey !== null ? (windows ?? []).find((w) => windowKey(w) === editingKey) : undefined;
 
@@ -441,19 +436,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                     <RowIcon icon={w.icon} fallback="🪟" />
                     <RecordName
                       name={w.title}
-                      sub={
-                        <>
-                          {windowProcessLabel(w)}
-                          {newRows.has(windowKey(w)) && searchesFullTitle(w) && (
-                            <span
-                              className="set-chip set-chip-warn"
-                              title={t('set.record.fullTitleHint')}
-                            >
-                              {t('set.record.fullTitle')}
-                            </span>
-                          )}
-                        </>
-                      }
+                      sub={windowProcessLabel(w)}
                       notes={<WindowNotes window={w} opensAsTab={false} />}
                     />
                     <Place text={placeOf(w)} />

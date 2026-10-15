@@ -113,29 +113,24 @@ describe('autoLinkWindows', () => {
 });
 
 describe('decideWindowMatch', () => {
-  it('その exe のウィンドウが 1 つなら exe 名だけ', () => {
-    expect(decideWindowMatch(obsidian, [obsidian, terminal])).toEqual({
+  it('開いているウィンドウの数によらず、exe 名とタイトル全体を保存する', () => {
+    expect(decideWindowMatch(obsidian)).toEqual({
       processName: 'Obsidian.exe',
+      title: obsidian.title,
     });
-  });
-
-  it('同じ exe が 2 つ以上なら、タイトルも保存する', () => {
-    const second = win({ ...terminal, hwnd: 9, title: 'ai-workspace' });
-    expect(decideWindowMatch(terminal, [terminal, second])).toEqual({
+    expect(decideWindowMatch(terminal)).toEqual({
       processName: 'WindowsTerminal.exe',
       title: 'QDL_main',
     });
-  });
-
-  it('エクスプローラーとストアアプリは、1 つでもタイトルを保存する', () => {
-    expect(decideWindowMatch(explorerA, [explorerA])).toEqual({
+    expect(decideWindowMatch(explorerA)).toEqual({
       processName: 'explorer.exe',
       title: 'ai-workspace',
     });
-    const sticky = win({ title: '付箋', processName: 'ApplicationFrameHost.exe' });
-    expect(decideWindowMatch(sticky, [sticky])).toEqual({
-      processName: 'ApplicationFrameHost.exe',
-      title: '付箋',
+  });
+
+  it('タイトルが空なら exe 名だけ', () => {
+    expect(decideWindowMatch(win({ title: '  ', processName: 'app.exe' }))).toEqual({
+      processName: 'app.exe',
     });
   });
 });
