@@ -453,6 +453,8 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
           // 指す先だけを差し替え、動かすウィンドウ・位置・行の名前は残す
           const target = catalogItemToEntry(item);
           update({ itemId: target.itemId, open: target.open });
+          // フォルダ取込の展開分は id を持たずパスで入るので、選択肢も「パス」にする
+          if (!target.itemId) setOpenKind('path');
         }}
       />
       <WindowSelectorModal
