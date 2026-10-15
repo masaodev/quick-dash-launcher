@@ -272,6 +272,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         isOpen={recordOpen}
         entries={entries}
         catalog={catalogById}
+        catalogList={catalog}
         screens={screens}
         onClose={() => setRecordOpen(false)}
         onConfirm={setEntries}

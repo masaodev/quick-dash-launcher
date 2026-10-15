@@ -640,6 +640,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       outcomeOpenOnly: 'opens only',
       outcomeFrontOnly: 'brings it to the front if it is open',
       keepPrevious: 'Keeps its previous position',
+      fullTitle: 'Full title',
+      fullTitleHint:
+        'Looks for a window with exactly this title. If the title changes (for example after an app update), the window will not be found, so you can search by part of it in ✏️ (Row details)',
       newRowNote:
         'Rows added here are "Move only": they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️.',
       noPlacement: 'No position recorded',

@@ -643,6 +643,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       outcomeOpenOnly: '開くだけ',
       outcomeFrontOnly: '開いていれば前面に出すだけ',
       keepPrevious: '前の位置のまま',
+      fullTitle: 'タイトル全体',
+      fullTitleHint:
+        'タイトル全体が同じウィンドウを探します。アプリの更新などでタイトルが変わると見つからなくなるので、✏️（行の詳細）で一部だけで探すようにできます',
       newRowNote:
         '足した行は「動かすだけ」です（開いているウィンドウを動かすだけ）。閉じていても開きたいときは、行の詳細 ✏️ で開くもの（アイテムかパス）を足します。',
       noPlacement: '位置は記録しない',

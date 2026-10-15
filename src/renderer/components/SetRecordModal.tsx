@@ -25,6 +25,7 @@ import {
 import { logError } from '../utils/debug';
 import '../styles/components/SetEditor.css';
 
+import SetEntryDetailModal from './SetEntryDetailModal';
 import WindowSelectorModal from './WindowSelectorModal';
 import { Button } from './ui';
 
@@ -32,6 +33,8 @@ interface SetRecordModalProps {
   isOpen: boolean;
   entries: SetEntry[];
   catalog: ReadonlyMap<string, SetCatalogItem>;
+  /** 行の詳細でアイテムを選ぶときの一覧 */
+  catalogList: SetCatalogItem[];
   screens: readonly ScreenArea[];
   onClose: () => void;
   /** 記録した結果の行（並びは元の行のあとに、新しく足した行） */
@@ -144,6 +147,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   isOpen,
   entries,
   catalog,
+  catalogList,
   screens,
   onClose,
   onConfirm,
@@ -155,6 +159,10 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
   const [assign, setAssign] = useState<Map<number, WindowInfo | null>>(new Map());
   /** 新しい行として追加するウィンドウ */
   const [newRows, setNewRows] = useState<Set<string>>(new Set());
+  /** 記録する前に行の詳細で直した、新しい行（ウィンドウのキー → 行） */
+  const [newRowEdits, setNewRowEdits] = useState<Map<string, SetEntry>>(new Map());
+  /** 行の詳細を開いている新しい行（ウィンドウのキー） */
+  const [editingKey, setEditingKey] = useState<string | null>(null);
   /** 手で結び付けるウィンドウを選んでいる行 */
   const [pickingFor, setPickingFor] = useState<number | null>(null);
   /** 「行に無いウィンドウ」「最小化中」の欄を開いているか（既定は畳む。行を足すときだけ開けばよい） */
@@ -182,6 +190,7 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
         for (const [index, w] of result.links) initial.set(index, w as WindowInfo);
         setAssign(initial);
         setNewRows(new Set());
+        setNewRowEdits(new Map());
         setWindows(list);
       })
       .catch((error) => {
@@ -264,11 +273,22 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
       return entry;
     });
     for (const w of all) {
-      if (newRows.has(windowKey(w))) result.push(entryFromWindow(w, all));
+      if (newRows.has(windowKey(w))) result.push(newRowEntry(w));
     }
     onConfirm(result);
     onClose();
   };
+
+  /** 新しく足す行（行の詳細で直していればその内容） */
+  const newRowEntry = (w: WindowInfo): SetEntry =>
+    newRowEdits.get(windowKey(w)) ?? entryFromWindow(w, windows ?? []);
+  /** タイトル全体で探す新しい行か（アプリの更新などでタイトルが変わると見つからなくなる） */
+  const searchesFullTitle = (w: WindowInfo) => {
+    const title = newRowEntry(w).window?.title;
+    return !!title && !/[*?]/.test(title);
+  };
+  const editingWindow =
+    editingKey !== null ? (windows ?? []).find((w) => windowKey(w) === editingKey) : undefined;
 
   const nameOf = (i: number) => views[i]?.name || `#${i + 1}`;
   const placeOf = (w: WindowInfo) =>
@@ -421,7 +441,19 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                     <RowIcon icon={w.icon} fallback="🪟" />
                     <RecordName
                       name={w.title}
-                      sub={windowProcessLabel(w)}
+                      sub={
+                        <>
+                          {windowProcessLabel(w)}
+                          {newRows.has(windowKey(w)) && searchesFullTitle(w) && (
+                            <span
+                              className="set-chip set-chip-warn"
+                              title={t('set.record.fullTitleHint')}
+                            >
+                              {t('set.record.fullTitle')}
+                            </span>
+                          )}
+                        </>
+                      }
                       notes={<WindowNotes window={w} opensAsTab={false} />}
                     />
                     <Place text={placeOf(w)} />
@@ -443,6 +475,17 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
                         </optgroup>
                       )}
                     </select>
+                    {/* 行として追加するウィンドウだけ、記録する前に行の詳細で直せる */}
+                    <button
+                      type="button"
+                      className="set-icon-btn"
+                      title={t('set.editor.detail')}
+                      aria-label={t('set.editor.detail')}
+                      disabled={!newRows.has(windowKey(w))}
+                      onClick={() => setEditingKey(windowKey(w))}
+                    >
+                      ✏️
+                    </button>
                   </div>
                 ))}
 
@@ -478,6 +521,17 @@ const SetRecordModal: React.FC<SetRecordModalProps> = ({
         </div>
       </div>
 
+      <SetEntryDetailModal
+        entry={editingWindow ? newRowEntry(editingWindow) : null}
+        catalog={catalog}
+        catalogList={catalogList}
+        screens={screens}
+        onClose={() => setEditingKey(null)}
+        onChange={(entry) => {
+          if (editingKey === null) return;
+          setNewRowEdits((prev) => new Map(prev).set(editingKey, entry));
+        }}
+      />
       <WindowSelectorModal
         isOpen={pickingFor !== null}
         onClose={() => setPickingFor(null)}
