@@ -344,8 +344,23 @@ async function runSet(
   };
   /**
    * 動かすだけの行で、ウィンドウが見つからなかった（失敗とは数えず、理由だけ添える）。
-   * 同じ exe のウィンドウはあるならタイトルが合わないだけなので、そう知らせる（タブの切り替えなど）
+   * 同じ exe のウィンドウはあるならタイトルが合わないだけなので、そう知らせる（タブの切り替えなど）。
+   * ほかの行の条件に合うウィンドウはその行のものなので除く（行の順番で知らせる文が変わらないように）
    */
+  const otherRowsWindows = (index: number): Set<bigint> => {
+    const taken = new Set<bigint>(claimed);
+    item.entries.forEach((entry, i) => {
+      if (i === index || !entry.window) return;
+      if (!entry.window.processName && !entry.window.title) return;
+      const config = {
+        title: entry.window.title || ANY_WINDOW_TITLE,
+        processName: entry.window.processName,
+      };
+      let found: bigint | null;
+      while ((found = deps.findWindow(config, taken)) !== null) taken.add(found);
+    });
+    return taken;
+  };
   const skip = (index: number) => {
     results.push({ index, name: resolved[index].name, success: true, skipped: true });
     const match = item.entries[index].window;
@@ -353,9 +368,10 @@ async function runSet(
       !!match?.processName &&
       !!match.title &&
       match.title !== ANY_WINDOW_TITLE &&
-      // ほかの行が取ったウィンドウは除く（同じ窓に当たる行が 2 つあるとき、取られただけなのにタイトル違いと出さない）
-      deps.findWindow({ title: ANY_WINDOW_TITLE, processName: match.processName }, claimed) !==
-        null;
+      deps.findWindow(
+        { title: ANY_WINDOW_TITLE, processName: match.processName },
+        otherRowsWindows(index)
+      ) !== null;
     update(
       index,
       'skipped',

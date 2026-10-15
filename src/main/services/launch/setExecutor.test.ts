@@ -264,6 +264,34 @@ describe('executeSet', () => {
     expect(last[1].errorMessage).toBe('set.run.notOpen');
   });
 
+  it('ほかの行の窓だけが開いているときは、行の順番によらず「開いていない」で飛ばす', async () => {
+    for (const order of [0, 1]) {
+      const { deps } = makeDeps([{ hwnd: 8n, title: 'B - ペイント', processName: 'mspaint.exe' }]);
+      const sent: LayoutExecutionProgress[] = [];
+      deps.progress = {
+        show: vi.fn(async () => {}),
+        send: vi.fn((_event, progress) => {
+          sent.push(structuredClone(progress));
+        }),
+        onCancel: vi.fn(() => () => {}),
+      };
+      const rowA = {
+        window: { processName: 'mspaint.exe', title: 'A - ペイント' },
+        placement: { x: 0, y: 0 },
+      };
+      const rowB = {
+        window: { processName: 'mspaint.exe', title: 'B - ペイント' },
+        placement: { x: 9, y: 9 },
+      };
+      const entries = order === 0 ? [rowA, rowB] : [rowB, rowA];
+      await executeSet({ displayName: 'x', entries }, resolve, deps, logger);
+      const last = sent[sent.length - 1].entries;
+      const a = last[order === 0 ? 0 : 1];
+      expect(a.status).toBe('skipped');
+      expect(a.errorMessage).toBe('set.run.notOpen');
+    }
+  });
+
   it('位置を当てられなかったウィンドウは「動かせませんでした」で失敗にする', async () => {
     const { deps } = makeDeps([{ hwnd: 3n, title: 'admin', processName: 'mmc.exe' }]);
     deps.applyConfig = vi.fn(async () => ({
