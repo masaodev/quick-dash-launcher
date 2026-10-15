@@ -84,7 +84,7 @@
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
 | **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダを開く、編集、セットの今の位置を記録し直す） | [context-menu.md](./context-menu.md) |
-| **URLコンバーターメニュー**（`UrlConverterMenu`） | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「🔗 URL変換」 | [register-modal.md](./register-modal.md#533-url変換ボタンをクリック) |
+| **変換メニュー**（`ItemConverterMenu`） | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「変換 ▾」 | [register-modal.md](./register-modal.md#533-変換ボタンをクリック) |
 | **セットの欄**（`SetEntriesEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📦 セット」のとき（行の一覧・開き方） | [register-modal.md](./register-modal.md#58-セットの行を編集) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
 | **ホットキー入力** | 起動ホットキー・アイテム検索ホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |

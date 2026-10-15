@@ -1388,20 +1388,38 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     notSet: 'Not set',
     selectFile: 'Choose file',
   },
-  urlConverter: {
-    title: 'Convert the URL format (SharePoint and more)',
-    button: 'Convert URL',
-    noRule: 'No conversion rule matches this URL',
-    hint: 'Supports URLs of Office files (Excel, Word, PowerPoint) on SharePoint',
+  itemConverter: {
+    button: 'Convert',
+    title:
+      'Convert the path to another way of opening it (new browser window, Office app, and more)',
+    noCandidates: 'No conversion is available for this input',
+    unsupportedBrowser: 'Your default browser ({{name}}) is not supported',
+    groups: {
+      url: 'URL',
+      browser: 'Browser ({{name}})',
+    },
     options: {
+      toUrl: 'Back to the URL',
+      newWindow: 'Open in a new window',
+      appWindow: 'Open in an app window',
+      incognito: 'Open in an incognito window',
+      inPrivate: 'Open in an InPrivate window',
+      privateWindow: 'Open in a private window',
       sharePointEdit: 'Open for editing (SharePoint default)',
       edit: 'Open for editing',
       readOnly: 'Open as read-only',
     },
     descriptions: {
+      toUrl: 'Opens in a new tab of your default browser',
+      appWindow: 'Opens in a window without tabs or an address bar',
       sharePointEdit: 'The standard way SharePoint opens files for editing',
       edit: 'Opens in the {{app}} app for editing',
       readOnly: 'Opens in the {{app}} app as read-only',
+    },
+    converted: {
+      toUrl: 'Changed back to the URL',
+      browser: 'Converted to open in {{name}}',
+      office: 'Converted to open in the {{app}} app',
     },
   },
   groupColors: {

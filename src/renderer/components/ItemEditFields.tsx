@@ -1,6 +1,6 @@
 import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type {
   ClipboardFormat,
   DataFileTab,
@@ -9,6 +9,7 @@ import type {
   WindowConfig,
   WindowInfo,
 } from '@common/types';
+import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { debugLog } from '../utils/debug';
 import { toWindowConfig, toWindowOperationConfig } from '../utils/windowFilter';
@@ -16,7 +17,7 @@ import { toWindowConfig, toWindowOperationConfig } from '../utils/windowFilter';
 import DirOptionsEditor from './DirOptionsEditor';
 import WindowConfigEditor from './WindowConfigEditor';
 import CustomIconEditor from './CustomIconEditor';
-import UrlConverterMenu from './UrlConverterMenu';
+import ItemConverterMenu from './ItemConverterMenu';
 import IconFetchButton from './IconFetchButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
 import SetEntriesEditor from './SetEntriesEditor';
@@ -113,6 +114,27 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   showSeparator,
 }) => {
   const { t } = useTranslation();
+  // 変換で書き換えた欄を一瞬光らせる
+  const [convertedFlash, setConvertedFlash] = useState(false);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(flashTimerRef.current), []);
+
+  const handleConvert = (converted: { path: string; args: string }) => {
+    // 種別はパスから決まる（ブラウザの exe ならアプリ）。パス欄を離れたときの判定を待たずに合わせる。
+    // 前の種別で読み込んだアイコン（ファビコンなど）は合わなくなるので外す
+    onUpdate({
+      path: converted.path,
+      args: converted.args || undefined,
+      type: detectItemTypeSync(converted.path),
+      icon: undefined,
+    });
+    // 引数は普段閉じているオプションの中にあるので、書き換えたら開いて見せる
+    if (converted.args && !optionsOpen) onToggleOptions();
+    setConvertedFlash(true);
+    clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setConvertedFlash(false), 800);
+  };
+  const flashClass = convertedFlash ? ' item-converted-flash' : '';
   const selectedTab = placement?.availableTabs.find((tab) => tab.files.includes(item.targetTab));
   const hasPath =
     item.itemCategory !== 'set' &&
@@ -205,7 +227,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             type="text"
             value={item.path}
             readOnly={isPathReadOnly}
-            className={errors?.path ? 'error' : isPathReadOnly ? 'readonly' : ''}
+            className={(errors?.path ? 'error' : isPathReadOnly ? 'readonly' : '') + flashClass}
             onChange={(e) => onFieldChange('path', e.target.value)}
             onBlur={() => onPathBlur()}
             placeholder={t('register.pathPlaceholder')}
@@ -216,11 +238,9 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             onFetch={() => onFetchIcon()}
             itemType={item.type}
           />
-          <UrlConverterMenu
-            url={item.path}
-            onConvert={(convertedUrl) => onFieldChange('path', convertedUrl)}
-            itemType={item.type}
-          />
+          {!isPathReadOnly && (
+            <ItemConverterMenu path={item.path} args={item.args} onConvert={handleConvert} />
+          )}
           {errors?.path && <span className="error-message">{errors.path}</span>}
         </div>
       )}
@@ -253,6 +273,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
                     <input
                       type="text"
                       value={item.args || ''}
+                      className={flashClass.trim()}
                       onChange={(e) => onFieldChange('args', e.target.value)}
                       placeholder={t('register.argsPlaceholder')}
                     />

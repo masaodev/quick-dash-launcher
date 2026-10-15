@@ -27,6 +27,8 @@ export const IPC_CHANNELS = {
   PATH_GET_KIND: 'path:get-kind',
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
+  /** 既定のブラウザの exe と表示名（登録・編集画面の「変換」） */
+  GET_DEFAULT_BROWSER: 'browser:get-default',
 
   // アイコン操作
   FETCH_FAVICON: 'fetch-favicon',

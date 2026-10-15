@@ -495,14 +495,13 @@
 
 /* パス入力欄横のアクションボタン（色と無効の見た目は Button の secondary） */
 .icon-fetch-btn,
-.url-converter-btn {
+.item-converter-btn {
   gap: var(--spacing-xs);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.icon-fetch-emoji,
-.url-converter-emoji {
+.icon-fetch-emoji {
   font-size: var(--font-size-sm);
 }
 

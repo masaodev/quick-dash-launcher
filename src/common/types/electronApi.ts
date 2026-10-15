@@ -3,6 +3,7 @@
  * preload 側はこの型で注釈しているため、実装とのずれは型チェックで検出される。
  */
 import type { PathKind } from '../utils/itemTypeDetector';
+import type { DefaultBrowser } from '../itemConversions';
 import type { AppLanguage } from '../i18n/languages';
 import type { ProgressEventType } from '../ipcChannels';
 import type { ScreenArea } from '../utils/placementLabel';
@@ -135,6 +136,8 @@ export interface ElectronAPI {
   registerItems: (items: RegisterItem[]) => Promise<void>;
   /** パスがフォルダ・ファイル・存在しないのどれかを確かめる（登録画面へのドロップ） */
   getPathKind: (filePath: string) => Promise<PathKind>;
+  /** 既定のブラウザの exe と表示名（取れなければ null。登録・編集画面の「変換」） */
+  getDefaultBrowser: () => Promise<DefaultBrowser | null>;
   /**
    * パスが実在するかをまとめて確認する（押したときだけ呼ぶ）。環境変数（%VAR%）は展開して調べ、
    * 応答しないパスは時間切れで unknown にする

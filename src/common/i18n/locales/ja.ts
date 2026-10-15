@@ -1390,20 +1390,37 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     notSet: '未設定',
     selectFile: 'ファイルから選択',
   },
-  urlConverter: {
-    title: 'URL形式を変換（SharePoint等）',
-    button: 'URL変換',
-    noRule: 'このURLに対応する変換ルールが見つかりませんでした',
-    hint: 'SharePoint上のOfficeファイル（Excel、Word、PowerPoint）のURLに対応しています',
+  itemConverter: {
+    button: '変換',
+    title: 'パスを別の開き方の書き方に変換します（ブラウザの新しいウィンドウ・Office アプリなど）',
+    noCandidates: 'この入力に使える変換はありません',
+    unsupportedBrowser: '既定のブラウザ（{{name}}）には対応していません',
+    groups: {
+      url: 'URL',
+      browser: 'ブラウザ（{{name}}）',
+    },
     options: {
+      toUrl: 'URL に戻す',
+      newWindow: '新しいウィンドウで開く形にする',
+      appWindow: 'アプリのウィンドウで開く形にする',
+      incognito: 'シークレット ウィンドウで開く形にする',
+      inPrivate: 'InPrivate ウィンドウで開く形にする',
+      privateWindow: 'プライベート ウィンドウで開く形にする',
       sharePointEdit: '編集用に開く（SharePoint標準）',
       edit: '編集用に開く',
       readOnly: '読み取り専用',
     },
     descriptions: {
+      toUrl: '既定のブラウザの新しいタブで開きます',
+      appWindow: 'タブとアドレスバーの無いウィンドウで開きます',
       sharePointEdit: 'SharePointで使用される標準的な編集用の開き方',
       edit: '{{app}}アプリで編集用に開く',
       readOnly: '{{app}}アプリで読み取り専用で開く',
+    },
+    converted: {
+      toUrl: 'URL に戻しました',
+      browser: '{{name}} で開く形に変換しました',
+      office: '{{app}} アプリで開く形に変換しました',
     },
   },
   groupColors: {
