@@ -322,15 +322,39 @@ export function indexById(items: readonly AppItem[]): Map<string, AppItem> {
 /** セットの行の名前（トーストで中身を見せる） */
 export function setEntryNames(entries: readonly SetEntry[], items: readonly AppItem[]): string[] {
   const byId = indexById(items);
+  return setEntryNamesBy(entries, (id) => {
+    const item = byId.get(id);
+    return item && 'displayName' in item ? item.displayName : undefined;
+  });
+}
+
+/** セットの行の名前（アイテムの名前は nameOf で引く。引けず名前も無い行は除く） */
+export function setEntryNamesBy(
+  entries: readonly SetEntry[],
+  nameOf: (itemId: string) => string | undefined
+): string[] {
   return entries
     .map((entry) => {
-      const item = entry.itemId ? byId.get(entry.itemId) : undefined;
-      if (item && 'displayName' in item) return item.displayName;
+      const name = entry.itemId ? nameOf(entry.itemId) : undefined;
+      if (name) return name;
       if (entry.label) return entry.label;
       if (entry.open) return lastSegment(entry.open.path);
       return entry.window?.title ?? entry.window?.processName ?? '';
     })
     .filter((name) => name !== '');
+}
+
+/** ツールチップに出す行の名前（先頭 3 行。残りは件数） */
+export function setEntriesSummary(
+  entries: readonly SetEntry[],
+  nameOf: (itemId: string) => string | undefined
+): string {
+  const names = setEntryNamesBy(entries, nameOf).slice(0, 3);
+  const rest = entries.length - names.length;
+  const joined = names.join(i18next.t('common.listSeparator'));
+  return rest > 0
+    ? i18next.t('launcher.tooltip.setRowsMore', { names: joined, count: rest })
+    : i18next.t('launcher.tooltip.setRows', { names: joined });
 }
 
 /** アイコンが取れていないときの、種類ごとの絵文字（メイン画面と同じ表に、動かすだけの行を足す） */

@@ -36,7 +36,7 @@ import AlertDialog from './components/AlertDialog';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
-import { setEntryNames } from './utils/setEditing';
+import { indexById, setEntryNames } from './utils/setEditing';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
@@ -55,6 +55,14 @@ function App(): React.ReactElement {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<AppItem[]>([]);
+  /** セットのツールチップで行の名前を引く（絞り込みの外のアイテムも引けるよう、全アイテムから） */
+  const nameOfMainItem = useMemo(() => {
+    const byId = indexById(mainItems);
+    return (itemId: string) => {
+      const item = byId.get(itemId);
+      return item && 'displayName' in item ? item.displayName : undefined;
+    };
+  }, [mainItems]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
@@ -685,6 +693,7 @@ function App(): React.ReactElement {
 
       <LauncherItemList
         items={filteredItems}
+        nameOfItem={nameOfMainItem}
         selectedIndex={selectedIndex}
         onItemExecute={handleExecuteItem}
         onItemSelect={setSelectedIndex}

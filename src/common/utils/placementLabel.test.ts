@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { computePlacementLabel, type ScreenArea } from './placementLabel';
+import { computePlacementLabel, fitPlacementToScreens, type ScreenArea } from './placementLabel';
 
 /** 1920×1080 の画面（タスクバー 40 px を除いた作業領域は 1920×1040） */
 const screen1: ScreenArea = {
@@ -72,5 +72,35 @@ describe('computePlacementLabel', () => {
     expect(computePlacementLabel({ virtualDesktopNumber: 2 }, [screen1])).toEqual({
       kind: 'none',
     });
+  });
+});
+
+describe('fitPlacementToScreens', () => {
+  it('どれかの画面に入っていれば、そのまま返す', () => {
+    const p = { x: 2000, y: 100, width: 800, height: 600 };
+    expect(fitPlacementToScreens(p, [screen1, screen2])).toBe(p);
+  });
+
+  it('どの画面にも入らなければ、主画面（左上が 0,0）の作業領域の中央に収める', () => {
+    const p = { x: 2000, y: 100, width: 800, height: 600, virtualDesktopNumber: 2 };
+    expect(fitPlacementToScreens(p, [screen1])).toEqual({
+      x: 560,
+      y: 220,
+      width: 800,
+      height: 600,
+      virtualDesktopNumber: 2,
+    });
+  });
+
+  it('作業領域より大きければ、作業領域の大きさに縮める', () => {
+    const p = { x: -3000, y: 0, width: 2560, height: 1400 };
+    expect(fitPlacementToScreens(p, [screen1])).toEqual({ x: 0, y: 0, width: 1920, height: 1040 });
+  });
+
+  it('画面の情報が無いときと、座標の無いときはそのまま返す', () => {
+    const p = { x: 5000, y: 0, width: 800, height: 600 };
+    expect(fitPlacementToScreens(p, [])).toBe(p);
+    const noPos = { width: 800, height: 600 };
+    expect(fitPlacementToScreens(noPos, [screen1])).toBe(noPos);
   });
 });

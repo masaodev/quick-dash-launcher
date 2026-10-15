@@ -219,6 +219,49 @@ describe('executeSet', () => {
     expect(result.errorCount).toBe(1);
   });
 
+  it('位置を当てられなかったウィンドウは「動かせませんでした」で失敗にする', async () => {
+    const { deps } = makeDeps([{ hwnd: 3n, title: 'admin', processName: 'mmc.exe' }]);
+    deps.applyConfig = vi.fn(async () => ({
+      activated: true,
+      windowFound: true,
+      positionNotApplied: true as const,
+    }));
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [{ window: { processName: 'mmc.exe' }, placement: { x: 0, y: 0 } }],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(result.entries[0]).toMatchObject({ success: false, error: 'set.run.couldNotMove' });
+  });
+
+  it('記録した位置がどの画面にも入らなければ、主画面に収めて当てる', async () => {
+    const { deps } = makeDeps([{ hwnd: 4n, title: 'メモ', processName: 'sticky.exe' }]);
+    deps.screens = () => [
+      {
+        bounds: { x: 0, y: 0, width: 1920, height: 1080 },
+        workArea: { x: 0, y: 0, width: 1920, height: 1040 },
+      },
+    ];
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        {
+          window: { processName: 'sticky.exe' },
+          placement: { x: 3000, y: 0, width: 800, height: 600 },
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(deps.applyConfig).toHaveBeenCalledWith(
+      4n,
+      expect.objectContaining({ x: 560, y: 220, width: 800, height: 600 }),
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
   it('飛ばした行は、進み具合の表示に skipped と理由で出す', async () => {
     const { deps } = makeDeps();
     const sent: LayoutExecutionProgress[] = [];

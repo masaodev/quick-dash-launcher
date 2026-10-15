@@ -167,6 +167,9 @@ export const ja = {
       processId: 'プロセスID: {{value}}',
       set_one: 'セット: {{count}}件',
       set_other: 'セット: {{count}}件',
+      setRows: '行: {{names}}',
+      setRowsMore_one: '行: {{names}} ほか{{count}}件',
+      setRowsMore_other: '行: {{names}} ほか{{count}}件',
       setPlaced_one: '位置を合わせる行: {{count}}件',
       setPlaced_other: '位置を合わせる行: {{count}}件',
       virtualDesktop: '仮想デスクトップ: {{value}}',
@@ -571,6 +574,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   set: {
     run: {
       notOpen: '開いていないので動かしませんでした',
+      couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
     },
     errors: {
       itemNotFound: 'アイテムが見つかりません',

@@ -9,7 +9,7 @@
  * - 置き場所の無い行は、今までのグループと同じ（アイテムにウィンドウ設定があれば、開いていれば前面に出すだけ）
  * - 置き場所のある行が 1 つでもあれば、進み具合を画面の隅に出す（中止できる）
  */
-import { ipcMain } from 'electron';
+import { ipcMain, screen } from 'electron';
 import type { Logger } from 'pino';
 import { itemLogger } from '@common/logger';
 import type {
@@ -33,6 +33,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { ANY_WINDOW_TITLE, createTitleMatcher } from '@common/utils/windowTitle';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
+import { fitPlacementToScreens, type ScreenArea } from '@common/utils/placementLabel';
 
 import { applyWindowConfig, tryActivateWindow } from '../../utils/windowActivator.js';
 import { findWindowHwndByTitle, maximizeWindow } from '../../utils/nativeWindowControl.js';
@@ -107,6 +108,8 @@ export interface SetExecutorDeps {
   activate: typeof tryActivateWindow;
   maximize: (hwnd: bigint) => boolean;
   sleep: (ms: number) => Promise<void>;
+  /** 画面の範囲（物理ピクセル。どの画面にも入らない位置を主画面に収めるのに使う） */
+  screens?: () => ScreenArea[];
   progress?: {
     show: () => Promise<void>;
     send: (event: ProgressEventType, progress: LayoutExecutionProgress) => void;
@@ -213,6 +216,12 @@ const defaultDeps: SetExecutorDeps = {
   activate: tryActivateWindow,
   maximize: (hwnd) => maximizeWindow(hwnd),
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  // ウィンドウの座標（GetWindowRect）は物理ピクセルなので、画面の範囲も物理ピクセルに直す
+  screens: () =>
+    screen.getAllDisplays().map((display) => ({
+      bounds: screen.dipToScreenRect(null, display.bounds),
+      workArea: screen.dipToScreenRect(null, display.workArea),
+    })),
   progress: {
     show: async () => {
       await showLayoutProgressWindow();
@@ -277,6 +286,7 @@ async function runSet(
 
   const resolved = item.entries.map((entry) => resolveSetEntry(entry, resolve));
   const hasPlacement = item.entries.some((entry) => entry.placement);
+  const screens = hasPlacement ? (deps.screens?.() ?? []) : [];
 
   let cancelled = false;
   const progress: LayoutExecutionProgress = {
@@ -398,8 +408,15 @@ async function runSet(
         return finish(index);
       }
 
-      // 置き場所のある行
-      const config = buildSetWindowConfig(entry, r);
+      // 置き場所のある行。今は無い画面の位置なら、主画面に収める（見えない所へ動かさない）
+      const fitted = fitPlacementToScreens(entry.placement, screens);
+      if (fitted !== entry.placement) {
+        logger.info(
+          { setName: item.displayName, index, placement: entry.placement, fitted },
+          '記録した位置がどの画面にも入らないので、主画面に収めます'
+        );
+      }
+      const config = buildSetWindowConfig({ ...entry, placement: fitted }, r);
       if (!config) {
         // 見つけ方を決められない（URL など）: 開くだけにする
         if (r.launch) await deps.launch(r.launch, logger);
@@ -428,9 +445,13 @@ async function runSet(
       markOpened();
       if (cancelled) return finish(index, mainI18n.t('layout.cancelled'));
 
-      await deps.applyConfig(hwnd, config, r.name, logger);
+      const applied = await deps.applyConfig(hwnd, config, r.name, logger);
       if (entry.placement.state === 'maximized') deps.maximize(hwnd);
-      return finish(index);
+      // 管理者権限で動くウィンドウなどは、位置を当てても動かない（大きさは見ない）
+      return finish(
+        index,
+        applied.positionNotApplied ? mainI18n.t('set.run.couldNotMove') : undefined
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(

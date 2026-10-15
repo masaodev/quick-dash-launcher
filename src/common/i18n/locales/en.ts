@@ -165,6 +165,9 @@ export const en: LocaleMessages = {
       processId: 'Process ID: {{value}}',
       set_one: 'Set: {{count}} item',
       set_other: 'Set: {{count}} items',
+      setRows: 'Rows: {{names}}',
+      setRowsMore_one: 'Rows: {{names}}, and {{count}} more',
+      setRowsMore_other: 'Rows: {{names}}, and {{count}} more',
       setPlaced_one: 'Rows that place a window: {{count}}',
       setPlaced_other: 'Rows that place a window: {{count}}',
       virtualDesktop: 'Virtual desktop: {{value}}',
@@ -568,6 +571,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
   set: {
     run: {
       notOpen: "Not open, so it wasn't moved",
+      couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
     },
     errors: {
       itemNotFound: "Couldn't find the item this row points to",

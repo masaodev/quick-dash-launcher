@@ -38,6 +38,8 @@ interface ItemListProps {
   onMoveWindows?: (wins: WindowInfo[], desktopNumber: number) => Promise<void>;
   /** ウィンドウ検索の複数選択（Ctrl+クリック・Shift+クリック・選んだ行の右クリック） */
   windowSelection?: WindowListSelection;
+  /** id からアイテムの名前を引く（セットのツールチップに行の名前を出す。絞り込みの外のアイテムも引く） */
+  nameOfItem?: (itemId: string) => string | undefined;
 }
 
 export interface WindowListSelection {
@@ -67,6 +69,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onPinWindows,
   onMoveWindows,
   windowSelection,
+  nameOfItem,
 }) => {
   const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
@@ -398,7 +401,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 }}
                 onMouseEnter={() => onItemSelect(index)}
                 onContextMenu={(e) => handleContextMenu(e, item)}
-                title={getTooltipText(item)}
+                title={getTooltipText(item, nameOfItem)}
               >
                 {isMarked && (
                   <span className="item-mark" aria-label={t('launcher.list.selected')}>

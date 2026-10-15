@@ -7,6 +7,7 @@ import {
   entryOpensAsTab,
   linkEntryToWindow,
   setEntryNames,
+  setEntriesSummary,
   titleParts,
   windowPickNotes,
 } from './setEditing';
@@ -145,5 +146,26 @@ describe('titleParts', () => {
 
   it('ワイルドカードは除き、同じ部品は 1 つにする', () => {
     expect(titleParts('*一時メモ.txt* - a - a')).toEqual(['一時メモ.txt', 'a']);
+  });
+});
+
+describe('setEntriesSummary', () => {
+  const nameOf = (id: string) => (id === 'gmail1aa' ? 'Gmail' : undefined);
+
+  it('先頭 3 行の名前を並べ、残りは件数にする', () => {
+    const entries: SetEntry[] = [
+      { itemId: 'gmail1aa' },
+      { label: '一時メモ' },
+      { open: { path: 'C:/tools/notepad.exe' } },
+      { window: { processName: 'sticky.exe' } },
+    ];
+    expect(setEntriesSummary(entries, nameOf)).toBe('行: Gmail、一時メモ、notepad.exe ほか1件');
+  });
+
+  it('3 行以下なら名前だけ。名前を引けない行は件数に回す', () => {
+    expect(setEntriesSummary([{ itemId: 'gmail1aa' }], nameOf)).toBe('行: Gmail');
+    expect(setEntriesSummary([{ itemId: 'gmail1aa' }, { itemId: 'nobody11' }], nameOf)).toBe(
+      '行: Gmail ほか1件'
+    );
   });
 });

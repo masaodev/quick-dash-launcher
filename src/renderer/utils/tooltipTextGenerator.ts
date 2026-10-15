@@ -11,6 +11,8 @@ import type {
 import { isWindowInfo, isWindowItem, isClipboardItem, isSetItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 
+import { setEntriesSummary } from './setEditing';
+
 // 一覧を描く部品（LauncherItemList）が useTranslation で言語の切り替えに合わせて描き直すので、
 // ここでは描くときの言語で i18next.t から引く
 const t = i18next.t.bind(i18next);
@@ -109,8 +111,13 @@ function getWindowInfoTooltip(win: WindowInfo): string {
 /**
  * SetItem用のツールチップテキストを生成
  */
-function getSetItemTooltip(setItem: SetItem): string {
+function getSetItemTooltip(
+  setItem: SetItem,
+  nameOf: (itemId: string) => string | undefined
+): string {
   const lines: string[] = [t('launcher.tooltip.set', { count: setItem.entries.length })];
+  // 旧グループのツールチップと同じく、中身の名前を出す（先頭 3 行）
+  if (setItem.entries.length > 0) lines.push(setEntriesSummary(setItem.entries, nameOf));
   const placed = setItem.entries.filter((entry) => entry.placement).length;
   if (placed > 0) lines.push(t('launcher.tooltip.setPlaced', { count: placed }));
   appendMetaInfo(lines, {
@@ -211,13 +218,16 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
  * AppItem用のツールチップテキストを生成
  * アイテムタイプに応じて適切な生成関数を呼び出す
  */
-export function getTooltipText(item: AppItem): string {
+export function getTooltipText(
+  item: AppItem,
+  nameOf: (itemId: string) => string | undefined = () => undefined
+): string {
   if (isWindowInfo(item)) {
     return getWindowInfoTooltip(item);
   }
 
   if (isSetItem(item)) {
-    return getSetItemTooltip(item);
+    return getSetItemTooltip(item, nameOf);
   }
 
   if (isWindowItem(item)) {

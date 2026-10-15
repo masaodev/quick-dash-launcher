@@ -150,3 +150,33 @@ export function computePlacementLabel(
   const row = Math.min(2, Math.max(0, Math.floor(((cy - area.y) / area.height) * 3)));
   return withScreen({ kind: 'region' as const, region: REGIONS[row][col], width, height });
 }
+
+/**
+ * 置き場所がどの画面にも入らない（モニターを外した・並びを変えた）とき、主画面の作業領域に収める
+ *
+ * ウィンドウの中心点が入る画面があれば、そのまま返す。無ければ、大きさを主画面（左上が 0,0 の画面。
+ * 無ければ 1 枚目）の作業領域に収まるよう縮め、作業領域の中央に置く。画面の情報が無ければそのまま返す
+ */
+export function fitPlacementToScreens(
+  placement: SetPlacement,
+  screens: readonly ScreenArea[]
+): SetPlacement {
+  const { x, y, width, height } = placement;
+  if (screens.length === 0 || x === undefined || y === undefined) return placement;
+  const w = width ?? 0;
+  const h = height ?? 0;
+  if (screens.some((s) => contains(s.bounds, x + w / 2, y + h / 2))) return placement;
+
+  const primary = screens.find((s) => contains(s.bounds, 0, 0)) ?? screens[0];
+  const work =
+    primary.workArea.width > 0 && primary.workArea.height > 0 ? primary.workArea : primary.bounds;
+  const fittedWidth = width === undefined ? undefined : Math.min(width, work.width);
+  const fittedHeight = height === undefined ? undefined : Math.min(height, work.height);
+  return {
+    ...placement,
+    x: Math.round(work.x + (work.width - (fittedWidth ?? 0)) / 2),
+    y: Math.round(work.y + (work.height - (fittedHeight ?? 0)) / 2),
+    ...(fittedWidth !== undefined ? { width: fittedWidth } : {}),
+    ...(fittedHeight !== undefined ? { height: fittedHeight } : {}),
+  };
+}
