@@ -10,7 +10,7 @@ import { isEditableJsonItem } from '@common/types';
 
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
-import { saveRegisterItems } from '../utils/registerItemSave';
+import { saveRegisterItems, withOwnClipboardData } from '../utils/registerItemSave';
 
 import ConfirmDialog from './ConfirmDialog';
 import RegisterModal from './RegisterModal';
@@ -62,7 +62,8 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
           : null;
       pendingSave.current = (async () => {
         try {
-          const action = await saveRegisterItems(items, editingItem);
+          const ownItems = await withOwnClipboardData(items, request.prefillItems);
+          const action = await saveRegisterItems(ownItems, editingItem);
           window.electronAPI.notifyMainChildWindowResult({ kind: 'register', action });
         } catch (error) {
           logError('アイテムの保存に失敗しました:', error);
@@ -73,7 +74,7 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       // 失敗してもウィンドウは閉じる（エラーはログに残す。close 側の finally で閉じる）
       pendingSave.current.catch(() => {});
     },
-    [request.editingItem, request.returnToOpener, requestId, showError, t]
+    [request.editingItem, request.prefillItems, request.returnToOpener, requestId, showError, t]
   );
 
   const handleDeleteRequest = useCallback((item: EditingAppItem | EditableJsonItem) => {
@@ -116,6 +117,7 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
         onRegister={handleRegister}
         droppedPaths={request.droppedPaths}
         editingItem={request.editingItem}
+        prefillItems={request.prefillItems}
         currentTab={request.currentTab}
         initialCategory={request.initialCategory}
         onDelete={request.returnToOpener ? undefined : handleDeleteRequest}

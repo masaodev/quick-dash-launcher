@@ -54,6 +54,12 @@ export const WORKSPACE_CONFIRM_WINDOW_NAME_PREFIX = 'workspace-confirm:';
 export const MAIN_CHILD_WINDOW_NAME_PREFIX = 'main-child:';
 
 /**
+ * ワークスペースのアイテムをドラッグするときに、アイテムの JSON を載せる dataTransfer の型
+ * メインウィンドウに落とすと、このアイテムを初期値にして登録画面を開く
+ */
+export const WORKSPACE_ITEM_DRAG_TYPE = 'workspaceItem';
+
+/**
  * アイコン取得の対象になるアイテムタイプ
  * folder / group / windowOperation / clipboard / layout は
  * タイプ別のデフォルトアイコンを使うため取得対象外

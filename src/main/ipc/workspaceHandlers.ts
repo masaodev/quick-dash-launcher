@@ -11,8 +11,10 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
+import { isClipboardItem } from '@common/types/guards';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
+import { ClipboardService } from '../services/clipboardService.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import {
   WorkspaceService,
@@ -35,6 +37,17 @@ import {
 } from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
+
+/**
+ * クリップボードアイテムなら実データを複製した参照に差し替える
+ * （メインウィンドウと 1 つのファイルを共有すると、メインウィンドウで消したときにワークスペース側が復元できなくなる）。
+ * 複製できなければ元の参照のまま足す
+ */
+function withOwnClipboardData(item: AppItem): AppItem {
+  if (!isClipboardItem(item)) return item;
+  const newRef = ClipboardService.getInstance().duplicateClipboardData(item.clipboardDataRef);
+  return newRef ? { ...item, clipboardDataRef: newRef } : item;
+}
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -147,7 +160,7 @@ export function setupWorkspaceHandlers(): void {
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
     (_event, item: AppItem, groupId?: string, workspaceId?: string) =>
       withWorkspaceService(async (service) => {
-        const addedItem = await service.addItem(item, groupId, workspaceId);
+        const addedItem = await service.addItem(withOwnClipboardData(item), groupId, workspaceId);
         logger.info(
           { id: addedItem.id, name: addedItem.displayName, groupId, workspaceId },
           'Added item to workspace'

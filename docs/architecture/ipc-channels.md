@@ -152,6 +152,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
 - `load-data-files` の再読込でワークスペースの内容が変わっていた場合にも送られる
+- `workspace:add-item` は、クリップボードアイテムなら保存データ（`clipboard-data/<id>.json`）を `ClipboardService.duplicateClipboardData` で複製し、複製を指すアイテムとして足す（メインウィンドウと 1 つのファイルを共有しない。複製できなければ元の参照のまま）。逆向き（ワークスペースのアイテムをメインウィンドウに登録）は、登録画面が保存するときに `clipboard:duplicate-data` で複製する
 
 ### 失敗時の扱い
 
@@ -188,6 +189,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 | 3. 子が結果を預けて閉じる | `window:return-main-child-value` | `workspace:return-confirm-result` |
 | `window.name` の接頭辞（以降が要求 ID） | `main-child:` | `workspace-confirm:` |
 
+- ワークスペースのアイテムをメインウィンドウに登録するときは、要求の `prefillItems` に初期値のアイテムを載せる。右クリックの「メインウィンドウに登録」は、メインプロセスがメインウィンドウを出してから `register-workspace-item-to-main` イベント（メインプロセス → メインウィンドウ。パラメータはワークスペースのアイテム）で知らせ、メインウィンドウが `window:open-main-child` を呼ぶ
 - 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う

@@ -128,11 +128,7 @@
   cursor: pointer;
 }
 
-/* Drag and Drop Overlay */
-.app.dragging-over {
-  position: relative;
-}
-
+/* Drag and Drop Overlay（.app は position: fixed なので、その全面に重ねる） */
 .drag-overlay {
   position: absolute;
   top: 0;
