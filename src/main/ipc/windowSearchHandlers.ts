@@ -20,6 +20,7 @@ import {
   isPinnedWindow,
   getAllDesktopNames,
   switchToWindowDesktop,
+  isDllLoaded,
 } from '../utils/virtualDesktop/index.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { getOverlayWindow } from '../services/overlayWindowService.js';
@@ -77,7 +78,8 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
 
   ipcMain.handle(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, (): VirtualDesktopInfo => {
     try {
-      if (!isVirtualDesktopSupported()) {
+      // DLL が読めないとデスクトップの番号も移動も扱えない（レジストリだけでは、件数 0 のタブが並ぶ）
+      if (!isVirtualDesktopSupported() || !isDllLoaded()) {
         return { supported: false, desktopCount: -1, currentDesktop: -1 };
       }
       return {
