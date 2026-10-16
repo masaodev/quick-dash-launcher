@@ -79,20 +79,17 @@ describe('loadSetEntryIcons', () => {
     Reflect.deleteProperty(window, 'electronAPI');
   });
 
-  function mockApi(cached: Record<string, string>, fetched: Record<string, string>) {
+  function mockApi(cached: Record<string, string>, ensured: Record<string, string>) {
     const api = {
       loadCachedIcons: vi.fn(async () => cached),
-      getIconForItem: vi.fn(async (path: string) => fetched[path] ?? null),
+      ensureIcons: vi.fn(async () => ensured),
     };
     Object.defineProperty(window, 'electronAPI', { configurable: true, value: api });
     return api;
   }
 
-  it('キャッシュにあるものはそのまま使い、無いものだけ取り出す', async () => {
-    const api = mockApi(
-      { 'C:\\tools\\Obsidian.lnk': 'data:lnk' },
-      { 'ms-todo:': 'data:todo', 'C:\\tools\\none.exe': '' }
-    );
+  it('キャッシュにあるものはそのまま使い、無いものだけ ensureIcons で取る', async () => {
+    const api = mockApi({ 'C:\\tools\\Obsidian.lnk': 'data:lnk' }, { 'ms-todo:': 'data:todo' });
     const icons = await loadSetEntryIcons([
       { open: { path: 'C:\\tools\\Obsidian.lnk' } },
       { open: { path: 'ms-todo:' } },
@@ -102,10 +99,16 @@ describe('loadSetEntryIcons', () => {
       'C:\\tools\\Obsidian.lnk': 'data:lnk',
       'ms-todo:': 'data:todo',
     });
-    expect(api.getIconForItem.mock.calls.map((c) => c[0]).sort()).toEqual([
-      'C:\\tools\\none.exe',
-      'ms-todo:',
+    expect(api.ensureIcons).toHaveBeenCalledWith([
+      expect.objectContaining({ path: 'ms-todo:', type: 'customUri' }),
+      expect.objectContaining({ path: 'C:\\tools\\none.exe', type: 'app' }),
     ]);
+  });
+
+  it('キャッシュで全部揃えば ensureIcons を呼ばない', async () => {
+    const api = mockApi({ 'ms-todo:': 'data:todo' }, {});
+    await loadSetEntryIcons([{ open: { path: 'ms-todo:' } }]);
+    expect(api.ensureIcons).not.toHaveBeenCalled();
   });
 
   it('アイテムを指す行・フォルダ・動かすだけの行は読まない', async () => {
