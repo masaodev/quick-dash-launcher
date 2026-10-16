@@ -147,7 +147,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### 変更操作と `workspace-changed` (イベント)
 
-`workspace:*` の変更系チャンネル（アイテム・グループ・ワークスペース（タブ）・アーカイブの追加・更新・削除・並び替え）は、成功すると `workspace-changed` を全ウィンドウに送る（`src/main/ipc/workspaceHandlers.ts`）。主に `withWorkspaceChange()` を使い、追加系（`workspace:add-item`・`workspace:add-items-from-paths`）は `notifyWorkspaceChanged()` を直接呼ぶ。受け手のワークスペース画面は一覧を読み直す。
+`workspace:*` の変更系チャンネル（アイテム・グループ・ワークスペース（タブ）・アーカイブの追加・更新・削除・並び替え）は、成功すると `workspace-changed` を全ウィンドウに送る（`src/main/ipc/workspaceHandlers.ts`）。主に `withWorkspaceChange()` を使い、追加・作成（`workspace:add-item`・`workspace:add-items-from-paths`・`workspace:create-workspace`・`workspace:create-group`）と、先に切り離しウィンドウを閉じる削除・アーカイブ（`workspace:delete-workspace`・`workspace:delete-group`・`workspace:archive-group`）は `notifyWorkspaceChanged()` を直接呼ぶ。受け手のワークスペース画面は一覧を読み直す。
 
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
@@ -205,7 +205,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ## 通知と進捗
 
-- **トースト**: `show-toast-window` で表示する。トーストはセットの進み具合と共用の 1 枚のオーバーレイウィンドウに出し（`src/main/services/overlayWindowService.ts`）、メインプロセスはそのウィンドウにだけ `show-toast` イベントを送る。セットの進み具合の表示中はトーストを出さない（実行が終わった後に残っている表示は、次のトーストで置き換える）。オプションは `ToastOptions`（同ファイル）を参照
+- **トースト**: `show-toast-window` で表示する。トーストはセットの進み具合と共用の 1 枚のオーバーレイウィンドウに出し（`src/main/services/overlayWindowService.ts`）、メインプロセスはそのウィンドウにだけ `show-toast` イベントを送る。セットの進み具合の表示中はトーストを出さない（実行が終わった後に残っている表示は、次のトーストで置き換える）。オプションは `ToastOptions`（`src/common/types/toast.ts`）を参照
 - **アイコン取得の進捗**: `icon-progress-start` / `icon-progress-update` / `icon-progress-complete`。データは `IconProgress`（`src/common/types/icon.ts`）
 - **セットの実行の進み具合**: 位置のある行が 1 つでもあるセットを実行したときに出す。`layout-progress-start` / `layout-progress-update` / `layout-progress-complete`（チャンネル名は旧ウィンドウ配置のまま）。中止は `layout-cancel`、表示を閉じるのは `close-layout-progress-window`（どちらも `send`）。実装は `src/main/services/launch/setExecutor.ts`
 

@@ -211,7 +211,7 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 **旧グループ・旧ウィンドウ配置からセットへの変換**: 2.0 への移行のあと、`workspace.json` / `workspace-archive.json` の `type: "group"` と `type: "layout"` を `type: "set"` に変換して書き戻す（`WorkspaceFileStore`・`src/main/services/data/setMigration.ts`）。変換の規則はデータファイルと同じ（[データファイル形式 3.3.6](data-format.md#336-旧形式からの変換)）で、所属・並び順（`workspaceId` / `groupId` / `order` / `addedAt` / `archivedAt` / `archivedGroupId`）はそのまま残す。データファイルとの違いは次のとおり。
 
 - 旧グループの名前は、データファイルの通常アイテム・ウィンドウアイテムの表示名から探して `itemId` の行にする。データファイルは読み込み処理に通さずに中身だけを読むので、フォルダ取込で展開したアイテムの名前は見つからない行になる（`src/main/services/workspace/WorkspaceService.ts`）
-- 2 ファイルとも読めた（`corrupted` でない）ときだけ変換する
+- 2 ファイルとも読み込みの状態が `ok` のときだけ変換する（`corrupted`・`unreadable` のときはしない）
 - 変換の前に `backup/<日時>_pre-set-migration/` のスナップショットを作る（`backupEnabled` に関係なく作る）。作れなければ変換せず、旧形式のアイテムは未知の `type` として `invalid` になる（ファイルには残る）
 
 ---

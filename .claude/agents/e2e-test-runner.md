@@ -146,7 +146,7 @@ npm run test:e2e:single <テスト名>  # 1ファイルだけ実行（例: first
 ### 実行されたテストスイート
 1. basic-ui.spec.ts（基本UI機能テスト）
 2. item-registration.spec.ts（アイテム登録・編集機能テスト）
-3. group-item-registration.spec.ts（グループアイテム登録・編集機能テスト）
+3. set-item.spec.ts（セットアイテムのテスト）
 4. multi-tab.spec.ts（マルチタブ機能テスト）
 ...
 

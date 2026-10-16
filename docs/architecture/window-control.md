@@ -64,7 +64,7 @@
     - モーダルモード
     - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
   - **別の仮想デスクトップにあるとき**: 表示したまま別の仮想デスクトップへ移った（ピン留め中など）メインウィンドウは、ホットキー（アイテム検索のホットキーも）を押すと隠さずに今のデスクトップへ移して前に出す。表示するときも、別のデスクトップにあれば今のデスクトップへ移してから出す（`moveWindowToCurrentDesktop()`）。先に `focus()` すると Windows がメインウィンドウのあるデスクトップへ切り替えてしまうため、移すのが先
-  - **実装場所**: `src/main/windowManager.ts`（`hideMainWindow()`）
+  - **実装場所**: `src/main/services/hotkeyService.ts`（ホットキーの登録と押したときの表示・非表示の切り替え。`handleHotkeyPressed()`）、`src/main/windowManager.ts`（`registerGlobalShortcut()` で表示・非表示の処理を渡す。`showMainWindow()`・`hideMainWindow()`）
 - **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
 - **モーダルモード時のフォーカス制御**: メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間はフォーカスアウトでもウィンドウが非表示にならない（下記「メイン画面の子ウィンドウ」）
 - **Escapeキー**: 以下の場合を**除き**、Escapeキーで非表示可能
@@ -137,7 +137,7 @@
 **4. 固定位置（手動設定）モード (`fixed`)**
 
 - ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します
-- 初回表示時（`windowPositionX=0, windowPositionY=0`の場合）は画面中央に配置され、その位置が自動保存されます
+- 初回表示時（`windowPositionX=0, windowPositionY=0`の場合）と、保存した位置がどのモニターの作業領域にも入らないとき（モニターを外した後など）は画面中央に配置され、その位置が自動保存されます（`isPositionOnScreen()`、`src/main/utils/screenPosition.ts`）
 - ウィンドウの`moved`イベントを監視し、ユーザーがウィンドウを移動すると自動的に位置を保存します
 - 保存された座標（`windowPositionX`, `windowPositionY`）は`settings.json`に永続化されます
 
@@ -172,7 +172,7 @@
 `fixed`モード時のみ、以下のタイミングでウィンドウ位置が自動保存されます：
 
 1. **ウィンドウ移動時**: ユーザーがウィンドウをドラッグして移動したとき（`moved`イベント）
-2. **初回表示時**: `windowPositionX=0, windowPositionY=0`の場合、画面中央に配置後に位置を保存
+2. **初回表示時・保存位置が画面外のとき**: `windowPositionX=0, windowPositionY=0`の場合、または保存位置がどのモニターの作業領域にも入らない場合、画面中央に配置後に位置を保存
 
 ### システムトレイメニュー
 
@@ -328,41 +328,25 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 ### データ形式
 
-ウィンドウ設定はdata.jsonの5番目のフィールドに記述します。
-
-#### 文字列形式（タイトルのみ）
-
-```
-名前,パス,引数,カスタムアイコン,ウィンドウタイトル
-```
-
-**例:**
-
-```
-VSCode,code.exe,,,Visual Studio Code
-Chrome,chrome.exe,,,Google Chrome
-```
-
-#### JSON形式（位置・サイズ指定）
-
-```
-名前,パス,引数,カスタムアイコン,"{""title"":""ウィンドウタイトル"",""x"":100,""y"":200,""width"":800,""height"":600}"
-```
-
-**JSON構造:**
+ウィンドウ設定は、通常アイテムでは data.json のアイテムの `windowConfig` オブジェクトに、ウィンドウ操作アイテム（`type: "window"`）ではアイテム自身のフィールド（タイトルは `windowTitle`、ほかは `windowConfig` と同じ名前）に書きます。
 
 ```json
 {
-  "title": "ウィンドウタイトル（必須）",
-  "x": 100, // X座標（省略可能）
-  "y": 200, // Y座標（省略可能）
-  "width": 800, // 幅（省略可能）
-  "height": 600, // 高さ（省略可能）
-  "moveToActiveMonitorCenter": true // アクティブモニター中央に移動（省略可能、デフォルト: false）
+  "id": "u1V2w3X4",
+  "type": "item",
+  "displayName": "VSCode",
+  "path": "code.exe",
+  "windowConfig": {
+    "title": "Visual Studio Code",
+    "x": 100,
+    "y": 200,
+    "width": 800,
+    "height": 600
+  }
 }
 ```
 
-詳細は **[データファイル形式 - ウィンドウ設定](file-formats/data-format.md#315-ウィンドウ制御設定windowconfig)** を参照してください。
+フィールド・既定値・例の正本は **[データファイル形式 - ウィンドウ制御設定](file-formats/data-format.md#315-ウィンドウ制御設定windowconfig)** と **[ウィンドウアイテム](file-formats/data-format.md#34-ウィンドウアイテムjsonwindowitem)** です。以下の使用例は `windowConfig` の部分だけを示します。
 
 ### アクティブモニター中央への移動
 
@@ -378,13 +362,8 @@ Chrome,chrome.exe,,,Google Chrome
 
 **使用例:**
 
-```
-// アクティブモニターの中央に移動（サイズ指定あり）
-VSCode,code.exe,,,"{""title"":""Visual Studio Code"",""moveToActiveMonitorCenter"":true,""width"":1600,""height"":900}"
-
-// アクティブモニターの中央に移動（サイズ指定なし、現在のサイズを維持）
-Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""moveToActiveMonitorCenter"":true}"
-```
+- アクティブモニターの中央に移動（サイズ指定あり）: `{ "title": "Visual Studio Code", "moveToActiveMonitorCenter": true, "width": 1600, "height": 900 }`
+- アクティブモニターの中央に移動（サイズ指定なし、現在のサイズを維持）: `{ "title": "Google Chrome", "moveToActiveMonitorCenter": true }`
 
 ### マルチモニタ対応（固定座標指定）
 
@@ -399,11 +378,9 @@ Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""moveToActiveMonitorCenter"":
 
 **使用例（デュアルモニタ、固定座標）:**
 
-```
-Chrome (セカンダリ),chrome.exe,,,"{""title"":""Google Chrome"",""x"":1920,""y"":0,""width"":1920,""height"":1080}"
-VSCode (左半分),code.exe,,,"{""title"":""Visual Studio Code"",""x"":0,""y"":0,""width"":960,""height"":1080}"
-Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":960,""height"":1080}"
-```
+- Chrome（セカンダリ全体）: `{ "title": "Google Chrome", "x": 1920, "y": 0, "width": 1920, "height": 1080 }`
+- VSCode（プライマリの左半分）: `{ "title": "Visual Studio Code", "x": 0, "y": 0, "width": 960, "height": 1080 }`
+- Slack（プライマリの右半分）: `{ "title": "Slack", "x": 960, "y": 0, "width": 960, "height": 1080 }`
 
 ### 実装詳細
 
@@ -474,17 +451,8 @@ Slack (右半分),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":9
 
 **使用例:**
 
-```
-// デスクトップ2にウィンドウを移動
-VSCode,code.exe,,,"{""title"":""Visual Studio Code"",""virtualDesktopNumber"":2}"
-
-// デスクトップ3に移動し、位置・サイズも調整
-Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""virtualDesktopNumber"":3,""x"":100,""y"":100,""width"":1600,""height"":900}"
-
-// デスクトップ1（左半分）+ デスクトップ2（右半分）で画面分割
-VSCode (Desktop1),code.exe,,,"{""title"":""Visual Studio Code"",""virtualDesktopNumber"":1,""x"":0,""y"":0,""width"":960,""height"":1080}"
-Chrome (Desktop2),chrome.exe,,,"{""title"":""Google Chrome"",""virtualDesktopNumber"":2,""x"":0,""y"":0,""width"":960,""height"":1080}"
-```
+- デスクトップ2にウィンドウを移動: `{ "title": "Visual Studio Code", "virtualDesktopNumber": 2 }`
+- デスクトップ3に移動し、位置・サイズも調整: `{ "title": "Google Chrome", "virtualDesktopNumber": 3, "x": 100, "y": 100, "width": 1600, "height": 900 }`
 
 **技術実装:**
 
@@ -536,9 +504,9 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
 | **デスクトップ切り替え** | ウィンドウのデスクトップに切り替え | 切り替えなし（現在のデスクトップを維持） |
 | **位置・サイズ設定** | デスクトップ移動後に設定 | 直接設定（移動不要） |
 | **ユーザー体験** | 画面が一瞬切り替わる | 作業を中断しない |
+| **設定確実性** | 1回のみ試行 | 最大3回リトライ |
 
 ただし、アイテム・ウィンドウ操作アイテムで、移す先の番号の指定が無いままウィンドウを前に出すときは、そのままでは見えないので、ウィンドウのあるデスクトップへ切り替える（上の「仮想デスクトップ移動機能」の 5）。
-| **設定確実性** | 1回のみ試行 | 最大3回リトライ |
 
 ### ウィンドウアクティブ化制御
 
@@ -559,16 +527,8 @@ v0.5.12以降、仮想デスクトップ機能が大幅に強化され、以下�
 
 **使用例:**
 
-```
-// 位置・サイズ調整のみ実行（アクティブ化しない）
-Slack (Background),slack://,,,"{""title"":""Slack"",""x"":960,""y"":0,""width"":960,""height"":1080,""activateWindow"":false}"
-
-// 仮想デスクトップ移動のみ実行（アクティブ化しない）
-Teams,teams://,,,"{""title"":""Teams"",""virtualDesktopNumber"":2,""activateWindow"":false}"
-
-// 明示的にアクティブ化を指定（デフォルトと同じ）
-Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""activateWindow"":true}"
-```
+- 位置・サイズ調整のみ実行（アクティブ化しない）: `{ "title": "Slack", "x": 960, "y": 0, "width": 960, "height": 1080, "activateWindow": false }`
+- 仮想デスクトップ移動のみ実行（アクティブ化しない）: `{ "title": "Teams", "virtualDesktopNumber": 2, "activateWindow": false }`
 
 ### システムウィンドウの除外
 
@@ -590,17 +550,17 @@ Chrome,chrome.exe,,,"{""title"":""Google Chrome"",""activateWindow"":true}"
 
 **単一アイテムのウィンドウ設定:**
 
-既存の`windowTitle`文字列形式は引き続きサポートされます。アプリケーション内部では自動的に`WindowConfig`形式に変換されます。
+CSV 形式（`data*.txt`）では 5 番目の列にウィンドウタイトルの文字列か JSON を書いていた。v0.6.1 で CSV を廃止し、今は `windowConfig` オブジェクトだけを読む（文字列は受け付けない。`validateWindowConfig`、`src/common/utils/jsonParser.ts`）。
 
 **ウィンドウ操作アイテム:**
 
-v0.5.10以降、ウィンドウ操作アイテムはJSON形式専用となりました。
+v0.5.10以降、ウィンドウ操作アイテムはJSON形式専用となりました（CSV の列に JSON を書く形）。v0.6.1 からは data.json の `type: "window"` のアイテムです。
 
 **JSON形式の利点:**
 
 - フィールド順序エラー（設定値のズレ）を完全に解消
 - 管理画面でのインライン編集を禁止し、データ破損を防止
-- 詳細編集モーダル（RegisterModal）からの編集で、正しいJSON形式を保証
+- 詳細編集（登録・編集ウィンドウ）からの編集で、正しいJSON形式を保証
 
 ## 関連ドキュメント
 

@@ -312,7 +312,9 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
                           win.desktopNumber &&
                           win.desktopNumber > 0 && (
                             <span className="window-desktop">
-                              {t('windowPicker.desktop', { number: win.desktopNumber })}
+                              {t('windowPicker.desktop', {
+                                number: desktopLabel(win.desktopNumber, desktopInfo?.desktopNames),
+                              })}
                               {win.desktopNumber === desktopInfo?.currentDesktop &&
                                 t('windowPicker.current')}
                             </span>

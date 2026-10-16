@@ -234,7 +234,7 @@ export interface LayoutExecutionProgress {
 }
 
 /**
- * セットの行の「見つけ方」。どのウィンドウをこの行のウィンドウとみなすか
+ * セットの行の「動かすウィンドウ」。どのウィンドウをこの行のウィンドウとみなすか
  *
  * 結び付けた相手の hwnd は開き直すたびに変わるので持たず、次にどう探すかだけを持つ
  */
@@ -245,7 +245,7 @@ export interface SetWindowMatch {
   title?: string;
 }
 
-/** セットの行の「置き場所」 */
+/** セットの行の「位置」 */
 export interface SetPlacement {
   /** X座標（仮想スクリーン座標系） */
   x?: number;
@@ -269,17 +269,17 @@ export interface SetOpenTarget {
   args?: string;
 }
 
-/** セットの行。開くもの（itemId か open）・見つけ方・置き場所を持つ */
+/** セットの行。開くもの（itemId か open）・動かすウィンドウ・位置を持つ */
 export interface SetEntry {
   /** 登録済みのアイテムの id（どのデータファイルのアイテムでもよい） */
   itemId?: string;
   /** この行の中だけで持つ開くもの（itemId と同時には持たない） */
   open?: SetOpenTarget;
-  /** 行の名前。open の行や、参照先が見つからない行の表示に使う */
+  /** 行の名前。open の行や、指すアイテムが見つからない行の表示に使う */
   label?: string;
-  /** 見つけ方 */
+  /** 動かすウィンドウ */
   window?: SetWindowMatch;
-  /** 置き場所。無ければ開くだけ */
+  /** 位置。無ければ開くだけ */
   placement?: SetPlacement;
   /** ウィンドウが開いていたとき: move＝開き直さず位置だけ合わせる（既定）／openNew＝もう 1 つ開く */
   ifOpen?: 'move' | 'openNew';

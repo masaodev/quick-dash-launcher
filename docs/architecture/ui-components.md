@@ -42,7 +42,7 @@ props はコードを正とし、ここには写さない。決まりとして�
 | 用途 | 推奨クラス |
 | --- | --- |
 | ヘッダーの正方形アイコンボタン（メイン・ワークスペース） | `.action-btn` |
-| タブ切り替えボタン | `.menu-item`, `.desktop-tab` |
+| タブ切り替えボタン | `.tab-button`（設定タブのカテゴリ切り替えは `.menu-item`、ウィンドウを選ぶ画面の仮想デスクトップのタブとそれにそろえたタブは `.desktop-tab`） |
 | 閉じる・削除の ×（検索クリアを含む） | `.close-btn`（[css-design.md](css-design.md#閉じる削除ボタンクラス)） |
 | ドロップダウントリガー | `.dropdown-trigger-btn` |
 | 一覧の行の削除アイコンボタン（🗑） | `.delete-button` |
@@ -50,7 +50,7 @@ props はコードを正とし、ここには写さない。決まりとして�
 ### ダイアログのフッター
 
 - `.modal-actions` は `Modal.css` の右寄せを全ダイアログで共通にする。画面ごとの CSS でグローバルに上書きしない（同じ CSS を読むウィンドウの全ダイアログに効いてしまう）。配置を変えたい画面は `.icon-detail-modal .modal-actions` のようにスコープを付ける
-- 左端に置くボタン（登録・編集ウィンドウの「⚡ 試しに実行」）があるときは、残りを `.modal-actions-right`（`margin-left: auto`）で包んで右に寄せる
+- 左端に置くボタン（登録・編集ウィンドウとワークスペースのアイテム編集の「⚡ 試しに実行」）があるときは、残りを `.modal-actions-right`（`margin-left: auto`）で包んで右に寄せる
 
 ## コンポーネント命名規則
 
@@ -76,7 +76,7 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 1. **2つ以上のウィンドウで使用される**
 2. **ビジネスロジックを持たない純粋なUI部品**（ダイアログ、入力部品など）
 
-例：`AlertDialog`, `ConfirmDialog`, `ColorPicker`, `HotkeyInput`, `SetEntriesEditor`（セットの行の編集。登録・編集とワークスペースのアイテム編集の 2 つのウィンドウで使う。そこから開く `SetItemPickerModal`・`SetRecordModal`・`SetEntryDetailModal` も同じ）
+例：`AlertDialog`, `ConfirmDialog`, `ColorPicker`, `HotkeyInput`, `MemoViewModal`（メモの表示。メインウィンドウとワークスペースウィンドウで使う）, `SetEntriesEditor`（セットの行の編集。登録・編集とワークスペースのアイテム編集の 2 つのウィンドウで使う。そこから開く `SetItemPickerModal`・`SetRecordModal`・`SetEntryDetailModal` も同じ）
 
 ### 既知の例外（命名規則未適用）
 
@@ -90,6 +90,5 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 | `AppImportModal` | `AdminItemManagerView` | `Admin*` |
 | `AutoImportFilterDropdown` | `AdminItemManagerView` | `AdminItemManager*` |
 | `MissingIconNotice` | `App`（メインウィンドウ） | `Launcher*` |
-| `MemoViewModal` | `LauncherItemList` | `Launcher*` |
 
 メインウィンドウの子ウィンドウ（登録・編集、アイコン取得結果）の部品（`RegisterModal`・`RegisterWindowPage`・`IconProgressDetailModal`・`MainChildPage`）はプレフィックスなしで、子ウィンドウに付けるプレフィックスはまだ決めていない。
