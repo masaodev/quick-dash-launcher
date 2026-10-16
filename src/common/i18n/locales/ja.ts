@@ -370,7 +370,7 @@ export const ja = {
       windowPin: 'ウィンドウをすべてのデスクトップに表示しました',
       windowUnpin: 'ウィンドウをすべてのデスクトップに表示するのをやめました',
       workspaceAdd: 'ワークスペースに追加しました',
-      clipboard: 'クリップボードに復元しています...',
+      clipboard: 'クリップボードにコピーしました',
       default: '起動中...',
     },
     groupOpening_one: '{{count}}件のアイテムを起動します',

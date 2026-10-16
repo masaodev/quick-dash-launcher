@@ -369,7 +369,7 @@ export const en: LocaleMessages = {
       windowPin: 'Now shown on all desktops',
       windowUnpin: 'No longer shown on all desktops',
       workspaceAdd: 'Added to workspace',
-      clipboard: 'Restoring to clipboard...',
+      clipboard: 'Copied to the clipboard',
       default: 'Opening...',
     },
     groupOpening_one: 'Opening {{count}} item',
