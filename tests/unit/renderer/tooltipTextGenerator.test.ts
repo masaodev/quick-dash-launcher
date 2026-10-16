@@ -23,7 +23,7 @@ describe('tooltipTextGenerator', () => {
       const result = getTooltipText(item);
 
       expect(result).toContain('ウィンドウタイトル: Test Window');
-      expect(result).toContain('プロセス名: test.exe');
+      expect(result).toContain('exe 名: test.exe');
       expect(result).toContain('実行ファイルパス: C:\\test\\test.exe');
       expect(result).toContain('状態: 最大化');
       expect(result).toContain('位置: (100, 200)');
@@ -46,7 +46,7 @@ describe('tooltipTextGenerator', () => {
       const result = getTooltipText(item);
 
       expect(result).toContain('ウィンドウタイトル: Test Window');
-      expect(result).not.toContain('プロセス名:');
+      expect(result).not.toContain('exe 名:');
       expect(result).not.toContain('実行ファイルパス:');
       expect(result).not.toContain('状態:');
     });
@@ -89,7 +89,7 @@ describe('tooltipTextGenerator', () => {
   });
 
   describe('SetItem', () => {
-    it('行の数と位置を合わせる行の数、データファイルを出す', () => {
+    it('行の数とウィンドウ位置のある行の数、データファイルを出す', () => {
       const item: SetItem = {
         displayName: 'TestSet',
         type: 'set',
@@ -101,7 +101,7 @@ describe('tooltipTextGenerator', () => {
       const result = getTooltipText(item);
 
       expect(result).toContain('セット: 2件');
-      expect(result).toContain('位置を合わせる行: 1件');
+      expect(result).toContain('ウィンドウ位置のある行: 1件');
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('ID: abc12345');
     });
@@ -129,7 +129,7 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('位置: (0, 0)');
       expect(result).toContain('サイズ: 1920x1080');
       expect(result).toContain('仮想デスクトップ: 2');
-      expect(result).toContain('アクティブ化: しない');
+      expect(result).toContain('前面に出す: 出さない');
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('行番号: 15');
     });
@@ -163,7 +163,7 @@ describe('tooltipTextGenerator', () => {
       expect(result).not.toContain('位置:');
       expect(result).not.toContain('サイズ:');
       expect(result).not.toContain('仮想デスクトップ:');
-      expect(result).not.toContain('アクティブ化: しない');
+      expect(result).not.toContain('前面に出す: 出さない');
     });
 
     it('activateWindowがtrueの場合、表示されない', () => {
@@ -176,7 +176,7 @@ describe('tooltipTextGenerator', () => {
 
       const result = getTooltipText(item);
 
-      expect(result).not.toContain('アクティブ化:');
+      expect(result).not.toContain('前面に出す:');
     });
   });
 
