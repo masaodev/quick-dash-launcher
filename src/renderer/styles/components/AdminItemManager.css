@@ -140,12 +140,12 @@
 
 .edit-mode-toolbar .toolbar-split > .toolbar-split-toggle {
   min-width: 0;
-  padding-left: var(--spacing-sm);
-  padding-right: var(--spacing-sm);
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
-  /* 本体との境目（少し濃い青の線） */
-  border-left-color: var(--color-primary-hover);
+  /* 本体との境目（白っぽい線） */
+  border-left-color: color-mix(in srgb, var(--color-white) 45%, var(--color-primary));
 }
 
 .edit-mode-toolbar .toolbar-split-toggle-icon {
