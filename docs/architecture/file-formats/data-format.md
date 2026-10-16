@@ -372,7 +372,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 | `window` | 動かすウィンドウ（`processName`＝exe 名、部分一致／`title`＝ウィンドウタイトル、大文字小文字を区別しない全体一致で `*`・`?` を使える） | ウィンドウアイテムを指す行はそのアイテムの条件（`windowTitle`・`processName`）、開くものが exe（`.exe` で終わるパス）ならその exe 名で探す。それ以外は探さない（`buildSetWindowConfig`） |
 | `placement` | 位置（`x`・`y`・`width`・`height`＝仮想スクリーン座標系の物理ピクセル、`virtualDesktopNumber`＝1 始まりの整数、`state: "maximized"`＝最大化） | 位置を合わせず、開くだけ |
 | `ifOpen` | 動かすウィンドウが既に開いていたとき。`"move"`＝開かずに位置だけ合わせる／`"openNew"`＝もう 1 つ開く | `"move"` |
-| `activateWindow` | 位置を合わせたウィンドウを前面に出すか | `true` |
+| `activateWindow` | 位置を合わせたウィンドウを前面に出すか | `false`（出さない。v0.8.0-beta.10 までは `true`） |
 | `waitSeconds` | 開いてからウィンドウが出るのを待つ秒数 | 30 |
 
 - `itemId` で指せるのは通常アイテム（`type: "item"`）とウィンドウアイテム（`type: "window"`）。セット・クリップボードを指した行は実行時に失敗する（`src/main/services/launch/setExecutor.ts`）
