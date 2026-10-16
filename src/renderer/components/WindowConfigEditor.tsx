@@ -1,3 +1,9 @@
+/**
+ * ウィンドウ操作アイテム（種別「ウィンドウ操作」）の設定欄
+ *
+ * 単一アイテムのウィンドウ切り替えは ItemWindowSwitchEditor（セットの行の詳細と同じ部品）を使う。
+ * ウィンドウ操作アイテムは廃止する予定なので、この欄はそれまでのもの
+ */
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { WindowConfig, WindowInfo } from '@common/types';
@@ -13,30 +19,12 @@ interface WindowConfigEditorProps {
   onGetWindowClick: () => void;
   /** ウィンドウ検索で位置/サイズを取得するコールバック */
   onFetchFromWindow?: () => Promise<WindowInfo | null>;
-  /** 初期状態で展開するか（デフォルト: false） */
-  defaultExpanded?: boolean;
-  /** 折りたたみトグルを表示するか（デフォルト: true） */
-  showToggle?: boolean;
-  /**
-   * 「カーソルがあるモニターの中央に配置」を出すか（デフォルト: true）。
-   * 単一アイテムでは廃止したので出さない（ウィンドウ操作アイテムだけが使う）
-   */
-  showCenterOnCursorMonitor?: boolean;
 }
 
 /* eslint-disable react/prop-types */
 const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
-  ({
-    windowConfig,
-    onChange,
-    onGetWindowClick,
-    onFetchFromWindow,
-    defaultExpanded = false,
-    showToggle = true,
-    showCenterOnCursorMonitor = true,
-  }) => {
+  ({ windowConfig, onChange, onGetWindowClick, onFetchFromWindow }) => {
     const { t } = useTranslation();
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const [fetchError, setFetchError] = useState<'position' | 'size' | null>(null);
 
     const baseConfig = windowConfig || { title: '' };
@@ -68,28 +56,14 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
     const handleFetchSize = () =>
       handleFetchFromWindow('size', (info) => ({ width: info.width, height: info.height }));
 
-    const renderContent = () => (
-      <>
+    return (
+      <div className="form-group vertical-layout">
         <div className="help-box">
-          <p className="help-title">
-            {showToggle ? t('windowConfig.reuseTitle') : t('windowConfig.actionTitle')}
-          </p>
+          <p className="help-title">{t('windowConfig.actionTitle')}</p>
           <p className="help-flow">
-            {showToggle ? (
-              <>
-                {t('windowConfig.stepSearch')}
-                <br />
-                {t('windowConfig.stepAct')}
-                <br />
-                {t('windowConfig.stepLaunch')}
-              </>
-            ) : (
-              <>
-                {t('windowConfig.stepSearch')}
-                <br />
-                {t('windowConfig.stepAct')}
-              </>
-            )}
+            {t('windowConfig.stepSearch')}
+            <br />
+            {t('windowConfig.stepAct')}
           </p>
         </div>
 
@@ -175,24 +149,22 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               {fetchError === 'position' && (
                 <div className="window-config-fetch-error">{t('windowConfig.windowNotFound')}</div>
               )}
-              {showCenterOnCursorMonitor && (
-                <div className="window-config-checkbox-row">
-                  <label className="window-config-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={windowConfig?.moveToActiveMonitorCenter || false}
-                      onChange={(e) =>
-                        onChange({
-                          ...baseConfig,
-                          moveToActiveMonitorCenter: e.target.checked || undefined,
-                        })
-                      }
-                      className="window-config-checkbox"
-                    />
-                    <span>{t('windowConfig.centerOnCursorMonitor')}</span>
-                  </label>
-                </div>
-              )}
+              <div className="window-config-checkbox-row">
+                <label className="window-config-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={windowConfig?.moveToActiveMonitorCenter || false}
+                    onChange={(e) =>
+                      onChange({
+                        ...baseConfig,
+                        moveToActiveMonitorCenter: e.target.checked || undefined,
+                      })
+                    }
+                    className="window-config-checkbox"
+                  />
+                  <span>{t('windowConfig.centerOnCursorMonitor')}</span>
+                </label>
+              </div>
               <div className="window-config-help-text">{t('windowConfig.byCoordinates')}</div>
               <div className="window-config-row-double" style={{ marginLeft: 'var(--spacing-lg)' }}>
                 <div className="window-config-field">
@@ -297,27 +269,6 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
             </div>
           </div>
         </div>
-      </>
-    );
-
-    return (
-      <div className="form-group vertical-layout">
-        {showToggle ? (
-          <div className="options-section">
-            <button
-              type="button"
-              className="options-toggle"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
-              <span>{t('windowConfig.optionsToggle')}</span>
-            </button>
-
-            {isExpanded && <div className="options-content">{renderContent()}</div>}
-          </div>
-        ) : (
-          renderContent()
-        )}
       </div>
     );
   }

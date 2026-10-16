@@ -6,7 +6,7 @@
  *
  * - データファイル・ワークスペースの読み込み時に 1 回だけ書き換える（convertLegacyWindowConfigs）
  * - 移行が保留になった間や古い CLI の --set windowConfig=… は、検証（jsonParser）がその場で直す
- * - 編集画面は B で作り直すまで windowConfig のまま扱うので、読み込み・保存で行き来させる（switchToWindowConfig）
+ * - 登録・編集画面は ItemWindowSwitch のキーをそのまま持つ（保存するときは itemWindowSwitchFields で写す）
  */
 import type {
   ItemWindowSwitch,
@@ -80,7 +80,8 @@ export function windowConfigToSwitch(wc: LegacyWindowConfig): ItemWindowSwitch |
 }
 
 /**
- * ItemWindowSwitch を windowConfig に戻す（編集画面の一時つなぎ用。B で編集画面を作り直したら消す）
+ * ItemWindowSwitch を windowConfig に戻す（セットの行がアイテムのウィンドウ切り替えを借りるとき、
+ * ウィンドウを探して前面に出す処理（windowActivator）に渡す形にする）
  *
  * ifOpen・waitSeconds・placement.state は windowConfig に無いので落ちる
  *
@@ -102,12 +103,13 @@ export function switchToWindowConfig(s: ItemWindowSwitch): WindowConfig | undefi
 }
 
 /**
- * 編集画面の windowConfig を保存する形にする（一時つなぎ。B で編集画面を作り直したら消す）
+ * 登録・編集画面の値から、保存するウィンドウ切り替えのキーを写す
  *
- * 位置の無い・既定値だけのキーは書かない。前面に出すはチェックの値をそのまま書く
+ * 対象ウィンドウ（exe 名かタイトル）が無ければ何も書かない（ウィンドウ位置などだけ残っていても、
+ * 探す相手が無いので使えない）。値の無いキーは書かない
  */
-export function windowConfigToSwitchFields(wc: WindowConfig | undefined): ItemWindowSwitch {
-  return (wc && windowConfigToSwitch(wc)) || {};
+export function itemWindowSwitchFields(source: ItemWindowSwitch): ItemWindowSwitch {
+  return hasItemWindowSwitch(source) ? pickItemWindowSwitch(source) : {};
 }
 
 /** ウィンドウ切り替えを持つか（探すウィンドウの条件があるか） */

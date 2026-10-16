@@ -1281,6 +1281,12 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     path: 'パス:',
     pathPlaceholder: 'ファイルパス、URL、またはカスタムURIを入力',
     itemOptions: 'オプション設定（引数・アイコン）',
+    windowSwitch: {
+      toggle: 'オプション設定（ウィンドウ切り替え・ウィンドウ位置）',
+      findHint:
+        'このアイテムを開いたとき、この 2 つに合うウィンドウが開いていれば、開き直さずにそのウィンドウへ切り替えます。exe 名は一部でもよく、タイトルは全体が同じものを探します（* は任意の文字。例: *Obsidian）。',
+      pinToAllDesktops: '📌 全デスクトップに表示',
+    },
     dirOptions: 'フォルダ取込のオプション',
     args: '引数:',
     argsPlaceholder: 'コマンドライン引数（実行ファイルやアプリの場合のみ有効）',
@@ -1303,11 +1309,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
   },
   windowConfig: {
-    reuseTitle: '既存ウィンドウの再利用機能',
     actionTitle: 'ウィンドウ操作機能',
     stepSearch: '① タイトル/プロセス名で対象ウィンドウを検索',
     stepAct: '② 見つかったら下記の操作を実行',
-    stepLaunch: '③ 見つからなければ → パスのアイテムを新規起動',
     searchHeading: '🔍 ① ウィンドウ検索',
     selectWindow: 'ウィンドウを選択',
     windowTitle: 'ウィンドウタイトル:',
@@ -1338,7 +1342,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     byNumber: '番号で指定',
     desktopNumber: 'デスクトップ番号:',
     desktopNumberPlaceholder: '1から開始',
-    optionsToggle: 'オプション設定（ウィンドウ切り替え）',
   },
   clipboardEditor: {
     formats: {

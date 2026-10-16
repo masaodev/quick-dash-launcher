@@ -6,7 +6,6 @@ import type {
   DataFileTab,
   RegisterItem,
   SetEntry,
-  WindowConfig,
   WindowInfo,
 } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -16,6 +15,7 @@ import { toWindowConfig, toWindowOperationConfig } from '../utils/windowFilter';
 
 import DirOptionsEditor from './DirOptionsEditor';
 import WindowConfigEditor from './WindowConfigEditor';
+import ItemWindowSwitchEditor from './ItemWindowSwitchEditor';
 import CustomIconEditor from './CustomIconEditor';
 import ItemConverterMenu from './ItemConverterMenu';
 import IconFetchButton from './IconFetchButton';
@@ -40,7 +40,6 @@ export type ItemFieldValue =
   | boolean
   | number
   | RegisterItem['dirOptions']
-  | WindowConfig
   | RegisterItem['windowOperationConfig']
   | ClipboardFormat[]
   | SetEntry[];
@@ -91,7 +90,9 @@ interface ItemEditFieldsProps {
   customIconPreview: string | undefined;
   onCustomIconSelect: () => void;
   onCustomIconDelete: () => void;
+  /** ウィンドウ操作アイテムの「ウィンドウを選択」 */
   onOpenWindowSelector: () => void;
+  /** ウィンドウ操作アイテムの「ウィンドウから取得」 */
   onFetchFromWindow: () => Promise<WindowInfo | null>;
   onClipboardError: (message: string) => void;
   showSeparator: boolean;
@@ -316,13 +317,11 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
       )}
 
       {item.itemCategory === 'item' && (
-        <WindowConfigEditor
-          windowConfig={item.windowConfig}
-          onChange={(windowConfig) => onFieldChange('windowConfig', windowConfig)}
-          onGetWindowClick={onOpenWindowSelector}
-          onFetchFromWindow={onFetchFromWindow}
-          defaultExpanded={false}
-          showCenterOnCursorMonitor={false}
+        <ItemWindowSwitchEditor
+          value={item}
+          itemType={item.type}
+          opensSomething={item.path.trim() !== ''}
+          onChange={(patch) => onUpdate(patch)}
         />
       )}
 
@@ -339,8 +338,6 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             }
             onGetWindowClick={onOpenWindowSelector}
             onFetchFromWindow={onFetchFromWindow}
-            showToggle={false}
-            defaultExpanded={false}
           />
           {errors?.displayName && (
             <div className="form-group">

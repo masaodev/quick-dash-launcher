@@ -9,7 +9,7 @@ import {
   replaceWindowConfig,
   switchToWindowConfig,
   windowConfigToSwitch,
-  windowConfigToSwitchFields,
+  itemWindowSwitchFields,
 } from './itemWindowConversion';
 
 describe('windowConfigToSwitch', () => {
@@ -75,7 +75,7 @@ describe('windowConfigToSwitch', () => {
   });
 });
 
-describe('switchToWindowConfig（編集画面の一時つなぎ）', () => {
+describe('switchToWindowConfig（セットの行がアイテムの対象ウィンドウを借りるとき）', () => {
   it('windowConfig に戻し、往復しても同じ形になる', () => {
     const original = {
       window: { processName: 'sakura.exe', title: 'メモ' },
@@ -107,16 +107,32 @@ describe('switchToWindowConfig（編集画面の一時つなぎ）', () => {
   });
 });
 
-describe('windowConfigToSwitchFields', () => {
-  it('windowConfig が無い・条件が無ければ空', () => {
-    expect(windowConfigToSwitchFields(undefined)).toEqual({});
-    expect(windowConfigToSwitchFields({ title: '' })).toEqual({});
+describe('itemWindowSwitchFields', () => {
+  it('対象ウィンドウが無ければ、ウィンドウ位置などが残っていても何も書かない', () => {
+    expect(itemWindowSwitchFields({})).toEqual({});
+    expect(
+      itemWindowSwitchFields({ placement: { x: 0, y: 0 }, waitSeconds: 5, pinToAllDesktops: true })
+    ).toEqual({});
   });
 
-  it('前面に出すはチェックの値をそのまま書く', () => {
-    expect(windowConfigToSwitchFields({ title: 'a', activateWindow: true })).toEqual({
-      window: { title: 'a' },
-      activateWindow: true,
+  it('ifOpen・waitSeconds・placement.state も含めて、値のあるキーをそのまま写す', () => {
+    const value = {
+      displayName: 'x',
+      window: { processName: 'sakura.exe', title: '*メモ*' },
+      placement: { x: 1, y: 2, width: 3, height: 4, state: 'maximized' as const },
+      ifOpen: 'openNew' as const,
+      activateWindow: false,
+      waitSeconds: 10,
+      pinToAllDesktops: true,
+      args: undefined,
+    };
+    expect(itemWindowSwitchFields(value)).toEqual({
+      window: { processName: 'sakura.exe', title: '*メモ*' },
+      placement: { x: 1, y: 2, width: 3, height: 4, state: 'maximized' },
+      ifOpen: 'openNew',
+      activateWindow: false,
+      waitSeconds: 10,
+      pinToAllDesktops: true,
     });
   });
 });

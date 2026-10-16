@@ -667,3 +667,68 @@ test.describe('QuickDashLauncher - 登録画面の子ダイアログの Escape',
     await expect(editor.locator('.register-modal')).toBeVisible();
   });
 });
+
+/**
+ * 単一アイテムの「オプション設定（ウィンドウ切り替え・ウィンドウ位置）」
+ * - セットの行の詳細と同じ部品で、対象ウィンドウ・開くときの動きを入れて保存できる
+ * - もう一度編集を開くと、入れた値が残っている（開いていたら＝もう 1 つ開く も保たれる）
+ */
+test.describe('QuickDashLauncher - 単一アイテムのウィンドウ切り替え', () => {
+  test('対象ウィンドウを入れて保存し、もう一度開いても値が残る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+    await utils.waitForPageLoad();
+    await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
+
+    const openEditor = async () => {
+      const github = await mainWindow.evaluate(async () => {
+        const items = await window.electronAPI.loadDataFiles('internal');
+        return items.find((i) => 'path' in i && i.displayName === 'GitHub');
+      });
+      expect(github).toBeDefined();
+      await menuHelper.simulateLauncherMenu('edit', github as unknown as Record<string, unknown>);
+      const editor = await utils.waitForRegisterWindow(electronApp);
+      await editor
+        .locator('.options-toggle', { hasText: 'ウィンドウ切り替え・ウィンドウ位置' })
+        .click();
+      return editor.getByTestId('item-window-switch');
+    };
+
+    await test.step('対象ウィンドウと開いていたらを入れて更新する', async () => {
+      const fields = await openEditor();
+      await expect(fields.getByText('このアイテムを開いたとき', { exact: false })).toBeVisible();
+      await fields.getByLabel('exe 名').fill('chrome.exe');
+      await fields.getByLabel('ウィンドウタイトル').fill('*GitHub*');
+      await fields.getByLabel('開いていたら').selectOption('openNew');
+      await expect(fields.getByText(/今合うウィンドウ/)).toBeVisible();
+      const editor = utils.registerPage;
+      // 更新するとすぐ閉じるので、閉じるのを先に待ち始める
+      await Promise.all([
+        editor.waitForEvent('close', { timeout: 10000 }),
+        editor.locator('.modal-actions button', { hasText: '更新' }).click(),
+      ]);
+    });
+
+    await test.step('データファイルに保存形式のキーで書かれる', async () => {
+      await expect
+        .poll(() => {
+          const item = configHelper.getItemByDisplayName('data.json', 'GitHub');
+          return item && isJsonLauncherItem(item)
+            ? { window: item.window, ifOpen: item.ifOpen }
+            : undefined;
+        })
+        .toEqual({ window: { processName: 'chrome.exe', title: '*GitHub*' }, ifOpen: 'openNew' });
+    });
+
+    await test.step('もう一度開くと値が残っている', async () => {
+      const fields = await openEditor();
+      await expect(fields.getByLabel('exe 名')).toHaveValue('chrome.exe');
+      await expect(fields.getByLabel('ウィンドウタイトル')).toHaveValue('*GitHub*');
+      await expect(fields.getByLabel('開いていたら')).toHaveValue('openNew');
+    });
+  });
+});

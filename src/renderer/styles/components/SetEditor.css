@@ -605,3 +605,18 @@
   align-self: start;
   line-height: var(--input-height-sm);
 }
+
+/* 枠の中のチェック（単一アイテムの「全デスクトップに表示」）。入力欄の高さ・余白を当てない */
+.set-detail-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.set-detail-group .set-detail-check input {
+  height: auto;
+  margin: 0;
+  padding: 0;
+}

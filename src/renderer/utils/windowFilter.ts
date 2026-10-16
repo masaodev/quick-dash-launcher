@@ -61,8 +61,8 @@ function extractWindowSearchParams(item: RegisterItem): {
     };
   }
   return {
-    title: item.windowConfig?.title,
-    processName: item.windowConfig?.processName,
+    title: item.window?.title,
+    processName: item.window?.processName,
   };
 }
 

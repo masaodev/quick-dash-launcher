@@ -28,7 +28,7 @@ import {
 import { generateId } from './jsonParser.js';
 import { normalizeWindowTitleForProcessOnly } from './windowTitle.js';
 import { pickWindowPlacement } from './windowPlacement.js';
-import { switchToWindowConfig, windowConfigToSwitchFields } from './itemWindowConversion.js';
+import { itemWindowSwitchFields, pickItemWindowSwitch } from './itemWindowConversion.js';
 
 /** 展開したアイテムが持つ取込の設定を、編集フォームのフォルダ取込のオプションにする */
 function toJsonDirOptions(options: DirOptionsForProcessing | undefined): JsonDirOptions {
@@ -204,7 +204,7 @@ export function convertEditingAppItemToRegisterItem(
       targetFile: item.sourceFile,
       folderProcessing: item.type === 'folder' ? 'folder' : undefined,
       customIcon: item.customIcon,
-      windowConfig: switchToWindowConfig(item),
+      ...pickItemWindowSwitch(item),
       itemCategory: 'item',
       memo: item.memo,
     };
@@ -275,7 +275,7 @@ export function convertEditableJsonItemToRegisterItem(
       targetFile: sourceFile,
       folderProcessing: undefined,
       customIcon: jsonItem.customIcon,
-      windowConfig: switchToWindowConfig(jsonItem),
+      ...pickItemWindowSwitch(jsonItem),
       itemCategory: 'item' as const,
       memo: jsonItem.memo,
     };
@@ -408,7 +408,7 @@ export function convertRegisterItemToJsonItem(
     path: registerItem.path,
     ...(registerItem.args && { args: registerItem.args }),
     ...(registerItem.customIcon && { customIcon: registerItem.customIcon }),
-    ...windowConfigToSwitchFields(registerItem.windowConfig),
+    ...itemWindowSwitchFields(registerItem),
     ...(memo && { memo }),
     updatedAt: now,
   };

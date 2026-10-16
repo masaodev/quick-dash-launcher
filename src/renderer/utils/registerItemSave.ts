@@ -1,6 +1,6 @@
 import i18next from 'i18next';
 import type { RegisterItem, EditingAppItem } from '@common/types';
-import { windowConfigToSwitchFields } from '@common/utils/itemWindowConversion';
+import { itemWindowSwitchFields } from '@common/utils/itemWindowConversion';
 
 /**
  * 登録フォームの内容をデータファイルへ保存する
@@ -63,7 +63,7 @@ export async function saveRegisterItems(
         type: item.type,
         args: item.args,
         customIcon: item.customIcon,
-        ...windowConfigToSwitchFields(item.windowConfig),
+        ...itemWindowSwitchFields(item),
         memo: item.memo,
       },
     });

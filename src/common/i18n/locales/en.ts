@@ -1279,6 +1279,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     path: 'Path:',
     pathPlaceholder: 'Enter a file path, URL, or custom URI',
     itemOptions: 'Options (arguments, icon)',
+    windowSwitch: {
+      toggle: 'Options (switch to window, window position)',
+      findHint:
+        'When this item opens and a window matching these two is already open, it switches to that window instead of opening it again. The exe name can be partial; the title must match as a whole (* matches any text, e.g. *Obsidian).',
+      pinToAllDesktops: '📌 Show on all desktops',
+    },
     dirOptions: 'Folder import options',
     args: 'Arguments:',
     argsPlaceholder: 'Command-line arguments (for executables and apps only)',
@@ -1301,11 +1307,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
   },
   windowConfig: {
-    reuseTitle: 'Reuse an existing window',
     actionTitle: 'Window action',
     stepSearch: '1. Find the window by title or process name',
     stepAct: '2. If found, do the actions below',
-    stepLaunch: "3. If not found, open the item's path",
     searchHeading: '🔍 1. Find the window',
     selectWindow: 'Choose window',
     windowTitle: 'Window title:',
@@ -1336,7 +1340,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     byNumber: 'By number',
     desktopNumber: 'Desktop number:',
     desktopNumberPlaceholder: 'Starts at 1',
-    optionsToggle: 'Options (switch to window)',
   },
   clipboardEditor: {
     formats: {

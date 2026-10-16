@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { WorkspaceItem, WorkspaceItemUpdate, WindowInfo, WindowConfig } from '@common/types';
+import type { WorkspaceItem, WorkspaceItemUpdate, WindowInfo } from '@common/types';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
@@ -34,7 +34,7 @@ interface WorkspaceItemEditModalProps {
 /**
  * ワークスペースアイテム編集フォーム
  *
- * ワークスペースアイテムの全フィールド（path, args, customIcon, windowConfig等）を編集する。
+ * ワークスペースアイテムの全フィールド（path, args, customIcon, ウィンドウ切り替え等）を編集する。
  * 独立した編集ウィンドウ（WorkspaceItemEditPage）に描画される
  */
 const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
@@ -112,28 +112,16 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     });
   };
 
+  /** ウィンドウ操作アイテムの「ウィンドウを選択」（単一アイテムは欄の中の「開いているウィンドウから取り込む」） */
   const onWindowSelected = (windowInfo: WindowInfo) => {
-    if (!item) return;
-
-    if (item.itemCategory === 'window') {
-      const currentConfig = item.windowOperationConfig;
-      const windowOperationConfig = {
-        ...currentConfig,
+    if (item?.itemCategory === 'window') {
+      handleFieldChange('windowOperationConfig', {
+        ...item.windowOperationConfig,
         displayName: item.displayName,
         windowTitle: windowInfo.title,
         processName: windowInfo.processName,
-      };
-      handleFieldChange('windowOperationConfig', windowOperationConfig);
-    } else {
-      const currentConfig = item.windowConfig;
-      const windowConfig: WindowConfig = {
-        ...currentConfig,
-        title: windowInfo.title,
-        processName: windowInfo.processName,
-      };
-      handleFieldChange('windowConfig', windowConfig);
+      });
     }
-
     setWindowSelectorOpen(false);
   };
 

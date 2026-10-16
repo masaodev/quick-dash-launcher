@@ -176,30 +176,19 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     setWindowSelectorOpen(true);
   };
 
+  /** ウィンドウ操作アイテムの「ウィンドウを選択」（単一アイテムは欄の中の「開いているウィンドウから取り込む」） */
   const onWindowSelected = (window: WindowInfo): void => {
     if (windowSelectorItemIndex === null) return;
 
     const item = items[windowSelectorItemIndex];
-    if (!item) return;
+    if (item?.itemCategory !== 'window') return;
 
-    if (item.itemCategory === 'window') {
-      const currentConfig = item.windowOperationConfig;
-      const windowOperationConfig = {
-        ...currentConfig,
-        displayName: item.displayName,
-        windowTitle: window.title,
-        processName: window.processName,
-      };
-      handleItemChange(windowSelectorItemIndex, 'windowOperationConfig', windowOperationConfig);
-    } else {
-      const currentConfig = item.windowConfig;
-      const windowConfig = {
-        ...currentConfig,
-        title: window.title,
-        processName: window.processName,
-      };
-      handleItemChange(windowSelectorItemIndex, 'windowConfig', windowConfig);
-    }
+    handleItemChange(windowSelectorItemIndex, 'windowOperationConfig', {
+      ...item.windowOperationConfig,
+      displayName: item.displayName,
+      windowTitle: window.title,
+      processName: window.processName,
+    });
   };
 
   const handleDelete = (): void => {

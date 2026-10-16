@@ -188,6 +188,48 @@ describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
     });
   });
 
+  it('item のウィンドウ切り替え（ifOpen・waitSeconds・placement.state を含む）が往復で消えないこと', () => {
+    const withSwitch: WorkspaceItem = {
+      ...launcher,
+      window: { processName: 'sakura.exe', title: '*メモ*' },
+      placement: { x: 0, y: 0, width: 800, height: 600, state: 'maximized' },
+      ifOpen: 'openNew',
+      activateWindow: false,
+      waitSeconds: 10,
+      pinToAllDesktops: true,
+    };
+    const register = workspaceItemToRegisterItem(withSwitch);
+    expect(register).toMatchObject({
+      window: { processName: 'sakura.exe', title: '*メモ*' },
+      placement: { state: 'maximized' },
+      ifOpen: 'openNew',
+      waitSeconds: 10,
+    });
+    expect(registerItemToWorkspaceItemUpdate(register)).toEqual({
+      type: 'item',
+      displayName: 'GitHub',
+      path: 'https://github.com/',
+      args: '--x',
+      window: { processName: 'sakura.exe', title: '*メモ*' },
+      placement: { x: 0, y: 0, width: 800, height: 600, state: 'maximized' },
+      ifOpen: 'openNew',
+      activateWindow: false,
+      waitSeconds: 10,
+      pinToAllDesktops: true,
+      memo: 'めも',
+    });
+  });
+
+  it('item の対象ウィンドウを外したら、残ったウィンドウ位置なども保存しないこと', () => {
+    const register = {
+      ...workspaceItemToRegisterItem(launcher),
+      placement: { x: 0, y: 0 },
+      waitSeconds: 5,
+    };
+    expect(registerItemToWorkspaceItemUpdate(register)).not.toHaveProperty('placement');
+    expect(registerItemToWorkspaceItemUpdate(register)).not.toHaveProperty('waitSeconds');
+  });
+
   it('set / clipboard がデータファイルと同じフィールド名で往復すること', () => {
     expect(registerItemToWorkspaceItemUpdate(workspaceItemToRegisterItem(groupItem))).toEqual({
       type: 'set',
