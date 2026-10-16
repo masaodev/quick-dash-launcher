@@ -28,7 +28,7 @@
 | **ファイル名** | `src/renderer/components/AppImportModal.tsx` |
 | **コンポーネント名** | `AppImportModal` |
 | **重複の判定** | `src/common/utils/appDuplicateDetector.ts` |
-| **新しいタブ・データファイルの作成** | `src/renderer/hooks/useAdminTabStructure.ts` の `createImportFile`（タブバーの「＋」と同じ計算＝`tabStructureEdits.ts`） |
+| **新しいタブ・データファイルの作成** | `src/renderer/hooks/useAdminTabStructure.ts` の `createImportFile`（タブバーの「＋」と同じ計算＝`src/common/utils/tabManager/tabStructureEdits.ts`） |
 | **スタイル** | `src/renderer/styles/components/AppImport.css`（検索欄・重複警告は `BookmarkImport.css` を共用） |
 | **表示条件** | アイテム管理の「アイテムを一括取り込み ▼」→「インストール済みアプリを取り込む」、メインウィンドウの ➕ の「💻 インストール済みアプリを取り込む」（管理ウィンドウのアイテム管理タブでこの画面を開く） |
 | **画面タイプ** | オーバーレイ型モーダル（管理ウィンドウ内） |

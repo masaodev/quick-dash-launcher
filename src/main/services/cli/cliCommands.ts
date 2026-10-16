@@ -8,6 +8,8 @@ import type { CliRequest, CliResponse } from './cliProtocol.js';
 import { runLauncherItemCommand } from './cliLauncherCommands.js';
 import type { LauncherStore } from './cliLauncherCommands.js';
 import { runLauncherSetCommand } from './cliSetCommands.js';
+import { runLauncherTabCommand } from './cliTabCommands.js';
+import type { TabStore } from './cliTabCommands.js';
 import { runWorkspaceCommand } from './cliWorkspaceCommands.js';
 import type { WorkspaceStore } from './cliWorkspaceCommands.js';
 import type { ClipboardTextStore } from './cliShared.js';
@@ -32,6 +34,8 @@ export interface CliContext {
   /** 書き込みの前に読み直す（外部変更の検知。ワークスペースは読み直さないと書き込みを断られる） */
   syncBeforeWrite: () => Promise<void>;
   launcher: LauncherStore;
+  /** メイン画面のタブとデータファイルの構成 */
+  tabs: TabStore;
   workspace: WorkspaceStore;
   markFolder: (path: string) => Promise<string>;
   /** 書き込んだ後: 画面に知らせ、トーストを出す */
@@ -146,6 +150,13 @@ async function dispatch(
       if (noun === 'set') {
         const [setVerb, ...setArgs] = args;
         return runLauncherSetCommand(verb, setVerb, setArgs, launcherCtx);
+      }
+      if (noun === 'tab') {
+        return runLauncherTabCommand(verb, args, {
+          store: ctx.tabs,
+          syncBeforeWrite: ctx.syncBeforeWrite,
+          changed: (message: string) => ctx.changed('launcher', message),
+        });
       }
       if (noun !== 'item')
         throw new CliError('usage', mainI18n.t('cli.errors.unknownLauncherNoun', { noun }));

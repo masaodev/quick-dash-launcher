@@ -403,6 +403,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 コマンド:
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
   launcher set row list|add|remove       メインウィンドウのセットの行
+  launcher tab list|add|update|remove    メインウィンドウのタブとデータファイルの構成
   workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove|archive   ワークスペースのグループ
@@ -420,6 +421,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 `,
       launcher: `使い方: qdl launcher item <操作> [引数]
         qdl launcher set row <操作> <セット> [引数]
+        qdl launcher tab <操作> [引数]
 
 メインウィンドウのアイテム（datafiles/data*.json）を扱います。
 
@@ -434,10 +436,18 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   set row add <セット>          セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
                                 --label <行の名前> --position <0 始まり> --dry-run）
   set row remove <セット> <行番号>    セットの行を消す（--dry-run）
+  tab list                      タブとデータファイルの構成（ファイルごとの件数、どのタブにも無いファイル）
+  tab add                       タブを足す（--name は必須。新しいデータファイルも作る。--label <ファイルの名前>
+                                --position <0 始まり> --dry-run）
+  tab update <タブ>             変更（--name --position --dry-run）
+  tab remove <タブ>             タブを消す（消えるデータファイルが空のときだけ。--dry-run）
+  tab file add <タブ>           新しいデータファイルを作って入れる（--label）。--existing <data5.json> で既存のファイル
+  tab file update <data3.json>  データファイルの名前を変える（--label）
+  tab file remove <タブ> <ファイル>   タブから外す（どこにも残らなければ消す。空のときだけ。--dry-run）
 
 --path の相対パスは qdl を実行したフォルダが基準です。--type set では --path を求めず、最初の行を
 --item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
-足します。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir|window のときに
+足します。<タブ> は番号（0 始まり）か名前の完全一致です。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir|window のときに
 要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
 --type clipboard はテキストだけのクリップボードアイテムで、--path の代わりに本文を --text か
 --text-file <ファイル>（UTF-8、1 MB まで）で渡します。本文を書き換えられるのは、中身がテキストだけのものです。
@@ -483,6 +493,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       idOrGroupName: '<id か名前>',
       setIdOrName: '<セットの id か表示名>',
       entryIndex: '<行番号>',
+      tab: '<タブの番号か名前>',
+      dataFile: '<データファイル>',
     },
     errors: {
       relativePath: '相対パスを解決できません（実行したフォルダが分かりません）: {{value}}',
@@ -498,7 +510,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
       unknownLauncherNoun:
-        '不明なコマンドです: launcher {{noun}}（launcher item と launcher set のみ）',
+        '不明なコマンドです: launcher {{noun}}（launcher item・launcher set・launcher tab のみ）',
       missingSetNoun: 'launcher set の後に row を指定してください',
       missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
@@ -568,6 +580,12 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       clipboardNotText:
         'このクリップボードアイテムはテキスト以外（{{formats}}）を含むので、本文を書き換えられません（名前・メモ・移動はできます。中身を変えるときは画面で操作してください）',
       saveTextFailed: 'クリップボードの本文を保存できませんでした',
+      missingTabVerb: '操作を指定してください（list / add / update / remove / file）',
+      missingTabFileVerb: '操作を指定してください（add / update / remove）',
+      dataFileNotEmpty:
+        'アイテムが入ったデータファイルが消えるのでやめました: {{files}}。アイテムを別のタブへ移すか消してから実行してください',
+      fileNotInTabs: 'データファイル {{file}} はどのタブにも入っていません',
+      dataFileNotEmptyEntry: '{{label}}（{{file}}・{{count}} 件）',
       autoImportedNotMovable:
         '自動取込で入ったアイテムは別のタブへ移せません（次の取込で同じものがまた足されます）。取込のルールの取り込み先を変えてください',
     },
@@ -578,6 +596,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       group: 'グループ',
       workspaceItem: 'ワークスペースのアイテム',
       archivedGroup: 'アーカイブのグループ',
+      tab: 'タブ',
+      dataFile: 'データファイル',
     },
     changed: {
       launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
@@ -595,6 +615,12 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
       groupArchived: 'CLI: グループ「{{name}}」をアーカイブしました',
       groupRestored: 'CLI: グループ「{{name}}」をワークスペース「{{workspace}}」に復元しました',
+      tabAdded: 'CLI: タブ「{{name}}」を追加しました',
+      tabUpdated: 'CLI: タブ「{{name}}」を変更しました',
+      tabRemoved: 'CLI: タブ「{{name}}」を削除しました',
+      tabFileAdded: 'CLI: タブ「{{tab}}」にデータファイル「{{label}}」を入れました',
+      tabFileUpdated: 'CLI: データファイルの名前を「{{label}}」に変えました',
+      tabFileRemoved: 'CLI: タブ「{{tab}}」からデータファイル「{{label}}」を外しました',
       setEntryAdded: 'CLI: セット「{{set}}」に「{{name}}」の行を追加しました',
       setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },

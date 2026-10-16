@@ -402,6 +402,7 @@ QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
   launcher set row list|add|remove       Rows of a set in the launcher
+  launcher tab list|add|update|remove    Tabs and data files in the launcher
   workspace list|add|update|remove         Workspaces themselves
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove|archive   Groups in workspaces
@@ -419,6 +420,7 @@ Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect 
 `,
       launcher: `Usage: qdl launcher item <action> [arguments]
        qdl launcher set row <action> <set> [arguments]
+       qdl launcher tab <action> [arguments]
 
 Works with the items in the launcher (datafiles/data*.json).
 
@@ -433,10 +435,18 @@ Works with the items in the launcher (datafiles/data*.json).
   set row add <set>             Add a row to a set (--item <id or name> | --path <path> [--args],
                                 --label <row name> --position <0-based> --dry-run)
   set row remove <set> <row>    Delete a row from a set (--dry-run)
+  tab list                      Tabs and their data files (item count per file, files in no tab)
+  tab add                       Add a tab with a new data file (--name is required. --label <file name>
+                                --position <0-based> --dry-run)
+  tab update <tab>              Change a tab (--name --position --dry-run)
+  tab remove <tab>              Delete a tab (only when the data files it would delete are empty. --dry-run)
+  tab file add <tab>            Create a data file in the tab (--label), or add one with --existing <data5.json>
+  tab file update <data3.json>  Rename a data file (--label)
+  tab file remove <tab> <file>  Take a data file out of the tab (deleted if no other tab uses it; only when empty. --dry-run)
 
 A relative --path is resolved from the folder where you run qdl. With --type set, --path isn't required;
 pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
-more rows with set row add. The target window and its window position are set with "Add windows"
+more rows with set row add. <tab> is a 0-based number or an exact tab name. The target window and its window position are set with "Add windows"
 or "Update window positions" on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
 --type clipboard adds a text-only clipboard item: instead of --path, pass the text with --text or
 --text-file <file> (UTF-8, 1 MB at most). Only clipboard items that contain just text can have their text replaced.
@@ -483,6 +493,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       idOrGroupName: '<id or name>',
       setIdOrName: '<set id or name>',
       entryIndex: '<row number>',
+      tab: '<tab number or name>',
+      dataFile: '<data file>',
     },
     errors: {
       relativePath: "Can't resolve the relative path (the current folder is unknown): {{value}}",
@@ -498,7 +510,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       ambiguous: '{{count}} matches for the {{what}} "{{key}}". Use the id',
       unknownCommand: 'Unknown command: {{command}}',
       unknownLauncherNoun:
-        'Unknown command: launcher {{noun}} (only launcher item and launcher set)',
+        'Unknown command: launcher {{noun}} (only launcher item, launcher set, and launcher tab)',
       missingSetNoun: 'Specify row after launcher set',
       missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
@@ -565,6 +577,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       clipboardNotText:
         "This clipboard item contains more than text ({{formats}}), so its text can't be replaced (you can still change its name and memo or move it; change its contents on screen)",
       saveTextFailed: "Couldn't save the clipboard text",
+      missingTabVerb: 'Specify an action (list / add / update / remove / file)',
+      missingTabFileVerb: 'Specify an action (add / update / remove)',
+      dataFileNotEmpty:
+        'Stopped because data files with items would be deleted: {{files}}. Move the items to another tab or delete them first',
+      fileNotInTabs: "The data file {{file}} isn't in any tab",
+      dataFileNotEmptyEntry: '{{label}} ({{file}}, {{count}} items)',
       autoImportedNotMovable:
         "Items added by auto import can't be moved to another tab (the next import would add them again). Change the import rule's target file instead",
     },
@@ -575,6 +593,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       group: 'group',
       workspaceItem: 'workspace item',
       archivedGroup: 'archived group',
+      tab: 'tab',
+      dataFile: 'data file',
     },
     changed: {
       launcherAdded: 'CLI: Added "{{name}}" to the launcher',
@@ -592,6 +612,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       groupRemoved: 'CLI: Deleted the group "{{name}}" from the workspace',
       groupArchived: 'CLI: Archived the group "{{name}}"',
       groupRestored: 'CLI: Restored the group "{{name}}" to the workspace "{{workspace}}"',
+      tabAdded: 'CLI: Added the tab "{{name}}"',
+      tabUpdated: 'CLI: Changed the tab "{{name}}"',
+      tabRemoved: 'CLI: Deleted the tab "{{name}}"',
+      tabFileAdded: 'CLI: Added the data file "{{label}}" to the tab "{{tab}}"',
+      tabFileUpdated: 'CLI: Renamed the data file to "{{label}}"',
+      tabFileRemoved: 'CLI: Took the data file "{{label}}" out of the tab "{{tab}}"',
       setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
       setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },
