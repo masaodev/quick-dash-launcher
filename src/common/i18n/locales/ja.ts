@@ -87,7 +87,7 @@ export const ja = {
     registerMenu: {
       title: 'アイテムを登録',
       quickAdd: '📄 簡易登録',
-      addBookmarks: '🔖 ブラウザのブックマークを追加',
+      addBookmarks: '🔖 ブラウザのブックマークを取り込む',
       addApps: '💻 インストール済みアプリを取り込む',
     },
     settingsMenu: {
@@ -935,7 +935,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       save: '変更を保存',
     },
     header: {
-      addBookmarks: 'ブラウザのブックマークを追加',
+      addBookmarks: 'ブラウザのブックマークを取り込む',
       addApps: 'インストール済みアプリを取り込む',
       autoImportSettings: 'ブックマーク自動取込の設定…',
       autoImportSettingsTitle:
@@ -1149,6 +1149,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     openAutoImportSettings: '自動取込の設定を開く',
     name: 'ルール名:',
     namePlaceholder: '{{name}}（空なら条件から自動で付けます）',
+    source: '取込元:',
+    unlistedTarget: '（どのタブにも無いデータファイル）',
+    changeTarget: '変更',
     browser: 'ブラウザ',
     noBrowsers: 'インストール済みブラウザが見つかりません',
     profile: 'プロファイル',

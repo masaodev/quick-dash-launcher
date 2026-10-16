@@ -85,7 +85,7 @@ export const en: LocaleMessages = {
     registerMenu: {
       title: 'Add item',
       quickAdd: '📄 Add item',
-      addBookmarks: '🔖 Add browser bookmarks',
+      addBookmarks: '🔖 Import browser bookmarks',
       addApps: '💻 Import installed apps',
     },
     settingsMenu: {
@@ -931,7 +931,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       save: 'Save changes',
     },
     header: {
-      addBookmarks: 'Add browser bookmarks',
+      addBookmarks: 'Import browser bookmarks',
       addApps: 'Import installed apps',
       autoImportSettings: 'Bookmark auto-import settings…',
       autoImportSettingsTitle:
@@ -1146,6 +1146,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     openAutoImportSettings: 'Open auto-import settings',
     name: 'Rule name:',
     namePlaceholder: '{{name}} (named from the conditions if left blank)',
+    source: 'Source:',
+    unlistedTarget: '(a data file not in any tab)',
+    changeTarget: 'Change',
     browser: 'Browser',
     noBrowsers: 'No installed browsers were found',
     profile: 'Profile',

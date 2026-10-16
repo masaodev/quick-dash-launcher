@@ -113,6 +113,8 @@
 }
 
 .bookmark-import-toolbar select {
+  width: auto;
+  max-width: 220px;
   height: var(--input-height-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-size-base);
@@ -570,4 +572,9 @@
 
 .bookmark-rule-error {
   color: var(--color-danger);
+}
+
+.bookmark-rule-line select {
+  width: auto;
+  max-width: 220px;
 }

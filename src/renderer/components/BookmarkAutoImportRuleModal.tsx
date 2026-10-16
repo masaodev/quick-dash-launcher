@@ -99,6 +99,21 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
     defaultName: t('bookmarkImportModal.defaultName'),
   });
 
+  // 編集するルールの取込先が、どのタブにも無いデータファイルのとき（帯では選べない）。
+  // 「変更」を押すまでは、そのファイルのまま保存する
+  const unlistedTarget =
+    rule && rule.targetFile && !dataFileTabs.some((tab) => tab.files.includes(rule.targetFile))
+      ? rule.targetFile
+      : null;
+  const [changeUnlisted, setChangeUnlisted] = useState(false);
+  const keepUnlisted = unlistedTarget !== null && !changeUnlisted;
+  const destination: ImportDestination = keepUnlisted
+    ? { kind: 'existing', fileName: unlistedTarget }
+    : dest.destination;
+  const destinationText = keepUnlisted
+    ? dataFileLabels[unlistedTarget] || unlistedTarget
+    : dest.destinationText;
+
   const updateRule = (fields: Partial<BookmarkAutoImportRule>) => {
     setEditingRule((prev) => ({ ...prev, ...fields, updatedAt: Date.now() }));
   };
@@ -266,7 +281,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
     try {
       const saved = await onSave(
         { ...editingRule, name: effectiveName, includeSubfolders: true, updatedAt: Date.now() },
-        dest.destination
+        destination
       );
       if (!saved) setIsSaving(false);
     } catch (error) {
@@ -348,7 +363,18 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
         <div className="import-hint">{t('bookmarkRule.hint')}</div>
 
-        <ImportDestinationBand dest={dest} />
+        {keepUnlisted ? (
+          <div className="import-dest">
+            <span className="import-dest-label">{t('importCommon.destination')}</span>
+            <span>{destinationText}</span>
+            <span className="import-dest-label">{t('bookmarkRule.unlistedTarget')}</span>
+            <Button variant="secondary" size="sm" onClick={() => setChangeUnlisted(true)}>
+              {t('bookmarkRule.changeTarget')}
+            </Button>
+          </div>
+        ) : (
+          <ImportDestinationBand dest={dest} />
+        )}
 
         <div className="bookmark-rule-body">
           <div className="bookmark-rule-form">
@@ -368,7 +394,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
           <div className="bookmark-rule-form">
             {/* 取込元 */}
-            <span className="bookmark-rule-label">{t('importCommon.source')}</span>
+            <span className="bookmark-rule-label">{t('bookmarkRule.source')}</span>
             <div className="bookmark-rule-line">
               <select
                 aria-label={t('bookmarkRule.browser')}
@@ -621,7 +647,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
         <div className="import-footer">
           <span className="import-echo">
-            {t('importCommon.destinationEcho', { target: dest.destinationText })}
+            {t('importCommon.destinationEcho', { target: destinationText })}
           </span>
           <div className="import-actions">
             <Button variant="secondary" onClick={onCancel}>

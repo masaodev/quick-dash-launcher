@@ -5,7 +5,7 @@
 - [画面一覧](./README.md) - 全画面構成の概要
 - [管理ウィンドウ](./admin-window.md) - 開き元（アイテム管理タブの追加の ▼ メニュー）
 - [アイテム登録・編集モーダル](./register-modal.md) - 取込先の帯と同じ形の「保存先の帯」
-- [ブックマーク取込画面](./bookmark-import-modal.md) - 案内・重複時の処理の言葉をそろえている取込画面
+- [ブックマーク取込画面](./bookmark-import-modal.md) - 取込先の帯・選び方・フッターをそろえている取込画面
 
 ## 1. 概要
 
@@ -29,7 +29,8 @@
 | **コンポーネント名** | `AppImportModal` |
 | **重複の判定** | `src/common/utils/appDuplicateDetector.ts` |
 | **新しいタブ・データファイルの作成** | `src/renderer/hooks/useAdminTabStructure.ts` の `createImportFile`（タブバーの「＋」と同じ計算＝`src/common/utils/tabManager/tabStructureEdits.ts`） |
-| **スタイル** | `src/renderer/styles/components/AppImport.css`（検索欄・重複警告は `BookmarkImport.css` を共用） |
+| **取込先の帯** | `src/renderer/components/ImportDestinationBand.tsx`（ブックマーク取込・取込ルールの画面と共通） |
+| **スタイル** | `src/renderer/styles/components/AppImport.css`（見出し・案内・取込先の帯・フッターは `ImportModal.css`、検索欄・重複警告は `BookmarkImport.css` を共用） |
 | **表示条件** | アイテム管理の「＋ アイテムを追加」の右隣の ▼ →「インストール済みアプリを取り込む」、メインウィンドウの ➕ の「💻 インストール済みアプリを取り込む」（管理ウィンドウのアイテム管理タブでこの画面を開く） |
 | **画面タイプ** | オーバーレイ型モーダル（管理ウィンドウ内） |
 | **親画面** | 管理ウィンドウ（アイテム管理タブ） |
