@@ -111,30 +111,29 @@
 }
 
 /* ウィンドウサイズ用横並びレイアウト */
+/* 見出しの列と入力欄の列に分け、見出しの長さが違っても入力欄の位置をそろえる */
 .window-size-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: var(--spacing-md) var(--spacing-lg);
 }
 
 .window-size-group {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--spacing-lg);
+  display: contents;
 }
 
 .window-size-group-title {
   font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--text-primary);
-  min-width: 90px;
-  flex-shrink: 0;
 }
 
+/* 幅が足りないときは「高さ」を次の行に回す（px がセクションの外へはみ出さない） */
 .window-size-inputs {
   display: flex;
-  gap: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm) var(--spacing-xl);
   align-items: center;
 }
 
@@ -148,7 +147,7 @@
   font-weight: 500;
   color: var(--text-secondary);
   font-size: var(--font-size-base);
-  min-width: 40px;
+  min-width: 4em;
 }
 
 .window-size-field input[type='number'] {

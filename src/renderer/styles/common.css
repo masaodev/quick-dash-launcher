@@ -3,6 +3,7 @@
 /* =========================
    タブバー共通スタイル
    ========================= */
+/* タブがはみ出すときは横スクロール（スクロールバーは出さず、ホイールで動かす。useTabBarScroll） */
 .tab-bar {
   display: flex;
   gap: 2px;
@@ -10,9 +11,16 @@
   background-color: var(--mode-tint);
   border-bottom: var(--border-light);
   -webkit-app-region: no-drag;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-button {
+  flex-shrink: 0;
   padding: var(--spacing-xs) var(--spacing-sm);
   border: none;
   background-color: var(--color-gray-300);
