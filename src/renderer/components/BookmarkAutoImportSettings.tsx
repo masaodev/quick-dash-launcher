@@ -121,10 +121,20 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       targetFile = created.fileName;
     }
     const saved = { ...rule, targetFile };
-    if (editingRule === 'new') {
-      await addRule(saved);
-    } else {
-      await updateRule(saved);
+    try {
+      if (editingRule === 'new') {
+        await addRule(saved);
+      } else {
+        await updateRule(saved);
+      }
+    } catch (error) {
+      logError('ルールの保存に失敗しました:', error);
+      showError(
+        t('itemManager.ruleSaveFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
+      return false;
     }
     setEditingRule(null);
     return true;

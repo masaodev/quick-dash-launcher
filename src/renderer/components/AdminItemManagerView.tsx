@@ -464,7 +464,18 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     const target = await resolveImportTarget(destination);
     if (!target) return false;
     const rule = { ...draft, targetFile: target.fileName };
-    await addAutoImportRule(rule);
+    try {
+      await addAutoImportRule(rule);
+    } catch (error) {
+      // 取込先は作ったので、そのタブ・ファイルを開いてから知らせる（画面は開いたまま）
+      showImportTarget(target);
+      showWarning(
+        t('itemManager.ruleSaveFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
+      return false;
+    }
     showImportTarget(target);
     let result: BookmarkAutoImportResult;
     try {

@@ -1029,6 +1029,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     imported_other: 'Added {{count}} items to {{file}} (save to keep this change)',
     ruleSavedAndRun: 'Saved and ran the rule "{{name}}": {{count}} added',
     ruleManualDuplicates: '{{message}} ({{count}} also match URLs you added yourself)',
+    ruleSaveFailed: "Couldn't save the rule: {{error}}",
     ruleRunFailed: 'Saved the rule "{{name}}", but it failed to run: {{error}}',
     deleteConfirmOne: 'Delete {{names}}?',
     deleteConfirmFew: 'Delete these {{count}} items: {{names}}?',

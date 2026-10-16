@@ -15,7 +15,7 @@ import type {
   BookmarkWithFolder,
 } from '@common/types/bookmarkAutoImport';
 import { buildBookmarkFolderTree } from '@common/utils/bookmarkRuleFilter';
-import { isInFolder, selectionAsRule } from '@common/utils/bookmarkSelection';
+import { selectionAsRule } from '@common/utils/bookmarkSelection';
 import { checkDuplicates } from '@common/utils/duplicateDetector';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
@@ -176,20 +176,25 @@ function BookmarkImportModal({
 
   const folders = useMemo(() => buildBookmarkFolderTree(allBookmarks), [allBookmarks]);
   /** フォルダごとの、中のブックマーク（サブフォルダ込み）の位置 */
-  const folderMembers = useMemo(() => {
-    const map = new Map<string, number[]>();
-    const walk = (list: BookmarkFolder[]) => {
-      for (const folder of list) {
-        map.set(
-          folder.path,
-          allBookmarks.flatMap((b, i) => (isInFolder(b.folderPath, folder.path) ? [i] : []))
-        );
-        walk(folder.children);
+  // ブックマークを 1 回なめて、フォルダごとの中身（サブフォルダ込み）と直下の位置を作る
+  const { folderMembers, directMembers } = useMemo(() => {
+    const members = new Map<string, number[]>();
+    const direct = new Map<string, number[]>();
+    allBookmarks.forEach((bookmark, index) => {
+      if (!bookmark.folderPath) return;
+      const parts = bookmark.folderPath.split('/');
+      for (let depth = 1; depth <= parts.length; depth++) {
+        const path = parts.slice(0, depth).join('/');
+        const list = members.get(path);
+        if (list) list.push(index);
+        else members.set(path, [index]);
       }
-    };
-    walk(folders);
-    return map;
-  }, [folders, allBookmarks]);
+      const own = direct.get(bookmark.folderPath);
+      if (own) own.push(index);
+      else direct.set(bookmark.folderPath, [index]);
+    });
+    return { folderMembers: members, directMembers: direct };
+  }, [allBookmarks]);
 
   const searchHits = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -358,6 +363,9 @@ function BookmarkImportModal({
         );
       }
       if (done) onCancel();
+    } catch (error) {
+      // 呼び出し側がトーストで知らせる。ここでは画面を開いたままにする
+      logError('ブックマークの取り込みに失敗しました:', error);
     } finally {
       setBusy(false);
     }
@@ -417,9 +425,7 @@ function BookmarkImportModal({
     const all = members.length > 0 && chosen === members.length;
     const isOpen = openFolders.has(folder.path);
     const label = bookmarkFolderLabel(folder.name, t);
-    const directIndexes = isOpen
-      ? allBookmarks.flatMap((b, i) => (b.folderPath === folder.path ? [i] : []))
-      : [];
+    const directIndexes = isOpen ? (directMembers.get(folder.path) ?? []) : [];
     return (
       <div key={`f-${folder.path}`}>
         <div

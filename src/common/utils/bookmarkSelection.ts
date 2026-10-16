@@ -43,15 +43,23 @@ export function selectionAsRule(
   if (selectedCount === 0) return { ok: false, allFolders: false, folderPaths: [] };
   if (selectedCount === bookmarks.length) return { ok: true, allFolders: true, folderPaths: [] };
 
+  // フォルダごとに、中のブックマーク（サブフォルダ込み）の数と選んだ数を 1 回のなめで数える
+  const totals = new Map<string, { all: number; chosen: number }>();
+  bookmarks.forEach((bookmark, index) => {
+    if (!bookmark.folderPath) return;
+    const parts = bookmark.folderPath.split('/');
+    for (let depth = 1; depth <= parts.length; depth++) {
+      const path = parts.slice(0, depth).join('/');
+      const entry = totals.get(path) ?? { all: 0, chosen: 0 };
+      entry.all++;
+      if (selected.has(index)) entry.chosen++;
+      totals.set(path, entry);
+    }
+  });
   const fullFolders = new Set(
     collectFolderPaths(bookmarks).filter((path) => {
-      let count = 0;
-      for (let i = 0; i < bookmarks.length; i++) {
-        if (!isInFolder(bookmarks[i].folderPath, path)) continue;
-        if (!selected.has(i)) return false;
-        count++;
-      }
-      return count > 0;
+      const entry = totals.get(path);
+      return entry !== undefined && entry.all > 0 && entry.chosen === entry.all;
     })
   );
   const parentOf = (path: string) => path.slice(0, Math.max(0, path.lastIndexOf('/')));

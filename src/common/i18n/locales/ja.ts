@@ -1033,6 +1033,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     imported_other: '{{count}} 件を {{file}} に追加しました（保存で確定）',
     ruleSavedAndRun: 'ルール「{{name}}」を保存して実行しました: {{count}}件登録',
     ruleManualDuplicates: '{{message}}（手動で登録済みの URL と {{count}} 件重複しています）',
+    ruleSaveFailed: 'ルールを保存できませんでした: {{error}}',
     ruleRunFailed: 'ルール「{{name}}」を保存しましたが実行に失敗しました: {{error}}',
     deleteConfirmOne: '{{names}}を削除しますか？',
     deleteConfirmFew: '{{names}} の {{count}} 件を削除しますか？',
