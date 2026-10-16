@@ -80,7 +80,7 @@ function displayWindowInfo() {
     log(`  サイズ:       width=${win.width}, height=${win.height}`);
     log(`  状態:         ${win.windowState || 'N/A'}`);
     log(`  デスクトップ: ${win.desktopNumber || 'N/A'}`);
-    log(`  ピン止め:     ${win.isPinned ? 'はい' : 'いいえ'}`);
+    log(`  全デスクトップに表示: ${win.isPinned ? 'はい' : 'いいえ'}`);
     log(`  アイコン:     ${win.icon ? 'あり' : 'なし'}`);
   });
 

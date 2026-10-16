@@ -331,9 +331,9 @@ export async function applyWindowConfig(
   if (needsPinning) {
     const pinSuccess = pinWindow(hwnd);
     if (pinSuccess) {
-      logger.info(logCtx, '全仮想デスクトップにピン止めしました');
+      logger.info(logCtx, '全デスクトップに表示しました');
     } else {
-      logger.warn(logCtx, 'ウィンドウのピン止めに失敗しました');
+      logger.warn(logCtx, 'ウィンドウの全デスクトップへの表示に失敗しました');
     }
   }
 
@@ -384,7 +384,7 @@ export async function applyWindowConfig(
   }
 
   // virtualDesktopNumberが指定されている場合のみ、そのデスクトップに移動
-  // ピン止めが有効な場合はスキップ（ピン止めウィンドウは全デスクトップに表示される）
+  // 全デスクトップに表示するときはスキップ（どのデスクトップにも出る）
   const targetDesktopNumber =
     windowConfig.virtualDesktopNumber !== undefined && !needsPinning
       ? windowConfig.virtualDesktopNumber

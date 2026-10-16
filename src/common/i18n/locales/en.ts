@@ -92,7 +92,7 @@ export const en: LocaleMessages = {
       title: 'Settings',
       settings: '⚙️ Settings',
       itemManager: '✏️ Item Manager (Ctrl+E)',
-      toggleWorkspace: '🗂️ Show workspace (Ctrl+W)',
+      toggleWorkspace: '🗂️ Show or hide workspace (Ctrl+W)',
       quit: '🚪 Exit',
     },
     desktopTabs: {
