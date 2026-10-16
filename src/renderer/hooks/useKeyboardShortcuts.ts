@@ -296,7 +296,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
           }
           await window.electronAPI.openParentFolder(selectedItem as LauncherItem);
         } else if (e.shiftKey && !isWindowInfo(selectedItem)) {
-          // セット・ウィンドウ操作・クリップボードにも親フォルダは無い。
+          // セット・クリップボードにも親フォルダは無い。
           // Enter と同じく実行すると思わぬ起動になるので、実行せずに URL と同じ文言で知らせる
           //（セットのトーストは中身の一覧を出す形なので、名前を本文に入れたシンプルな形にする）
           await window.electronAPI.showToastWindow(
@@ -309,7 +309,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
                 }
               : {
                   displayName: selectedItem.displayName,
-                  itemType: selectedItem.type === 'window' ? 'windowOperation' : selectedItem.type,
+                  itemType: selectedItem.type,
                   message: t('launcher.messages.noContainingFolder'),
                 }
           );

@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { jsonItemToDisplayText } from '@common/utils/displayTextConverter';
-import type { JsonLauncherItem, JsonDirItem, JsonWindowItem } from '@common/types';
+import type { JsonLauncherItem, JsonDirItem } from '@common/types';
 
 describe('displayTextConverter', () => {
   describe('jsonItemToDisplayText', () => {
@@ -135,45 +135,6 @@ describe('displayTextConverter', () => {
         expect(result).toBe(
           'dir,C:\\Documents,depth=3,types=both,filter=*.md,exclude=node_modules,prefix=[DOC],suffix=.bak'
         );
-      });
-    });
-
-    describe('windowアイテム', () => {
-      it('基本的なwindowアイテムを変換できる', () => {
-        const item: JsonWindowItem = {
-          id: 'test-13',
-          type: 'window',
-          displayName: 'MyWindow',
-          windowTitle: 'Window Title',
-        };
-        const result = jsonItemToDisplayText(item);
-        expect(result).toBe(
-          'window,"{""displayName"":""MyWindow"",""windowTitle"":""Window Title""}"'
-        );
-      });
-
-      it('全オプション付きのwindowアイテムを変換できる', () => {
-        const item: JsonWindowItem = {
-          id: 'test-14',
-          type: 'window',
-          displayName: 'MyWindow',
-          windowTitle: 'Title',
-          processName: 'app.exe',
-          x: 100,
-          y: 200,
-          width: 800,
-          height: 600,
-          moveToActiveMonitorCenter: true,
-          virtualDesktopNumber: 2,
-          activateWindow: true,
-          pinToAllDesktops: false,
-        };
-        const result = jsonItemToDisplayText(item);
-        expect(result).toContain('window,');
-        expect(result).toContain('displayName');
-        expect(result).toContain('MyWindow');
-        // JSON文字列が正しくエスケープされているか確認
-        expect(result).toContain('""');
       });
     });
   });

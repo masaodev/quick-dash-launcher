@@ -1,39 +1,40 @@
-import type { WindowInfo, WindowItem } from '../types';
+import type { LauncherItem, WindowInfo } from '../types';
 
-export interface WindowInfoToWindowItemOptions {
+import { decideWindowMatch, placementFromWindow } from './setWindowMatching';
+
+export interface WindowInfoToPathlessItemOptions {
   /**
-   * 今の位置・サイズ（x/y/width/height）も記録するか。既定は false
+   * 今の位置・サイズも記録するか（placement を付ける）。既定は false
    *
-   * 記録すると、アクティブ化のたびに登録時の場所へ戻される。位置の再現は
-   * ウィンドウ配置（layout）の役目なので、既定では「タイトルとプロセス名で探して前面に出す」だけにする
+   * 記録すると、切り替えるたびに記録した位置へ戻す。既定では「exe 名とタイトルで探して切り替える」だけにする
    */
   includePosition?: boolean;
+  /**
+   * 仮想デスクトップの数（placementFromWindow と同じ）。2 未満・省略なら仮想デスクトップの番号を記録しない
+   * （ワークスペースに追加するときは、切り替えでほかのデスクトップへ引き戻さない）
+   */
+  desktopCount?: number;
 }
 
 /**
- * ウィンドウ検索の結果（開いているウィンドウ）を、ワークスペースやデータファイルに登録できる
- * ウィンドウ操作アイテムに変換する
+ * ウィンドウ検索の結果（開いているウィンドウ）を、パスの無い単一アイテムに変換する
  *
- * hwnd は閉じると無効になるので持たない。タイトルとプロセス名で毎回探し直す方式に合わせる。
- * タイトルが変わるウィンドウ（ブラウザ等）は後で編集してワイルドカード（`*`）にする想定
+ * 対象ウィンドウは exe 名とタイトル全体（セットの行に記録するときと同じ decideWindowMatch）。
+ * 開くもの（パス）は持たない。exe のパスは使わない（あとで本人がパスを入れれば、開いていないときに開ける）。
+ * hwnd は閉じると無効になるので持たない。タイトルが変わるウィンドウ（ブラウザ等）は後で編集して一部だけにする想定
  */
-export function windowInfoToWindowItem(
+export function windowInfoToPathlessItem(
   info: WindowInfo,
-  options: WindowInfoToWindowItemOptions = {}
-): WindowItem {
-  const item: WindowItem = {
-    type: 'window',
+  options: WindowInfoToPathlessItemOptions = {}
+): LauncherItem {
+  const item: LauncherItem = {
+    type: 'windowSwitch',
     displayName: info.title,
-    windowTitle: info.title,
+    path: '',
+    window: decideWindowMatch(info),
   };
-  if (info.processName) {
-    item.processName = info.processName;
-  }
   if (options.includePosition) {
-    item.x = info.x;
-    item.y = info.y;
-    item.width = info.width;
-    item.height = info.height;
+    item.placement = placementFromWindow(info, options.desktopCount ?? 0);
   }
   return item;
 }

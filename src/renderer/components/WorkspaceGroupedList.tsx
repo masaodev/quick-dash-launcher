@@ -9,12 +9,12 @@ import type {
   MixedChild,
   MixedOrderEntry,
   GroupDropZone,
-  WindowItem,
+  SetPlacement,
 } from '@common/types';
-import { isWindowItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 import { resolveGroupColorCss } from '@common/groupColors';
 import { WORKSPACE_ITEM_DRAG_TYPE } from '@common/constants';
+import { isLauncherItem } from '@common/types/guards';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import {
   canCreateSubgroup,
@@ -553,10 +553,10 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   };
 
   /**
-   * AppItem（LauncherItem/SetItem/WindowItem/ClipboardItem）をワークスペースに追加
+   * AppItem（LauncherItem/SetItem/ClipboardItem）をワークスペースに追加
    *
-   * ウィンドウ検索結果は送り側でウィンドウ操作アイテム（タイトル＋プロセス名）に変換済み。
-   * windowPosition が付いていて Ctrl を押してドロップしたときだけ、今の位置・サイズも記録する
+   * ウィンドウ検索結果は送り側でパスの無い単一アイテム（exe 名＋タイトル）に変換済み。
+   * windowPosition（placement）が付いていて Ctrl を押してドロップしたときだけ、今の位置・サイズも記録する
    */
   async function addAppItemToWorkspace(
     appItemData: string,
@@ -565,12 +565,15 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     includePosition = false
   ): Promise<void> {
     let item: AppItem = JSON.parse(appItemData);
-    if (includePosition && windowPositionData && isWindowItem(item)) {
-      const position = JSON.parse(windowPositionData) as Pick<
-        WindowItem,
-        'x' | 'y' | 'width' | 'height'
-      >;
-      item = { ...item, ...position };
+    let withPosition = false;
+    if (
+      includePosition &&
+      windowPositionData &&
+      isLauncherItem(item) &&
+      item.type === 'windowSwitch'
+    ) {
+      item = { ...item, placement: JSON.parse(windowPositionData) as SetPlacement };
+      withPosition = true;
     }
     await window.electronAPI.workspaceAPI.addItem(item, groupId, activeWorkspaceId);
     // 型安全のためinチェックを使用（WindowInfo は来ない）
@@ -579,7 +582,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       itemType: 'workspaceAdd',
       path: 'path' in item ? item.path : undefined,
       icon: 'icon' in item ? item.icon : undefined,
-      message: isWindowItem(item) && includePosition ? t('workspace.restoresPosition') : undefined,
+      message: withPosition ? t('workspace.restoresPosition') : undefined,
     });
   }
 

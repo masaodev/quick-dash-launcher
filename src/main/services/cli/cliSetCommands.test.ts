@@ -17,7 +17,13 @@ function entry(item: JsonItem, file = 'datafiles/data.json'): LauncherEntry {
 beforeEach(() => {
   entries = [
     entry({ id: 'Memo0001', type: 'item', displayName: 'メモ帳', path: 'notepad.exe' }),
-    entry({ id: 'Win00001', type: 'window', displayName: 'ターミナル', windowTitle: '*' }),
+    entry({
+      id: 'Win00001',
+      type: 'item',
+      displayName: 'ターミナル',
+      path: '',
+      window: { processName: 'WindowsTerminal.exe' },
+    }),
     entry({ id: 'Dir00001', type: 'dir', path: 'C:\\docs' }),
     entry(
       {

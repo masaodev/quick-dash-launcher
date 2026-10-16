@@ -54,7 +54,6 @@ const TYPE_OPTIONS: ReadonlyArray<{ type: JsonItem['type']; opensDetail: boolean
   { type: 'item', opensDetail: false },
   { type: 'dir', opensDetail: false },
   { type: 'set', opensDetail: true },
-  { type: 'window', opensDetail: true },
   { type: 'clipboard', opensDetail: true },
 ];
 

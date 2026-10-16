@@ -194,15 +194,14 @@ export function useRegisterForm(
       | number
       | RegisterItem['dirOptions']
       | WindowConfig
-      | RegisterItem['windowOperationConfig']
       | ClipboardFormat[]
       | SetEntry[]
   ) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
-    if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
-      clearErrorField(index, field === 'windowOperationConfig' ? 'displayName' : field);
+    if (field === 'displayName' || field === 'path') {
+      clearErrorField(index, field);
     }
 
     if (field === 'itemCategory') {
@@ -210,7 +209,6 @@ export function useRegisterForm(
       const clearCommonFields = () => {
         delete item.folderProcessing;
         delete item.dirOptions;
-        delete item.windowOperationConfig;
       };
       const clearClipboardFields = () => {
         // 未確定のキャプチャは使われなくなるので、メインプロセス側の保持も捨てる
@@ -237,11 +235,6 @@ export function useRegisterForm(
           clearCommonFields();
           clearClipboardFields();
           item.setEntries ??= [];
-          break;
-        case 'window':
-          clearCommonFields();
-          item.windowOperationConfig ??= { displayName: '', windowTitle: '' };
-          clearClipboardFields();
           break;
         case 'clipboard':
           clearCommonFields();
@@ -311,14 +304,6 @@ export function useRegisterForm(
 
       if (item.itemCategory === 'set' && (item.setEntries ?? []).length === 0) {
         newErrors[i].setEntries = t('set.editor.entriesRequired');
-      }
-
-      if (item.itemCategory === 'window') {
-        const hasWindowTitle = item.windowOperationConfig?.windowTitle?.trim();
-        const hasProcessName = item.windowOperationConfig?.processName?.trim();
-        if (!hasWindowTitle && !hasProcessName) {
-          newErrors[i].displayName = t('register.errors.windowRequired');
-        }
       }
 
       if (item.itemCategory === 'clipboard') {

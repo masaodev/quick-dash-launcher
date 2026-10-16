@@ -36,17 +36,29 @@ const launcher = {
   order: 0,
   addedAt: 1,
 };
-const windowItem = {
+/** パスの無い単一アイテム */
+const pathlessItem = {
   id: 'itAAAAA2',
-  type: 'window',
+  type: 'item',
   displayName: 'Chrome',
-  windowTitle: '*Chrome',
-  x: 0,
-  y: 0,
-  width: 800,
-  height: 600,
+  path: '',
+  window: { title: '*Chrome' },
+  placement: { x: 0, y: 0, width: 800, height: 600 },
   workspaceId: 'wsAAAAA1',
   order: 1,
+  addedAt: 1,
+};
+/** 廃止したウィンドウ操作（読み込みでパスの無い単一アイテムにする） */
+const legacyWindowItem = {
+  id: 'itAAAAA3',
+  type: 'window',
+  displayName: 'メモ帳',
+  windowTitle: '',
+  processName: 'notepad.exe',
+  x: 0,
+  moveToActiveMonitorCenter: true,
+  workspaceId: 'wsAAAAA1',
+  order: 2,
   addedAt: 1,
 };
 
@@ -55,7 +67,7 @@ function file(overrides: Record<string, unknown> = {}): string {
     version: JSON_WORKSPACE_VERSION,
     workspaces: [ws],
     groups: [group],
-    items: [launcher, windowItem],
+    items: [launcher, pathlessItem],
     ...overrides,
   });
 }
@@ -321,16 +333,24 @@ describe('workspaceParser: 不正な要素', () => {
     ).toContain('Unknown item type');
   });
 
-  it('ウィンドウ操作のタイトル空・プロセス名だけは "*" に正規化して normalized にすること', () => {
+  it('廃止したウィンドウ操作は、その場で同じ id のパスの無い単一アイテムにすること（書き戻し要にはしない）', () => {
     const result = parseWorkspaceFileLenient(
-      file({ items: [{ ...windowItem, windowTitle: '', processName: 'notepad.exe' }] }),
+      file({ items: [legacyWindowItem] }),
       createWorkspaceParseContext(NOW)
     );
-    expect(result.data.items[0]).toMatchObject({ windowTitle: '*', processName: 'notepad.exe' });
-    expect(result.issues).toEqual([
-      expect.objectContaining({ kind: 'normalized', section: 'items', id: windowItem.id }),
-    ]);
-    expect(result.modified).toBe(true);
+    expect(result.data.items[0]).toEqual({
+      id: 'itAAAAA3',
+      type: 'item',
+      displayName: 'メモ帳',
+      path: '',
+      window: { processName: 'notepad.exe' },
+      placement: { x: 0 },
+      workspaceId: 'wsAAAAA1',
+      order: 2,
+      addedAt: 1,
+    });
+    expect(result.issues).toEqual([]);
+    expect(result.modified).toBe(false);
   });
 
   it('アイテム本体の検証はデータファイルと同じで、未知のフィールドは落ちること', () => {

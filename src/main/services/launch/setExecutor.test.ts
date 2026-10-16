@@ -954,12 +954,24 @@ describe('パスの無い単一アイテム', () => {
     expect(result.errorCount).toBe(0);
   });
 
-  it('セットの行が指して開いていなければ、失敗にせず飛ばす', async () => {
+  it('セットの行が指して開いていなければ、失敗にせず飛ばす（廃止したウィンドウ操作から変換したものも同じ）', async () => {
     const { deps } = makeDeps();
     const set: SetItem = {
       type: 'set',
       displayName: 'TODOset',
       entries: [{ itemId: 'todo1aaa', placement: { x: 1, y: 2 } }],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(deps.launch).not.toHaveBeenCalled();
+    expect(result.entries).toEqual([{ index: 0, name: 'MS To Do', success: true, skipped: true }]);
+  });
+
+  it('位置の無い行が指して開いていなくても、失敗にせず飛ばす', async () => {
+    const { deps } = makeDeps();
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'TODOset',
+      entries: [{ itemId: 'todo1aaa' }],
     };
     const result = await executeSet(set, resolve, deps, logger);
     expect(deps.launch).not.toHaveBeenCalled();

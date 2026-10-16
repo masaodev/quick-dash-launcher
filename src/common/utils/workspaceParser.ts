@@ -38,12 +38,9 @@ import {
   validateJsonClipboardItem,
   validateJsonLauncherItem,
   validateJsonSetItem,
-  validateJsonWindowItem,
 } from './jsonParser';
 import type { JsonItemIssue } from './jsonParser';
-import { normalizeWindowTitleForProcessOnly } from './windowTitle';
-import { WINDOW_PLACEMENT_KEYS } from './windowPlacement.js';
-import { ITEM_WINDOW_SWITCH_KEYS } from './itemWindowConversion';
+import { ITEM_WINDOW_SWITCH_KEYS, windowItemToPathlessItem } from './itemWindowConversion';
 
 // ============================================================
 // 型
@@ -287,7 +284,7 @@ const ITEM_META_KEYS = [
 /**
  * 書き込み前のアイテム本体の正規化・検証（QDL 自身が書く経路でも、読み込みで invalid になるものを書かない）
  *
- * - ウィンドウ操作でタイトルが空・プロセス名だけのときは全一致ワイルドカード "*" にする（移行と同じ規則）
+ * - 廃止したウィンドウ操作（type: 'window'。古い CLI など）はパスの無い単一アイテムにする（読み込みと同じ規則）
  * - 通常アイテムで path が変わらない編集では、呼び出し側が渡した originalPath（.lnk のリンク先）を保つ
  *
  * @throws 検証を通らないとき（displayName 欠落など）
@@ -297,10 +294,6 @@ export function normalizeWorkspaceItemBody<T extends { type: JsonWorkspaceItem['
   id: string
 ): T {
   const raw = { ...(body as unknown as Record<string, unknown>) };
-  if (raw.type === 'window') {
-    const normalized = normalizeWindowTitleForProcessOnly(raw.windowTitle, raw.processName);
-    if (normalized !== undefined) raw.windowTitle = normalized;
-  }
   const validated = validateItemBody(raw, id);
   delete validated.id;
   delete validated.updatedAt;
@@ -309,8 +302,12 @@ export function normalizeWorkspaceItemBody<T extends { type: JsonWorkspaceItem['
 
 /**
  * ワークスペースアイテムの本体（type 固有部分）をデータファイルの検証関数で検証する
+ *
+ * 廃止したウィンドウ操作（type: 'window'）は、その場でパスの無い単一アイテムに直してから検証する
+ * （移行が保留になった間や、古い CLI でも動きを変えない）
  */
-function validateItemBody(raw: Record<string, unknown>, id: string): Record<string, unknown> {
+function validateItemBody(source: Record<string, unknown>, id: string): Record<string, unknown> {
+  const raw = source.type === 'window' ? windowItemToPathlessItem(source) : source;
   const body: Record<string, unknown> = { ...raw, id };
   for (const key of ITEM_META_KEYS) delete body[key];
 
@@ -322,8 +319,6 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
       const originalPath = optionalString(raw, 'originalPath');
       return originalPath === undefined ? item : { ...item, originalPath };
     }
-    case 'window':
-      return validateJsonWindowItem(body) as unknown as Record<string, unknown>;
     case 'clipboard':
       return validateJsonClipboardItem(body) as unknown as Record<string, unknown>;
     case 'set':
@@ -341,7 +336,6 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
 
 const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
   item: ['path', 'args', 'originalPath', 'customIcon', ...ITEM_WINDOW_SWITCH_KEYS],
-  window: ['windowTitle', ...WINDOW_PLACEMENT_KEYS],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
   set: ['entries', 'launchMode', 'customIcon'],
 };
@@ -501,12 +495,6 @@ function parseItemBase(
   issues: IssueCollector
 ): ParsedItem<JsonWorkspaceItem> {
   const id = resolveId(raw, 'items', index, ctx, issues);
-  const windowTitle = normalizeWindowTitleForProcessOnly(raw.windowTitle, raw.processName);
-  if (raw.type === 'window' && windowTitle !== undefined) {
-    raw = { ...raw, windowTitle };
-    // 書き込み側の normalizeWorkspaceItemBody と同じ規則。読み込みでは normalized として報告する
-    issues.normalized('items', index, issues.t('parseReasons.windowTitleWildcard'), id);
-  }
   const body = validateItemBody(raw, id);
   delete body.updatedAt;
 

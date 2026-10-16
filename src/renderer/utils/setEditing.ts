@@ -12,7 +12,7 @@ import type {
   WindowInfo,
   WorkspaceItem,
 } from '@common/types';
-import { isLauncherItem, isWindowItem } from '@common/types/guards';
+import { isLauncherItem } from '@common/types/guards';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import {
   hasItemWindowSwitch,
@@ -63,7 +63,7 @@ export interface SetCatalogItem {
 /**
  * 単一アイテムの行の種類（アイコン・結び付けに使う）
  *
- * パスの無い単一アイテムは開くものが無く、既にあるウィンドウを探すだけなので、ウィンドウ操作と同じ 'window' にする
+ * パスの無い単一アイテムは開くものが無く、既にあるウィンドウを探すだけなので 'window' にする
  */
 function launcherKind(item: Pick<LauncherItem, 'type'>): SetTargetKind | 'window' {
   if (item.type === 'windowSwitch') return 'window';
@@ -104,39 +104,27 @@ export async function loadSetCatalog(
   if (includeWorkspace) {
     const workspaceItems: WorkspaceItem[] = await window.electronAPI.workspaceAPI.loadItems();
     for (const item of workspaceItems) {
-      if (item.type !== 'item' && item.type !== 'window') continue;
+      if (item.type !== 'item') continue;
       result.push({
         key: item.id,
         id: item.id,
         displayName: item.displayName,
-        kind: item.type === 'window' ? 'window' : launcherKind({ type: item.launcherType }),
-        path: item.type === 'item' ? item.path : undefined,
-        args: item.type === 'item' ? item.args : undefined,
+        kind: launcherKind({ type: item.launcherType }),
+        path: item.path,
+        args: item.args,
         icon: item.icon,
         groupName: i18next.t('set.picker.workspace'),
         sameGroup: true,
-        ...(item.type === 'item' ? switchFieldsOf(item) : {}),
+        ...switchFieldsOf(item),
       });
     }
   }
 
   for (const item of allItems) {
-    if (!isLauncherItem(item) && !isWindowItem(item)) continue;
+    if (!isLauncherItem(item)) continue;
     const tab = tabOf(item.sourceFile);
     const sameGroup = !includeWorkspace && !!currentTab && tab === currentTab;
     const groupName = tab?.name ?? item.sourceFile ?? '';
-    if (isWindowItem(item)) {
-      if (!item.id) continue;
-      result.push({
-        key: item.id,
-        id: item.id,
-        displayName: item.displayName,
-        kind: 'window',
-        groupName,
-        sameGroup,
-      });
-      continue;
-    }
     // フォルダ取込の展開分は id を持たないので、パスで持つ
     const id = item.isDirExpanded ? undefined : item.id;
     result.push({

@@ -267,9 +267,10 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
   test.beforeEach(async ({ configHelper, mainWindow }) => {
     configHelper.addItemToFile('data.json', {
       id: 'e2ewin01',
-      type: 'window',
-      displayName: 'E2Eウィンドウ操作',
-      windowTitle: 'E2E存在しないウィンドウ',
+      type: 'item',
+      displayName: 'E2Eパスの無いアイテム',
+      path: '',
+      window: { title: 'E2E存在しないウィンドウ' },
     });
     configHelper.addItemToFile('data.json', {
       id: 'e2elay01',
@@ -315,8 +316,8 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
     expect(labels).toContain('📂 親フォルダを開く');
   });
 
-  test('ウィンドウ操作にはパス系の項目が出ない', async ({ electronApp, mainWindow }) => {
-    const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eウィンドウ操作');
+  test('パスの無い単一アイテムにはパス系の項目が出ない', async ({ electronApp, mainWindow }) => {
+    const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eパスの無いアイテム');
     expect(labels).toEqual(['✏️ 編集', '⭐ ワークスペースに追加']);
   });
 

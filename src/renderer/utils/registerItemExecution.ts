@@ -1,5 +1,4 @@
 import type { LauncherItem, RegisterItem } from '@common/types';
-import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
 import { itemWindowSwitchFields } from '@common/utils/itemWindowConversion';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
@@ -31,7 +30,6 @@ export function toLauncherItem(item: RegisterItem): LauncherItem | null {
   switch (item.itemCategory) {
     case 'dir':
     case 'set':
-    case 'window':
       return null;
     case 'clipboard':
       return {
@@ -64,20 +62,7 @@ export function toLauncherItem(item: RegisterItem): LauncherItem | null {
  */
 export async function tryExecuteRegisterItem(item: RegisterItem): Promise<void> {
   try {
-    if (item.itemCategory === 'window') {
-      if (!item.windowOperationConfig) {
-        logError('ウィンドウ操作設定が不足しています');
-        return;
-      }
-      const { windowTitle, processName } = item.windowOperationConfig;
-      await window.electronAPI.executeWindowOperation({
-        ...item.windowOperationConfig,
-        // 保存時と同じく、タイトルが空でプロセス名だけなら "*" で探す
-        windowTitle: normalizeWindowTitleForProcessOnly(windowTitle, processName) ?? windowTitle,
-        displayName: item.displayName,
-        type: 'window',
-      });
-    } else if (item.itemCategory === 'set') {
+    if (item.itemCategory === 'set') {
       // 行は全タブのアイテムから探す（保存前の内容で試す）
       const allItems = await window.electronAPI.loadDataFiles('internal');
       await window.electronAPI.executeSet(

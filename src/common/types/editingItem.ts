@@ -5,7 +5,7 @@
  * RawDataLine（CSV形式）を廃止し、AppItemベースで直接扱う。
  */
 
-import type { LauncherItem, WindowItem, ClipboardItem, SetItem } from './launcher';
+import type { LauncherItem, ClipboardItem, SetItem } from './launcher';
 import type { DirOptionsForProcessing } from './json-data';
 import type { EditableJsonItem } from './editableItem';
 
@@ -33,12 +33,6 @@ export interface EditingLauncherItem extends Omit<LauncherItem, 'sourceFile'>, E
 }
 
 /**
- * 編集用WindowItem
- * sourceFileを必須にするため、Omitで除外してから再定義
- */
-export interface EditingWindowItem extends Omit<WindowItem, 'sourceFile'>, EditingItemMeta {}
-
-/**
  * 編集用ClipboardItem
  * sourceFileを必須にするため、Omitで除外してから再定義
  */
@@ -54,25 +48,17 @@ export interface EditingSetItem extends Omit<SetItem, 'sourceFile'>, EditingItem
  * 編集用アイテムの統合型
  *
  * RegisterModal、useRegisterWindow、useRegisterFormで使用される。
- * LauncherItem/WindowItem/ClipboardItem/SetItemのいずれかに、
+ * LauncherItem/ClipboardItem/SetItemのいずれかに、
  * 編集に必要なメタデータ（sourceFile, jsonItemId）を付加したもの。
  */
-export type EditingAppItem =
-  EditingLauncherItem | EditingWindowItem | EditingClipboardItem | EditingSetItem;
+export type EditingAppItem = EditingLauncherItem | EditingClipboardItem | EditingSetItem;
 
 /**
  * EditingLauncherItemかどうかを判定
  */
 export function isEditingLauncherItem(item: EditingAppItem): item is EditingLauncherItem {
-  const specialTypes = ['window', 'clipboard', 'set'] as const;
+  const specialTypes = ['clipboard', 'set'] as const;
   return !specialTypes.includes(item.type as (typeof specialTypes)[number]);
-}
-
-/**
- * EditingWindowItemかどうかを判定
- */
-export function isEditingWindowItem(item: EditingAppItem): item is EditingWindowItem {
-  return item.type === 'window';
 }
 
 /**

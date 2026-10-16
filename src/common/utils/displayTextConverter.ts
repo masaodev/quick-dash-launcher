@@ -62,11 +62,6 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       return parts.join(',');
     }
 
-    case 'window': {
-      const { id: _id, type: _type, ...config } = item;
-      return `window,${escapeDisplayTextField(JSON.stringify(config))}`;
-    }
-
     case 'clipboard': {
       const parts = ['clipboard', item.displayName, item.dataFileRef, item.formats.join(';')];
       if (item.preview) {

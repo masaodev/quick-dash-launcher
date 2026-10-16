@@ -486,6 +486,7 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   });
   expectPositionals(parsed, []);
   const type = optionString(parsed, 'type') ?? 'item';
+  if (type === 'window') throw new CliError('usage', mainI18n.t('cli.errors.windowTypeRemoved'));
   if (type !== 'item' && type !== 'clipboard') {
     throw new CliError(
       'usage',

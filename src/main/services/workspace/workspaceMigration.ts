@@ -7,7 +7,7 @@
  * v1 → 2.0 の主な変換:
  * - id を 8 文字英数字に採番し直し、参照（groupId / parentGroupId / workspaceId / archivedGroupId /
  *   切り離しウィンドウのキー）を追随させる。固定 id 'default' のワークスペースも採番
- * - items: 判定済み type（url/file/app/…）→ 'item'、'windowOperation' → 'window'、
+ * - items: 判定済み type（url/file/app/…）→ 'item'、'windowOperation' → 'window'（続く読み込みでパスの無い単一アイテムに変換される）、
  *   path の疑似文字列 "[ウィンドウ操作: <title>]" → windowTitle、windowX/Y/Width/Height → x/y/width/height、
  *   clipboardDataRef/clipboardFormats/clipboardSavedAt → dataFileRef/formats/savedAt、layoutEntries → entries。
  *   originalName / label / icon は落とす

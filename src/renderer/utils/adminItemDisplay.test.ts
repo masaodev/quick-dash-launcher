@@ -17,9 +17,7 @@ const group: JsonItem = { id: 'g1', type: 'set', displayName: 'G', entries: [{ i
 
 describe('adminItemDisplay', () => {
   it('種類ごとの表示名が揃っていること', () => {
-    expect(Object.keys(ITEM_TYPE_INFO).sort()).toEqual(
-      ['clipboard', 'dir', 'item', 'set', 'window'].sort()
-    );
+    expect(Object.keys(ITEM_TYPE_INFO).sort()).toEqual(['clipboard', 'dir', 'item', 'set'].sort());
     expect(getItemTypeLabel('set')).toBe('セット');
   });
 

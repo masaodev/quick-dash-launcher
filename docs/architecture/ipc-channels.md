@@ -86,7 +86,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 ### `register-items` と ID ベースの更新
 
 - `register-items`: `RegisterItem[]` をデータファイルに追加する。`RegisterItem` の項目は `src/common/types/register.ts` を参照。登録先が `datafiles/` 直下の `.json` でないアイテムが 1 件でもあれば、何も書かずに例外を返す（`create-data-file`・`delete-data-file` も同じ名前の制約で、外れると `{ success: false, error }` を返す。判定は `src/common/utils/dataFileName.ts`。`create-data-file` は同じ名前のファイルが既にあるときも作らず、`alreadyExists: true` を添えて返す）
-- `update-item-by-id`・`update-dir-item-by-id`・`update-window-item-by-id`・`update-set-item-by-id`・`delete-items-by-id`: アイテムの `id` で対象を特定して書き換える（行番号では特定しない）。`delete-items-by-id` はクリップボードアイテムの保存データも消す
+- `update-item-by-id`・`update-dir-item-by-id`・`update-set-item-by-id`・`delete-items-by-id`: アイテムの `id` で対象を特定して書き換える（行番号では特定しない）。`delete-items-by-id` はクリップボードアイテムの保存データも消す
 - いずれも処理後に `data-changed` を全ウィンドウへ送る
 
 ### `data-changed` (イベント)

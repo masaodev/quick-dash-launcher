@@ -13,7 +13,7 @@ import {
   serializeJsonDataFile,
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
-import type { JsonDataFile, JsonLauncherItem, JsonDirItem, JsonWindowItem } from '@common/types';
+import type { JsonDataFile, JsonLauncherItem, JsonDirItem } from '@common/types';
 import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
 
 /** 旧版（v0.8.0-beta.5 まで）がファイルに書いていた $schema */
@@ -181,7 +181,7 @@ describe('jsonParser: パースとシリアライズ', () => {
       expect(() => parseJsonDataFile(json)).toThrow();
     });
 
-    it('JsonWindowItemを正しくパースできること', () => {
+    it('廃止したウィンドウ操作は、同じ id のパスの無い単一アイテムとして読むこと', () => {
       const json = JSON.stringify({
         version: '1.0',
         items: [
@@ -200,12 +200,15 @@ describe('jsonParser: パースとシリアライズ', () => {
         ],
       });
       const result = parseJsonDataFile(json);
-      const item = result.items[0] as JsonWindowItem;
-      expect(item.type).toBe('window');
-      expect(item.displayName).toBe('MS To DO');
-      expect(item.windowTitle).toBe('Microsoft To Do');
-      expect(item.x).toBe(1273);
-      expect(item.activateWindow).toBe(false);
+      expect(result.items[0]).toEqual({
+        id: 'q7r8s9t0',
+        type: 'item',
+        displayName: 'MS To DO',
+        path: '',
+        window: { title: 'Microsoft To Do' },
+        placement: { x: 1273, y: 1, width: 1293, height: 1397, virtualDesktopNumber: 1 },
+        activateWindow: false,
+      });
     });
 
     it('不正なJSONでエラーをスローすること', () => {
@@ -370,7 +373,8 @@ describe('jsonParser: 完全なJSONファイルの処理', () => {
     expect(result.items).toHaveLength(7);
 
     // 各タイプの検証
-    expect(result.items[0].type).toBe('window');
+    // ウィンドウ操作はパスの無い単一アイテムとして読む
+    expect(result.items[0]).toMatchObject({ type: 'item', path: '' });
     expect(result.items[1].type).toBe('dir');
     expect(result.items[3].type).toBe('set');
     expect(result.items[4].type).toBe('item');
@@ -496,7 +500,7 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     expect(result.issues[0].reason).toContain('options.depth');
   });
 
-  it('ウィンドウ操作のタイトル空・プロセス名だけは "*" に正規化し、書き戻し要にすること', () => {
+  it('ウィンドウ操作はその場でパスの無い単一アイテムに直し、書き戻し要にはしないこと（変換は移行が行う）', () => {
     const processOnly = {
       id: 'wnAAAAA1',
       type: 'window',
@@ -506,21 +510,27 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     };
     const result = parseJsonDataFileLenient(fileWith([processOnly]));
 
-    expect(result.validItems).toHaveLength(1);
-    expect(result.data.items[0]).toMatchObject({ windowTitle: '*', processName: 'notepad.exe' });
-    expect(result.issues).toEqual([
-      expect.objectContaining({ index: 0, kind: 'normalized', id: 'wnAAAAA1' }),
+    expect(result.validItems).toEqual([
+      {
+        id: 'wnAAAAA1',
+        type: 'item',
+        displayName: 'メモ帳',
+        path: '',
+        window: { processName: 'notepad.exe' },
+      },
     ]);
-    expect(result.modified).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.modified).toBe(false);
   });
 
-  it('ウィンドウ操作のタイトル空でプロセス名も無ければ invalid のままにすること', () => {
+  it('ウィンドウ操作のタイトル空でプロセス名も無ければ invalid にし、ファイル上は元のまま残すこと', () => {
     const result = parseJsonDataFileLenient(
       fileWith([{ id: 'wnAAAAA2', type: 'window', displayName: 'x', windowTitle: '' }])
     );
     expect(result.validItems).toHaveLength(0);
     expect(result.issues).toEqual([expect.objectContaining({ kind: 'invalid', id: 'wnAAAAA2' })]);
-    expect(result.issues[0].reason).toContain('windowTitle');
+    expect(result.issues[0].reason).toContain('path');
+    expect(result.data.items[0]).toMatchObject({ type: 'window', windowTitle: '' });
   });
 
   it('未知の type はスキップし、他のアイテムは生かすこと', () => {

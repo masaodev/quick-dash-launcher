@@ -173,8 +173,6 @@ export const en: LocaleMessages = {
       setRowsMore_other: 'Rows: {{names}}, and {{count}} more',
       setPlaced_one: 'Rows with a window position: {{count}}',
       setPlaced_other: 'Rows with a window position: {{count}}',
-      virtualDesktop: 'Virtual desktop: {{value}}',
-      noActivate: 'Bring to front: No',
       clipboardFormats: 'Formats: {{value}}',
       clipboardFormatNames: {
         text: 'Text',
@@ -195,9 +193,8 @@ export const en: LocaleMessages = {
       noBookmarkRules: 'No bookmark import rules are turned on',
       addToWorkspaceFailed: "Couldn't add to the workspace",
       windowAddedWithPosition:
-        'Finds the window by exe name and title, then restores its recorded window position and brings it to the front',
-      windowAdded:
-        'Finds the window by exe name and title and brings it to the front (you can edit the title)',
+        "When it's open, moves this window back to the recorded window position",
+      windowAdded: "Switches to this window when it's open (add a path to open it when it isn't)",
       dataFilesCreateFailed: "Couldn't create the data files for tabs: {{files}}",
       virtualDesktopUnsupported: "Virtual desktops aren't supported on this PC.",
       noContainingFolder: "This item doesn't have a containing folder",
@@ -365,7 +362,6 @@ export const en: LocaleMessages = {
       folder: 'Opening folder...',
       customUri: 'Opening...',
       windowSwitch: 'Switching to the window',
-      windowOperation: 'Running window action',
       windowActivate: 'Brought the window to the front',
       windowClose: 'Window closed',
       windowPin: 'Now shown on all desktops',
@@ -429,7 +425,7 @@ Works with the items in the launcher (datafiles/data*.json).
   item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>,
                                 --with-text to include clipboard text)
   item add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
-                                --type item|dir|set|window|clipboard, --set key=value, --dry-run)
+                                --type item|dir|set|clipboard, --set key=value, --dry-run)
   item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key,
                                 --text | --text-file, --file | --tab to move it to another tab, --dry-run)
   item remove <id or name>      Delete an item (--dry-run)
@@ -449,7 +445,9 @@ Works with the items in the launcher (datafiles/data*.json).
 A relative --path is resolved from the folder where you run qdl. With --type set, --path isn't required;
 pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
 more rows with set row add. <tab> is a 0-based number or an exact tab name. The target window and its window position are set with "Add windows"
-or "Update window positions" on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
+or "Update window positions" on screen. For --type dir, pass the options with --set (for example --set options='{"depth":1}').
+For an item that only switches to an open window (a pathless single item), pass the target window instead of --path
+with --set window='{"processName":"notepad.exe"}' (--type window has been removed).
 --type clipboard adds a text-only clipboard item: instead of --path, pass the text with --text or
 --text-file <file> (UTF-8, 1 MB at most). Only clipboard items that contain just text can have their text replaced.
 `,
@@ -534,6 +532,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       noTabSimple: 'There\'s no tab "{{tab}}"',
       tabHasNoFile: 'The tab "{{tab}}" has no data file',
       badType: '--type must be one of {{types}}: {{type}}',
+      windowTypeRemoved:
+        '--type window (window action) has been removed. For an item that only switches to an open window, use --set window=\'{"processName":"notepad.exe","title":"…"}\' instead of --path (a pathless single item)',
       dirHasNoName: "Folder imports (dir) don't have a display name",
       needName: 'Specify --name',
       needPath: 'Specify --path',
@@ -884,7 +884,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     types: {
       item: 'Single item',
       dir: 'Folder import',
-      window: 'Window action',
       clipboard: 'Clipboard',
       set: 'Set',
       unknown: 'Unknown',
@@ -894,7 +893,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       noPath: '(no path)',
       windowSwitchOnly: '(no path, switch only: {{target}})',
       noItems: '(no items)',
-      noWindowTitle: '(no window title)',
       noFolderPath: '(no folder path)',
       noData: '(no data)',
       setRows_one: '{{count}} row',
@@ -947,7 +945,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     row: {
       typeSelectTitle:
-        'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows), window action, and clipboard open Edit details.',
+        'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows) and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
       namePlaceholder: 'Enter a name (Enter moves to the path)',
       invalid: 'This item has a problem: {{error}}',
@@ -1332,7 +1330,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       item: '📄 Single item',
       dir: '🗂️ Folder import',
       set: '📦 Set',
-      window: '🪟 Window action',
       clipboard: '📋 Clipboard',
     },
     typeDescriptions: {
@@ -1347,10 +1344,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       set: {
         main: 'Opens several items together',
         sub: 'Can arrange the windows at the window positions you recorded',
-      },
-      window: {
-        main: 'Finds an open window and brings it forward or moves it',
-        sub: 'Opens nothing (does nothing if the window is not found)',
       },
       clipboard: {
         main: 'Copies saved text or images to the clipboard',
@@ -1387,7 +1380,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       displayNameRequired: 'Enter a display name',
       pathRequired: 'Enter a path',
       pathOrWindowRequired: 'Enter either a path or a target window',
-      windowRequired: 'Enter a window title or process name',
       clipboardRequired: 'Write some text or capture the clipboard',
       clipboardSaveFailed: "Couldn't save the clipboard data",
       iconNotFound: "Couldn't get the icon",
@@ -1398,41 +1390,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       customIconSelectFailed: "Couldn't choose the custom icon: {{error}}",
       customIconDeleteFailed: "Couldn't remove the custom icon: {{error}}",
     },
-  },
-  windowConfig: {
-    actionTitle: 'Window action',
-    stepSearch: '1. Find the window by title or process name',
-    stepAct: '2. If found, do the actions below',
-    searchHeading: '🔍 1. Find the window',
-    selectWindow: 'Choose window',
-    windowTitle: 'Window title:',
-    windowTitlePlaceholder: 'Example: *Chrome* or Google Chrome',
-    windowTitleHint:
-      '💡 * matches any text (example: *Chrome* matches windows with "Chrome" in the title)',
-    processName: 'Process name:',
-    processNamePlaceholder: 'Process name (partial match, example: chrome)',
-    actionHeading: '⚙️ 2. Actions',
-    activateHeading: '✨ Bring to front',
-    activate: 'Bring the window to the front',
-    positionHeading: '📐 Window position',
-    fetchFromWindow: 'Get from window',
-    windowNotFound: "The window wasn't found",
-    centerOnCursorMonitor: 'Center on the monitor with the mouse pointer',
-    byCoordinates: 'By coordinates',
-    x: 'X:',
-    xPlaceholder: 'X',
-    y: 'Y:',
-    yPlaceholder: 'Y',
-    sizeHeading: '📏 Window size',
-    width: 'Width:',
-    widthPlaceholder: 'Width',
-    height: 'Height:',
-    heightPlaceholder: 'Height',
-    desktopHeading: '🖥️ Virtual desktop',
-    showOnAllDesktops: '📌 Show on all desktops',
-    byNumber: 'By number',
-    desktopNumber: 'Desktop number:',
-    desktopNumberPlaceholder: 'Starts at 1',
   },
   clipboardEditor: {
     formats: {
@@ -1706,8 +1663,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     idInvalidFormat:
       'id "{{id}}" was invalid, so a new one was assigned (8 alphanumeric characters)',
     idDuplicate: 'id "{{id}}" was a duplicate, so a new one was assigned',
-    windowTitleWildcard:
-      'windowTitle was empty with only a process name, so it was set to "*" (match all)',
     arrayFilled: '{{key}} was missing, so an empty array was added',
     valueFilled: '{{key}} was missing, so {{value}} was added',
     colorFilled: 'color was missing, so "{{color}}" was added',
@@ -1797,7 +1752,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       title: 'This workspace is empty',
       hint: 'Right-click an item in the launcher and select "Add to workspace".',
     },
-    restoresPosition: 'Moves it back to the recorded window position and brings it to the front',
+    restoresPosition: "When it's open, moves this window back to the recorded window position",
     restoredGroupName: '{{name}} (restored)',
     defaultWorkspaceName: 'Default',
     detached: {
@@ -1815,8 +1770,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       remove: 'Remove',
     },
     describe: {
-      window: 'Window action: {{title}}',
-      windowWithProcess: 'Window action: {{title}} ({{process}})',
       clipboard: 'Clipboard',
       clipboardWithPreview: 'Clipboard: {{preview}}',
       set_one: 'Set: {{count}} item',

@@ -85,27 +85,34 @@ describe('WorkspaceItemManager', () => {
   it('updateItem で種別を変えると古い種別のフィールドが残らないこと', () => {
     const added = manager.addItem({ displayName: 'a', path: 'C:\\a.exe', type: 'app', args: '-x' });
     manager.updateItem(added.id, {
-      type: 'window',
+      type: 'clipboard',
       displayName: 'a',
-      windowTitle: '*a',
-      x: 1,
+      dataFileRef: 'clipboard-data/a.json',
+      savedAt: 1,
+      formats: ['text'],
     });
     const item = readItems()[0];
-    expect(item).toMatchObject({ type: 'window', windowTitle: '*a', x: 1 });
+    expect(item).toMatchObject({ type: 'clipboard', dataFileRef: 'clipboard-data/a.json' });
     expect(item).not.toHaveProperty('path');
     expect(item).not.toHaveProperty('args');
     expect(manager.loadItems()[0]).not.toHaveProperty('launcherType');
   });
 
-  it('タイトル空・プロセス名だけのウィンドウ操作は "*" に正規化して書くこと（読み込みで invalid にしない）', () => {
-    const added = manager.addItem({
+  it('廃止したウィンドウ操作の本体（古い CLI など）は、パスの無い単一アイテムにして書くこと', () => {
+    const added = manager.addItem({ displayName: 'a', path: 'C:\\a.exe', type: 'app' });
+    manager.updateItem(added.id, {
       type: 'window',
       displayName: 'メモ帳',
       windowTitle: '',
       processName: 'notepad.exe',
+    } as never);
+    expect(readItems()[0]).toMatchObject({
+      type: 'item',
+      displayName: 'メモ帳',
+      path: '',
+      window: { processName: 'notepad.exe' },
     });
-    expect(added).toMatchObject({ type: 'window', windowTitle: '*', processName: 'notepad.exe' });
-    expect(readItems()[0].windowTitle).toBe('*');
+    expect(readItems()[0]).not.toHaveProperty('windowTitle');
   });
 
   it('検証を通らない本体（displayName 空）は書かずに throw すること', () => {

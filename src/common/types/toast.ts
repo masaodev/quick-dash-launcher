@@ -6,7 +6,6 @@ export type ToastItemType =
   | 'app'
   | 'customUri'
   | 'windowSwitch'
-  | 'windowOperation'
   | 'windowActivate'
   | 'windowClose'
   | 'windowPin'

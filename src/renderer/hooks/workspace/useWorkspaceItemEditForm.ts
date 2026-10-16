@@ -73,8 +73,8 @@ export function useWorkspaceItemEditForm(
 
       const newItem: RegisterItem = { ...item, [field]: value };
 
-      if (field === 'displayName' || field === 'path' || field === 'windowOperationConfig') {
-        clearErrorField(field === 'windowOperationConfig' ? 'displayName' : field);
+      if (field === 'displayName' || field === 'path') {
+        clearErrorField(field);
       }
 
       setItem(newItem);
@@ -113,14 +113,6 @@ export function useWorkspaceItemEditForm(
 
     if (item.itemCategory === 'set' && !item.setEntries?.length) {
       newErrors.setEntries = t('set.editor.entriesRequired');
-    }
-
-    if (item.itemCategory === 'window') {
-      const hasWindowTitle = item.windowOperationConfig?.windowTitle?.trim();
-      const hasProcessName = item.windowOperationConfig?.processName?.trim();
-      if (!hasWindowTitle && !hasProcessName) {
-        newErrors.displayName = t('register.errors.windowRequired');
-      }
     }
 
     if (item.itemCategory === 'clipboard' && !hasClipboardContent(item)) {

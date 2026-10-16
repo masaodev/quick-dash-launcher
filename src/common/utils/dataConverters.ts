@@ -4,30 +4,25 @@
 
 import { DEFAULT_DATA_FILE } from '../types';
 import type { DataFileTab, JsonDirOptions, JsonItem, ClipboardFormat } from '../types';
-import type { RegisterItem, WindowOperationConfig } from '../types/register.js';
+import type { RegisterItem } from '../types/register.js';
 import type { SetEntry, SetLaunchMode } from '../types/launcher.js';
-import type { EditingAppItem, EditingWindowItem } from '../types/editingItem.js';
+import type { EditingAppItem } from '../types/editingItem.js';
 import type { EditableJsonItem } from '../types/editableItem.js';
 import {
   isEditingLauncherItem,
-  isEditingWindowItem,
   isEditingClipboardItem,
   isEditingSetItem,
 } from '../types/editingItem.js';
 import {
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonWindowItem,
   isJsonClipboardItem,
   isJsonSetItem,
   DIR_OPTIONS_DEFAULTS,
   type DirOptionsForProcessing,
-  type JsonWindowItem,
 } from '../types/json-data.js';
 
 import { generateId } from './jsonParser.js';
-import { normalizeWindowTitleForProcessOnly } from './windowTitle.js';
-import { pickWindowPlacement } from './windowPlacement.js';
 import { itemWindowSwitchFields, pickItemWindowSwitch } from './itemWindowConversion.js';
 
 /** 展開したアイテムが持つ取込の設定を、編集フォームのフォルダ取込のオプションにする */
@@ -51,17 +46,6 @@ export function getDefaultTab(sourceFile: string | undefined, tabs: DataFileTab[
   return sourceFile || (tabs.length > 0 ? tabs[0].files[0] : DEFAULT_DATA_FILE);
 }
 
-/** EditingWindowItemまたはJsonWindowItemからWindowOperationConfigを作成する */
-function createWindowOperationConfig(
-  item: EditingWindowItem | JsonWindowItem
-): WindowOperationConfig {
-  return {
-    displayName: item.displayName,
-    windowTitle: item.windowTitle,
-    ...pickWindowPlacement(item),
-  };
-}
-
 /** RegisterItemの共通ベースを作成する */
 function createBaseRegisterItem(
   displayName: string,
@@ -69,22 +53,6 @@ function createBaseRegisterItem(
   targetFile: string | undefined
 ): Pick<RegisterItem, 'displayName' | 'path' | 'type' | 'targetTab' | 'targetFile'> {
   return { displayName, path: '', type: 'app', targetTab, targetFile };
-}
-
-/** ウィンドウ操作用RegisterItemを作成する */
-function createWindowRegisterItem(
-  displayName: string,
-  config: WindowOperationConfig,
-  targetTab: string,
-  targetFile: string | undefined,
-  memo?: string
-): RegisterItem {
-  return {
-    ...createBaseRegisterItem(displayName, targetTab, targetFile),
-    itemCategory: 'window',
-    windowOperationConfig: config,
-    memo,
-  };
 }
 
 /** セット用RegisterItemを作成する */
@@ -142,16 +110,6 @@ export function convertEditingAppItemToRegisterItem(
   tabs: DataFileTab[]
 ): RegisterItem {
   const defaultTab = getDefaultTab(item.sourceFile, tabs);
-
-  if (isEditingWindowItem(item)) {
-    return createWindowRegisterItem(
-      item.displayName,
-      createWindowOperationConfig(item),
-      defaultTab,
-      item.sourceFile,
-      item.memo
-    );
-  }
 
   if (isEditingClipboardItem(item)) {
     return createClipboardRegisterItem(
@@ -241,16 +199,6 @@ export function convertEditableJsonItemToRegisterItem(
       // メモを渡さないと、詳細編集で更新したときに元のメモが消える
       memo: jsonItem.memo,
     };
-  }
-
-  if (isJsonWindowItem(jsonItem)) {
-    return createWindowRegisterItem(
-      jsonItem.displayName,
-      createWindowOperationConfig(jsonItem),
-      defaultTab,
-      sourceFile,
-      jsonItem.memo
-    );
   }
 
   if (isJsonSetItem(jsonItem)) {
@@ -347,24 +295,6 @@ export function convertRegisterItemToJsonItem(
       type: 'dir',
       path: registerItem.path,
       options: Object.keys(options).length > 0 ? options : undefined,
-      ...(memo && { memo }),
-      updatedAt: now,
-    };
-  }
-
-  if (registerItem.itemCategory === 'window') {
-    const config = registerItem.windowOperationConfig;
-    if (!config) {
-      throw new Error('windowOperationConfig is required for window items');
-    }
-    return {
-      id,
-      type: 'window',
-      displayName: config.displayName || registerItem.displayName,
-      windowTitle:
-        normalizeWindowTitleForProcessOnly(config.windowTitle, config.processName) ??
-        config.windowTitle,
-      ...pickWindowPlacement(config),
       ...(memo && { memo }),
       updatedAt: now,
     };

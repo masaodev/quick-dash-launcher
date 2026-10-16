@@ -14,13 +14,7 @@ import type {
   WindowInfo,
   IconFetchErrorRecord,
 } from '@common/types';
-import {
-  isWindowInfo,
-  isWindowItem,
-  isClipboardItem,
-  isSetItem,
-  isLauncherItem,
-} from '@common/types/guards';
+import { isWindowInfo, isClipboardItem, isSetItem, isLauncherItem } from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
@@ -206,7 +200,7 @@ function App(): React.ReactElement {
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
-      (item) => !isWindowInfo(item) && !isSetItem(item) && !isWindowItem(item)
+      (item) => !isWindowInfo(item) && !isSetItem(item)
     ) as LauncherItem[];
     const [iconCache, customIcons] = await Promise.all([
       window.electronAPI.loadCachedIcons(launcherItems),
@@ -275,13 +269,7 @@ function App(): React.ReactElement {
 
   const executeAppItem = useCallback(
     async (item: AppItem): Promise<void> => {
-      if (isWindowItem(item)) {
-        await window.electronAPI.showToastWindow({
-          displayName: item.displayName,
-          itemType: 'windowOperation',
-        });
-        await window.electronAPI.executeWindowOperation(item);
-      } else if (isClipboardItem(item)) {
+      if (isClipboardItem(item)) {
         // 書き戻しは一瞬なので、書き戻してから「コピーしました」を出す（前に出すと終わっていないように見える）
         const restored = await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
         if (restored.success) {
@@ -397,7 +385,7 @@ function App(): React.ReactElement {
     (item: AppItem) => {
       if (isWindowInfo(item)) return;
 
-      if (isSetItem(item) || isWindowItem(item)) {
+      if (isSetItem(item)) {
         void openEditWindow({
           ...item,
           sourceFile: item.sourceFile || DEFAULT_DATA_FILE,

@@ -33,7 +33,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **フォルダ**: `config/datafiles/`
 - **ファイル**: `datafiles/data.json` (必須), `datafiles/data2.json`, `datafiles/data3.json`, ... (オプション)
 - **内容**: ランチャーに表示するアイテムの定義
-- **アイテムタイプ**: `item` (通常), `dir` (フォルダ取込), `set` (セット), `window` (ウィンドウ操作), `clipboard` (クリップボード)。旧形式の `group`（旧グループ）・`layout`（旧ウィンドウ配置）は読み込み時に `set` に変換される
+- **アイテムタイプ**: `item` (通常), `dir` (フォルダ取込), `set` (セット), `clipboard` (クリップボード)。旧形式の `group`（旧グループ）・`layout`（旧ウィンドウ配置）は読み込み時に `set` に、廃止した `window`（ウィンドウ操作）はパスの無い `item` に変換される
 
 ---
 
@@ -41,7 +41,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 **→ [ワークスペースファイル形式](workspace-format.md)**
 
-- **workspace.json**（version 2.0）: ワークスペース（タブ）・グループ・アイテム。アイテムはデータファイルと同じ語彙（`type: item / window / clipboard / set`）
+- **workspace.json**（version 2.0）: ワークスペース（タブ）・グループ・アイテム。アイテムはデータファイルと同じ語彙（`type: item / clipboard / set`）
 - **workspace-archive.json**（version 2.0）: アーカイブされたグループとアイテム
 - **workspace-ui-state.json**: グループの折りたたみ・切り離しウィンドウの位置（QDL 管理）
 

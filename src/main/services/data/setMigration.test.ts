@@ -12,7 +12,14 @@ describe('setMigration', () => {
       path: 'C:\\docs\\メモ.txt',
       isDirExpanded: true,
     },
-    { id: 'w1w1w1w1', type: 'window', displayName: '電卓を前面に', windowTitle: '電卓' },
+    // ウィンドウ操作は読み込みでパスの無い単一アイテムになっている（id は変わらない）
+    {
+      id: 'w1w1w1w1',
+      type: 'windowSwitch',
+      displayName: '電卓を前面に',
+      path: '',
+      window: { title: '電卓' },
+    },
   ];
 
   it('名前から id（展開分はパス）を引く', () => {

@@ -4,7 +4,7 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type { AppItem, LauncherItem, WindowItem, ClipboardItem, SetItem } from './launcher';
+import type { AppItem, LauncherItem, ClipboardItem, SetItem } from './launcher';
 import type { WindowInfo } from './window';
 
 /** 配列でないオブジェクト（JSON の読み込みで、キーを持つ値か確かめる） */
@@ -43,29 +43,7 @@ export function isWindowInfo(item: AppItem): item is WindowInfo {
  * }
  */
 export function isLauncherItem(item: AppItem): item is LauncherItem {
-  return (
-    !isWindowInfo(item) &&
-    item.type !== 'window' &&
-    item.type !== 'clipboard' &&
-    item.type !== 'set'
-  );
-}
-
-/**
- * WindowItemかどうかを判定する型ガード
- *
- * @param item - 判定対象のAppItem
- * @returns WindowItemの場合true
- *
- * @example
- * const item: AppItem = getItem();
- * if (isWindowItem(item)) {
- *   // ここではitemはWindowItem型として扱われる
- *   console.log(item.windowTitle);
- * }
- */
-export function isWindowItem(item: AppItem): item is WindowItem {
-  return !isWindowInfo(item) && item.type === 'window';
+  return !isWindowInfo(item) && item.type !== 'clipboard' && item.type !== 'set';
 }
 
 /**

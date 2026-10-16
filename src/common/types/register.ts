@@ -1,27 +1,12 @@
 /**
  * 登録関連の型定義
  *
- * RegisterModal、フォルダ取込、ウィンドウ操作アイテムで使用される型定義を提供します。
+ * RegisterModal、フォルダ取込で使用される型定義を提供します。
  */
 
-import type {
-  ItemWindowSwitch,
-  LauncherItem,
-  WindowItemConfig,
-  SetEntry,
-  SetLaunchMode,
-} from './launcher';
+import type { ItemWindowSwitch, LauncherItem, SetEntry, SetLaunchMode } from './launcher';
 import type { JsonDirOptions } from './json-data';
 import type { ClipboardFormat } from './clipboard';
-
-/**
- * ウィンドウ操作アイテムの設定（登録・編集フォームで使う）
- *
- * ID で window アイテムを更新するときの WindowItemConfig と同じ形なので、別名として定義する。
- *
- * @see JsonWindowItem - JSON形式のウィンドウ操作アイテム
- */
-export type WindowOperationConfig = WindowItemConfig;
 
 /**
  * RegisterModalで使用されるアイテム型
@@ -39,9 +24,8 @@ export interface RegisterItem extends ItemWindowSwitch {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
-  itemCategory: 'item' | 'dir' | 'window' | 'clipboard' | 'set';
+  itemCategory: 'item' | 'dir' | 'clipboard' | 'set';
   dirOptions?: JsonDirOptions;
-  windowOperationConfig?: WindowOperationConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
   /** クリップボードデータファイルへの参照（clipboard専用、永続化済み） */

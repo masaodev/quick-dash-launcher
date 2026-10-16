@@ -1,12 +1,10 @@
 import { ipcMain, shell } from 'electron';
 import { itemLogger } from '@common/logger';
-import { LauncherItem, WindowItem, AppItem, WindowConfig } from '@common/types';
+import { LauncherItem, AppItem } from '@common/types';
 import type { SetItem } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { pickWindowPlacement } from '@common/utils/windowPlacement';
 import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
-import { tryActivateWindow } from '../utils/windowActivator.js';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
@@ -24,16 +22,6 @@ import {
   notifySetFailures,
 } from '../services/launch/setExecutor.js';
 import { mainI18n } from '../services/mainI18n.js';
-
-/**
- * WindowItemからWindowConfigを生成する
- */
-function createWindowConfig(item: WindowItem): WindowConfig {
-  return {
-    title: item.windowTitle,
-    ...pickWindowPlacement(item),
-  };
-}
 
 /** アイテムを開けなかったら、理由をエラーのトーストで知らせる（メイン画面・ワークスペースで共通） */
 export async function notifyLaunchFailure(
@@ -147,32 +135,5 @@ export function setupItemHandlers(): void {
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {
     hideLayoutProgressWindow();
-  });
-
-  ipcMain.handle(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, async (_event, item: WindowItem) => {
-    itemLogger.info(
-      {
-        windowTitle: item.windowTitle,
-        processName: item.processName,
-        x: item.x,
-        y: item.y,
-        width: item.width,
-        height: item.height,
-        virtualDesktopNumber: item.virtualDesktopNumber,
-        activateWindow: item.activateWindow,
-      },
-      'ウィンドウ操作アイテムを実行中'
-    );
-
-    hideMainWindowOnExecute();
-
-    const windowConfig = createWindowConfig(item);
-    const result = await tryActivateWindow(windowConfig, item.windowTitle, itemLogger, {
-      followDesktop: true,
-    });
-
-    if (!result.windowFound) {
-      itemLogger.warn({ windowTitle: item.windowTitle }, 'ウィンドウが見つかりませんでした');
-    }
   });
 }

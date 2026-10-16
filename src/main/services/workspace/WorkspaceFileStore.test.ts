@@ -307,7 +307,13 @@ describe('WorkspaceFileStore', () => {
     expect(main.version).toBe('2.0');
     expect(main.workspaces[0].id).not.toBe('default');
     expect(isValidId(main.workspaces[0].id)).toBe(true);
-    expect(main.items[0]).toMatchObject({ type: 'window', windowTitle: '*Chrome', x: 1, y: 2 });
+    // ウィンドウ操作は 2.0 に変換したうえで、パスの無い単一アイテムにする
+    expect(main.items[0]).toMatchObject({
+      type: 'item',
+      path: '',
+      window: { title: '*Chrome' },
+      placement: { x: 1, y: 2 },
+    });
     expect(main.items[0].groupId).toBe(main.groups[0].id);
     expect(main.groups[0]).not.toHaveProperty('collapsed');
     expect(main.groups[0].color).toBe('primary');
@@ -536,6 +542,80 @@ describe('WorkspaceFileStore', () => {
 
       expect(readJson(paths.main).items[0]).toHaveProperty('windowConfig');
       expect(store.get('items')[0]).toMatchObject({ window: { processName: 'sakura.exe' } });
+    });
+
+    const legacyWindow = {
+      id: 'winAAAA1',
+      type: 'window',
+      displayName: 'メモ帳',
+      windowTitle: '*',
+      processName: 'notepad.exe',
+      x: 10,
+      y: 20,
+      moveToActiveMonitorCenter: true,
+      memo: '朝に使う',
+      workspaceId: 'wsAAAAA1',
+      order: 2,
+      addedAt: 1,
+    };
+
+    it('ウィンドウ操作は _pre-window-migration を作り、同じ id のパスの無い単一アイテムに書き換えること', async () => {
+      fs.writeFileSync(paths.main, v2File({ items: [legacyWindow] }), 'utf8');
+      fs.writeFileSync(
+        paths.archive,
+        JSON.stringify({
+          version: '2.0',
+          groups: [],
+          items: [{ ...legacyWindow, id: 'winAAAA2', archivedAt: 1 }],
+        }),
+        'utf8'
+      );
+      const calls: string[] = [];
+      const store = createMigratingStore(calls);
+      await store.reload();
+
+      expect(calls).toEqual(['pre-window-migration']);
+      const written = readJson(paths.main).items[0];
+      expect(written).toEqual({
+        id: 'winAAAA1',
+        type: 'item',
+        displayName: 'メモ帳',
+        path: '',
+        window: { processName: 'notepad.exe' },
+        placement: { x: 10, y: 20 },
+        memo: '朝に使う',
+        workspaceId: 'wsAAAAA1',
+        order: 2,
+        addedAt: 1,
+      });
+      expect(readJson(paths.archive).items[0]).toMatchObject({
+        id: 'winAAAA2',
+        type: 'item',
+        path: '',
+      });
+      expect(store.get('items')[0]).toMatchObject({ id: 'winAAAA1', launcherType: 'windowSwitch' });
+      await store.reload();
+      expect(calls).toEqual(['pre-window-migration']);
+    });
+
+    it('スナップショットに失敗したら書き換えないが、読み込みではパスの無い単一アイテムとして扱うこと', async () => {
+      fs.writeFileSync(paths.main, v2File({ items: [legacyWindow] }), 'utf8');
+      const store = new WorkspaceFileStore(paths, uiState, {
+        now: () => NOW,
+        createPreMigrationSnapshot: async () => {},
+        createPreWindowMigrationSnapshot: async () => {
+          throw new Error('snapshot failed');
+        },
+      });
+      await store.reload();
+
+      expect(readJson(paths.main).items[0].type).toBe('window');
+      expect(store.get('items')[0]).toMatchObject({
+        id: 'winAAAA1',
+        type: 'item',
+        path: '',
+        window: { processName: 'notepad.exe' },
+      });
     });
   });
 });

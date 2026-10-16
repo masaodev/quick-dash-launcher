@@ -1,15 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import {
-  isLauncherItem,
-  isWindowInfo,
-  isSetItem,
-  isWindowItem,
-  isClipboardItem,
-} from '@common/types/guards';
+import { isLauncherItem, isWindowInfo, isSetItem, isClipboardItem } from '@common/types/guards';
 import { LauncherItem, AppItem, WindowInfo } from '@common/types';
-import { windowInfoToWindowItem } from '@common/utils/windowInfoConverter';
+import { windowInfoToPathlessItem } from '@common/utils/windowInfoConverter';
 import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
@@ -207,7 +201,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       window.electronAPI.onLauncherMenuShowMemo(openMemoModal),
       window.electronAPI.onWindowMenuActivate((item) => latestRef.current.onItemExecute(item)),
       window.electronAPI.onWindowMenuAddToWorkspace(async ({ windowInfo, includePosition }) => {
-        const windowItem = windowInfoToWindowItem(windowInfo, { includePosition });
+        // 開いているウィンドウへ切り替えるだけのパスの無い単一アイテム（exe のパスは使わない）
+        const windowItem = windowInfoToPathlessItem(windowInfo, { includePosition });
         try {
           await window.electronAPI.workspaceAPI.addItem(windowItem);
           await window.electronAPI.showToastWindow({
@@ -279,12 +274,12 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     e.dataTransfer.effectAllowed = 'copy';
 
     if (isWindowInfo(item)) {
-      // ウィンドウ検索結果は hwnd（bigint）を持ち JSON にできないので、先にウィンドウ操作アイテムへ変換する。
-      // 既定はアクティブ化のみ。位置は別データで渡し、ドロップ側が Ctrl 押下時だけ採用する
-      e.dataTransfer.setData('launcherItem', JSON.stringify(windowInfoToWindowItem(item)));
+      // ウィンドウ検索結果は hwnd（bigint）を持ち JSON にできないので、先にパスの無い単一アイテムへ変換する。
+      // 既定は切り替えだけ。位置（placement）は別データで渡し、ドロップ側が Ctrl 押下時だけ採用する
+      e.dataTransfer.setData('launcherItem', JSON.stringify(windowInfoToPathlessItem(item)));
       e.dataTransfer.setData(
         'windowPosition',
-        JSON.stringify({ x: item.x, y: item.y, width: item.width, height: item.height })
+        JSON.stringify(windowInfoToPathlessItem(item, { includePosition: true }).placement)
       );
       return;
     }
@@ -339,7 +334,6 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const item = items[index];
             const isWindow = isWindowInfo(item);
             const isSet = isSetItem(item);
-            const isWindowOperation = isWindowItem(item);
             const isClipboard = isClipboardItem(item);
             const isDraggable = true;
             const isDragging = draggedItemIndex === index;
@@ -355,8 +349,6 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             let itemKey: string;
             if (isWindow) {
               itemKey = `window-${item.hwnd}`;
-            } else if (isWindowOperation) {
-              itemKey = `windowop-${itemName}-${index}`;
             } else {
               itemKey = `${itemName}-${index}`;
             }
@@ -366,7 +358,6 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               index === selectedIndex && 'selected',
               isSet && 'group-item',
               isWindow && 'window-item',
-              isWindowOperation && 'window-operation-item',
               isClipboard && 'clipboard-item',
               isDragging && 'dragging',
               isMarked && 'marked',

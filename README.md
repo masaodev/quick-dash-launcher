@@ -118,7 +118,6 @@ Change the type in the Add item window to do more than open files and URLs. For 
 | Feature | What it does |
 | --- | --- |
 | [Set](docs/features/set.md) | Open several items or paths at once, and optionally move their windows to recorded positions |
-| Window action | Find a window that's already open, then bring it to the front or change its position and size |
 | Clipboard item | Save text or images and copy them back to the clipboard when you select them |
 | [Bookmark import](docs/features/bookmark-import.md) | Import your browser bookmarks, and optionally keep them up to date automatically |
 

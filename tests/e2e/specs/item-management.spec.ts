@@ -123,16 +123,18 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await firstRow.locator('.content-column .edit-input').press('Enter');
       });
 
-      await test.step('種類でウィンドウ操作を選ぶと、その種別で詳細編集が開く', async () => {
+      await test.step('種類でセットを選ぶと、その種別で詳細編集が開く', async () => {
         const firstRow = adminWindow.locator('.raw-item-row').first();
-        await firstRow.locator('select.type-select').selectOption('window');
+        // 廃止したウィンドウ操作は選べない
+        await expect(firstRow.locator('select.type-select option[value="window"]')).toHaveCount(0);
+        await firstRow.locator('select.type-select').selectOption('set');
         // 詳細編集は独立した子ウィンドウで開く（管理ウィンドウの中には描かない）
         const adminUtils = new TestUtils(adminWindow);
         const detailWindow = await adminUtils.waitForRegisterWindow(electronApp);
         const modal = detailWindow.locator('.register-modal');
         await expect(adminWindow.locator('.register-modal')).toHaveCount(0);
         // 種別の select（最初の select は保存先タブ）
-        await expect(modal.locator('select:has(option[value="window"])')).toHaveValue('window');
+        await expect(modal.locator('select:has(option[value="set"])')).toHaveValue('set');
         await adminUtils.pressEscapeToCloseRegisterModal();
         // 一覧側の種類は変わっていない
         await expect(firstRow.locator('select.type-select')).toHaveValue('item');

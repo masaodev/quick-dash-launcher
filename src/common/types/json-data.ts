@@ -29,8 +29,7 @@ export interface JsonDataFile {
 /**
  * JSONデータファイル内のアイテム型（Union型）
  */
-export type JsonItem =
-  JsonLauncherItem | JsonDirItem | JsonWindowItem | JsonClipboardItem | JsonSetItem;
+export type JsonItem = JsonLauncherItem | JsonDirItem | JsonClipboardItem | JsonSetItem;
 
 // ============================================================
 // 共通フィールド
@@ -170,47 +169,6 @@ export interface JsonGroupItem extends JsonItemBase {
 }
 
 // ============================================================
-// ウィンドウ操作 (type: "window")
-// ============================================================
-
-/**
- * ウィンドウ操作アイテム
- * 既存のウィンドウを検索・アクティブ化し、位置・サイズを制御する
- */
-export interface JsonWindowItem extends JsonItemBase {
-  /** アイテムタイプ */
-  type: 'window';
-  /**
-   * アイテムリストでの表示名
-   * @minLength 1
-   */
-  displayName: string;
-  /**
-   * ウィンドウタイトル（検索用、ワイルドカード対応）
-   * @minLength 1
-   */
-  windowTitle: string;
-  /** プロセス名で検索（部分一致、オプション） */
-  processName?: string;
-  /** X座標（仮想スクリーン座標系、オプション） */
-  x?: number;
-  /** Y座標（仮想スクリーン座標系、オプション） */
-  y?: number;
-  /** 幅（オプション） */
-  width?: number;
-  /** 高さ（オプション） */
-  height?: number;
-  /** アクティブモニターの中央に移動するか（オプション） */
-  moveToActiveMonitorCenter?: boolean;
-  /** 仮想デスクトップ番号（1から開始、オプション） */
-  virtualDesktopNumber?: number;
-  /** ウィンドウをアクティブにするか（デフォルト: true、オプション） */
-  activateWindow?: boolean;
-  /** 全デスクトップに表示するか（オプション） */
-  pinToAllDesktops?: boolean;
-}
-
-// ============================================================
 // クリップボードアイテム (type: "clipboard")
 // ============================================================
 
@@ -300,13 +258,6 @@ export function isJsonLauncherItem(item: JsonItem): item is JsonLauncherItem {
  */
 export function isJsonDirItem(item: JsonItem): item is JsonDirItem {
   return item.type === 'dir';
-}
-
-/**
- * JsonWindowItemかどうかを判定
- */
-export function isJsonWindowItem(item: JsonItem): item is JsonWindowItem {
-  return item.type === 'window';
 }
 
 /**

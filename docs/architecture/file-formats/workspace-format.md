@@ -20,7 +20,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ### 1.2. 設計方針
 
-- **アイテムの語彙はデータファイルと同じ**: `type`（`item` / `window` / `clipboard` / `set`）と型ごとのフィールド名は `datafiles/data*.json` の `JsonItem` と一致する。ワークスペース側は所属（`workspaceId` / `groupId`）と並び順（`order` / `addedAt`）を足し、`updatedAt` / `autoImportRuleId` を除いたもの（`type: item` のみ `originalPath` を追加で持つ）。一致は `src/common/types/json-workspace.ts` のコンパイル時アサーションで担保
+- **アイテムの語彙はデータファイルと同じ**: `type`（`item` / `clipboard` / `set`）と型ごとのフィールド名は `datafiles/data*.json` の `JsonItem` と一致する。ワークスペース側は所属（`workspaceId` / `groupId`）と並び順（`order` / `addedAt`）を足し、`updatedAt` / `autoImportRuleId` を除いたもの（`type: item` のみ `originalPath` を追加で持つ）。一致は `src/common/types/json-workspace.ts` のコンパイル時アサーションで担保
 - **ファイルには判定結果を保存しない**: `url / file / app / …` の起動種別は保存せず、読込時に `path` から判定する（実行時の `launcherType`）
 - **UI 状態はデータに混ぜない**: 折りたたみ・ウィンドウ位置は `workspace-ui-state.json` に分離
 - **色は CSS 変数名ではなくトークン**: `primary` などの名前で保存し、レンダラーで `var(--group-color-<token>)` に解決する（`src/common/groupColors.ts`）
@@ -109,7 +109,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | **id** | string | ✓ | 8 文字英数字。無い・不正・重複なら採番（`idAssigned`） |
-| **type** | string | ✓ | `item` / `window` / `clipboard` / `set` |
+| **type** | string | ✓ | `item` / `clipboard` / `set`。廃止した `window`（ウィンドウ操作）は読み込み時にパスの無い `item` に変換する（6 章） |
 | **displayName** | string | ✓ | 表示名 |
 | **memo** | string | - | 自由記述 |
 | **workspaceId** | string | ✓ | 所属ワークスペース |
@@ -117,7 +117,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | **order** | number | ✓* | 同じグループ内での並び順 |
 | **addedAt** | number | ✓* | 追加日時（ms） |
 
-型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`window`＝[3.4](data-format.md#34-ウィンドウアイテムjsonwindowitem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`set`＝[3.3](data-format.md#33-セットjsonsetitem)）を参照。ワークスペースに固有の違いは次のとおり。
+型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`set`＝[3.3](data-format.md#33-セットjsonsetitem)）を参照。ワークスペースに固有の違いは次のとおり。
 
 - `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri）は `originalPath` があればそれ、なければ `path` から判定する。`path` は、ウィンドウ切り替えの `window` があれば空でもよい（パスの無い単一アイテム。起動種別は `windowSwitch`、[データファイル形式 3.1.5.7](data-format.md#3157-パスの無い単一アイテム)）。ドット入りのフォルダ名と拡張子の無いファイルの扱い（末尾の区切り文字・読み込み時のディスク確認・`path-type-cache.json`）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
 - データファイルの `updatedAt`・`autoImportRuleId` は持たない
@@ -198,7 +198,7 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 | --- | --- |
 | `id`: UUID、ワークスペース `"default"` | 8 文字英数字に採番し直し、全参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId` / UI 状態のキー）を追随 |
 | `type: "url" / "file" / "folder" / "app" / "customUri"` | `type: "item"`（起動種別は読込時に判定） |
-| `type: "windowOperation"`、`path: "[ウィンドウ操作: <title>]"` | `type: "window"`、`windowTitle: "<title>"`。タイトル空で `processName` だけなら `windowTitle: "*"` |
+| `type: "windowOperation"`、`path: "[ウィンドウ操作: <title>]"` | いったん `type: "window"`（`windowTitle: "<title>"`。タイトル空で `processName` だけなら `"*"`）にし、このあと下のウィンドウ操作の変換でパスの無い単一アイテム（`type: "item"`・`path: ""`・`window`）になる |
 | `windowX / windowY / windowWidth / windowHeight` | `x / y / width / height` |
 | `clipboardDataRef / clipboardFormats / clipboardSavedAt` | `dataFileRef / formats / savedAt` |
 | `layoutEntries` | `entries`（`icon` は除去。このあと下のセットへの変換で `set` になる） |
@@ -211,14 +211,14 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 
 **旧グループ・旧ウィンドウ配置からセットへの変換**: 2.0 への移行のあと、`workspace.json` / `workspace-archive.json` の `type: "group"` と `type: "layout"` を `type: "set"` に変換して書き戻す（`WorkspaceFileStore`・`src/main/services/data/setMigration.ts`）。変換の規則はデータファイルと同じ（[データファイル形式 3.3.6](data-format.md#336-旧形式からの変換)）で、所属・並び順（`workspaceId` / `groupId` / `order` / `addedAt` / `archivedAt` / `archivedGroupId`）はそのまま残す。データファイルとの違いは次のとおり。
 
-- 旧グループの名前は、データファイルの通常アイテム・ウィンドウアイテムの表示名から探して `itemId` の行にする。データファイルは読み込み処理に通さずに中身だけを読むので、フォルダ取込で展開したアイテムの名前は見つからない行になる（`src/main/services/workspace/WorkspaceService.ts`）
+- 旧グループの名前は、データファイルの通常アイテム（まだ変換していないウィンドウ操作を含む）の表示名から探して `itemId` の行にする。データファイルは読み込み処理に通さずに中身だけを読むので、フォルダ取込で展開したアイテムの名前は見つからない行になる（`src/main/services/workspace/WorkspaceService.ts`）
 - 2 ファイルとも読み込みの状態が `ok` のときだけ変換する（`corrupted`・`unreadable` のときはしない）
 - 変換の前に `backup/<日時>_pre-set-migration/` のスナップショットを作る（`backupEnabled` に関係なく作る）。作れなければ変換せず、旧形式のアイテムは未知の `type` として `invalid` になる（ファイルには残る）
 
-**単一アイテムの windowConfig の変換**: セットへの変換に続けて、`type: "item"` の `windowConfig` をウィンドウ切り替えの新しいキー（`window`・`placement` など）に変換して書き戻す（`WorkspaceFileStore`・`src/common/utils/itemWindowConversion.ts`）。規則はデータファイルと同じ（[データファイル形式 3.1.5.6](data-format.md#3156-旧形式windowconfigからの変換)）。
+**単一アイテムの windowConfig とウィンドウ操作の変換**: セットへの変換に続けて、`type: "item"` の `windowConfig` をウィンドウ切り替えの新しいキー（`window`・`placement` など）に、廃止したウィンドウ操作（`type: "window"`）をパスの無い単一アイテムに変換して書き戻す（`WorkspaceFileStore` の `migrateLegacyItems`・`src/common/utils/itemWindowConversion.ts`）。規則はデータファイルと同じ（[データファイル形式 3.1.5.6](data-format.md#3156-旧形式windowconfigからの変換)・[3.4](data-format.md#34-ウィンドウ操作廃止読み込み時に変換)）。ウィンドウ操作の `id`・所属・並び順（`workspaceId` / `groupId` / `order` / `addedAt` / `archivedAt` / `archivedGroupId`）はそのまま残すので、指していたセットの行もそのまま変換後のアイテムを指す。
 
 - セットへの変換と同じく、2 ファイルとも読み込みの状態が `ok` のときだけ変換する
-- スナップショットは 1 回だけ作る。セットへの変換もあれば `backup/<日時>_pre-set-migration/`、`windowConfig` だけなら `backup/<日時>_pre-window-migration/`（`backupEnabled` に関係なく作る）。作れなければ書き換えないが、読み込みの検証が新しいキーに直すので動きは変わらない
+- スナップショットは 1 回だけ作る。セットへの変換もあれば `backup/<日時>_pre-set-migration/`、`windowConfig`・ウィンドウ操作だけなら `backup/<日時>_pre-window-migration/`（`backupEnabled` に関係なく作る）。作れなければ書き換えないが、読み込みの検証（`src/common/utils/workspaceParser.ts` の `validateItemBody`）がその場で新しい形に直すので動きは変わらない
 
 ---
 
