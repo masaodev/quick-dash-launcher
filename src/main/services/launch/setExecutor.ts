@@ -211,7 +211,8 @@ export function buildSetWindowConfig(
     width: p.width,
     height: p.height,
     virtualDesktopNumber: p.virtualDesktopNumber,
-    activateWindow: entry.activateWindow,
+    // セットの行は既定で前面に出さない（出すのは true を書いた行だけ）
+    activateWindow: entry.activateWindow === true,
   };
 }
 

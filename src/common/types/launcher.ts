@@ -283,7 +283,7 @@ export interface SetEntry {
   placement?: SetPlacement;
   /** ウィンドウが開いていたとき: move＝開き直さず位置だけ合わせる（既定）／openNew＝もう 1 つ開く */
   ifOpen?: 'move' | 'openNew';
-  /** 置いたウィンドウを前面に出すか（既定 true） */
+  /** 置いたウィンドウを前面に出すか（既定 false＝出さない） */
   activateWindow?: boolean;
   /** 開いてからウィンドウが出るのを待つ秒数（既定 30） */
   waitSeconds?: number;

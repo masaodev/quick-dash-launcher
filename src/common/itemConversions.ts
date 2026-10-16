@@ -243,14 +243,15 @@ function browserCandidates(
   otherArgs: string[],
   skipMode?: BrowserOpenMode
 ): ConversionCandidate[] {
-  // ファイルはシークレットで開かない（拡張機能が既定で動かず、.md などを整形して見られない）
-  const allowPrivate = !FILE_URL.test(url);
+  // ファイルは新しいウィンドウだけにする。シークレットは拡張機能が既定で動かず .md などを整形して見られない。
+  // アプリのウィンドウ（--app=file:///…）はアプリのウィンドウとして表示されない
+  const isFile = FILE_URL.test(url);
   const flags = getBrowserFlags(exePath);
   if (!flags) return [];
   const modeArgs: Record<BrowserOpenMode, string[] | undefined> = {
     newWindow: [flags.newWindow, url],
-    appWindow: flags.appWindow ? [flags.appWindow + url] : undefined,
-    private: allowPrivate ? [flags.private, url] : undefined,
+    appWindow: flags.appWindow && !isFile ? [flags.appWindow + url] : undefined,
+    private: isFile ? undefined : [flags.private, url],
   };
   const modes: BrowserOpenMode[] = ['newWindow', 'appWindow', 'private'];
   return modes.flatMap((mode) => {

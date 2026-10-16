@@ -155,23 +155,25 @@ describe('ファイル（関連付けがブラウザ）の変換', () => {
     expect(getConversionFileExtension(CHROME.exePath, `--new-window ${MD_URL}`)).toBe('.md');
   });
 
-  it('関連付けのブラウザで新しいウィンドウ・アプリのウィンドウの形を出す（シークレットは出さない）', () => {
+  it('関連付けのブラウザで新しいウィンドウの形だけを出す（アプリのウィンドウ・シークレットは出さない）', () => {
     const groups = getConversionGroups(MD, '', EDGE, CHROME);
     expect(groups.map((g) => [g.kind, g.title])).toEqual([['browser', 'Google Chrome']]);
-    expect(flatten(groups)).toEqual([
-      `${CHROME.exePath}|--new-window ${MD_URL}`,
-      `${CHROME.exePath}|--app=${MD_URL}`,
-    ]);
+    expect(flatten(groups)).toEqual([`${CHROME.exePath}|--new-window ${MD_URL}`]);
+  });
+
+  it('前の版で保存したアプリのウィンドウの形（--app=file:///…）は読み取り、ファイルと新しいウィンドウに変換できる', () => {
+    const groups = getConversionGroups(CHROME.exePath, `--app=${MD_URL}`, EDGE, CHROME);
+    expect(flatten(groups)).toEqual([`${MD}|`, `${CHROME.exePath}|--new-window ${MD_URL}`]);
   });
 
   it('関連付けがブラウザでない・分からないファイルには候補が無い', () => {
     expect(getConversionGroups(MD, '', CHROME, null)).toEqual([]);
   });
 
-  it('ブラウザでファイルを開く形からは、ファイルに戻すと別の形を出す', () => {
+  it('ブラウザの新しいウィンドウでファイルを開く形からは、ファイルに戻す候補だけを出す', () => {
     const groups = getConversionGroups(CHROME.exePath, `--new-window ${MD_URL}`, EDGE, CHROME);
-    expect(groups.map((g) => g.kind)).toEqual(['file', 'browser']);
-    expect(flatten(groups)).toEqual([`${MD}|`, `${CHROME.exePath}|--app=${MD_URL}`]);
+    expect(groups.map((g) => g.kind)).toEqual(['file']);
+    expect(flatten(groups)).toEqual([`${MD}|`]);
   });
 
   it('空白・# を含むパスは符号化し、戻すと元のパスになる', () => {
@@ -184,9 +186,9 @@ describe('ファイル（関連付けがブラウザ）の変換', () => {
 
   it('UNC のパスは file://server/… にし、戻せる', () => {
     const path = String.raw`\\server\share\memo.md`;
-    const toApp = getConversionGroups(path, '', null, CHROME)[0].candidates[1];
-    expect(toApp.args).toBe('--app=file://server/share/memo.md');
-    const back = getConversionGroups(toApp.path, toApp.args, null, CHROME)[0].candidates[0];
+    const toWindow = getConversionGroups(path, '', null, CHROME)[0].candidates[0];
+    expect(toWindow.args).toBe('--new-window file://server/share/memo.md');
+    const back = getConversionGroups(toWindow.path, toWindow.args, null, CHROME)[0].candidates[0];
     expect(back).toMatchObject({ kind: 'toFile', path });
   });
 });

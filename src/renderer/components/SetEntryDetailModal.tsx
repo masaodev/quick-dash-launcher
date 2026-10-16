@@ -451,13 +451,13 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                   </label>
                   <select
                     id="set-detail-activate"
-                    value={draft.activateWindow === false ? 'no' : 'yes'}
+                    value={draft.activateWindow === true ? 'yes' : 'no'}
                     onChange={(e) =>
-                      update({ activateWindow: e.target.value === 'no' ? false : undefined })
+                      update({ activateWindow: e.target.value === 'yes' ? true : undefined })
                     }
                   >
-                    <option value="yes">{t('set.detail.activateYes')}</option>
                     <option value="no">{t('set.detail.activateNo')}</option>
+                    <option value="yes">{t('set.detail.activateYes')}</option>
                   </select>
                   <label className="set-detail-label" htmlFor="set-detail-wait">
                     {t('set.detail.wait')}

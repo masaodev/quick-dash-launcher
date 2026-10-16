@@ -153,6 +153,29 @@ describe('executeSet', () => {
     expect(result.entries[0]).toMatchObject({ success: false, error: 'set.run.desktopNotFound' });
   });
 
+  it('位置のある行は、activateWindow が true のときだけ前面に出す（既定は出さない）', async () => {
+    // 同じウィンドウを 2 行で取り合わないよう、行ごとに別のウィンドウを用意する
+    const { deps } = makeDeps(
+      [1n, 2n, 3n].map((hwnd) => ({
+        hwnd,
+        title: 'a.png - ペイント',
+        processName: 'mspaint.exe',
+      }))
+    );
+    const entry = {
+      window: { processName: 'mspaint.exe', title: '*a.png*' },
+      placement: { x: 0, y: 0, width: 100, height: 100 },
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: '前面',
+      entries: [entry, { ...entry, activateWindow: true }, { ...entry, activateWindow: false }],
+    };
+    await executeSet(set, resolve, deps, logger);
+    const activates = vi.mocked(deps.applyConfig).mock.calls.map((c) => c[1].activateWindow);
+    expect(activates).toEqual([false, true, false]);
+  });
+
   it('名前だけ残した行（旧グループで見つからなかった名前）は、参照先が見つからないとして失敗し、残りは続ける', async () => {
     const { deps, calls } = makeDeps();
     const set: SetItem = {
