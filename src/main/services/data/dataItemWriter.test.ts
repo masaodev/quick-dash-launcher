@@ -19,7 +19,12 @@ vi.mock('@common/logger', () => ({
 }));
 
 import { getCorruptedDataFiles, clearDataFileCorrupted } from './corruptedDataFiles';
-import { registerItems, updateSetItemById, updateWindowItemById } from './dataItemWriter';
+import {
+  moveItemToFile,
+  registerItems,
+  updateSetItemById,
+  updateWindowItemById,
+} from './dataItemWriter';
 
 function writeFile(fileName: string, content: string): void {
   fs.writeFileSync(path.join(tempRoot.dir, fileName), content, 'utf8');
@@ -189,5 +194,70 @@ describe('dataItemWriter', () => {
 
     expect(readItems('datafiles/data.json')).toEqual([]);
     expect(fs.existsSync(path.join(tempRoot.dir, 'outside.json'))).toBe(false);
+  });
+
+  describe('moveItemToFile', () => {
+    beforeEach(() => {
+      writeFile(
+        'datafiles/data.json',
+        JSON.stringify({
+          version: '1.0',
+          items: [
+            { id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe' },
+            { id: 'bbbbbbbb', type: 'item', displayName: 'B', path: 'C:\\b.exe' },
+          ],
+        })
+      );
+      writeFile(
+        'datafiles/data2.json',
+        JSON.stringify({
+          version: '1.0',
+          items: [{ id: 'cccccccc', type: 'item', displayName: 'C', path: 'C:\\c.exe' }],
+        })
+      );
+    });
+
+    it('id を保ったまま移す先の末尾に足し、元のファイルからだけ消すこと（内容も差し替える）', () => {
+      moveItemToFile(
+        tempRoot.dir,
+        { id: 'aaaaaaaa', type: 'item', displayName: 'A2', path: 'C:\\a.exe' },
+        'datafiles/data.json',
+        'datafiles/data2.json'
+      );
+      expect(readItems('datafiles/data.json').map((i) => i.id)).toEqual(['bbbbbbbb']);
+      expect(readItems('datafiles/data2.json')).toMatchObject([
+        { id: 'cccccccc' },
+        { id: 'aaaaaaaa', displayName: 'A2' },
+      ]);
+    });
+
+    it('移す先が壊れていたら、どちらのファイルも変えないこと', () => {
+      writeFile('datafiles/data2.json', '{ broken');
+      expect(() =>
+        moveItemToFile(
+          tempRoot.dir,
+          { id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe' },
+          'datafiles/data.json',
+          'datafiles/data2.json'
+        )
+      ).toThrow();
+      expect(readItems('datafiles/data.json')).toHaveLength(2);
+      expect(fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data2.json'), 'utf8')).toBe(
+        '{ broken'
+      );
+      expect(getCorruptedDataFiles()).toContain('datafiles/data2.json');
+    });
+
+    it('元のファイルに無ければエラーにし、何も書かないこと', () => {
+      expect(() =>
+        moveItemToFile(
+          tempRoot.dir,
+          { id: 'cccccccc', type: 'item', displayName: 'C', path: 'C:\\c.exe' },
+          'datafiles/data.json',
+          'datafiles/data2.json'
+        )
+      ).toThrow();
+      expect(readItems('datafiles/data2.json')).toHaveLength(1);
+    });
   });
 });

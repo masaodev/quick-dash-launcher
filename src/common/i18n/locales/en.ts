@@ -402,7 +402,7 @@ QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
   launcher set row list|add|remove       Rows of a set in the launcher
-  workspace list                           List workspaces
+  workspace list|add|update|remove         Workspaces themselves
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove   Groups in workspaces
   check                                    Show the result of the last load (invalid entries, new IDs, outside changes) without reloading
@@ -424,7 +424,8 @@ Works with the items in the launcher (datafiles/data*.json).
   item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
   item add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
                                 --type item|dir|set|window, --set key=value, --dry-run)
-  item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
+  item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key,
+                                --file | --tab to move it to another tab, --dry-run)
   item remove <id or name>      Delete an item (--dry-run)
   set row list <set>            List the rows of a set (row numbers are 0-based)
   set row add <set>             Add a row to a set (--item <id or name> | --path <path> [--args],
@@ -441,6 +442,9 @@ or "Update window positions" on screen. For --type dir|window, pass the required
 Works with workspaces (workspace.json).
 
   qdl workspace list                          List workspaces
+  qdl workspace add                           Add a workspace (--name is required. --position <0-based> --dry-run)
+  qdl workspace update <id or name>           Change a workspace (--name --position --dry-run)
+  qdl workspace remove <id or name>           Delete an empty workspace (--dry-run)
   qdl workspace item list                     List items (--workspace --group --grep)
   qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
                                               --workspace --position <0-based> --set key=value --dry-run)
@@ -490,7 +494,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
       missingVerb: 'Specify an action (list / add / update / remove)',
-      missingWorkspaceNoun: 'After workspace, specify list, item, or group',
+      missingWorkspaceNoun: 'After workspace, specify list, add, update, remove, item, or group',
       badJson: "Can't read the request as JSON",
       badShape: 'The request is malformed',
       versionMismatch:
@@ -537,6 +541,11 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       emptyName: '--name is empty',
       groupNotEmpty:
         'The group "{{name}}" isn\'t empty ({{items}} items, {{subgroups}} subgroups). Move or delete its contents first',
+      workspaceNotEmpty:
+        'The workspace "{{name}}" isn\'t empty ({{groups}} groups, {{items}} items). Move or delete its contents first',
+      lastWorkspace: "You can't delete the last workspace",
+      autoImportedNotMovable:
+        "Items added by auto import can't be moved to another tab (the next import would add them again). Change the import rule's target file instead",
     },
     targets: {
       launcherItem: 'launcher item',
@@ -549,6 +558,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       launcherAdded: 'CLI: Added "{{name}}" to the launcher',
       launcherUpdated: 'CLI: Changed "{{name}}" in the launcher',
       launcherRemoved: 'CLI: Deleted "{{name}}" from the launcher',
+      launcherMoved: 'CLI: Moved "{{name}}" in the launcher to the tab "{{tab}}"',
+      workspaceAdded: 'CLI: Added the workspace "{{name}}"',
+      workspaceUpdated: 'CLI: Changed the workspace "{{name}}"',
+      workspaceRemoved: 'CLI: Deleted the workspace "{{name}}"',
       workspaceItemAdded: 'CLI: Added "{{name}}" to the workspace',
       workspaceItemUpdated: 'CLI: Changed "{{name}}" in the workspace',
       workspaceItemRemoved: 'CLI: Deleted "{{name}}" from the workspace',
@@ -1498,6 +1511,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       'Saving was stopped because a data file may be corrupted: {{files}}. Repair (or delete) the file and try again.',
     addBlockedCorrupted:
       'Adding was stopped because the data file may be corrupted: {{file}}. Repair (or delete) the file and try again.',
+    moveBlockedCorrupted:
+      'Moving was stopped because a data file may be corrupted: {{file}}. Repair (or delete) the file and try again.',
     writeFailed: "Couldn't write the data file: {{file}}",
     itemNotFound: "The item with ID {{id}} wasn't found",
     invalidTargetFile: 'The data file name to add to is invalid: {{files}}',

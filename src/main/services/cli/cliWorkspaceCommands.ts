@@ -37,6 +37,11 @@ import { checkCliSetEntries } from './cliSetCommands.js';
 /** WorkspaceService のうち CLI が使うもの（テストでは差し替える） */
 export interface WorkspaceStore {
   loadWorkspaces(): Promise<Workspace[]>;
+  createWorkspace(name: string): Promise<Workspace>;
+  renameWorkspace(id: string, name: string): Promise<void>;
+  /** 中のグループ・アイテムごと消す（CLI は空のワークスペースにだけ使う） */
+  deleteWorkspace(id: string): Promise<void>;
+  reorderWorkspaces(ids: string[]): Promise<void>;
   loadGroups(): Promise<WorkspaceGroupView[]>;
   loadItems(): Promise<WorkspaceItem[]>;
   addItem(item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem>;
@@ -221,19 +226,21 @@ export async function runWorkspaceCommand(
   args: readonly string[],
   ctx: WorkspaceCommandContext
 ): Promise<unknown> {
-  if (noun === 'list') {
-    const parsed = parseArgs(verb === undefined ? args : [verb, ...args], {});
-    expectPositionals(parsed, []);
-    const s = await snapshot(ctx.store);
-    return [...s.workspaces]
-      .sort((a, b) => a.order - b.order)
-      .map((w) => ({
-        id: w.id,
-        displayName: w.displayName,
-        order: w.order,
-        groupCount: s.groups.filter((g) => g.workspaceId === w.id).length,
-        itemCount: s.items.filter((i) => i.workspaceId === w.id).length,
-      }));
+  // ワークスペース自体は「もの」を挟まない（qdl workspace list|add|update|remove）
+  const workspaceArgs = verb === undefined ? args : [verb, ...args];
+  switch (noun) {
+    case 'list': {
+      const parsed = parseArgs(workspaceArgs, {});
+      expectPositionals(parsed, []);
+      const s = await snapshot(ctx.store);
+      return sortedWorkspaces(s).map((w) => workspaceView(w, s));
+    }
+    case 'add':
+      return addWorkspace(workspaceArgs, ctx);
+    case 'update':
+      return updateWorkspace(workspaceArgs, ctx);
+    case 'remove':
+      return removeWorkspace(workspaceArgs, ctx);
   }
   if (noun === 'item') {
     switch (verb) {
@@ -273,6 +280,129 @@ export async function runWorkspaceCommand(
       ? mainI18n.t('cli.errors.unknownVerb', { command: `workspace ${noun} ${verb}` })
       : mainI18n.t('cli.errors.missingVerb')
   );
+}
+
+function sortedWorkspaces(s: Snapshot): Workspace[] {
+  return [...s.workspaces].sort((a, b) => a.order - b.order);
+}
+
+function workspaceView(w: Workspace, s: Snapshot): Record<string, unknown> {
+  return {
+    id: w.id,
+    displayName: w.displayName,
+    order: w.order,
+    groupCount: s.groups.filter((g) => g.workspaceId === w.id).length,
+    itemCount: s.items.filter((i) => i.workspaceId === w.id).length,
+  };
+}
+
+/** ワークスペースを position 番目（0 始まり）に置く。範囲の外は端に寄せる */
+async function placeWorkspaceAt(
+  store: WorkspaceStore,
+  id: string,
+  position: number
+): Promise<void> {
+  const ids = sortedWorkspaces(await snapshot(store))
+    .map((w) => w.id)
+    .filter((x) => x !== id);
+  ids.splice(Math.max(0, Math.min(position, ids.length)), 0, id);
+  await store.reorderWorkspaces(ids);
+}
+
+async function addWorkspace(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['name', 'position'], flags: ['dry-run'] });
+  expectPositionals(parsed, []);
+  const name = optionString(parsed, 'name');
+  if (!name?.trim()) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
+  const position = optionInt(parsed, 'position');
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (dryRun) {
+    return {
+      dryRun: true,
+      workspace: { id: null, displayName: name, ...(position !== undefined ? { position } : {}) },
+    };
+  }
+
+  await ctx.syncBeforeWrite();
+  const created = await ctx.store.createWorkspace(name);
+  if (position !== undefined) await placeWorkspaceAt(ctx.store, created.id, position);
+  ctx.changed(mainI18n.t('cli.changed.workspaceAdded', { name }));
+  const after = await snapshot(ctx.store);
+  return workspaceView(after.workspaces.find((w) => w.id === created.id) ?? created, after);
+}
+
+async function updateWorkspace(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['name', 'position'], flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const name = optionString(parsed, 'name');
+  const position = optionInt(parsed, 'position');
+  if (name === undefined && position === undefined) {
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.errors.needChanges', { options: '--name --position' })
+    );
+  }
+  if (name !== undefined && !name.trim())
+    throw new CliError('usage', mainI18n.t('cli.errors.emptyName'));
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const workspace = findWorkspace(key, s);
+  const before = workspaceView(workspace, s);
+  if (dryRun) {
+    return {
+      dryRun: true,
+      before,
+      changes: {
+        ...(name !== undefined ? { displayName: name } : {}),
+        ...(position !== undefined ? { position } : {}),
+      },
+    };
+  }
+
+  if (name !== undefined) await ctx.store.renameWorkspace(workspace.id, name);
+  if (position !== undefined) await placeWorkspaceAt(ctx.store, workspace.id, position);
+  ctx.changed(mainI18n.t('cli.changed.workspaceUpdated', { name: name ?? workspace.displayName }));
+  const after = await snapshot(ctx.store);
+  const updated = after.workspaces.find((w) => w.id === workspace.id) ?? workspace;
+  return { before, workspace: workspaceView(updated, after) };
+}
+
+async function removeWorkspace(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const workspace = findWorkspace(key, s);
+  const view = workspaceView(workspace, s);
+  // 本体の削除は中身ごと消すので、CLI では空のものだけにする（グループの削除と同じ）
+  if ((view.groupCount as number) > 0 || (view.itemCount as number) > 0) {
+    throw new CliError(
+      'conflict',
+      mainI18n.t('cli.errors.workspaceNotEmpty', {
+        name: workspace.displayName,
+        groups: String(view.groupCount),
+        items: String(view.itemCount),
+      })
+    );
+  }
+  if (s.workspaces.length <= 1) {
+    throw new CliError('conflict', mainI18n.t('cli.errors.lastWorkspace'));
+  }
+  if (dryRun) return { dryRun: true, removed: view };
+  await ctx.store.deleteWorkspace(workspace.id);
+  ctx.changed(mainI18n.t('cli.changed.workspaceRemoved', { name: workspace.displayName }));
+  return { removed: view };
 }
 
 async function listItems(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {

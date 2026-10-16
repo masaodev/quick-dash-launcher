@@ -58,6 +58,7 @@ function context(overrides: Partial<CliContext> = {}): CliContext {
       }),
       dataFiles: () => [],
       tabs: async () => [],
+      move: vi.fn(),
       append: vi.fn(),
       replace: vi.fn(),
       remove: vi.fn(),

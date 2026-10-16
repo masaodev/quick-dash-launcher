@@ -403,7 +403,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 コマンド:
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
   launcher set row list|add|remove       メインウィンドウのセットの行
-  workspace list                           ワークスペースの一覧
+  workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove   ワークスペースのグループ
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
@@ -425,7 +425,8 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
   item add                      追加（--name・--path は必須。--args --memo、--file | --tab、
                                 --type item|dir|set|window、--set key=value、--dry-run）
-  item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
+  item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key、
+                                --file | --tab で別のタブへ移す、--dry-run）
   item remove <id か表示名>     削除（--dry-run）
   set row list <セット>         セットの行の一覧（行番号は 0 始まり）
   set row add <セット>          セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
@@ -442,6 +443,9 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 ワークスペース（workspace.json）を扱います。
 
   qdl workspace list                          ワークスペースの一覧
+  qdl workspace add                           追加（--name は必須。--position <0 始まり> --dry-run）
+  qdl workspace update <id か名前>            変更（--name --position --dry-run）
+  qdl workspace remove <id か名前>            空のワークスペースを削除（--dry-run）
   qdl workspace item list                     アイテムの一覧（--workspace --group --grep）
   qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
                                               --workspace --position <0 始まり> --set key=value --dry-run）
@@ -491,7 +495,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
       missingVerb: '操作を指定してください（list / add / update / remove）',
-      missingWorkspaceNoun: 'workspace の後に list / item / group を指定してください',
+      missingWorkspaceNoun:
+        'workspace の後に list / add / update / remove / item / group を指定してください',
       badJson: '依頼を JSON として読めません',
       badShape: '依頼の形が正しくありません',
       versionMismatch:
@@ -540,6 +545,11 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       emptyName: '--name が空です',
       groupNotEmpty:
         'グループ「{{name}}」は空ではありません（アイテム {{items}} 件、サブグループ {{subgroups}} 件）。中身を移すか消してから削除してください',
+      workspaceNotEmpty:
+        'ワークスペース「{{name}}」は空ではありません（グループ {{groups}} 件、アイテム {{items}} 件）。中身を移すか消してから削除してください',
+      lastWorkspace: '最後のワークスペースは削除できません',
+      autoImportedNotMovable:
+        '自動取込で入ったアイテムは別のタブへ移せません（次の取込で同じものがまた足されます）。取込のルールの取り込み先を変えてください',
     },
     targets: {
       launcherItem: 'メインウィンドウのアイテム',
@@ -552,6 +562,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
       launcherUpdated: 'CLI: メインウィンドウの「{{name}}」を変更しました',
       launcherRemoved: 'CLI: メインウィンドウの「{{name}}」を削除しました',
+      launcherMoved: 'CLI: メインウィンドウの「{{name}}」をタブ「{{tab}}」へ移しました',
+      workspaceAdded: 'CLI: ワークスペース「{{name}}」を追加しました',
+      workspaceUpdated: 'CLI: ワークスペース「{{name}}」を変更しました',
+      workspaceRemoved: 'CLI: ワークスペース「{{name}}」を削除しました',
       workspaceItemAdded: 'CLI: ワークスペースに「{{name}}」を追加しました',
       workspaceItemUpdated: 'CLI: ワークスペースの「{{name}}」を変更しました',
       workspaceItemRemoved: 'CLI: ワークスペースの「{{name}}」を削除しました',
@@ -1500,6 +1514,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       'データファイルが破損している可能性があるため保存を中止しました: {{files}}。ファイルを修復（または削除）してから再試行してください',
     addBlockedCorrupted:
       'データファイルが破損している可能性があるため登録を中止しました: {{file}}。ファイルを修復（または削除）してから再試行してください',
+    moveBlockedCorrupted:
+      'データファイルが破損している可能性があるため移動を中止しました: {{file}}。ファイルを修復（または削除）してから再試行してください',
     writeFailed: 'データファイルの書き込みに失敗しました: {{file}}',
     itemNotFound: 'ID {{id}} のアイテムが見つかりません',
     invalidTargetFile: '登録先のデータファイル名が正しくありません: {{files}}',
