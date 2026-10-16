@@ -7,6 +7,7 @@ import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 
 import { getCountClass } from '../utils/tabUtils';
 import { filterItems } from '../utils/dataParser';
+import { useTabBarScroll } from '../hooks/useTabBarScroll';
 
 interface DesktopTabBarProps {
   /** 仮想デスクトップ情報 */
@@ -57,6 +58,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
   onTabChange,
 }) => {
   const { t } = useTranslation();
+  const { tabBarRef, handleWheel } = useTabBarScroll(activeDesktopTab);
   // タブリストを生成（useMemoで最適化）
   const tabs = useMemo((): DesktopTab[] => {
     // 検索クエリでフィルタリング
@@ -99,7 +101,7 @@ const LauncherDesktopTabBar: React.FC<DesktopTabBarProps> = ({
   ]);
 
   return (
-    <div className="tab-bar">
+    <div className="tab-bar" ref={tabBarRef} onWheel={handleWheel}>
       {tabs.map((tab) => {
         const countClass = getCountClass(tab.count);
         return (

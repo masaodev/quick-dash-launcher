@@ -34,15 +34,23 @@ const SEARCH_MODE_ICONS = {
   window: '🪟',
 } as const satisfies Record<SearchMode, string>;
 
-function F5Hint({ label, onClick }: { label: string; onClick: () => void }): ReactElement {
+/** 「キー:説明」の組（狭いときは組の途中で折り返さず、組ごとに次の行へ回す） */
+function KeyHint({
+  keyName,
+  label,
+  onClick,
+}: {
+  keyName: string;
+  label: string;
+  onClick?: () => void;
+}): ReactElement {
   return (
-    <>
-      F5:
+    <span className="search-mode-hint">
+      {keyName}:
       <button type="button" className="search-mode-hint-link" onClick={onClick}>
         {label}
       </button>
-      {'　'}
-    </>
+    </span>
   );
 }
 
@@ -99,17 +107,26 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
 
         <div className="search-mode-indicator">
           <span className="search-mode-label">{t(SEARCH_MODE_LABEL_KEYS[searchMode])}</span>
-          <span>
+          <span className="search-mode-hints">
             {searchMode === 'window' && onRefreshWindows && (
-              <F5Hint label={t('launcher.search.refreshWindows')} onClick={onRefreshWindows} />
+              <KeyHint
+                keyName="F5"
+                label={t('launcher.search.refreshWindows')}
+                onClick={onRefreshWindows}
+              />
             )}
             {searchMode === 'normal' && onReloadData && (
-              <F5Hint label={t('launcher.search.reloadData')} onClick={onReloadData} />
+              <KeyHint
+                keyName="F5"
+                label={t('launcher.search.reloadData')}
+                onClick={onReloadData}
+              />
             )}
-            Shift+Tab:
-            <button type="button" className="search-mode-hint-link" onClick={onToggleSearchMode}>
-              {t('launcher.search.toggleMode')}
-            </button>
+            <KeyHint
+              keyName="Shift+Tab"
+              label={t('launcher.search.toggleMode')}
+              onClick={onToggleSearchMode}
+            />
           </span>
         </div>
       </div>

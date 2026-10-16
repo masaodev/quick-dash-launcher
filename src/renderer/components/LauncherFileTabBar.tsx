@@ -5,6 +5,7 @@ import { isWindowInfo } from '@common/types/guards';
 import { filterItems } from '../utils/dataParser';
 import { getCountClass } from '../utils/tabUtils';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
+import { useTabBarScroll } from '../hooks/useTabBarScroll';
 
 interface FileTabBarProps {
   /** データファイルタブの設定（タブグループのリスト） */
@@ -40,6 +41,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   const [editingTabIndex, setEditingTabIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const { tabBarRef, handleWheel } = useTabBarScroll(activeTab);
 
   // コンテキストメニューからのリネームイベントを受信
   useEffect(() => {
@@ -117,7 +119,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
   };
 
   return (
-    <div className="tab-bar">
+    <div className="tab-bar" ref={tabBarRef} onWheel={handleWheel}>
       {dataFileTabs.map((tabConfig, index) => {
         const count = tabItemCounts[index];
         const countClass = getCountClass(count);
