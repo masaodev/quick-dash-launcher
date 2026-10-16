@@ -453,6 +453,91 @@ describe('WorkspaceFileStore', () => {
     expect(files[0].issues.map((i) => i.kind)).toEqual(['idAssigned']);
     expect(files[0].rewritten).toBe(true);
   });
+  describe('単一アイテムの windowConfig の変換', () => {
+    const legacyLauncher = {
+      ...launcher,
+      path: 'C:\\tools\\memo.txt',
+      windowConfig: { title: 'memo.txt - sakura', processName: 'sakura.exe', x: 1, y: 2 },
+    };
+
+    function createMigratingStore(calls: string[], withSetMigration = true) {
+      return new WorkspaceFileStore(paths, uiState, {
+        now: () => NOW,
+        createPreMigrationSnapshot: async () => {
+          calls.push('pre-migration');
+        },
+        ...(withSetMigration
+          ? {
+              prepareSetMigration: async () => ({
+                resolveName: () => undefined,
+                parallel: false,
+                snapshot: async () => {
+                  calls.push('pre-set-migration');
+                },
+              }),
+            }
+          : {}),
+        createPreWindowMigrationSnapshot: async () => {
+          calls.push('pre-window-migration');
+        },
+      });
+    }
+
+    it('windowConfig だけなら _pre-window-migration を 1 回作って新しいキーに書き換えること', async () => {
+      fs.writeFileSync(paths.main, v2File({ items: [legacyLauncher] }), 'utf8');
+      const calls: string[] = [];
+      const store = createMigratingStore(calls);
+      await store.reload();
+
+      expect(calls).toEqual(['pre-window-migration']);
+      const written = readJson(paths.main).items[0];
+      expect(written).not.toHaveProperty('windowConfig');
+      expect(written).toMatchObject({
+        window: { processName: 'sakura.exe', title: 'memo.txt - sakura' },
+        placement: { x: 1, y: 2 },
+        activateWindow: true,
+      });
+      // 2 回目は変換するものが無いので、スナップショットを作らない
+      await store.reload();
+      expect(calls).toEqual(['pre-window-migration']);
+    });
+
+    it('セットへの変換もあれば _pre-set-migration の 1 回で両方を変換すること', async () => {
+      const legacyGroup = {
+        id: 'grpAAAA1',
+        type: 'group',
+        displayName: '朝',
+        itemNames: ['GitHub'],
+        workspaceId: 'wsAAAAA1',
+        order: 1,
+        addedAt: 1,
+      };
+      fs.writeFileSync(paths.main, v2File({ items: [legacyLauncher, legacyGroup] }), 'utf8');
+      const calls: string[] = [];
+      await createMigratingStore(calls).reload();
+
+      expect(calls).toEqual(['pre-set-migration']);
+      const items = readJson(paths.main).items;
+      expect(items[0]).toHaveProperty('window');
+      expect(items[0]).not.toHaveProperty('windowConfig');
+      expect(items[1].type).toBe('set');
+    });
+
+    it('スナップショットに失敗したら書き換えないが、読み込みでは新しいキーとして扱うこと', async () => {
+      fs.writeFileSync(paths.main, v2File({ items: [legacyLauncher] }), 'utf8');
+      const store = new WorkspaceFileStore(paths, uiState, {
+        now: () => NOW,
+        createPreMigrationSnapshot: async () => {},
+        createPreWindowMigrationSnapshot: async () => {
+          throw new Error('snapshot failed');
+        },
+      });
+      await store.reload();
+
+      expect(readJson(paths.main).items[0]).toHaveProperty('windowConfig');
+      expect(store.get('items')[0]).toMatchObject({ window: { processName: 'sakura.exe' } });
+    });
+  });
 });
 
 describe('resolveLauncherType', () => {

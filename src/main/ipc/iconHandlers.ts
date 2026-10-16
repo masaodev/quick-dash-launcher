@@ -86,7 +86,7 @@ export function setupIconHandlers(
     (
       _event,
       filePath: string,
-      itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard'
+      itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch' | 'clipboard'
     ) => getIconForItem(filePath, itemType)
   );
 }

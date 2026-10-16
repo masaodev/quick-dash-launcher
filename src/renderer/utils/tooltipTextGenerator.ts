@@ -10,6 +10,7 @@ import type {
 } from '@common/types';
 import { isWindowInfo, isWindowItem, isClipboardItem, isSetItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
+import { describeWindowMatch, isPathlessItem } from '@common/utils/itemWindowConversion';
 
 import { setEntriesSummary } from './setEditing';
 
@@ -164,7 +165,14 @@ function getWindowItemTooltip(windowItem: WindowItem): string {
  */
 function getLauncherItemTooltip(launcherItem: LauncherItem): string {
   const lines: string[] = [];
-  lines.push(PathUtils.getFullPath(launcherItem));
+  // パスの無い単一アイテムは、パスの代わりに切り替える先のウィンドウを出す
+  lines.push(
+    isPathlessItem(launcherItem)
+      ? t('launcher.tooltip.windowSwitchOnly', {
+          target: describeWindowMatch(launcherItem.window),
+        })
+      : PathUtils.getFullPath(launcherItem)
+  );
 
   appendMetaInfo(lines, {
     sourceFile: launcherItem.sourceFile,

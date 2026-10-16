@@ -56,7 +56,9 @@ describe('validateEditableItem', () => {
       };
       const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
-      expect(result.error).toBe('pathが空です');
+      expect(result.error).toBe(
+        'pathが空です（パスの無いアイテムは window の processName か title が要ります）'
+      );
     });
 
     it('pathが空白のみの場合、エラーを返す', () => {
@@ -68,7 +70,22 @@ describe('validateEditableItem', () => {
       };
       const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
-      expect(result.error).toBe('pathが空です');
+      expect(result.error).toBe(
+        'pathが空です（パスの無いアイテムは window の processName か title が要ります）'
+      );
+    });
+
+    it('pathが空でも、対象ウィンドウ（exe 名かタイトル）があれば有効（パスの無い単一アイテム）', () => {
+      for (const window of [{ processName: 'sakura.exe' }, { title: 'Microsoft To Do' }]) {
+        const item: JsonItem = {
+          id: 'test-5b',
+          type: 'item',
+          displayName: 'MS To Do',
+          path: '',
+          window,
+        };
+        expect(validateEditableItem(item, t)).toEqual({ isValid: true });
+      }
     });
 
     it('argsが設定されていても有効', () => {

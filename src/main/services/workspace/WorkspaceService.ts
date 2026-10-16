@@ -120,6 +120,10 @@ export class WorkspaceService {
               },
             };
           },
+          createPreWindowMigrationSnapshot: async () => {
+            const backupService = await BackupService.getInstance();
+            await backupService.createPreWindowMigrationSnapshot();
+          },
         }
       );
       await store.reload();

@@ -8,6 +8,7 @@
 // ランチャー関連の型
 export type {
   WindowConfig,
+  ItemWindowSwitch,
   LauncherItem,
   WindowItem,
   WindowItemConfig,

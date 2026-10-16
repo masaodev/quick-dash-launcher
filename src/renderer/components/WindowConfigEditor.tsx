@@ -1,3 +1,9 @@
+/**
+ * ウィンドウ操作アイテム（種別「ウィンドウ操作」）の設定欄
+ *
+ * 単一アイテムのウィンドウ切り替えは ItemWindowSwitchEditor（セットの行の詳細と同じ部品）を使う。
+ * ウィンドウ操作アイテムは廃止する予定なので、この欄はそれまでのもの
+ */
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { WindowConfig, WindowInfo } from '@common/types';
@@ -13,24 +19,12 @@ interface WindowConfigEditorProps {
   onGetWindowClick: () => void;
   /** ウィンドウ検索で位置/サイズを取得するコールバック */
   onFetchFromWindow?: () => Promise<WindowInfo | null>;
-  /** 初期状態で展開するか（デフォルト: false） */
-  defaultExpanded?: boolean;
-  /** 折りたたみトグルを表示するか（デフォルト: true） */
-  showToggle?: boolean;
 }
 
 /* eslint-disable react/prop-types */
 const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
-  ({
-    windowConfig,
-    onChange,
-    onGetWindowClick,
-    onFetchFromWindow,
-    defaultExpanded = false,
-    showToggle = true,
-  }) => {
+  ({ windowConfig, onChange, onGetWindowClick, onFetchFromWindow }) => {
     const { t } = useTranslation();
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const [fetchError, setFetchError] = useState<'position' | 'size' | null>(null);
 
     const baseConfig = windowConfig || { title: '' };
@@ -62,28 +56,14 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
     const handleFetchSize = () =>
       handleFetchFromWindow('size', (info) => ({ width: info.width, height: info.height }));
 
-    const renderContent = () => (
-      <>
+    return (
+      <div className="form-group vertical-layout">
         <div className="help-box">
-          <p className="help-title">
-            {showToggle ? t('windowConfig.reuseTitle') : t('windowConfig.actionTitle')}
-          </p>
+          <p className="help-title">{t('windowConfig.actionTitle')}</p>
           <p className="help-flow">
-            {showToggle ? (
-              <>
-                {t('windowConfig.stepSearch')}
-                <br />
-                {t('windowConfig.stepAct')}
-                <br />
-                {t('windowConfig.stepLaunch')}
-              </>
-            ) : (
-              <>
-                {t('windowConfig.stepSearch')}
-                <br />
-                {t('windowConfig.stepAct')}
-              </>
-            )}
+            {t('windowConfig.stepSearch')}
+            <br />
+            {t('windowConfig.stepAct')}
           </p>
         </div>
 
@@ -289,27 +269,6 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
             </div>
           </div>
         </div>
-      </>
-    );
-
-    return (
-      <div className="form-group vertical-layout">
-        {showToggle ? (
-          <div className="options-section">
-            <button
-              type="button"
-              className="options-toggle"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
-              <span>{t('windowConfig.optionsToggle')}</span>
-            </button>
-
-            {isExpanded && <div className="options-content">{renderContent()}</div>}
-          </div>
-        ) : (
-          renderContent()
-        )}
       </div>
     );
   }

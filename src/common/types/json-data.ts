@@ -5,7 +5,7 @@
  * CSV形式からの移行後に使用される
  */
 
-import type { WindowConfig, LayoutWindowEntry, SetEntry, SetLaunchMode } from './launcher';
+import type { ItemWindowSwitch, LayoutWindowEntry, SetEntry, SetLaunchMode } from './launcher';
 import type { ClipboardFormat } from './clipboard';
 
 // ============================================================
@@ -60,7 +60,7 @@ interface JsonItemBase {
  * 通常のランチャーアイテム
  * ファイル、アプリケーション、URL、フォルダなどを起動するアイテム
  */
-export interface JsonLauncherItem extends JsonItemBase {
+export interface JsonLauncherItem extends JsonItemBase, ItemWindowSwitch {
   /** アイテムタイプ */
   type: 'item';
   /**
@@ -77,8 +77,6 @@ export interface JsonLauncherItem extends JsonItemBase {
   args?: string;
   /** カスタムアイコンファイル名（オプション） */
   customIcon?: string;
-  /** ウィンドウ制御設定（オプション） */
-  windowConfig?: WindowConfig;
   /** 自動取込ルールのID（このフィールドがあるアイテムは自動管理対象） */
   autoImportRuleId?: string;
 }

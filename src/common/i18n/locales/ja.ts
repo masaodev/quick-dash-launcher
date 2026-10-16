@@ -88,7 +88,7 @@ export const ja = {
       title: 'アイテムを登録',
       quickAdd: '📄 簡易登録',
       addBookmarks: '🔖 ブラウザのブックマークを追加',
-      addApps: '💻 インストール済みアプリを追加',
+      addApps: '💻 インストール済みアプリを取り込む',
     },
     settingsMenu: {
       title: '設定',
@@ -157,6 +157,7 @@ export const ja = {
       expandedOptions: '設定: {{value}}',
       windowTitle: 'ウィンドウタイトル: {{value}}',
       processName: 'exe 名: {{value}}',
+      windowSwitchOnly: '開いているウィンドウに切り替えるだけ: {{target}}',
       executablePath: '実行ファイルパス: {{value}}',
       windowState: '状態: {{value}}',
       windowStates: {
@@ -364,6 +365,7 @@ export const ja = {
       file: 'ファイルを開いています...',
       folder: 'フォルダを開いています...',
       customUri: '起動中...',
+      windowSwitch: 'ウィンドウに切り替えます',
       windowOperation: 'ウィンドウ操作を実行します',
       windowActivate: 'ウィンドウを前面に出しました',
       windowClose: 'ウィンドウを閉じました',
@@ -403,6 +405,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 コマンド:
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
   launcher set row list|add|remove       メインウィンドウのセットの行
+  launcher tab list|add|update|remove    メインウィンドウのタブとデータファイルの構成
   workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove|archive   ワークスペースのグループ
@@ -420,24 +423,36 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 `,
       launcher: `使い方: qdl launcher item <操作> [引数]
         qdl launcher set row <操作> <セット> [引数]
+        qdl launcher tab <操作> [引数]
 
 メインウィンドウのアイテム（datafiles/data*.json）を扱います。
 
-  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
+  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>、
+                                --with-text でクリップボードの本文も）
   item add                      追加（--name・--path は必須。--args --memo、--file | --tab、
-                                --type item|dir|set|window、--set key=value、--dry-run）
+                                --type item|dir|set|window|clipboard、--set key=value、--dry-run）
   item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key、
-                                --file | --tab で別のタブへ移す、--dry-run）
+                                --text | --text-file、--file | --tab で別のタブへ移す、--dry-run）
   item remove <id か表示名>     削除（--dry-run）
   set row list <セット>         セットの行の一覧（行番号は 0 始まり）
   set row add <セット>          セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
                                 --label <行の名前> --position <0 始まり> --dry-run）
   set row remove <セット> <行番号>    セットの行を消す（--dry-run）
+  tab list                      タブとデータファイルの構成（ファイルごとの件数、どのタブにも無いファイル）
+  tab add                       タブを足す（--name は必須。新しいデータファイルも作る。--label <ファイルの名前>
+                                --position <0 始まり> --dry-run）
+  tab update <タブ>             変更（--name --position --dry-run）
+  tab remove <タブ>             タブを消す（消えるデータファイルが空のときだけ。--dry-run）
+  tab file add <タブ>           新しいデータファイルを作って入れる（--label）。--existing <data5.json> で既存のファイル
+  tab file update <data3.json>  データファイルの名前を変える（--label）
+  tab file remove <タブ> <ファイル>   タブから外す（どこにも残らなければ消す。空のときだけ。--dry-run）
 
 --path の相対パスは qdl を実行したフォルダが基準です。--type set では --path を求めず、最初の行を
 --item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
-足します。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir|window のときに
+足します。<タブ> は番号（0 始まり）か名前の完全一致です。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir|window のときに
 要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
+--type clipboard はテキストだけのクリップボードアイテムで、--path の代わりに本文を --text か
+--text-file <ファイル>（UTF-8、1 MB まで）で渡します。本文を書き換えられるのは、中身がテキストだけのものです。
 `,
       workspace: `使い方: qdl workspace <もの> <操作> [引数]
 
@@ -447,10 +462,11 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace add                           追加（--name は必須。--position <0 始まり> --dry-run）
   qdl workspace update <id か名前>            変更（--name --position --dry-run）
   qdl workspace remove <id か名前>            空のワークスペースを削除（--dry-run）
-  qdl workspace item list                     アイテムの一覧（--workspace --group --grep）
+  qdl workspace item list                     アイテムの一覧（--workspace --group --grep --with-text）
   qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
-                                              --workspace --position <0 始まり> --set key=value --dry-run）
-  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --set --unset、
+                                              --workspace --position <0 始まり> --set key=value --dry-run。
+                                              --type clipboard なら --path の代わりに --text | --text-file）
+  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
                                               --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
@@ -479,6 +495,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       idOrGroupName: '<id か名前>',
       setIdOrName: '<セットの id か表示名>',
       entryIndex: '<行番号>',
+      tab: '<タブの番号か名前>',
+      dataFile: '<データファイル>',
     },
     errors: {
       relativePath: '相対パスを解決できません（実行したフォルダが分かりません）: {{value}}',
@@ -494,7 +512,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
       unknownLauncherNoun:
-        '不明なコマンドです: launcher {{noun}}（launcher item と launcher set のみ）',
+        '不明なコマンドです: launcher {{noun}}（launcher item・launcher set・launcher tab のみ）',
       missingSetNoun: 'launcher set の後に row を指定してください',
       missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
@@ -519,6 +537,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       dirHasNoName: 'フォルダ取込（dir）は表示名を持ちません',
       needName: '--name を指定してください',
       needPath: '--path を指定してください',
+      needPathOrWindow: '--path か --set window=… を指定してください',
       argsOnlyItem: '--args は通常のアイテム（item）とセット（set）の行だけに指定できます',
       itemOnlySet: '--item と --label はセット（--type set）だけに指定できます',
       setItemAndPath: '--item と --path はどちらか一方を指定してください',
@@ -531,7 +550,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       setItemType:
         '種類 {{type}} のアイテムはセットの行にできません（{{types}} のみ。フォルダ取込の中身は --path で）',
       setRowUnknownKeys:
-        '行 {{index}} に知らないキーがあります: {{keys}}（itemId・open・label・window・placement・ifOpen・activateWindow・waitSeconds）',
+        '行 {{index}} に知らないキーがあります: {{keys}}（itemId・open・label・window・placement・ifOpen・activateWindow・waitSeconds・pinToAllDesktops）',
       setRowEmpty:
         '行 {{index}} に、開くもの（itemId・open）も対象ウィンドウ（window）もありません',
       setRowItemNotFound: '行 {{index}} の itemId {{id}} のアイテムが見つかりません',
@@ -553,6 +572,23 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       workspaceNotEmpty:
         'ワークスペース「{{name}}」は空ではありません（グループ {{groups}} 件、アイテム {{items}} 件）。中身を移すか消してから削除してください',
       lastWorkspace: '最後のワークスペースは削除できません',
+      textAndTextFile: '--text と --text-file はどちらか一方を指定してください',
+      textFileNotFound: '--text-file のファイルが見つかりません: {{file}}',
+      textFileTooLarge: '--text-file のファイルが大きすぎます（1 MB まで）: {{file}}',
+      emptyText: '本文が空です',
+      needText: '本文を --text か --text-file で指定してください',
+      textOnlyClipboard:
+        '--text・--text-file はクリップボードアイテム（clipboard）だけに指定できます',
+      clipboardOption: 'クリップボードアイテムには --{{option}} を指定できません',
+      clipboardNotText:
+        'このクリップボードアイテムはテキスト以外（{{formats}}）を含むので、本文を書き換えられません（名前・メモ・移動はできます。中身を変えるときは画面で操作してください）',
+      saveTextFailed: 'クリップボードの本文を保存できませんでした',
+      missingTabVerb: '操作を指定してください（list / add / update / remove / file）',
+      missingTabFileVerb: '操作を指定してください（add / update / remove）',
+      dataFileNotEmpty:
+        'アイテムが入ったデータファイルが消えるのでやめました: {{files}}。アイテムを別のタブへ移すか消してから実行してください',
+      fileNotInTabs: 'データファイル {{file}} はどのタブにも入っていません',
+      dataFileNotEmptyEntry: '{{label}}（{{file}}・{{count}} 件）',
       autoImportedNotMovable:
         '自動取込で入ったアイテムは別のタブへ移せません（次の取込で同じものがまた足されます）。取込のルールの取り込み先を変えてください',
     },
@@ -563,6 +599,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       group: 'グループ',
       workspaceItem: 'ワークスペースのアイテム',
       archivedGroup: 'アーカイブのグループ',
+      tab: 'タブ',
+      dataFile: 'データファイル',
     },
     changed: {
       launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
@@ -580,6 +618,12 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
       groupArchived: 'CLI: グループ「{{name}}」をアーカイブしました',
       groupRestored: 'CLI: グループ「{{name}}」をワークスペース「{{workspace}}」に復元しました',
+      tabAdded: 'CLI: タブ「{{name}}」を追加しました',
+      tabUpdated: 'CLI: タブ「{{name}}」を変更しました',
+      tabRemoved: 'CLI: タブ「{{name}}」を削除しました',
+      tabFileAdded: 'CLI: タブ「{{tab}}」にデータファイル「{{label}}」を入れました',
+      tabFileUpdated: 'CLI: データファイルの名前を「{{label}}」に変えました',
+      tabFileRemoved: 'CLI: タブ「{{tab}}」からデータファイル「{{label}}」を外しました',
       setEntryAdded: 'CLI: セット「{{set}}」に「{{name}}」の行を追加しました',
       setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },
@@ -604,8 +648,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     run: {
       titleNotMatched: 'タイトルが合うウィンドウがありません（{{exe}} は開いています）',
       notOpen: '開いていないので動かしませんでした',
+      itemNotOpen: '開いていないので切り替えませんでした',
       couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
       desktopNotFound: 'デスクトップ {{number}} がありません。位置だけ合わせました',
+      itemWindowTimedOut: 'ウィンドウが出るのを {{seconds}} 秒待ちましたが、見つかりませんでした',
     },
     errors: {
       itemNotFound: 'アイテムが見つかりません',
@@ -709,6 +755,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       openKindPath: 'パス',
       item: 'アイテム',
       itemNote: 'アイテムを直すと、このセットにも効きます。',
+      inheritNote:
+        'ℹ️ アイテム「{{name}}」の設定で開きます。下で入れると、この行の設定が優先されます。',
+      inheritValue: 'アイテムの設定（{{value}}）',
+      inheritPlacement: 'アイテムの設定（📍 {{place}}）',
       pickItem: 'アイテムを選ぶ',
       otherItem: '別のアイテムにする',
       pathNote: 'このセットに書いたパス（アイテムは作りません）。',
@@ -717,22 +767,30 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       find: '対象ウィンドウ',
       processName: 'exe 名',
       processNamePlaceholder: '例: notepad.exe',
+      processNameNote: '一部でも探せます（例: sakura）',
       windowTitle: 'ウィンドウタイトル',
       windowTitlePlaceholder: '空ならタイトルは問わない',
+      windowTitleNote: '全体が同じものを探します。* は任意の文字（例: *Obsidian）',
       anyTitle: 'タイトルを問わない',
       anyTitleHint: 'exe 名だけで探します（タイトルは問いません）',
-      titleParts: '一部だけで探す:',
+      titleParts: 'タイトルの一部だけで探す',
       revertTitle: '↺ 元に戻す',
       matchNone: '今合うウィンドウ: 0 件',
       matchOne: '今合うウィンドウ: 1 件（{{title}}）',
       matchMany: '今合うウィンドウ: {{count}} 件（別のウィンドウにも当たります）',
-      findHint:
-        'このセットを開いたとき、この 2 つに合うウィンドウを記録したウィンドウ位置へ動かします。exe 名は一部でもよく、タイトルは全体が同じものを探します（* は任意の文字。例: *Obsidian）。',
+      findLead: 'このセットを開いたとき、合うウィンドウを記録したウィンドウ位置へ動かします。',
+      pickFromWindow: '🔍 開いているウィンドウから選ぶ',
       placement: 'ウィンドウ位置',
       recorded: '記録したウィンドウ位置',
       noPlacement: 'まだ記録していません',
-      takeFromWindow: '開いているウィンドウから取り込む',
+      updatePlacement: '📍 ウィンドウ位置を更新',
+      updatePlacementNoMatch: '合うウィンドウが開いていません',
+      updatePlacementNote:
+        '今合うウィンドウの、今の位置と大きさを記録し直します（条件は変えません）',
       clearPlacement: 'ウィンドウ位置を外す',
+      pinToAllDesktops: '📌 全デスクトップに表示',
+      pickPlacementTitle: 'どのウィンドウの位置を記録しますか',
+      pickPlacementConfirm: '記録する',
       desktop: '仮想デスクトップ',
       desktopKeep: '変えない',
       behavior: '開くときの動き',
@@ -745,6 +803,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       wait: 'ウィンドウが出るのを待つ（秒）',
       minimizedPicked:
         '最小化中のウィンドウなので、対象ウィンドウだけ取りました。ウィンドウ位置は元の大きさに戻してから取ってください',
+      minimizedNotUpdated:
+        '最小化中のウィンドウなので、ウィンドウ位置は取りませんでした。元の大きさに戻してから押してください',
     },
     placement: {
       none: 'ウィンドウ位置なし',
@@ -835,6 +895,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     noName: '(名前なし)',
     pathSummary: {
       noPath: '(パスなし)',
+      windowSwitchOnly: '(パスなし・切り替えるだけ: {{target}})',
       noItems: '(アイテムなし)',
       noWindowTitle: '(ウィンドウタイトルなし)',
       noFolderPath: '(フォルダパスなし)',
@@ -876,7 +937,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     header: {
       addBookmarks: 'ブラウザのブックマークを追加',
-      addApps: 'インストール済みアプリを追加',
+      addApps: 'インストール済みアプリを取り込む',
       autoImportSettings: 'ブックマーク自動取込の設定…',
       autoImportSettingsTitle:
         'ブラウザのブックマークを、ルールに従って起動時などに自動で取り込む設定',
@@ -1192,14 +1253,22 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     noExtension: '(なし)',
     notFound: 'インストール済みアプリが見つかりませんでした',
     scanFailed: 'アプリのスキャンに失敗しました',
-    title: 'インストール済みアプリの追加',
+    title: 'インストール済みアプリを取り込む',
     hint: '使うアプリにチェックを入れて取り込みます。取り込んだアプリは未保存の変更として追加され、「変更を保存」で確定します。',
     scanning: 'スタートメニューをスキャン中...',
     found_one: 'スタートメニューから {{count}} 件見つかりました',
     found_other: 'スタートメニューから {{count}} 件見つかりました',
     rescan: '再スキャン',
-    destinationNote: '別のファイルへは、アイテム管理で切り替えてから開いてください',
-    filter: '絞り込み',
+    destTab: '取込先のタブ',
+    destFile: '取込先のデータファイル',
+    newTab: '＋ 新しいタブ',
+    newFile: '＋ 新しいデータファイル',
+    tabName: 'タブ名',
+    fileName: 'ファイル名',
+    defaultName: 'アプリ',
+    newTabName: '{{name}}（新しいタブ）',
+    newFileName: '{{name}}（新規）',
+    destinationEcho: '{{target}} に取り込む',
     searchPlaceholder: 'アプリ名またはパスで検索...',
     clearSearch: '検索をクリア',
     excludeUninstallers: 'アンインストーラーを除外',
@@ -1208,21 +1277,20 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     filterCount_one: ' ({{count}}件)',
     filterCount_other: ' ({{count}}件)',
     showExcluded: '除外したものも表示',
-    list_one: 'アプリ一覧（{{count}}件）',
-    list_other: 'アプリ一覧（{{count}}件）',
+    list_one: 'アプリ名（{{count}}件）',
+    list_other: 'アプリ名（{{count}}件）',
     toggleVisible: '表示中のアプリをまとめて選ぶ・外す',
-    appName: 'アプリ名',
     type: '種別',
-    targetPath: 'ターゲットパス',
     registered: '登録済み',
+    registeredInTab: 'このタブのほかのデータファイルに登録済み',
     noMatches: '条件に一致するアプリはありません',
     registeredSelected_one: '選んだアプリのうち {{count}} 件は取込先に登録済みです',
     registeredSelected_other: '選んだアプリのうち {{count}} 件は取込先に登録済みです',
     selected_one: '{{count}} 件を選択中',
     selected_other: '{{count}} 件を選択中',
     clearSelection: '選択を解除',
-    import_one: '取り込む ({{count}}件)',
-    import_other: '取り込む ({{count}}件)',
+    import_one: '{{count}} 件を取り込む',
+    import_other: '{{count}} 件を取り込む',
   },
   help: {
     shortcuts: '⌨️ キーボードショートカット',
@@ -1324,6 +1392,12 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     path: 'パス:',
     pathPlaceholder: 'ファイルパス、URL、またはカスタムURIを入力',
     itemOptions: 'オプション設定（引数・アイコン）',
+    windowSwitch: {
+      toggle: 'オプション設定（ウィンドウ切り替え・ウィンドウ位置）',
+      findLead:
+        'このアイテムを開いたとき、合うウィンドウが開いていれば、開き直さずにそのウィンドウへ切り替えます。',
+      pathlessNote: 'パスが空なので、開いているウィンドウへ切り替えるだけです',
+    },
     dirOptions: 'フォルダ取込のオプション',
     args: '引数:',
     argsPlaceholder: 'コマンドライン引数（実行ファイルやアプリの場合のみ有効）',
@@ -1333,6 +1407,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     errors: {
       displayNameRequired: '表示名を入力してください',
       pathRequired: 'パスを入力してください',
+      pathOrWindowRequired: 'パスか対象ウィンドウのどちらかを入力してください',
       windowRequired: 'ウィンドウタイトルまたはプロセス名を入力してください',
       clipboardRequired: 'テキストを書くか、クリップボードを取り込んでください',
       clipboardSaveFailed: 'クリップボードデータの保存に失敗しました',
@@ -1346,11 +1421,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
   },
   windowConfig: {
-    reuseTitle: '既存ウィンドウの再利用機能',
     actionTitle: 'ウィンドウ操作機能',
     stepSearch: '① タイトル/プロセス名で対象ウィンドウを検索',
     stepAct: '② 見つかったら下記の操作を実行',
-    stepLaunch: '③ 見つからなければ → パスのアイテムを新規起動',
     searchHeading: '🔍 ① ウィンドウ検索',
     selectWindow: 'ウィンドウを選択',
     windowTitle: 'ウィンドウタイトル:',
@@ -1381,7 +1454,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     byNumber: '番号で指定',
     desktopNumber: 'デスクトップ番号:',
     desktopNumberPlaceholder: '1から開始',
-    optionsToggle: 'オプション設定（ウィンドウ切り替え）',
   },
   clipboardEditor: {
     formats: {
@@ -1671,6 +1743,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   validation: {
     emptyField: '{{field}}が空です',
     emptyTypedField: '{{type}}の{{field}}が空です',
+    pathOrWindowRequired:
+      'pathが空です（パスの無いアイテムは window の processName か title が要ります）',
     depthOutOfRange: 'depthは-1（無制限）または0以上である必要があります',
     invalidTypes: 'typesはfile, folder, bothのいずれかである必要があります',
     unknownType: '未知のアイテムタイプ: {{type}}',

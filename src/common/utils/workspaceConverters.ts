@@ -26,6 +26,12 @@ import type { RegisterItem, WindowOperationConfig } from '../types/register';
 
 import { windowInfoToWindowItem } from './windowInfoConverter';
 import { pickWindowPlacement } from './windowPlacement.js';
+import {
+  describeWindowMatch,
+  isPathlessItem,
+  itemWindowSwitchFields,
+  pickItemWindowSwitch,
+} from './itemWindowConversion.js';
 
 /** undefined の値を持つキーを落とす（ファイルに `"args": undefined` のような穴を残さないため） */
 function compact<T extends object>(obj: T): T {
@@ -44,7 +50,7 @@ function launcherBody(item: LauncherItem): WorkspaceItemUpdate {
     args: item.args,
     originalPath: item.originalPath,
     customIcon: item.customIcon,
-    windowConfig: item.windowConfig,
+    ...pickItemWindowSwitch(item),
     memo: item.memo,
   });
 }
@@ -159,7 +165,7 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         icon: item.icon,
         targetTab: '',
         customIcon: item.customIcon,
-        windowConfig: item.windowConfig,
+        ...pickItemWindowSwitch(item),
         itemCategory: 'item',
         memo: item.memo,
       };
@@ -213,7 +219,7 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         path: registerItem.path,
         args: registerItem.args || undefined,
         customIcon: registerItem.customIcon,
-        windowConfig: registerItem.windowConfig,
+        ...itemWindowSwitchFields(registerItem),
         memo,
       });
   }
@@ -231,7 +237,10 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
 export function describeWorkspaceItem(item: WorkspaceItem, t: TFunction): string {
   switch (item.type) {
     case 'item':
-      return item.path;
+      // パスの無い単一アイテムは、パスの代わりに切り替える先のウィンドウを出す
+      return isPathlessItem(item)
+        ? t('launcher.tooltip.windowSwitchOnly', { target: describeWindowMatch(item.window) })
+        : item.path;
     case 'window':
       return item.processName
         ? t('workspace.describe.windowWithProcess', {

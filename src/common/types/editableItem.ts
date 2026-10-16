@@ -6,6 +6,7 @@
 
 import type { TFunction } from 'i18next';
 import type { JsonItem, LauncherItem } from '@common/types';
+import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 /**
  * 編集可能なJSONアイテム
@@ -103,8 +104,9 @@ export function validateEditableItem(item: JsonItem, t: TFunction): ValidationRe
       if (!item.displayName || !item.displayName.trim()) {
         return { isValid: false, error: t('validation.emptyField', { field: 'displayName' }) };
       }
-      if (!item.path || !item.path.trim()) {
-        return { isValid: false, error: t('validation.emptyField', { field: 'path' }) };
+      // パスの無い単一アイテム（対象ウィンドウだけ）は、開いているウィンドウへ切り替えるだけ
+      if ((!item.path || !item.path.trim()) && !hasItemWindowSwitch(item)) {
+        return { isValid: false, error: t('validation.pathOrWindowRequired') };
       }
       return { isValid: true };
     }

@@ -43,6 +43,7 @@ import {
 import type { JsonItemIssue } from './jsonParser';
 import { normalizeWindowTitleForProcessOnly } from './windowTitle';
 import { WINDOW_PLACEMENT_KEYS } from './windowPlacement.js';
+import { ITEM_WINDOW_SWITCH_KEYS } from './itemWindowConversion';
 
 // ============================================================
 // 型
@@ -339,7 +340,7 @@ function validateItemBody(raw: Record<string, unknown>, id: string): Record<stri
 // ============================================================
 
 const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
-  item: ['path', 'args', 'originalPath', 'customIcon', 'windowConfig'],
+  item: ['path', 'args', 'originalPath', 'customIcon', ...ITEM_WINDOW_SWITCH_KEYS],
   window: ['windowTitle', ...WINDOW_PLACEMENT_KEYS],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
   set: ['entries', 'launchMode', 'customIcon'],

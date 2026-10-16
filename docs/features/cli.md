@@ -45,18 +45,25 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `status` | 本体の版・`qdl.exe` の版・本体のプロセス ID・設定フォルダの場所を返す。何も変えない |
 | `reload` | 設定ファイルを読み直す（メイン画面の F5 と同じ再読込）。読み込み結果を返す |
 | `check` | 読み直さずに、直近の読み込み（起動時・F5・`reload`・CLI の書き込み前）の結果を返す |
-| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る |
+| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る。`--with-text` でクリップボードアイテムの本文も返す |
 | `launcher item add` | メイン画面にアイテムを足す |
 | `launcher item update <id か表示名>` | メイン画面のアイテムを変える・別のタブ（データファイル）へ移す |
 | `launcher item remove <id か表示名>` | メイン画面のアイテムを消す |
 | `launcher set row list <セット>` | セットの行の一覧。行番号（0 始まり）と行の名前を付ける |
 | `launcher set row add <セット>` | セットに行を足す |
 | `launcher set row remove <セット> <行番号>` | セットの行を消す。最後の 1 行は消さない |
+| `launcher tab list` | メイン画面のタブとデータファイルの構成。ファイルごとのアイテム数・既定のタブ・どのタブにも入っていないファイルを返す |
+| `launcher tab add` | タブを足す。新しいデータファイルを 1 つ作って入れる |
+| `launcher tab update <タブ>` | タブの名前・並び順を変える |
+| `launcher tab remove <タブ>` | タブを消す。消えることになるデータファイルが空のときだけ |
+| `launcher tab file add <タブ>` | 新しいデータファイルを作ってタブに入れる。`--existing` で既存のファイルを入れる |
+| `launcher tab file update <データファイル>` | データファイルの名前（ラベル）を変える |
+| `launcher tab file remove <タブ> <データファイル>` | データファイルをタブから外す。ほかのタブで使っていなければディスクからも消すので、空のときだけ |
 | `workspace list` | ワークスペースの一覧（グループ数・アイテム数つき） |
 | `workspace add` | ワークスペースを足す |
 | `workspace update <id か名前>` | ワークスペースの名前・並び順を変える |
 | `workspace remove <id か名前>` | 空のワークスペースを消す |
-| `workspace item list` | ワークスペースのアイテムの一覧。`--workspace`・`--group`・`--grep` で絞る |
+| `workspace item list` | ワークスペースのアイテムの一覧。`--workspace`・`--group`・`--grep` で絞る。`--with-text` でクリップボードアイテムの本文も返す |
 | `workspace item add` | ワークスペースにアイテムを足す |
 | `workspace item update <id か表示名>` | ワークスペースのアイテムを変える・移す |
 | `workspace item remove <id か表示名>` | ワークスペースのアイテムを消す |
@@ -73,16 +80,19 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | オプション | 使えるコマンド | 内容 |
 | --- | --- | --- |
 | `--name` | item add（必須。フォルダ取込を除く）／update、group add（必須）／update、workspace add（必須）／update | 表示名 |
-| `--path` | item add（必須。セットを除く）／update、set row add | ファイル・フォルダ・URL・コマンド。相対パスは `qdl` を実行したフォルダが基準。セットでは行の開くもの |
+| `--path` | item add（必須。セットを除く。通常のアイテムは `--set window=…` で対象ウィンドウを渡せば省ける）／update、set row add | ファイル・フォルダ・URL・コマンド。相対パスは `qdl` を実行したフォルダが基準。セットでは行の開くもの。通常のアイテムで省くと、パスの無い単一アイテム（開いているウィンドウに切り替えるだけ）になる |
 | `--args` | item add／update、set row add | コマンドライン引数。セットでは `--path` の行にだけ付けられる |
 | `--item` | launcher item add（`--type set`）、set row add | 行の開くものにする登録済みのアイテム（id か表示名）。`--path` とはどちらか一方 |
-| `--label` | launcher item add（`--type set`）、set row add | 行の名前 |
+| `--label` | launcher item add（`--type set`）、set row add、launcher tab add、tab file add／update | セットでは行の名前。タブではデータファイルの名前（省略時は「<タブ名>用データファイル」） |
+| `--existing` | launcher tab file add | タブに入れる既存のデータファイル（`data5.json` など。`tab list` の `unassignedFiles`） |
 | `--memo` | item add／update | メモ |
+| `--text` `--text-file` | item add（`--type clipboard`。どちらか必須）／update | クリップボードアイテムの本文。`--text-file` は UTF-8 のテキストファイル（1 MB まで。相対パスは `qdl` を実行したフォルダが基準）。どちらか一方だけ |
+| `--with-text` | item list | 中身がテキストだけのクリップボードアイテムに、本文 `text` を付ける |
 | `--file` `--tab` | launcher item add／update | 足す（update では移す）データファイル、またはタブ（その先頭のデータファイル）。add で省略したときは `datafiles/data.json` |
-| `--type` | launcher item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`window`（ウィンドウ操作） |
+| `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`window`（ウィンドウ操作）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ |
 | `--group` | workspace item add／update | 入れるグループ。update で `""` を渡すと未分類へ移す |
 | `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる。archive restore では復元先（省略時は元のワークスペース） |
-| `--position` | workspace item add／update、workspace add／update、set row add | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの並び。set row add では行を差し込む位置（省略時は最後） |
+| `--position` | workspace item add／update、workspace add／update、set row add、launcher tab add／update | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの、launcher tab add／update ではタブの並び。set row add では行を差し込む位置（省略時は最後） |
 | `--color` | workspace group add／update | `primary` `success` `danger` `warning` `info` `secondary` `purple` `teal` `pink` `indigo` `orange` `cyan`、または `#rrggbb` |
 | `--parent` | workspace group add／update | 親グループ（2 段まで）。update で `""` を渡すと最上位へ移す |
 | `--set key=value` | item add／update | 専用のオプションが無い項目（例 `--set windowTitle=メモ帳`、`--set entries='[{"itemId":"…"}]'`）。値が JSON の配列・オブジェクト・数値・`true`／`false`ならその型になる |
@@ -93,28 +103,32 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 - **対象の指定**: id か、表示名の完全一致。表示名が複数に当たったときは何も変えずに終わり、候補（id・表示名・場所）を返す。部分一致では指定しない（探すときは `list --grep`）
 - **相対パス**: `.` で始まる、または `\`・`/` を含み、絶対パスでも URL でも `%VAR%` で始まるパスでもないときだけ、実行したフォルダを基準に絶対パスにする。`notepad.exe` や `code` のように PATH から探すコマンドはそのまま
-- **種類**: 通常のアイテムの種類（URL・フォルダ・ファイル・アプリ・カスタム URI）は、画面の登録と同じくパスから判定する。結果の `kind` に入る（データファイル上の `type` は `item` のまま）
+- **種類**: 通常のアイテムの種類（URL・フォルダ・ファイル・アプリ・カスタム URI）は、画面の登録と同じくパスから判定する。結果の `kind` に入る（データファイル上の `type` は `item` のまま）。パスが空なら `windowSwitch`（パスの無い単一アイテム。例 `qdl launcher item add --name "MS To Do" --set window='{"processName":"ApplicationFrameHost.exe"}'`）
 - **検証**: 設定ファイルを読み込むときと同じ検証を通す。その種類に無い項目を `--set` すると、黙って捨てずに断る
 - **書き込みの前の読み直し**: 書き込むコマンドは、まず設定ファイルを読み直す。QDL の外でファイルが編集されていれば、ここで外部変更として検知し、変更前の内容を残す。ワークスペースは読み直さないと書き込みを断る作りなので、CLI では外部で編集した直後でも書き込める
 - **書き込んだ後**: 開いている画面に反映し、「CLI: …を追加しました」のようなトーストで知らせる（失敗・`--dry-run`・一覧では出さない）
 - **セットの作り方**: `launcher item add --type set --name <名前>` に、最初の行を `--item <id か表示名>` か `--path <パス>`（`--args`）で渡す（`--label` で行の名前）。`--set entries='[…]'` で行をまとめて渡してもよいが、`--item`・`--path` とは併用できない。2 行目からは `launcher set row add` で足す
 - **セットの行にできるもの**: 開くものだけ。`--item` で指せるのは種類 `item`（通常のアイテム）と `window`（ウィンドウ操作）のアイテムで、フォルダ取込・セットなどは断る（フォルダ取込の中身は `--path` で行にする）。対象ウィンドウとウィンドウ位置は CLI からは付けず、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付ける
 - **別のタブへ移す**: `launcher item update <id か表示名> --tab <タブ>`（か `--file`）。id を保ったまま移すので、セットの行は切れない。ほかの項目の変更と同時にもできる。移す先に書いてから元のファイルから消す（途中で失敗しても、消えずに 2 つのファイルに残る）。そのタブのどれかのデータファイルに既にあれば移さず、`"unchanged": true` を返す。自動取込で入ったアイテムは移さない（取込は取り込み先のファイルの中で入れ替えるので、次の取込でまた足される）
+- **タブ構成**: アイテム管理画面のタブの操作と同じ計算・同じ順（新しいファイルを作る → `settings.json` の `dataFileTabs`・`dataFileLabels` を保存する → どのタブにも残らないファイルを消す）で確定し、開いている画面に知らせる。`<タブ>` は番号（0 始まり）か名前の完全一致、`<データファイル>` は `data3.json` のようなファイル名か名前（ラベル）。画面と違って確認を挟めないので、アイテムが入ったデータファイルを消すことになる操作（`tab remove`・`tab file remove`）は `conflict` で断る。最後のタブと、メインのデータファイル（`datafiles/data.json`）を消す操作も `conflict`。消したファイルを取り込み先にしていた自動取込ルールは、画面と同じく無効にして結果の `disabledAutoImportRules` で知らせる。タブの表示（基本設定の「データファイルのタブを表示」）がオフのときは、足したタブが画面に出ないので、結果に `"tabsHidden": true` を付ける
 - **アーカイブ**: `workspace group archive` は、画面と同じく先に切り離しウィンドウを閉じてから、子孫のサブグループとアイテムごとしまう。`archive list`・`archive restore` で扱うのは、しまった単位（最上位のグループ）だけ。一緒にしまったサブグループは一覧の `subgroups` に名前が出て、親と一緒に戻る。`archive restore` は `--workspace` を省くと元のワークスペースへ戻し、元のワークスペースが無くなっていれば既定（先頭）のワークスペースへ戻す。どちらも画面の「移動先を選んで復元」と同じ処理で、最上位のグループとして戻る
-- **触れないもの**: クリップボードアイテムは足せず、変えられない（画面の操作で作るもの）。消すことはできる。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
-- **ワークスペースに足せる種類**: 通常のアイテムだけ。ウィンドウ操作・セットを足すのは画面で行う（既にあるものは update で変えられる）
+- **クリップボードアイテム**: CLI で足せるのは、中身がテキストだけのもの（画面の「テキストを書く」と同じ）。本文を `--text` か `--text-file` で渡すと、実データを新しいファイルに保存して参照（`dataFileRef`）を差し替える。前の実データのファイルは消さない（画面で書き換えたときと同じ）。本文を書き換えられるのは中身がテキストだけのもので、画像・HTML・RTF を含むものは `conflict` で断る（名前・メモの変更と別のタブへの移動はできる）。参照の項目（`dataFileRef`・`savedAt`・`formats`・`preview`）は `--set`・`--unset` で変えられない。今の本文は `list --with-text` で読める
+- **触れないもの**: 画像・HTML・RTF を含むクリップボードアイテムの中身（画面の操作で作るもの。名前・メモは変えられ、消すこともできる）。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
+- **ワークスペースに足せる種類**: 通常のアイテムと、テキストだけのクリップボードアイテム。ウィンドウ操作・セットを足すのは画面で行う（既にあるものは update で変えられる）
 
 ### 出力
 
 成功したら、標準出力に結果の JSON を出します。
 
-- `list`: 配列。各要素に場所を付ける（メイン画面は `file`・`tab`、ワークスペースは `location: ["ワークスペース名", "グループ", "サブグループ"]`）
+- `list`: 配列。各要素に場所を付ける（メイン画面は `file`・`tab`、ワークスペースは `location: ["ワークスペース名", "グループ", "サブグループ"]`）。`--with-text` では、中身がテキストだけのクリップボードアイテムに本文 `text` を付ける
 - `add`: 足したもの（採番した `id` を含む）
 - `update`: `{ "before": 変える前, "item": 変えた後 }`（グループは `group`、ワークスペースは `workspace`）。別のタブへ移したときは `"moved": { "from", "to" }` を付ける
 - `remove`: `{ "removed": 消したもの }`
 - `group archive`: `{ "archived": しまったグループ }`（`itemCount`・`subgroupCount` は子孫まで数える）
 - `archive list`: 配列。各要素に `archivedAt`・元のワークスペース `workspace`（無くなっていれば `null`）・子孫までの `itemCount`・一緒にしまったサブグループの名前 `subgroups` を付ける
 - `archive restore`: `{ "restored": 戻したグループ }`。`--dry-run` では `{ "dryRun": true, "restoring": 戻すもの, "workspace": 復元先 }`
+- `tab list`: `{ "showDataFileTabs", "tabs": [ { index, name, files: [ { file, label, itemCount } ], itemCount, default } ], "unassignedFiles": [ … ] }`
+- `tab add`・`tab update`: `{ "tab": 足した・変えた後のタブ }`（update は `before` も）。`tab remove` は `{ "removed", "deletedFiles" }`、`tab file remove` は `{ "removed", "deleted", "tab" }`
 - `set row list`・`set row add`・`set row remove`: `{ "set": { id, displayName, file, tab }, "entries": [ 行 ] }`（変えた後の全部の行）。各行に行番号 `index` と行の名前 `name` を付け、指しているアイテムが見つからない行には `"missing": true` を付ける
 - `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので `id` は無い）
 
@@ -188,7 +202,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 ### 現在の制限
 
-1. **扱えるのはアイテム・セットの行・ワークスペースとそのグループ・グループのアーカイブまで**: タブ・データファイルの追加と削除、`settings.json` の変更（ホットキーなど）はできません
+1. **扱えるのはアイテム・セットの行・タブ構成・ワークスペースとそのグループ・グループのアーカイブまで**: `settings.json` のそのほかの設定（ホットキーなど）は変えられません
 2. **アンインストールしても PATH は残る**: アンインストールしても PATH の項目と `%LOCALAPPDATA%\quick-dash-launcher\bin` は残ります。先に管理画面で「QuickDashLauncher CLI を使えるようにする」を外してからアンインストールしてください
 3. **Windows のみ**: 名前付きパイプを使うので、本体と同じく Windows でだけ動きます
 

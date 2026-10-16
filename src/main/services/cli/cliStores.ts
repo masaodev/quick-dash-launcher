@@ -1,4 +1,6 @@
 import { generateUniqueId } from '@common/utils/jsonParser';
+import { setTabManagerTranslator } from '@common/utils/tabManager';
+import type { TabManagerTranslate } from '@common/utils/tabManager';
 import { createChildLogger } from '@common/logger';
 
 import PathManager from '../../config/pathManager.js';
@@ -7,16 +9,19 @@ import { loadEditableItems } from '../data/editableItemsStore.js';
 import { appendJsonItems, moveItemToFile, replaceItemById } from '../data/dataItemWriter.js';
 import { deleteItemsById } from '../../ipc/editHandlers.js';
 import { withFolderMarker } from '../../utils/folderPathProbe.js';
-import { reapplySettingsFromDisk } from '../../ipc/settingsHandlers.js';
+import { reapplySettingsFromDisk, saveSettings } from '../../ipc/settingsHandlers.js';
+import { createDataFile, deleteDataFile } from '../data/dataFileOps.js';
 import { notifyDataChanged, notifyWorkspaceChanged } from '../../ipc/notifications.js';
 import { closeDetachedWindowsForGroup } from '../../ipc/workspaceHandlers.js';
 import { getLastLoadReport, reloadConfigFiles } from '../data/dataFileLoader.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
 import { showToastWindow } from '../overlayWindowService.js';
+import { ClipboardService } from '../clipboardService.js';
 import { mainI18n } from '../mainI18n.js';
 
 import { CliError } from './cliArgs.js';
 import type { LauncherStore } from './cliLauncherCommands.js';
+import type { TabStore } from './cliTabCommands.js';
 import type { CliContext } from './cliCommands.js';
 
 const cliLogger = createChildLogger('cli');
@@ -52,12 +57,55 @@ export function createLauncherStore(configFolder: string): LauncherStore {
 }
 
 /**
+ * タブ構成の読み書きを、アイテム管理画面と同じ処理につなぐ（データファイルの作成・削除、設定の保存と通知）
+ */
+export function createTabStore(configFolder: string): TabStore {
+  return {
+    async load() {
+      const settings = await SettingsService.getInstance();
+      const [tabs, labels, defaultFileTab, showDataFileTabs] = await Promise.all([
+        settings.get('dataFileTabs'),
+        settings.get('dataFileLabels'),
+        settings.get('defaultFileTab'),
+        settings.get('showDataFileTabs'),
+      ]);
+      return { tabs, labels: labels ?? {}, defaultFileTab, showDataFileTabs };
+    },
+    filesOnDisk: () => PathManager.getDataFiles(),
+    async countItems() {
+      const result = await loadEditableItems(configFolder);
+      if (result.error) throw new CliError('unavailable', result.error);
+      const counts = new Map<string, number>();
+      for (const entry of result.items) {
+        counts.set(entry.meta.sourceFile, (counts.get(entry.meta.sourceFile) ?? 0) + 1);
+      }
+      return counts;
+    },
+    createFile(fileName) {
+      const result = createDataFile(configFolder, fileName);
+      if (!result.success) throw new CliError('unavailable', result.error ?? fileName);
+    },
+    async deleteFile(fileName) {
+      const result = await deleteDataFile(configFolder, fileName);
+      if (!result.success) throw new CliError('unavailable', result.error ?? fileName);
+      return result.disabledRules ?? [];
+    },
+    save: (structure) =>
+      saveSettings({ dataFileTabs: structure.tabs, dataFileLabels: structure.labels }),
+  };
+}
+
+/**
  * CLI のコマンドに渡す道具一式（本体の処理・通知・トースト）
  */
 export function createCliContext(
   configFolder: string,
   base: Pick<CliContext, 'appVersion' | 'pid'>
 ): CliContext {
+  // タブ構成の計算が返す理由の文言を、CLI の応答と同じ言語（main の i18next）で出す
+  setTabManagerTranslator((key, options) =>
+    (mainI18n.t as unknown as TabManagerTranslate)(key, options)
+  );
   return {
     ...base,
     configFolder,
@@ -76,6 +124,7 @@ export function createCliContext(
       await reloadConfigFiles(configFolder, 'internal');
     },
     launcher: createLauncherStore(configFolder),
+    tabs: createTabStore(configFolder),
     workspace: {
       loadWorkspaces: async () => (await WorkspaceService.getInstance()).loadWorkspaces(),
       createWorkspace: async (name) => (await WorkspaceService.getInstance()).createWorkspace(name),
@@ -118,5 +167,24 @@ export function createCliContext(
       );
     },
     beforeGroupRemoved: closeDetachedWindowsForGroup,
+    clipboard: {
+      save: (text) => {
+        const result = ClipboardService.getInstance().saveText(text);
+        if (!result.success || !result.dataFileRef) {
+          throw new CliError(
+            'unavailable',
+            result.error ?? mainI18n.t('cli.errors.saveTextFailed')
+          );
+        }
+        return {
+          dataFileRef: result.dataFileRef,
+          savedAt: result.savedAt ?? Date.now(),
+          preview: result.preview ?? '',
+          formats: result.formats ?? ['text'],
+        };
+      },
+      read: (dataFileRef) =>
+        ClipboardService.getInstance().readContent({ dataFileRef })?.text ?? null,
+    },
   };
 }

@@ -74,7 +74,7 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 1. **2つ以上のウィンドウで使用される**
 2. **ビジネスロジックを持たない純粋なUI部品**（ダイアログ、入力部品など）
 
-例：`AlertDialog`, `ConfirmDialog`, `ColorPicker`, `HotkeyInput`, `MemoViewModal`（メモの表示。メインウィンドウとワークスペースウィンドウで使う）, `SetEntriesEditor`（セットの行の編集。登録・編集とワークスペースのアイテム編集の 2 つのウィンドウで使う。そこから開く `SetItemPickerModal`・`SetAddWindowsModal`・`SetUpdatePositionsModal`・`SetEntryDetailModal` も同じ）
+例：`AlertDialog`, `ConfirmDialog`, `ColorPicker`, `HotkeyInput`, `MemoViewModal`（メモの表示。メインウィンドウとワークスペースウィンドウで使う）, `SetEntriesEditor`（セットの行の編集。登録・編集とワークスペースのアイテム編集の 2 つのウィンドウで使う。そこから開く `SetItemPickerModal`・`SetAddWindowsModal`・`SetUpdatePositionsModal`・`SetEntryDetailModal` も同じ）, `ItemWindowSwitchEditor`（単一アイテムのウィンドウ切り替え。中の 3 つの枠 `WindowMatchFields`・`WindowPlacementFields`・`OpenBehaviorFields`（`WindowSwitchFields.tsx`）は `SetEntryDetailModal` と共用）
 
 ### 既知の例外（命名規則未適用）
 

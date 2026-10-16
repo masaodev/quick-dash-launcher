@@ -86,7 +86,7 @@ export const en: LocaleMessages = {
       title: 'Add item',
       quickAdd: '📄 Add item',
       addBookmarks: '🔖 Add browser bookmarks',
-      addApps: '💻 Add installed apps',
+      addApps: '💻 Import installed apps',
     },
     settingsMenu: {
       title: 'Settings',
@@ -155,6 +155,7 @@ export const en: LocaleMessages = {
       expandedOptions: 'Options: {{value}}',
       windowTitle: 'Window title: {{value}}',
       processName: 'Exe name: {{value}}',
+      windowSwitchOnly: 'Only switches to an open window: {{target}}',
       executablePath: 'Executable path: {{value}}',
       windowState: 'State: {{value}}',
       windowStates: {
@@ -363,6 +364,7 @@ export const en: LocaleMessages = {
       file: 'Opening file...',
       folder: 'Opening folder...',
       customUri: 'Opening...',
+      windowSwitch: 'Switching to the window',
       windowOperation: 'Running window action',
       windowActivate: 'Brought the window to the front',
       windowClose: 'Window closed',
@@ -402,6 +404,7 @@ QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
   launcher set row list|add|remove       Rows of a set in the launcher
+  launcher tab list|add|update|remove    Tabs and data files in the launcher
   workspace list|add|update|remove         Workspaces themselves
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove|archive   Groups in workspaces
@@ -419,24 +422,36 @@ Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect 
 `,
       launcher: `Usage: qdl launcher item <action> [arguments]
        qdl launcher set row <action> <set> [arguments]
+       qdl launcher tab <action> [arguments]
 
 Works with the items in the launcher (datafiles/data*.json).
 
-  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
+  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>,
+                                --with-text to include clipboard text)
   item add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
-                                --type item|dir|set|window, --set key=value, --dry-run)
+                                --type item|dir|set|window|clipboard, --set key=value, --dry-run)
   item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key,
-                                --file | --tab to move it to another tab, --dry-run)
+                                --text | --text-file, --file | --tab to move it to another tab, --dry-run)
   item remove <id or name>      Delete an item (--dry-run)
   set row list <set>            List the rows of a set (row numbers are 0-based)
   set row add <set>             Add a row to a set (--item <id or name> | --path <path> [--args],
                                 --label <row name> --position <0-based> --dry-run)
   set row remove <set> <row>    Delete a row from a set (--dry-run)
+  tab list                      Tabs and their data files (item count per file, files in no tab)
+  tab add                       Add a tab with a new data file (--name is required. --label <file name>
+                                --position <0-based> --dry-run)
+  tab update <tab>              Change a tab (--name --position --dry-run)
+  tab remove <tab>              Delete a tab (only when the data files it would delete are empty. --dry-run)
+  tab file add <tab>            Create a data file in the tab (--label), or add one with --existing <data5.json>
+  tab file update <data3.json>  Rename a data file (--label)
+  tab file remove <tab> <file>  Take a data file out of the tab (deleted if no other tab uses it; only when empty. --dry-run)
 
 A relative --path is resolved from the folder where you run qdl. With --type set, --path isn't required;
 pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
-more rows with set row add. The target window and its window position are set with "Add windows"
+more rows with set row add. <tab> is a 0-based number or an exact tab name. The target window and its window position are set with "Add windows"
 or "Update window positions" on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
+--type clipboard adds a text-only clipboard item: instead of --path, pass the text with --text or
+--text-file <file> (UTF-8, 1 MB at most). Only clipboard items that contain just text can have their text replaced.
 `,
       workspace: `Usage: qdl workspace <target> <action> [arguments]
 
@@ -446,10 +461,11 @@ Works with workspaces (workspace.json).
   qdl workspace add                           Add a workspace (--name is required. --position <0-based> --dry-run)
   qdl workspace update <id or name>           Change a workspace (--name --position --dry-run)
   qdl workspace remove <id or name>           Delete an empty workspace (--dry-run)
-  qdl workspace item list                     List items (--workspace --group --grep)
+  qdl workspace item list                     List items (--workspace --group --grep --with-text)
   qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
-                                              --workspace --position <0-based> --set key=value --dry-run)
-  qdl workspace item update <id or name>      Change an item (--name --path --args --memo --set --unset,
+                                              --workspace --position <0-based> --set key=value --dry-run.
+                                              With --type clipboard, --text | --text-file instead of --path)
+  qdl workspace item update <id or name>      Change an item (--name --path --args --memo --text --text-file --set --unset,
                                               --group <group> ("" for ungrouped) --workspace --position --dry-run)
   qdl workspace item remove <id or name>      Delete an item (--dry-run)
   qdl workspace group list                    List groups (--workspace --grep)
@@ -479,6 +495,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       idOrGroupName: '<id or name>',
       setIdOrName: '<set id or name>',
       entryIndex: '<row number>',
+      tab: '<tab number or name>',
+      dataFile: '<data file>',
     },
     errors: {
       relativePath: "Can't resolve the relative path (the current folder is unknown): {{value}}",
@@ -494,7 +512,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       ambiguous: '{{count}} matches for the {{what}} "{{key}}". Use the id',
       unknownCommand: 'Unknown command: {{command}}',
       unknownLauncherNoun:
-        'Unknown command: launcher {{noun}} (only launcher item and launcher set)',
+        'Unknown command: launcher {{noun}} (only launcher item, launcher set, and launcher tab)',
       missingSetNoun: 'Specify row after launcher set',
       missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
@@ -519,6 +537,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       dirHasNoName: "Folder imports (dir) don't have a display name",
       needName: 'Specify --name',
       needPath: 'Specify --path',
+      needPathOrWindow: 'Specify --path or --set window=…',
       argsOnlyItem: '--args can be used only with regular items (item) and rows of a set (set)',
       itemOnlySet: '--item and --label can be used only with sets (--type set)',
       setItemAndPath: 'Specify either --item or --path, not both',
@@ -531,7 +550,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       setItemType:
         "Items of type {{type}} can't be rows of a set (only {{types}}. Use --path for the contents of an imported folder)",
       setRowUnknownKeys:
-        'Row {{index}} has unknown keys: {{keys}} (itemId, open, label, window, placement, ifOpen, activateWindow, waitSeconds)',
+        'Row {{index}} has unknown keys: {{keys}} (itemId, open, label, window, placement, ifOpen, activateWindow, waitSeconds, pinToAllDesktops)',
       setRowEmpty: 'Row {{index}} has nothing to open (itemId, open) and no target window (window)',
       setRowItemNotFound: "Row {{index}}: couldn't find the item with itemId {{id}}",
       setNoPathArgs:
@@ -551,6 +570,22 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       workspaceNotEmpty:
         'The workspace "{{name}}" isn\'t empty ({{groups}} groups, {{items}} items). Move or delete its contents first',
       lastWorkspace: "You can't delete the last workspace",
+      textAndTextFile: 'Specify either --text or --text-file, not both',
+      textFileNotFound: "Couldn't find the --text-file file: {{file}}",
+      textFileTooLarge: 'The --text-file file is too large (1 MB at most): {{file}}',
+      emptyText: 'The text is empty',
+      needText: 'Specify the text with --text or --text-file',
+      textOnlyClipboard: '--text and --text-file can only be used with clipboard items (clipboard)',
+      clipboardOption: "Clipboard items don't take --{{option}}",
+      clipboardNotText:
+        "This clipboard item contains more than text ({{formats}}), so its text can't be replaced (you can still change its name and memo or move it; change its contents on screen)",
+      saveTextFailed: "Couldn't save the clipboard text",
+      missingTabVerb: 'Specify an action (list / add / update / remove / file)',
+      missingTabFileVerb: 'Specify an action (add / update / remove)',
+      dataFileNotEmpty:
+        'Stopped because data files with items would be deleted: {{files}}. Move the items to another tab or delete them first',
+      fileNotInTabs: "The data file {{file}} isn't in any tab",
+      dataFileNotEmptyEntry: '{{label}} ({{file}}, {{count}} items)',
       autoImportedNotMovable:
         "Items added by auto import can't be moved to another tab (the next import would add them again). Change the import rule's target file instead",
     },
@@ -561,6 +596,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       group: 'group',
       workspaceItem: 'workspace item',
       archivedGroup: 'archived group',
+      tab: 'tab',
+      dataFile: 'data file',
     },
     changed: {
       launcherAdded: 'CLI: Added "{{name}}" to the launcher',
@@ -578,6 +615,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       groupRemoved: 'CLI: Deleted the group "{{name}}" from the workspace',
       groupArchived: 'CLI: Archived the group "{{name}}"',
       groupRestored: 'CLI: Restored the group "{{name}}" to the workspace "{{workspace}}"',
+      tabAdded: 'CLI: Added the tab "{{name}}"',
+      tabUpdated: 'CLI: Changed the tab "{{name}}"',
+      tabRemoved: 'CLI: Deleted the tab "{{name}}"',
+      tabFileAdded: 'CLI: Added the data file "{{label}}" to the tab "{{tab}}"',
+      tabFileUpdated: 'CLI: Renamed the data file to "{{label}}"',
+      tabFileRemoved: 'CLI: Took the data file "{{label}}" out of the tab "{{tab}}"',
       setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
       setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },
@@ -600,8 +643,11 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     run: {
       titleNotMatched: 'No window with a matching title ({{exe}} is open)',
       notOpen: "Not open, so it wasn't moved",
+      itemNotOpen: "Not open, so it didn't switch",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
       desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
+      itemWindowTimedOut:
+        'Waited {{seconds}} seconds for the window to appear, but it was not found',
     },
     errors: {
       itemNotFound: "Couldn't find the item this row points to",
@@ -706,6 +752,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       openKindPath: 'Path',
       item: 'Item',
       itemNote: 'Changes to the item apply to this set too.',
+      inheritNote:
+        'ℹ️ Opens with the settings of the item "{{name}}". Anything you enter below takes priority for this row.',
+      inheritValue: 'Item setting ({{value}})',
+      inheritPlacement: 'Item setting (📍 {{place}})',
       pickItem: 'Choose an item',
       otherItem: 'Use another item',
       pathNote: 'A path written in this set (no item is created).',
@@ -714,22 +764,30 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       find: 'Target window',
       processName: 'Exe name',
       processNamePlaceholder: 'Example: notepad.exe',
+      processNameNote: 'Part of the name works too (e.g. sakura)',
       windowTitle: 'Window title',
       windowTitlePlaceholder: 'Leave empty to accept any title',
+      windowTitleNote: 'Matches the whole title. * matches any text (e.g. *Obsidian)',
       anyTitle: 'Any title',
       anyTitleHint: 'Search by exe name only (any title)',
-      titleParts: 'Search by part:',
+      titleParts: 'Search by part of the title',
       revertTitle: '↺ Revert',
       matchNone: 'Matching windows now: 0',
       matchOne: 'Matching windows now: 1 ({{title}})',
       matchMany: 'Matching windows now: {{count}} (other windows match too)',
-      findHint:
-        'When the set opens, the window matching these two is moved to the recorded window position. The exe name can be partial; the title must match as a whole (* matches any text, e.g. *Obsidian).',
+      findLead: 'When the set opens, the matching window is moved to the recorded window position.',
+      pickFromWindow: '🔍 Choose from open windows',
       placement: 'Window position',
       recorded: 'Recorded window position',
       noPlacement: 'Not recorded yet',
-      takeFromWindow: 'Take from an open window',
+      updatePlacement: '📍 Update window position',
+      updatePlacementNoMatch: 'No matching window is open',
+      updatePlacementNote:
+        "Records the matching window's current position and size again (conditions unchanged)",
       clearPlacement: 'Remove window position',
+      pinToAllDesktops: '📌 Show on all desktops',
+      pickPlacementTitle: "Which window's position should be recorded?",
+      pickPlacementConfirm: 'Record',
       desktop: 'Virtual desktop',
       desktopKeep: "Don't change",
       behavior: 'When opening',
@@ -742,6 +800,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       wait: 'Wait for the window to appear (seconds)',
       minimizedPicked:
         'This window is minimized, so only the target window was taken. Restore it before taking the window position',
+      minimizedNotUpdated:
+        'This window is minimized, so its window position was not taken. Restore it, then press again',
     },
     placement: {
       none: 'No window position',
@@ -832,6 +892,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     noName: '(no name)',
     pathSummary: {
       noPath: '(no path)',
+      windowSwitchOnly: '(no path, switch only: {{target}})',
       noItems: '(no items)',
       noWindowTitle: '(no window title)',
       noFolderPath: '(no folder path)',
@@ -873,7 +934,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
     header: {
       addBookmarks: 'Add browser bookmarks',
-      addApps: 'Add installed apps',
+      addApps: 'Import installed apps',
       autoImportSettings: 'Bookmark auto-import settings…',
       autoImportSettingsTitle:
         'Set up rules to import browser bookmarks automatically, such as when the app starts',
@@ -1191,14 +1252,22 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     noExtension: '(none)',
     notFound: 'No installed apps were found',
     scanFailed: "Couldn't scan for apps",
-    title: 'Add installed apps',
+    title: 'Import installed apps',
     hint: 'Check the apps you want and import them. Imported apps are added as unsaved changes; select "Save changes" to keep them.',
     scanning: 'Scanning the Start menu...',
     found_one: 'Found {{count}} app in the Start menu',
     found_other: 'Found {{count}} apps in the Start menu',
     rescan: 'Scan again',
-    destinationNote: 'To import into another file, switch to it in Item Manager first',
-    filter: 'Filters',
+    destTab: 'Destination tab',
+    destFile: 'Destination data file',
+    newTab: '+ New tab',
+    newFile: '+ New data file',
+    tabName: 'Tab name',
+    fileName: 'File name',
+    defaultName: 'Apps',
+    newTabName: '{{name}} (new tab)',
+    newFileName: '{{name}} (new)',
+    destinationEcho: 'Import into {{target}}',
     searchPlaceholder: 'Search app names or paths...',
     clearSearch: 'Clear search',
     excludeUninstallers: 'Exclude uninstallers',
@@ -1207,21 +1276,20 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     filterCount_one: ' ({{count}})',
     filterCount_other: ' ({{count}})',
     showExcluded: 'Show excluded apps',
-    list_one: 'Apps ({{count}})',
-    list_other: 'Apps ({{count}})',
+    list_one: 'App name ({{count}})',
+    list_other: 'App name ({{count}})',
     toggleVisible: 'Select or clear all apps shown',
-    appName: 'App name',
     type: 'Type',
-    targetPath: 'Target path',
     registered: 'Added',
+    registeredInTab: 'Already in another data file in this tab',
     noMatches: 'No apps match',
     registeredSelected_one: '{{count}} of the selected apps is already in the destination',
     registeredSelected_other: '{{count}} of the selected apps are already in the destination',
     selected_one: '{{count}} selected',
     selected_other: '{{count}} selected',
     clearSelection: 'Clear selection',
-    import_one: 'Import ({{count}})',
-    import_other: 'Import ({{count}})',
+    import_one: 'Import {{count}} app',
+    import_other: 'Import {{count}} apps',
   },
   help: {
     shortcuts: '⌨️ Keyboard shortcuts',
@@ -1323,6 +1391,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     path: 'Path:',
     pathPlaceholder: 'Enter a file path, URL, or custom URI',
     itemOptions: 'Options (arguments, icon)',
+    windowSwitch: {
+      toggle: 'Options (switch to window, window position)',
+      findLead:
+        'When this item opens and a matching window is already open, it switches to that window instead of opening it again.',
+      pathlessNote: 'The path is empty, so this only switches to an open window',
+    },
     dirOptions: 'Folder import options',
     args: 'Arguments:',
     argsPlaceholder: 'Command-line arguments (for executables and apps only)',
@@ -1332,6 +1406,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     errors: {
       displayNameRequired: 'Enter a display name',
       pathRequired: 'Enter a path',
+      pathOrWindowRequired: 'Enter either a path or a target window',
       windowRequired: 'Enter a window title or process name',
       clipboardRequired: 'Write some text or capture the clipboard',
       clipboardSaveFailed: "Couldn't save the clipboard data",
@@ -1345,11 +1420,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
   },
   windowConfig: {
-    reuseTitle: 'Reuse an existing window',
     actionTitle: 'Window action',
     stepSearch: '1. Find the window by title or process name',
     stepAct: '2. If found, do the actions below',
-    stepLaunch: "3. If not found, open the item's path",
     searchHeading: '🔍 1. Find the window',
     selectWindow: 'Choose window',
     windowTitle: 'Window title:',
@@ -1380,7 +1453,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     byNumber: 'By number',
     desktopNumber: 'Desktop number:',
     desktopNumberPlaceholder: 'Starts at 1',
-    optionsToggle: 'Options (switch to window)',
   },
   clipboardEditor: {
     formats: {
@@ -1675,6 +1747,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
   validation: {
     emptyField: '{{field}} is empty',
     emptyTypedField: '{{field}} of the {{type}} item is empty',
+    pathOrWindowRequired:
+      'path is empty (an item without a path needs window.processName or window.title)',
     depthOutOfRange: 'depth must be -1 (unlimited) or 0 or greater',
     invalidTypes: 'types must be file, folder, or both',
     unknownType: 'Unknown item type: {{type}}',

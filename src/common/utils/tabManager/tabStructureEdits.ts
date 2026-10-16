@@ -1,6 +1,6 @@
-import i18next from 'i18next';
 import { DEFAULT_DATA_FILE, DataFileTab } from '@common/types';
 
+import { tabT } from './translate';
 import { FileNameGenerator } from './fileNameGenerator';
 import { TabValidator } from './tabValidator';
 import { TabStateCalculator } from './tabStateCalculator';
@@ -56,11 +56,19 @@ function swapWithNeighbor<T>(items: T[], index: number, direction: MoveDirection
   return next;
 }
 
-/** 既存のラベルと重ならない、新しいファイルのラベル */
-function uniqueDefaultLabel(labels: Record<string, string>, tabName: string): string {
+/**
+ * 既存のラベルと重ならない、新しいファイルのラベル
+ *
+ * @param baseLabel 付けたい名前（取込画面で入力したものなど）。空なら「<タブ名>用データファイル」
+ */
+function uniqueDefaultLabel(
+  labels: Record<string, string>,
+  tabName: string,
+  baseLabel?: string
+): string {
   const used = new Set(Object.values(labels).filter((label) => label && label.trim() !== ''));
   return FileNameGenerator.generateUniqueLabel(
-    i18next.t('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName }),
+    baseLabel?.trim() || tabT('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName }),
     used
   );
 }
@@ -82,18 +90,22 @@ export function isFileUsedInOtherTabs(
   return TabValidator.isFileUsedInOtherTabs(fileName, tabIndex, tabs);
 }
 
-/** 新しいタブを末尾に足す。データファイルを 1 つ作って入れる */
+/** 新しいタブを末尾に足す。データファイルを 1 つ作って入れる（fileLabel はそのファイルの名前） */
 export function addTab(
   structure: TabStructure,
   tabName: string,
-  filesOnDisk: string[]
+  filesOnDisk: string[],
+  fileLabel?: string
 ): TabStructureEdit {
   const fileName = nextFileName(structure.tabs, filesOnDisk);
   const name = tabName.trim() || FileNameGenerator.getDefaultTabName(fileName);
   return done(
     {
       tabs: [...structure.tabs, { name, files: [fileName] }],
-      labels: { ...structure.labels, [fileName]: uniqueDefaultLabel(structure.labels, name) },
+      labels: {
+        ...structure.labels,
+        [fileName]: uniqueDefaultLabel(structure.labels, name, fileLabel),
+      },
     },
     [fileName]
   );
@@ -105,9 +117,9 @@ export function renameTab(
   tabName: string
 ): TabStructureEdit {
   if (!isValidTabIndex(structure.tabs, tabIndex))
-    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
+    return fail(tabT('itemManager.tabStructure.errors.tabNotFound'));
   const name = tabName.trim();
-  if (!name) return fail(i18next.t('itemManager.tabStructure.errors.tabNameRequired'));
+  if (!name) return fail(tabT('itemManager.tabStructure.errors.tabNameRequired'));
   const tabs = [...structure.tabs];
   tabs[tabIndex] = { ...tabs[tabIndex], name };
   return done({ ...structure, tabs });
@@ -119,21 +131,20 @@ export function moveTab(
   direction: MoveDirection
 ): TabStructureEdit {
   const tabs = swapWithNeighbor(structure.tabs, tabIndex, direction);
-  if (!tabs) return fail(i18next.t('itemManager.tabStructure.errors.cannotMove'));
+  if (!tabs) return fail(tabT('itemManager.tabStructure.errors.cannotMove'));
   return done({ ...structure, tabs });
 }
 
 /** タブを消せない理由（消せるなら null） */
 export function getDeleteTabBlocker(tabs: DataFileTab[], tabIndex: number): string | null {
-  if (!isValidTabIndex(tabs, tabIndex))
-    return i18next.t('itemManager.tabStructure.errors.tabNotFound');
-  if (tabs.length <= 1) return i18next.t('itemManager.tabStructure.errors.lastTab');
+  if (!isValidTabIndex(tabs, tabIndex)) return tabT('itemManager.tabStructure.errors.tabNotFound');
+  if (tabs.length <= 1) return tabT('itemManager.tabStructure.errors.lastTab');
   const tab = tabs[tabIndex];
   if (
     tab.files.includes(DEFAULT_DATA_FILE) &&
     !isFileUsedInOtherTabs(tabs, tabIndex, DEFAULT_DATA_FILE)
   ) {
-    return i18next.t('itemManager.tabStructure.errors.mainTabDelete');
+    return tabT('itemManager.tabStructure.errors.mainTabDelete');
   }
   return null;
 }
@@ -156,14 +167,15 @@ export function deleteTab(structure: TabStructure, tabIndex: number): TabStructu
   );
 }
 
-/** 新しいデータファイルを作ってタブの末尾に入れる */
+/** 新しいデータファイルを作ってタブの末尾に入れる（fileLabel はそのファイルの名前） */
 export function addNewFileToTab(
   structure: TabStructure,
   tabIndex: number,
-  filesOnDisk: string[]
+  filesOnDisk: string[],
+  fileLabel?: string
 ): TabStructureEdit {
   if (!isValidTabIndex(structure.tabs, tabIndex))
-    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
+    return fail(tabT('itemManager.tabStructure.errors.tabNotFound'));
   const fileName = nextFileName(structure.tabs, filesOnDisk);
   const tab = structure.tabs[tabIndex];
   const tabs = [...structure.tabs];
@@ -171,7 +183,10 @@ export function addNewFileToTab(
   return done(
     {
       tabs,
-      labels: { ...structure.labels, [fileName]: uniqueDefaultLabel(structure.labels, tab.name) },
+      labels: {
+        ...structure.labels,
+        [fileName]: uniqueDefaultLabel(structure.labels, tab.name, fileLabel),
+      },
     },
     [fileName]
   );
@@ -184,11 +199,11 @@ export function addExistingFileToTab(
   fileName: string
 ): TabStructureEdit {
   if (!isValidTabIndex(structure.tabs, tabIndex))
-    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
+    return fail(tabT('itemManager.tabStructure.errors.tabNotFound'));
   const tab = structure.tabs[tabIndex];
   const validation = TabValidator.canAddFileToTab(fileName, tab);
   if (!validation.valid)
-    return fail(validation.reason || i18next.t('itemManager.tabStructure.errors.cannotAddFile'));
+    return fail(validation.reason || tabT('itemManager.tabStructure.errors.cannotAddFile'));
   const tabs = [...structure.tabs];
   tabs[tabIndex] = { ...tab, files: [...tab.files, fileName] };
   const labels = { ...structure.labels };
@@ -205,7 +220,7 @@ export function renameFile(
   label: string
 ): TabStructureEdit {
   const name = label.trim();
-  if (!name) return fail(i18next.t('itemManager.tabStructure.errors.fileNameRequired'));
+  if (!name) return fail(tabT('itemManager.tabStructure.errors.fileNameRequired'));
   return done({ ...structure, labels: { ...structure.labels, [fileName]: name } });
 }
 
@@ -216,10 +231,10 @@ export function moveFileInTab(
   direction: MoveDirection
 ): TabStructureEdit {
   if (!isValidTabIndex(structure.tabs, tabIndex))
-    return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
+    return fail(tabT('itemManager.tabStructure.errors.tabNotFound'));
   const tab = structure.tabs[tabIndex];
   const files = swapWithNeighbor(tab.files, tab.files.indexOf(fileName), direction);
-  if (!files) return fail(i18next.t('itemManager.tabStructure.errors.cannotMove'));
+  if (!files) return fail(tabT('itemManager.tabStructure.errors.cannotMove'));
   const tabs = [...structure.tabs];
   tabs[tabIndex] = { ...tab, files };
   return done({ ...structure, tabs });
@@ -233,9 +248,9 @@ export function getRemoveFileBlocker(
 ): string | null {
   const validation = TabValidator.canRemoveFileFromTab(fileName, tabIndex, tabs);
   if (!validation.valid)
-    return validation.reason || i18next.t('itemManager.tabStructure.errors.cannotRemoveFile');
+    return validation.reason || tabT('itemManager.tabStructure.errors.cannotRemoveFile');
   if (fileName === DEFAULT_DATA_FILE && !isFileUsedInOtherTabs(tabs, tabIndex, fileName)) {
-    return i18next.t('itemManager.tabStructure.errors.mainFileDelete');
+    return tabT('itemManager.tabStructure.errors.mainFileDelete');
   }
   return null;
 }

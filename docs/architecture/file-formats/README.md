@@ -45,7 +45,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **workspace-archive.json**（version 2.0）: アーカイブされたグループとアイテム
 - **workspace-ui-state.json**: グループの折りたたみ・切り離しウィンドウの位置（QDL 管理）
 
-ワークスペースアイテムはメイン画面のアイテムをコピーし、独立して管理されます。旧形式（version なし）は起動時に 1 回だけ 2.0 に変換され、変換前は `backup/*_pre-migration/` に残ります。旧グループ・旧ウィンドウ配置は読み込み時にセットに変換され、変換前は `backup/*_pre-set-migration/` に残ります。
+ワークスペースアイテムはメイン画面のアイテムをコピーし、独立して管理されます。旧形式（version なし）は起動時に 1 回だけ 2.0 に変換され、変換前は `backup/*_pre-migration/` に残ります。旧グループ・旧ウィンドウ配置は読み込み時にセットに変換され、変換前は `backup/*_pre-set-migration/` に残ります。単一アイテムの旧形式 `windowConfig` も読み込み時に新しいキーに変換され、変換前は `backup/*_pre-window-migration/`（セットへの変換と一緒なら `_pre-set-migration`）に残ります。
 
 ---
 
@@ -82,12 +82,13 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **バックアップ対象**: `datafiles/data*.json`、`settings.json`、`workspace.json`、`workspace-archive.json`、`workspace-ui-state.json`、（旧形式の `workspace-detached.json` が残っていれば）それも、（設定により）`clipboard-data/*.json`
 - **変更検知トリガー**: `datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json`の変更で判定
 - **作成タイミング**: 起動時に1日1回（ローカル時刻の日付で判定）、変更がある場合のみ（`backupEnabled` が無効なら作らない）
-- **保持件数**: 設定可能（`backupRetention`、デフォルト値は設定ファイルを参照）。超えた古いものから消す。`_pre-external` と、`_pre-set-migration` の新しい 2 つは数えない（消さない）
+- **保持件数**: 設定可能（`backupRetention`、デフォルト値は設定ファイルを参照）。超えた古いものから消す。`_pre-external` と、`_pre-set-migration`・`_pre-window-migration` それぞれの新しい 2 つは数えない（消さない）
 - **リストア前自動バックアップ**: リストア実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
 - **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
 - **セット変換前スナップショット**: データファイル・ワークスペースファイルの旧グループ・旧ウィンドウ配置をセットに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-set-migration/` を作成（`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つ（データファイル用とワークスペース用）は前の版に戻すときの拠り所なので `backupRetention` で数えずに残し、3 つ目より古いものは通常のスナップショットと一緒に数える（`src/main/services/backupService.ts` の `cleanupOldSnapshots`）
-- **同じ秒に作ったとき**: サフィックス付き（`_pre-restore`・`_pre-external`・`_pre-migration`・`_pre-set-migration`）のフォルダは、同じ名前がすでにあれば `YYYY-MM-DDTHH-MM-SS-2_pre-external/` のように連番を付けて別に作る（上書きしない）。一覧では連番の大きい方を新しいものとして並べる
+- **ウィンドウ切り替え変換前スナップショット**: データファイル・ワークスペースファイルの単一アイテムの旧形式 `windowConfig` を新しいキーに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-window-migration/` を作成（セットへの変換も要るときは `_pre-set-migration` の 1 回で済ませ、これは作らない。`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つは `backupRetention` で数えずに残す
+- **同じ秒に作ったとき**: サフィックス付き（`_pre-restore`・`_pre-external`・`_pre-migration`・`_pre-set-migration`・`_pre-window-migration`）のフォルダは、同じ名前がすでにあれば `YYYY-MM-DDTHH-MM-SS-2_pre-external/` のように連番を付けて別に作る（上書きしない）。一覧では連番の大きい方を新しいものとして並べる
 
 ### ログ
 
@@ -105,7 +106,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 
 ## QDL の外での変更
 
-設定フォルダのファイルを手で編集する使い方はサポートしない。AI にアイテムやワークスペースを変えさせたいときは CLI（`qdl`）を使い、CLI に無い操作（設定・タブ構成）は画面から行う。
+設定フォルダのファイルを手で編集する使い方はサポートしない。AI にアイテムやワークスペースを変えさせたいときは CLI（`qdl`）を使い、CLI に無い操作（基本設定）は画面から行う。
 
 それでもファイルが QDL の外で変わることはある（古い版の QDL・同期ツール・手で直した場合）。そのときの備えとして、寛容な読み込み・採番・変更前スナップショット・破損時に上書きしない・保存時の楽観ロックが働く（[データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え)、[ワークスペースファイル形式](workspace-format.md)）。
 

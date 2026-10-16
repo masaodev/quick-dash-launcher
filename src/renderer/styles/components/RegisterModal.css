@@ -330,6 +330,13 @@
   background-color: var(--color-gray-200);
 }
 
+/* たたんでいても見出しの横に出す要約（単一アイテムのウィンドウ位置） */
+.options-toggle-summary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .toggle-icon {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
@@ -644,4 +651,10 @@
 .register-item .form-group.vertical-layout {
   flex-direction: column;
   align-items: stretch;
+}
+
+/* パスの無い単一アイテムの補足（パス欄の下。ラベルの幅だけ下げるのは .form-group small と同じ） */
+.register-item .form-group small.path-pathless-note {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
 }

@@ -1,5 +1,7 @@
 import type { LauncherItem, RegisterItem } from '@common/types';
 import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
+import { itemWindowSwitchFields } from '@common/utils/itemWindowConversion';
+import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
 import { debugLog, logError } from './debug';
 
@@ -9,6 +11,19 @@ const NON_EXECUTABLE_CATEGORIES: ReadonlyArray<RegisterItem['itemCategory']> = [
 /** 登録フォームの内容を保存前に「試しに実行」できる種別か */
 export function canTryExecute(item: RegisterItem | undefined): boolean {
   return !!item && !NON_EXECUTABLE_CATEGORIES.includes(item.itemCategory);
+}
+
+/**
+ * 今のパスに合う種別（種別はパス欄を離れたときに決めるので、その前に試したときに古い種別のままにしない）
+ *
+ * パスが空なら切り替えるだけの種別、空でないのに切り替えるだけの種別のままならパスから判定し直す
+ */
+export function launcherTypeForPath(
+  path: string,
+  type: LauncherItem['type']
+): LauncherItem['type'] {
+  if (!path.trim()) return 'windowSwitch';
+  return type === 'windowSwitch' ? detectItemTypeSync(path) : type;
 }
 
 /** 登録フォームの内容を、起動用の LauncherItem に変換する（起動対象でない種別は null） */
@@ -32,10 +47,11 @@ export function toLauncherItem(item: RegisterItem): LauncherItem | null {
       return {
         displayName: item.displayName,
         path: item.path,
-        type: item.type,
+        // パス欄を離れる前に試したときも、今のパスに合う種別にする
+        type: launcherTypeForPath(item.path, item.type),
         args: item.args,
         customIcon: item.customIcon,
-        windowConfig: item.windowConfig,
+        ...itemWindowSwitchFields(item),
       };
   }
 }

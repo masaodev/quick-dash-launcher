@@ -10,6 +10,7 @@ import {
 } from '@common/types/guards';
 import { LauncherItem, AppItem, WindowInfo } from '@common/types';
 import { windowInfoToWindowItem } from '@common/utils/windowInfoConverter';
+import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
@@ -419,11 +420,11 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                       )}
                     </span>
                   )}
-                  {isLauncherItem(item) && item.windowConfig?.title && (
+                  {isLauncherItem(item) && hasItemWindowSwitch(item) && (
                     <span
                       className="window-title-badge"
                       title={t('launcher.list.windowSearchBadge', {
-                        title: item.windowConfig.title,
+                        title: item.window?.title || item.window?.processName || '',
                       })}
                     >
                       🔍

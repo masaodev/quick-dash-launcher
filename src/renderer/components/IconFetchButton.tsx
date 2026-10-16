@@ -7,7 +7,7 @@ interface IconFetchButtonProps {
   path: string;
   loading: boolean;
   onFetch: () => void;
-  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
+  itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch' | 'clipboard';
 }
 
 const IconFetchButton: React.FC<IconFetchButtonProps> = ({ path, loading, onFetch, itemType }) => {

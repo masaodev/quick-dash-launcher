@@ -8,17 +8,21 @@
  * - 同時に開く: 全部を一度に開き、出たものから位置を合わせる
  * - 置き場所の無い行は、今までのグループと同じ（アイテムにウィンドウ設定があれば、開いていれば前面に出すだけ）
  * - 置き場所のある行が 1 つでもあれば、進み具合を画面の隅に出す（中止できる）
+ * - 単一アイテムのウィンドウ切り替えも、アイテムを「セットの 1 行」として同じ処理で実行する（executeLauncherItem）
+ * - パスの無い単一アイテムは開くものが無いので、行は「動かすだけ」になる（開いていなければ飛ばす）
  */
 import { ipcMain, screen } from 'electron';
 import type { Logger } from 'pino';
 import { itemLogger } from '@common/logger';
 import type {
   AppItem,
+  ItemWindowSwitch,
   LauncherItem,
   LayoutEntryProgress,
   LayoutExecutionProgress,
   SetEntry,
   SetItem,
+  SetWindowMatch,
   WindowConfig,
   WindowItem,
 } from '@common/types';
@@ -33,9 +37,14 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { ANY_WINDOW_TITLE, createTitleMatcher } from '@common/utils/windowTitle';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
+import { isPathlessItem, switchToWindowConfig } from '@common/utils/itemWindowConversion';
 import { fitPlacementToScreens, type ScreenArea } from '@common/utils/placementLabel';
 
-import { applyWindowConfig, tryActivateWindow } from '../../utils/windowActivator.js';
+import {
+  applyWindowConfig,
+  tryActivateWindow,
+  type ApplyWindowOptions,
+} from '../../utils/windowActivator.js';
 import {
   findWindowHwndByTitle,
   holdForeground,
@@ -67,6 +76,11 @@ interface ResolvedEntry {
   launch?: LaunchableItem;
   /** 指しているアイテムのウィンドウ設定（置き場所の無い行で、開いていれば前面に出すのに使う） */
   itemWindowConfig?: WindowConfig;
+  /**
+   * 指しているパスの無い単一アイテムの対象ウィンドウ（開くものが無いので、行に探す条件が無ければこれで探す。
+   * 置き場所のある行でも借りる）
+   */
+  itemWindow?: SetWindowMatch;
   /** 指しているのがウィンドウ操作アイテムのとき */
   windowItem?: WindowItem;
   /** 解決できなかった理由 */
@@ -135,6 +149,16 @@ function lastSegment(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
+/**
+ * アイテムのウィンドウ切り替えを、位置の無い行で「開いていれば前面に出す」のに使う条件にする
+ * （セットの行がウィンドウの見つけ方を持たないとき、指すアイテムの見つけ方を使う）
+ */
+function itemWindowConfigOf(item: LauncherItem): WindowConfig | undefined {
+  // 位置・前面に出すか・ピン止めも今までどおり当てる（行に見つけ方が無いときだけ使う）
+  const config = switchToWindowConfig(item);
+  return config && { ...config, title: config.title || ANY_WINDOW_TITLE };
+}
+
 /** 行の指す先を解決する */
 export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): ResolvedEntry {
   if (entry.itemId) {
@@ -148,6 +172,15 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
     if (isWindowItem(item)) {
       return { name: item.displayName, windowItem: item };
     }
+    if (isLauncherItem(item) && isPathlessItem(item)) {
+      // 開くものが無い（動かすだけの行）。探す条件は行に無ければアイテムのものを借りる
+      return {
+        name: item.displayName,
+        itemWindow: item.window,
+        itemWindowConfig: itemWindowConfigOf(item),
+        ...(item.icon ? { icon: item.icon } : {}),
+      };
+    }
     if (isLauncherItem(item)) {
       return {
         name: item.displayName,
@@ -157,7 +190,7 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
           args: item.args,
           displayName: item.displayName,
         },
-        itemWindowConfig: (item as LauncherItem).windowConfig,
+        itemWindowConfig: itemWindowConfigOf(item),
         ...(item.icon ? { icon: item.icon } : {}),
       };
     }
@@ -189,7 +222,7 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
 /**
  * 置き場所のある行で探すウィンドウの条件
  *
- * 行に見つけ方が無ければ、ウィンドウ操作アイテムの条件、または開く exe の名前から推測する
+ * 行に見つけ方が無ければ、ウィンドウ操作アイテム・パスの無い単一アイテムの条件、または開く exe の名前から推測する
  */
 export function buildSetWindowConfig(
   entry: SetEntry,
@@ -201,6 +234,9 @@ export function buildSetWindowConfig(
     if (resolved.windowItem) {
       title = resolved.windowItem.windowTitle;
       processName = resolved.windowItem.processName;
+    } else if (resolved.itemWindow) {
+      title = resolved.itemWindow.title;
+      processName = resolved.itemWindow.processName;
     } else if (resolved.launch?.type === 'app' && /\.exe$/i.test(resolved.launch.path.trim())) {
       // .lnk・.bat・shell:AppsFolder なども app と判定されるが、ウィンドウの exe 名とは合わないので推測しない
       processName = lastSegment(resolved.launch.path.trim());
@@ -293,7 +329,9 @@ async function runSet(
   item: Pick<SetItem, 'displayName' | 'entries' | 'launchMode'>,
   resolve: SetItemResolver,
   deps: SetExecutorDeps,
-  logger: Logger
+  logger: Logger,
+  /** 単一アイテムを 1 行として実行する（セットの実行では渡さない） */
+  single = false
 ): Promise<SetExecutionResult> {
   const parallel = item.launchMode === 'parallel';
   logger.info(
@@ -302,6 +340,20 @@ async function runSet(
   );
 
   const resolved = item.entries.map((entry) => resolveSetEntry(entry, resolve));
+  /**
+   * 単一アイテムは今までどおり、前面に出すウィンドウが別の仮想デスクトップにあればそこへ切り替える
+   * （セットの実行は利用者のデスクトップを変えない）
+   */
+  const applyOptions: ApplyWindowOptions | undefined = single ? { followDesktop: true } : undefined;
+  /** 行の「全デスクトップに表示」を当てる（セットの行・単一アイテムで同じ） */
+  const withPin = (config: WindowConfig, entry: SetEntry): WindowConfig =>
+    entry.pinToAllDesktops ? { ...config, pinToAllDesktops: true } : config;
+  const withSingle = (config: WindowConfig, entry: SetEntry): WindowConfig =>
+    withPin(single ? { ...config, activateWindow: entry.activateWindow !== false } : config, entry);
+  const activate = (config: WindowConfig, name: string) =>
+    applyOptions
+      ? deps.activate(config, name, logger, applyOptions)
+      : deps.activate(config, name, logger);
   const hasPlacement = item.entries.some((entry) => entry.placement);
   const screens = hasPlacement ? (deps.screens?.() ?? []) : [];
 
@@ -392,7 +444,7 @@ async function runSet(
   };
   const skip = (index: number) => {
     results.push({ index, name: resolved[index].name, success: true, skipped: true });
-    const match = item.entries[index].window;
+    const match = item.entries[index].window ?? resolved[index].itemWindow;
     const exeOpen =
       !!match?.processName &&
       !!match.title &&
@@ -439,32 +491,32 @@ async function runSet(
             title: r.windowItem.windowTitle || ANY_WINDOW_TITLE,
             ...pickWindowPlacement(r.windowItem),
           };
-          const result = await deps.activate(config, r.name, logger);
+          const result = await deps.activate(withPin(config, entry), r.name, logger);
           return finish(
             index,
             result.windowFound ? undefined : mainI18n.t('layout.windowNotFound')
           );
         }
         if (!r.launch) {
-          // 動かすだけの行で位置が無い: 開いていれば前面に出す（探す条件が空ならどのウィンドウにも合うので失敗にする）
-          if (!entry.window?.processName && !entry.window?.title) {
-            return finish(index, mainI18n.t('layout.windowNotFound'));
-          }
-          const result = await deps.activate(
-            {
-              title: entry.window.title || ANY_WINDOW_TITLE,
-              processName: entry.window.processName,
-            },
-            r.name,
-            logger
-          );
+          // 動かすだけの行で位置が無い: 開いていれば前面に出す。行に探す条件が無ければ、パスの無い単一アイテムの
+          // 設定（ウィンドウ位置も含む）で探す。どちらも無ければどのウィンドウにも合うので失敗にする
+          const config =
+            entry.window?.processName || entry.window?.title
+              ? {
+                  title: entry.window.title || ANY_WINDOW_TITLE,
+                  processName: entry.window.processName,
+                }
+              : r.itemWindowConfig;
+          if (!config) return finish(index, mainI18n.t('layout.windowNotFound'));
+          // 単一アイテムは前面に出すかを設定どおりにし、別のデスクトップにあればそこへ切り替える
+          const result = await activate(withSingle(config, entry), r.name);
           return result.windowFound ? finish(index) : skip(index);
         }
         const itemConfig = entry.window
           ? { title: entry.window.title || ANY_WINDOW_TITLE, processName: entry.window.processName }
           : r.itemWindowConfig;
         if (itemConfig && entry.ifOpen !== 'openNew') {
-          const result = await deps.activate(itemConfig, r.name, logger);
+          const result = await activate(withSingle(itemConfig, entry), r.name);
           // 前面に出すのを Windows に断られても、見つかっていれば開き直さない（二重に開かない）
           if (result.windowFound) return finish(index);
         }
@@ -482,7 +534,9 @@ async function runSet(
       }
       // 今は無い仮想デスクトップ（デスクトップを減らした後など）: 位置だけ合わせて知らせる
       const desktopCount = deps.desktopCount?.() ?? 0;
+      // 全デスクトップに表示する行は、デスクトップの番号を使わない
       const missingDesktop =
+        !entry.pinToAllDesktops &&
         fitted.virtualDesktopNumber !== undefined &&
         desktopCount > 0 &&
         fitted.virtualDesktopNumber > desktopCount
@@ -526,10 +580,15 @@ async function runSet(
       if (cancelled) return finish(index, mainI18n.t('layout.cancelled'));
 
       // 前面に出さない行は、最大化の解除（位置を当てる前）と最大化で前面に出てしまうので、取られたら戻す
-      const releaseForeground = config.activateWindow ? undefined : deps.holdForeground?.(hwnd);
+      const applyTarget = applyOptions ? withSingle(config, entry) : withPin(config, entry);
+      const releaseForeground = applyTarget.activateWindow
+        ? undefined
+        : deps.holdForeground?.(hwnd);
       let applied: Awaited<ReturnType<SetExecutorDeps['applyConfig']>>;
       try {
-        applied = await deps.applyConfig(hwnd, config, r.name, logger);
+        applied = applyOptions
+          ? await deps.applyConfig(hwnd, applyTarget, r.name, logger, applyOptions)
+          : await deps.applyConfig(hwnd, applyTarget, r.name, logger);
         if (entry.placement.state === 'maximized') deps.maximize(hwnd);
       } finally {
         releaseForeground?.();
@@ -629,6 +688,111 @@ export async function notifySetFailures(
       count: names.length,
       names: names.join(', '),
     })}`,
+    duration: LONG_TOAST_DURATION_MS,
+  });
+}
+
+/** 単一アイテムを 1 行として実行するときの、行の itemId（アイテムの id とぶつからない値） */
+const SINGLE_ITEM_ROW_ID = ':single-item:';
+
+/** 単一アイテムの実行に要る項目 */
+export type ExecutableLauncherItem = Pick<
+  LauncherItem,
+  'displayName' | 'path' | 'type' | 'args' | 'icon' | 'id'
+> &
+  ItemWindowSwitch;
+
+/**
+ * ウィンドウ切り替えを持つ単一アイテムを、セットの 1 行として実行する
+ *
+ * - パスの無い単一アイテムは開くものが無い（動かすだけの行）。開いていれば切り替え（位置があれば当て）、
+ *   開いていなければ何も開かずに飛ばす（結果の行に skipped が付く）
+ *
+ * - 位置が無ければ、ウィンドウが見つかれば前面に出して終わり、無ければ開く（開いたウィンドウは動かさない）
+ * - 位置があれば、見つからなければ開いて waitSeconds（既定 30）待ち、出てきたウィンドウに位置を当てる
+ * - ifOpen が openNew なら、いつも開く
+ * - 前面に出す（activateWindow）の既定は true（セットの行は false）
+ * - 進み具合の表示は出さない。うまくいかなかったときだけトーストで知らせる（notifyLauncherItemFailure）
+ *
+ * window を持たないアイテムはこの関数を通さず、普通に開く
+ */
+export async function executeLauncherItem(
+  item: ExecutableLauncherItem,
+  deps: SetExecutorDeps = defaultDeps,
+  logger: Logger = itemLogger
+): Promise<SetExecutionResult> {
+  // 二重実行の防止はセットと同じ（1 回目のウィンドウが出る前の 2 回目で、もう 1 つ開かないように）
+  const key = item.id !== undefined ? `item:${item.id}` : undefined;
+  if (key !== undefined && runningSets.has(key)) {
+    logger.info({ name: item.displayName }, '同じアイテムを実行中なので、重ねては開きません');
+    return { successCount: 0, errorCount: 0, cancelled: false, entries: [], skipped: true };
+  }
+  const entry: SetEntry = {
+    itemId: SINGLE_ITEM_ROW_ID,
+    ...(item.window ? { window: item.window } : {}),
+    ...(item.placement ? { placement: item.placement } : {}),
+    ...(item.ifOpen ? { ifOpen: item.ifOpen } : {}),
+    ...(item.waitSeconds !== undefined ? { waitSeconds: item.waitSeconds } : {}),
+    activateWindow: item.activateWindow ?? true,
+    ...(item.pinToAllDesktops === true ? { pinToAllDesktops: true } : {}),
+  };
+  const launcher: LauncherItem = {
+    displayName: item.displayName,
+    path: item.path,
+    type: item.type,
+    ...(item.args ? { args: item.args } : {}),
+    ...(item.icon ? { icon: item.icon } : {}),
+    // パスの無い単一アイテムかを行の解決で見分ける（対象ウィンドウ自体は行の window で探す）
+    ...(item.window ? { window: item.window } : {}),
+  };
+  if (key !== undefined) runningSets.add(key);
+  try {
+    return await runSet(
+      { displayName: item.displayName, entries: [entry] },
+      (itemId) => (itemId === SINGLE_ITEM_ROW_ID ? launcher : undefined),
+      { ...deps, progress: undefined },
+      logger,
+      true
+    );
+  } finally {
+    if (key !== undefined) runningSets.delete(key);
+  }
+}
+
+/**
+ * 単一アイテムのウィンドウ切り替えがうまくいかなかったことをトーストで知らせる
+ *
+ * - パスの無い単一アイテムで、ウィンドウが開いていなかった（飛ばした）: 情報のトーストで知らせる
+ *   （何も起きないと壊れて見えるため）
+ * - うまくいったとき・二重実行で何もしなかったときは知らせない
+ */
+export async function notifyLauncherItemFailure(
+  item: Pick<ExecutableLauncherItem, 'displayName' | 'type' | 'waitSeconds'>,
+  result: SetExecutionResult
+): Promise<void> {
+  if (result.cancelled) return;
+  if (result.entries.some((entry) => entry.skipped)) {
+    await showToastWindow({
+      displayName: item.displayName,
+      itemType: item.type,
+      type: 'info',
+      message: mainI18n.t('set.run.itemNotOpen'),
+    });
+    return;
+  }
+  const failed = result.entries.find((entry) => !entry.success);
+  if (!failed) return;
+  const message =
+    failed.error === mainI18n.t('layout.timedOut')
+      ? mainI18n.t('set.run.itemWindowTimedOut', {
+          seconds: item.waitSeconds ?? SET_DEFAULT_WAIT_SECONDS,
+        })
+      : (failed.error ?? '');
+  await showToastWindow({
+    displayName: item.displayName,
+    itemType: item.type,
+    type: 'warning',
+    message,
     duration: LONG_TOAST_DURATION_MS,
   });
 }

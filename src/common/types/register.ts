@@ -5,7 +5,7 @@
  */
 
 import type {
-  WindowConfig,
+  ItemWindowSwitch,
   LauncherItem,
   WindowItemConfig,
   SetEntry,
@@ -25,8 +25,11 @@ export type WindowOperationConfig = WindowItemConfig;
 
 /**
  * RegisterModalで使用されるアイテム型
+ *
+ * 単一アイテムのウィンドウ切り替えは、保存形式と同じキー（window・placement・ifOpen・activateWindow・
+ * waitSeconds・pinToAllDesktops）をそのまま持つ（ItemWindowSwitch）。単一アイテム以外では使わない
  */
-export interface RegisterItem {
+export interface RegisterItem extends ItemWindowSwitch {
   displayName: string;
   path: string;
   type: LauncherItem['type'];
@@ -36,7 +39,6 @@ export interface RegisterItem {
   folderProcessing?: 'folder' | 'expand';
   icon?: string;
   customIcon?: string;
-  windowConfig?: WindowConfig;
   itemCategory: 'item' | 'dir' | 'window' | 'clipboard' | 'set';
   dirOptions?: JsonDirOptions;
   windowOperationConfig?: WindowOperationConfig;

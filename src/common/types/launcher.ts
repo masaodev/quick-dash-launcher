@@ -4,7 +4,8 @@ import type { DirOptionsForProcessing } from './json-data';
 
 /**
  * ウィンドウ制御の設定情報
- * アイテム起動時のウィンドウ検索・位置・サイズ制御に使用
+ * ウィンドウ操作アイテムの実行と、ウィンドウを探して位置・サイズを当てる処理（windowActivator）の内部で使う。
+ * 単一アイテムの保存形式では使わない（旧形式の windowConfig。読み込み時に ItemWindowSwitch に変換する）
  *
  * ワイルドカード検索:
  * - タイトルにワイルドカード文字（*または?）が含まれている場合、ワイルドカードマッチングを実行
@@ -37,16 +38,43 @@ export interface WindowConfig {
 }
 
 /**
+ * 単一アイテムのウィンドウ切り替え（セットの行と同じ形・同じ実行処理）
+ *
+ * window があれば、開く前にそのウィンドウを探し、見つかれば前面に出す（placement があれば位置を合わせる）。
+ * 見つからなければ開く（placement があれば、出てくるのを待って位置を合わせる）。
+ * 旧形式の windowConfig は読み込み時にこの形に変換する（itemWindowConversion.ts）
+ */
+export interface ItemWindowSwitch {
+  /** 探すウィンドウ（無ければウィンドウ切り替えをしない） */
+  window?: SetWindowMatch;
+  /** 位置。無ければ見つかったウィンドウを前面に出すだけ（開いたウィンドウは動かさない） */
+  placement?: SetPlacement;
+  /** ウィンドウが開いていたとき: move＝開き直さず前面に出す（既定）／openNew＝もう 1 つ開く */
+  ifOpen?: 'move' | 'openNew';
+  /** 見つけたウィンドウを前面に出すか（既定 true。セットの行と既定が違う） */
+  activateWindow?: boolean;
+  /** 開いてからウィンドウが出るのを待つ秒数（位置があるときだけ使う。既定 30） */
+  waitSeconds?: number;
+  /** 全仮想デスクトップにピン止めするか（既定 false） */
+  pinToAllDesktops?: boolean;
+}
+
+/**
  * ランチャーアプリケーションで表示・実行されるアイテムの基本インターフェース
  * ファイル、アプリケーション、URL、フォルダなど様々なタイプのアイテムに対応
  */
-export interface LauncherItem {
+export interface LauncherItem extends ItemWindowSwitch {
   /** アイテムの表示名 */
   displayName: string;
   /** アイテムのパス、URL、またはコマンド */
   path: string;
-  /** アイテムのタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI、クリップボード） */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
+  /**
+   * アイテムのタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI、クリップボード）
+   *
+   * windowSwitch は「パスの無い単一アイテム」（path が空で、window だけを持つ）。何も開かず、
+   * 開いているウィンドウに切り替えるだけ（保存形式には書かない。path から判定する）
+   */
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch' | 'clipboard';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
   /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */
@@ -71,8 +99,6 @@ export interface LauncherItem {
   expandedFromId?: string;
   /** 編集モードで変更されたかどうか */
   isEdited?: boolean;
-  /** ウィンドウ制御設定（ウィンドウ検索・位置・サイズ制御） */
-  windowConfig?: WindowConfig;
   /** 自由記述メモ（オプション） */
   memo?: string;
   /** 自動取込ルールのID（このフィールドがあるアイテムは自動管理対象） */
@@ -289,6 +315,8 @@ export interface SetEntry {
   activateWindow?: boolean;
   /** 開いてからウィンドウが出るのを待つ秒数（既定 30） */
   waitSeconds?: number;
+  /** この行のウィンドウを全仮想デスクトップにピン止めするか（既定 false。true のときだけ書く） */
+  pinToAllDesktops?: boolean;
 }
 
 /** セットの開き方: sequential＝順番に（既定）／parallel＝同時に */

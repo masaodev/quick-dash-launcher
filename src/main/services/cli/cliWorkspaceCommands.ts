@@ -1,5 +1,6 @@
 import type {
   AppItem,
+  JsonClipboardItem,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
   MixedOrderEntry,
@@ -23,14 +24,18 @@ import {
   optionString,
   parseArgs,
 } from './cliArgs.js';
-import type { CliCandidate } from './cliArgs.js';
+import type { CliCandidate, ParsedArgs } from './cliArgs.js';
 import {
   applyPatch,
+  isTextOnlyClipboard,
   matchesGrep,
+  previewClipboardText,
+  readTextOption,
   resolveCliPath,
   resolveOne,
   validateAsDataItem,
 } from './cliShared.js';
+import type { ClipboardTextStore } from './cliShared.js';
 import { checkCliSetEntries } from './cliSetCommands.js';
 
 /**
@@ -77,7 +82,12 @@ export interface WorkspaceCommandContext {
   changed(message: string): void;
   /** グループを消す前に、そのグループの切り離しウィンドウを閉じる */
   beforeGroupRemoved(groupId: string): Promise<void>;
+  /** クリップボードアイテムの実データ（テキストだけ） */
+  clipboard: ClipboardTextStore;
 }
+
+/** 検証のためだけに入れる実データの参照（保存するまで本物の参照は決まらない） */
+const CHECK_DATA_REF = 'clipboard-data/CliCheck.json';
 
 interface Snapshot {
   workspaces: Workspace[];
@@ -431,8 +441,12 @@ async function removeWorkspace(
 }
 
 async function listItems(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
-  const parsed = parseArgs(args, { values: ['workspace', 'group', 'grep'] });
+  const parsed = parseArgs(args, {
+    values: ['workspace', 'group', 'grep'],
+    flags: ['with-text'],
+  });
   expectPositionals(parsed, []);
+  const withText = optionFlag(parsed, 'with-text');
   const s = await snapshot(ctx.store);
   const workspaceKey = optionString(parsed, 'workspace');
   const workspace = workspaceKey ? findWorkspace(workspaceKey, s) : undefined;
@@ -443,24 +457,59 @@ async function listItems(args: readonly string[], ctx: WorkspaceCommandContext):
     .filter((i) => !workspace || i.workspaceId === workspace.id)
     .filter((i) => groupKey === undefined || (group ? i.groupId === group.id : !i.groupId))
     .filter((i) => matchesGrep(grep, Object.values(i)))
-    .map((i) => itemView(i, s));
+    .map((i) => {
+      const v = itemView(i, s);
+      // テキストだけのクリップボードアイテムは、求められたら本文も返す（書き換える前に読むため）
+      if (withText && i.type === 'clipboard' && isTextOnlyClipboard(i.formats)) {
+        v.text = ctx.clipboard.read(i.dataFileRef);
+      }
+      return v;
+    });
 }
 
 async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, {
-    values: ['name', 'path', 'args', 'memo', 'group', 'workspace', 'position'],
+    values: [
+      'name',
+      'path',
+      'args',
+      'memo',
+      'group',
+      'workspace',
+      'position',
+      'type',
+      'text',
+      'text-file',
+    ],
     flags: ['dry-run'],
     allowSet: true,
   });
   expectPositionals(parsed, []);
+  const type = optionString(parsed, 'type') ?? 'item';
+  if (type !== 'item' && type !== 'clipboard') {
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.errors.badType', { types: 'item / clipboard', type })
+    );
+  }
+  if (type === 'clipboard') return addClipboardItem(parsed, ctx);
+  if (
+    optionString(parsed, 'text') !== undefined ||
+    optionString(parsed, 'text-file') !== undefined
+  ) {
+    throw new CliError('usage', mainI18n.t('cli.errors.textOnlyClipboard'));
+  }
   const name = optionString(parsed, 'name');
   const rawPath = optionString(parsed, 'path');
   if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
-  if (!rawPath) throw new CliError('usage', mainI18n.t('cli.errors.needPath'));
+  // --set window=… で対象ウィンドウを渡せば --path が無くてもよい（パスの無い単一アイテム）
+  const setsWindow = parsed.sets.some(([key]) => key === 'window' || key === 'windowConfig');
+  if (!rawPath && !setsWindow)
+    throw new CliError('usage', mainI18n.t('cli.errors.needPathOrWindow'));
   const position = optionInt(parsed, 'position');
   const dryRun = optionFlag(parsed, 'dry-run');
 
-  const itemPath = await ctx.markFolder(resolveCliPath(rawPath, ctx.cwd));
+  const itemPath = rawPath ? await ctx.markFolder(resolveCliPath(rawPath, ctx.cwd)) : '';
   // 中身はデータファイルの通常アイテムと同じ規則で検証する
   const { merged, setKeys } = applyPatch(
     { id: 'CliCheck', type: 'item' },
@@ -508,19 +557,105 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   return itemView(item, after);
 }
 
+/**
+ * テキストだけのクリップボードアイテムを足す（画面の「テキストを書く」と同じ）。本文は --text か --text-file
+ */
+async function addClipboardItem(
+  parsed: ParsedArgs,
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const name = optionString(parsed, 'name');
+  if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
+  for (const option of ['path', 'args']) {
+    if (optionString(parsed, option) !== undefined) {
+      throw new CliError('usage', mainI18n.t('cli.errors.clipboardOption', { option }));
+    }
+  }
+  const text = readTextOption(
+    optionString(parsed, 'text'),
+    optionString(parsed, 'text-file'),
+    ctx.cwd
+  );
+  if (text === undefined) throw new CliError('usage', mainI18n.t('cli.errors.needText'));
+  const position = optionInt(parsed, 'position');
+  const dryRun = optionFlag(parsed, 'dry-run');
+  const { merged, setKeys } = applyPatch(
+    {
+      id: 'CliCheck',
+      type: 'clipboard',
+      ...previewClipboardText(text),
+      dataFileRef: CHECK_DATA_REF,
+    },
+    { displayName: name, memo: optionString(parsed, 'memo') },
+    parsed
+  );
+  // 検証が通ってから実データを保存する（断ったときに実データのファイルを残さない）
+  const checked = validateAsDataItem(merged, setKeys) as JsonClipboardItem;
+
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const place = resolvePlace(s, optionString(parsed, 'workspace'), optionString(parsed, 'group'));
+  const location = [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)];
+  if (dryRun) {
+    return { dryRun: true, item: { ...checked, id: null, dataFileRef: null, location } };
+  }
+
+  const saved = ctx.clipboard.save(text);
+  const added = await ctx.store.addItem(
+    {
+      type: 'clipboard',
+      displayName: checked.displayName,
+      clipboardDataRef: saved.dataFileRef,
+      savedAt: saved.savedAt,
+      preview: saved.preview,
+      formats: saved.formats,
+      ...(checked.memo ? { memo: checked.memo } : {}),
+      ...(checked.customIcon ? { customIcon: checked.customIcon } : {}),
+    } as AppItem,
+    place.groupId,
+    place.workspaceId
+  );
+  if (position !== undefined) {
+    await placeAt(ctx.store, added.id, place.workspaceId, place.groupId, position);
+  }
+  const after = await snapshot(ctx.store);
+  const item = after.items.find((i) => i.id === added.id) ?? added;
+  ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
+  return itemView(item, after);
+}
+
 async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, {
-    values: ['name', 'path', 'args', 'memo', 'group', 'workspace', 'position'],
+    values: ['name', 'path', 'args', 'memo', 'group', 'workspace', 'position', 'text', 'text-file'],
     flags: ['dry-run'],
     allowSet: true,
   });
   const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const text = readTextOption(
+    optionString(parsed, 'text'),
+    optionString(parsed, 'text-file'),
+    ctx.cwd
+  );
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
   const current = findItem(key, s);
+  if (text !== undefined && current.type !== 'clipboard') {
+    throw new CliError('usage', mainI18n.t('cli.errors.textOnlyClipboard'));
+  }
   if (current.type === 'clipboard') {
-    throw new CliError('invalid', mainI18n.t('cli.errors.typeNotEditable', { type: current.type }));
+    for (const option of ['path', 'args']) {
+      if (optionString(parsed, option) !== undefined) {
+        throw new CliError('usage', mainI18n.t('cli.errors.clipboardOption', { option }));
+      }
+    }
+    // 画像・HTML・RTF を含むものは、本文を書き換えると中身が欠けるので断る（名前・メモ・移動はできる）
+    if (text !== undefined && !isTextOnlyClipboard(current.formats)) {
+      throw new CliError(
+        'conflict',
+        mainI18n.t('cli.errors.clipboardNotText', { formats: current.formats.join(', ') })
+      );
+    }
   }
 
   const rawPath = optionString(parsed, 'path');
@@ -535,6 +670,8 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     path: itemPath,
     args: optionString(parsed, 'args'),
     memo: optionString(parsed, 'memo'),
+    // 本文を変えたら、実データは新しいファイルに保存して参照を差し替える（画面と同じ）
+    ...(text !== undefined ? previewClipboardText(text) : {}),
   };
   const groupKey = optionString(parsed, 'group');
   const workspaceKey = optionString(parsed, 'workspace');
@@ -552,7 +689,8 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     throw new CliError(
       'usage',
       mainI18n.t('cli.errors.needChanges', {
-        options: '--name --path --args --memo --set --unset --group --workspace --position',
+        options:
+          '--name --path --args --memo --text --text-file --set --unset --group --workspace --position',
       })
     );
   }
@@ -583,6 +721,7 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     if (setKeys.includes('entries')) checkCliSetEntries(merged.entries);
   }
   validateAsDataItem({ ...merged, id: 'CliCheck' }, setKeys);
+  if (text !== undefined && !dryRun) Object.assign(merged, ctx.clipboard.save(text));
 
   const place =
     groupKey !== undefined || workspaceKey !== undefined

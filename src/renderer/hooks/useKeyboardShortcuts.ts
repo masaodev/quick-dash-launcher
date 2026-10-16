@@ -281,8 +281,12 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         // 押しっぱなしのキーリピートでは実行しない（多重起動や、失敗のダイアログを閉じた直後の実行し直しを防ぐ）
         if (e.repeat || !selectedItem) return;
         if (e.shiftKey && isLauncherItem(selectedItem)) {
-          // URL・カスタム URI には親フォルダが無い。押しても無反応だと故障に見えるので知らせる
-          if (selectedItem.type === 'url' || selectedItem.type === 'customUri') {
+          // URL・カスタム URI・パスの無い単一アイテムには親フォルダが無い。押しても無反応だと故障に見えるので知らせる
+          if (
+            selectedItem.type === 'url' ||
+            selectedItem.type === 'customUri' ||
+            selectedItem.type === 'windowSwitch'
+          ) {
             await window.electronAPI.showToastWindow({
               displayName: selectedItem.displayName,
               itemType: selectedItem.type,

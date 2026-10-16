@@ -32,6 +32,7 @@ graph TD
     SetAddWindows[ウィンドウを追加]
     SetUpdate[ウィンドウ位置を更新]
     SetDetail[行の詳細]
+    PlacementPick[ウィンドウ位置を記録するウィンドウを選ぶ]
     WindowSelect[ウィンドウ選択モーダル]
     AppImport[アプリ取込画面]
     BackupSnapshot[バックアップスナップショットモーダル]
@@ -51,7 +52,7 @@ graph TD
     Main <-->|Ctrl+E / 設定メニュー| AdminWindow
     Main <-->|Ctrl+W / ⚙️メニュー「ワークスペースの表示/非表示」 / 自動表示| Workspace
     Main -->|➕ボタン「簡易登録」 / 右クリック / D&D| Register
-    Main -->|➕ボタン「ブラウザのブックマークを追加」<br/>「インストール済みアプリを追加」| AdminItems
+    Main -->|➕ボタン「ブラウザのブックマークを追加」<br/>「インストール済みアプリを取り込む」| AdminItems
     Main -->|詳細ボタン| IconProgress
     Main -->|📝バッジ / 右クリック「メモを表示」| MemoView
 
@@ -86,7 +87,8 @@ graph TD
 
     %% セットの小さな画面の遷移
     SetRecord -->|ウィンドウを選ぶ / 別のウィンドウにする| WindowSelect
-    SetDetail -->|開いているウィンドウから取り込む| WindowSelect
+    SetDetail -->|開いているウィンドウから選ぶ| WindowSelect
+    SetDetail -->|ウィンドウ位置を更新（合うウィンドウが 2 つ以上）| PlacementPick
     WorkspaceItemEdit -->|カスタムアイコン選択| FilePicker
 
     %% ブックマーク取込画面の遷移
@@ -112,7 +114,7 @@ graph TD
     class FirstLaunch,Main,Workspace,Detached window
     class AdminSettings,AdminItems,AdminOther adminTab
     class Register,IconProgress,WorkspaceItemEdit,WorkspaceConfirm child
-    class BookmarkImport,SetPicker,SetRecord,SetDetail,WindowSelect,AppImport,BackupSnapshot,MemoView modal
+    class BookmarkImport,SetPicker,SetRecord,SetDetail,PlacementPick,WindowSelect,AppImport,BackupSnapshot,MemoView modal
     class FilePicker,Alert,Confirm dialog
 ```
 
@@ -147,7 +149,7 @@ graph TD
 | 元画面 | 遷移先 | トリガー | 戻り方 |
 | --- | --- | --- | --- |
 | **メインウィンドウ** | **アイテム登録・編集**（子ウィンドウ） | ➕ボタンのドロップダウン「簡易登録」 / 右クリック「編集」 / D&D | キャンセル / 保存 / Escape |
-| **メインウィンドウ** | **管理ウィンドウ**（アイテム管理タブ）の取込画面 | ➕ボタンのドロップダウン「ブラウザのブックマークを追加」「インストール済みアプリを追加」 | 管理ウィンドウ側の取込画面を閉じる |
+| **メインウィンドウ** | **管理ウィンドウ**（アイテム管理タブ）の取込画面 | ➕ボタンのドロップダウン「ブラウザのブックマークを追加」「インストール済みアプリを取り込む」 | 管理ウィンドウ側の取込画面を閉じる |
 | **メインウィンドウ** | **メモ表示モーダル** | アイテム一覧の 📝 バッジのクリック / 右クリック「📝 メモを表示」 | Escape |
 | **メインウィンドウ** | **アイコン取得結果**（子ウィンドウ） | 詳細ボタン | 閉じるボタン / Escape |
 | **メインウィンドウ** | **AlertDialog** | エラー/通知発生時 | OKボタン |
@@ -172,7 +174,7 @@ graph TD
 | --- | --- | --- | --- |
 | **管理ウィンドウ/アイテム管理タブ** | **アイテム登録・編集**（子ウィンドウ。親は管理ウィンドウ） | ✏️ボタン | キャンセル / 保存（保存せず未保存の変更として反映） |
 | **管理ウィンドウ/アイテム管理タブ** | **ブックマーク取込画面** | 追加の ▼ メニュー「ブラウザのブックマークを追加」 | キャンセル / 今回だけ取り込む / ルールとして保存 |
-| **管理ウィンドウ/アイテム管理タブ** | **アプリ取込画面** | 追加の ▼ メニュー「インストール済みアプリを追加」 | キャンセル / 取り込む |
+| **管理ウィンドウ/アイテム管理タブ** | **アプリ取込画面** | 追加の ▼ メニュー「インストール済みアプリを取り込む」 | キャンセル / 取り込む |
 | **管理ウィンドウ/アイテム管理タブ** | **AlertDialog** | エラー/通知発生時 | OKボタン |
 | **管理ウィンドウ/アイテム管理タブ** | **ConfirmDialog** | 確認が必要な操作時 | OK / キャンセル |
 
@@ -221,7 +223,8 @@ graph TD
 | 元画面 | 遷移先 | トリガー | 戻り方 |
 | --- | --- | --- | --- |
 | **ウィンドウ位置を更新** | **ウィンドウ選択モーダル** | 「ウィンドウを選ぶ」/ プルダウンの「別のウィンドウにする」 | キャンセル / 選択 |
-| **行の詳細** | **ウィンドウ選択モーダル** | 「開いているウィンドウから取り込む」 | キャンセル / 選択 |
+| **行の詳細** | **ウィンドウ選択モーダル** | 「🔍 開いているウィンドウから選ぶ」 | キャンセル / 選択 |
+| **行の詳細** | **ウィンドウ位置を記録するウィンドウを選ぶ**（`WindowPlacementPickModal`） | 「📍 ウィンドウ位置を更新」で合うウィンドウが 2 つ以上 | キャンセル / 記録する |
 
 ### ブックマーク取込画面から開くダイアログ
 

@@ -452,3 +452,36 @@ describe('workspaceParser: アーカイブ', () => {
     expect(result.data.groups[0].parentGroupId).toBe('grAAAAA1');
   });
 });
+
+describe('workspaceParser: パスの無い単一アイテム', () => {
+  it('対象ウィンドウがあれば path が空でも読み、path は空のまま書き戻すこと', () => {
+    const pathless = {
+      ...launcher,
+      id: 'itAAAAA3',
+      displayName: 'MS To Do',
+      path: '',
+      window: { processName: 'ApplicationFrameHost.exe', title: 'Microsoft To Do' },
+      order: 2,
+    };
+    const result = parseWorkspaceFileLenient(
+      file({ items: [launcher, pathless] }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.invalid.items).toEqual([]);
+    const written = JSON.parse(serializeWorkspaceFile(result.data, result.invalid));
+    expect(written.items.find((i: { id: string }) => i.id === 'itAAAAA3')).toMatchObject({
+      type: 'item',
+      path: '',
+      window: { processName: 'ApplicationFrameHost.exe', title: 'Microsoft To Do' },
+    });
+  });
+
+  it('path も対象ウィンドウも空なら invalid として外すこと', () => {
+    const empty = { ...launcher, id: 'itAAAAA3', path: '', order: 2 };
+    const result = parseWorkspaceFileLenient(
+      file({ items: [launcher, empty] }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.invalid.items).toEqual([empty]);
+  });
+});

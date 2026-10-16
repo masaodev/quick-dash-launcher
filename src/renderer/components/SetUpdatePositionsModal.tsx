@@ -12,6 +12,7 @@ import { autoLinkWindows, canAutoLink, matchesWindow } from '@common/utils/setWi
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
   describeSetEntry,
+  entryWindowMatch,
   entryOpensAsTab,
   isOwnWindow,
   linkEntryToWindow,
@@ -199,6 +200,13 @@ const SetUpdatePositionsModal: React.FC<SetUpdatePositionsModalProps> = ({
     const result = entries.map((entry, i) => {
       const w = assign.get(i);
       if (w) {
+        // パスの無い単一アイテムの対象ウィンドウを借りている行は、合うなら借りたまま位置だけ入れる
+        //（行に見つけ方を書くと、アイテムの対象ウィンドウを直しても効かなくなる）
+        const borrowed = entries[i].window ? undefined : entryWindowMatch(entry, views[i]);
+        if (borrowed && matchesWindow(borrowed, w)) {
+          const { window: _w, ...linked } = linkEntryToWindow(entry, w, desktopCount);
+          return linked;
+        }
         // 前の見つけ方がこのウィンドウに当てはまらなければ（手で結び付けた・付け替えた）、決め直す
         const base =
           entry.window && matchesWindow(entry.window, w) ? entry : { ...entry, window: undefined };
@@ -319,7 +327,7 @@ const SetUpdatePositionsModal: React.FC<SetUpdatePositionsModalProps> = ({
                         : null;
                     const outcome = previous
                       ? t('set.update.outcomeKeep', { place: previous })
-                      : view.holding === 'none'
+                      : view.moveOnly
                         ? t('set.update.outcomeFrontOnly')
                         : t('set.update.outcomeOpenOnly');
                     // アイテムが見つからない行は、更新しても開けないので理由だけを出す

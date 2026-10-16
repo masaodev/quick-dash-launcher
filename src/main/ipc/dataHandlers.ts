@@ -1,20 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
-
 import { ipcMain } from 'electron';
-import { dataLogger } from '@common/logger';
-import { FileUtils } from '@common/utils/fileUtils';
-import { isValidDataFileName } from '@common/utils/dataFileName';
-import { serializeJsonDataFile, createEmptyJsonDataFile } from '@common/utils/jsonParser';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import { DEFAULT_DATA_FILE } from '@common/types';
 import type { JsonDirOptions, SetItemFields, WindowItemConfig } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
-import { SettingsService } from '../services/settingsService.js';
 import { PathManager } from '../config/pathManager.js';
-import { forgetDataFile, writeDataFile } from '../services/dataFileTracker.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
 import { getDefaultBrowser, getFileHandler } from '../utils/defaultBrowser.js';
@@ -27,7 +17,7 @@ import {
   updateSetItemById,
   updateWindowItemById,
 } from '../services/data/dataItemWriter.js';
-import { mainI18n } from '../services/mainI18n.js';
+import { createDataFile, deleteDataFile } from '../services/data/dataFileOps.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { notifyDataChanged } from './notifications.js';
@@ -44,77 +34,13 @@ export function setupDataHandlers(configFolder: string) {
 
   ipcMain.handle(IPC_CHANNELS.GET_DATA_FILES, () => PathManager.getDataFiles());
 
-  ipcMain.handle(IPC_CHANNELS.CREATE_DATA_FILE, async (_event, fileName: string) => {
-    if (!isValidDataFileName(fileName)) {
-      dataLogger.warn({ fileName }, 'データファイル名が不正なため作成しません');
-      return { success: false, error: mainI18n.t('dataFile.invalidName') };
-    }
+  ipcMain.handle(IPC_CHANNELS.CREATE_DATA_FILE, (_event, fileName: string) =>
+    createDataFile(configFolder, fileName)
+  );
 
-    const filePath = path.join(configFolder, fileName);
-    dataLogger.info(`create-data-file called: ${fileName} at ${filePath}`);
-
-    if (FileUtils.exists(filePath)) {
-      dataLogger.warn(`File already exists: ${filePath}`);
-      return { success: false, error: mainI18n.t('dataFile.alreadyExists'), alreadyExists: true };
-    }
-
-    try {
-      const emptyData = serializeJsonDataFile(createEmptyJsonDataFile());
-      writeDataFile(filePath, emptyData);
-      dataLogger.info(`File created successfully: ${filePath}`);
-      // 編集画面は読み込み時のハッシュ表を持つので、ファイル構成の変化も知らせる
-      notifyDataChanged();
-      return { success: true };
-    } catch (error) {
-      dataLogger.error({ error, filePath }, 'Failed to create file');
-      return {
-        success: false,
-        error: mainI18n.t('dataFile.createFailed', { error: String(error) }),
-      };
-    }
-  });
-
-  ipcMain.handle(IPC_CHANNELS.DELETE_DATA_FILE, async (_event, fileName: string) => {
-    if (fileName === DEFAULT_DATA_FILE) {
-      return { success: false, error: mainI18n.t('dataFile.cannotDeleteMain') };
-    }
-    if (!isValidDataFileName(fileName)) {
-      dataLogger.warn({ fileName }, 'データファイル名が不正なため削除しません');
-      return { success: false, error: mainI18n.t('dataFile.invalidName') };
-    }
-
-    const filePath = path.join(configFolder, fileName);
-
-    try {
-      await fs.promises.unlink(filePath);
-      forgetDataFile(fileName);
-
-      // 削除されたファイルを targetFile に持つ自動取込ルールを無効化
-      const settingsService = await SettingsService.getInstance();
-      const autoImportSettings = await settingsService.get('bookmarkAutoImport');
-      const rulesToDisable =
-        autoImportSettings?.rules?.filter((r) => r.targetFile === fileName && r.enabled) ?? [];
-
-      if (rulesToDisable.length > 0) {
-        for (const rule of rulesToDisable) {
-          rule.enabled = false;
-        }
-        await settingsService.set('bookmarkAutoImport', autoImportSettings);
-        dataLogger.info(
-          { disabledRules: rulesToDisable.map((r) => r.name), fileName },
-          'データファイル削除に伴い自動取込ルールを無効化しました'
-        );
-      }
-
-      notifyDataChanged();
-      return { success: true, disabledRules: rulesToDisable.map((r) => r.name) };
-    } catch (error) {
-      return {
-        success: false,
-        error: mainI18n.t('dataFile.deleteFailed', { error: String(error) }),
-      };
-    }
-  });
+  ipcMain.handle(IPC_CHANNELS.DELETE_DATA_FILE, (_event, fileName: string) =>
+    deleteDataFile(configFolder, fileName)
+  );
 
   // メイン画面の初回読み込み・F5。ワークスペースも含めて読み直し、レポートを書く
   ipcMain.handle(IPC_CHANNELS.LOAD_DATA_FILES, (_event, trigger?: LoadTrigger) =>

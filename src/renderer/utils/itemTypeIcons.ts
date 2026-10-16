@@ -7,6 +7,7 @@ export const ITEM_TYPE_ICONS: Readonly<Record<string, string>> = {
   app: '⚙️',
   file: '📄',
   customUri: '🔗',
+  windowSwitch: '🪟',
   window: '🪟',
   clipboard: '📋',
   set: '📦',

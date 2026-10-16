@@ -3,6 +3,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { detectFileItemTypeSync, detectItemTypeSync, detectItemType } from './itemTypeDetector';
 
 describe('detectItemTypeSync', () => {
+  it('空のパスは windowSwitch（パスの無い単一アイテム）と判定する', () => {
+    // folder と判定すると、親フォルダを開く・アイコン取得・パスの確認がフォルダとして動いてしまう
+    expect(detectItemTypeSync('')).toBe('windowSwitch');
+    expect(detectItemTypeSync('   ')).toBe('windowSwitch');
+  });
+
   it('標準URLスキーマはurlと判定する', () => {
     expect(detectItemTypeSync('https://example.com')).toBe('url');
     expect(detectItemTypeSync('http://example.com/path')).toBe('url');
@@ -51,6 +57,12 @@ describe('detectItemTypeSync', () => {
 });
 
 describe('detectItemType', () => {
+  it('空のパスはディスクに問い合わせず windowSwitch と判定する', async () => {
+    const pathKind = vi.fn().mockResolvedValue('folder');
+    await expect(detectItemType('', pathKind)).resolves.toBe('windowSwitch');
+    expect(pathKind).not.toHaveBeenCalled();
+  });
+
   it('ディスクでフォルダと分かればfolderを返す', async () => {
     const pathKind = vi.fn().mockResolvedValue('folder');
     await expect(detectItemType('C:\\Users\\daido\\Downloads', pathKind)).resolves.toBe('folder');
