@@ -37,7 +37,7 @@
 }
 
 .item.selected {
-  background-color: var(--color-primary);
+  background-color: var(--mode-accent-solid);
   color: var(--color-white);
 }
 
@@ -98,22 +98,22 @@
 
 /* ウィンドウアイテムのスタイル */
 .item.window-item {
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--mode-accent);
 }
 
 /* ウィンドウ検索の複数選択: 選んだ行は淡い背景とチェック。カーソル（.selected）は塗りのまま */
 .item.marked {
-  background-color: var(--bg-selected);
+  background-color: var(--mode-marked);
 }
 
 .item.marked.selected {
-  background-color: var(--color-primary);
+  background-color: var(--mode-accent-solid);
 }
 
 .item-mark {
   width: var(--spacing-md);
   margin-right: var(--spacing-xs);
-  color: var(--color-primary);
+  color: var(--mode-accent);
   font-weight: bold;
   flex-shrink: 0;
   text-align: center;

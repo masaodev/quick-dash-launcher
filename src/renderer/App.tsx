@@ -651,7 +651,10 @@ function App(): React.ReactElement {
   }
 
   return (
-    <div className={`app ${isDraggingOver ? 'dragging-over' : ''}`} onKeyDown={handleKeyDown}>
+    <div
+      className={`app search-mode-${searchMode} ${isDraggingOver ? 'dragging-over' : ''}`}
+      onKeyDown={handleKeyDown}
+    >
       <div className="header">
         <LauncherSearchBox
           ref={searchInputRef}

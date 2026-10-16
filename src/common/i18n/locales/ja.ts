@@ -33,9 +33,10 @@ export const ja = {
   },
   launcher: {
     search: {
-      placeholder: '検索...',
+      placeholder: 'アイテムを検索...',
+      placeholderWindow: 'ウィンドウを検索...',
       clear: '検索をクリア',
-      modeNormal: '通常検索モード',
+      modeNormal: '🔍 通常検索モード',
       modeWindow: '🪟 ウィンドウ検索モード',
       refreshWindows: '更新',
       reloadData: 'データ再読込',

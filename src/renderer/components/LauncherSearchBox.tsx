@@ -23,6 +23,17 @@ const SEARCH_MODE_LABEL_KEYS = {
   window: 'launcher.search.modeWindow',
 } as const satisfies Record<SearchMode, string>;
 
+const SEARCH_MODE_PLACEHOLDER_KEYS = {
+  normal: 'launcher.search.placeholder',
+  window: 'launcher.search.placeholderWindow',
+} as const satisfies Record<SearchMode, string>;
+
+// 検索欄の左端に出すモードの目印（両モードで同じ幅にして、入力の書き出し位置をそろえる）
+const SEARCH_MODE_ICONS = {
+  normal: '🔍',
+  window: '🪟',
+} as const satisfies Record<SearchMode, string>;
+
 function F5Hint({ label, onClick }: { label: string; onClick: () => void }): ReactElement {
   return (
     <>
@@ -61,6 +72,9 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
     return (
       <div className="search-box-wrapper">
         <div className="search-box-container">
+          <span className="search-mode-icon" aria-hidden="true" data-testid="search-mode-icon">
+            {SEARCH_MODE_ICONS[searchMode]}
+          </span>
           <input
             ref={inputRef}
             type="text"
@@ -68,7 +82,7 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={t('launcher.search.placeholder')}
+            placeholder={t(SEARCH_MODE_PLACEHOLDER_KEYS[searchMode])}
             autoFocus
           />
           {value && (

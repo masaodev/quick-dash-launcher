@@ -32,9 +32,10 @@ export const en: LocaleMessages = {
   },
   launcher: {
     search: {
-      placeholder: 'Search...',
+      placeholder: 'Search items...',
+      placeholderWindow: 'Search windows...',
       clear: 'Clear search',
-      modeNormal: 'Normal search',
+      modeNormal: '🔍 Normal search',
       modeWindow: '🪟 Window search',
       refreshWindows: 'Refresh',
       reloadData: 'Reload data',

@@ -69,6 +69,17 @@
   --bg-file-bar: #e0f2ef;
   --color-file: var(--group-color-teal);
 
+  /* メインウィンドウの検索モードの色。既定は通常検索モードの値で、
+     ウィンドウ検索モードでは .app.search-mode-window で差し替える（index.css）。
+     紫＝通常の青と分け、危険・警告・成功の赤・黄・緑を避けた色 */
+  --color-window-search: #7b3fc4;
+  --bg-window-search: #f3ecfc;
+  --bg-window-search-marked: #e6d8f8;
+  --mode-accent: var(--color-primary); /* 線・文字（検索欄の縁・リンク・タブの下線） */
+  --mode-accent-solid: var(--color-primary); /* 白文字を載せる塗り（選択行・目印・バッジ） */
+  --mode-tint: var(--bg-header); /* ヘッダー・タブ・ヒント行の面 */
+  --mode-marked: var(--bg-selected); /* 複数選択で選んだ行 */
+
   /* テキストカラー */
   --text-primary: #333;
   --text-secondary: #555;
