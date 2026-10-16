@@ -17,6 +17,23 @@ export function isBareFileName(itemPath: string): boolean {
 async function isFile(fullPath: string): Promise<boolean> {
   try {
     return (await fs.stat(fullPath)).isFile();
+  } catch (error) {
+    return isAppExecutionAlias(fullPath, error);
+  }
+}
+
+/**
+ * ストアアプリの実行エイリアス（WindowsApps\mspaint.exe など）か
+ *
+ * エイリアスはリンクに見え、リンク先（C:\Program Files\WindowsApps）は読む権限が無いので
+ * fs.stat が EACCES・EPERM で失敗する。リンク自体があり、リンク先が権限で読めないだけのときは
+ * あるものとみなす（shell.openPath で起動できる）
+ */
+async function isAppExecutionAlias(fullPath: string, statError: unknown): Promise<boolean> {
+  const code = (statError as { code?: string } | undefined)?.code;
+  if (code !== 'EACCES' && code !== 'EPERM') return false;
+  try {
+    return (await fs.lstat(fullPath)).isSymbolicLink();
   } catch {
     return false;
   }
