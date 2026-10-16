@@ -1,6 +1,6 @@
 /**
  * 画面: セットの行の詳細
- * 画面仕様: docs/screens/set-editor-modals.md#4-行の詳細
+ * 画面仕様: docs/screens/set-editor-modals.md#5-行の詳細
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
