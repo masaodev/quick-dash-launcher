@@ -7,6 +7,7 @@ import {
   catalogItemToEntry,
   describeSetEntry,
   loadSetCatalog,
+  loadSetEntryIcons,
   placementText,
   SET_KIND_ICONS,
   type SetCatalogItem,
@@ -50,6 +51,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
 }) => {
   const { t } = useTranslation();
   const [catalog, setCatalog] = useState<SetCatalogItem[]>([]);
+  /** 行が自分で持つパスのアイコン（アイテムを指す行は catalog のアイコンを使う） */
+  const [ownIcons, setOwnIcons] = useState<ReadonlyMap<string, string>>(new Map());
   const [screens, setScreens] = useState<ScreenArea[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [addWindowsOpen, setAddWindowsOpen] = useState(false);
@@ -80,6 +83,25 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
       cancelled = true;
     };
   }, [currentFile, includeWorkspace, selfId]);
+
+  // 並べ替えでは読み直さないよう、行が持つパスの組が変わったときだけ読む
+  const ownPathsKey = useMemo(
+    () =>
+      [...new Set(entries.flatMap((e) => (!e.itemId && e.open?.path ? [e.open.path] : [])))]
+        .sort()
+        .join('\n'),
+    [entries]
+  );
+  useEffect(() => {
+    if (!ownPathsKey) return;
+    let cancelled = false;
+    loadSetEntryIcons(ownPathsKey.split('\n').map((path) => ({ open: { path } })))
+      .then((icons) => !cancelled && setOwnIcons(icons))
+      .catch((e) => logError('セットの行のアイコンを読めませんでした:', e));
+    return () => {
+      cancelled = true;
+    };
+  }, [ownPathsKey]);
 
   const catalogById = useMemo(() => {
     const map = new Map<string, SetCatalogItem>();
@@ -120,7 +142,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
           <div className="set-empty">{t('set.editor.empty')}</div>
         ) : (
           entries.map((entry, index) => {
-            const view = describeSetEntry(entry, catalogById);
+            const view = describeSetEntry(entry, catalogById, ownIcons);
             const place = placementText(entry, screens, desktopNames);
             return (
               <div
@@ -297,6 +319,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         isOpen={updateOpen}
         entries={entries}
         catalog={catalogById}
+        ownIcons={ownIcons}
         screens={screens}
         onClose={() => setUpdateOpen(false)}
         onConfirm={setEntries}

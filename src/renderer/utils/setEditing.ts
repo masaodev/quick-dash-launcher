@@ -2,6 +2,7 @@
  * セットの編集で使う補助（アイテムの一覧・行の表示・位置の表示の文言・記録の反映）
  */
 import i18next from 'i18next';
+import { isIconFetchTarget } from '@common/constants';
 import type { AppItem, LauncherItem, SetEntry, WindowInfo, WorkspaceItem } from '@common/types';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -151,10 +152,46 @@ function lastSegment(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
-/** 行の表示を作る */
+/**
+ * 行が自分で持つパス（アイテムを指さない行）のアイコンを読む
+ *
+ * キャッシュにあればそれを使い、無いものだけ ensureIcons で取る（ワークスペースと同じ取り方。
+ * 取れなかったものは記録され、次からは取りに行かない）。フォルダなど、アイコンを取らない種類は読まない。
+ *
+ * @returns Map<パス, base64 データ URL>。取れなかったパスは入らない
+ */
+export async function loadSetEntryIcons(
+  entries: readonly SetEntry[]
+): Promise<Map<string, string>> {
+  const items = new Map<string, LauncherItem>();
+  for (const entry of entries) {
+    if (entry.itemId || !entry.open?.path) continue;
+    const { path } = entry.open;
+    const type = kindFromPath(path);
+    if (!isIconFetchTarget(type)) continue;
+    items.set(path, { displayName: lastSegment(path), path, type } as LauncherItem);
+  }
+  const icons = new Map<string, string>();
+  if (items.size === 0) return icons;
+
+  const put = (found: Record<string, string>) => {
+    for (const [path, icon] of Object.entries(found)) if (icon) icons.set(path, icon);
+  };
+  put(await window.electronAPI.loadCachedIcons([...items.values()]).catch(() => ({})));
+  const missing = [...items.values()].filter((item) => !icons.has(item.path));
+  if (missing.length > 0) put(await window.electronAPI.ensureIcons(missing).catch(() => ({})));
+  return icons;
+}
+
+/**
+ * 行の表示を作る
+ *
+ * @param ownIcons 行が自分で持つパスのアイコン（loadSetEntryIcons の結果）
+ */
 export function describeSetEntry(
   entry: SetEntry,
-  catalog: ReadonlyMap<string, SetCatalogItem>
+  catalog: ReadonlyMap<string, SetCatalogItem>,
+  ownIcons?: ReadonlyMap<string, string>
 ): SetEntryView {
   if (entry.itemId) {
     const item = catalog.get(entry.itemId);
@@ -178,6 +215,7 @@ export function describeSetEntry(
   if (entry.open) {
     return {
       name: entry.label ?? lastSegment(entry.open.path),
+      icon: ownIcons?.get(entry.open.path),
       kind: kindFromPath(entry.open.path),
       holding: 'own',
       missing: false,

@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { SetEntry, WindowInfo } from '@common/types';
 
 import {
   describeSetEntry,
   entryFromWindow,
+  loadSetEntryIcons,
   entryOpensAsTab,
   linkEntryToWindow,
   setEntryNames,
@@ -54,6 +55,13 @@ describe('linkEntryToWindow', () => {
 });
 
 describe('describeSetEntry', () => {
+  it('パスを持つ行は、渡したアイコンからパスで引く', () => {
+    const entry: SetEntry = { open: { path: 'C:\\tools\\Obsidian.lnk' } };
+    const icons = new Map([['C:\\tools\\Obsidian.lnk', 'data:image/png;base64,AAA']]);
+    expect(describeSetEntry(entry, new Map(), icons).icon).toBe('data:image/png;base64,AAA');
+    expect(describeSetEntry(entry, new Map()).icon).toBeUndefined();
+  });
+
   it('名前だけ残した行は参照先が見つからない行として出し、並べるだけの行とは分ける', () => {
     expect(describeSetEntry({ label: '消したアイテム' }, new Map())).toMatchObject({
       name: '消したアイテム',
@@ -63,6 +71,55 @@ describe('describeSetEntry', () => {
     expect(
       describeSetEntry({ window: { processName: 'notepad.exe' }, placement: { x: 0 } }, new Map())
     ).toMatchObject({ holding: 'none', missing: false });
+  });
+});
+
+describe('loadSetEntryIcons', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(window, 'electronAPI');
+  });
+
+  function mockApi(cached: Record<string, string>, ensured: Record<string, string>) {
+    const api = {
+      loadCachedIcons: vi.fn(async () => cached),
+      ensureIcons: vi.fn(async () => ensured),
+    };
+    Object.defineProperty(window, 'electronAPI', { configurable: true, value: api });
+    return api;
+  }
+
+  it('キャッシュにあるものはそのまま使い、無いものだけ ensureIcons で取る', async () => {
+    const api = mockApi({ 'C:\\tools\\Obsidian.lnk': 'data:lnk' }, { 'ms-todo:': 'data:todo' });
+    const icons = await loadSetEntryIcons([
+      { open: { path: 'C:\\tools\\Obsidian.lnk' } },
+      { open: { path: 'ms-todo:' } },
+      { open: { path: 'C:\\tools\\none.exe' } },
+    ]);
+    expect(Object.fromEntries(icons)).toEqual({
+      'C:\\tools\\Obsidian.lnk': 'data:lnk',
+      'ms-todo:': 'data:todo',
+    });
+    expect(api.ensureIcons).toHaveBeenCalledWith([
+      expect.objectContaining({ path: 'ms-todo:', type: 'customUri' }),
+      expect.objectContaining({ path: 'C:\\tools\\none.exe', type: 'app' }),
+    ]);
+  });
+
+  it('キャッシュで全部揃えば ensureIcons を呼ばない', async () => {
+    const api = mockApi({ 'ms-todo:': 'data:todo' }, {});
+    await loadSetEntryIcons([{ open: { path: 'ms-todo:' } }]);
+    expect(api.ensureIcons).not.toHaveBeenCalled();
+  });
+
+  it('アイテムを指す行・フォルダ・動かすだけの行は読まない', async () => {
+    const api = mockApi({}, {});
+    const icons = await loadSetEntryIcons([
+      { itemId: 'abc12345' },
+      { open: { path: 'C:\\Users\\me\\Documents\\' } },
+      { window: { processName: 'notepad.exe' } },
+    ]);
+    expect(icons.size).toBe(0);
+    expect(api.loadCachedIcons).not.toHaveBeenCalled();
   });
 });
 
