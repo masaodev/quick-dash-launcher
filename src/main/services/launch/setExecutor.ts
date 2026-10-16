@@ -42,7 +42,7 @@ import {
   maximizeWindow,
 } from '../../utils/nativeWindowControl.js';
 import { getDesktopCount, getWindowDesktopNumber } from '../../utils/virtualDesktop/index.js';
-import { launchItem, type LaunchableItem } from '../../utils/itemLauncher.js';
+import { launchItem, type LaunchableItem, type LaunchResult } from '../../utils/itemLauncher.js';
 import {
   getLayoutProgressWindow,
   LONG_TOAST_DURATION_MS,
@@ -109,7 +109,7 @@ export type SetItemResolver = (itemId: string) => AppItem | undefined;
 
 /** 実行の差し替え口（テスト用） */
 export interface SetExecutorDeps {
-  launch: (item: LaunchableItem, logger: Logger) => Promise<void>;
+  launch: (item: LaunchableItem, logger: Logger) => Promise<LaunchResult>;
   findWindow: (match: WindowConfig, exclude?: ReadonlySet<bigint>) => bigint | null;
   applyConfig: typeof applyWindowConfig;
   activate: typeof tryActivateWindow;
@@ -468,8 +468,8 @@ async function runSet(
           // 前面に出すのを Windows に断られても、見つかっていれば開き直さない（二重に開かない）
           if (result.windowFound) return finish(index);
         }
-        await deps.launch(r.launch, logger);
-        return finish(index);
+        const launched = await deps.launch(r.launch, logger);
+        return finish(index, launched.success ? undefined : launched.error);
       }
 
       // 置き場所のある行。今は無い画面の位置なら、主画面に収める（見えない所へ動かさない）
@@ -498,8 +498,8 @@ async function runSet(
       );
       if (!config) {
         // 見つけ方を決められない（URL など）: 開くだけにする
-        if (r.launch) await deps.launch(r.launch, logger);
-        return finish(index);
+        const launched = r.launch ? await deps.launch(r.launch, logger) : undefined;
+        return finish(index, launched && !launched.success ? launched.error : undefined);
       }
 
       let hwnd = entry.ifOpen === 'openNew' ? null : findUnclaimed(config);
@@ -514,7 +514,8 @@ async function runSet(
           let found: bigint | null;
           while ((found = deps.findWindow(config, before)) !== null) before.add(found);
         }
-        await deps.launch(r.launch, logger);
+        const launched = await deps.launch(r.launch, logger);
+        if (!launched.success) return finish(index, launched.error);
         markOpened();
         hwnd = await waitForWindow(config, before, entry.waitSeconds ?? SET_DEFAULT_WAIT_SECONDS);
         if (hwnd === null) {

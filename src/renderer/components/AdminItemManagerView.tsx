@@ -11,7 +11,10 @@ import {
   type RegisterItem,
 } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
+import type {
+  BookmarkAutoImportResult,
+  BookmarkAutoImportRule,
+} from '@common/types/bookmarkAutoImport';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
 
 import { useToast } from '../hooks/useToast';
@@ -432,7 +435,19 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleBookmarkSaveAsRule = async (rule: BookmarkAutoImportRule) => {
     await addAutoImportRule(rule);
     setIsBookmarkModalOpen(false);
-    const result = await executeAutoImportRule(rule);
+    let result: BookmarkAutoImportResult;
+    try {
+      result = await executeAutoImportRule(rule);
+    } catch (error) {
+      // 実行の IPC が例外で失敗したときも、success: false と同じく知らせる
+      result = {
+        success: false,
+        importedCount: 0,
+        deletedCount: 0,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        executedAt: Date.now(),
+      };
+    }
     if (result.success) {
       const message = t('itemManager.ruleSavedAndRun', {
         name: rule.name,

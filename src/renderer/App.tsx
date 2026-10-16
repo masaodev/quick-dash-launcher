@@ -286,7 +286,17 @@ function App(): React.ReactElement {
           displayName: item.displayName,
           itemType: 'clipboard',
         });
-        await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
+        const restored = await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
+        if (!restored.success) {
+          await window.electronAPI.showToastWindow({
+            type: 'error',
+            message: t('launcher.messages.launchFailed', {
+              name: item.displayName,
+              error: restored.error ?? '',
+            }),
+            duration: 6000,
+          });
+        }
       } else if (isSetItem(item)) {
         // 置き場所のある行があれば、進み具合の表示が出る（トーストはその間は出ない）
         await window.electronAPI.showToastWindow({
