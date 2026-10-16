@@ -147,7 +147,7 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
     });
   });
 
-  test('ウィンドウを追加は検索で絞り込め、位置を更新は行が無いと押せない', async ({
+  test('ウィンドウを追加は検索で絞り込め、ウィンドウ位置を更新は行が無いと押せない', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -158,9 +158,9 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
       .nth(1)
       .selectOption({ value: 'set' });
 
-    await test.step('行が無いあいだは「位置を更新」を押せない', async () => {
+    await test.step('行が無いあいだは「ウィンドウ位置を更新」を押せない', async () => {
       await expect(
-        utils.registerPage.locator('.register-modal button', { hasText: '位置を更新' })
+        utils.registerPage.locator('.register-modal button', { hasText: 'ウィンドウ位置を更新' })
       ).toBeDisabled();
     });
 

@@ -320,11 +320,11 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
     expect(labels).toEqual(['✏️ 編集', '⭐ ワークスペースに追加']);
   });
 
-  test('置き場所のあるセットには「位置を更新」が出て、パス系の項目は出ない', async ({
+  test('置き場所のあるセットには「ウィンドウ位置を更新」が出て、パス系の項目は出ない', async ({
     electronApp,
     mainWindow,
   }) => {
     const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eセット');
-    expect(labels).toEqual(['✏️ 編集', '📍 位置を更新', '⭐ ワークスペースに追加']);
+    expect(labels).toEqual(['✏️ 編集', '📍 ウィンドウ位置を更新', '⭐ ワークスペースに追加']);
   });
 });
