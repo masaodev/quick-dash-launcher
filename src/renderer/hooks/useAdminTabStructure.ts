@@ -16,6 +16,11 @@ export type TabStructureSettings = Pick<
   'dataFileTabs' | 'dataFileLabels' | 'showDataFileTabs'
 >;
 
+/** 取込で作る新しいデータファイルの置き場 */
+export type NewImportFileTarget =
+  | { kind: 'newFile'; tabIndex: number; fileLabel: string }
+  | { kind: 'newTab'; tabName: string; fileLabel: string };
+
 export interface ConfirmOptions {
   title?: string;
   confirmText?: string;
@@ -86,7 +91,7 @@ export function useAdminTabStructure({
     [countItems, fileLabel, t]
   );
 
-  /** 計算した構成を確定する。成功したら true */
+  /** 計算した構成を確定する。成功したら true（successMessage が空ならトーストを出さない） */
   const commit = useCallback(
     async (
       edit: TabStructureEdit,
@@ -133,7 +138,7 @@ export function useAdminTabStructure({
           disabledRules.push(...(result.disabledRules ?? []));
         }
 
-        showSuccess(successMessage);
+        if (successMessage) showSuccess(successMessage);
         if (disabledRules.length > 0) {
           showWarning(
             t('itemManager.tabStructure.rulesDisabled', {
@@ -154,25 +159,62 @@ export function useAdminTabStructure({
     [onSaved, showSuccess, showWarning, dropFileItems, t]
   );
 
+  /** タブ表示がオフなら、新しいタブを作るときに表示をオンにするかを聞く */
+  const askShowTabs = useCallback(async (): Promise<Partial<TabStructureSettings>> => {
+    if (showDataFileTabs) return {};
+    const show = await confirm(t('itemManager.tabStructure.showTabsConfirm'), {
+      title: t('itemManager.tabStructure.showTabsTitle'),
+      confirmText: t('itemManager.tabStructure.showTabsYes'),
+      cancelText: t('itemManager.tabStructure.showTabsNo'),
+    });
+    return show ? { showDataFileTabs: true } : {};
+  }, [confirm, showDataFileTabs, t]);
+
   /** タブを末尾に足す。足したタブの位置を返す（やめた・失敗したら null） */
   const addTab = useCallback(
     async (tabName: string): Promise<number | null> => {
       const filesOnDisk = await window.electronAPI.getDataFiles().catch(() => []);
       const edit = TabStructureEdits.addTab(structureRef.current, tabName, filesOnDisk);
-      const extra: Partial<TabStructureSettings> = {};
-      if (edit.ok && !showDataFileTabs) {
-        const show = await confirm(t('itemManager.tabStructure.showTabsConfirm'), {
-          title: t('itemManager.tabStructure.showTabsTitle'),
-          confirmText: t('itemManager.tabStructure.showTabsYes'),
-          cancelText: t('itemManager.tabStructure.showTabsNo'),
-        });
-        if (show) extra.showDataFileTabs = true;
-      }
+      const extra = edit.ok ? await askShowTabs() : {};
       const name = edit.ok ? edit.structure.tabs[edit.structure.tabs.length - 1].name : '';
       const saved = await commit(edit, t('itemManager.tabStructure.tabCreated', { name }), extra);
       return saved && edit.ok ? edit.structure.tabs.length - 1 : null;
     },
-    [commit, confirm, showDataFileTabs, t]
+    [askShowTabs, commit, t]
+  );
+
+  /**
+   * 取込の確定時に、取り込む先の新しいデータファイルを作る（新しいタブごと作ることもできる）。
+   * 作ったファイルとそのタブの位置を返す（失敗したら null。理由は警告のトーストで出す）。
+   * 取り込んだ結果は呼び出し側がまとめて知らせるので、ここでは成功のトーストを出さない
+   */
+  const createImportFile = useCallback(
+    async (
+      target: NewImportFileTarget
+    ): Promise<{ tabIndex: number; fileName: string; fileLabel: string } | null> => {
+      const filesOnDisk = await window.electronAPI.getDataFiles().catch(() => []);
+      const edit =
+        target.kind === 'newTab'
+          ? TabStructureEdits.addTab(
+              structureRef.current,
+              target.tabName,
+              filesOnDisk,
+              target.fileLabel
+            )
+          : TabStructureEdits.addNewFileToTab(
+              structureRef.current,
+              target.tabIndex,
+              filesOnDisk,
+              target.fileLabel
+            );
+      const extra = edit.ok && target.kind === 'newTab' ? await askShowTabs() : {};
+      const saved = await commit(edit, '', extra);
+      if (!saved || !edit.ok) return null;
+      const fileName = edit.filesToCreate[0];
+      const tabIndex = target.kind === 'newTab' ? edit.structure.tabs.length - 1 : target.tabIndex;
+      return { tabIndex, fileName, fileLabel: edit.structure.labels[fileName] };
+    },
+    [askShowTabs, commit]
   );
 
   const renameTab = useCallback(
@@ -294,6 +336,7 @@ export function useAdminTabStructure({
 
   return {
     addTab,
+    createImportFile,
     renameTab,
     moveTab,
     deleteTab,

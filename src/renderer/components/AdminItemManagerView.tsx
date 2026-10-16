@@ -41,7 +41,7 @@ import AdminItemManagerHeader from './AdminItemManagerHeader';
 import AdminItemManagerTabBar from './AdminItemManagerTabBar';
 import AutoImportFilterDropdown from './AutoImportFilterDropdown';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
-import AppImportModal from './AppImportModal';
+import AppImportModal, { type AppImportDestination } from './AppImportModal';
 import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui/Button';
 
@@ -467,17 +467,36 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   };
 
-  const handleAppImport = (apps: ScannedAppItem[], duplicateHandling: DuplicateHandlingOption) => {
+  /**
+   * アプリ取込画面「取り込む」: 新しいタブ・ファイルが取込先ならここで作ってから、未保存の変更として追加する。
+   * 取り込んだ先のタブ・ファイルを開く。ファイルを作れなかったら false（取込画面は開いたまま）
+   */
+  const handleAppImport = async (
+    apps: ScannedAppItem[],
+    duplicateHandling: DuplicateHandlingOption,
+    destination: AppImportDestination
+  ): Promise<boolean> => {
+    let target: { tabIndex: number; fileName: string; fileLabel: string };
+    if (destination.kind === 'existing') {
+      target = {
+        tabIndex: dataFileTabs.findIndex((tab) => tab.files.includes(destination.fileName)),
+        fileName: destination.fileName,
+        fileLabel: getFileLabel(destination.fileName),
+      };
+    } else {
+      const created = await tabStructure.createImportFile(destination);
+      if (!created) return false;
+      target = created;
+    }
     // スキップのときは取込先に登録済みの分は入らない
+    const fileItems = workingItems.filter((item) => item.meta.sourceFile === target.fileName);
     const addedCount =
-      duplicateHandling === 'skip'
-        ? checkAppDuplicates(apps, currentFileWorkingItems).newCount
-        : apps.length;
-    editing.importApps(apps, duplicateHandling, selectedDataFile);
-    setIsAppImportModalOpen(false);
-    showInfo(
-      t('itemManager.imported', { count: addedCount, file: getFileLabel(selectedDataFile) })
-    );
+      duplicateHandling === 'skip' ? checkAppDuplicates(apps, fileItems).newCount : apps.length;
+    editing.importApps(apps, duplicateHandling, target.fileName);
+    if (target.tabIndex >= 0) setSelectedTabIndex(target.tabIndex);
+    setSelectedDataFile(target.fileName);
+    showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
+    return true;
   };
 
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
@@ -616,19 +635,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
     editing.clearRebaseNotice();
   }, [rebaseNotice]);
-
-  // 現在選択されているタブの情報を取得
-  const currentTab = dataFileTabs[selectedTabIndex];
-  const currentTabFiles = currentTab?.files || [DEFAULT_DATA_FILE];
-
-  // インポート先の表示テキストを生成
-  const getImportDestination = (): string => {
-    const tabName = currentTab?.name || '';
-    if (currentTabFiles.length > 1) {
-      return `${tabName} > ${getFileLabel(selectedDataFile)}`;
-    }
-    return tabName;
-  };
 
   const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all' || missingOnly;
 
@@ -790,8 +796,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         isOpen={isAppImportModalOpen}
         onClose={() => setIsAppImportModalOpen(false)}
         onImport={handleAppImport}
-        existingItems={currentFileWorkingItems}
-        importDestination={getImportDestination()}
+        existingItems={workingItems}
+        dataFileTabs={dataFileTabs}
+        dataFileLabels={dataFileLabels}
+        initialTabIndex={selectedTabIndex}
       />
 
       <ConfirmDialog
