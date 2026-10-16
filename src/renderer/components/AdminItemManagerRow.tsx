@@ -110,11 +110,11 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   );
 
   const renderIconCell = () => {
-    // 単一アイテムの場合のみアイコンを表示
-    if (jsonItem.type !== 'item') return null;
+    // 単一アイテムのアイコンと、クリップボード・セットのカスタムアイコン
     if (iconData) {
       return <img src={iconData} alt="" className="item-icon-image" />;
     }
+    if (jsonItem.type !== 'item') return null;
     // アイコンがない場合、フォルダなら絵文字表示（読み込み時の判定がなければパスから判定）
     const path = jsonItem.path || '';
     if (path && (item.meta.launcherType ?? detectItemTypeSync(path)) === 'folder') {

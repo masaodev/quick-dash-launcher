@@ -6,7 +6,7 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 
 import { useAdminCellEditing } from '../hooks/useAdminCellEditing';
 import { useAdminContextMenu } from '../hooks/useAdminContextMenu';
-import { useAdminItemIcons } from '../hooks/useAdminItemIcons';
+import { getAdminItemIcon, useAdminItemIcons } from '../hooks/useAdminItemIcons';
 import { useColumnResize } from '../hooks/useColumnResize';
 import { getItemKey, type SortColumn, type SortState } from '../utils/editableItemOperations';
 
@@ -154,7 +154,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 isSelected={selectedItems.has(itemKey)}
                 isChanged={changedIds.has(itemKey)}
                 pathMissing={missingIds.has(itemKey)}
-                iconData={jsonItem.type === 'item' ? itemIcons.get(jsonItem.path || '') : undefined}
+                iconData={getAdminItemIcon(itemIcons, jsonItem)}
                 autoImportRuleName={
                   jsonItem.type === 'item' && jsonItem.autoImportRuleId
                     ? autoImportRuleMap?.get(jsonItem.autoImportRuleId)

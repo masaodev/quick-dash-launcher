@@ -4,11 +4,14 @@ import type {
   Workspace,
   WorkspaceItem,
   WorkspaceLauncherItem,
+  WorkspaceClipboardItem,
+  WorkspaceSetItem,
   WorkspaceGroupView,
 } from '@common/types';
 import { isIconFetchTarget } from '@common/constants';
 
 import { logError } from '../../utils/debug';
+import { loadCustomIcons } from '../../utils/customIcons';
 import { useGlobalLoading } from '../useGlobalLoading';
 
 type IconCacheItem = {
@@ -35,19 +38,37 @@ function toIconCacheItem(item: WorkspaceLauncherItem): IconCacheItem {
   };
 }
 
+/** path を持たず、カスタムアイコンをファイル名で読む種別（クリップボード・セット） */
+function hasCustomIconOnly(item: WorkspaceItem): item is WorkspaceClipboardItem | WorkspaceSetItem {
+  return item.type === 'clipboard' || item.type === 'set';
+}
+
 async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise<T[]> {
   const itemsNeedingIcons = items.filter(
     (item): item is T & WorkspaceLauncherItem => !item.icon && isLauncherItem(item)
   );
-  if (itemsNeedingIcons.length === 0) return items;
-
-  const iconCache = await window.electronAPI.loadCachedIcons(
-    itemsNeedingIcons.map(toIconCacheItem)
+  const customIconFileNames = items.map((item) =>
+    !item.icon && hasCustomIconOnly(item) ? item.customIcon : undefined
   );
+  if (itemsNeedingIcons.length === 0 && !customIconFileNames.some(Boolean)) return items;
 
-  return items.map((item) =>
-    isLauncherItem(item) ? { ...item, icon: item.icon || iconCache[item.path] || undefined } : item
-  );
+  const [iconCache, customIcons] = await Promise.all([
+    itemsNeedingIcons.length > 0
+      ? window.electronAPI.loadCachedIcons(itemsNeedingIcons.map(toIconCacheItem))
+      : Promise.resolve<Record<string, string>>({}),
+    loadCustomIcons(customIconFileNames),
+  ]);
+
+  return items.map((item) => {
+    if (isLauncherItem(item)) {
+      return { ...item, icon: item.icon || iconCache[item.path] || undefined };
+    }
+    if (hasCustomIconOnly(item) && !item.icon && item.customIcon) {
+      const icon = customIcons[item.customIcon];
+      return icon ? { ...item, icon } : item;
+    }
+    return item;
+  });
 }
 
 export function useWorkspaceData(detachedGroupId?: string | null) {

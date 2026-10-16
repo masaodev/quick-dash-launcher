@@ -38,6 +38,7 @@ import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { debugLog, logError } from './utils/debug';
 import { indexById, setEntryNames } from './utils/setEditing';
+import { loadCustomIcons } from './utils/customIcons';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
@@ -207,10 +208,22 @@ function App(): React.ReactElement {
     const launcherItems = items.filter(
       (item) => !isWindowInfo(item) && !isSetItem(item) && !isWindowItem(item)
     ) as LauncherItem[];
-    const iconCache = await window.electronAPI.loadCachedIcons(launcherItems);
+    const [iconCache, customIcons] = await Promise.all([
+      window.electronAPI.loadCachedIcons(launcherItems),
+      // path を持たないクリップボード・セットは、カスタムアイコンをファイル名で読む
+      loadCustomIcons(
+        items.map((item) =>
+          isClipboardItem(item) || isSetItem(item) ? item.customIcon : undefined
+        )
+      ),
+    ]);
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
+      if (isClipboardItem(item) || isSetItem(item)) {
+        const icon = item.customIcon ? customIcons[item.customIcon] : undefined;
+        return icon ? { ...item, icon } : item;
+      }
       if (!isLauncherItem(item)) {
         return item;
       }

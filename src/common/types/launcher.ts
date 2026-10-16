@@ -170,6 +170,8 @@ export interface ClipboardItem {
   formats: ClipboardFormat[];
   /** カスタムアイコンのファイル名（オプション） */
   customIcon?: string;
+  /** 表示用のアイコン（customIcon から読んだ base64 データ URL。実行時のみで保存しない） */
+  icon?: string;
   /** 元のデータファイル */
   sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */
@@ -307,6 +309,8 @@ export interface SetItem {
   launchMode?: SetLaunchMode;
   /** カスタムアイコンのファイル名（オプション） */
   customIcon?: string;
+  /** 表示用のアイコン（customIcon から読んだ base64 データ URL。実行時のみで保存しない） */
+  icon?: string;
   /** 元のデータファイル */
   sourceFile?: string;
   /** データファイル内の行番号（編集機能で使用、非推奨：IDベースアクセスを推奨） */

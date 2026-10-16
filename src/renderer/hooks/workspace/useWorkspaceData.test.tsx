@@ -37,6 +37,47 @@ afterEach(() => {
   Reflect.deleteProperty(window, 'electronAPI');
 });
 
+describe('useWorkspaceData のアイコン', () => {
+  it('クリップボード・セットのカスタムアイコンをファイル名で読んで icon に入れる', async () => {
+    const requested: string[] = [];
+    const api = window.electronAPI as unknown as Record<string, unknown> & {
+      workspaceAPI: Record<string, unknown>;
+    };
+    api.getCustomIcon = async (fileName: string) => {
+      requested.push(fileName);
+      return fileName === 'missing.png' ? null : `data:image/png;base64,${fileName}`;
+    };
+    api.workspaceAPI.loadItems = async () => [
+      { id: 's1', type: 'set', displayName: 'S1', entries: [], customIcon: 'set.png' },
+      { id: 's2', type: 'set', displayName: 'S2', entries: [], customIcon: 'set.png' },
+      {
+        id: 'c1',
+        type: 'clipboard',
+        displayName: 'C1',
+        dataFileRef: 'x.json',
+        savedAt: 0,
+        formats: [],
+        customIcon: 'clip.png',
+      },
+      { id: 's3', type: 'set', displayName: 'S3', entries: [], customIcon: 'missing.png' },
+      { id: 's4', type: 'set', displayName: 'S4', entries: [] },
+    ];
+
+    const { result } = renderHook(() => useWorkspaceData());
+    await waitFor(() => expect(result.current.items).toHaveLength(5));
+
+    const iconOf = (id: string) =>
+      (result.current.items.find((item) => item.id === id) as { icon?: string }).icon;
+    expect(iconOf('s1')).toBe('data:image/png;base64,set.png');
+    expect(iconOf('s2')).toBe('data:image/png;base64,set.png');
+    expect(iconOf('c1')).toBe('data:image/png;base64,clip.png');
+    expect(iconOf('s3')).toBeUndefined();
+    expect(iconOf('s4')).toBeUndefined();
+    // 同じファイルは 1 回だけ読む
+    expect(requested.sort()).toEqual(['clip.png', 'missing.png', 'set.png']);
+  });
+});
+
 describe('useWorkspaceData の折りたたみ', () => {
   it('開閉より前に送った読み込みの応答が後から届いても、開閉した状態は戻らない', async () => {
     const { result } = renderHook(() => useWorkspaceData());
