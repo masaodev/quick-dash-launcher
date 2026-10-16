@@ -12,10 +12,11 @@ type Listener = (
 ) => void;
 
 /** on で登録されたリスナーを覚える、偽の webContents */
-function fakeContents(type: string) {
+function fakeContents(type: string, currentUrl = 'http://localhost:9001/index.html') {
   const listeners = new Map<string, Listener>();
   const contents = {
     getType: () => type,
+    getURL: () => currentUrl,
     on: vi.fn((name: string, listener: Listener) => listeners.set(name, listener)),
   };
   return { contents: contents as unknown as WebContents, listeners };
@@ -38,6 +39,19 @@ describe('guardNavigation', () => {
     const main = { preventDefault: vi.fn(), url: 'https://example.com/', isMainFrame: true };
     listeners.get('will-frame-navigate')!(main);
     expect(main.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('今と同じ URL への移動は止めない（開発サーバーの Vite の移り直し）', () => {
+    const { contents, listeners } = fakeContents('window', 'http://localhost:9001/index.html');
+    guardNavigation(contents);
+
+    const same = { preventDefault: vi.fn() };
+    listeners.get('will-navigate')!(same, 'http://localhost:9001/index.html');
+    expect(same.preventDefault).not.toHaveBeenCalled();
+
+    const other = { preventDefault: vi.fn() };
+    listeners.get('will-navigate')!(other, 'http://localhost:9001/admin.html');
+    expect(other.preventDefault).toHaveBeenCalled();
   });
 
   it('DevTools など画面でないものには付けない', () => {
