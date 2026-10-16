@@ -134,9 +134,9 @@ test.describe('QuickDashLauncher - 登録画面の変換', () => {
     await utils.fillRegisterForm({ name: '全体ビュー', path: mdPath });
 
     await convertButton(page).click();
+    // ファイルではアプリのウィンドウの候補を出さない（ブラウザがアプリのウィンドウとして出さないため）
     await expect(page.locator('.item-converter-option-label')).toHaveText([
       '新しいウィンドウで開く形にする',
-      'アプリのウィンドウで開く形にする',
     ]);
     await page
       .locator('.item-converter-option', { hasText: '新しいウィンドウで開く形にする' })
