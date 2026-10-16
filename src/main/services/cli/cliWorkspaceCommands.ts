@@ -1,5 +1,7 @@
 import type {
   AppItem,
+  ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
   MixedOrderEntry,
   Workspace,
   WorkspaceGroupUpdate,
@@ -9,6 +11,7 @@ import type {
 } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isValidGroupColor } from '@common/groupColors';
+import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -58,6 +61,12 @@ export interface WorkspaceStore {
   ): Promise<WorkspaceGroupView>;
   updateGroup(id: string, updates: WorkspaceGroupUpdate): Promise<void>;
   deleteGroup(id: string, deleteItems: boolean): Promise<void>;
+  /** 子孫のサブグループとアイテムごとアーカイブへ移す */
+  archiveGroup(id: string): Promise<void>;
+  loadArchivedGroups(): Promise<ArchivedWorkspaceGroup[]>;
+  loadArchivedItems(): Promise<ArchivedWorkspaceItem[]>;
+  /** アーカイブ済みのグループなら、そのワークスペースへ復元する（画面の「移動先を選んで復元」と同じ） */
+  moveGroupToWorkspace(groupId: string, workspaceId: string): Promise<void>;
 }
 
 export interface WorkspaceCommandContext {
@@ -264,7 +273,23 @@ export async function runWorkspaceCommand(
         return updateGroup(args, ctx);
       case 'remove':
         return removeGroup(args, ctx);
+      case 'archive':
+        return archiveGroup(args, ctx);
     }
+  }
+  if (noun === 'archive') {
+    switch (verb) {
+      case 'list':
+        return listArchive(args, ctx);
+      case 'restore':
+        return restoreArchive(args, ctx);
+    }
+    throw new CliError(
+      'usage',
+      verb
+        ? mainI18n.t('cli.errors.unknownVerb', { command: `workspace archive ${verb}` })
+        : mainI18n.t('cli.errors.missingArchiveVerb')
+    );
   }
   if (noun !== 'item' && noun !== 'group') {
     throw new CliError(
@@ -738,4 +763,115 @@ async function removeGroup(
   await ctx.store.deleteGroup(group.id, false);
   ctx.changed(mainI18n.t('cli.changed.groupRemoved', { name: group.displayName }));
   return { removed: view };
+}
+
+async function archiveGroup(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrGroupName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const group = findGroup(key, s);
+  // サブグループの中身も一緒にしまうので、件数は子孫まで数える
+  const ids = new Set([group.id, ...getDescendantGroupIds(group.id, s.groups)]);
+  const archived = {
+    ...groupView(group, s),
+    itemCount: s.items.filter((i) => i.groupId && ids.has(i.groupId)).length,
+    subgroupCount: ids.size - 1,
+  };
+  if (dryRun) return { dryRun: true, archived };
+  // 画面と同じく、先に切り離しウィンドウを閉じる
+  await ctx.beforeGroupRemoved(group.id);
+  await ctx.store.archiveGroup(group.id);
+  ctx.changed(mainI18n.t('cli.changed.groupArchived', { name: group.displayName }));
+  return { archived };
+}
+
+interface ArchiveSnapshot {
+  groups: ArchivedWorkspaceGroup[];
+  items: ArchivedWorkspaceItem[];
+  workspaces: Workspace[];
+}
+
+async function archiveSnapshot(store: WorkspaceStore): Promise<ArchiveSnapshot> {
+  const [groups, items, workspaces] = await Promise.all([
+    store.loadArchivedGroups(),
+    store.loadArchivedItems(),
+    store.loadWorkspaces(),
+  ]);
+  return { groups, items, workspaces };
+}
+
+/** アーカイブの単位（一緒にしまったサブグループを除く最上位のグループ） */
+function archiveRoots(a: ArchiveSnapshot): ArchivedWorkspaceGroup[] {
+  const ids = new Set(a.groups.map((g) => g.id));
+  return a.groups.filter((g) => !g.parentGroupId || !ids.has(g.parentGroupId));
+}
+
+function archivedView(group: ArchivedWorkspaceGroup, a: ArchiveSnapshot): Record<string, unknown> {
+  const ids = new Set([group.id, ...getDescendantGroupIds(group.id, a.groups)]);
+  return {
+    id: group.id,
+    displayName: group.displayName,
+    color: group.color,
+    archivedAt: new Date(group.archivedAt).toISOString(),
+    // 元のワークスペース（消えていれば null。復元すると既定のワークスペースへ戻る）
+    workspace: a.workspaces.find((w) => w.id === group.workspaceId)?.displayName ?? null,
+    itemCount: a.items.filter((i) => ids.has(i.archivedGroupId)).length,
+    subgroups: a.groups.filter((g) => g.id !== group.id && ids.has(g.id)).map((g) => g.displayName),
+  };
+}
+
+async function listArchive(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['grep'] });
+  expectPositionals(parsed, []);
+  const a = await archiveSnapshot(ctx.store);
+  const grep = optionString(parsed, 'grep');
+  return archiveRoots(a)
+    .filter((g) => matchesGrep(grep, [g.displayName]))
+    .map((g) => archivedView(g, a));
+}
+
+async function restoreArchive(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['workspace'], flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrGroupName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const a = await archiveSnapshot(ctx.store);
+  const group = resolveOne(
+    key,
+    archiveRoots(a),
+    mainI18n.t('cli.targets.archivedGroup'),
+    (g) => g.id,
+    (g) => g.displayName,
+    (g): CliCandidate => ({ id: g.id, displayName: g.displayName, location: [] })
+  );
+  const s = await snapshot(ctx.store);
+  const workspaceKey = optionString(parsed, 'workspace');
+  // 省略時は元のワークスペース。無くなっていれば既定のワークスペース
+  const target = workspaceKey
+    ? findWorkspace(workspaceKey, s)
+    : (s.workspaces.find((w) => w.id === group.workspaceId) ?? defaultWorkspace(s));
+  const before = archivedView(group, a);
+  if (dryRun) return { dryRun: true, restoring: before, workspace: target.displayName };
+
+  await ctx.store.moveGroupToWorkspace(group.id, target.id);
+  ctx.changed(
+    mainI18n.t('cli.changed.groupRestored', {
+      name: group.displayName,
+      workspace: target.displayName,
+    })
+  );
+  const after = await snapshot(ctx.store);
+  const restored = after.groups.find((g) => g.id === group.id);
+  return { restored: restored ? groupView(restored, after) : before };
 }

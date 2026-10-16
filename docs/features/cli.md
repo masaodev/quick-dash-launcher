@@ -64,6 +64,9 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `workspace group add` | ワークスペースにグループを足す |
 | `workspace group update <id か名前>` | グループの名前・色・親を変える |
 | `workspace group remove <id か名前>` | 空のグループを消す |
+| `workspace group archive <id か名前>` | グループを、子孫のサブグループとアイテムごとアーカイブする |
+| `workspace archive list` | アーカイブしたグループの一覧。`--grep` で絞る |
+| `workspace archive restore <id か名前>` | アーカイブしたグループを復元する。`--workspace` で復元先を選ぶ |
 
 ### 足す・変えるときのオプション
 
@@ -78,7 +81,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--file` `--tab` | launcher item add／update | 足す（update では移す）データファイル、またはタブ（その先頭のデータファイル）。add で省略したときは `datafiles/data.json` |
 | `--type` | launcher item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`window`（ウィンドウ操作） |
 | `--group` | workspace item add／update | 入れるグループ。update で `""` を渡すと未分類へ移す |
-| `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる |
+| `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる。archive restore では復元先（省略時は元のワークスペース） |
 | `--position` | workspace item add／update、workspace add／update、set row add | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの並び。set row add では行を差し込む位置（省略時は最後） |
 | `--color` | workspace group add／update | `primary` `success` `danger` `warning` `info` `secondary` `purple` `teal` `pink` `indigo` `orange` `cyan`、または `#rrggbb` |
 | `--parent` | workspace group add／update | 親グループ（2 段まで）。update で `""` を渡すと最上位へ移す |
@@ -97,7 +100,8 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **セットの作り方**: `launcher item add --type set --name <名前>` に、最初の行を `--item <id か表示名>` か `--path <パス>`（`--args`）で渡す（`--label` で行の名前）。`--set entries='[…]'` で行をまとめて渡してもよいが、`--item`・`--path` とは併用できない。2 行目からは `launcher set row add` で足す
 - **セットの行にできるもの**: 開くものだけ。`--item` で指せるのは種類 `item`（通常のアイテム）と `window`（ウィンドウ操作）のアイテムで、フォルダ取込・セットなどは断る（フォルダ取込の中身は `--path` で行にする）。対象ウィンドウとウィンドウ位置は CLI からは付けず、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付ける
 - **別のタブへ移す**: `launcher item update <id か表示名> --tab <タブ>`（か `--file`）。id を保ったまま移すので、セットの行は切れない。ほかの項目の変更と同時にもできる。移す先に書いてから元のファイルから消す（途中で失敗しても、消えずに 2 つのファイルに残る）。そのタブのどれかのデータファイルに既にあれば移さず、`"unchanged": true` を返す。自動取込で入ったアイテムは移さない（取込は取り込み先のファイルの中で入れ替えるので、次の取込でまた足される）
-- **触れないもの**: クリップボードアイテムは足せず、変えられない（画面の操作で作るもの）。消すことはできる。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
+- **アーカイブ**: `workspace group archive` は、画面と同じく先に切り離しウィンドウを閉じてから、子孫のサブグループとアイテムごとしまう。`archive list`・`archive restore` で扱うのは、しまった単位（最上位のグループ）だけ。一緒にしまったサブグループは一覧の `subgroups` に名前が出て、親と一緒に戻る。`archive restore` は `--workspace` を省くと元のワークスペースへ戻し、元のワークスペースが無くなっていれば既定（先頭）のワークスペースへ戻す。どちらも画面の「移動先を選んで復元」と同じ処理で、最上位のグループとして戻る
+- **触れないもの**: クリップボードアイテムは足せず、変えられない（画面の操作で作るもの）。消すことはできる。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
 - **ワークスペースに足せる種類**: 通常のアイテムだけ。ウィンドウ操作・セットを足すのは画面で行う（既にあるものは update で変えられる）
 
 ### 出力
@@ -108,6 +112,9 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - `add`: 足したもの（採番した `id` を含む）
 - `update`: `{ "before": 変える前, "item": 変えた後 }`（グループは `group`、ワークスペースは `workspace`）。別のタブへ移したときは `"moved": { "from", "to" }` を付ける
 - `remove`: `{ "removed": 消したもの }`
+- `group archive`: `{ "archived": しまったグループ }`（`itemCount`・`subgroupCount` は子孫まで数える）
+- `archive list`: 配列。各要素に `archivedAt`・元のワークスペース `workspace`（無くなっていれば `null`）・子孫までの `itemCount`・一緒にしまったサブグループの名前 `subgroups` を付ける
+- `archive restore`: `{ "restored": 戻したグループ }`。`--dry-run` では `{ "dryRun": true, "restoring": 戻すもの, "workspace": 復元先 }`
 - `set row list`・`set row add`・`set row remove`: `{ "set": { id, displayName, file, tab }, "entries": [ 行 ] }`（変えた後の全部の行）。各行に行番号 `index` と行の名前 `name` を付け、指しているアイテムが見つからない行には `"missing": true` を付ける
 - `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので `id` は無い）
 
@@ -181,7 +188,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 ### 現在の制限
 
-1. **扱えるのはアイテム・セットの行・ワークスペースとそのグループまで**: タブ・データファイルの追加と削除、`settings.json` の変更（ホットキーなど）、アーカイブはできません
+1. **扱えるのはアイテム・セットの行・ワークスペースとそのグループ・グループのアーカイブまで**: タブ・データファイルの追加と削除、`settings.json` の変更（ホットキーなど）はできません
 2. **アンインストールしても PATH は残る**: アンインストールしても PATH の項目と `%LOCALAPPDATA%\quick-dash-launcher\bin` は残ります。先に管理画面で「QuickDashLauncher CLI を使えるようにする」を外してからアンインストールしてください
 3. **Windows のみ**: 名前付きパイプを使うので、本体と同じく Windows でだけ動きます
 

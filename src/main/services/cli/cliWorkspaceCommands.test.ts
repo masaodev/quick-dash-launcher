@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type {
   AppItem,
+  ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
   Workspace,
   WorkspaceGroupView,
   WorkspaceItem,
@@ -14,6 +16,8 @@ import type { WorkspaceCommandContext, WorkspaceStore } from './cliWorkspaceComm
 let workspaces: Workspace[];
 let groups: WorkspaceGroupView[];
 let items: WorkspaceItem[];
+let archivedGroups: ArchivedWorkspaceGroup[];
+let archivedItems: ArchivedWorkspaceItem[];
 let ctx: WorkspaceCommandContext;
 let nextId: number;
 
@@ -57,6 +61,25 @@ beforeEach(() => {
     group('GrEmpty1', '空', 2),
   ];
   items = [item('It000001', '議事録', 0, 'GrA00001'), item('It000002', '設計', 2, 'GrA00001')];
+  archivedGroups = [
+    { ...group('ArG00001', '旧案件', 0), archivedAt: 0, originalOrder: 0, itemCount: 1 },
+    {
+      ...group('ArSub001', '旧資料', 1, { parentGroupId: 'ArG00001' }),
+      archivedAt: 0,
+      originalOrder: 1,
+      itemCount: 1,
+    },
+    {
+      ...group('ArG00002', '迷子', 2, { workspaceId: 'WsGone01' }),
+      archivedAt: 0,
+      originalOrder: 2,
+      itemCount: 0,
+    },
+  ] as ArchivedWorkspaceGroup[];
+  archivedItems = [
+    { ...item('ArIt0001', '古い', 0, 'ArG00001'), archivedAt: 0, archivedGroupId: 'ArG00001' },
+    { ...item('ArIt0002', '古い資料', 0, 'ArSub001'), archivedAt: 0, archivedGroupId: 'ArSub001' },
+  ] as ArchivedWorkspaceItem[];
 
   const store: WorkspaceStore = {
     loadWorkspaces: async () => [...workspaces].sort((a, b) => a.order - b.order),
@@ -120,6 +143,16 @@ beforeEach(() => {
     deleteGroup: async (id) => {
       groups = groups.filter((g) => g.id !== id);
     },
+    archiveGroup: vi.fn(async (id: string) => {
+      groups = groups.filter((g) => g.id !== id && g.parentGroupId !== id);
+    }),
+    loadArchivedGroups: async () => archivedGroups,
+    loadArchivedItems: async () => archivedItems,
+    moveGroupToWorkspace: vi.fn(async (id: string, workspaceId: string) => {
+      const found = archivedGroups.find((g) => g.id === id)!;
+      archivedGroups = archivedGroups.filter((g) => g.id !== id);
+      groups.push(group(found.id, found.displayName, 9, { workspaceId }));
+    }),
   };
   ctx = {
     store,
@@ -309,5 +342,61 @@ describe('workspace add / update / remove', () => {
     workspaces = [{ id: 'Ws000002', displayName: '私用', order: 0, createdAt: 0 }];
     expect((await errorOf(runWorkspaceCommand('remove', '私用', [], ctx))).code).toBe('conflict');
     expect(ctx.store.deleteWorkspace).not.toHaveBeenCalled();
+  });
+});
+
+describe('workspace group archive / archive list / archive restore', () => {
+  it('archive は子孫まで数え、切り離しウィンドウを閉じてからしまう', async () => {
+    const r = await runWorkspaceCommand('group', 'archive', ['案件A'], ctx);
+    expect(r).toMatchObject({ archived: { id: 'GrA00001', itemCount: 2, subgroupCount: 1 } });
+    expect(ctx.beforeGroupRemoved).toHaveBeenCalledWith('GrA00001');
+    expect(ctx.store.archiveGroup).toHaveBeenCalledWith('GrA00001');
+  });
+
+  it('archive の --dry-run はしまわない', async () => {
+    const r = await runWorkspaceCommand('group', 'archive', ['案件A', '--dry-run'], ctx);
+    expect(r).toMatchObject({ dryRun: true, archived: { id: 'GrA00001' } });
+    expect(ctx.store.archiveGroup).not.toHaveBeenCalled();
+    expect(ctx.beforeGroupRemoved).not.toHaveBeenCalled();
+  });
+
+  it('list は最上位のグループだけを、サブグループ名と子孫までの件数つきで返す', async () => {
+    const r = (await runWorkspaceCommand('archive', 'list', [], ctx)) as Record<string, unknown>[];
+    expect(r).toHaveLength(2);
+    expect(r[0]).toMatchObject({
+      id: 'ArG00001',
+      workspace: '仕事',
+      itemCount: 2,
+      subgroups: ['旧資料'],
+    });
+    expect(r[1]).toMatchObject({ id: 'ArG00002', workspace: null });
+  });
+
+  it('restore は省略時に元のワークスペースへ、元が無ければ既定のワークスペースへ戻す', async () => {
+    await runWorkspaceCommand('archive', 'restore', ['旧案件'], ctx);
+    expect(ctx.store.moveGroupToWorkspace).toHaveBeenCalledWith('ArG00001', 'Ws000001');
+    const r = await runWorkspaceCommand('archive', 'restore', ['迷子'], ctx);
+    expect(ctx.store.moveGroupToWorkspace).toHaveBeenCalledWith('ArG00002', 'Ws000001');
+    expect(r).toMatchObject({ restored: { id: 'ArG00002', location: ['仕事', '迷子'] } });
+  });
+
+  it('restore は --workspace で復元先を選べ、--dry-run では戻さない', async () => {
+    const r = await runWorkspaceCommand(
+      'archive',
+      'restore',
+      ['旧案件', '--workspace', '私用', '--dry-run'],
+      ctx
+    );
+    expect(r).toMatchObject({ dryRun: true, workspace: '私用', restoring: { id: 'ArG00001' } });
+    expect(ctx.store.moveGroupToWorkspace).not.toHaveBeenCalled();
+    await runWorkspaceCommand('archive', 'restore', ['旧案件', '--workspace', '私用'], ctx);
+    expect(ctx.store.moveGroupToWorkspace).toHaveBeenCalledWith('ArG00001', 'Ws000002');
+  });
+
+  it('一緒にしまったサブグループだけは指定できず not_found、操作が無ければ usage', async () => {
+    expect((await errorOf(runWorkspaceCommand('archive', 'restore', ['旧資料'], ctx))).code).toBe(
+      'not_found'
+    );
+    expect((await errorOf(runWorkspaceCommand('archive', undefined, [], ctx))).code).toBe('usage');
   });
 });
