@@ -42,7 +42,8 @@ const ItemWindowSwitchEditor: React.FC<ItemWindowSwitchEditorProps> = ({
 }) => {
   const { t } = useTranslation();
   const idPrefix = `item-window-${useId().replace(/:/g, '')}`;
-  const [expanded, setExpanded] = useState(false);
+  // パスの無い単一アイテム（パスが空で対象ウィンドウがある）は、ウィンドウ切り替えが働きのすべてなので開いた状態で出す
+  const [expanded, setExpanded] = useState(!opensSomething && !!value.window);
   const [picking, setPicking] = useState(false);
   /** 開いたときの対象ウィンドウ（「元に戻す」の先・一部だけで探す候補の元） */
   const [initialWindow] = useState(value.window);

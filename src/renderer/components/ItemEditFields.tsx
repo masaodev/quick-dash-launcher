@@ -9,6 +9,7 @@ import type {
   WindowInfo,
 } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { isPathlessItem } from '@common/utils/itemWindowConversion';
 
 import { debugLog } from '../utils/debug';
 import { toWindowConfig, toWindowOperationConfig } from '../utils/windowFilter';
@@ -265,6 +266,10 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             <ItemConverterMenu path={item.path} args={item.args} onConvert={handleConvert} />
           )}
           {errors?.path && <span className="error-message">{errors.path}</span>}
+          {/* パスの無い単一アイテム: 開くものが無く、開いているウィンドウへ切り替えるだけと添える */}
+          {!errors?.path && item.itemCategory === 'item' && isPathlessItem(item) && (
+            <small className="path-pathless-note">{t('register.windowSwitch.pathlessNote')}</small>
+          )}
         </div>
       )}
 

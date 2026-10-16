@@ -4,6 +4,7 @@ import type { JsonItem } from '@common/types';
 import { isJsonLauncherItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { isPathlessItem } from '@common/utils/itemWindowConversion';
 
 import {
   formatUpdatedAt,
@@ -119,6 +120,10 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     const path = jsonItem.path || '';
     if (path && (item.meta.launcherType ?? detectItemTypeSync(path)) === 'folder') {
       return <span className="folder-emoji">📁</span>;
+    }
+    // パスの無い単一アイテム（開いているウィンドウに切り替えるだけ）
+    if (isPathlessItem(jsonItem)) {
+      return <span className="folder-emoji">🪟</span>;
     }
     return null;
   };

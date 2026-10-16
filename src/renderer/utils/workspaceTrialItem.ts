@@ -1,5 +1,7 @@
-import type { RegisterItem, WorkspaceItem } from '@common/types';
+import type { RegisterItem, WorkspaceItem, WorkspaceLauncherItem } from '@common/types';
 import { itemWindowSwitchFields, omitItemWindowSwitch } from '@common/utils/itemWindowConversion';
+
+import { launcherTypeForPath } from './registerItemExecution';
 
 /**
  * ワークスペースのアイテム編集の「試しに実行」に渡すアイテムを、編集中の内容から作る
@@ -15,7 +17,13 @@ export function toTrialWorkspaceItem(saved: WorkspaceItem, editing: RegisterItem
       displayName: editing.displayName,
       path: editing.path,
       args: editing.args || undefined,
-      launcherType: editing.type === 'clipboard' ? saved.launcherType : editing.type,
+      launcherType:
+        editing.type === 'clipboard'
+          ? saved.launcherType
+          : (launcherTypeForPath(
+              editing.path,
+              editing.type
+            ) as WorkspaceLauncherItem['launcherType']),
     };
   }
   if (saved.type === 'set' && editing.itemCategory === 'set') {

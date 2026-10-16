@@ -10,6 +10,7 @@ import { detectItemType } from '@common/utils/itemTypeDetector';
 import type { ItemFieldValue } from '../../components/ItemEditFields';
 import { logError } from '../../utils/debug';
 import { hasClipboardContent, saveClipboardText } from '../../utils/clipboardText';
+import { registerPathError } from '../../utils/registerItemValidation';
 import { useToast } from '../useToast';
 
 interface FormErrors {
@@ -83,7 +84,14 @@ export function useWorkspaceItemEditForm(
 
   const handlePathBlur = useCallback(async () => {
     // クリップボードアイテムはpathを持たない
-    if (!item || item.itemCategory === 'clipboard' || !item.path?.trim()) return;
+    if (!item || item.itemCategory === 'clipboard') return;
+    if (!item.path?.trim()) {
+      // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
+      if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
+        setItem((prev) => (prev ? { ...prev, type: 'windowSwitch', icon: undefined } : null));
+      }
+      return;
+    }
 
     const newType = await detectItemType(item.path);
     setItem((prev) => (prev ? { ...prev, type: newType } : null));
@@ -98,13 +106,9 @@ export function useWorkspaceItemEditForm(
       newErrors.displayName = t('register.errors.displayNameRequired');
     }
 
-    if (
-      item.itemCategory !== 'set' &&
-      item.itemCategory !== 'window' &&
-      item.itemCategory !== 'clipboard' &&
-      !item.path?.trim()
-    ) {
-      newErrors.path = t('register.errors.pathRequired');
+    const pathError = registerPathError(item);
+    if (pathError) {
+      newErrors.path = t(pathError);
     }
 
     if (item.itemCategory === 'set' && !item.setEntries?.length) {

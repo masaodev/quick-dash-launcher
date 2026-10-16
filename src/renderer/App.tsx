@@ -657,7 +657,11 @@ function App(): React.ReactElement {
         return false;
       }
       const launcherItem = item;
-      if (launcherItem.type === 'folder' || launcherItem.type === 'customUri') {
+      if (
+        launcherItem.type === 'folder' ||
+        launcherItem.type === 'customUri' ||
+        launcherItem.type === 'windowSwitch'
+      ) {
         return false;
       }
       if (errorKeySet.has(launcherItem.path)) {

@@ -19,7 +19,7 @@ import { isBareFileName, resolveFromPath } from './pathResolver.js';
  * 起動可能なアイテムの最小インターフェース
  */
 export interface LaunchableItem {
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch' | 'clipboard';
   path: string;
   args?: string;
   displayName?: string;

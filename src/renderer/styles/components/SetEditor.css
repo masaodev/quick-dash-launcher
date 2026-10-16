@@ -710,3 +710,16 @@
 .set-placement-pick-details span + span {
   margin-left: var(--spacing-md);
 }
+
+/* 行に設定が無く、アイテムの設定で開くことの案内（「開くもの」の枠の下の 1 行） */
+.set-detail-inherit {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* 記録が無いときに出す、アイテムの設定のウィンドウ位置（入力欄の placeholder と同じ薄い字） */
+.set-placement-inherited {
+  color: var(--text-muted);
+}

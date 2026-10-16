@@ -83,6 +83,11 @@ interface WindowMatchFieldsProps {
   onPickWindow: () => void;
   /** exe 名もタイトルも空になったら undefined */
   onChange: (window: SetWindowMatch | undefined) => void;
+  /**
+   * 欄が空のときに薄い字で出す、代わりに使われる値（セットの行がアイテムの設定で開くとき）。
+   * 無い欄は既定の placeholder
+   */
+  inherited?: SetWindowMatch;
 }
 
 /** 対象ウィンドウ（開いているウィンドウから選ぶ・exe 名・ウィンドウタイトル・一部だけで探す候補・今合うウィンドウ） */
@@ -94,6 +99,7 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
   lead,
   onPickWindow,
   onChange,
+  inherited,
 }) => {
   const { t } = useTranslation();
   const initialTitle = initial?.title;
@@ -132,7 +138,11 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
         <input
           id={`${idPrefix}-process`}
           type="text"
-          placeholder={t('set.detail.processNamePlaceholder')}
+          placeholder={
+            inherited?.processName
+              ? t('set.detail.inheritValue', { value: inherited.processName })
+              : t('set.detail.processNamePlaceholder')
+          }
           value={value?.processName ?? ''}
           onChange={(e) => update({ processName: orUndefined(e.target.value) })}
         />
@@ -147,7 +157,11 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
           <input
             id={`${idPrefix}-title`}
             type="text"
-            placeholder={t('set.detail.windowTitlePlaceholder')}
+            placeholder={
+              inherited?.title
+                ? t('set.detail.inheritValue', { value: inherited.title })
+                : t('set.detail.windowTitlePlaceholder')
+            }
             value={value?.title ?? ''}
             onChange={(e) => update({ title: orUndefined(e.target.value) })}
           />
@@ -233,6 +247,8 @@ interface WindowPlacementFieldsProps {
   tabNote?: boolean;
   /** 最後に選んだウィンドウについて知らせること（記録したウィンドウ位置の下に添える） */
   pickNotes?: readonly WindowPickNote[];
+  /** 記録が無いときに薄い字で出す、代わりに使われるウィンドウ位置（セットの行がアイテムの設定で開くとき） */
+  inheritedPlacement?: SetPlacement;
 }
 
 /** ウィンドウ位置（記録したウィンドウ位置・ウィンドウ位置を更新・外す・仮想デスクトップ・全デスクトップに表示） */
@@ -249,6 +265,7 @@ export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
   onUpdated,
   tabNote = false,
   pickNotes = [],
+  inheritedPlacement,
 }) => {
   const { t } = useTranslation();
   const pinned = pinToAllDesktops === true;
@@ -313,11 +330,19 @@ export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
       <span className="set-detail-label set-detail-label-top">{t('set.detail.recorded')}</span>
       {/* 1 行目に位置の言葉、2 行目にボタン、3 行目に短い補足（ボタンが途中で折り返さない並び） */}
       <div className="set-field-col">
-        <span className="set-placement-text">
-          {placement
-            ? `📍 ${placementSummary(placement, screens, desktopNames)}`
-            : t('set.detail.noPlacement')}
-        </span>
+        {placement ? (
+          <span className="set-placement-text">
+            📍 {placementSummary(placement, screens, desktopNames)}
+          </span>
+        ) : inheritedPlacement ? (
+          <span className="set-placement-text set-placement-inherited">
+            {t('set.detail.inheritPlacement', {
+              place: placementSummary(inheritedPlacement, screens, desktopNames) ?? '',
+            })}
+          </span>
+        ) : (
+          <span className="set-placement-text">{t('set.detail.noPlacement')}</span>
+        )}
         <span className="set-detail-buttons">
           <Button
             variant="secondary"

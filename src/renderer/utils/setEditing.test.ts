@@ -4,6 +4,10 @@ import type { SetEntry, WindowInfo } from '@common/types';
 import {
   describeSetEntry,
   entryFromWindow,
+  entryWindowMatch,
+  toMatchableEntry,
+  usesItemSwitch,
+  type SetCatalogItem,
   loadSetEntryIcons,
   entryOpensAsTab,
   linkEntryToWindow,
@@ -71,6 +75,66 @@ describe('describeSetEntry', () => {
     expect(
       describeSetEntry({ window: { processName: 'notepad.exe' }, placement: { x: 0 } }, new Map())
     ).toMatchObject({ holding: 'none', missing: false });
+  });
+});
+
+describe('アイテムのウィンドウ切り替えを使う行', () => {
+  const todo: SetCatalogItem = {
+    key: 'todo1aaa',
+    id: 'todo1aaa',
+    displayName: 'MS To Do',
+    kind: 'window',
+    path: '',
+    groupName: 'メイン',
+    sameGroup: true,
+    itemSwitch: { window: { processName: 'ApplicationFrameHost.exe', title: 'Microsoft To Do' } },
+    pathless: true,
+  };
+  const memo: SetCatalogItem = {
+    key: 'memo1aaa',
+    id: 'memo1aaa',
+    displayName: '一時メモ',
+    kind: 'file',
+    path: 'C:\\一時メモ.txt',
+    groupName: 'メイン',
+    sameGroup: true,
+    itemSwitch: {
+      window: { processName: 'sakura.exe', title: '*一時メモ.txt*' },
+      placement: { x: 0, y: 0, width: 800, height: 600 },
+    },
+  };
+  const catalog = new Map([
+    ['todo1aaa', todo],
+    ['memo1aaa', memo],
+  ]);
+
+  it('パスの無い単一アイテムを指す行は「動かすだけ」で、パスを出さない', () => {
+    const view = describeSetEntry({ itemId: 'todo1aaa' }, catalog);
+    expect(view).toMatchObject({ kind: 'window', holding: 'ref', moveOnly: true });
+    expect(view.path).toBeUndefined();
+    expect(describeSetEntry({ itemId: 'memo1aaa' }, catalog).moveOnly).toBeUndefined();
+  });
+
+  it('パスの無い単一アイテムを指す行は、行に探す条件が無ければアイテムの対象ウィンドウで結び付ける', () => {
+    expect(toMatchableEntry({ itemId: 'todo1aaa' }, 0, catalog).window).toEqual({
+      processName: 'ApplicationFrameHost.exe',
+      title: 'Microsoft To Do',
+    });
+    const own = { itemId: 'todo1aaa', window: { processName: 'other.exe' } };
+    expect(entryWindowMatch(own, describeSetEntry(own, catalog))).toEqual({
+      processName: 'other.exe',
+    });
+    // パスのあるアイテムは今までどおり借りない（開くものから推測する）
+    expect(toMatchableEntry({ itemId: 'memo1aaa' }, 0, catalog).window).toBeUndefined();
+  });
+
+  it('行に対象ウィンドウもウィンドウ位置も無いときだけ、アイテムの設定で開く（パスあり・なし両方）', () => {
+    const uses = (entry: SetEntry) => usesItemSwitch(entry, describeSetEntry(entry, catalog));
+    expect(uses({ itemId: 'memo1aaa' })).toBe(true);
+    expect(uses({ itemId: 'todo1aaa' })).toBe(true);
+    expect(uses({ itemId: 'memo1aaa', window: { processName: 'x.exe' } })).toBe(false);
+    expect(uses({ itemId: 'memo1aaa', placement: { x: 0 } })).toBe(false);
+    expect(uses({ itemId: 'gone1aaa' })).toBe(false);
   });
 });
 

@@ -155,6 +155,7 @@ export const en: LocaleMessages = {
       expandedOptions: 'Options: {{value}}',
       windowTitle: 'Window title: {{value}}',
       processName: 'Exe name: {{value}}',
+      windowSwitchOnly: 'Only switches to an open window: {{target}}',
       executablePath: 'Executable path: {{value}}',
       windowState: 'State: {{value}}',
       windowStates: {
@@ -363,6 +364,7 @@ export const en: LocaleMessages = {
       file: 'Opening file...',
       folder: 'Opening folder...',
       customUri: 'Opening...',
+      windowSwitch: 'Switching to the window',
       windowOperation: 'Running window action',
       windowActivate: 'Brought the window to the front',
       windowClose: 'Window closed',
@@ -523,6 +525,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       dirHasNoName: "Folder imports (dir) don't have a display name",
       needName: 'Specify --name',
       needPath: 'Specify --path',
+      needPathOrWindow: 'Specify --path or --set window=…',
       argsOnlyItem: '--args can be used only with regular items (item) and rows of a set (set)',
       itemOnlySet: '--item and --label can be used only with sets (--type set)',
       setItemAndPath: 'Specify either --item or --path, not both',
@@ -614,6 +617,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     run: {
       titleNotMatched: 'No window with a matching title ({{exe}} is open)',
       notOpen: "Not open, so it wasn't moved",
+      itemNotOpen: "Not open, so it didn't switch",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
       desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
       itemWindowTimedOut:
@@ -722,6 +726,10 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       openKindPath: 'Path',
       item: 'Item',
       itemNote: 'Changes to the item apply to this set too.',
+      inheritNote:
+        'ℹ️ Opens with the settings of the item "{{name}}". Anything you enter below takes priority for this row.',
+      inheritValue: 'Item setting ({{value}})',
+      inheritPlacement: 'Item setting (📍 {{place}})',
       pickItem: 'Choose an item',
       otherItem: 'Use another item',
       pathNote: 'A path written in this set (no item is created).',
@@ -858,6 +866,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     noName: '(no name)',
     pathSummary: {
       noPath: '(no path)',
+      windowSwitchOnly: '(no path, switch only: {{target}})',
       noItems: '(no items)',
       noWindowTitle: '(no window title)',
       noFolderPath: '(no folder path)',
@@ -1340,6 +1349,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       toggle: 'Options (switch to window, window position)',
       findLead:
         'When this item opens and a matching window is already open, it switches to that window instead of opening it again.',
+      pathlessNote: 'The path is empty, so this only switches to an open window',
     },
     dirOptions: 'Folder import options',
     args: 'Arguments:',
@@ -1350,6 +1360,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     errors: {
       displayNameRequired: 'Enter a display name',
       pathRequired: 'Enter a path',
+      pathOrWindowRequired: 'Enter either a path or a target window',
       windowRequired: 'Enter a window title or process name',
       clipboardRequired: 'Write some text or capture the clipboard',
       clipboardSaveFailed: "Couldn't save the clipboard data",
@@ -1690,6 +1701,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
   validation: {
     emptyField: '{{field}} is empty',
     emptyTypedField: '{{field}} of the {{type}} item is empty',
+    pathOrWindowRequired:
+      'path is empty (an item without a path needs window.processName or window.title)',
     depthOutOfRange: 'depth must be -1 (unlimited) or 0 or greater',
     invalidTypes: 'types must be file, folder, or both',
     unknownType: 'Unknown item type: {{type}}',

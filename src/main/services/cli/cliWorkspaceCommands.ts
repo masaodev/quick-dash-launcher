@@ -502,11 +502,14 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   const name = optionString(parsed, 'name');
   const rawPath = optionString(parsed, 'path');
   if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
-  if (!rawPath) throw new CliError('usage', mainI18n.t('cli.errors.needPath'));
+  // --set window=… で対象ウィンドウを渡せば --path が無くてもよい（パスの無い単一アイテム）
+  const setsWindow = parsed.sets.some(([key]) => key === 'window' || key === 'windowConfig');
+  if (!rawPath && !setsWindow)
+    throw new CliError('usage', mainI18n.t('cli.errors.needPathOrWindow'));
   const position = optionInt(parsed, 'position');
   const dryRun = optionFlag(parsed, 'dry-run');
 
-  const itemPath = await ctx.markFolder(resolveCliPath(rawPath, ctx.cwd));
+  const itemPath = rawPath ? await ctx.markFolder(resolveCliPath(rawPath, ctx.cwd)) : '';
   // 中身はデータファイルの通常アイテムと同じ規則で検証する
   const { merged, setKeys } = applyPatch(
     { id: 'CliCheck', type: 'item' },

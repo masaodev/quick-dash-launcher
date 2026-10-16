@@ -119,7 +119,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 
 型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`window`＝[3.4](data-format.md#34-ウィンドウアイテムjsonwindowitem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`set`＝[3.3](data-format.md#33-セットjsonsetitem)）を参照。ワークスペースに固有の違いは次のとおり。
 
-- `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri）は `originalPath` があればそれ、なければ `path` から判定する。ドット入りのフォルダ名と拡張子の無いファイルの扱い（末尾の区切り文字・読み込み時のディスク確認・`path-type-cache.json`）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
+- `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri）は `originalPath` があればそれ、なければ `path` から判定する。`path` は、ウィンドウ切り替えの `window` があれば空でもよい（パスの無い単一アイテム。起動種別は `windowSwitch`、[データファイル形式 3.1.5.7](data-format.md#3157-パスの無い単一アイテム)）。ドット入りのフォルダ名と拡張子の無いファイルの扱い（末尾の区切り文字・読み込み時のディスク確認・`path-type-cache.json`）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
 - データファイルの `updatedAt`・`autoImportRuleId` は持たない
 - `clipboard` は QDL が生成する。手で書かない
 - `set` の行の `itemId` は、ワークスペースのアイテムの id か、データファイルのアイテムの id を指す。実行時はワークスペースのアイテムを先に探す（`src/main/ipc/workspaceHandlers.ts`）

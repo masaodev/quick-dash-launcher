@@ -6,6 +6,7 @@ import type { ScreenArea } from '@common/utils/placementLabel';
 import {
   catalogItemToEntry,
   describeSetEntry,
+  entryWindowMatch,
   loadSetCatalog,
   loadSetEntryIcons,
   placementText,
@@ -121,7 +122,11 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   /** 行の 2 段目の文字（開くもの。動かすだけの行は動かすウィンドウの exe 名。指す先が無い行は出さない） */
   const rowDetails = (entry: SetEntry, view: SetEntryView): string => {
     if (view.missing) return '';
-    if (view.holding === 'none') return entry.window?.processName ?? entry.window?.title ?? '';
+    // 動かすだけの行は動かすウィンドウの exe 名（パスの無い単一アイテムを指す行で、行に無ければアイテムのもの）
+    if (view.moveOnly) {
+      const match = entryWindowMatch(entry, view);
+      return match?.processName ?? match?.title ?? '';
+    }
     return view.path ?? '';
   };
 
@@ -199,7 +204,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     )}
                   </span>
                   {/* 2 段目はその行が開くもの。動かすだけの行は、印と動かすウィンドウの exe 名 */}
-                  {view.holding === 'none' && !view.missing ? (
+                  {view.moveOnly && !view.missing ? (
                     <span className="set-row-details" title={rowDetails(entry, view)}>
                       <span className="set-chip set-chip-open">{t('set.editor.moveOnly')}</span>
                       {rowDetails(entry, view)}
@@ -296,7 +301,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         {/* 動かすだけの行があるときだけ、閉じていると動かないことと、開くものの足し方を添える */}
         {entries.some((entry) => {
           const view = describeSetEntry(entry, catalogById);
-          return view.holding === 'none' && !view.missing;
+          return view.moveOnly && !view.missing;
         }) && t('set.editor.moveOnlyHint')}
       </small>
 

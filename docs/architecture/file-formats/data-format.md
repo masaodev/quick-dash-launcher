@@ -134,7 +134,8 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 #### 3.1.1. フィールドの要点
 
-- **必須**: `type: "item"`・`displayName`（表示名）・`path`（ファイルパス・URL・コマンド）。`displayName` と `path` は空文字不可
+- **必須**: `type: "item"`・`displayName`（表示名）・`path`（ファイルパス・URL・コマンド）。`displayName` は空文字不可
+- `path` は、ウィンドウ切り替えの `window`（`processName` か `title`）があれば空文字でもよい（パスの無い単一アイテム、3.1.5.7）。どちらも空のアイテムは不正（5.1）
 - **任意**: `args`（コマンドライン引数）・`customIcon`（3.1.4）・ウィンドウ切り替えの `window`・`placement`・`ifOpen`・`activateWindow`・`waitSeconds`・`pinToAllDesktops`（3.1.5）・`autoImportRuleId`
 - `autoImportRuleId` は自動取込ルールの ID。このフィールドがあるアイテムは自動取込の管理対象になる
 
@@ -230,6 +231,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 | `pinToAllDesktops` | 全仮想デスクトップにピン止めする。ピン止めしたときは `placement.virtualDesktopNumber` を使わない | `false` |
 
 - `window` が無い（`processName`・`title` のどちらも無い）アイテムでは、ほかのキーがあっても使わない
+- `path` が空のときは開くものが無いので、`ifOpen`・`waitSeconds` は使わない（3.1.5.7）
 - 型の合わない値は、セットの行と同じく黙って捨てる（3.3.4。`pinToAllDesktops` は真偽値だけ）
 
 ##### 3.1.5.2. ワイルドカード検索
@@ -296,6 +298,25 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
 - `windowConfig` と新しいキーが両方あれば `windowConfig` を優先する（`ifOpen`・`waitSeconds` は残す）
 - 変換は戻せないので、書き換える前に全設定ファイルのスナップショットを 1 回だけ作る。旧グループ・旧ウィンドウ配置のセットへの変換（3.3.6）も要るときは `backup/<日時>_pre-set-migration/`、`windowConfig` だけのときは `backup/<日時>_pre-window-migration/`（`BackupService.createPreWindowMigrationSnapshot`）。`backupEnabled` に関係なく作り、作れなければ変換しない
 - 読めないデータファイルがあってセットへの変換と一緒に保留したとき、変換前に QDL の外で書いたとき、CLI で `--set windowConfig=…` を渡したときも、読み込み時の検証がその場で新しいキーに直すので、動きは変わらない（`validateJsonLauncherItem`）。型の合わない `windowConfig`（オブジェクトでない、`x` が数値でない など）は今までどおりアイテムごと不正にする
+
+##### 3.1.5.7. パスの無い単一アイテム
+
+`path` が空文字で、`window` だけを持つ単一アイテムです。開くものが無く、開いているウィンドウに切り替えるだけです。`type` は `"item"` のまま書きます（起動種別は読み込み時に `path` から判定し、空なら `windowSwitch` になる。`src/common/utils/itemTypeDetector.ts`）。
+
+```json
+{
+  "id": "t1O2d3O4",
+  "type": "item",
+  "displayName": "MS To Do",
+  "path": "",
+  "window": { "processName": "ApplicationFrameHost.exe", "title": "Microsoft To Do" },
+  "activateWindow": true
+}
+```
+
+- **開いたとき**: セットの「開くものの無い行」（3.3.5 の 2・3）として実行する。`window` に合うウィンドウが開いていれば、`placement` があれば位置を合わせて切り替える（前面に出すかは `activateWindow`）。開いていなければ何も開かず、情報のトースト「開いていないので切り替えませんでした」を出す（`notifyLauncherItemFailure`）
+- **セットの行が指したとき**: 行は開くものの無い行（動かすだけ）になる。行に `window` が無ければ、アイテムの `window` で探す。位置の無い行はアイテムの `placement`・`activateWindow`・`pinToAllDesktops` も当てる（パスのあるアイテムと同じ、3.3.5 の 2）。開いていなければ飛ばす（3.3.5 の 7）
+- **path を入れたとき**: 普通の単一アイテム（開いていれば切り替え、無ければ開く）になる
 
 #### 3.1.6. ショートカットファイルの自動解析
 
@@ -456,8 +477,8 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
 実行は `executeSet`（`src/main/services/launch/setExecutor.ts`）。
 
 1. **開き方**: 順番に開くときは、行を開いてから次の行を開くまで 100ms（`GROUP_LAUNCH_DELAY_MS`、`src/common/constants.ts`）あける。ウィンドウを待って位置を合わせる処理は並行して続け、次の行はその完了を待たない。同時に開くときは全部の行を一度に始める
-2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。開くものの無い行（動かすだけ）は、`window` に合うウィンドウを前に出す（無ければ飛ばす。`window` が空なら失敗）。それ以外は、`ifOpen` が `"move"` で `window`（無ければ指すアイテムのウィンドウ切り替えの `windowConfig`。そのときはアイテムの `placement`・`activateWindow`・`pinToAllDesktops` も当てる、3.1.5）に合うウィンドウが見つかれば前に出すだけ（Windows に前面化を断られても開き直さない）、無ければ開く。行の `pinToAllDesktops` が `true` なら、前に出すウィンドウにピン止めも当てる
-3. **位置のある行**: `window` で探す（3.3.2）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからないとき、開くものの無い行は飛ばす（ウィンドウアイテムを指す行は失敗）。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。合うウィンドウが複数あれば、`placement.virtualDesktopNumber` のデスクトップにあるものを先に使う。見つかったら、最小化の解除・ピン止め（`pinToAllDesktops`）・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する（前面に出さない行では、位置を当ててから最大化するまでの間に前面が移ったら、元の前面のウィンドウに戻す。Windows の最大化の解除と最大化は、前面に出さずに行う手段が無いため）。記録した位置の中心がどの画面にも入らない（モニターを外したなど）ときは、主画面（左上が 0,0 の画面）の作業領域に収まる大きさにして、その中央に当てる。当てた後に読み直した位置（x・y）がずれていれば（管理者権限で動くウィンドウなど）、その行は失敗（「ウィンドウを動かせませんでした」）にする。大きさは見ない。`virtualDesktopNumber` が今のデスクトップの数より大きい（今は無いデスクトップ）ときは、番号を外して位置だけ当て、その行は失敗（「デスクトップ N がありません。位置だけ合わせました」）にする。利用者の見ているデスクトップは切り替えない。行の `pinToAllDesktops` が `true` なら、仮想デスクトップは移さず（今は無いデスクトップの番号でも失敗にしない）全仮想デスクトップにピン止めする
+2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。開くものの無い行（動かすだけ。パスの無い単一アイテムを指す行を含む、3.1.5.7）は、`window` に合うウィンドウを前に出す（行に `window` が無ければ、パスの無い単一アイテムの `window`・`placement`・`activateWindow`・`pinToAllDesktops` を使う。無ければ飛ばす。探す条件が空なら失敗）。それ以外は、`ifOpen` が `"move"` で `window`（無ければ指すアイテムのウィンドウ切り替えの `windowConfig`。そのときはアイテムの `placement`・`activateWindow`・`pinToAllDesktops` も当てる、3.1.5）に合うウィンドウが見つかれば前に出すだけ（Windows に前面化を断られても開き直さない）、無ければ開く。行の `pinToAllDesktops` が `true` なら、前に出すウィンドウにピン止めも当てる
+3. **位置のある行**: `window` で探す（3.3.2。行に `window` が無ければ、指すウィンドウアイテム・パスの無い単一アイテムの条件、または開く exe の名前で探す）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからないとき、開くものの無い行は飛ばす（ウィンドウアイテムを指す行は失敗）。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。合うウィンドウが複数あれば、`placement.virtualDesktopNumber` のデスクトップにあるものを先に使う。見つかったら、最小化の解除・ピン止め（`pinToAllDesktops`）・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する（前面に出さない行では、位置を当ててから最大化するまでの間に前面が移ったら、元の前面のウィンドウに戻す。Windows の最大化の解除と最大化は、前面に出さずに行う手段が無いため）。記録した位置の中心がどの画面にも入らない（モニターを外したなど）ときは、主画面（左上が 0,0 の画面）の作業領域に収まる大きさにして、その中央に当てる。当てた後に読み直した位置（x・y）がずれていれば（管理者権限で動くウィンドウなど）、その行は失敗（「ウィンドウを動かせませんでした」）にする。大きさは見ない。`virtualDesktopNumber` が今のデスクトップの数より大きい（今は無いデスクトップ）ときは、番号を外して位置だけ当て、その行は失敗（「デスクトップ N がありません。位置だけ合わせました」）にする。利用者の見ているデスクトップは切り替えない。行の `pinToAllDesktops` が `true` なら、仮想デスクトップは移さず（今は無いデスクトップの番号でも失敗にしない）全仮想デスクトップにピン止めする
 4. **取り合わない**: 1 回の実行の中で、ある行が使うと決めたウィンドウは、ほかの行の候補から外す
 5. **探す相手が決まらない行**: `window` が無く開くものが exe でない（URL など）行は、位置があっても開くだけ
 6. **失敗**: 行ごとに失敗しても残りを続ける。開けなかった行（パスが無いなど）は、ウィンドウを待たずにその理由で失敗にする。位置のある行が 1 つでもあれば進み具合を画面の隅に出し（中止できる）、行ごとの結果はそこに出す。無ければ、失敗した行の名前を警告のトーストで出す
@@ -822,7 +843,7 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
 
 - `JsonItem` は `type`（`item` / `dir` / `set` / `window` / `clipboard`）で判別する union。全アイテム共通のフィールドは `id`（8 文字の英数字）・`memo`・`updatedAt`
 - ファイル上の型（`Json*`）と画面で扱う内部型は別。読み込み時に `src/main/services/data/jsonItemConverter.ts` が JSON アイテムを内部型へ変換する（フォルダ取込の展開・`.lnk` の解析を含む）
-- 内部型の `type` は JSON 側と語彙が違う。`JsonLauncherItem`（`type: "item"`）は、パスから判定した実行タイプ（`url` / `file` / `folder` / `app` / `customUri`）を `type` に持つ `LauncherItem` になる
+- 内部型の `type` は JSON 側と語彙が違う。`JsonLauncherItem`（`type: "item"`）は、パスから判定した実行タイプ（`url` / `file` / `folder` / `app` / `customUri`、`path` が空なら `windowSwitch`＝パスの無い単一アイテム、3.1.5.7）を `type` に持つ `LauncherItem` になる
 - 内部型の `sourceFile`・`id` は、編集・削除のときに元のファイルとアイテムを特定するために使う（`lineNumber` は非推奨）
 
 ## 7. 関連ドキュメント

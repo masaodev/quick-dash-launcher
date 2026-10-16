@@ -228,13 +228,16 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
   const rawPath = optionString(parsed, 'path');
   if (type === 'dir' && name) throw new CliError('usage', mainI18n.t('cli.errors.dirHasNoName'));
   if (type !== 'dir' && !name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
-  if ((type === 'item' || type === 'dir') && !rawPath)
-    throw new CliError('usage', mainI18n.t('cli.errors.needPath'));
+  if (type === 'dir' && !rawPath) throw new CliError('usage', mainI18n.t('cli.errors.needPath'));
+  // 単一アイテムは、--set window=… で対象ウィンドウを渡せば --path が無くてもよい（パスの無い単一アイテム）
+  const setsWindow = parsed.sets.some(([key]) => key === 'window' || key === 'windowConfig');
+  if (type === 'item' && !rawPath && !setsWindow)
+    throw new CliError('usage', mainI18n.t('cli.errors.needPathOrWindow'));
   if (type !== 'item' && optionString(parsed, 'args') !== undefined) {
     throw new CliError('usage', mainI18n.t('cli.errors.argsOnlyItem'));
   }
 
-  let itemPath: string | undefined;
+  let itemPath: string | undefined = type === 'item' ? '' : undefined;
   if (rawPath !== undefined) {
     itemPath = resolveCliPath(rawPath, ctx.cwd);
     if (type === 'item') itemPath = await ctx.store.markFolder(itemPath);

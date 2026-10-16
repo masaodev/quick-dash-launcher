@@ -60,7 +60,7 @@ uwp_{PackageFamilyName}_icon.png
 | `customUri` | 1. スキーマから解決 | `apps/uri_{schema}_icon.png` |
 | | 2. 拡張子へフォールバック | `extensions/ext_{extension}_icon.png` |
 | `file` | - | `extensions/ext_{extension}_icon.png` |
-| `folder` ほか | - | 取得しない（デフォルトアイコンを表示） |
+| `folder` ほか | - | 取得しない（デフォルトアイコンを表示。パスの無い単一アイテム `windowSwitch` も同じで、カスタムアイコンが無ければ 🪟） |
 
 ### キャッシュに無いアイコンの補完
 
@@ -81,7 +81,7 @@ uwp_{PackageFamilyName}_icon.png
 | アプリケーション | ⚙️ |
 | カスタムURI | 🔗 |
 | セット | 📦 |
-| ウィンドウ | 🪟 |
+| ウィンドウ（ウィンドウ操作・パスの無い単一アイテム） | 🪟 |
 | クリップボード | 📋 |
 
 セットの編集画面の行の一覧では、何も開かずにウィンドウを動かすだけの行に 🖥️ を使う。
