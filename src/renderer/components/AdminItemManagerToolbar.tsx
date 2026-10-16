@@ -147,7 +147,7 @@ const AddSplitButton: React.FC<AdminItemManagerToolbarProps> = ({
         title={t('itemManager.toolbar.addMenu')}
         aria-expanded={dropdown.isOpen}
       >
-        ▼
+        <span className="toolbar-split-toggle-icon">▼</span>
       </Button>
       {dropdown.isOpen && (
         <div className="dropdown-menu" role="menu">
