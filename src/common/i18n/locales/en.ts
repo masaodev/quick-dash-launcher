@@ -1245,7 +1245,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       },
       window: {
         main: 'Finds an open window and brings it forward or moves it',
-        sub: 'Launches nothing (does nothing if the window is not found)',
+        sub: 'Opens nothing (does nothing if the window is not found)',
       },
       clipboard: {
         main: 'Saves what you have copied right now',
