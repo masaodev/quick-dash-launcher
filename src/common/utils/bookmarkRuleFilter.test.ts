@@ -6,7 +6,6 @@ import {
   applyBookmarkRuleFilters,
   buildBookmarkDisplayName,
   buildBookmarkFolderTree,
-  validateBookmarkRulePatterns,
 } from './bookmarkRuleFilter';
 
 const bookmarks: BookmarkWithFolder[] = [
@@ -59,34 +58,24 @@ describe('applyBookmarkRuleFilters', () => {
     expect(result.map((b) => b.displayName)).toEqual(['Google', 'ニュース']);
   });
 
-  it('URL・名前パターンは大文字小文字を区別しない正規表現', () => {
+  it('URL・名前はその文字を含むものだけ（大文字小文字を区別しない）', () => {
     expect(
-      applyBookmarkRuleFilters(bookmarks, { ...baseFilter, urlPattern: 'GITHUB\\.com' }).map(
+      applyBookmarkRuleFilters(bookmarks, { ...baseFilter, urlPattern: 'GITHUB.com' }).map(
         (b) => b.displayName
       )
     ).toEqual(['GitHub', 'GitHub Docs']);
     expect(
-      applyBookmarkRuleFilters(bookmarks, { ...baseFilter, namePattern: 'docs|ニュース' }).map(
+      applyBookmarkRuleFilters(bookmarks, { ...baseFilter, namePattern: 'docs' }).map(
         (b) => b.displayName
       )
-    ).toEqual(['GitHub Docs', 'ニュース']);
+    ).toEqual(['GitHub Docs']);
   });
 
-  it('無効な正規表現は絞り込まない', () => {
-    expect(applyBookmarkRuleFilters(bookmarks, { ...baseFilter, urlPattern: '(' })).toHaveLength(4);
-  });
-});
-
-describe('validateBookmarkRulePatterns', () => {
-  it('空と妥当な正規表現は valid、壊れた正規表現は invalid', () => {
-    expect(validateBookmarkRulePatterns({ urlPattern: '', namePattern: 'a|b' })).toEqual({
-      urlPatternValid: true,
-      namePatternValid: true,
-    });
-    expect(validateBookmarkRulePatterns({ urlPattern: '[', namePattern: '' })).toEqual({
-      urlPatternValid: false,
-      namePatternValid: true,
-    });
+  it('正規表現の記号もそのままの文字として比べる', () => {
+    expect(applyBookmarkRuleFilters(bookmarks, { ...baseFilter, urlPattern: '(' })).toHaveLength(0);
+    expect(
+      applyBookmarkRuleFilters(bookmarks, { ...baseFilter, namePattern: 'docs|ニュース' })
+    ).toHaveLength(0);
   });
 });
 

@@ -129,3 +129,16 @@
   display: flex;
   gap: var(--spacing-sm);
 }
+
+/* 案内の右にボタンを置くとき（ブックマーク取込の「自動取込の設定を開く」） */
+.import-hint-with-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.import-hint-with-action > span {
+  flex: 1 1 320px;
+  min-width: 0;
+}

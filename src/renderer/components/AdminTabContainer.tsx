@@ -94,6 +94,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             selectedCategory={settingsCategory}
             onSelectCategory={onSettingsCategoryChange}
             onOpenManualBookmarkImport={onOpenManualBookmarkImport}
+            onTabStructureSaved={onTabStructureSaved}
           />
         )}
         {activeTab === 'edit' && (

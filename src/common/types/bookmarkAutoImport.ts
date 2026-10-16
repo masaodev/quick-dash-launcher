@@ -25,9 +25,9 @@ export interface BookmarkAutoImportRule {
   folderFilterMode: 'include' | 'exclude';
   /** サブフォルダのブックマークも含めるか（デフォルト: true） */
   includeSubfolders: boolean;
-  /** URLパターン（正規表現、空=全URL） */
+  /** URL に含む文字（大文字小文字を区別しない。空=全URL） */
   urlPattern: string;
-  /** 名前パターン（正規表現、空=全名前） */
+  /** 名前に含む文字（大文字小文字を区別しない。空=全名前） */
   namePattern: string;
 
   /** インポート先データファイル名（例: "datafiles/data.json"） */

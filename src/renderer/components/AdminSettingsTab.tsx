@@ -6,6 +6,7 @@ import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
 import { isResettableCategory, type SettingsCategory } from '../utils/settingsResetKeys';
 import { logError } from '../utils/debug';
+import type { TabStructureSettings } from '../hooks/useAdminTabStructure';
 
 import AlertDialog from './AlertDialog';
 import ConfirmDialog from './ConfirmDialog';
@@ -32,6 +33,8 @@ interface SettingsTabProps {
   onSelectCategory: (category: SettingsCategory) => void;
   /** 「一度だけ取り込む」→ アイテム管理の手動取込モーダルを開く */
   onOpenManualBookmarkImport?: () => void;
+  /** ブックマークの取込ルールの取込先に新しいタブ・データファイルを作ったとき */
+  onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
 }
 
 const AdminSettingsTab: React.FC<SettingsTabProps> = ({
@@ -41,6 +44,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
   selectedCategory,
   onSelectCategory,
   onOpenManualBookmarkImport,
+  onTabStructureSaved,
 }) => {
   const { t } = useTranslation();
   const [editedSettings, setEditedSettings] = useState<AppSettings>(settings);
@@ -162,7 +166,13 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               <p className="settings-section-description">
                 {t('settings.bookmarkAutoImport.description')}
               </p>
-              <BookmarkAutoImportSettings onOpenManualImport={onOpenManualBookmarkImport} />
+              <BookmarkAutoImportSettings
+                onOpenManualImport={onOpenManualBookmarkImport}
+                dataFileTabs={settings.dataFileTabs ?? []}
+                dataFileLabels={settings.dataFileLabels ?? {}}
+                showDataFileTabs={settings.showDataFileTabs ?? false}
+                onTabStructureSaved={onTabStructureSaved}
+              />
             </div>
           )}
 
