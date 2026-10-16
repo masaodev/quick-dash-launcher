@@ -86,14 +86,12 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
     await test.step('アイテムがデータファイルと同じ語彙になり、廃止フィールドが消える', async () => {
       const byName = (name: string) => main.items.find((i) => i.displayName === name)!;
       expect(byName('GitHub')).toMatchObject({ type: 'item', path: 'https://github.com/' });
+      // 旧ウィンドウ操作は、2.0 へ移した後にパスの無い単一アイテムになる
       expect(byName('Chrome を左へ')).toMatchObject({
-        type: 'window',
-        windowTitle: '*Google Chrome',
-        processName: 'chrome.exe',
-        x: 0,
-        y: 0,
-        width: 1280,
-        height: 1400,
+        type: 'item',
+        path: '',
+        window: { processName: 'chrome.exe', title: '*Google Chrome' },
+        placement: { x: 0, y: 0, width: 1280, height: 1400 },
       });
       expect(byName('クリップ')).toMatchObject({
         type: 'clipboard',

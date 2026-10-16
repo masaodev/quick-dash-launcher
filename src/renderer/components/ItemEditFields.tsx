@@ -1,21 +1,13 @@
 import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
-import type {
-  ClipboardFormat,
-  DataFileTab,
-  RegisterItem,
-  SetEntry,
-  WindowInfo,
-} from '@common/types';
+import type { ClipboardFormat, DataFileTab, RegisterItem, SetEntry } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isPathlessItem } from '@common/utils/itemWindowConversion';
 
 import { debugLog } from '../utils/debug';
-import { toWindowConfig, toWindowOperationConfig } from '../utils/windowFilter';
 
 import DirOptionsEditor from './DirOptionsEditor';
-import WindowConfigEditor from './WindowConfigEditor';
 import ItemWindowSwitchEditor from './ItemWindowSwitchEditor';
 import CustomIconEditor from './CustomIconEditor';
 import ItemConverterMenu from './ItemConverterMenu';
@@ -28,7 +20,6 @@ export const ITEM_CATEGORY_ICONS: Readonly<Record<RegisterItem['itemCategory'], 
   item: '📄',
   dir: '🗂️',
   set: '📦',
-  window: '🪟',
   clipboard: '📋',
 };
 
@@ -37,13 +28,7 @@ const NO_SET_ENTRIES: SetEntry[] = [];
 
 /** フォームの 1 項目に入れられる値 */
 export type ItemFieldValue =
-  | string
-  | boolean
-  | number
-  | RegisterItem['dirOptions']
-  | RegisterItem['windowOperationConfig']
-  | ClipboardFormat[]
-  | SetEntry[];
+  string | boolean | number | RegisterItem['dirOptions'] | ClipboardFormat[] | SetEntry[];
 
 export interface ItemEditFieldErrors {
   displayName?: string;
@@ -91,10 +76,6 @@ interface ItemEditFieldsProps {
   customIconPreview: string | undefined;
   onCustomIconSelect: () => void;
   onCustomIconDelete: () => void;
-  /** ウィンドウ操作アイテムの「ウィンドウを選択」 */
-  onOpenWindowSelector: () => void;
-  /** ウィンドウ操作アイテムの「ウィンドウから取得」 */
-  onFetchFromWindow: () => Promise<WindowInfo | null>;
   onClipboardError: (message: string) => void;
   showSeparator: boolean;
 }
@@ -122,8 +103,6 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   customIconPreview,
   onCustomIconSelect,
   onCustomIconDelete,
-  onOpenWindowSelector,
-  onFetchFromWindow,
   onClipboardError,
   showSeparator,
 }) => {
@@ -150,10 +129,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   };
   const flashClass = convertedFlash ? ' item-converted-flash' : '';
   const selectedTab = placement?.availableTabs.find((tab) => tab.files.includes(item.targetTab));
-  const hasPath =
-    item.itemCategory !== 'set' &&
-    item.itemCategory !== 'window' &&
-    item.itemCategory !== 'clipboard';
+  const hasPath = item.itemCategory !== 'set' && item.itemCategory !== 'clipboard';
 
   const customIconEditor = (
     <CustomIconEditor
@@ -217,7 +193,6 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           <option value="item">{t('register.types.item')}</option>
           <option value="dir">{t('register.types.dir')}</option>
           <option value="set">{t('register.types.set')}</option>
-          <option value="window">{t('register.types.window')}</option>
           <option value="clipboard">{t('register.types.clipboard')}</option>
         </select>
         <div className="register-kind-desc">
@@ -328,28 +303,6 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           opensSomething={item.path.trim() !== ''}
           onChange={(patch) => onUpdate(patch)}
         />
-      )}
-
-      {item.itemCategory === 'window' && (
-        <div>
-          <WindowConfigEditor
-            windowConfig={
-              item.windowOperationConfig
-                ? toWindowConfig(item.windowOperationConfig)
-                : { title: '' }
-            }
-            onChange={(wc) =>
-              onFieldChange('windowOperationConfig', toWindowOperationConfig(item.displayName, wc))
-            }
-            onGetWindowClick={onOpenWindowSelector}
-            onFetchFromWindow={onFetchFromWindow}
-          />
-          {errors?.displayName && (
-            <div className="form-group">
-              <span className="error-message">{errors.displayName}</span>
-            </div>
-          )}
-        </div>
       )}
 
       {item.itemCategory === 'clipboard' && (

@@ -17,15 +17,13 @@ import type {
   LauncherItem,
   SetItem,
   ToastItemType,
-  WindowItem,
   WorkspaceItem,
   WorkspaceItemUpdate,
 } from '../types';
-import { isClipboardItem, isSetItem, isWindowInfo, isWindowItem } from '../types/guards';
-import type { RegisterItem, WindowOperationConfig } from '../types/register';
+import { isClipboardItem, isSetItem, isWindowInfo } from '../types/guards';
+import type { RegisterItem } from '../types/register';
 
-import { windowInfoToWindowItem } from './windowInfoConverter';
-import { pickWindowPlacement } from './windowPlacement.js';
+import { windowInfoToPathlessItem } from './windowInfoConverter';
 import {
   describeWindowMatch,
   isPathlessItem,
@@ -51,16 +49,6 @@ function launcherBody(item: LauncherItem): WorkspaceItemUpdate {
     originalPath: item.originalPath,
     customIcon: item.customIcon,
     ...pickItemWindowSwitch(item),
-    memo: item.memo,
-  });
-}
-
-function windowBody(item: WindowItem): WorkspaceItemUpdate {
-  return compact({
-    type: 'window',
-    displayName: item.displayName,
-    windowTitle: item.windowTitle,
-    ...pickWindowPlacement(item),
     memo: item.memo,
   });
 }
@@ -92,14 +80,13 @@ function setBody(item: SetItem): WorkspaceItemUpdate {
 /**
  * メイン画面のアイテムをワークスペースアイテムの本体に変換する（id・並び順・所属は呼び出し側が付ける）
  *
- * WindowInfo（ウィンドウ検索結果）はタイトルとプロセス名だけのウィンドウ操作アイテムにする。
- * 位置も記録したいときは呼び出し側で windowInfoToWindowItem(info, { includePosition: true }) を通す
+ * WindowInfo（ウィンドウ検索結果）は exe 名とタイトルだけのパスの無い単一アイテムにする。
+ * 位置も記録したいときは呼び出し側で windowInfoToPathlessItem(info, { includePosition: true }) を通す
  */
 export function appItemToWorkspaceItemBody(item: AppItem): WorkspaceItemUpdate {
   if (isWindowInfo(item)) {
-    return windowBody(windowInfoToWindowItem(item));
+    return launcherBody(windowInfoToPathlessItem(item));
   }
-  if (isWindowItem(item)) return windowBody(item);
   if (isClipboardItem(item)) return clipboardBody(item);
   if (isSetItem(item)) return setBody(item);
   return launcherBody(item);
@@ -114,22 +101,6 @@ export function appItemToWorkspaceItemBody(item: AppItem): WorkspaceItemUpdate {
  */
 export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
   switch (item.type) {
-    case 'window': {
-      const windowOperationConfig: WindowOperationConfig = {
-        displayName: item.displayName,
-        windowTitle: item.windowTitle,
-        ...pickWindowPlacement(item),
-      };
-      return {
-        displayName: item.displayName,
-        path: '',
-        type: 'app',
-        targetTab: '',
-        itemCategory: 'window',
-        windowOperationConfig,
-        memo: item.memo,
-      };
-    }
     case 'clipboard':
       return {
         displayName: item.displayName,
@@ -181,17 +152,6 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
   const memo = registerItem.memo || undefined;
 
   switch (registerItem.itemCategory) {
-    case 'window': {
-      const config = registerItem.windowOperationConfig;
-      return compact({
-        type: 'window',
-        displayName: config?.displayName || registerItem.displayName,
-        windowTitle: config?.windowTitle ?? '',
-        ...pickWindowPlacement(config ?? {}),
-        processName: config?.processName || undefined,
-        memo,
-      });
-    }
     case 'clipboard':
       return compact({
         type: 'clipboard',
@@ -241,13 +201,6 @@ export function describeWorkspaceItem(item: WorkspaceItem, t: TFunction): string
       return isPathlessItem(item)
         ? t('launcher.tooltip.windowSwitchOnly', { target: describeWindowMatch(item.window) })
         : item.path;
-    case 'window':
-      return item.processName
-        ? t('workspace.describe.windowWithProcess', {
-            title: item.windowTitle,
-            process: item.processName,
-          })
-        : t('workspace.describe.window', { title: item.windowTitle });
     case 'clipboard':
       return item.preview
         ? t('workspace.describe.clipboardWithPreview', { preview: item.preview })
@@ -262,8 +215,6 @@ export function toToastItemType(item: WorkspaceItem): ToastItemType {
   switch (item.type) {
     case 'item':
       return item.launcherType;
-    case 'window':
-      return 'windowOperation';
     default:
       return item.type;
   }

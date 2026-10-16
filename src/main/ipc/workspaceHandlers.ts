@@ -10,11 +10,9 @@ import type {
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
-import { pickWindowPlacement } from '@common/utils/windowPlacement';
 import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { isClipboardItem } from '@common/types/guards';
 
-import { tryActivateWindow } from '../utils/windowActivator.js';
 import { ClipboardService } from '../services/clipboardService.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import {
@@ -67,7 +65,7 @@ export async function closeDetachedWindowsForGroup(groupId: string): Promise<voi
 }
 
 /**
- * セットの行が指すワークスペースのアイテムを、実行に使う形にする（開けるのは通常アイテムとウィンドウ操作だけ）
+ * セットの行が指すワークスペースのアイテムを、実行に使う形にする（開けるのは通常アイテムだけ）
  */
 function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
   if (item.type === 'item') {
@@ -77,15 +75,6 @@ function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
       path: item.path,
       args: item.args,
       ...pickItemWindowSwitch(item),
-      id: item.id,
-    };
-  }
-  if (item.type === 'window') {
-    return {
-      type: 'window',
-      displayName: item.displayName,
-      windowTitle: item.windowTitle,
-      ...pickWindowPlacement(item),
       id: item.id,
     };
   }
@@ -245,31 +234,6 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
     try {
-      // ウィンドウ操作アイテム
-      if (item.type === 'window') {
-        const windowTitle = item.windowTitle;
-
-        const activationResult = await tryActivateWindow(
-          {
-            title: windowTitle,
-            ...pickWindowPlacement(item),
-          },
-          item.displayName,
-          logger,
-          { followDesktop: true }
-        );
-
-        if (activationResult.activated) {
-          logger.info({ id: item.id, name: item.displayName }, 'Window operation executed');
-          return { success: true };
-        }
-        logger.warn(
-          { id: item.id, name: item.displayName, windowTitle },
-          'Window operation failed: Window not found'
-        );
-        throw new Error(`${mainI18n.t('layout.windowNotFound')}: ${windowTitle}`);
-      }
-
       // クリップボードタイプの場合
       if (item.type === 'clipboard') {
         if (!item.dataFileRef) {

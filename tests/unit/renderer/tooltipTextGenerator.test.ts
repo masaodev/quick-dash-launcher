@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { WindowInfo, SetItem, WindowItem, LauncherItem, ClipboardItem } from '@common/types';
+import type { WindowInfo, SetItem, LauncherItem, ClipboardItem } from '@common/types';
 
 import { getTooltipText } from '../../../src/renderer/utils/tooltipTextGenerator';
 
@@ -104,79 +104,6 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('ウィンドウ位置のある行: 1件');
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('ID: abc12345');
-    });
-  });
-
-  describe('WindowItem', () => {
-    it('ウィンドウ操作アイテムの全情報が正しくフォーマットされる', () => {
-      const item: WindowItem = {
-        displayName: 'TestOperation',
-        type: 'window',
-        windowTitle: 'Target Window',
-        x: 0,
-        y: 0,
-        width: 1920,
-        height: 1080,
-        virtualDesktopNumber: 2,
-        activateWindow: false,
-        sourceFile: 'data.json',
-        lineNumber: 15,
-      };
-
-      const result = getTooltipText(item);
-
-      expect(result).toContain('ウィンドウタイトル: Target Window');
-      expect(result).toContain('位置: (0, 0)');
-      expect(result).toContain('サイズ: 1920x1080');
-      expect(result).toContain('仮想デスクトップ: 2');
-      expect(result).toContain('前面に出す: 出さない');
-      expect(result).toContain('データファイル: data.json');
-      expect(result).toContain('行番号: 15');
-    });
-
-    it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
-      const item: WindowItem = {
-        displayName: 'TestOperation',
-        type: 'window',
-        windowTitle: 'Target Window',
-        sourceFile: 'data.json',
-        id: 'win12345',
-        lineNumber: 15,
-      };
-
-      const result = getTooltipText(item);
-
-      expect(result).toContain('ID: win12345');
-      expect(result).not.toContain('行番号:');
-    });
-
-    it('オプショナルフィールドがない場合', () => {
-      const item: WindowItem = {
-        displayName: 'TestOperation',
-        type: 'window',
-        windowTitle: 'Target Window',
-      };
-
-      const result = getTooltipText(item);
-
-      expect(result).toContain('ウィンドウタイトル: Target Window');
-      expect(result).not.toContain('位置:');
-      expect(result).not.toContain('サイズ:');
-      expect(result).not.toContain('仮想デスクトップ:');
-      expect(result).not.toContain('前面に出す: 出さない');
-    });
-
-    it('activateWindowがtrueの場合、表示されない', () => {
-      const item: WindowItem = {
-        displayName: 'TestOperation',
-        type: 'window',
-        windowTitle: 'Target Window',
-        activateWindow: true,
-      };
-
-      const result = getTooltipText(item);
-
-      expect(result).not.toContain('前面に出す:');
     });
   });
 

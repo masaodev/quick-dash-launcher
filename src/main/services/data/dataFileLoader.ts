@@ -306,9 +306,10 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
  *
  * - グループ・ウィンドウ配置 → セット。グループの名前は、読み込んだ全タブのアイテムから解決する（旧来の実行と同じ範囲）
  * - 単一アイテムの windowConfig → ウィンドウ切り替えの新しいキー（window・placement など）
+ * - 廃止したウィンドウ操作（type: 'window'）→ パスの無い単一アイテム（id は変えない）
  *
  * 戻せない変換なので、書き換える前に全設定ファイルのスナップショットを 1 回だけ残す（セットへの変換が要れば
- * _pre-set-migration、windowConfig だけなら _pre-window-migration）。スナップショットを作れなければ変換しない
+ * _pre-set-migration、windowConfig・ウィンドウ操作だけなら _pre-window-migration）。スナップショットを作れなければ変換しない
  *
  * @returns 書き換えたファイルがあれば true
  */
@@ -343,7 +344,7 @@ async function migrateLegacyItemsInDataFiles(
   }
   if (targets.length === 0) return false;
   // 読めないファイルがあると、そのファイルのアイテムを指すグループの名前を解決できず、名前だけの行に変えてしまう。直るまで待つ
-  // （windowConfig は読み込みの検証がその場で新しい形に直すので、待っている間も動きは変わらない）
+  // （windowConfig・ウィンドウ操作は読み込みの検証がその場で新しい形に直すので、待っている間も動きは変わらない）
   if (unreadable) {
     dataLogger.warn('読めないデータファイルがあるので、旧形式からの変換を保留します');
     return false;

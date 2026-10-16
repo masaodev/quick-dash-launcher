@@ -58,7 +58,7 @@ export interface LauncherCommandContext {
   clipboard: ClipboardTextStore;
 }
 
-const EDITABLE_TYPES = ['item', 'dir', 'set', 'window'] as const;
+const EDITABLE_TYPES = ['item', 'dir', 'set'] as const;
 /** 検証のためだけに入れる実データの参照（保存するまで本物の参照は決まらない） */
 const CHECK_DATA_REF = 'clipboard-data/CliCheck.json';
 /** CLI で足せる・変えられる種類（クリップボードはテキストだけ） */
@@ -202,6 +202,8 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
   });
   expectPositionals(parsed, []);
   const type = optionString(parsed, 'type') ?? 'item';
+  // 廃止したウィンドウ操作は、パスの無い単一アイテムの作り方を案内する
+  if (type === 'window') throw new CliError('usage', mainI18n.t('cli.errors.windowTypeRemoved'));
   if (!(ADDABLE_TYPES as readonly string[]).includes(type)) {
     throw new CliError(
       'usage',

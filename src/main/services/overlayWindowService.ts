@@ -36,7 +36,6 @@ const ACTION_KEYS = {
   folder: 'toast.actions.folder',
   customUri: 'toast.actions.customUri',
   windowSwitch: 'toast.actions.windowSwitch',
-  windowOperation: 'toast.actions.windowOperation',
   windowActivate: 'toast.actions.windowActivate',
   windowClose: 'toast.actions.windowClose',
   windowPin: 'toast.actions.windowPin',

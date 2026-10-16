@@ -413,6 +413,14 @@ describe('workspace group archive / archive list / archive restore', () => {
 });
 
 describe('workspace のクリップボードアイテム（テキスト）', () => {
+  it('廃止した --type window は断り、パスの無い単一アイテムの作り方を案内する', async () => {
+    const e = await errorOf(
+      runWorkspaceCommand('item', 'add', ['--type', 'window', '--name', 'メモ帳'], ctx)
+    );
+    expect(e.code).toBe('usage');
+    expect(e.message).toContain('--set window=');
+  });
+
   it('--type clipboard --text でグループに足す', async () => {
     const addItem = vi.spyOn(ctx.store, 'addItem');
     const r = await runWorkspaceCommand(

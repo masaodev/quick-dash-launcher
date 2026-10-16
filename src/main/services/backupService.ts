@@ -477,7 +477,8 @@ export class BackupService {
   }
 
   /**
-   * 単一アイテムの windowConfig をウィンドウ切り替えの新しいキーに変換する前に全対象をスナップショットする
+   * 単一アイテムの windowConfig をウィンドウ切り替えの新しいキーに、ウィンドウ操作をパスの無い単一アイテムに変換する前に
+   * 全対象をスナップショットする
    * （_pre-window-migration。セットへの変換も要るときは _pre-set-migration の 1 回で済ませ、これは作らない）
    *
    * 不可逆な形式変更なので backupEnabled に関係なく作る。失敗したら呼び出し側は変換しない

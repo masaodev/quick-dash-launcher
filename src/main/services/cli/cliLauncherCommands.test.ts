@@ -214,14 +214,21 @@ describe('launcher item add', () => {
     expect(store.append).not.toHaveBeenCalled();
   });
 
-  it('その種類に要る項目が無ければ、どう渡すかを日本語で案内する', async () => {
+  it('廃止した --type window は断り、パスの無い単一アイテムの作り方を案内する', async () => {
     const window = await errorOf(
-      runLauncherItemCommand('add', ['--type', 'window', '--name', 'w'], ctx)
+      runLauncherItemCommand(
+        'add',
+        ['--type', 'window', '--name', 'w', '--set', 'windowTitle=*メモ帳*'],
+        ctx
+      )
     );
-    expect(window.code).toBe('invalid');
-    expect(window.message).toContain(
-      'キー windowTitle がありません（--set windowTitle=… で渡してください）'
-    );
+    expect(window.code).toBe('usage');
+    expect(window.message).toContain('--type window');
+    expect(window.message).toContain('--set window=');
+    expect(store.append).not.toHaveBeenCalled();
+  });
+
+  it('その種類に要る項目が無ければ、どう渡すかを日本語で案内する', async () => {
     const set = await errorOf(runLauncherItemCommand('add', ['--type', 'set', '--name', 'g'], ctx));
     expect(set.message).toContain('--item');
     const path = await errorOf(

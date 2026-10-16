@@ -25,17 +25,16 @@ const launcher: WorkspaceItem = {
   memo: 'めも',
   launcherType: 'url',
 };
-const windowItem: WorkspaceItem = {
+/** パスの無い単一アイテム（廃止したウィンドウ操作はこれに変換する） */
+const pathlessItem: WorkspaceItem = {
   ...meta,
-  type: 'window',
+  type: 'item',
   displayName: 'Chrome',
-  windowTitle: '*Chrome',
-  processName: 'chrome.exe',
-  x: 1,
-  y: 2,
-  width: 3,
-  height: 4,
+  path: '',
+  window: { processName: 'chrome.exe', title: '*Chrome' },
+  placement: { x: 1, y: 2, width: 3, height: 4 },
   activateWindow: false,
+  launcherType: 'windowSwitch',
 };
 const groupItem: WorkspaceItem = {
   ...meta,
@@ -78,18 +77,20 @@ describe('workspaceConverters: appItemToWorkspaceItemBody', () => {
       memo: 'm1',
     });
 
-    const windowApp: AppItem = {
-      type: 'window',
+    const pathlessApp: AppItem = {
+      type: 'windowSwitch',
       displayName: 'Chrome',
-      windowTitle: '*Chrome',
-      x: 1,
+      path: '',
+      window: { title: '*Chrome' },
+      placement: { x: 1 },
       memo: 'm2',
     };
-    expect(appItemToWorkspaceItemBody(windowApp)).toEqual({
-      type: 'window',
+    expect(appItemToWorkspaceItemBody(pathlessApp)).toEqual({
+      type: 'item',
       displayName: 'Chrome',
-      windowTitle: '*Chrome',
-      x: 1,
+      path: '',
+      window: { title: '*Chrome' },
+      placement: { x: 1 },
       memo: 'm2',
     });
 
@@ -124,7 +125,7 @@ describe('workspaceConverters: appItemToWorkspaceItemBody', () => {
     });
   });
 
-  it('WindowInfo（ウィンドウ検索結果）はタイトルとプロセス名だけのウィンドウ操作アイテムになること', () => {
+  it('WindowInfo（ウィンドウ検索結果）は exe 名とタイトルだけのパスの無い単一アイテムになること', () => {
     // #327 でウィンドウ検索結果をワークスペースに登録できるようにした（位置は付けない）
     const windowInfo = {
       hwnd: 1,
@@ -136,38 +137,32 @@ describe('workspaceConverters: appItemToWorkspaceItemBody', () => {
       height: 200,
     } as unknown as AppItem;
     expect(appItemToWorkspaceItemBody(windowInfo)).toEqual({
-      type: 'window',
+      type: 'item',
       displayName: 't',
-      windowTitle: 't',
-      processName: 'p',
+      path: '',
+      window: { processName: 'p', title: 't' },
     });
   });
 });
 
 describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
-  it('window は RegisterItem の windowOperationConfig と往復すること', () => {
-    const register = workspaceItemToRegisterItem(windowItem);
-    expect(register.itemCategory).toBe('window');
-    expect(register.windowOperationConfig).toMatchObject({
-      windowTitle: '*Chrome',
-      processName: 'chrome.exe',
-      x: 1,
-      y: 2,
-      width: 3,
-      height: 4,
+  it('パスの無い単一アイテムは RegisterItem と往復すること', () => {
+    const register = workspaceItemToRegisterItem(pathlessItem);
+    expect(register).toMatchObject({
+      itemCategory: 'item',
+      type: 'windowSwitch',
+      path: '',
+      window: { processName: 'chrome.exe', title: '*Chrome' },
+      placement: { x: 1, y: 2, width: 3, height: 4 },
       activateWindow: false,
     });
 
-    const update = registerItemToWorkspaceItemUpdate(register);
-    expect(update).toEqual({
-      type: 'window',
+    expect(registerItemToWorkspaceItemUpdate(register)).toEqual({
+      type: 'item',
       displayName: 'Chrome',
-      windowTitle: '*Chrome',
-      processName: 'chrome.exe',
-      x: 1,
-      y: 2,
-      width: 3,
-      height: 4,
+      path: '',
+      window: { processName: 'chrome.exe', title: '*Chrome' },
+      placement: { x: 1, y: 2, width: 3, height: 4 },
       activateWindow: false,
     });
   });
@@ -253,13 +248,13 @@ describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
   });
 
   it('種別を変える更新でも古い種別のフィールドが混ざらないこと', () => {
-    const register = workspaceItemToRegisterItem(windowItem);
+    const register = workspaceItemToRegisterItem(clipboardItem);
     const update = registerItemToWorkspaceItemUpdate({
       ...register,
       itemCategory: 'item',
       path: 'C:\\a.exe',
     });
-    expect(update).toEqual({ type: 'item', displayName: 'Chrome', path: 'C:\\a.exe' });
+    expect(update).toEqual({ type: 'item', displayName: 'クリップ', path: 'C:\\a.exe' });
   });
 });
 
@@ -267,21 +262,22 @@ describe('workspaceConverters: 表示', () => {
   it('describeWorkspaceItem は種別に応じた 1 行を返すこと', () => {
     const t = createI18n('ja').t;
     expect(describeWorkspaceItem(launcher, t)).toBe('https://github.com/');
-    expect(describeWorkspaceItem(windowItem, t)).toBe('ウィンドウ操作: *Chrome（chrome.exe）');
+    expect(describeWorkspaceItem(pathlessItem, t)).toBe(
+      '開いているウィンドウに切り替えるだけ: chrome.exe / *Chrome'
+    );
     expect(describeWorkspaceItem(groupItem, t)).toBe('セット: 2件');
     expect(describeWorkspaceItem(clipboardItem, t)).toBe('クリップボード: hello');
   });
 
   it('describeWorkspaceItem は表示言語が英語なら英語の 1 行を返すこと', () => {
     const t = createI18n('en').t;
-    expect(describeWorkspaceItem(windowItem, t)).toBe('Window action: *Chrome (chrome.exe)');
     expect(describeWorkspaceItem(groupItem, t)).toBe('Set: 2 items');
     expect(describeWorkspaceItem(layoutItem, t)).toBe('Set: 1 item');
   });
 
-  it('toToastItemType は通常アイテムに launcherType、ウィンドウ操作に windowOperation を返すこと', () => {
+  it('toToastItemType は通常アイテムに launcherType（パスの無い単一アイテムは windowSwitch）を返すこと', () => {
     expect(toToastItemType(launcher)).toBe('url');
-    expect(toToastItemType(windowItem)).toBe('windowOperation');
+    expect(toToastItemType(pathlessItem)).toBe('windowSwitch');
     expect(toToastItemType(groupItem)).toBe('set');
   });
 });

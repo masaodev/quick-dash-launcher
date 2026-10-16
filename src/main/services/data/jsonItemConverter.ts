@@ -6,12 +6,10 @@ import {
   AppItem,
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonWindowItem,
   isJsonClipboardItem,
   isJsonSetItem,
 } from '@common/types';
 import type { JsonItem } from '@common/types';
-import { pickWindowPlacement } from '@common/utils/windowPlacement';
 import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { refineItemType } from '../../utils/folderPathProbe.js';
@@ -98,18 +96,6 @@ export async function convertJsonItemToAppItems(
     for (const scannedItem of scannedItems) {
       addIfUnique(scannedItem);
     }
-  } else if (isJsonWindowItem(jsonItem)) {
-    items.push({
-      type: 'window',
-      displayName: jsonItem.displayName,
-      windowTitle: jsonItem.windowTitle,
-      ...pickWindowPlacement(jsonItem),
-      sourceFile,
-      lineNumber,
-      id: jsonItem.id,
-      isEdited: false,
-      memo: jsonItem.memo,
-    });
   } else if (isJsonClipboardItem(jsonItem)) {
     items.push({
       type: 'clipboard',

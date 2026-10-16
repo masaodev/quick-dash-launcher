@@ -5,7 +5,7 @@
  * 動きは変えない: グループは開くだけの行、レイアウトのエントリは置き場所付きの行にする（setConversion.ts）
  */
 import type { AppItem, JsonGroupItem, JsonLayoutItem, SetLaunchMode } from '@common/types';
-import { isLauncherItem, isRecord, isWindowItem } from '@common/types/guards';
+import { isLauncherItem, isRecord } from '@common/types/guards';
 import { validateJsonGroupItem, validateJsonLayoutItem } from '@common/utils/jsonParser';
 import {
   convertGroupToSet,
@@ -33,8 +33,6 @@ export function buildGroupNameResolver(items: readonly AppItem[]): GroupNameReso
       } else {
         map.set(item.displayName, { itemId: item.id });
       }
-    } else if (isWindowItem(item) && item.id) {
-      map.set(item.displayName, { itemId: item.id });
     }
   }
   return (name) => map.get(name);

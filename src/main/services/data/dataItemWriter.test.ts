@@ -19,12 +19,7 @@ vi.mock('@common/logger', () => ({
 }));
 
 import { getCorruptedDataFiles, clearDataFileCorrupted } from './corruptedDataFiles';
-import {
-  moveItemToFile,
-  registerItems,
-  updateSetItemById,
-  updateWindowItemById,
-} from './dataItemWriter';
+import { moveItemToFile, registerItems, updateSetItemById } from './dataItemWriter';
 
 function writeFile(fileName: string, content: string): void {
   fs.writeFileSync(path.join(tempRoot.dir, fileName), content, 'utf8');
@@ -83,22 +78,6 @@ describe('dataItemWriter', () => {
     expect(items[0]).not.toHaveProperty('memo');
     expect(items[1]).toMatchObject({ id: 'cccccccc', displayName: 'C' });
     expect(readItems('datafiles/data.json')[0]).toMatchObject({ id: 'aaaaaaaa' });
-  });
-
-  it('window アイテムもメモが空なら保存しないこと', () => {
-    writeFile(
-      'datafiles/data.json',
-      JSON.stringify({
-        version: '1.0',
-        items: [{ id: 'wwwwwwww', type: 'window', displayName: 'W', windowTitle: 'old' }],
-      })
-    );
-
-    updateWindowItemById(tempRoot.dir, 'wwwwwwww', { displayName: 'W', windowTitle: 'new' }, '');
-
-    const [item] = readItems('datafiles/data.json');
-    expect(item).toMatchObject({ id: 'wwwwwwww', type: 'window', windowTitle: 'new' });
-    expect(item).not.toHaveProperty('memo');
   });
 
   it('ID が見つからなければエラーにすること', () => {

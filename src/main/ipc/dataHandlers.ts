@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import type { JsonDirOptions, SetItemFields, WindowItemConfig } from '@common/types';
+import type { JsonDirOptions, SetItemFields } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -15,7 +15,6 @@ import {
   registerItems,
   updateDirItemById,
   updateSetItemById,
-  updateWindowItemById,
 } from '../services/data/dataItemWriter.js';
 import { createDataFile, deleteDataFile } from '../services/data/dataFileOps.js';
 
@@ -91,14 +90,6 @@ export function setupDataHandlers(configFolder: string) {
     IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID,
     async (_event, id: string, dirPath: string, options?: JsonDirOptions, memo?: string) => {
       updateDirItemById(configFolder, id, dirPath, options, memo);
-      notifyDataChanged();
-    }
-  );
-
-  ipcMain.handle(
-    IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID,
-    async (_event, id: string, config: WindowItemConfig, memo?: string) => {
-      updateWindowItemById(configFolder, id, config, memo);
       notifyDataChanged();
     }
   );

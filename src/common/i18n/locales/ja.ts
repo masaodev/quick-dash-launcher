@@ -175,8 +175,6 @@ export const ja = {
       setRowsMore_other: '行: {{names}} ほか{{count}}件',
       setPlaced_one: 'ウィンドウ位置のある行: {{count}}件',
       setPlaced_other: 'ウィンドウ位置のある行: {{count}}件',
-      virtualDesktop: '仮想デスクトップ: {{value}}',
-      noActivate: '前面に出す: 出さない',
       clipboardFormats: 'フォーマット: {{value}}',
       clipboardFormatNames: {
         text: 'テキスト',
@@ -196,9 +194,9 @@ export const ja = {
       activateWindowFailed: 'ウィンドウを前面に出せませんでした',
       noBookmarkRules: '有効なブックマーク取込ルールがありません',
       addToWorkspaceFailed: 'ワークスペースへの追加に失敗しました',
-      windowAddedWithPosition:
-        'exe 名とタイトルで探し、記録したウィンドウ位置に戻して前面に出します',
-      windowAdded: 'exe 名とタイトルで探して前面に出します（タイトルは編集できます）',
+      windowAddedWithPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
+      windowAdded:
+        '開いているときに、このウィンドウへ切り替えます（パスを入れると、開いていないときに開けます）',
       dataFilesCreateFailed: 'タブのデータファイルを作成できませんでした: {{files}}',
       virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません。',
       noContainingFolder: 'このアイテムには親フォルダがありません',
@@ -366,7 +364,6 @@ export const ja = {
       folder: 'フォルダを開いています...',
       customUri: '起動中...',
       windowSwitch: 'ウィンドウに切り替えます',
-      windowOperation: 'ウィンドウ操作を実行します',
       windowActivate: 'ウィンドウを前面に出しました',
       windowClose: 'ウィンドウを閉じました',
       windowPin: 'ウィンドウをすべてのデスクトップに表示しました',
@@ -430,7 +427,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>、
                                 --with-text でクリップボードの本文も）
   item add                      追加（--name・--path は必須。--args --memo、--file | --tab、
-                                --type item|dir|set|window|clipboard、--set key=value、--dry-run）
+                                --type item|dir|set|clipboard、--set key=value、--dry-run）
   item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key、
                                 --text | --text-file、--file | --tab で別のタブへ移す、--dry-run）
   item remove <id か表示名>     削除（--dry-run）
@@ -449,8 +446,10 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 
 --path の相対パスは qdl を実行したフォルダが基準です。--type set では --path を求めず、最初の行を
 --item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
-足します。<タブ> は番号（0 始まり）か名前の完全一致です。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir|window のときに
-要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
+足します。<タブ> は番号（0 始まり）か名前の完全一致です。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir の
+オプションは --set で渡します（例 --set options='{"depth":1}'）。
+開いているウィンドウへ切り替えるだけのアイテム（パスの無い単一アイテム）は、--path の代わりに対象ウィンドウを
+--set window='{"processName":"notepad.exe"}' で渡します（--type window は廃止しました）。
 --type clipboard はテキストだけのクリップボードアイテムで、--path の代わりに本文を --text か
 --text-file <ファイル>（UTF-8、1 MB まで）で渡します。本文を書き換えられるのは、中身がテキストだけのものです。
 `,
@@ -534,6 +533,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       noTabSimple: 'タブ「{{tab}}」がありません',
       tabHasNoFile: 'タブ「{{tab}}」にデータファイルがありません',
       badType: '--type は {{types}} のいずれかです: {{type}}',
+      windowTypeRemoved:
+        '--type window（ウィンドウ操作）は廃止しました。開いているウィンドウへ切り替えるだけのアイテムは、--path の代わりに --set window=\'{"processName":"notepad.exe","title":"…"}\' で作ります（パスの無い単一アイテム）',
       dirHasNoName: 'フォルダ取込（dir）は表示名を持ちません',
       needName: '--name を指定してください',
       needPath: '--path を指定してください',
@@ -887,7 +888,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     types: {
       item: '単一アイテム',
       dir: 'フォルダ取込',
-      window: 'ウィンドウ操作',
       clipboard: 'クリップボード',
       set: 'セット',
       unknown: '不明',
@@ -897,7 +897,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       noPath: '(パスなし)',
       windowSwitchOnly: '(パスなし・切り替えるだけ: {{target}})',
       noItems: '(アイテムなし)',
-      noWindowTitle: '(ウィンドウタイトルなし)',
       noFolderPath: '(フォルダパスなし)',
       noData: '(データなし)',
       setRows_one: '{{count}} 行',
@@ -970,7 +969,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     },
     row: {
       typeSelectTitle:
-        '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・ウィンドウ操作・クリップボードは詳細編集が開きます',
+        '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
       namePlaceholder: '名前を入力（Enter でパスへ）',
       invalid: '入力に不備があります: {{error}}',
@@ -1353,7 +1352,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       item: '📄 単一アイテム',
       dir: '🗂️ フォルダ取込',
       set: '📦 セット',
-      window: '🪟 ウィンドウ操作',
       clipboard: '📋 クリップボード',
     },
     typeDescriptions: {
@@ -1368,10 +1366,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       set: {
         main: '複数のアイテムをまとめて開きます',
         sub: '開いたウィンドウを、記録したウィンドウ位置に並べられます',
-      },
-      window: {
-        main: '開いているウィンドウを探して、前面に出す・動かします',
-        sub: '何も起動しません（見つからなければ何もしません）',
       },
       clipboard: {
         main: '定型文や画像を、クリップボードにコピーします',
@@ -1408,7 +1402,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       displayNameRequired: '表示名を入力してください',
       pathRequired: 'パスを入力してください',
       pathOrWindowRequired: 'パスか対象ウィンドウのどちらかを入力してください',
-      windowRequired: 'ウィンドウタイトルまたはプロセス名を入力してください',
       clipboardRequired: 'テキストを書くか、クリップボードを取り込んでください',
       clipboardSaveFailed: 'クリップボードデータの保存に失敗しました',
       iconNotFound: 'アイコンを取得できませんでした',
@@ -1419,41 +1412,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       customIconSelectFailed: 'カスタムアイコンの選択に失敗しました: {{error}}',
       customIconDeleteFailed: 'カスタムアイコンの削除に失敗しました: {{error}}',
     },
-  },
-  windowConfig: {
-    actionTitle: 'ウィンドウ操作機能',
-    stepSearch: '① タイトル/プロセス名で対象ウィンドウを検索',
-    stepAct: '② 見つかったら下記の操作を実行',
-    searchHeading: '🔍 ① ウィンドウ検索',
-    selectWindow: 'ウィンドウを選択',
-    windowTitle: 'ウィンドウタイトル:',
-    windowTitlePlaceholder: '例: *Chrome* または Google Chrome',
-    windowTitleHint:
-      '💡 * で任意の文字列にマッチ（例: *Chrome* → タイトルに「Chrome」を含むウィンドウ）',
-    processName: 'プロセス名:',
-    processNamePlaceholder: 'プロセス名（部分一致、例: chrome）',
-    actionHeading: '⚙️ ② 操作内容',
-    activateHeading: '✨ 前面表示',
-    activate: 'ウィンドウを前面に表示する',
-    positionHeading: '📐 ウィンドウ位置設定',
-    fetchFromWindow: 'ウィンドウから取得',
-    windowNotFound: 'ウィンドウが見つかりません',
-    centerOnCursorMonitor: 'カーソルがあるモニターの中央に配置',
-    byCoordinates: '座標で指定',
-    x: 'X座標:',
-    xPlaceholder: 'X座標',
-    y: 'Y座標:',
-    yPlaceholder: 'Y座標',
-    sizeHeading: '📏 ウィンドウサイズ設定',
-    width: '幅:',
-    widthPlaceholder: '幅',
-    height: '高さ:',
-    heightPlaceholder: '高さ',
-    desktopHeading: '🖥️ 仮想デスクトップ設定',
-    showOnAllDesktops: '📌 全デスクトップに表示',
-    byNumber: '番号で指定',
-    desktopNumber: 'デスクトップ番号:',
-    desktopNumberPlaceholder: '1から開始',
   },
   clipboardEditor: {
     formats: {
@@ -1724,7 +1682,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     idInvalid: 'id "{{id}}" が不正なため採番し直しました',
     idInvalidFormat: 'id "{{id}}" が不正なため採番し直しました（8 文字の英数字）',
     idDuplicate: 'id "{{id}}" が重複しているため採番し直しました',
-    windowTitleWildcard: 'windowTitle が空でプロセス名だけのため "*"（全一致）にしました',
     arrayFilled: '{{key}} が無いため空の配列を補いました',
     valueFilled: '{{key}} が無いため {{value}} を補いました',
     colorFilled: 'color が無いため "{{color}}" を補いました',
@@ -1813,7 +1770,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       title: 'ワークスペースは空です',
       hint: 'メインウィンドウのアイテムを右クリックして「ワークスペースに追加」を選択してください',
     },
-    restoresPosition: '記録したウィンドウ位置に戻して前面に出します',
+    restoresPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
     restoredGroupName: '{{name}} (復元)',
     defaultWorkspaceName: 'デフォルト',
     detached: {
@@ -1831,8 +1788,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       remove: '削除',
     },
     describe: {
-      window: 'ウィンドウ操作: {{title}}',
-      windowWithProcess: 'ウィンドウ操作: {{title}}（{{process}}）',
       clipboard: 'クリップボード',
       clipboardWithPreview: 'クリップボード: {{preview}}',
       set_one: 'セット: {{count}}件',

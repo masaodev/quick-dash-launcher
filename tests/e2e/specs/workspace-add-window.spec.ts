@@ -31,11 +31,11 @@ const windowInfo: WindowInfo = {
 
 /**
  * ウィンドウ検索結果の右クリック「ワークスペースに追加」
- * - 既定はタイトルとプロセス名だけのウィンドウ操作アイテム（hwnd・位置は持たない）
- * - 「位置・サイズも記録して」を選ぶと x/y/width/height も付く
+ * - 既定は exe 名とタイトルだけのパスの無い単一アイテム（hwnd・位置・exe のパスは持たない）
+ * - 「⭐ ウィンドウ位置も記録してワークスペースに追加」を選ぶと placement も付く
  */
 test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペースに追加', () => {
-  test('メニューのイベントでウィンドウ操作アイテムが追加される', async ({
+  test('メニューのイベントでパスの無い単一アイテムが追加される', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -45,7 +45,7 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
     await workspaceWindow.waitForLoadState('domcontentloaded');
     const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
 
-    await test.step('既定: アクティブ化のみ', async () => {
+    await test.step('既定: 切り替えだけ', async () => {
       await menuHelper.sendIpcToRenderer(IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE, {
         windowInfo,
         includePosition: false,
@@ -68,20 +68,22 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
     const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
 
     const plain = items.find((item) => item.displayName === '設計書.docx - Word');
-    expect(plain?.type).toBe('window');
-    if (plain?.type === 'window') {
-      expect(plain.windowTitle).toBe('設計書.docx - Word');
-      expect(plain.processName).toBe('WINWORD.EXE');
-      expect(plain.x).toBeUndefined();
-      expect(plain.width).toBeUndefined();
-      expect('hwnd' in plain).toBe(false);
-    }
+    expect(plain).toMatchObject({
+      type: 'item',
+      path: '',
+      launcherType: 'windowSwitch',
+      window: { processName: 'WINWORD.EXE', title: '設計書.docx - Word' },
+    });
+    expect(plain).not.toHaveProperty('placement');
+    expect(plain).not.toHaveProperty('hwnd');
 
     const positioned = items.find((item) => item.displayName === '位置つき - Word');
-    expect(positioned?.type).toBe('window');
-    if (positioned?.type === 'window') {
-      expect(positioned).toMatchObject({ x: 100, y: 200, width: 800, height: 600 });
-    }
+    expect(positioned).toMatchObject({
+      type: 'item',
+      path: '',
+      window: { processName: 'WINWORD.EXE', title: '位置つき - Word' },
+      placement: { x: 100, y: 200, width: 800, height: 600 },
+    });
   });
 });
 

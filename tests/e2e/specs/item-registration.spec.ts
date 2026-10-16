@@ -558,37 +558,22 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
 });
 
 /**
- * 「⚡ 試しに実行」でのウィンドウ操作
- * - タイトルが空でプロセス名だけのときは、保存時と同じく "*" で探す
- *
- * 実際のウィンドウは動かさないよう、メインプロセスのウィンドウ操作ハンドラを差し替えて引数を記録する
+ * 種別のプルダウン: 廃止したウィンドウ操作は選べない（開いているウィンドウへの切り替えは単一アイテムのオプション）
  */
-test.describe('QuickDashLauncher - 試しに実行（ウィンドウ操作）', () => {
-  test('タイトルが空でプロセス名だけなら "*" で探す', async ({ electronApp, mainWindow }) => {
+test.describe('QuickDashLauncher - 登録画面の種別', () => {
+  test('種別のプルダウンに「ウィンドウ操作」が無い', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
-
-    await electronApp.evaluate(({ ipcMain }) => {
-      const g = globalThis as { __e2eWindowOps?: unknown[] };
-      g.__e2eWindowOps = [];
-      ipcMain.removeHandler('execute-window-operation');
-      ipcMain.handle('execute-window-operation', (_event, item: unknown) => {
-        g.__e2eWindowOps!.push(item);
-      });
-    });
-
     const registerPage = await utils.openRegisterModal(electronApp);
-    await registerPage.locator('select:has(option[value="window"])').first().selectOption('window');
-    await registerPage.locator('input[placeholder^="プロセス名"]').first().fill('notepad');
-    await registerPage.locator('button', { hasText: '試しに実行' }).click();
 
-    await expect
-      .poll(() =>
-        electronApp.evaluate(
-          () => (globalThis as { __e2eWindowOps?: unknown[] }).__e2eWindowOps ?? []
-        )
-      )
-      .toEqual([expect.objectContaining({ windowTitle: '*', processName: 'notepad' })]);
+    const kind = registerPage.locator('select:has(option[value="clipboard"])').first();
+    await expect(kind.locator('option')).toHaveText([
+      '📄 単一アイテム',
+      '🗂️ フォルダ取込',
+      '📦 セット',
+      '📋 クリップボード',
+    ]);
+    await expect(kind.locator('option[value="window"]')).toHaveCount(0);
   });
 });
 
@@ -632,8 +617,13 @@ test.describe('QuickDashLauncher - 登録画面の子ダイアログの Escape',
     await utils.waitForPageLoad();
     const registerPage = await utils.openRegisterModal(electronApp);
 
-    await registerPage.locator('select:has(option[value="window"])').first().selectOption('window');
-    await registerPage.locator('button', { hasText: 'ウィンドウを選択' }).first().click();
+    await registerPage
+      .locator('.options-toggle', { hasText: 'ウィンドウ切り替え・ウィンドウ位置' })
+      .click();
+    await registerPage
+      .getByTestId('item-window-switch')
+      .locator('button', { hasText: '開いているウィンドウから選ぶ' })
+      .click();
     const selector = registerPage.locator('.window-selector-modal-overlay');
     await expect(selector).toBeVisible({ timeout: 10000 });
 

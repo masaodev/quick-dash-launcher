@@ -35,14 +35,6 @@ export async function saveRegisterItems(
     await window.electronAPI.registerItems([{ ...item, keepId: itemId }]);
   } else if (item.itemCategory === 'dir') {
     await window.electronAPI.updateDirItemById(itemId, item.path, item.dirOptions, item.memo);
-  } else if (item.itemCategory === 'window') {
-    const cfg = item.windowOperationConfig;
-    if (!cfg) throw new Error('windowOperationConfig is required for window items');
-    await window.electronAPI.updateWindowItemById(
-      itemId,
-      { ...cfg, displayName: item.displayName },
-      item.memo
-    );
   } else if (item.itemCategory === 'set') {
     await window.electronAPI.updateSetItemById(
       itemId,

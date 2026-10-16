@@ -557,19 +557,6 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
       }
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
     }
-    case 'window': {
-      const windowTitle = jsonItem.windowTitle || '';
-      const settings: string[] = [];
-      if (jsonItem.x !== undefined) settings.push(`x:${jsonItem.x}`);
-      if (jsonItem.y !== undefined) settings.push(`y:${jsonItem.y}`);
-      if (jsonItem.width !== undefined) settings.push(`w:${jsonItem.width}`);
-      if (jsonItem.height !== undefined) settings.push(`h:${jsonItem.height}`);
-      if (jsonItem.virtualDesktopNumber !== undefined)
-        settings.push(`desk:${jsonItem.virtualDesktopNumber}`);
-      if (jsonItem.activateWindow !== undefined) settings.push(`active:${jsonItem.activateWindow}`);
-      if (!windowTitle) return i18next.t('itemManager.pathSummary.noWindowTitle');
-      return settings.length > 0 ? `${windowTitle} [${settings.join(', ')}]` : windowTitle;
-    }
     case 'dir': {
       const dirPath = jsonItem.path || '';
       const options = jsonItem.options || {};

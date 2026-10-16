@@ -9,6 +9,7 @@ import {
   replaceWindowConfig,
   switchToWindowConfig,
   windowConfigToSwitch,
+  windowItemToPathlessItem,
   itemWindowSwitchFields,
 } from './itemWindowConversion';
 
@@ -189,7 +190,7 @@ describe('replaceWindowConfig', () => {
 });
 
 describe('hasLegacyWindowConfig・convertLegacyWindowConfigs', () => {
-  it('windowConfig を持つ単一アイテムだけを変換する', () => {
+  it('windowConfig を持つ単一アイテムとウィンドウ操作を変換する', () => {
     const items = [
       { id: 'a', type: 'item', displayName: 'A', path: 'a.exe', windowConfig: { title: 'A' } },
       { id: 'b', type: 'window', displayName: 'B', windowTitle: 'B' },
@@ -206,7 +207,13 @@ describe('hasLegacyWindowConfig・convertLegacyWindowConfigs', () => {
       window: { title: 'A' },
       activateWindow: true,
     });
-    expect(converted[1]).toBe(items[1]);
+    expect(converted[1]).toEqual({
+      id: 'b',
+      type: 'item',
+      displayName: 'B',
+      path: '',
+      window: { title: 'B' },
+    });
     expect(converted[2]).toBe(items[2]);
     expect(hasLegacyWindowConfig(converted)).toBe(false);
   });
@@ -219,5 +226,82 @@ describe('hasLegacyWindowConfig・convertLegacyWindowConfigs', () => {
 
   it('配列でなければ持たないとみなす', () => {
     expect(hasLegacyWindowConfig(undefined)).toBe(false);
+  });
+});
+
+describe('windowItemToPathlessItem', () => {
+  it('同じ id・表示名・メモのパスの無い単一アイテムにし、位置は placement にまとめる', () => {
+    expect(
+      windowItemToPathlessItem({
+        id: 'w1',
+        type: 'window',
+        displayName: '一時メモ',
+        windowTitle: '一時メモ.txt - sakura',
+        processName: 'sakura.exe',
+        x: 10,
+        y: 20,
+        width: 800,
+        height: 600,
+        virtualDesktopNumber: 2,
+        moveToActiveMonitorCenter: true,
+        activateWindow: false,
+        pinToAllDesktops: true,
+        customIcon: 'memo.png',
+        memo: 'メモ',
+        updatedAt: 123,
+      })
+    ).toEqual({
+      id: 'w1',
+      type: 'item',
+      displayName: '一時メモ',
+      path: '',
+      customIcon: 'memo.png',
+      memo: 'メモ',
+      updatedAt: 123,
+      window: { processName: 'sakura.exe', title: '一時メモ.txt - sakura' },
+      placement: { x: 10, y: 20, width: 800, height: 600, virtualDesktopNumber: 2 },
+      activateWindow: false,
+      pinToAllDesktops: true,
+    });
+  });
+
+  it('タイトル "*" はタイトルを問わない（exe 名だけで探す）。前面に出す（既定）は書かない', () => {
+    const converted = windowItemToPathlessItem({
+      id: 'w2',
+      type: 'window',
+      displayName: 'Chrome',
+      windowTitle: '*',
+      processName: 'chrome.exe',
+      activateWindow: true,
+    });
+    expect(converted).toEqual({
+      id: 'w2',
+      type: 'item',
+      displayName: 'Chrome',
+      path: '',
+      window: { processName: 'chrome.exe' },
+    });
+  });
+
+  it('exe 名が無くタイトルが "*" だけなら、探す条件として "*" を残す', () => {
+    expect(
+      windowItemToPathlessItem({ id: 'w3', type: 'window', displayName: '何か', windowTitle: '*' })
+        .window
+    ).toEqual({ title: '*' });
+  });
+
+  it('ワークスペースの所属・並び順は残す', () => {
+    const converted = windowItemToPathlessItem({
+      id: 'w4',
+      type: 'window',
+      displayName: 'メモ帳',
+      windowTitle: '*メモ帳*',
+      workspaceId: 'ws',
+      groupId: 'g',
+      order: 3,
+      addedAt: 1,
+    });
+    expect(converted).toMatchObject({ workspaceId: 'ws', groupId: 'g', order: 3, addedAt: 1 });
+    expect(converted).not.toHaveProperty('windowTitle');
   });
 });

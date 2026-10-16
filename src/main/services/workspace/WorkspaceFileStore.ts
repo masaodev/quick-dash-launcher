@@ -134,7 +134,7 @@ export interface WorkspaceFileStoreHooks {
     snapshot: () => Promise<void>;
   }>;
   /**
-   * 単一アイテムの windowConfig だけを変換する前のスナップショットを作る（_pre-window-migration。失敗したら投げる）。
+   * 単一アイテムの windowConfig・ウィンドウ操作だけを変換する前のスナップショットを作る（_pre-window-migration。失敗したら投げる）。
    * セットへの変換もあるときは prepareSetMigration の snapshot だけを使う。省略すると windowConfig だけの変換はしない（テスト）
    */
   createPreWindowMigrationSnapshot?: () => Promise<void>;
@@ -357,7 +357,8 @@ export class WorkspaceFileStore {
       this.importLegacyDetachedIfPresent();
     }
 
-    // 旧形式のグループ・ウィンドウ配置 → セット、単一アイテムの windowConfig → ウィンドウ切り替えの新しいキー
+    // 旧形式のグループ・ウィンドウ配置 → セット、単一アイテムの windowConfig → ウィンドウ切り替えの新しいキー、
+    // ウィンドウ操作 → パスの無い単一アイテム
     // （戻せないので、変換前に全設定ファイルのスナップショットを 1 回だけ残す）
     let forceRewriteMain = false;
     let forceRewriteArchive = false;
@@ -546,9 +547,10 @@ export class WorkspaceFileStore {
   }
 
   /**
-   * main・archive の中の旧形式のアイテムを変換する（グループ・ウィンドウ配置 → セット、windowConfig → 新しいキー）
+   * main・archive の中の旧形式のアイテムを変換する（グループ・ウィンドウ配置 → セット、windowConfig → 新しいキー、
+   * ウィンドウ操作 → パスの無い単一アイテム）
    *
-   * スナップショットは 1 回だけ作る（セットへの変換があれば _pre-set-migration、windowConfig だけなら
+   * スナップショットは 1 回だけ作る（セットへの変換があれば _pre-set-migration、windowConfig・ウィンドウ操作だけなら
    * _pre-window-migration）。変換するものが無ければ何もしない（読み込みのたびにスナップショットが増えるのを防ぐ）
    *
    * @returns 書き換えた内容（変えていないファイルは null）。変換しなければ undefined

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { WorkspaceItem, WorkspaceItemUpdate, WindowInfo } from '@common/types';
-import { pickWindowPlacement } from '@common/utils/windowPlacement';
+import type { WorkspaceItem, WorkspaceItemUpdate } from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
@@ -9,11 +8,9 @@ import { useToast } from '../hooks/useToast';
 import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEditForm';
 import { logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
-import { fetchMatchingWindow } from '../utils/windowFilter';
 import { toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
 
 import FilePickerDialog from './FilePickerDialog';
-import WindowSelectorModal from './WindowSelectorModal';
 import ItemEditFields from './ItemEditFields';
 import { Button } from './ui';
 import '../styles/components/ItemConverterMenu.css';
@@ -46,7 +43,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
-  const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const { showError } = useToast();
@@ -112,24 +108,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     });
   };
 
-  /** ウィンドウ操作アイテムの「ウィンドウを選択」（単一アイテムは欄の中の「開いているウィンドウから取り込む」） */
-  const onWindowSelected = (windowInfo: WindowInfo) => {
-    if (item?.itemCategory === 'window') {
-      handleFieldChange('windowOperationConfig', {
-        ...item.windowOperationConfig,
-        displayName: item.displayName,
-        windowTitle: windowInfo.title,
-        processName: windowInfo.processName,
-      });
-    }
-    setWindowSelectorOpen(false);
-  };
-
-  const fetchFromWindow = async (): Promise<WindowInfo | null> => {
-    if (!item) return null;
-    return fetchMatchingWindow(item);
-  };
-
   const handleExecute = async () => {
     if (!item || !editingItem) return;
 
@@ -142,22 +120,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         pinModeChanged = true;
       }
 
-      if (item.itemCategory === 'window') {
-        if (!item.windowOperationConfig) {
-          logError('ウィンドウ操作設定が不足しています');
-          return;
-        }
-
-        await window.electronAPI.executeWindowOperation({
-          displayName: item.displayName,
-          type: 'window',
-          windowTitle: item.windowOperationConfig.windowTitle,
-          ...pickWindowPlacement(item.windowOperationConfig),
-        });
-      } else {
-        // 保存済みの内容ではなく、編集中の内容で試す
-        await window.electronAPI.workspaceAPI.launchItem(toTrialWorkspaceItem(editingItem, item));
-      }
+      // 保存済みの内容ではなく、編集中の内容で試す
+      await window.electronAPI.workspaceAPI.launchItem(toTrialWorkspaceItem(editingItem, item));
     } catch (error) {
       logError('アイテムの実行に失敗しました:', error);
     } finally {
@@ -235,8 +199,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   customIconPreview={customIconPreviews[0]}
                   onCustomIconSelect={() => openCustomIconPicker(0)}
                   onCustomIconDelete={onCustomIconDeleted}
-                  onOpenWindowSelector={() => setWindowSelectorOpen(true)}
-                  onFetchFromWindow={fetchFromWindow}
                   onClipboardError={showError}
                   showSeparator={false}
                 />
@@ -278,12 +240,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
         title={t('register.customIconPickerTitle')}
         fileTypes="image"
         description={t('register.customIconPickerDescription')}
-      />
-
-      <WindowSelectorModal
-        isOpen={windowSelectorOpen}
-        onClose={() => setWindowSelectorOpen(false)}
-        onSelect={onWindowSelected}
       />
     </>
   );

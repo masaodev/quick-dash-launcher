@@ -24,9 +24,8 @@ import type {
   SetItem,
   SetWindowMatch,
   WindowConfig,
-  WindowItem,
 } from '@common/types';
-import { isLauncherItem, isWindowItem } from '@common/types/guards';
+import { isLauncherItem } from '@common/types/guards';
 import { GROUP_LAUNCH_DELAY_MS } from '@common/constants';
 import {
   IPC_CHANNELS,
@@ -35,7 +34,6 @@ import {
 } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { ANY_WINDOW_TITLE, createTitleMatcher } from '@common/utils/windowTitle';
-import { pickWindowPlacement } from '@common/utils/windowPlacement';
 import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
 import { isPathlessItem, switchToWindowConfig } from '@common/utils/itemWindowConversion';
 import { fitPlacementToScreens, type ScreenArea } from '@common/utils/placementLabel';
@@ -81,8 +79,6 @@ interface ResolvedEntry {
    * 置き場所のある行でも借りる）
    */
   itemWindow?: SetWindowMatch;
-  /** 指しているのがウィンドウ操作アイテムのとき */
-  windowItem?: WindowItem;
   /** 解決できなかった理由 */
   error?: string;
   /** 進み具合の表示に出すアイコン（指しているアイテムのもの） */
@@ -169,9 +165,6 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
         error: mainI18n.t('set.errors.itemNotFound'),
       };
     }
-    if (isWindowItem(item)) {
-      return { name: item.displayName, windowItem: item };
-    }
     if (isLauncherItem(item) && isPathlessItem(item)) {
       // 開くものが無い（動かすだけの行）。探す条件は行に無ければアイテムのものを借りる
       return {
@@ -222,7 +215,7 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
 /**
  * 置き場所のある行で探すウィンドウの条件
  *
- * 行に見つけ方が無ければ、ウィンドウ操作アイテム・パスの無い単一アイテムの条件、または開く exe の名前から推測する
+ * 行に見つけ方が無ければ、パスの無い単一アイテムの条件、または開く exe の名前から推測する
  */
 export function buildSetWindowConfig(
   entry: SetEntry,
@@ -231,10 +224,7 @@ export function buildSetWindowConfig(
   let title = entry.window?.title;
   let processName = entry.window?.processName;
   if (!title && !processName) {
-    if (resolved.windowItem) {
-      title = resolved.windowItem.windowTitle;
-      processName = resolved.windowItem.processName;
-    } else if (resolved.itemWindow) {
+    if (resolved.itemWindow) {
       title = resolved.itemWindow.title;
       processName = resolved.itemWindow.processName;
     } else if (resolved.launch?.type === 'app' && /\.exe$/i.test(resolved.launch.path.trim())) {
@@ -485,18 +475,6 @@ async function runSet(
     try {
       // 置き場所の無い行: 今までのグループと同じ
       if (!entry.placement) {
-        if (r.windowItem) {
-          const config: WindowConfig = {
-            // タイトルが空のウィンドウ操作は exe 名だけで探す（位置のある行と同じ）
-            title: r.windowItem.windowTitle || ANY_WINDOW_TITLE,
-            ...pickWindowPlacement(r.windowItem),
-          };
-          const result = await deps.activate(withPin(config, entry), r.name, logger);
-          return finish(
-            index,
-            result.windowFound ? undefined : mainI18n.t('layout.windowNotFound')
-          );
-        }
         if (!r.launch) {
           // 動かすだけの行で位置が無い: 開いていれば前面に出す。行に探す条件が無ければ、パスの無い単一アイテムの
           // 設定（ウィンドウ位置も含む）で探す。どちらも無ければどのウィンドウにも合うので失敗にする
@@ -558,10 +536,8 @@ async function runSet(
 
       let hwnd = entry.ifOpen === 'openNew' ? null : findUnclaimed(config);
       if (hwnd === null) {
-        // 動かすだけの行（ウィンドウ操作アイテムを指す行を除く）は、開いていなければ飛ばす
-        if (!r.launch) {
-          return r.windowItem ? finish(index, mainI18n.t('layout.windowNotFound')) : skip(index);
-        }
+        // 動かすだけの行は、開いていなければ飛ばす
+        if (!r.launch) return skip(index);
         // もう 1 つ開くときは、開く前からあるウィンドウを除いて新しいものを待つ
         const before = new Set<bigint>();
         if (entry.ifOpen === 'openNew') {

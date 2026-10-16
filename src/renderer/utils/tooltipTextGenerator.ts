@@ -3,12 +3,11 @@ import type {
   AppItem,
   WindowInfo,
   SetItem,
-  WindowItem,
   LauncherItem,
   ClipboardItem,
   DirOptionsForProcessing,
 } from '@common/types';
-import { isWindowInfo, isWindowItem, isClipboardItem, isSetItem } from '@common/types/guards';
+import { isWindowInfo, isClipboardItem, isSetItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 import { describeWindowMatch, isPathlessItem } from '@common/utils/itemWindowConversion';
 
@@ -131,36 +130,6 @@ function getSetItemTooltip(
 }
 
 /**
- * WindowItem用のツールチップテキストを生成
- */
-function getWindowItemTooltip(windowItem: WindowItem): string {
-  const lines: string[] = [];
-  lines.push(t('launcher.tooltip.windowTitle', { value: windowItem.windowTitle }));
-  lines.push('');
-
-  if (windowItem.x !== undefined && windowItem.y !== undefined) {
-    lines.push(t('launcher.tooltip.position', { x: windowItem.x, y: windowItem.y }));
-  }
-  if (windowItem.width !== undefined && windowItem.height !== undefined) {
-    lines.push(t('launcher.tooltip.size', { width: windowItem.width, height: windowItem.height }));
-  }
-  if (windowItem.virtualDesktopNumber !== undefined) {
-    lines.push(t('launcher.tooltip.virtualDesktop', { value: windowItem.virtualDesktopNumber }));
-  }
-  if (windowItem.activateWindow === false) {
-    lines.push(t('launcher.tooltip.noActivate'));
-  }
-
-  appendMetaInfo(lines, {
-    sourceFile: windowItem.sourceFile,
-    id: windowItem.id,
-    lineNumber: windowItem.lineNumber,
-  });
-
-  return lines.join('\n');
-}
-
-/**
  * LauncherItem用のツールチップテキストを生成
  */
 function getLauncherItemTooltip(launcherItem: LauncherItem): string {
@@ -237,10 +206,6 @@ export function getTooltipText(
 
   if (isSetItem(item)) {
     return getSetItemTooltip(item, nameOf);
-  }
-
-  if (isWindowItem(item)) {
-    return getWindowItemTooltip(item);
   }
 
   if (isClipboardItem(item)) {

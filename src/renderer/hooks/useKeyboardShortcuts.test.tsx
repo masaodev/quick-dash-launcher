@@ -190,8 +190,13 @@ describe('useKeyboardShortcuts', () => {
     });
   });
 
-  it('ウィンドウ操作アイテムの Shift+Enter は実行せず、URL と同じ文言で知らせる', async () => {
-    const item = { type: 'window', displayName: 'メール', windowTitle: 'Outlook' } as AppItem;
+  it('パスの無い単一アイテムの Shift+Enter は実行せず、URL と同じ文言で知らせる', async () => {
+    const item: AppItem = {
+      type: 'windowSwitch',
+      displayName: 'メール',
+      path: '',
+      window: { title: 'Outlook' },
+    };
     const { params, handleKeyDown } = setup([item]);
 
     await handleKeyDown(keyEvent('Enter', { shiftKey: true }));
@@ -199,7 +204,7 @@ describe('useKeyboardShortcuts', () => {
     expect(params.handleExecuteItem).not.toHaveBeenCalled();
     expect(showToastWindow).toHaveBeenCalledWith({
       displayName: 'メール',
-      itemType: 'windowOperation',
+      itemType: 'windowSwitch',
       message: 'このアイテムには親フォルダがありません',
     });
   });

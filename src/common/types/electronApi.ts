@@ -23,8 +23,6 @@ import type {
   LayoutExecutionProgress,
   WindowPinMode,
   SearchHistoryEntry,
-  WindowItem,
-  WindowItemConfig,
   SetItem,
   AppItem,
   AppInfo,
@@ -88,7 +86,6 @@ export interface ElectronAPI {
   loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
   openItem: (item: LauncherItem) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
-  executeWindowOperation: (item: WindowItem) => Promise<void>;
   /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
   executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
   openConfigFolder: () => Promise<void>;
@@ -191,7 +188,6 @@ export interface ElectronAPI {
     options?: JsonDirOptions,
     memo?: string
   ) => Promise<void>;
-  updateWindowItemById: (id: string, config: WindowItemConfig, memo?: string) => Promise<void>;
   updateSetItemById: (id: string, set: SetItemFields, memo?: string) => Promise<void>;
   selectBookmarkFile: () => Promise<string | null>;
   /** HTML ブックマークファイル（Netscape 形式）をフォルダ付きで読む（取込画面用） */

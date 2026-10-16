@@ -133,22 +133,6 @@ export function validateEditableItem(item: JsonItem, t: TFunction): ValidationRe
       return { isValid: true };
     }
 
-    case 'window': {
-      if (!item.displayName || !item.displayName.trim()) {
-        return {
-          isValid: false,
-          error: t('validation.emptyTypedField', { type: 'window', field: 'displayName' }),
-        };
-      }
-      if (!item.windowTitle || !item.windowTitle.trim()) {
-        return {
-          isValid: false,
-          error: t('validation.emptyTypedField', { type: 'window', field: 'windowTitle' }),
-        };
-      }
-      return { isValid: true };
-    }
-
     case 'clipboard': {
       if (!item.displayName || !item.displayName.trim()) {
         return {

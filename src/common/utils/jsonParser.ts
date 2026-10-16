@@ -10,7 +10,6 @@ import type {
   JsonLauncherItem,
   JsonDirItem,
   JsonGroupItem,
-  JsonWindowItem,
   JsonClipboardItem,
   JsonLayoutItem,
   JsonSetItem,
@@ -23,8 +22,11 @@ import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
 import { getFallbackT } from '@common/i18n';
 import type { TFunction } from 'i18next';
 
-import { normalizeWindowTitleForProcessOnly } from './windowTitle';
-import { hasItemWindowSwitch, replaceWindowConfig } from './itemWindowConversion';
+import {
+  hasItemWindowSwitch,
+  replaceWindowConfig,
+  windowItemToPathlessItem,
+} from './itemWindowConversion';
 
 // ============================================================
 // ID生成
@@ -281,24 +283,6 @@ export function parseJsonDataFileLenient(
     itemObj.id = id;
     seenIds.add(id);
 
-    // ウィンドウ操作: タイトル空・プロセス名だけは全一致ワイルドカードにする（invalid にしない）
-    if (itemObj.type === 'window') {
-      const windowTitle = normalizeWindowTitleForProcessOnly(
-        itemObj.windowTitle,
-        itemObj.processName
-      );
-      if (windowTitle !== undefined) {
-        itemObj.windowTitle = windowTitle;
-        issues.push({
-          index,
-          kind: 'normalized',
-          id,
-          reason: t('parseReasons.windowTitleWildcard'),
-        });
-        modified = true;
-      }
-    }
-
     try {
       const validatedItem = validateJsonItem(itemObj, index);
       items.push(validatedItem);
@@ -452,7 +436,8 @@ export function validateJsonItem(item: unknown, index: number): JsonItem {
     case 'dir':
       return validateJsonDirItem(obj);
     case 'window':
-      return validateJsonWindowItem(obj);
+      // 廃止したウィンドウ操作は、その場でパスの無い単一アイテムに直す（移行が保留になった間や、古い CLI でも動きを変えない）
+      return validateJsonLauncherItem(windowItemToPathlessItem(obj));
     case 'clipboard':
       return validateJsonClipboardItem(obj);
     case 'set':
@@ -574,33 +559,6 @@ export function validateJsonGroupItem(obj: Record<string, unknown>): JsonGroupIt
     itemNames: obj.itemNames as string[],
   };
 
-  validateOptionalString(obj, item, 'memo');
-  validateTypedFields(obj, item, ['updatedAt'], 'number');
-
-  return item;
-}
-
-/**
- * JsonWindowItemを検証
- */
-export function validateJsonWindowItem(obj: Record<string, unknown>): JsonWindowItem {
-  if (typeof obj.displayName !== 'string' || !obj.displayName) {
-    throw new Error('displayName is required and must be a non-empty string');
-  }
-  if (typeof obj.windowTitle !== 'string' || !obj.windowTitle) {
-    throw new Error('windowTitle is required and must be a non-empty string');
-  }
-
-  const item: JsonWindowItem = {
-    id: obj.id as string,
-    type: 'window',
-    displayName: obj.displayName,
-    windowTitle: obj.windowTitle,
-  };
-
-  validateTypedFields(obj, item, WINDOW_NUMERIC_FIELDS, 'number');
-  validateTypedFields(obj, item, WINDOW_BOOLEAN_FIELDS, 'boolean');
-  validateOptionalString(obj, item, 'processName');
   validateOptionalString(obj, item, 'memo');
   validateTypedFields(obj, item, ['updatedAt'], 'number');
 

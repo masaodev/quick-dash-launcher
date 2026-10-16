@@ -22,7 +22,7 @@ import { resolveCliPath, resolveOne, validateAsDataItem } from './cliShared.js';
  */
 
 /** セットの行から指せる種類（実行で開けるもの） */
-const ENTRY_ITEM_TYPES = ['item', 'window'] as const;
+const ENTRY_ITEM_TYPES = ['item'] as const;
 
 function nameOf(item: JsonItem): string {
   return 'displayName' in item && item.displayName ? item.displayName : item.id;

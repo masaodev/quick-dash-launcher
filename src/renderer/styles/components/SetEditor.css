@@ -436,7 +436,7 @@
   overflow-y: auto;
 }
 
-/* 登録画面の .window-config-group / -title と同じ、枠で囲んで見出しを付ける形 */
+/* 枠で囲んで見出しを付ける形 */
 .set-detail-group {
   grid-column: 1 / -1;
   display: grid;

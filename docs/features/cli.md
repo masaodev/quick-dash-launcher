@@ -89,13 +89,13 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--text` `--text-file` | item add（`--type clipboard`。どちらか必須）／update | クリップボードアイテムの本文。`--text-file` は UTF-8 のテキストファイル（1 MB まで。相対パスは `qdl` を実行したフォルダが基準）。どちらか一方だけ |
 | `--with-text` | item list | 中身がテキストだけのクリップボードアイテムに、本文 `text` を付ける |
 | `--file` `--tab` | launcher item add／update | 足す（update では移す）データファイル、またはタブ（その先頭のデータファイル）。add で省略したときは `datafiles/data.json` |
-| `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`window`（ウィンドウ操作）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ |
+| `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ。廃止した `window`（ウィンドウ操作）を渡すと `usage` で断り、代わりに `--set window='{"processName":"notepad.exe","title":"…"}'` でパスの無い単一アイテムを作るよう案内する |
 | `--group` | workspace item add／update | 入れるグループ。update で `""` を渡すと未分類へ移す |
 | `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる。archive restore では復元先（省略時は元のワークスペース） |
 | `--position` | workspace item add／update、workspace add／update、set row add、launcher tab add／update | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの、launcher tab add／update ではタブの並び。set row add では行を差し込む位置（省略時は最後） |
 | `--color` | workspace group add／update | `primary` `success` `danger` `warning` `info` `secondary` `purple` `teal` `pink` `indigo` `orange` `cyan`、または `#rrggbb` |
 | `--parent` | workspace group add／update | 親グループ（2 段まで）。update で `""` を渡すと最上位へ移す |
-| `--set key=value` | item add／update | 専用のオプションが無い項目（例 `--set windowTitle=メモ帳`、`--set entries='[{"itemId":"…"}]'`）。値が JSON の配列・オブジェクト・数値・`true`／`false`ならその型になる |
+| `--set key=value` | item add／update | 専用のオプションが無い項目（例 `--set options='{"depth":1}'`、`--set entries='[{"itemId":"…"}]'`）。値が JSON の配列・オブジェクト・数値・`true`／`false`ならその型になる |
 | `--unset key` | item update | 項目を外す |
 | `--dry-run` | 書き込む各コマンド | 書き込まずに、結果だけを返す |
 
@@ -108,13 +108,13 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **書き込みの前の読み直し**: 書き込むコマンドは、まず設定ファイルを読み直す。QDL の外でファイルが編集されていれば、ここで外部変更として検知し、変更前の内容を残す。ワークスペースは読み直さないと書き込みを断る作りなので、CLI では外部で編集した直後でも書き込める
 - **書き込んだ後**: 開いている画面に反映し、「CLI: …を追加しました」のようなトーストで知らせる（失敗・`--dry-run`・一覧では出さない）
 - **セットの作り方**: `launcher item add --type set --name <名前>` に、最初の行を `--item <id か表示名>` か `--path <パス>`（`--args`）で渡す（`--label` で行の名前）。`--set entries='[…]'` で行をまとめて渡してもよいが、`--item`・`--path` とは併用できない。2 行目からは `launcher set row add` で足す
-- **セットの行にできるもの**: 開くものだけ。`--item` で指せるのは種類 `item`（通常のアイテム）と `window`（ウィンドウ操作）のアイテムで、フォルダ取込・セットなどは断る（フォルダ取込の中身は `--path` で行にする）。対象ウィンドウとウィンドウ位置は CLI からは付けず、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付ける
+- **セットの行にできるもの**: 開くものだけ。`--item` で指せるのは種類 `item`（通常のアイテム。パスの無い単一アイテムを含む）だけで、フォルダ取込・セットなどは断る（フォルダ取込の中身は `--path` で行にする）。対象ウィンドウとウィンドウ位置は CLI からは付けず、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付ける
 - **別のタブへ移す**: `launcher item update <id か表示名> --tab <タブ>`（か `--file`）。id を保ったまま移すので、セットの行は切れない。ほかの項目の変更と同時にもできる。移す先に書いてから元のファイルから消す（途中で失敗しても、消えずに 2 つのファイルに残る）。そのタブのどれかのデータファイルに既にあれば移さず、`"unchanged": true` を返す。自動取込で入ったアイテムは移さない（取込は取り込み先のファイルの中で入れ替えるので、次の取込でまた足される）
 - **タブ構成**: アイテム管理画面のタブの操作と同じ計算・同じ順（新しいファイルを作る → `settings.json` の `dataFileTabs`・`dataFileLabels` を保存する → どのタブにも残らないファイルを消す）で確定し、開いている画面に知らせる。`<タブ>` は番号（0 始まり）か名前の完全一致、`<データファイル>` は `data3.json` のようなファイル名か名前（ラベル）。画面と違って確認を挟めないので、アイテムが入ったデータファイルを消すことになる操作（`tab remove`・`tab file remove`）は `conflict` で断る。最後のタブと、メインのデータファイル（`datafiles/data.json`）を消す操作も `conflict`。消したファイルを取り込み先にしていた自動取込ルールは、画面と同じく無効にして結果の `disabledAutoImportRules` で知らせる。タブの表示（基本設定の「データファイルのタブを表示」）がオフのときは、足したタブが画面に出ないので、結果に `"tabsHidden": true` を付ける
 - **アーカイブ**: `workspace group archive` は、画面と同じく先に切り離しウィンドウを閉じてから、子孫のサブグループとアイテムごとしまう。`archive list`・`archive restore` で扱うのは、しまった単位（最上位のグループ）だけ。一緒にしまったサブグループは一覧の `subgroups` に名前が出て、親と一緒に戻る。`archive restore` は `--workspace` を省くと元のワークスペースへ戻し、元のワークスペースが無くなっていれば既定（先頭）のワークスペースへ戻す。どちらも画面の「移動先を選んで復元」と同じ処理で、最上位のグループとして戻る
 - **クリップボードアイテム**: CLI で足せるのは、中身がテキストだけのもの（画面の「テキストを書く」と同じ）。本文を `--text` か `--text-file` で渡すと、実データを新しいファイルに保存して参照（`dataFileRef`）を差し替える。前の実データのファイルは消さない（画面で書き換えたときと同じ）。本文を書き換えられるのは中身がテキストだけのもので、画像・HTML・RTF を含むものは `conflict` で断る（名前・メモの変更と別のタブへの移動はできる）。参照の項目（`dataFileRef`・`savedAt`・`formats`・`preview`）は `--set`・`--unset` で変えられない。今の本文は `list --with-text` で読める
 - **触れないもの**: 画像・HTML・RTF を含むクリップボードアイテムの中身（画面の操作で作るもの。名前・メモは変えられ、消すこともできる）。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
-- **ワークスペースに足せる種類**: 通常のアイテムと、テキストだけのクリップボードアイテム。ウィンドウ操作・セットを足すのは画面で行う（既にあるものは update で変えられる）
+- **ワークスペースに足せる種類**: 通常のアイテム（パスの無い単一アイテムを含む）と、テキストだけのクリップボードアイテム。セットを足すのは画面で行う（既にあるものは update で変えられる）
 
 ### 出力
 

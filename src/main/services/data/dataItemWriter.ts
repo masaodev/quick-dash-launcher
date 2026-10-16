@@ -7,19 +7,11 @@ import {
   serializeJsonDataFile,
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
-import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
 import { isValidDataFileName } from '@common/utils/dataFileName';
 import { DEFAULT_DATA_FILE } from '@common/types';
-import type {
-  JsonDataFile,
-  JsonItem,
-  JsonDirOptions,
-  SetItemFields,
-  WindowItemConfig,
-} from '@common/types';
+import type { JsonDataFile, JsonItem, JsonDirOptions, SetItemFields } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
-import { pickWindowPlacement } from '@common/utils/windowPlacement';
 
 import { PathManager } from '../../config/pathManager.js';
 import { mainI18n } from '../mainI18n.js';
@@ -77,26 +69,6 @@ export function updateDirItemById(
     type: 'dir',
     path: dirPath,
     options: options && Object.keys(options).length > 0 ? options : undefined,
-    memo: memo || undefined,
-    updatedAt: Date.now(),
-  });
-}
-
-/** IDでwindowアイテムを更新する */
-export function updateWindowItemById(
-  configFolder: string,
-  id: string,
-  config: WindowItemConfig,
-  memo?: string
-): void {
-  replaceItemById(configFolder, {
-    id,
-    type: 'window',
-    displayName: config.displayName,
-    windowTitle:
-      normalizeWindowTitleForProcessOnly(config.windowTitle, config.processName) ??
-      config.windowTitle,
-    ...pickWindowPlacement(config),
     memo: memo || undefined,
     updatedAt: Date.now(),
   });

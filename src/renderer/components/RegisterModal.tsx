@@ -4,13 +4,7 @@
  */
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
-import type {
-  RegisterItem,
-  EditingAppItem,
-  EditableJsonItem,
-  WindowInfo,
-  LauncherItem,
-} from '@common/types';
+import type { RegisterItem, EditingAppItem, EditableJsonItem, LauncherItem } from '@common/types';
 import { isEditableJsonItem, isJsonLauncherItem } from '@common/types';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
@@ -19,10 +13,8 @@ import { useRegisterForm } from '../hooks/useRegisterForm';
 import { useToast } from '../hooks/useToast';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 import { canTryExecute, tryExecuteRegisterItem } from '../utils/registerItemExecution';
-import { fetchMatchingWindow } from '../utils/windowFilter';
 
 import FilePickerDialog from './FilePickerDialog';
-import WindowSelectorModal from './WindowSelectorModal';
 import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
 import RegisterPlacementBar, { describePlacement } from './RegisterPlacementBar';
 import { Button } from './ui';
@@ -72,8 +64,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const [windowSelectorOpen, setWindowSelectorOpen] = useState(false);
-  const [windowSelectorItemIndex, setWindowSelectorItemIndex] = useState<number | null>(null);
   const [optionsSectionOpen, setOptionsSectionOpen] = useState<boolean[]>([]);
   const [isDraggingOverModal, setIsDraggingOverModal] = useState(false);
 
@@ -169,26 +159,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         updateItem(idx, { customIcon: undefined });
       });
     }
-  };
-
-  const openWindowSelector = (index: number): void => {
-    setWindowSelectorItemIndex(index);
-    setWindowSelectorOpen(true);
-  };
-
-  /** ウィンドウ操作アイテムの「ウィンドウを選択」（単一アイテムは欄の中の「開いているウィンドウから取り込む」） */
-  const onWindowSelected = (window: WindowInfo): void => {
-    if (windowSelectorItemIndex === null) return;
-
-    const item = items[windowSelectorItemIndex];
-    if (item?.itemCategory !== 'window') return;
-
-    handleItemChange(windowSelectorItemIndex, 'windowOperationConfig', {
-      ...item.windowOperationConfig,
-      displayName: item.displayName,
-      windowTitle: window.title,
-      processName: window.processName,
-    });
   };
 
   const handleDelete = (): void => {
@@ -314,8 +284,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     customIconPreview={customIconPreviews[index]}
                     onCustomIconSelect={() => openCustomIconPicker(index)}
                     onCustomIconDelete={() => onCustomIconDeleted(index)}
-                    onOpenWindowSelector={() => openWindowSelector(index)}
-                    onFetchFromWindow={() => fetchMatchingWindow(items[index])}
                     onClipboardError={showError}
                     showSeparator={items.length > 1}
                     selfId={
@@ -374,12 +342,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
         title={t('register.customIconPickerTitle')}
         fileTypes="image"
         description={t('register.customIconPickerDescription')}
-      />
-
-      <WindowSelectorModal
-        isOpen={windowSelectorOpen}
-        onClose={() => setWindowSelectorOpen(false)}
-        onSelect={onWindowSelected}
       />
     </>
   );

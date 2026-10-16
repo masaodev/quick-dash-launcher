@@ -69,7 +69,6 @@ const electronAPI: ElectronAPI = {
   loadDataFiles: (trigger) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
   openItem: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item),
   openParentFolder: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
-  executeWindowOperation: (item) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_WINDOW_OPERATION, item),
   executeSet: (item, allItems) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_SET, item, allItems),
   openConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_FAVICON, url),
@@ -132,8 +131,6 @@ const electronAPI: ElectronAPI = {
   // IDベースのアイテム更新
   updateDirItemById: (id, dirPath, options, memo) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DIR_ITEM_BY_ID, id, dirPath, options, memo),
-  updateWindowItemById: (id, config, memo) =>
-    ipcRenderer.invoke(IPC_CHANNELS.UPDATE_WINDOW_ITEM_BY_ID, id, config, memo),
   updateSetItemById: (id, set, memo) =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_SET_ITEM_BY_ID, id, set, memo),
   selectBookmarkFile: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_BOOKMARK_FILE),

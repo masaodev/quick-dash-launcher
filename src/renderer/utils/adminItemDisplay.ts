@@ -4,17 +4,10 @@
  * 種類の表示名・アイコン、セルで編集できる項目の判定、更新日の書式など。状態を持たない。
  */
 import i18next from 'i18next';
-import type {
-  JsonItem,
-  JsonLauncherItem,
-  JsonWindowItem,
-  JsonSetItem,
-  JsonClipboardItem,
-} from '@common/types';
+import type { JsonItem, JsonLauncherItem, JsonSetItem, JsonClipboardItem } from '@common/types';
 import {
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonWindowItem,
   isJsonClipboardItem,
   isJsonSetItem,
 } from '@common/types';
@@ -23,7 +16,6 @@ import {
 export const ITEM_TYPE_INFO: Record<JsonItem['type'], { icon: string }> = {
   item: { icon: '📄' },
   dir: { icon: '🗂️' },
-  window: { icon: '🪟' },
   clipboard: { icon: '📋' },
   set: { icon: '📦' },
 };
@@ -44,14 +36,12 @@ export function getItemTypeName(jsonItem: JsonItem): string {
 }
 
 // displayNameを持つアイテム型
-export type JsonItemWithDisplayName =
-  JsonLauncherItem | JsonWindowItem | JsonSetItem | JsonClipboardItem;
+export type JsonItemWithDisplayName = JsonLauncherItem | JsonSetItem | JsonClipboardItem;
 
 /** displayName を持つ種類か（フォルダ取込だけが持たない） */
 export function hasDisplayName(jsonItem: JsonItem): jsonItem is JsonItemWithDisplayName {
   return (
     (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) ||
-    (jsonItem.type === 'window' && isJsonWindowItem(jsonItem)) ||
     (jsonItem.type === 'set' && isJsonSetItem(jsonItem)) ||
     (jsonItem.type === 'clipboard' && isJsonClipboardItem(jsonItem))
   );

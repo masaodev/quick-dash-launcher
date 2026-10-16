@@ -7,6 +7,9 @@
  * - データファイル・ワークスペースの読み込み時に 1 回だけ書き換える（convertLegacyWindowConfigs）
  * - 移行が保留になった間や古い CLI の --set windowConfig=… は、検証（jsonParser）がその場で直す
  * - 登録・編集画面は ItemWindowSwitch のキーをそのまま持つ（保存するときは itemWindowSwitchFields で写す）
+ *
+ * 廃止した種別「ウィンドウ操作」（type: 'window'）も、同じ読み込み時にパスの無い単一アイテムに変換する
+ * （windowItemToPathlessItem。id は変えないので、セットの行はそのまま変換後のアイテムを指す）
  */
 import type {
   ItemWindowSwitch,
@@ -181,17 +184,91 @@ export function replaceWindowConfig(
   return result;
 }
 
+/** ウィンドウ操作アイテムだけが持つキー（パスの無い単一アイテムに変換するときに置き換える） */
+const WINDOW_ITEM_KEYS = new Set<string>([
+  'type',
+  'windowTitle',
+  'processName',
+  'x',
+  'y',
+  'width',
+  'height',
+  'virtualDesktopNumber',
+  'moveToActiveMonitorCenter',
+  'activateWindow',
+  'pinToAllDesktops',
+]);
+
+/** 変換後のアイテムで先頭に並べるキー（保存形式の単一アイテムの順） */
+const PATHLESS_HEAD_KEYS = ['id', 'type', 'displayName', 'path'] as const;
+
+/**
+ * 廃止した種別「ウィンドウ操作」（type: 'window'）のアイテム（JSON のまま）を、パスの無い単一アイテムにする
+ *
+ * - windowTitle → window.title（空・"*" は書かない＝タイトルを問わない。windowConfigToSwitch と同じ解釈）、
+ *   processName → window.processName。ただし exe 名が無く、タイトルが "*" だけのときは "*" を残す（どのウィンドウにも
+ *   合う指定だったので、そのまま動くようにする）
+ * - x/y/width/height/virtualDesktopNumber → placement（1 つも無ければ付けない）
+ * - activateWindow は false のときだけ書く（単一アイテムの既定も前面に出す）。pinToAllDesktops は true のときだけ書く
+ * - moveToActiveMonitorCenter は単一アイテムでは廃止したので捨てる
+ * - id・displayName・customIcon・memo・updatedAt、ワークスペースの所属・並び順などはそのまま残す
+ */
+export function windowItemToPathlessItem(raw: Record<string, unknown>): Record<string, unknown> {
+  const converted = windowConfigToSwitch({
+    title: typeof raw.windowTitle === 'string' ? raw.windowTitle : '',
+    processName: typeof raw.processName === 'string' ? raw.processName : undefined,
+    x: raw.x as number | undefined,
+    y: raw.y as number | undefined,
+    width: raw.width as number | undefined,
+    height: raw.height as number | undefined,
+    virtualDesktopNumber: raw.virtualDesktopNumber as number | undefined,
+    activateWindow: raw.activateWindow === false ? false : undefined,
+    pinToAllDesktops: raw.pinToAllDesktops === true ? true : undefined,
+  });
+  const switchFields: Record<string, unknown> = converted ? { ...converted } : {};
+  if (!converted && typeof raw.windowTitle === 'string' && raw.windowTitle.trim() !== '') {
+    // タイトルが "*" だけ（exe 名なし）: 探す条件を残す
+    switchFields.window = { title: raw.windowTitle };
+  }
+  // 単一アイテムの既定は前面に出すので、true は書かない
+  if (switchFields.activateWindow === true) delete switchFields.activateWindow;
+
+  const rest: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (WINDOW_ITEM_KEYS.has(key) || (PATHLESS_HEAD_KEYS as readonly string[]).includes(key)) {
+      continue;
+    }
+    rest[key] = value;
+  }
+  return {
+    ...(raw.id !== undefined ? { id: raw.id } : {}),
+    type: 'item',
+    ...(raw.displayName !== undefined ? { displayName: raw.displayName } : {}),
+    path: '',
+    ...rest,
+    ...switchFields,
+  };
+}
+
 function isLegacyWindowConfigItem(item: unknown): item is Record<string, unknown> {
   return isRecord(item) && item.type === 'item' && item.windowConfig !== undefined;
 }
 
-/** 旧形式の windowConfig を持つ単一アイテムを含むか */
+function isLegacyWindowItem(item: unknown): item is Record<string, unknown> {
+  return isRecord(item) && item.type === 'window';
+}
+
+/** 旧形式の windowConfig を持つ単一アイテム、または廃止したウィンドウ操作アイテムを含むか */
 export function hasLegacyWindowConfig(items: unknown): boolean {
-  return Array.isArray(items) && items.some(isLegacyWindowConfigItem);
+  return (
+    Array.isArray(items) &&
+    items.some((item) => isLegacyWindowConfigItem(item) || isLegacyWindowItem(item))
+  );
 }
 
 /**
- * アイテムの配列（JSON のまま）の中の windowConfig を新しいキーに置き換える
+ * アイテムの配列（JSON のまま）の中の windowConfig を新しいキーに置き換え、ウィンドウ操作アイテムを
+ * パスの無い単一アイテムにする
  *
  * windowConfig がオブジェクトでないもの（壊れたもの）はそのまま残す（読み込みで不正なアイテムとして扱われる）
  */
@@ -201,6 +278,10 @@ export function convertLegacyWindowConfigs(items: unknown[]): {
 } {
   let changed = false;
   const result = items.map((raw) => {
+    if (isLegacyWindowItem(raw)) {
+      changed = true;
+      return windowItemToPathlessItem(raw);
+    }
     if (!isLegacyWindowConfigItem(raw)) return raw;
     const replaced = replaceWindowConfig(raw);
     if (!replaced) return raw;

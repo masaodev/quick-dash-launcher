@@ -11,7 +11,7 @@
 
 import type { ItemWindowSwitch, SetEntry, SetLaunchMode } from './launcher';
 import type { ClipboardFormat } from './clipboard';
-import type { JsonClipboardItem, JsonLauncherItem, JsonSetItem, JsonWindowItem } from './json-data';
+import type { JsonClipboardItem, JsonLauncherItem, JsonSetItem } from './json-data';
 
 // ============================================================
 // workspace.json
@@ -132,38 +132,6 @@ export interface JsonWorkspaceLauncherItem extends JsonWorkspaceItemBase, ItemWi
 }
 
 /**
- * ウィンドウ操作アイテム（type: "window"）
- * 既存のウィンドウを検索・アクティブ化し、位置・サイズを制御する
- */
-export interface JsonWorkspaceWindowItem extends JsonWorkspaceItemBase {
-  /** アイテムタイプ */
-  type: 'window';
-  /**
-   * ウィンドウタイトル（検索用、ワイルドカード * ? 対応）
-   * @minLength 1
-   */
-  windowTitle: string;
-  /** プロセス名で検索（部分一致、オプション） */
-  processName?: string;
-  /** X座標（仮想スクリーン座標系、オプション） */
-  x?: number;
-  /** Y座標（仮想スクリーン座標系、オプション） */
-  y?: number;
-  /** 幅（オプション） */
-  width?: number;
-  /** 高さ（オプション） */
-  height?: number;
-  /** アクティブモニターの中央に移動するか（オプション） */
-  moveToActiveMonitorCenter?: boolean;
-  /** 仮想デスクトップ番号（1から開始、オプション） */
-  virtualDesktopNumber?: number;
-  /** ウィンドウをアクティブにするか（デフォルト: true、オプション） */
-  activateWindow?: boolean;
-  /** 全デスクトップに表示するか（オプション） */
-  pinToAllDesktops?: boolean;
-}
-
-/**
  * クリップボードアイテム（type: "clipboard"）
  * QDL が画面操作で生成する。手で書かない
  */
@@ -201,13 +169,10 @@ export interface JsonWorkspaceSetItem extends JsonWorkspaceItemBase {
  * ワークスペースアイテム（Union型）
  */
 export type JsonWorkspaceItem =
-  | JsonWorkspaceLauncherItem
-  | JsonWorkspaceWindowItem
-  | JsonWorkspaceClipboardItem
-  | JsonWorkspaceSetItem;
+  JsonWorkspaceLauncherItem | JsonWorkspaceClipboardItem | JsonWorkspaceSetItem;
 
 /** ワークスペースアイテムの type の一覧 */
-export const JSON_WORKSPACE_ITEM_TYPES = ['item', 'window', 'clipboard', 'set'] as const;
+export const JSON_WORKSPACE_ITEM_TYPES = ['item', 'clipboard', 'set'] as const;
 
 // ============================================================
 // workspace-archive.json
@@ -314,10 +279,6 @@ type _AssertLauncherParity = Expect<
     Omit<JsonWorkspaceLauncherItem, WorkspaceMetaKey | 'originalPath'>,
     Omit<JsonLauncherItem, 'updatedAt' | 'autoImportRuleId'>
   >
->;
-
-type _AssertWindowParity = Expect<
-  SameKeys<Omit<JsonWorkspaceWindowItem, WorkspaceMetaKey>, Omit<JsonWindowItem, 'updatedAt'>>
 >;
 
 type _AssertClipboardParity = Expect<

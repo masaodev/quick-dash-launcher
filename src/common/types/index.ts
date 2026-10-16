@@ -10,8 +10,6 @@ export type {
   WindowConfig,
   ItemWindowSwitch,
   LauncherItem,
-  WindowItem,
-  WindowItemConfig,
   ClipboardItem,
   LayoutWindowEntry,
   LayoutWindowEntryWithoutIcon,
@@ -33,7 +31,6 @@ export type {
   Workspace,
   WorkspaceItem,
   WorkspaceLauncherItem,
-  WorkspaceWindowItem,
   WorkspaceClipboardItem,
   WorkspaceSetItem,
   WorkspaceItemUpdate,
@@ -55,7 +52,6 @@ export type {
   JsonWorkspaceGroup,
   JsonWorkspaceItem,
   JsonWorkspaceLauncherItem,
-  JsonWorkspaceWindowItem,
   JsonWorkspaceClipboardItem,
   JsonWorkspaceSetItem,
   JsonWorkspaceArchiveFile,
@@ -83,7 +79,6 @@ export type {
   JsonDirItem,
   JsonDirOptions,
   JsonGroupItem,
-  JsonWindowItem,
   JsonClipboardItem,
   JsonLayoutItem,
   JsonSetItem,
@@ -92,7 +87,6 @@ export type {
 export {
   isJsonLauncherItem,
   isJsonDirItem,
-  isJsonWindowItem,
   isJsonClipboardItem,
   isJsonSetItem,
   JSON_DATA_VERSION,
@@ -171,22 +165,16 @@ export type { WindowInfo, VirtualDesktopInfo, WindowState, Bounds, AdminTab } fr
 export type { AppInfo, AppDistribution } from './app';
 
 // 登録関連の型
-export type { RegisterItem, WindowOperationConfig } from './register';
+export type { RegisterItem } from './register';
 
 // 編集用アイテムの型と関数
 export type {
   EditingItemMeta,
   EditingLauncherItem,
-  EditingWindowItem,
   EditingSetItem,
   EditingAppItem,
 } from './editingItem';
-export {
-  isEditingLauncherItem,
-  isEditingWindowItem,
-  isEditingSetItem,
-  isEditableJsonItem,
-} from './editingItem';
+export { isEditingLauncherItem, isEditingSetItem, isEditableJsonItem } from './editingItem';
 
 // 編集可能なJSONアイテムの型
 export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from './editableItem';
@@ -209,4 +197,4 @@ export type { ToastItemType, ToastEventData, NotificationType, ToastOptions } fr
 export type { SnapshotInfo, BackupStatus } from './backup';
 
 // 型ガード関数
-export { isWindowInfo, isLauncherItem, isWindowItem, isClipboardItem, isSetItem } from './guards';
+export { isWindowInfo, isLauncherItem, isClipboardItem, isSetItem } from './guards';
