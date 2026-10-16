@@ -94,7 +94,7 @@ export const ja = {
       title: '設定',
       settings: '⚙️ 設定',
       itemManager: '✏️ アイテム管理（Ctrl+E）',
-      toggleWorkspace: '🗂️ ワークスペースを表示（Ctrl+W）',
+      toggleWorkspace: '🗂️ ワークスペースの表示/非表示（Ctrl+W）',
       quit: '🚪 アプリを終了',
     },
     desktopTabs: {

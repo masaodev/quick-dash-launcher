@@ -161,7 +161,7 @@ export interface JsonWorkspaceWindowItem extends JsonWorkspaceItemBase {
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするか（デフォルト: true、オプション） */
   activateWindow?: boolean;
-  /** 全仮想デスクトップにピン止めするか（オプション） */
+  /** 全デスクトップに表示するか（オプション） */
   pinToAllDesktops?: boolean;
 }
 

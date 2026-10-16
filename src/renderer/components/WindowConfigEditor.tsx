@@ -249,7 +249,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               </div>
             </div>
 
-            {/* 2-4. 仮想デスクトップ移動・ピン止め */}
+            {/* 2-4. 仮想デスクトップ移動・全デスクトップに表示 */}
             <div className="window-config-subgroup">
               <h5 className="window-config-subgroup-title">{t('windowConfig.desktopHeading')}</h5>
               <div className="window-config-checkbox-row">
@@ -261,7 +261,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
                       onChange({
                         ...baseConfig,
                         pinToAllDesktops: e.target.checked || undefined,
-                        // ピン止め時は仮想デスクトップ番号をクリア
+                        // 全デスクトップに表示するときは仮想デスクトップ番号をクリア
                         virtualDesktopNumber: e.target.checked
                           ? undefined
                           : windowConfig?.virtualDesktopNumber,

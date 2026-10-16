@@ -63,7 +63,7 @@ export interface WindowInfo {
   icon?: string;
   /** 仮想デスクトップ番号（1から開始、取得できない場合は-1） */
   desktopNumber?: number;
-  /** 全ての仮想デスクトップにピン止めされているか */
+  /** 全デスクトップに表示されているか */
   isPinned?: boolean;
   /** QDL より高い権限（管理者）で動いていて、QDL から動かせない（このときだけ true） */
   isElevated?: boolean;
