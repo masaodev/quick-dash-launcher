@@ -612,8 +612,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       launchMode: '開き方',
       sequential: '順番に開く',
       parallel: '同時に開く',
-      moveOnly: '動かすだけ',
-      moveOnlyDetails: '開かずに、{{window}} のウィンドウを動かす',
+      moveOnly: 'ウィンドウを動かすだけ',
       missing: 'アイテムが見つかりません',
       moveUp: '上へ',
       moveDown: '下へ',
@@ -624,7 +623,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       hintParallel:
         '全部の行を一度に開きます。開いているウィンドウを行にするときは「ウィンドウを追加」、ウィンドウを並べ直したら「位置を更新」を押します。',
       moveOnlyHint:
-        '「動かすだけ」の行は、ウィンドウが開いているときだけ動かします（開くものは行の詳細 ✏️ で足せます）。',
+        '「ウィンドウを動かすだけ」の行は、ウィンドウが開いているときだけ動かします（開くものは行の詳細 ✏️ で足せます）。',
     },
     addWindows: {
       title: 'ウィンドウを追加',
@@ -640,7 +639,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       addNone: '追加',
       add_one: '{{count}} 件を追加',
       add_other: '{{count}} 件を追加',
-      note: '足した行は「動かすだけ」です（開いているウィンドウを動かすだけ）。閉じていても開きたいときは、足したあとに行の詳細 ✏️ で開くもの（アイテムかパス）を足します。タイトルは全体が同じウィンドウを探します。タブの切り替えや更新でタイトルが変わるものは、行の詳細 ✏️ で一部だけにできます。',
+      note: '足した行は「ウィンドウを動かすだけ」の行です（開いているときだけ動かします）。閉じていても開きたいときは、足したあとに行の詳細 ✏️ で開くもの（アイテムかパス）を足します。タイトルは全体が同じウィンドウを探します。タブの切り替えや更新でタイトルが変わるものは、行の詳細 ✏️ で一部だけにできます。',
     },
     update: {
       title: '位置を更新',

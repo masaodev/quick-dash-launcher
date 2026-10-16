@@ -110,6 +110,13 @@
   color: var(--text-secondary);
 }
 
+/* 2 段目の先頭の印（動かすだけの行）。続く exe 名との間をあける */
+.set-row-details .set-chip {
+  margin-left: 0;
+  margin-right: var(--spacing-xs);
+  vertical-align: 0;
+}
+
 /* 位置（メイン画面のセットの行の 📍 と同じく、灰色の小さな文字） */
 .set-row-place {
   font-size: var(--font-size-sm);

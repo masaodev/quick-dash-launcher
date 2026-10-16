@@ -96,13 +96,10 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     return keys;
   }, [entries]);
 
-  /** 行の 2 段目（開くもの。動かすだけの行は動かすウィンドウ。指す先が無い行は出さない） */
+  /** 行の 2 段目の文字（開くもの。動かすだけの行は動かすウィンドウの exe 名。指す先が無い行は出さない） */
   const rowDetails = (entry: SetEntry, view: SetEntryView): string => {
     if (view.missing) return '';
-    if (view.holding === 'none') {
-      const target = entry.window?.processName ?? entry.window?.title ?? '';
-      return target ? t('set.editor.moveOnlyDetails', { window: target }) : '';
-    }
+    if (view.holding === 'none') return entry.window?.processName ?? entry.window?.title ?? '';
     return view.path ?? '';
   };
 
@@ -175,19 +172,22 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     <span className="set-row-title-text" title={view.name}>
                       {view.name}
                     </span>
-                    {view.missing ? (
+                    {view.missing && (
                       <span className="set-chip set-chip-danger">{t('set.editor.missing')}</span>
-                    ) : (
-                      view.holding === 'none' && (
-                        <span className="set-chip set-chip-open">{t('set.editor.moveOnly')}</span>
-                      )
                     )}
                   </span>
-                  {/* 2 段目はその行が開くもの（動かすだけの行は、動かすウィンドウ） */}
-                  {rowDetails(entry, view) && (
+                  {/* 2 段目はその行が開くもの。動かすだけの行は、印と動かすウィンドウの exe 名 */}
+                  {view.holding === 'none' && !view.missing ? (
                     <span className="set-row-details" title={rowDetails(entry, view)}>
+                      <span className="set-chip set-chip-open">{t('set.editor.moveOnly')}</span>
                       {rowDetails(entry, view)}
                     </span>
+                  ) : (
+                    rowDetails(entry, view) && (
+                      <span className="set-row-details" title={rowDetails(entry, view)}>
+                        {rowDetails(entry, view)}
+                      </span>
+                    )
                   )}
                 </span>
                 {place && <span className="set-row-place">📍 {place}</span>}

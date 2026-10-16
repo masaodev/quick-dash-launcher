@@ -609,8 +609,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       launchMode: 'How to open',
       sequential: 'One after another',
       parallel: 'All at once',
-      moveOnly: 'Move only',
-      moveOnlyDetails: "Doesn't open anything; moves the {{window}} window",
+      moveOnly: 'Moves a window only',
       missing: "Couldn't find the item",
       moveUp: 'Move up',
       moveDown: 'Move down',
@@ -621,7 +620,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       hintParallel:
         'All rows open at once. To turn open windows into rows, press "Add windows". After rearranging the windows, press "Update positions".',
       moveOnlyHint:
-        'Move-only rows move the window only while it is open (add something to open in Row details ✏️).',
+        '"Moves a window only" rows move the window only while it is open (add something to open in Row details ✏️).',
     },
     addWindows: {
       title: 'Add windows',
@@ -637,7 +636,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       addNone: 'Add',
       add_one: 'Add {{count}} window',
       add_other: 'Add {{count}} windows',
-      note: 'Rows added here are "Move only": they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️ afterwards. Rows look for a window with the whole title; if the title changes (switching tabs, updates), search by part of it in Row details ✏️.',
+      note: 'Rows added here are "Moves a window only" rows: they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️ afterwards. Rows look for a window with the whole title; if the title changes (switching tabs, updates), search by part of it in Row details ✏️.',
     },
     update: {
       title: 'Update positions',
