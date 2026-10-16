@@ -109,7 +109,8 @@ export interface SetExecutorDeps {
   findWindow: (match: WindowConfig, exclude?: ReadonlySet<bigint>) => bigint | null;
   applyConfig: typeof applyWindowConfig;
   activate: typeof tryActivateWindow;
-  maximize: (hwnd: bigint) => boolean;
+  /** activate が false なら、最大化しても前面の移りを元に戻す */
+  maximize: (hwnd: bigint, activate: boolean) => boolean;
   sleep: (ms: number) => Promise<void>;
   /** 画面の範囲（物理ピクセル。どの画面にも入らない位置を主画面に収めるのに使う） */
   screens?: () => ScreenArea[];
@@ -222,7 +223,7 @@ const defaultDeps: SetExecutorDeps = {
     findWindowHwndByTitle(createTitleMatcher(config.title), config.processName, exclude),
   applyConfig: applyWindowConfig,
   activate: tryActivateWindow,
-  maximize: (hwnd) => maximizeWindow(hwnd),
+  maximize: (hwnd, activate) => maximizeWindow(hwnd, { activate }),
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   desktopOf: (hwnd) => getWindowDesktopNumber(hwnd),
   desktopCount: () => getDesktopCount(),
@@ -518,7 +519,8 @@ async function runSet(
       if (cancelled) return finish(index, mainI18n.t('layout.cancelled'));
 
       const applied = await deps.applyConfig(hwnd, config, r.name, logger);
-      if (entry.placement.state === 'maximized') deps.maximize(hwnd);
+      if (entry.placement.state === 'maximized')
+        deps.maximize(hwnd, config.activateWindow === true);
       // 管理者権限で動くウィンドウなどは、位置を当てても動かない（大きさは見ない）
       if (applied.positionNotApplied) return finish(index, mainI18n.t('set.run.couldNotMove'));
       return finish(

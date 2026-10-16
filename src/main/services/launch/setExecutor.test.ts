@@ -79,8 +79,8 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
       calls.push(`activate:${config.title}:${hit !== null}`);
       return { activated: hit !== null, windowFound: hit !== null };
     }),
-    maximize: vi.fn((hwnd: bigint) => {
-      calls.push(`maximize:${hwnd}`);
+    maximize: vi.fn((hwnd: bigint, activate: boolean) => {
+      calls.push(`maximize:${hwnd}${activate ? ':activate' : ''}`);
       return true;
     }),
     sleep: vi.fn(async () => {}),
@@ -245,6 +245,26 @@ describe('executeSet', () => {
     };
     await executeSet(set, resolve, deps, logger);
     expect(calls).toEqual(['place:1', 'maximize:1']);
+  });
+
+  it('最大化は「前面に出す」の行だけ前面に出してよいと伝える', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'QDL_main', processName: 'WindowsTerminal.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: '並べる',
+      entries: [
+        {
+          itemId: 'term1aaa',
+          window: { processName: 'WindowsTerminal.exe' },
+          placement: { x: 0, y: 0, width: 960, height: 1040, state: 'maximized' },
+          activateWindow: true,
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual(['place:1', 'maximize:1:activate']);
   });
 
   it('無ければ開いてウィンドウが出るのを待ってから位置を合わせる', async () => {

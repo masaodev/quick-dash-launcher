@@ -47,6 +47,7 @@ const GetWindowThreadProcessId = user32.func('GetWindowThreadProcessId', 'uint32
   koffi.out(koffi.pointer('uint32', 1)),
 ]);
 const SetForegroundWindow = user32.func('SetForegroundWindow', 'bool', ['void*']);
+const GetForegroundWindow = user32.func('GetForegroundWindow', 'void*', []);
 const SystemParametersInfoW = user32.func('SystemParametersInfoW', 'bool', [
   'uint32',
   'uint32',
@@ -785,12 +786,27 @@ export function restoreWindow(hwnd: number | bigint): boolean {
 
 /**
  * ウィンドウを最大化する（今いる画面で最大化される）
+ *
+ * Windows には前面に出さずに最大化する ShowWindow の値が無く、呼び出し側が前面に
+ * する権利を持っていると、最大化したウィンドウが前面に出る。activate が false の
+ * ときは、最大化で前面が移っていたら元の前面のウィンドウに戻す。
  * @param hwnd ウィンドウハンドル
+ * @param options.activate 前面に出してよいか（既定 true）
  * @returns 成功したらtrue
  */
-export function maximizeWindow(hwnd: number | bigint): boolean {
+export function maximizeWindow(
+  hwnd: number | bigint,
+  options: { activate?: boolean } = {}
+): boolean {
   try {
-    return ShowWindow(toHwndNumber(hwnd), SW_MAXIMIZE);
+    const target = BigInt(hwnd);
+    const before = options.activate === false ? GetForegroundWindow() : null;
+    const ok = ShowWindow(toHwndNumber(hwnd), SW_MAXIMIZE);
+    if (before && koffi.address(before) !== 0n && koffi.address(before) !== target) {
+      const after = GetForegroundWindow();
+      if (after && koffi.address(after) === target) SetForegroundWindow(before);
+    }
+    return ok;
   } catch (error) {
     console.error(`Error maximizing window ${hwnd}:`, error);
     return false;
