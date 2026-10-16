@@ -6,6 +6,7 @@
   height: auto;
   overflow-y: auto;
   padding: var(--spacing-xs);
+  background-color: var(--mode-surface);
 }
 
 /* 仮想化用: 全アイテム分の高さを確保するスペーサー（絶対配置の基準） */

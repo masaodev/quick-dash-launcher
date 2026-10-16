@@ -48,6 +48,7 @@ body {
   --mode-accent: var(--color-window-search);
   --mode-accent-solid: var(--color-window-search);
   --mode-tint: var(--bg-window-search);
+  --mode-surface: var(--bg-window-search);
   --mode-marked: var(--bg-window-search-marked);
 }
 

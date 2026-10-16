@@ -78,6 +78,7 @@
   --mode-accent: var(--color-primary); /* 線・文字（検索欄の縁・リンク・タブの下線） */
   --mode-accent-solid: var(--color-primary); /* 白文字を載せる塗り（選択行・目印・バッジ） */
   --mode-tint: var(--bg-header); /* ヘッダー・タブ・ヒント行の面 */
+  --mode-surface: var(--bg-app); /* 一覧の面（縁の線と行のすき間が白く浮かないように、モードで色を付ける） */
   --mode-marked: var(--bg-selected); /* 複数選択で選んだ行 */
 
   /* テキストカラー */
