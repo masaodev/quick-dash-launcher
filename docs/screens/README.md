@@ -65,9 +65,10 @@
 | **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | [admin-window.md](./admin-window.md#551-スナップショット一覧) |
 | **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | [main-window.md](./main-window.md#5101-メモを表示) |
 | **セットに追加するアイテム**（`SetItemPickerModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ アイテムを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) |
-| **今の位置を記録**（`SetRecordModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「📍 今の位置を記録」クリック時 | [set-editor-modals.md](./set-editor-modals.md#3-今の位置を記録) |
-| **行の詳細**（`SetEntryDetailModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの行の「✏️」クリック・行のダブルクリック時 | [set-editor-modals.md](./set-editor-modals.md#4-行の詳細) |
-| **ウィンドウ選択モーダル**（`WindowSelectorModal`） | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時<br>今の位置を記録の「ウィンドウを選ぶ」「別のウィンドウにする」、行の詳細の「開いているウィンドウから位置を取る」 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
+| **ウィンドウを追加**（`SetAddWindowsModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ ウィンドウを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#3-ウィンドウを追加) |
+| **位置を更新**（`SetUpdatePositionsModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「📍 位置を更新」クリック時 | [set-editor-modals.md](./set-editor-modals.md#4-位置を更新) |
+| **行の詳細**（`SetEntryDetailModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの行の「✏️」クリック・行のダブルクリック時 | [set-editor-modals.md](./set-editor-modals.md#5-行の詳細) |
+| **ウィンドウ選択モーダル**（`WindowSelectorModal`） | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時<br>位置を更新の「ウィンドウを選ぶ」「別のウィンドウにする」、行の詳細の「開いているウィンドウから位置を取る」 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
 
 ### 共通ダイアログ
 
@@ -83,7 +84,7 @@
 
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
-| **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダを開く、編集、セットの今の位置を記録し直す） | [context-menu.md](./context-menu.md) |
+| **右クリックメニュー** | アイテムの右クリック操作<br>（パスコピー、フォルダを開く、編集、セットの位置を更新） | [context-menu.md](./context-menu.md) |
 | **変換メニュー**（`ItemConverterMenu`） | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「変換 ▾」 | [register-modal.md](./register-modal.md#533-変換ボタンをクリック) |
 | **セットの欄**（`SetEntriesEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📦 セット」のとき（行の一覧・開き方） | [register-modal.md](./register-modal.md#58-セットの行を編集) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |

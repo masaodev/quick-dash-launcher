@@ -261,7 +261,7 @@ export function placementText(
 }
 
 /**
- * 開いているウィンドウの今の位置の表示（記録の画面）
+ * 開いているウィンドウの今の位置の表示（ウィンドウを追加・位置を更新の画面）
  *
  * デスクトップが 2 つ以上あるときだけ、いるデスクトップ（全デスクトップに表示中ならそのこと）を添える
  */
@@ -285,7 +285,7 @@ export function windowPlacementText(
           width: window.width,
           height: window.height,
           ...(desktop !== undefined ? { virtualDesktopNumber: desktop } : {}),
-          // 記録すると「最大化」になるので、記録の画面でも同じ言葉で出す
+          // 記録すると「最大化」になるので、ウィンドウを選ぶ画面でも同じ言葉で出す
           ...(window.windowState === 'maximized' ? { state: 'maximized' as const } : {}),
         },
       },
@@ -296,10 +296,6 @@ export function windowPlacementText(
     ? i18next.t('set.placement.onAllDesktops', { place: text })
     : text;
 }
-
-/** 記録の画面でウィンドウごとに選ぶこと */
-export type RecordChoice =
-  { kind: 'skip' } | { kind: 'newRow' } | { kind: 'link'; entryIndex: number };
 
 /** ウィンドウの exe 名（拡張子なし。タイトルの下に添える） */
 export function windowProcessLabel(window: WindowInfo): string | undefined {
@@ -315,14 +311,22 @@ export function windowDisplayName(window: WindowInfo): string {
  * ウィンドウから新しい行を作る（動かすだけの行）
  *
  * ほかのアプリの起動の引数は取れないので、exe を開く行にすると開いていたファイルが開かない。
- * 位置を記録するのが主なので開くものは持たず、要るときは行の詳細で足してもらう
+ * 位置を記録するのが主なので開くものは持たず、要るときは行の詳細で足してもらう。
+ * 最小化中のウィンドウは座標が画面の外になるので、位置を持たない（元に戻してから「位置を更新」で入れる）
  */
 export function entryFromWindow(window: WindowInfo, desktopCount?: number): SetEntry {
   return {
     window: decideWindowMatch(window),
-    placement: placementFromWindow(window, desktopCount),
+    ...(window.windowState !== 'minimized'
+      ? { placement: placementFromWindow(window, desktopCount) }
+      : {}),
     label: windowDisplayName(window),
   };
+}
+
+/** QDL 自身のウィンドウ（登録画面など）は、セットの行の対象にしない */
+export function isOwnWindow(window: WindowInfo): boolean {
+  return /quick-?dash-?launcher|^electron\.exe$/i.test(window.processName ?? '');
 }
 
 /** タイトルを「 - 」「 | 」「 — 」で分けた部品（一部だけで探す候補。区切りが無ければ空） */

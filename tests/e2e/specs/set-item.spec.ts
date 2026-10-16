@@ -120,7 +120,7 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
         .first()
         .fill('空のセット');
       await utils.registerPage
-        .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
+        .locator('.register-modal .modal-actions button:is(:has-text("登録"), :has-text("更新"))')
         .first()
         .click();
       expect(await utils.isRegisterModalVisible()).toBe(true);
@@ -145,6 +145,44 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
       await picker.locator('button', { hasText: 'キャンセル' }).click();
       await utils.clickCancelButton();
     });
+  });
+
+  test('ウィンドウを追加は検索で絞り込め、位置を更新は行が無いと押せない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.openRegisterModal(electronApp);
+    await utils.registerPage
+      .locator('.register-modal select')
+      .nth(1)
+      .selectOption({ value: 'set' });
+
+    await test.step('行が無いあいだは「位置を更新」を押せない', async () => {
+      await expect(
+        utils.registerPage.locator('.register-modal button', { hasText: '位置を更新' })
+      ).toBeDisabled();
+    });
+
+    await test.step('ウィンドウを追加の画面で、合わない言葉で絞ると何も出ず、追加も押せない', async () => {
+      await utils.registerPage
+        .locator('.register-modal button', { hasText: 'ウィンドウを追加' })
+        .click();
+      const modal = utils.registerPage.locator('.set-addwin-modal');
+      await expect(modal).toBeVisible();
+      await expect(modal.locator('h3')).toHaveText('ウィンドウを追加');
+      await expect(modal.locator('.set-search')).toBeFocused();
+      await modal.locator('.set-search').fill('合うウィンドウが無いはずの言葉zzqx');
+      await expect(modal.locator('.set-empty')).toHaveText(
+        /合うウィンドウがありません|開いているウィンドウがありません/
+      );
+      await expect(modal.locator('button', { hasText: '表示中をすべて選ぶ' })).toBeDisabled();
+      await expect(modal.getByRole('button', { name: '追加', exact: true })).toBeDisabled();
+      await modal.locator('button', { hasText: 'キャンセル' }).click();
+      await expect(modal).not.toBeVisible();
+    });
+
+    await utils.clickCancelButton();
   });
 
   test('管理画面でセットの名前を変えて保存できる', async ({
@@ -174,7 +212,7 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
           .first()
           .fill('開発環境スタート改');
         const updateButton = detailWindow
-          .locator('.register-modal button:is(:has-text("登録"), :has-text("更新"))')
+          .locator('.register-modal .modal-actions button:is(:has-text("登録"), :has-text("更新"))')
           .first();
         await adminUtils.closeRegisterModalBy(() => updateButton.click());
 

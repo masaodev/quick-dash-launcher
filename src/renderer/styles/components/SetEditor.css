@@ -1,4 +1,4 @@
-/* セットの編集（行の一覧・アイテムの追加・今の位置の記録・行の詳細）
+/* セットの編集（行の一覧・アイテムの追加・ウィンドウの追加・位置の更新・行の詳細）
  *
  * 色の役割: 青＝操作・お知らせの印、灰色＝情報（位置・開くもの）、注意の茶色＝うまく動かないかもしれないとき、
  * 赤＝問題・消す。ボタンは <Button> のまま使い、ここでは色を変えない（css-design.md）
@@ -108,6 +108,13 @@
 .set-row-details {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
+}
+
+/* 2 段目の先頭の印（動かすだけの行）。続く exe 名との間をあける */
+.set-row-details .set-chip {
+  margin-left: 0;
+  margin-right: var(--spacing-xs);
+  vertical-align: 0;
 }
 
 /* 位置（メイン画面のセットの行の 📍 と同じく、灰色の小さな文字） */
@@ -227,7 +234,7 @@
   font-size: var(--font-size-base);
 }
 
-/* ===== 小さな画面（追加・記録・詳細） ===== */
+/* ===== 小さな画面（追加・位置の更新・詳細） ===== */
 
 .set-picker-modal,
 .set-record-modal,
@@ -345,7 +352,7 @@
   color: var(--text-muted);
 }
 
-/* ===== 今の位置を記録 ===== */
+/* ===== 位置を更新（名前の欄は、ウィンドウを追加でも使う） ===== */
 
 /* ウィンドウを選ぶ画面と同じ最大 800px */
 .set-record-modal {
@@ -355,8 +362,7 @@
 /* アイコン・名前・位置・どうするか。名前の列を優先し、位置の列は中身の幅にする */
 .set-record-row {
   display: grid;
-  /* 最後の列は「行に無いウィンドウ」の ✏️（ほかの欄の行は空。列をそろえるため幅は全部の行で取る） */
-  grid-template-columns: var(--icon-size-sm) minmax(0, 1fr) auto 170px 28px;
+  grid-template-columns: var(--icon-size-sm) minmax(0, 1fr) auto 170px;
   padding: var(--spacing-sm) var(--spacing-md);
 }
 
@@ -598,9 +604,4 @@
 .set-detail-label-top {
   align-self: start;
   line-height: var(--input-height-sm);
-}
-
-/* 記録の画面の ✏️ は、行として追加していないあいだ薄くする（絵文字は文字色が効かない） */
-.set-record-row .set-icon-btn:disabled {
-  opacity: 0.35;
 }

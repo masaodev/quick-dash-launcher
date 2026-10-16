@@ -58,7 +58,8 @@
 | 開くもの | what to open | 参照先 | 行が開くもの。登録済みのアイテムか、セットに書いたパス | `itemId`・`open` |
 | 動かすウィンドウ | window to move | 見つけ方 | 行の位置へ動かすウィンドウ。exe 名とウィンドウタイトルで探す | `window` |
 | 位置 | position | 置き場所 | 行のウィンドウを置く場所と大きさ・仮想デスクトップ | `placement` |
-| 今の位置を記録 | record current positions | 置き場所を記録 | 開いているウィンドウの今の位置を、セットの行に取り込むこと | `SetRecordModal` |
+| ウィンドウを追加 | add windows | 行として追加 | 開いているウィンドウを選んで、今の位置を持つ動かすだけの行としてセットに足すこと | `SetAddWindowsModal` |
+| 位置を更新 | update positions | 今の位置を記録、記録し直す | 開いているウィンドウの今の位置を、セットの今ある行に入れ直すこと（行は足さない） | `SetUpdatePositionsModal`、`rerecordSetPositions` |
 | 動かすだけ | move only | 並べるだけ | 何も開かず、既にあるウィンドウを動かすだけの行 | — |
 | 開き方 | how to open | 起動方法 | 行を順番に開くか、同時に開くか | `launchMode` |
 

@@ -18,7 +18,7 @@ import { resolveCliPath, resolveOne, validateAsDataItem } from './cliShared.js';
  * qdl launcher set row … — メイン画面のセットの行
  *
  * 行に入れられるのは、開くもの（登録済みのアイテムか、パス）だけ。
- * 動かすウィンドウと位置は、画面の「今の位置を記録」で付ける（CLI からは付けない）。
+ * 動かすウィンドウと位置は、画面の「ウィンドウを追加」「位置を更新」で付ける（CLI からは付けない）。
  */
 
 /** セットの行から指せる種類（実行で開けるもの） */

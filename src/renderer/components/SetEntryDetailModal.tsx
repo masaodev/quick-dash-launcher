@@ -393,13 +393,13 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
                   <span />
                   <span>
                     {entryOpensAsTab(view) && (
-                      <span className="set-info">{t('set.record.tabNote')}</span>
+                      <span className="set-info">{t('set.update.tabNote')}</span>
                     )}
                     {pickNotes.includes('minimized') && (
                       <span className="set-note">{t('set.detail.minimizedPicked')}</span>
                     )}
                     {pickNotes.includes('elevated') && (
-                      <span className="set-note">{t('set.record.elevatedNote')}</span>
+                      <span className="set-note">{t('set.update.elevatedNote')}</span>
                     )}
                   </span>
                 </>

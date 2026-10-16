@@ -1,5 +1,5 @@
 /**
- * セットの行とウィンドウを結び付ける規則（「今の位置を記録」と実行で共通）
+ * セットの行とウィンドウを結び付ける規則（「ウィンドウを追加」「位置を更新」と実行で共通）
  *
  * - 行に見つけ方（window）があればそれで探す
  * - 無ければ開くものから推測する（exe はパス、フォルダはエクスプローラーのタイトル、ファイルはタイトルに含まれる名前）
@@ -226,7 +226,7 @@ export function placementFromWindow(window: MatchableWindow, desktopCount?: numb
   return placement;
 }
 
-/** 記録し直した結果 */
+/** 位置を更新した結果 */
 export interface RerecordResult {
   entries: SetEntry[];
   /** 位置が変わった行の数 */
@@ -248,7 +248,7 @@ function samePlacement(a: SetPlacement | undefined, b: SetPlacement): boolean {
 }
 
 /**
- * 置き場所のある行の位置を、今開いているウィンドウから取り直す（メイン画面の右クリック「今の位置を記録し直す」）
+ * 置き場所のある行の位置を、今開いているウィンドウから取り直す（メイン画面の右クリック「位置を更新」）
  *
  * 行の見つけ方で探す（1 つのウィンドウは 1 行とだけ）。行の追加・削除はしない。見つからない行は前の位置のまま
  */
@@ -273,7 +273,7 @@ export function rerecordSetPlacements(
       return entry;
     }
     used.add(found);
-    // 編集画面の「今の位置を記録」と同じく、今の状態をそのまま記録する（仮想デスクトップの番号が空だった行にも
+    // 編集画面の「位置を更新」と同じく、今の状態をそのまま記録する（仮想デスクトップの番号が空だった行にも
     // 今のデスクトップの番号を入れる。全デスクトップに表示中で番号が無ければ空、デスクトップが 1 つなら入れない）
     const placement = placementFromWindow(found, desktopCount);
     if (samePlacement(entry.placement, placement)) return entry;
