@@ -60,6 +60,23 @@ export interface ClipboardSessionCaptureResult extends ClipboardCaptureResultBas
 }
 
 /**
+ * 中身を読む元（未確定のキャプチャか、保存済みの実データのどちらか）
+ */
+export interface ClipboardContentSource {
+  sessionId?: string;
+  dataFileRef?: string;
+}
+
+/**
+ * 登録画面に見せる中身（テキストの全文と画像の縮小版）
+ */
+export interface ClipboardContent {
+  text?: string;
+  /** 画像の縮小版（data URL） */
+  imageThumbnail?: string;
+}
+
+/**
  * セッションコミット結果
  */
 export interface ClipboardSessionCommitResult {

@@ -9,6 +9,7 @@ import { detectItemType } from '@common/utils/itemTypeDetector';
 
 import type { ItemFieldValue } from '../../components/ItemEditFields';
 import { logError } from '../../utils/debug';
+import { hasClipboardContent, saveClipboardText } from '../../utils/clipboardText';
 import { useToast } from '../useToast';
 
 interface FormErrors {
@@ -118,7 +119,7 @@ export function useWorkspaceItemEditForm(
       }
     }
 
-    if (item.itemCategory === 'clipboard' && !item.clipboardSessionId && !item.clipboardDataRef) {
+    if (item.itemCategory === 'clipboard' && !hasClipboardContent(item)) {
       newErrors.path = t('register.errors.clipboardRequired');
     }
 
@@ -126,9 +127,20 @@ export function useWorkspaceItemEditForm(
     return Object.keys(newErrors).length === 0;
   }, [item, t]);
 
-  /** クリップボードを取り直していたら、取り込んだ中身をファイルに確定する。失敗したら null */
+  /** テキストを書いた・クリップボードを取り直していたら、その中身をファイルに確定する。失敗したら null */
   const commitClipboardSession = useCallback(
     async (target: RegisterItem): Promise<RegisterItem | null> => {
+      if (target.itemCategory === 'clipboard' && target.clipboardText !== undefined) {
+        try {
+          return await saveClipboardText(target);
+        } catch (error) {
+          logError('Failed to save clipboard text:', error);
+          showError(
+            (error instanceof Error && error.message) || t('register.errors.clipboardSaveFailed')
+          );
+          return null;
+        }
+      }
       if (target.itemCategory !== 'clipboard' || !target.clipboardSessionId) return target;
       try {
         const result = await window.electronAPI.clipboardAPI.commitSession(

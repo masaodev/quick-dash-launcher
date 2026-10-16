@@ -19,6 +19,8 @@ import type {
   CurrentClipboardState,
   ClipboardSessionCaptureResult,
   ClipboardSessionCommitResult,
+  ClipboardContent,
+  ClipboardContentSource,
 } from '@common/types/clipboard';
 import {
   MAX_IMAGE_SIZE_BYTES,
@@ -415,6 +417,69 @@ export class ClipboardService {
       logger.info({ sessionId }, 'セッションデータを破棄しました');
     }
     return deleted;
+  }
+
+  /**
+   * 登録画面の「テキストを書く」で書いた本文を、テキストだけの実データとしてファイルに保存する
+   */
+  saveText(text: string): ClipboardCaptureResult {
+    if (!text.trim()) {
+      return { success: false, error: mainI18n.t('clipboardService.textEmpty') };
+    }
+    try {
+      const clipboardData: SerializableClipboard = {
+        formats: ['text'],
+        text,
+        savedAt: Date.now(),
+        dataSize: Buffer.byteLength(text, 'utf8'),
+      };
+      const dataFileRef = this.saveClipboardDataToFile(clipboardData);
+      logger.info({ dataFileRef, dataSize: clipboardData.dataSize }, 'テキストを保存しました');
+      return {
+        success: true,
+        dataFileRef,
+        preview: this.truncatePreview(text),
+        formats: clipboardData.formats,
+        dataSize: clipboardData.dataSize,
+        savedAt: clipboardData.savedAt,
+      };
+    } catch (error) {
+      logger.error({ error }, 'テキストの保存に失敗しました');
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : mainI18n.t('clipboardService.commitFailed'),
+      };
+    }
+  }
+
+  /**
+   * 未確定のキャプチャか保存済みの実データから、登録画面に見せる中身（テキストの全文・画像の縮小版）を読む。
+   * 読めなければ null。プレビューは途中で切ってあるので、テキストを編集するときは全文をここで読む
+   */
+  readContent(source: ClipboardContentSource): ClipboardContent | null {
+    try {
+      const data = this.loadData(source);
+      if (!data) return null;
+      return {
+        text: data.text,
+        imageThumbnail: this.generateImageThumbnail(data.imageBase64),
+      };
+    } catch (error) {
+      logger.error({ error, source }, 'クリップボードの中身の読み取りに失敗しました');
+      return null;
+    }
+  }
+
+  private loadData(source: ClipboardContentSource): SerializableClipboard | null {
+    if (source.sessionId) {
+      return this.pendingSessions.get(source.sessionId)?.clipboardData ?? null;
+    }
+    if (!source.dataFileRef) return null;
+    const id = this.extractIdFromRef(source.dataFileRef);
+    if (!id) return null;
+    const filePath = PathManager.getClipboardDataFilePath(id);
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   }
 
   async restoreClipboard(dataFileRef: string): Promise<ClipboardRestoreResult> {

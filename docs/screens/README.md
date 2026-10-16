@@ -89,7 +89,7 @@
 | **セットの欄**（`SetEntriesEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📦 セット」のとき（行の一覧・開き方） | [register-modal.md](./register-modal.md#58-セットの行を編集) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
 | **ホットキー入力** | 起動ホットキー・「ウィンドウ検索で起動」のホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
-| **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-クリップボードを取り込む) |
+| **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-内容を書く取り込む) |
 | **カラーピッカー**（`ColorPicker`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「🎨 カラーを変更」 | [workspace-window.md](./workspace-window.md#583-グループを右クリックして色を変更) |
 | **ウィンドウ設定エディター** | ウィンドウ設定（タイトル・位置・サイズ）の編集 | [register-modal.md](./register-modal.md#55-ウィンドウ設定を入力) |
 | **カスタムアイコンエディター** | カスタムアイコンの選択・削除 | [register-modal.md](./register-modal.md#512-カスタムアイコンを設定) |

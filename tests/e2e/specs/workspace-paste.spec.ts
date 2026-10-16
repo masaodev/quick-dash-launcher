@@ -149,8 +149,11 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     await expect(editor.getByPlaceholder('ファイルパス、URL、またはカスタムURIを入力')).toHaveCount(
       0
     );
-    // メインの編集画面と同じく、取り込んだ中身とカスタムアイコンの欄が出る
-    await expect(editor.locator('.clipboard-captured-data')).toBeVisible();
+    // メインの編集画面と同じく、内容欄とカスタムアイコンの欄が出る。
+    // 中身がテキストだけなので「テキストを書く」で開き、保存してある全文を見せる
+    await expect(editor.getByRole('textbox', { name: '保存するテキスト' })).toHaveValue(
+      '編集するメモ'
+    );
     await expect(editor.locator('.custom-icon-section')).toBeVisible();
 
     await nameInput.fill('編集したメモ');
