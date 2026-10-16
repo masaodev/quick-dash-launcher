@@ -45,7 +45,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `status` | 本体の版・`qdl.exe` の版・本体のプロセス ID・設定フォルダの場所を返す。何も変えない |
 | `reload` | 設定ファイルを読み直す（メイン画面の F5 と同じ再読込）。読み込み結果を返す |
 | `check` | 読み直さずに、直近の読み込み（起動時・F5・`reload`・CLI の書き込み前）の結果を返す |
-| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る |
+| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る。`--with-text` でクリップボードアイテムの本文も返す |
 | `launcher item add` | メイン画面にアイテムを足す |
 | `launcher item update <id か表示名>` | メイン画面のアイテムを変える・別のタブ（データファイル）へ移す |
 | `launcher item remove <id か表示名>` | メイン画面のアイテムを消す |
@@ -56,7 +56,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `workspace add` | ワークスペースを足す |
 | `workspace update <id か名前>` | ワークスペースの名前・並び順を変える |
 | `workspace remove <id か名前>` | 空のワークスペースを消す |
-| `workspace item list` | ワークスペースのアイテムの一覧。`--workspace`・`--group`・`--grep` で絞る |
+| `workspace item list` | ワークスペースのアイテムの一覧。`--workspace`・`--group`・`--grep` で絞る。`--with-text` でクリップボードアイテムの本文も返す |
 | `workspace item add` | ワークスペースにアイテムを足す |
 | `workspace item update <id か表示名>` | ワークスペースのアイテムを変える・移す |
 | `workspace item remove <id か表示名>` | ワークスペースのアイテムを消す |
@@ -78,8 +78,10 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--item` | launcher item add（`--type set`）、set row add | 行の開くものにする登録済みのアイテム（id か表示名）。`--path` とはどちらか一方 |
 | `--label` | launcher item add（`--type set`）、set row add | 行の名前 |
 | `--memo` | item add／update | メモ |
+| `--text` `--text-file` | item add（`--type clipboard`。どちらか必須）／update | クリップボードアイテムの本文。`--text-file` は UTF-8 のテキストファイル（1 MB まで。相対パスは `qdl` を実行したフォルダが基準）。どちらか一方だけ |
+| `--with-text` | item list | 中身がテキストだけのクリップボードアイテムに、本文 `text` を付ける |
 | `--file` `--tab` | launcher item add／update | 足す（update では移す）データファイル、またはタブ（その先頭のデータファイル）。add で省略したときは `datafiles/data.json` |
-| `--type` | launcher item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`window`（ウィンドウ操作） |
+| `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`window`（ウィンドウ操作）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ |
 | `--group` | workspace item add／update | 入れるグループ。update で `""` を渡すと未分類へ移す |
 | `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる。archive restore では復元先（省略時は元のワークスペース） |
 | `--position` | workspace item add／update、workspace add／update、set row add | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの並び。set row add では行を差し込む位置（省略時は最後） |
@@ -101,14 +103,15 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **セットの行にできるもの**: 開くものだけ。`--item` で指せるのは種類 `item`（通常のアイテム）と `window`（ウィンドウ操作）のアイテムで、フォルダ取込・セットなどは断る（フォルダ取込の中身は `--path` で行にする）。対象ウィンドウとウィンドウ位置は CLI からは付けず、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付ける
 - **別のタブへ移す**: `launcher item update <id か表示名> --tab <タブ>`（か `--file`）。id を保ったまま移すので、セットの行は切れない。ほかの項目の変更と同時にもできる。移す先に書いてから元のファイルから消す（途中で失敗しても、消えずに 2 つのファイルに残る）。そのタブのどれかのデータファイルに既にあれば移さず、`"unchanged": true` を返す。自動取込で入ったアイテムは移さない（取込は取り込み先のファイルの中で入れ替えるので、次の取込でまた足される）
 - **アーカイブ**: `workspace group archive` は、画面と同じく先に切り離しウィンドウを閉じてから、子孫のサブグループとアイテムごとしまう。`archive list`・`archive restore` で扱うのは、しまった単位（最上位のグループ）だけ。一緒にしまったサブグループは一覧の `subgroups` に名前が出て、親と一緒に戻る。`archive restore` は `--workspace` を省くと元のワークスペースへ戻し、元のワークスペースが無くなっていれば既定（先頭）のワークスペースへ戻す。どちらも画面の「移動先を選んで復元」と同じ処理で、最上位のグループとして戻る
-- **触れないもの**: クリップボードアイテムは足せず、変えられない（画面の操作で作るもの）。消すことはできる。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
-- **ワークスペースに足せる種類**: 通常のアイテムだけ。ウィンドウ操作・セットを足すのは画面で行う（既にあるものは update で変えられる）
+- **クリップボードアイテム**: CLI で足せるのは、中身がテキストだけのもの（画面の「テキストを書く」と同じ）。本文を `--text` か `--text-file` で渡すと、実データを新しいファイルに保存して参照（`dataFileRef`）を差し替える。前の実データのファイルは消さない（画面で書き換えたときと同じ）。本文を書き換えられるのは中身がテキストだけのもので、画像・HTML・RTF を含むものは `conflict` で断る（名前・メモの変更と別のタブへの移動はできる）。参照の項目（`dataFileRef`・`savedAt`・`formats`・`preview`）は `--set`・`--unset` で変えられない。今の本文は `list --with-text` で読める
+- **触れないもの**: 画像・HTML・RTF を含むクリップボードアイテムの中身（画面の操作で作るもの。名前・メモは変えられ、消すこともできる）。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
+- **ワークスペースに足せる種類**: 通常のアイテムと、テキストだけのクリップボードアイテム。ウィンドウ操作・セットを足すのは画面で行う（既にあるものは update で変えられる）
 
 ### 出力
 
 成功したら、標準出力に結果の JSON を出します。
 
-- `list`: 配列。各要素に場所を付ける（メイン画面は `file`・`tab`、ワークスペースは `location: ["ワークスペース名", "グループ", "サブグループ"]`）
+- `list`: 配列。各要素に場所を付ける（メイン画面は `file`・`tab`、ワークスペースは `location: ["ワークスペース名", "グループ", "サブグループ"]`）。`--with-text` では、中身がテキストだけのクリップボードアイテムに本文 `text` を付ける
 - `add`: 足したもの（採番した `id` を含む）
 - `update`: `{ "before": 変える前, "item": 変えた後 }`（グループは `group`、ワークスペースは `workspace`）。別のタブへ移したときは `"moved": { "from", "to" }` を付ける
 - `remove`: `{ "removed": 消したもの }`

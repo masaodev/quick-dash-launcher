@@ -422,11 +422,12 @@ Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect 
 
 Works with the items in the launcher (datafiles/data*.json).
 
-  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
+  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>,
+                                --with-text to include clipboard text)
   item add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
-                                --type item|dir|set|window, --set key=value, --dry-run)
+                                --type item|dir|set|window|clipboard, --set key=value, --dry-run)
   item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key,
-                                --file | --tab to move it to another tab, --dry-run)
+                                --text | --text-file, --file | --tab to move it to another tab, --dry-run)
   item remove <id or name>      Delete an item (--dry-run)
   set row list <set>            List the rows of a set (row numbers are 0-based)
   set row add <set>             Add a row to a set (--item <id or name> | --path <path> [--args],
@@ -437,6 +438,8 @@ A relative --path is resolved from the folder where you run qdl. With --type set
 pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
 more rows with set row add. The target window and its window position are set with "Add windows"
 or "Update window positions" on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
+--type clipboard adds a text-only clipboard item: instead of --path, pass the text with --text or
+--text-file <file> (UTF-8, 1 MB at most). Only clipboard items that contain just text can have their text replaced.
 `,
       workspace: `Usage: qdl workspace <target> <action> [arguments]
 
@@ -446,10 +449,11 @@ Works with workspaces (workspace.json).
   qdl workspace add                           Add a workspace (--name is required. --position <0-based> --dry-run)
   qdl workspace update <id or name>           Change a workspace (--name --position --dry-run)
   qdl workspace remove <id or name>           Delete an empty workspace (--dry-run)
-  qdl workspace item list                     List items (--workspace --group --grep)
+  qdl workspace item list                     List items (--workspace --group --grep --with-text)
   qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
-                                              --workspace --position <0-based> --set key=value --dry-run)
-  qdl workspace item update <id or name>      Change an item (--name --path --args --memo --set --unset,
+                                              --workspace --position <0-based> --set key=value --dry-run.
+                                              With --type clipboard, --text | --text-file instead of --path)
+  qdl workspace item update <id or name>      Change an item (--name --path --args --memo --text --text-file --set --unset,
                                               --group <group> ("" for ungrouped) --workspace --position --dry-run)
   qdl workspace item remove <id or name>      Delete an item (--dry-run)
   qdl workspace group list                    List groups (--workspace --grep)
@@ -551,6 +555,16 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       workspaceNotEmpty:
         'The workspace "{{name}}" isn\'t empty ({{groups}} groups, {{items}} items). Move or delete its contents first',
       lastWorkspace: "You can't delete the last workspace",
+      textAndTextFile: 'Specify either --text or --text-file, not both',
+      textFileNotFound: "Couldn't find the --text-file file: {{file}}",
+      textFileTooLarge: 'The --text-file file is too large (1 MB at most): {{file}}',
+      emptyText: 'The text is empty',
+      needText: 'Specify the text with --text or --text-file',
+      textOnlyClipboard: '--text and --text-file can only be used with clipboard items (clipboard)',
+      clipboardOption: "Clipboard items don't take --{{option}}",
+      clipboardNotText:
+        "This clipboard item contains more than text ({{formats}}), so its text can't be replaced (you can still change its name and memo or move it; change its contents on screen)",
+      saveTextFailed: "Couldn't save the clipboard text",
       autoImportedNotMovable:
         "Items added by auto import can't be moved to another tab (the next import would add them again). Change the import rule's target file instead",
     },

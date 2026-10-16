@@ -13,6 +13,7 @@ import { closeDetachedWindowsForGroup } from '../../ipc/workspaceHandlers.js';
 import { getLastLoadReport, reloadConfigFiles } from '../data/dataFileLoader.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
 import { showToastWindow } from '../overlayWindowService.js';
+import { ClipboardService } from '../clipboardService.js';
 import { mainI18n } from '../mainI18n.js';
 
 import { CliError } from './cliArgs.js';
@@ -118,5 +119,24 @@ export function createCliContext(
       );
     },
     beforeGroupRemoved: closeDetachedWindowsForGroup,
+    clipboard: {
+      save: (text) => {
+        const result = ClipboardService.getInstance().saveText(text);
+        if (!result.success || !result.dataFileRef) {
+          throw new CliError(
+            'unavailable',
+            result.error ?? mainI18n.t('cli.errors.saveTextFailed')
+          );
+        }
+        return {
+          dataFileRef: result.dataFileRef,
+          savedAt: result.savedAt ?? Date.now(),
+          preview: result.preview ?? '',
+          formats: result.formats ?? ['text'],
+        };
+      },
+      read: (dataFileRef) =>
+        ClipboardService.getInstance().readContent({ dataFileRef })?.text ?? null,
+    },
   };
 }

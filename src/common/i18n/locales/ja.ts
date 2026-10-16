@@ -423,11 +423,12 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 
 メインウィンドウのアイテム（datafiles/data*.json）を扱います。
 
-  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
+  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>、
+                                --with-text でクリップボードの本文も）
   item add                      追加（--name・--path は必須。--args --memo、--file | --tab、
-                                --type item|dir|set|window、--set key=value、--dry-run）
+                                --type item|dir|set|window|clipboard、--set key=value、--dry-run）
   item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key、
-                                --file | --tab で別のタブへ移す、--dry-run）
+                                --text | --text-file、--file | --tab で別のタブへ移す、--dry-run）
   item remove <id か表示名>     削除（--dry-run）
   set row list <セット>         セットの行の一覧（行番号は 0 始まり）
   set row add <セット>          セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
@@ -438,6 +439,8 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 --item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
 足します。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir|window のときに
 要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
+--type clipboard はテキストだけのクリップボードアイテムで、--path の代わりに本文を --text か
+--text-file <ファイル>（UTF-8、1 MB まで）で渡します。本文を書き換えられるのは、中身がテキストだけのものです。
 `,
       workspace: `使い方: qdl workspace <もの> <操作> [引数]
 
@@ -447,10 +450,11 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace add                           追加（--name は必須。--position <0 始まり> --dry-run）
   qdl workspace update <id か名前>            変更（--name --position --dry-run）
   qdl workspace remove <id か名前>            空のワークスペースを削除（--dry-run）
-  qdl workspace item list                     アイテムの一覧（--workspace --group --grep）
+  qdl workspace item list                     アイテムの一覧（--workspace --group --grep --with-text）
   qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
-                                              --workspace --position <0 始まり> --set key=value --dry-run）
-  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --set --unset、
+                                              --workspace --position <0 始まり> --set key=value --dry-run。
+                                              --type clipboard なら --path の代わりに --text | --text-file）
+  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
                                               --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
@@ -553,6 +557,17 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       workspaceNotEmpty:
         'ワークスペース「{{name}}」は空ではありません（グループ {{groups}} 件、アイテム {{items}} 件）。中身を移すか消してから削除してください',
       lastWorkspace: '最後のワークスペースは削除できません',
+      textAndTextFile: '--text と --text-file はどちらか一方を指定してください',
+      textFileNotFound: '--text-file のファイルが見つかりません: {{file}}',
+      textFileTooLarge: '--text-file のファイルが大きすぎます（1 MB まで）: {{file}}',
+      emptyText: '本文が空です',
+      needText: '本文を --text か --text-file で指定してください',
+      textOnlyClipboard:
+        '--text・--text-file はクリップボードアイテム（clipboard）だけに指定できます',
+      clipboardOption: 'クリップボードアイテムには --{{option}} を指定できません',
+      clipboardNotText:
+        'このクリップボードアイテムはテキスト以外（{{formats}}）を含むので、本文を書き換えられません（名前・メモ・移動はできます。中身を変えるときは画面で操作してください）',
+      saveTextFailed: 'クリップボードの本文を保存できませんでした',
       autoImportedNotMovable:
         '自動取込で入ったアイテムは別のタブへ移せません（次の取込で同じものがまた足されます）。取込のルールの取り込み先を変えてください',
     },

@@ -20,6 +20,7 @@ let archivedGroups: ArchivedWorkspaceGroup[];
 let archivedItems: ArchivedWorkspaceItem[];
 let ctx: WorkspaceCommandContext;
 let nextId: number;
+let saved: number;
 
 function group(id: string, name: string, order: number, extra: Partial<WorkspaceGroupView> = {}) {
   return {
@@ -51,6 +52,7 @@ function item(id: string, name: string, order: number, groupId?: string, workspa
 
 beforeEach(() => {
   nextId = 1;
+  saved = 0;
   workspaces = [
     { id: 'Ws000001', displayName: '仕事', order: 0, createdAt: 0 },
     { id: 'Ws000002', displayName: '私用', order: 1, createdAt: 0 },
@@ -161,6 +163,15 @@ beforeEach(() => {
     syncBeforeWrite: vi.fn(async () => {}),
     changed: vi.fn(),
     beforeGroupRemoved: vi.fn(async () => {}),
+    clipboard: {
+      save: vi.fn((text: string) => ({
+        dataFileRef: `clipboard-data/Saved${String(++saved).padStart(3, '0')}.json`,
+        savedAt: 1,
+        preview: text.slice(0, 100),
+        formats: ['text' as const],
+      })),
+      read: vi.fn((ref: string) => `本文:${ref}`),
+    },
   };
 });
 
@@ -398,5 +409,63 @@ describe('workspace group archive / archive list / archive restore', () => {
       'not_found'
     );
     expect((await errorOf(runWorkspaceCommand('archive', undefined, [], ctx))).code).toBe('usage');
+  });
+});
+
+describe('workspace のクリップボードアイテム（テキスト）', () => {
+  it('--type clipboard --text でグループに足す', async () => {
+    const addItem = vi.spyOn(ctx.store, 'addItem');
+    const r = await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--type', 'clipboard', '--name', 'あいさつ', '--text', 'こんにちは', '--group', '案件A'],
+      ctx
+    );
+    expect(r).toMatchObject({ displayName: 'あいさつ', location: ['仕事', '案件A'] });
+    // 画面からの追加と同じ形（ClipboardItem）で本体に渡す
+    expect(addItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'clipboard',
+        displayName: 'あいさつ',
+        clipboardDataRef: 'clipboard-data/Saved001.json',
+        formats: ['text'],
+        preview: 'こんにちは',
+      }),
+      'GrA00001',
+      'Ws000001'
+    );
+  });
+
+  it('テキストだけのものは本文を書き換え、テキスト以外を含むものは conflict', async () => {
+    items.push(
+      {
+        ...item('ClipW001', '定型', 5),
+        type: 'clipboard',
+        dataFileRef: 'clipboard-data/Old00001.json',
+        savedAt: 0,
+        formats: ['text'],
+      } as unknown as WorkspaceItem,
+      {
+        ...item('ClipW002', '画像', 6),
+        type: 'clipboard',
+        dataFileRef: 'clipboard-data/Img00001.json',
+        savedAt: 0,
+        formats: ['image'],
+      } as unknown as WorkspaceItem
+    );
+    await runWorkspaceCommand('item', 'update', ['定型', '--text', '新しい'], ctx);
+    expect(items.find((i) => i.id === 'ClipW001')).toMatchObject({
+      dataFileRef: 'clipboard-data/Saved001.json',
+      preview: '新しい',
+    });
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'update', ['画像', '--text', 'x'], ctx))).code
+    ).toBe('conflict');
+    const listed = (await runWorkspaceCommand('item', 'list', ['--with-text'], ctx)) as Record<
+      string,
+      unknown
+    >[];
+    expect(listed.find((v) => v.id === 'ClipW001')?.text).toBe('本文:clipboard-data/Saved001.json');
+    expect(listed.find((v) => v.id === 'ClipW002')).not.toHaveProperty('text');
   });
 });
