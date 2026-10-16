@@ -67,7 +67,7 @@
 | **セットに追加するアイテム**（`SetItemPickerModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ アイテムを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) |
 | **今の位置を記録**（`SetRecordModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「📍 今の位置を記録」クリック時 | [set-editor-modals.md](./set-editor-modals.md#3-今の位置を記録) |
 | **行の詳細**（`SetEntryDetailModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの行の「✏️」クリック・行のダブルクリック時 | [set-editor-modals.md](./set-editor-modals.md#4-行の詳細) |
-| **ウィンドウ選択モーダル** | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時<br>今の位置を記録の「ウィンドウを選ぶ」「別のウィンドウにする」、行の詳細の「開いているウィンドウから位置を取る」 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
+| **ウィンドウ選択モーダル**（`WindowSelectorModal`） | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時<br>今の位置を記録の「ウィンドウを選ぶ」「別のウィンドウにする」、行の詳細の「開いているウィンドウから位置を取る」 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
 
 ### 共通ダイアログ
 
@@ -87,7 +87,7 @@
 | **変換メニュー**（`ItemConverterMenu`） | アイテム登録・編集、ワークスペースアイテム編集のパス入力欄の「変換 ▾」 | [register-modal.md](./register-modal.md#533-変換ボタンをクリック) |
 | **セットの欄**（`SetEntriesEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📦 セット」のとき（行の一覧・開き方） | [register-modal.md](./register-modal.md#58-セットの行を編集) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
-| **ホットキー入力** | 起動ホットキー・アイテム検索ホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
+| **ホットキー入力** | 起動ホットキー・「ウィンドウ検索で起動」のホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
 | **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-クリップボードを取り込む) |
 | **カラーピッカー**（`ColorPicker`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「🎨 カラーを変更」 | [workspace-window.md](./workspace-window.md#583-グループを右クリックして色を変更) |
 | **ウィンドウ設定エディター** | ウィンドウ設定（タイトル・位置・サイズ）の編集 | [register-modal.md](./register-modal.md#55-ウィンドウ設定を入力) |

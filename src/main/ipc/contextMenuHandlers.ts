@@ -267,7 +267,7 @@ async function registerWorkspaceItemToMain(item: WorkspaceItem): Promise<void> {
   await showMainWindow();
   const mainWindow = getMainWindow();
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send(IPC_CHANNELS.EVENT_REGISTER_WORKSPACE_ITEM_TO_MAIN, item);
+  mainWindow.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN, item);
 }
 
 /** WorkspaceContextMenu用のネイティブメニューハンドラーを設定 */

@@ -18,6 +18,7 @@ npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に�
 npm run create-dev-icon # 開発モード用アイコンの作成
 npm run docs:screenshots # 画面仕様の画面イメージを撮影（ビルド込み）
 npm run docs:demo-gif    # README のデモ GIF を撮影（ビルド込み。ffmpeg が要る。撮影中は画面を触らない。英語版は docs:demo-gif:en）
+npm run docs:readme-images # README の「画面」の画面イメージ（登録画面・管理画面）を撮影（ビルド込み。英語版は docs:readme-images:en）
 ```
 
 詳細は **[開発ガイド - 多重起動](development.md#多重起動)** を参照してください。
@@ -40,6 +41,7 @@ Viteベースのビルドシステムを使用:
 - **ターゲット**: NSISインストーラーとポータブル版（いずれもx64）。Store 版（appx）は別のコマンドで作る（下記）
 - **App ID**: `net.masaodev.quick-dash-launcher`（masaodev.netドメイン所有者のため）
 - **CLI の同梱**: `npm run dist`・`dist:appx` は `build:cli` で `qdl.exe` を作ってから同梱する（`package.json` の `build.extraResources`。同梱先は下の「CLI（qdl.exe）」）。Rust が無いと失敗する（[開発ガイド - 必要なツール](development.md#必要なツール)）
+- **DLL の同梱**: 仮想デスクトップの操作に使う `resources/native/VirtualDesktopAccessor.dll`（リポジトリに入っている）を、`build.extraResources` でアプリの `resources/resources/native/` に同梱する。パッケージ版は `process.resourcesPath` の下から、開発時はリポジトリ直下から読む（`src/main/utils/virtualDesktop/dllLoader.ts`）
 
 ### CLI（qdl.exe）
 

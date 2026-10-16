@@ -1,5 +1,5 @@
 /**
- * URL変換ルール定義
+ * 変換ルール定義（Office の URL をカスタム URI に変換する）
  *
  * SharePointなどのURLをカスタムURIスキーマに変換するためのルールを定義します。
  */
@@ -8,7 +8,7 @@
  * 変換オプション
  */
 export interface ConversionOption {
-  /** 開き方（画面の表示名と説明は辞書の urlConverter.options・urlConverter.descriptions から引く） */
+  /** 開き方（画面の表示名と説明は辞書の itemConverter.options・itemConverter.descriptions から引く） */
   kind: 'sharePointEdit' | 'edit' | 'readOnly';
   /** プレフィックス */
   prefix: string;

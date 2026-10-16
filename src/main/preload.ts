@@ -115,8 +115,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_ESCAPE_HANDLED_BY_PAGE, handled),
   registerItems: (items) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   getPathKind: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PATH_GET_KIND, filePath),
-  getDefaultBrowser: () => ipcRenderer.invoke(IPC_CHANNELS.GET_DEFAULT_BROWSER),
-  getFileHandler: (extension) => ipcRenderer.invoke(IPC_CHANNELS.GET_FILE_HANDLER, extension),
+  getDefaultBrowser: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_GET_DEFAULT),
+  getFileHandler: (extension) => ipcRenderer.invoke(IPC_CHANNELS.FILE_GET_HANDLER, extension),
   checkPathsExist: (paths) => ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
@@ -417,7 +417,7 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, callback),
   onRegisterWorkspaceItemToMain: (callback) =>
     createEventListener<WorkspaceItem>(
-      IPC_CHANNELS.EVENT_REGISTER_WORKSPACE_ITEM_TO_MAIN,
+      IPC_CHANNELS.EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN,
       callback
     ),
   onWorkspaceMenuShowMemo: (callback) =>

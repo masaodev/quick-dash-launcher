@@ -2,7 +2,7 @@
  * 画面: セットに追加するアイテム
  * 画面仕様: docs/screens/set-editor-modals.md#2-セットに追加するアイテム
  */
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -41,6 +41,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -52,6 +53,10 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
     onClose();
   };
   useModalKeyboard({ isOpen, modalRef, onClose: close });
+  // useModalKeyboard が開いたときにモーダル本体へフォーカスを移すので、その後で検索欄へ戻す（autoFocus だと先に当たって外れる）
+  useEffect(() => {
+    if (isOpen) searchRef.current?.focus();
+  }, [isOpen]);
 
   const groups = useMemo(() => {
     const names: string[] = [];
@@ -137,8 +142,8 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
         <input
           type="text"
           className="set-search"
+          ref={searchRef}
           value={query}
-          autoFocus
           placeholder={t('set.picker.search')}
           onChange={(e) => setQuery(e.target.value)}
         />

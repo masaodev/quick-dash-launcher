@@ -66,6 +66,7 @@ const settings = await window.electronAPI.getSettings();
   - `full`: メイン画面の「完全リフレッシュ」。`explicit` に加えて、ドライブ文字で始まる拡張子の無いパスもすべてディスクで確かめ直す（`explicit` で確かめ直すのは `path-type-cache.json` に載っているパスだけ）（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
   - `internal`: 変更通知を受けた再読込・画面内の一覧取得。先行する `internal` の読み込みがあれば結果を共有する
 - 処理内容: フォルダ取込の展開・`.lnk` の解析・タブ単位の重複排除のあと、ワークスペースも読み直す（内容が変わっていれば `workspace-changed` を送る）
+- 旧グループ・旧ウィンドウ配置のアイテムがあれば、読み込みのときにセットへ変換して保存する（[データファイル形式 3.3.6](file-formats/data-format.md#336-旧形式からの変換)）
 - 外部変更（QDL の外での変更）を検知した場合は、変更前の内容をスナップショットに残す。破損ファイルや読み込み時の補正はトーストで知らせる
 - 実装: `src/main/services/data/dataFileLoader.ts`（`reloadConfigFiles()`）
 
@@ -189,7 +190,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 | 3. 子が結果を預けて閉じる | `window:return-main-child-value` | `workspace:return-confirm-result` |
 | `window.name` の接頭辞（以降が要求 ID） | `main-child:` | `workspace-confirm:` |
 
-- ワークスペースのアイテムをメインウィンドウに登録するときは、要求の `prefillItems` に初期値のアイテムを載せる。右クリックの「メインウィンドウに登録」は、メインプロセスがメインウィンドウを出してから `register-workspace-item-to-main` イベント（メインプロセス → メインウィンドウ。パラメータはワークスペースのアイテム）で知らせ、メインウィンドウが `window:open-main-child` を呼ぶ
+- ワークスペースのアイテムをメインウィンドウに登録するときは、要求の `prefillItems` に初期値のアイテムを載せる。右クリックの「メインウィンドウに登録」は、メインプロセスがメインウィンドウを出してから `workspace-menu-register-to-main` イベント（メインプロセス → メインウィンドウ。パラメータはワークスペースのアイテム）で知らせ、メインウィンドウが `window:open-main-child` を呼ぶ
 - 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う

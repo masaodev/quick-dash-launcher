@@ -352,7 +352,7 @@ Windows APIを使用してウィンドウからアイコンハンドル（HICON�
 
 - `src/main/utils/nativeWindowControl.ts`: `getWindowIcon()`, `convertIconToBase64()`, `getExecutablePathFromProcessId()`。アイコンの取得と変換は `getAllWindows()` の中で行う
 - `src/main/ipc/windowSearchHandlers.ts`: `getAllWindows()` を呼ぶだけ（アイコン処理は持たない）
-- `src/common/types/window.ts`: `WindowInfo`型に`icon`, `executablePath`フィールドを追加
+- `src/common/types/window.ts`: `WindowInfo` 型。アイコンは `icon`（base64 のデータ URL）、実行ファイルのパスは `executablePath` に入る
 
 ### 表示
 
