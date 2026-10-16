@@ -43,6 +43,24 @@ body {
   overflow: hidden;
 }
 
+/* ウィンドウ検索モード: 検索モードの色を紫に差し替え、ウィンドウの縁を囲む */
+.app.search-mode-window {
+  --mode-accent: var(--color-window-search);
+  --mode-accent-solid: var(--color-window-search);
+  --mode-tint: var(--bg-window-search);
+  --mode-surface: var(--bg-window-search);
+  --mode-marked: var(--bg-window-search-marked);
+}
+
+.app.search-mode-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--mode-accent);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* Scrollbar styling */
 *::-webkit-scrollbar {
   width: var(--scrollbar-width);
@@ -80,7 +98,7 @@ body {
   padding: var(--spacing-xs) var(--spacing-lg);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
-  background-color: var(--bg-header);
+  background-color: var(--mode-tint);
   border-top: var(--border-light);
   white-space: nowrap;
   overflow: hidden;
