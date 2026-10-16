@@ -1,8 +1,10 @@
+import * as fs from 'fs';
 import * as path from 'path';
 
 import { validateJsonItem } from '@common/utils/jsonParser';
 import { validateEditableItem } from '@common/types/editableItem';
-import type { JsonItem } from '@common/types';
+import type { ClipboardFormat, JsonItem } from '@common/types';
+import { PREVIEW_MAX_LENGTH } from '@common/types/clipboard';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -55,6 +57,11 @@ const PROTECTED_KEYS = new Set([
   'addedAt',
   'groupId',
   'workspaceId',
+  // クリップボードの実データへの参照（--text で書き換える）
+  'dataFileRef',
+  'savedAt',
+  'formats',
+  'preview',
 ]);
 
 /**
@@ -184,4 +191,77 @@ export function matchesGrep(grep: string | undefined, values: unknown[]): boolea
       (typeof v === 'string' && v.toLowerCase().includes(needle)) ||
       (Array.isArray(v) && v.some((x) => typeof x === 'string' && x.toLowerCase().includes(needle)))
   );
+}
+
+/** クリップボードアイテムの実データのうち、CLI が触る項目 */
+export interface ClipboardTextFields {
+  dataFileRef: string;
+  savedAt: number;
+  preview: string;
+  formats: ClipboardFormat[];
+}
+
+/** クリップボードの実データ（テキストだけ）の読み書き（本体の ClipboardService を包む。テストでは差し替える） */
+export interface ClipboardTextStore {
+  /** テキストだけの実データを新しく保存する（画面の「テキストを書く」と同じ） */
+  save(text: string): ClipboardTextFields;
+  /** 実データのテキストを読む（無ければ null） */
+  read(dataFileRef: string): string | null;
+}
+
+/** --text-file で読めるファイルの大きさの上限 */
+const TEXT_FILE_MAX_BYTES = 1024 * 1024;
+
+/** 中身がテキストだけのクリップボードアイテムか（画像・HTML・RTF を含むものは CLI で書き換えない） */
+export function isTextOnlyClipboard(formats: unknown): boolean {
+  return Array.isArray(formats) && formats.length > 0 && formats.every((f) => f === 'text');
+}
+
+/**
+ * --text か --text-file の本文。どちらも無ければ undefined。
+ * --text-file の相対パスは qdl を実行したフォルダが基準。UTF-8 で読み、先頭の BOM は外す
+ */
+export function readTextOption(
+  text: string | undefined,
+  textFile: string | undefined,
+  cwd: string
+): string | undefined {
+  if (text !== undefined && textFile !== undefined) {
+    throw new CliError('usage', mainI18n.t('cli.errors.textAndTextFile'));
+  }
+  let body = text;
+  if (textFile !== undefined) {
+    if (!path.win32.isAbsolute(textFile) && !cwd) {
+      throw new CliError('usage', mainI18n.t('cli.errors.relativePath', { value: textFile }));
+    }
+    const filePath = path.win32.resolve(cwd, textFile);
+    let stat: fs.Stats;
+    try {
+      stat = fs.statSync(filePath);
+    } catch {
+      throw new CliError(
+        'not_found',
+        mainI18n.t('cli.errors.textFileNotFound', { file: filePath })
+      );
+    }
+    if (stat.size > TEXT_FILE_MAX_BYTES) {
+      throw new CliError('invalid', mainI18n.t('cli.errors.textFileTooLarge', { file: filePath }));
+    }
+    const raw = fs.readFileSync(filePath, 'utf8');
+    body = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+  }
+  if (body !== undefined && !body.trim()) {
+    throw new CliError('invalid', mainI18n.t('cli.errors.emptyText'));
+  }
+  return body;
+}
+
+/** 実データを保存する前の形（検証と --dry-run に使う。dataFileRef は保存するまで決まらない） */
+export function previewClipboardText(text: string): Omit<ClipboardTextFields, 'dataFileRef'> {
+  return {
+    savedAt: Date.now(),
+    preview:
+      text.length <= PREVIEW_MAX_LENGTH ? text : `${text.substring(0, PREVIEW_MAX_LENGTH)}...`,
+    formats: ['text'],
+  };
 }

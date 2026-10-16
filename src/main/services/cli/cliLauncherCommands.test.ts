@@ -12,6 +12,7 @@ let store: LauncherStore & {
   move: ReturnType<typeof vi.fn>;
 };
 let ctx: LauncherCommandContext;
+let saved: number;
 
 function entry(item: JsonItem, file = 'datafiles/data.json'): LauncherEntry {
   return { item, file };
@@ -54,7 +55,22 @@ beforeEach(() => {
     markFolder: async (p: string) => p,
     newId: () => 'NewId001',
   };
-  ctx = { store, cwd: 'C:\\work\\案件A', syncBeforeWrite: vi.fn(async () => {}), changed: vi.fn() };
+  saved = 0;
+  ctx = {
+    store,
+    cwd: 'C:\\work\\案件A',
+    syncBeforeWrite: vi.fn(async () => {}),
+    changed: vi.fn(),
+    clipboard: {
+      save: vi.fn((text: string) => ({
+        dataFileRef: `clipboard-data/Saved${String(++saved).padStart(3, '0')}.json`,
+        savedAt: 1,
+        preview: text.slice(0, 100),
+        formats: ['text' as const],
+      })),
+      read: vi.fn((ref: string) => `本文:${ref}`),
+    },
+  };
 });
 
 async function errorOf(promise: Promise<unknown>): Promise<CliError> {
@@ -321,5 +337,123 @@ describe('launcher item list', () => {
         tab: 'メイン',
       }),
     ]);
+  });
+});
+
+describe('launcher のクリップボードアイテム（テキスト）', () => {
+  beforeEach(() => {
+    entries.push(
+      entry({
+        id: 'Clip0001',
+        type: 'clipboard',
+        displayName: '定型文',
+        dataFileRef: 'clipboard-data/Old00001.json',
+        savedAt: 0,
+        preview: '古い',
+        formats: ['text'],
+      }),
+      entry({
+        id: 'Clip0002',
+        type: 'clipboard',
+        displayName: '画像つき',
+        dataFileRef: 'clipboard-data/Img00001.json',
+        savedAt: 0,
+        formats: ['text', 'image'],
+      })
+    );
+  });
+
+  it('--type clipboard --text で足し、検証の後に実データを保存する', async () => {
+    const r = await runLauncherItemCommand(
+      'add',
+      ['--type', 'clipboard', '--name', 'あいさつ', '--text', 'お世話になっております。'],
+      ctx
+    );
+    expect(r).toMatchObject({
+      id: 'NewId001',
+      type: 'clipboard',
+      displayName: 'あいさつ',
+      dataFileRef: 'clipboard-data/Saved001.json',
+      formats: ['text'],
+      preview: 'お世話になっております。',
+    });
+    expect(ctx.clipboard.save).toHaveBeenCalledWith('お世話になっております。');
+  });
+
+  it('--dry-run・本文なし・--path 付きでは実データを保存しない', async () => {
+    const r = await runLauncherItemCommand(
+      'add',
+      ['--type', 'clipboard', '--name', 'x', '--text', 'y', '--dry-run'],
+      ctx
+    );
+    expect(r).toMatchObject({ dryRun: true, item: { dataFileRef: null, preview: 'y' } });
+    expect(
+      (await errorOf(runLauncherItemCommand('add', ['--type', 'clipboard', '--name', 'x'], ctx)))
+        .code
+    ).toBe('usage');
+    expect(
+      (
+        await errorOf(
+          runLauncherItemCommand(
+            'add',
+            ['--type', 'clipboard', '--name', 'x', '--text', 'y', '--path', 'a'],
+            ctx
+          )
+        )
+      ).code
+    ).toBe('usage');
+    expect(ctx.clipboard.save).not.toHaveBeenCalled();
+  });
+
+  it('テキストだけのものは本文を書き換え、実データの参照を差し替える', async () => {
+    const r = (await runLauncherItemCommand('update', ['定型文', '--text', '新しい本文'], ctx)) as {
+      before: Record<string, unknown>;
+      item: Record<string, unknown>;
+    };
+    expect(r.before).toMatchObject({ dataFileRef: 'clipboard-data/Old00001.json' });
+    expect(r.item).toMatchObject({
+      id: 'Clip0001',
+      dataFileRef: 'clipboard-data/Saved001.json',
+      preview: '新しい本文',
+    });
+    expect(store.replace).toHaveBeenCalled();
+  });
+
+  it('テキスト以外を含むものは本文を書き換えず conflict、名前は変えられる', async () => {
+    expect(
+      (await errorOf(runLauncherItemCommand('update', ['画像つき', '--text', 'x'], ctx))).code
+    ).toBe('conflict');
+    expect(ctx.clipboard.save).not.toHaveBeenCalled();
+    const r = (await runLauncherItemCommand('update', ['画像つき', '--name', '画像'], ctx)) as {
+      item: Record<string, unknown>;
+    };
+    expect(r.item).toMatchObject({ displayName: '画像', formats: ['text', 'image'] });
+  });
+
+  it('--text はクリップボード以外には usage、参照の項目は --set で変えられない', async () => {
+    expect(
+      (await errorOf(runLauncherItemCommand('update', ['メモ帳', '--text', 'x'], ctx))).code
+    ).toBe('usage');
+    expect(
+      (
+        await errorOf(
+          runLauncherItemCommand(
+            'update',
+            ['定型文', '--set', 'dataFileRef=clipboard-data/x.json'],
+            ctx
+          )
+        )
+      ).code
+    ).toBe('usage');
+  });
+
+  it('list --with-text はテキストだけのものに本文を付ける', async () => {
+    const r = (await runLauncherItemCommand('list', ['--with-text'], ctx)) as Record<
+      string,
+      unknown
+    >[];
+    expect(r.find((v) => v.id === 'Clip0001')?.text).toBe('本文:clipboard-data/Old00001.json');
+    expect(r.find((v) => v.id === 'Clip0002')).not.toHaveProperty('text');
+    expect(r.find((v) => v.id === 'Memo0001')).not.toHaveProperty('text');
   });
 });
