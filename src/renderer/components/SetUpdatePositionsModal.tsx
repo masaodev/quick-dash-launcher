@@ -1,6 +1,6 @@
 /**
  * 画面: 位置を更新
- * 画面仕様: docs/screens/set-editor-modals.md#4-位置を更新
+ * 画面仕様: docs/screens/set-editor-modals.md#4-ウィンドウ位置を更新
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
