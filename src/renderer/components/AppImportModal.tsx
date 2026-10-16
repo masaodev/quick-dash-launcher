@@ -2,11 +2,12 @@ import type { ReactElement } from 'react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
-import type { ScannedAppItem, DuplicateHandlingOption } from '@common/types';
+import type { ScannedAppItem, DuplicateHandlingOption, DataFileTab } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
+import type { NewImportFileTarget } from '../hooks/useAdminTabStructure';
 import { logError } from '../utils/debug';
 
 import AlertDialog from './AlertDialog';
@@ -17,9 +18,18 @@ import DuplicateHandlingSection from './DuplicateHandlingSection';
  * 画面: アプリ取込画面
  * 画面仕様: docs/screens/app-import-modal.md
  *
- * スタートメニューのアプリから使うものを選び、アイテム管理で開いているデータファイルに取り込む。
- * 区画と言葉はブックマーク取込画面にそろえ、選び方は 1 件ずつのチェック（初期は未選択）。
+ * スタートメニューのアプリから使うものを選び、データファイルに取り込む。選び方は 1 件ずつのチェック（初期は未選択）。
+ * 取込先は登録画面の「保存先」の帯と同じ形で選び、初期値は「選択中のタブに新しいデータファイルを作る」。
+ * 新しいタブ・ファイルは「取り込む」を押した時点で作る（キャンセルなら何も作らない）。
  */
+
+/** 取込先。既存のデータファイルか、取り込むときに作る新しいデータファイル（タブごと作ることもある） */
+export type AppImportDestination = { kind: 'existing'; fileName: string } | NewImportFileTarget;
+
+/** タブのプルダウンで「＋ 新しいタブ」を表す値 */
+const NEW_TAB = -1;
+/** ファイルのプルダウンで「＋ 新しいデータファイル」を表す値 */
+const NEW_FILE = '';
 
 interface FilterOptions {
   excludeUninstallers: boolean;
@@ -30,9 +40,18 @@ interface FilterOptions {
 interface AppImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (apps: ScannedAppItem[], duplicateHandling: DuplicateHandlingOption) => void;
+  /** 取り込む。取込先のファイルを作れなかったときは false（画面を開いたままにする） */
+  onImport: (
+    apps: ScannedAppItem[],
+    duplicateHandling: DuplicateHandlingOption,
+    destination: AppImportDestination
+  ) => Promise<boolean>;
+  /** アイテム管理の作業中のアイテム（全ファイル分。登録済みの判定に使う） */
   existingItems: EditableJsonItem[];
-  importDestination: string;
+  dataFileTabs: DataFileTab[];
+  dataFileLabels: Record<string, string>;
+  /** アイテム管理で選んでいるタブ（取込先の初期値） */
+  initialTabIndex: number;
 }
 
 const DEFAULT_FILTER_OPTIONS: FilterOptions = {
@@ -46,7 +65,9 @@ function AppImportModal({
   onClose,
   onImport,
   existingItems,
-  importDestination,
+  dataFileTabs,
+  dataFileLabels,
+  initialTabIndex,
 }: AppImportModalProps): ReactElement | null {
   const { t } = useTranslation();
   const [apps, setApps] = useState<ScannedAppItem[]>([]);
@@ -67,6 +88,25 @@ function AppImportModal({
 
   // 重複処理オプション
   const [duplicateHandling, setDuplicateHandling] = useState<DuplicateHandlingOption>('skip');
+
+  // 取込先（開くたびに「選択中のタブに新しいデータファイル」に戻す）
+  const [destTab, setDestTab] = useState<number>(initialTabIndex);
+  const [destFile, setDestFile] = useState<string>(NEW_FILE);
+  const [newTabName, setNewTabName] = useState('');
+  const [newFileLabel, setNewFileLabel] = useState('');
+  const [importing, setImporting] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    setDestTab(initialTabIndex < dataFileTabs.length ? initialTabIndex : 0);
+    setDestFile(NEW_FILE);
+    setNewTabName(t('appImport.defaultName'));
+    setNewFileLabel(t('appImport.defaultName'));
+  }, [isOpen]);
+  const destTabFiles = useMemo(
+    () => (destTab === NEW_TAB ? [] : (dataFileTabs[destTab]?.files ?? [])),
+    [destTab, dataFileTabs]
+  );
+  const fileLabel = (fileName: string) => dataFileLabels[fileName] || fileName;
 
   // AlertDialog状態管理
   const [alertDialog, setAlertDialog] = useState<{
@@ -152,10 +192,15 @@ function AppImportModal({
     return excluded;
   }, [apps, filterOptions]);
 
-  // 取込先にすでにあるアプリの id
+  // 取込先にすでにあるアプリの id。新しいファイルなら、そのタブのほかのファイルと照らす
+  // （印を出すだけで、新しいファイルは空なので重複の扱いは聞かない）
+  const destItems = useMemo(() => {
+    const files = destFile === NEW_FILE ? destTabFiles : [destFile];
+    return existingItems.filter((item) => files.includes(item.meta.sourceFile));
+  }, [existingItems, destFile, destTabFiles]);
   const registeredIds = useMemo(
-    () => new Set(checkAppDuplicates(apps, existingItems).duplicateBookmarkIds),
-    [apps, existingItems]
+    () => new Set(checkAppDuplicates(apps, destItems).duplicateBookmarkIds),
+    [apps, destItems]
   );
 
   // 一覧に出すアプリ（除外条件 + 検索）
@@ -305,11 +350,39 @@ function AppImportModal({
     onClose();
   }, [onClose]);
 
-  // 取り込む
-  const handleImport = () => {
-    if (selectedApps.length === 0) return;
-    onImport(selectedApps, duplicateHandling);
-    handleClose();
+  const destination: AppImportDestination =
+    destTab === NEW_TAB
+      ? { kind: 'newTab', tabName: newTabName, fileLabel: newFileLabel }
+      : destFile === NEW_FILE
+        ? { kind: 'newFile', tabIndex: destTab, fileLabel: newFileLabel }
+        : { kind: 'existing', fileName: destFile };
+
+  // フッターの「〜 に取り込む」（登録画面の「〜 に登録」と同じく、ファイルが 1 つのタブはタブ名だけ）
+  const destinationText = (() => {
+    const fallback = t('appImport.defaultName');
+    const newFile = t('appImport.newFileName', { name: newFileLabel.trim() || fallback });
+    if (destination.kind === 'newTab') {
+      return `${t('appImport.newTabName', { name: newTabName.trim() || fallback })} › ${newFile}`;
+    }
+    const tabName = dataFileTabs[destTab]?.name ?? '';
+    if (destination.kind === 'newFile') return `${tabName} › ${newFile}`;
+    return destTabFiles.length <= 1 ? tabName : `${tabName} › ${fileLabel(destFile)}`;
+  })();
+
+  // 取り込む（新しいタブ・ファイルはここで作る）
+  const handleImport = async () => {
+    if (selectedApps.length === 0 || importing) return;
+    setImporting(true);
+    try {
+      const imported = await onImport(
+        selectedApps,
+        destination.kind === 'existing' ? duplicateHandling : 'skip',
+        destination
+      );
+      if (imported) handleClose();
+    } finally {
+      setImporting(false);
+    }
   };
 
   useModalKeyboard({ isOpen, modalRef, onClose: handleClose });
@@ -326,43 +399,85 @@ function AppImportModal({
         ref={modalRef}
         tabIndex={-1}
       >
-        <h3>{t('appImport.title')}</h3>
+        <div className="app-import-header">
+          <h3>{t('appImport.title')}</h3>
+          <div className="app-import-selection">
+            <span>{t('appImport.selected', { count: selectedCount })}</span>
+            {selectedCount > 0 && (
+              <button
+                type="button"
+                className="app-clear-selection"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                {t('appImport.clearSelection')}
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="app-import-hint">{t('appImport.hint')}</div>
 
-        <div className="app-import-body">
-          {/* 取込元と取込先は横に並べ、一覧の高さを残す */}
-          <div className="app-import-row">
-            {/* 取込元 */}
-            <div className="app-import-section">
-              <h4>{t('importCommon.source')}</h4>
-              <div className="app-import-source">
-                <span className="app-import-status">
-                  {loading ? t('appImport.scanning') : t('appImport.found', { count: apps.length })}
-                </span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setScanCount((c) => c + 1)}
-                  disabled={loading}
-                >
-                  {t('appImport.rescan')}
-                </Button>
-              </div>
-            </div>
-            {/* 取込先（アイテム管理で開いているデータファイルに固定） */}
-            <div className="app-import-section">
-              <h4>{t('importCommon.destination')}</h4>
-              <div className="app-import-destination">
-                <span className="app-import-destination-value">{importDestination}</span>
-                <span className="app-import-note">{t('appImport.destinationNote')}</span>
-              </div>
-            </div>
-          </div>
+        {/* 取込先（登録画面の保存先の帯と同じ形） */}
+        <div className="app-import-dest">
+          <span className="app-import-dest-label">{t('importCommon.destination')}</span>
+          <select
+            aria-label={t('appImport.destTab')}
+            value={destTab}
+            onChange={(e) => {
+              setDestTab(Number(e.target.value));
+              setDestFile(NEW_FILE);
+            }}
+          >
+            {dataFileTabs.map((tab, index) => (
+              <option key={`${index}-${tab.files[0] ?? ''}`} value={index}>
+                {tab.name}
+              </option>
+            ))}
+            <option value={NEW_TAB}>{t('appImport.newTab')}</option>
+          </select>
+          <span className="app-import-dest-sep" aria-hidden>
+            ›
+          </span>
+          <select
+            aria-label={t('appImport.destFile')}
+            value={destFile}
+            onChange={(e) => setDestFile(e.target.value)}
+            disabled={destTab === NEW_TAB}
+          >
+            <option value={NEW_FILE}>{t('appImport.newFile')}</option>
+            {destTabFiles.map((file) => (
+              <option key={file} value={file}>
+                {fileLabel(file)}
+              </option>
+            ))}
+          </select>
+          {destTab === NEW_TAB && (
+            <label className="app-import-dest-field">
+              <span>{t('appImport.tabName')}</span>
+              <input
+                type="text"
+                value={newTabName}
+                onChange={(e) => setNewTabName(e.target.value)}
+                placeholder={t('appImport.defaultName')}
+              />
+            </label>
+          )}
+          {destFile === NEW_FILE && (
+            <label className="app-import-dest-field">
+              <span>{t('appImport.fileName')}</span>
+              <input
+                type="text"
+                value={newFileLabel}
+                onChange={(e) => setNewFileLabel(e.target.value)}
+                placeholder={t('appImport.defaultName')}
+              />
+            </label>
+          )}
+        </div>
 
-          {/* 絞り込み */}
-          <div className="app-import-section">
-            <h4>{t('appImport.filter')}</h4>
+        <div className="app-import-body">
+          {/* 検索と取込元 */}
+          <div className="app-import-toolbar">
             <div className="search-input-container">
               <input
                 type="text"
@@ -382,152 +497,168 @@ function AppImportModal({
                 </button>
               )}
             </div>
-            <div className="app-filter-checkboxes">
-              {(
-                [
-                  {
-                    key: 'excludeUninstallers',
-                    label: t('appImport.excludeUninstallers'),
-                    count: filterCounts.uninstallerCount,
-                  },
-                  {
-                    key: 'deduplicateLnkPriority',
-                    label: t('appImport.deduplicateLnkPriority'),
-                    count: filterCounts.deduplicateCount,
-                  },
-                  {
-                    key: 'excludeNonApps',
-                    label: t('appImport.excludeNonApps'),
-                    count: filterCounts.nonAppCount,
-                  },
-                ] as const
-              ).map(({ key, label, count }) => (
-                <label key={key} className="app-filter-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={filterOptions[key]}
-                    onChange={(e) =>
-                      setFilterOptions((prev) => ({ ...prev, [key]: e.target.checked }))
-                    }
-                  />
-                  <span>
-                    {label}
-                    {count > 0 && t('appImport.filterCount', { count })}
-                  </span>
-                </label>
-              ))}
-              <label className="app-filter-checkbox">
+            <div className="app-import-source">
+              <span className="app-import-status">
+                {loading ? t('appImport.scanning') : t('appImport.found', { count: apps.length })}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setScanCount((c) => c + 1)}
+                disabled={loading}
+              >
+                {t('appImport.rescan')}
+              </Button>
+            </div>
+          </div>
+
+          <div className="app-filter-checkboxes">
+            {(
+              [
+                {
+                  key: 'excludeUninstallers',
+                  label: t('appImport.excludeUninstallers'),
+                  count: filterCounts.uninstallerCount,
+                },
+                {
+                  key: 'deduplicateLnkPriority',
+                  label: t('appImport.deduplicateLnkPriority'),
+                  count: filterCounts.deduplicateCount,
+                },
+                {
+                  key: 'excludeNonApps',
+                  label: t('appImport.excludeNonApps'),
+                  count: filterCounts.nonAppCount,
+                },
+              ] as const
+            ).map(({ key, label, count }) => (
+              <label key={key} className="app-filter-checkbox">
                 <input
                   type="checkbox"
-                  checked={showExcluded}
-                  onChange={(e) => setShowExcluded(e.target.checked)}
+                  checked={filterOptions[key]}
+                  onChange={(e) =>
+                    setFilterOptions((prev) => ({ ...prev, [key]: e.target.checked }))
+                  }
                 />
                 <span>
-                  {t('appImport.showExcluded')}
-                  {excludedIds.size > 0 && t('appImport.filterCount', { count: excludedIds.size })}
+                  {label}
+                  {count > 0 && t('appImport.filterCount', { count })}
                 </span>
               </label>
-            </div>
+            ))}
+            <label className="app-filter-checkbox">
+              <input
+                type="checkbox"
+                checked={showExcluded}
+                onChange={(e) => setShowExcluded(e.target.checked)}
+              />
+              <span>
+                {t('appImport.showExcluded')}
+                {excludedIds.size > 0 && t('appImport.filterCount', { count: excludedIds.size })}
+              </span>
+            </label>
           </div>
 
           {/* アプリ一覧 */}
-          <div className="app-import-section app-import-list-section">
-            <h4>{t('appImport.list', { count: visibleApps.length })}</h4>
-            <div className="app-list-container" ref={listRef}>
-              <table className="app-table">
-                <thead>
-                  <tr>
-                    <th className="checkbox-column">
-                      <input
-                        ref={headerCheckboxRef}
-                        type="checkbox"
-                        checked={allVisibleSelected}
-                        onChange={handleToggleVisible}
-                        disabled={visibleApps.length === 0}
-                        title={t('appImport.toggleVisible')}
-                        aria-label={t('appImport.toggleVisible')}
-                      />
-                    </th>
-                    <th className="icon-column"></th>
-                    <th className="name-column">{t('appImport.appName')}</th>
-                    <th className="type-column">{t('appImport.type')}</th>
-                    <th className="path-column">{t('appImport.targetPath')}</th>
+          <div className="app-list-container" ref={listRef}>
+            <table className="app-table">
+              <thead>
+                <tr>
+                  <th className="checkbox-column">
+                    <input
+                      ref={headerCheckboxRef}
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={handleToggleVisible}
+                      disabled={visibleApps.length === 0}
+                      title={t('appImport.toggleVisible')}
+                      aria-label={t('appImport.toggleVisible')}
+                    />
+                  </th>
+                  <th className="icon-column"></th>
+                  <th className="name-column">
+                    {t('appImport.list', { count: visibleApps.length })}
+                  </th>
+                  <th className="type-column">{t('appImport.type')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paddingTop > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={4} style={{ height: paddingTop, padding: 0, border: 'none' }} />
                   </tr>
-                </thead>
-                <tbody>
-                  {paddingTop > 0 && (
-                    <tr aria-hidden="true">
-                      <td colSpan={5} style={{ height: paddingTop, padding: 0, border: 'none' }} />
-                    </tr>
-                  )}
-                  {virtualRows.map((virtualRow) => {
-                    const app = visibleApps[virtualRow.index];
-                    const icon = iconsRef.current.get(app.shortcutPath);
-                    const rowClasses = [
-                      selectedIds.has(app.id) ? 'selected' : '',
-                      excludedIds.has(app.id) ? 'excluded' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ');
-                    return (
-                      <tr
-                        key={app.id}
-                        data-index={virtualRow.index}
-                        ref={rowVirtualizer.measureElement}
-                        className={rowClasses}
-                        onClick={() => handleToggleApp(app.id)}
-                      >
-                        <td className="checkbox-column">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(app.id)}
-                            onChange={() => handleToggleApp(app.id)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </td>
-                        <td className="icon-column">
-                          {icon ? (
-                            <img src={icon} alt="" className="app-icon" />
-                          ) : (
-                            <span className="app-icon-placeholder" />
-                          )}
-                        </td>
-                        <td className="name-column">
+                )}
+                {virtualRows.map((virtualRow) => {
+                  const app = visibleApps[virtualRow.index];
+                  const icon = iconsRef.current.get(app.shortcutPath);
+                  const rowClasses = [
+                    selectedIds.has(app.id) ? 'selected' : '',
+                    excludedIds.has(app.id) ? 'excluded' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
+                  return (
+                    <tr
+                      key={app.id}
+                      data-index={virtualRow.index}
+                      ref={rowVirtualizer.measureElement}
+                      className={rowClasses}
+                      onClick={() => handleToggleApp(app.id)}
+                    >
+                      <td className="checkbox-column">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(app.id)}
+                          onChange={() => handleToggleApp(app.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </td>
+                      <td className="icon-column">
+                        {icon ? (
+                          <img src={icon} alt="" className="app-icon" />
+                        ) : (
+                          <span className="app-icon-placeholder" />
+                        )}
+                      </td>
+                      <td className="name-column">
+                        <div className="app-name">
                           {app.displayName}
                           {registeredIds.has(app.id) && (
-                            <span className="app-registered-badge">
+                            <span
+                              className="app-registered-badge"
+                              title={
+                                destFile === NEW_FILE ? t('appImport.registeredInTab') : undefined
+                              }
+                            >
                               {t('appImport.registered')}
                             </span>
                           )}
-                        </td>
-                        <td className="type-column">
-                          <span className="app-type-badge" title={app.targetPath}>
-                            {app.targetExtension}
-                          </span>
-                        </td>
-                        <td className="path-column">{app.targetPath}</td>
-                      </tr>
-                    );
-                  })}
-                  {paddingBottom > 0 && (
-                    <tr aria-hidden="true">
-                      <td
-                        colSpan={5}
-                        style={{ height: paddingBottom, padding: 0, border: 'none' }}
-                      />
+                        </div>
+                        <div className="app-path">{app.targetPath}</div>
+                      </td>
+                      <td className="type-column">
+                        <span className="app-type-badge" title={app.targetPath}>
+                          {app.targetExtension}
+                        </span>
+                      </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-              {!loading && apps.length > 0 && visibleApps.length === 0 && (
-                <div className="app-list-empty">{t('appImport.noMatches')}</div>
-              )}
-            </div>
+                  );
+                })}
+                {paddingBottom > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={4} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            {!loading && apps.length > 0 && visibleApps.length === 0 && (
+              <div className="app-list-empty">{t('appImport.noMatches')}</div>
+            )}
           </div>
         </div>
 
-        {/* 登録済みを選んだときの扱い */}
-        {selectedRegisteredCount > 0 && (
+        {/* 登録済みを選んだときの扱い（既存のファイルに入れるときだけ。新しいファイルは空なので聞かない） */}
+        {destFile !== NEW_FILE && selectedRegisteredCount > 0 && (
           <DuplicateHandlingSection
             message={t('appImport.registeredSelected', { count: selectedRegisteredCount })}
             value={duplicateHandling}
@@ -537,25 +668,18 @@ function AppImportModal({
         )}
 
         <div className="app-import-footer">
-          <div className="status-info">
-            {selectedCount > 0 && (
-              <>
-                <span>{t('appImport.selected', { count: selectedCount })}</span>
-                <button
-                  type="button"
-                  className="app-clear-selection"
-                  onClick={() => setSelectedIds(new Set())}
-                >
-                  {t('appImport.clearSelection')}
-                </button>
-              </>
-            )}
-          </div>
+          <span className="app-import-echo">
+            {t('appImport.destinationEcho', { target: destinationText })}
+          </span>
           <div className="app-modal-actions">
             <Button variant="secondary" onClick={handleClose}>
               {t('common.cancel')}
             </Button>
-            <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>
+            <Button
+              variant="primary"
+              onClick={() => void handleImport()}
+              disabled={selectedCount === 0 || importing}
+            >
               {t('appImport.import', { count: selectedCount })}
             </Button>
           </div>

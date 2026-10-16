@@ -56,11 +56,20 @@ function swapWithNeighbor<T>(items: T[], index: number, direction: MoveDirection
   return next;
 }
 
-/** 既存のラベルと重ならない、新しいファイルのラベル */
-function uniqueDefaultLabel(labels: Record<string, string>, tabName: string): string {
+/**
+ * 既存のラベルと重ならない、新しいファイルのラベル
+ *
+ * @param baseLabel 付けたい名前（取込画面で入力したものなど）。空なら「<タブ名>用データファイル」
+ */
+function uniqueDefaultLabel(
+  labels: Record<string, string>,
+  tabName: string,
+  baseLabel?: string
+): string {
   const used = new Set(Object.values(labels).filter((label) => label && label.trim() !== ''));
   return FileNameGenerator.generateUniqueLabel(
-    i18next.t('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName }),
+    baseLabel?.trim() ||
+      i18next.t('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName }),
     used
   );
 }
@@ -82,18 +91,22 @@ export function isFileUsedInOtherTabs(
   return TabValidator.isFileUsedInOtherTabs(fileName, tabIndex, tabs);
 }
 
-/** 新しいタブを末尾に足す。データファイルを 1 つ作って入れる */
+/** 新しいタブを末尾に足す。データファイルを 1 つ作って入れる（fileLabel はそのファイルの名前） */
 export function addTab(
   structure: TabStructure,
   tabName: string,
-  filesOnDisk: string[]
+  filesOnDisk: string[],
+  fileLabel?: string
 ): TabStructureEdit {
   const fileName = nextFileName(structure.tabs, filesOnDisk);
   const name = tabName.trim() || FileNameGenerator.getDefaultTabName(fileName);
   return done(
     {
       tabs: [...structure.tabs, { name, files: [fileName] }],
-      labels: { ...structure.labels, [fileName]: uniqueDefaultLabel(structure.labels, name) },
+      labels: {
+        ...structure.labels,
+        [fileName]: uniqueDefaultLabel(structure.labels, name, fileLabel),
+      },
     },
     [fileName]
   );
@@ -156,11 +169,12 @@ export function deleteTab(structure: TabStructure, tabIndex: number): TabStructu
   );
 }
 
-/** 新しいデータファイルを作ってタブの末尾に入れる */
+/** 新しいデータファイルを作ってタブの末尾に入れる（fileLabel はそのファイルの名前） */
 export function addNewFileToTab(
   structure: TabStructure,
   tabIndex: number,
-  filesOnDisk: string[]
+  filesOnDisk: string[],
+  fileLabel?: string
 ): TabStructureEdit {
   if (!isValidTabIndex(structure.tabs, tabIndex))
     return fail(i18next.t('itemManager.tabStructure.errors.tabNotFound'));
@@ -171,7 +185,10 @@ export function addNewFileToTab(
   return done(
     {
       tabs,
-      labels: { ...structure.labels, [fileName]: uniqueDefaultLabel(structure.labels, tab.name) },
+      labels: {
+        ...structure.labels,
+        [fileName]: uniqueDefaultLabel(structure.labels, tab.name, fileLabel),
+      },
     },
     [fileName]
   );

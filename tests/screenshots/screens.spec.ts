@@ -171,7 +171,7 @@ test.describe('画面仕様書の画面イメージ', () => {
       .locator('.dropdown-trigger-btn', { hasText: 'アイテムを一括取り込み' })
       .first()
       .click();
-    await admin.locator('.dropdown-item', { hasText: 'インストール済みアプリを追加' }).click();
+    await admin.locator('.dropdown-item', { hasText: 'インストール済みアプリを取り込む' }).click();
     const modal = admin.locator('.app-import-modal');
     await modal.waitFor({ state: 'visible' });
     await modal.locator('.app-table tbody tr', { hasText: '電卓' }).click();
