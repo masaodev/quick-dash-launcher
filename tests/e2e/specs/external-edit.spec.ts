@@ -98,6 +98,59 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
     });
   });
 
+  test('外部で書いた単一アイテムの windowConfig は、F5 で新しいキーに変換して書き戻す', async ({
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const configDir = configHelper.getConfigDir();
+
+    await test.step('初期表示を待つ', async () => {
+      await utils.waitForPageLoad();
+      await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
+    });
+
+    await test.step('QDL の外で windowConfig を持つアイテムを書き足す', async () => {
+      const data = JSON.parse(configHelper.readDataFileRaw('data.json'));
+      data.items.push({
+        id: 'winCfg01',
+        type: 'item',
+        displayName: '旧ウィンドウ設定メモ',
+        path: 'notepad.exe',
+        windowConfig: {
+          title: 'メモ.txt - メモ帳',
+          processName: 'notepad.exe',
+          x: 10,
+          y: 20,
+          width: 800,
+          height: 600,
+        },
+      });
+      configHelper.writeDataFileRaw('data.json', JSON.stringify(data, null, 2));
+    });
+
+    await test.step('F5 で読み直すと新しいキーに書き換わり、変換前のスナップショットが残る', async () => {
+      await utils.reloadWithF5();
+      const row = mainWindow.locator('.item', { hasText: '旧ウィンドウ設定メモ' });
+      await expect(row).toBeVisible({ timeout: 10000 });
+      await expect(row.locator('.window-title-badge')).toBeVisible();
+
+      await expect
+        .poll(() => configHelper.dataFileContains('data.json', 'windowConfig'), { timeout: 10000 })
+        .toBe(false);
+      const item = configHelper.getItemByDisplayName('data.json', '旧ウィンドウ設定メモ');
+      expect(item).toMatchObject({
+        window: { processName: 'notepad.exe', title: 'メモ.txt - メモ帳' },
+        placement: { x: 10, y: 20, width: 800, height: 600 },
+        activateWindow: true,
+      });
+      const backupDir = path.join(configDir, 'backup');
+      expect(
+        fs.readdirSync(backupDir).filter((name) => name.endsWith('_pre-window-migration'))
+      ).toHaveLength(1);
+    });
+  });
+
   test('編集画面を開いた後に外部で変更されたファイルは、保存時に上書きせず再読込する', async ({
     electronApp,
     mainWindow,

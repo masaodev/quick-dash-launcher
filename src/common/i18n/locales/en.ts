@@ -576,6 +576,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       notOpen: "Not open, so it wasn't moved",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
       desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
+      itemWindowTimedOut:
+        'Waited {{seconds}} seconds for the window to appear, but it was not found',
     },
     errors: {
       itemNotFound: "Couldn't find the item this row points to",

@@ -17,6 +17,11 @@ interface WindowConfigEditorProps {
   defaultExpanded?: boolean;
   /** 折りたたみトグルを表示するか（デフォルト: true） */
   showToggle?: boolean;
+  /**
+   * 「カーソルがあるモニターの中央に配置」を出すか（デフォルト: true）。
+   * 単一アイテムでは廃止したので出さない（ウィンドウ操作アイテムだけが使う）
+   */
+  showCenterOnCursorMonitor?: boolean;
 }
 
 /* eslint-disable react/prop-types */
@@ -28,6 +33,7 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
     onFetchFromWindow,
     defaultExpanded = false,
     showToggle = true,
+    showCenterOnCursorMonitor = true,
   }) => {
     const { t } = useTranslation();
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -169,22 +175,24 @@ const WindowConfigEditor: React.FC<WindowConfigEditorProps> = React.memo(
               {fetchError === 'position' && (
                 <div className="window-config-fetch-error">{t('windowConfig.windowNotFound')}</div>
               )}
-              <div className="window-config-checkbox-row">
-                <label className="window-config-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={windowConfig?.moveToActiveMonitorCenter || false}
-                    onChange={(e) =>
-                      onChange({
-                        ...baseConfig,
-                        moveToActiveMonitorCenter: e.target.checked || undefined,
-                      })
-                    }
-                    className="window-config-checkbox"
-                  />
-                  <span>{t('windowConfig.centerOnCursorMonitor')}</span>
-                </label>
-              </div>
+              {showCenterOnCursorMonitor && (
+                <div className="window-config-checkbox-row">
+                  <label className="window-config-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={windowConfig?.moveToActiveMonitorCenter || false}
+                      onChange={(e) =>
+                        onChange({
+                          ...baseConfig,
+                          moveToActiveMonitorCenter: e.target.checked || undefined,
+                        })
+                      }
+                      className="window-config-checkbox"
+                    />
+                    <span>{t('windowConfig.centerOnCursorMonitor')}</span>
+                  </label>
+                </div>
+              )}
               <div className="window-config-help-text">{t('windowConfig.byCoordinates')}</div>
               <div className="window-config-row-double" style={{ marginLeft: 'var(--spacing-lg)' }}>
                 <div className="window-config-field">

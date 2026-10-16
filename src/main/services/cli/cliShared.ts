@@ -134,7 +134,10 @@ export function validateAsDataItem(
       })
     );
   }
-  const unknown = setKeys.filter((key) => !(key in cleaned));
+  // 旧形式の windowConfig は検証が新しいキー（window・placement など）に直すので、知らない項目とはみなさない
+  const unknown = setKeys.filter(
+    (key) => !(key in cleaned) && !(key === 'windowConfig' && cleaned.type === 'item')
+  );
   if (unknown.length > 0) {
     throw new CliError(
       'invalid',

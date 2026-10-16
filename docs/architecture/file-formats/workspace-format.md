@@ -123,6 +123,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 - データファイルの `updatedAt`・`autoImportRuleId` は持たない
 - `clipboard` は QDL が生成する。手で書かない
 - `set` の行の `itemId` は、ワークスペースのアイテムの id か、データファイルのアイテムの id を指す。実行時はワークスペースのアイテムを先に探す（`src/main/ipc/workspaceHandlers.ts`）
+- `type: item` のウィンドウ切り替え（`window`・`placement` など、[データファイル形式 3.1.5](data-format.md#315-ウィンドウ切り替えitemwindowswitch)）も、データファイルと同じ処理で実行する
 
 アイテム本体の検証はデータファイルの検証関数（`validateJson*Item`）を共用しており、判定はデータファイルと一致する。
 
@@ -213,6 +214,11 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 - 旧グループの名前は、データファイルの通常アイテム・ウィンドウアイテムの表示名から探して `itemId` の行にする。データファイルは読み込み処理に通さずに中身だけを読むので、フォルダ取込で展開したアイテムの名前は見つからない行になる（`src/main/services/workspace/WorkspaceService.ts`）
 - 2 ファイルとも読み込みの状態が `ok` のときだけ変換する（`corrupted`・`unreadable` のときはしない）
 - 変換の前に `backup/<日時>_pre-set-migration/` のスナップショットを作る（`backupEnabled` に関係なく作る）。作れなければ変換せず、旧形式のアイテムは未知の `type` として `invalid` になる（ファイルには残る）
+
+**単一アイテムの windowConfig の変換**: セットへの変換に続けて、`type: "item"` の `windowConfig` をウィンドウ切り替えの新しいキー（`window`・`placement` など）に変換して書き戻す（`WorkspaceFileStore`・`src/common/utils/itemWindowConversion.ts`）。規則はデータファイルと同じ（[データファイル形式 3.1.5.6](data-format.md#3156-旧形式windowconfigからの変換)）。
+
+- セットへの変換と同じく、2 ファイルとも読み込みの状態が `ok` のときだけ変換する
+- スナップショットは 1 回だけ作る。セットへの変換もあれば `backup/<日時>_pre-set-migration/`、`windowConfig` だけなら `backup/<日時>_pre-window-migration/`（`backupEnabled` に関係なく作る）。作れなければ書き換えないが、読み込みの検証が新しいキーに直すので動きは変わらない
 
 ---
 

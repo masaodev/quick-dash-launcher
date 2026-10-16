@@ -4,6 +4,7 @@ import { LauncherItem, WindowItem, AppItem, WindowConfig } from '@common/types';
 import type { SetItem } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
+import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
@@ -12,7 +13,12 @@ import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
-import { executeSet, notifySetFailures } from '../services/launch/setExecutor.js';
+import {
+  executeLauncherItem,
+  executeSet,
+  notifyLauncherItemFailure,
+  notifySetFailures,
+} from '../services/launch/setExecutor.js';
 import { mainI18n } from '../services/mainI18n.js';
 
 /**
@@ -33,26 +39,18 @@ async function openItem(item: LauncherItem): Promise<void> {
       path: item.path,
       args: item.args || 'なし',
       originalPath: item.originalPath || 'なし',
-      windowConfig: item.windowConfig ? JSON.stringify(item.windowConfig) : 'なし',
+      window: hasItemWindowSwitch(item) ? JSON.stringify(pickItemWindowSwitch(item)) : 'なし',
     },
     'アイテムを起動中'
   );
 
-  // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-  const activationResult = await tryActivateWindow(
-    item.windowConfig,
-    item.displayName,
-    itemLogger,
-    {
-      followDesktop: true,
-    }
-  );
-
-  if (activationResult.activated) {
+  // ウィンドウ切り替えがあれば、セットの 1 行と同じ処理で開く（見つかれば前面に出す・位置を当てる）
+  if (hasItemWindowSwitch(item)) {
+    const result = await executeLauncherItem(item);
+    await notifyLauncherItemFailure(item, result);
     return;
   }
 
-  // 通常の起動処理
   await launchItem(
     {
       type: item.type,

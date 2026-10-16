@@ -11,6 +11,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
+import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { isClipboardItem } from '@common/types/guards';
 
 import { tryActivateWindow } from '../utils/windowActivator.js';
@@ -30,8 +31,10 @@ import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import {
+  executeLauncherItem,
   executeSet,
   isSetRunning,
+  notifyLauncherItemFailure,
   notifySetFailures,
   resolveSetEntry,
 } from '../services/launch/setExecutor.js';
@@ -71,7 +74,7 @@ function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
       displayName: item.displayName,
       path: item.path,
       args: item.args,
-      windowConfig: item.windowConfig,
+      ...pickItemWindowSwitch(item),
       id: item.id,
     };
   }
@@ -325,21 +328,13 @@ export function setupWorkspaceHandlers(): void {
         return { success: true, successCount: result.successCount, errorCount: result.errorCount };
       }
 
-      // ウィンドウ設定が存在する場合、先にウィンドウ検索を試行
-      const activationResult = await tryActivateWindow(
-        item.windowConfig,
-        item.displayName,
-        logger,
-        {
-          followDesktop: true,
-        }
-      );
-
-      if (activationResult.activated) {
-        // ウィンドウアクティブ化成功
+      // ウィンドウ切り替えがあれば、セットの 1 行と同じ処理で開く（見つかれば前面に出す・位置を当てる）
+      if (hasItemWindowSwitch(item)) {
+        const launchable = { ...item, type: item.launcherType };
+        const result = await executeLauncherItem(launchable);
+        await notifyLauncherItemFailure(launchable, result);
         return { success: true };
       }
-      // アクティブ化失敗または未設定の場合は下記の通常起動処理へフォールバック
 
       // 通常アイテムを起動：共通のlaunchItem関数を使用（起動種別は path から判定済み）
       await launchItem(

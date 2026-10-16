@@ -5,6 +5,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { JsonDataFile, JsonLauncherItem, LauncherItem, isJsonClipboardItem } from '@common/types';
 import { parseJsonDataFileLenient, serializeJsonDataFile } from '@common/utils/jsonParser';
 import { FileUtils } from '@common/utils/fileUtils';
+import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { ClipboardService } from '../services/clipboardService.js';
 import { writeDataFile } from '../services/dataFileTracker.js';
@@ -30,7 +31,7 @@ function convertLauncherItemToJsonItem(item: LauncherItem, existingId: string): 
     path: item.path,
     ...(item.args && { args: item.args }),
     ...(item.customIcon && { customIcon: item.customIcon }),
-    ...(item.windowConfig && { windowConfig: item.windowConfig }),
+    ...pickItemWindowSwitch(item),
     ...(item.memo && { memo: item.memo }),
     ...(item.autoImportRuleId && { autoImportRuleId: item.autoImportRuleId }),
     updatedAt: Date.now(),

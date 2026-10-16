@@ -4,6 +4,10 @@ import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { parseJsonDataFileLenient, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonItemIssue } from '@common/utils/jsonParser';
+import {
+  convertLegacyWindowConfigs,
+  hasLegacyWindowConfig,
+} from '@common/utils/itemWindowConversion';
 import { isJsonLauncherItem } from '@common/types';
 import type { AppItem, JsonDataFile, JsonItem } from '@common/types';
 import { isLauncherItem, isRecord, isWindowInfo } from '@common/types/guards';
@@ -254,8 +258,8 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
     }
   }
 
-  // 旧形式のグループ・ウィンドウ配置をセットに変換したら、変換後の内容で読み直す（2 回目は変換するものが無い）
-  if (await migrateLegacySetItemsInDataFiles(configFolder, allFiles, items)) {
+  // 旧形式（グループ・ウィンドウ配置、単一アイテムの windowConfig）を変換したら、変換後の内容で読み直す（2 回目は変換するものが無い）
+  if (await migrateLegacyItemsInDataFiles(configFolder, allFiles, items)) {
     const again = await loadDataFilesWithReport(configFolder);
     // 1 回目で見つけた外部変更・採番などは 2 回目では消えている（前回の内容を覚え直した）ので、足して返す
     const changedFiles = new Set(externallyChanged.map((f) => f.relativePath));
@@ -298,15 +302,17 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
 }
 
 /**
- * データファイルの中の旧形式のグループ・ウィンドウ配置をセットに変換して書き戻す
+ * データファイルの中の旧形式を新しい形に変換して書き戻す（読み込み時に 1 回だけ）
  *
- * グループの名前は、読み込んだ全タブのアイテムから解決する（旧来の実行と同じ範囲）。
- * 戻せない変換なので、書き換える前に全設定ファイルのスナップショット（_pre-set-migration）を残す。
- * スナップショットを作れなければ変換しない
+ * - グループ・ウィンドウ配置 → セット。グループの名前は、読み込んだ全タブのアイテムから解決する（旧来の実行と同じ範囲）
+ * - 単一アイテムの windowConfig → ウィンドウ切り替えの新しいキー（window・placement など）
+ *
+ * 戻せない変換なので、書き換える前に全設定ファイルのスナップショットを 1 回だけ残す（セットへの変換が要れば
+ * _pre-set-migration、windowConfig だけなら _pre-window-migration）。スナップショットを作れなければ変換しない
  *
  * @returns 書き換えたファイルがあれば true
  */
-async function migrateLegacySetItemsInDataFiles(
+async function migrateLegacyItemsInDataFiles(
   configFolder: string,
   fileNames: readonly string[],
   loadedItems: readonly AppItem[]
@@ -323,7 +329,11 @@ async function migrateLegacySetItemsInDataFiles(
     }
     try {
       const raw: unknown = JSON.parse(content);
-      if (isRecord(raw) && Array.isArray(raw.items) && hasLegacySetItems(raw.items)) {
+      if (
+        isRecord(raw) &&
+        Array.isArray(raw.items) &&
+        (hasLegacySetItems(raw.items) || hasLegacyWindowConfig(raw.items))
+      ) {
         targets.push({ filePath, raw: raw as Record<string, unknown> & { items: unknown[] } });
       }
     } catch {
@@ -333,8 +343,9 @@ async function migrateLegacySetItemsInDataFiles(
   }
   if (targets.length === 0) return false;
   // 読めないファイルがあると、そのファイルのアイテムを指すグループの名前を解決できず、名前だけの行に変えてしまう。直るまで待つ
+  // （windowConfig は読み込みの検証がその場で新しい形に直すので、待っている間も動きは変わらない）
   if (unreadable) {
-    dataLogger.warn('読めないデータファイルがあるので、セットへの変換を保留します');
+    dataLogger.warn('読めないデータファイルがあるので、旧形式からの変換を保留します');
     return false;
   }
 
@@ -342,36 +353,47 @@ async function migrateLegacySetItemsInDataFiles(
   const parallel = await settingsService.getLegacyParallelGroupLaunch();
   const resolveName = buildGroupNameResolver(loadedItems);
   const conversions = targets
-    .map(({ filePath, raw }) => ({
-      filePath,
-      raw,
-      converted: convertLegacySetItems(
+    .map(({ filePath, raw }) => {
+      const sets = convertLegacySetItems(
         raw.items,
         resolveName,
         parallel ? 'parallel' : 'sequential'
-      ),
-    }))
-    .filter(({ converted }) => converted.changed);
+      );
+      const windows = convertLegacyWindowConfigs(sets.items);
+      return {
+        filePath,
+        raw,
+        items: windows.items,
+        setsChanged: sets.changed,
+        changed: sets.changed || windows.changed,
+      };
+    })
+    .filter(({ changed }) => changed);
   // 変換できるものが無い（壊れた旧アイテムだけ）なら、スナップショットも作らない（読み込みのたびに増えるのを防ぐ）
   if (conversions.length === 0) return false;
 
+  const needsSetMigration = conversions.some(({ setsChanged }) => setsChanged);
   try {
     const backupService = await BackupService.getInstance();
-    await backupService.createPreSetMigrationSnapshot();
+    if (needsSetMigration) {
+      await backupService.createPreSetMigrationSnapshot();
+    } else {
+      await backupService.createPreWindowMigrationSnapshot();
+    }
   } catch (error) {
     dataLogger.error(
       { error },
-      'セットへの変換前のスナップショットを作れなかったので、変換しません'
+      '旧形式からの変換前のスナップショットを作れなかったので、変換しません'
     );
     return false;
   }
 
   let rewritten = false;
-  for (const { filePath, raw, converted } of conversions) {
-    const data = { ...raw, items: converted.items } as unknown as JsonDataFile;
+  for (const { filePath, raw, items } of conversions) {
+    const data = { ...raw, items } as unknown as JsonDataFile;
     if (writeDataFile(filePath, serializeJsonDataFile(data))) {
       rewritten = true;
-      dataLogger.info({ filePath }, 'グループ・ウィンドウ配置をセットに変換しました');
+      dataLogger.info({ filePath }, '旧形式のアイテムを新しい形に変換しました');
     }
   }
   return rewritten;

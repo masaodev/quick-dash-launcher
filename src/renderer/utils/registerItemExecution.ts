@@ -1,5 +1,6 @@
 import type { LauncherItem, RegisterItem } from '@common/types';
 import { normalizeWindowTitleForProcessOnly } from '@common/utils/windowTitle';
+import { windowConfigToSwitchFields } from '@common/utils/itemWindowConversion';
 
 import { debugLog, logError } from './debug';
 
@@ -35,7 +36,7 @@ export function toLauncherItem(item: RegisterItem): LauncherItem | null {
         type: item.type,
         args: item.args,
         customIcon: item.customIcon,
-        windowConfig: item.windowConfig,
+        ...windowConfigToSwitchFields(item.windowConfig),
       };
   }
 }

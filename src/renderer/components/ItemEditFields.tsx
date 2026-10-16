@@ -322,6 +322,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           onGetWindowClick={onOpenWindowSelector}
           onFetchFromWindow={onFetchFromWindow}
           defaultExpanded={false}
+          showCenterOnCursorMonitor={false}
         />
       )}
 

@@ -1,4 +1,8 @@
 import type { RegisterItem, WorkspaceItem } from '@common/types';
+import {
+  omitItemWindowSwitch,
+  windowConfigToSwitchFields,
+} from '@common/utils/itemWindowConversion';
 
 /**
  * ワークスペースのアイテム編集の「試しに実行」に渡すアイテムを、編集中の内容から作る
@@ -9,11 +13,11 @@ import type { RegisterItem, WorkspaceItem } from '@common/types';
 export function toTrialWorkspaceItem(saved: WorkspaceItem, editing: RegisterItem): WorkspaceItem {
   if (saved.type === 'item' && editing.itemCategory === 'item') {
     return {
-      ...saved,
+      ...omitItemWindowSwitch(saved),
+      ...windowConfigToSwitchFields(editing.windowConfig),
       displayName: editing.displayName,
       path: editing.path,
       args: editing.args || undefined,
-      windowConfig: editing.windowConfig,
       launcherType: editing.type === 'clipboard' ? saved.launcherType : editing.type,
     };
   }

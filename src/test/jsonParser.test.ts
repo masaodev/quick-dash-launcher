@@ -116,9 +116,11 @@ describe('jsonParser: パースとシリアライズ', () => {
       const item = result.items[0] as JsonLauncherItem;
       expect(item.args).toBe('C:\\Users\\project');
       expect(item.customIcon).toBe('cursor.png');
-      expect(item.windowConfig).toBeDefined();
-      expect(item.windowConfig?.title).toBe('Cursor*');
-      expect(item.windowConfig?.x).toBe(100);
+      // 旧形式の windowConfig は、その場でセットの行と同じキーに直す
+      expect(item).not.toHaveProperty('windowConfig');
+      expect(item.window).toEqual({ processName: 'Cursor.exe', title: 'Cursor*' });
+      expect(item.placement).toEqual({ x: 100, y: 200, width: 1920, height: 1080 });
+      expect(item.activateWindow).toBe(true);
     });
 
     it('JsonDirItemを正しくパースできること', () => {
@@ -678,5 +680,81 @@ describe('jsonParser: セット', () => {
         })
       )
     ).toThrow();
+  });
+});
+
+describe('jsonParser: 単一アイテムのウィンドウ切り替え', () => {
+  const parseOne = (item: Record<string, unknown>) =>
+    parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [{ id: 'item1aaa', type: 'item', displayName: 'x', path: 'notepad.exe', ...item }],
+      })
+    ).items[0];
+
+  it('セットの行と同じキーを読み、型の合わない値は捨てる', () => {
+    expect(
+      parseOne({
+        window: { processName: 'x.exe', title: 3 },
+        placement: { x: 0, y: 'top', virtualDesktopNumber: 2, state: 'maximized' },
+        ifOpen: 'openNew',
+        activateWindow: false,
+        waitSeconds: 10,
+        pinToAllDesktops: true,
+      })
+    ).toEqual({
+      id: 'item1aaa',
+      type: 'item',
+      displayName: 'x',
+      path: 'notepad.exe',
+      window: { processName: 'x.exe' },
+      placement: { x: 0, virtualDesktopNumber: 2, state: 'maximized' },
+      ifOpen: 'openNew',
+      activateWindow: false,
+      waitSeconds: 10,
+      pinToAllDesktops: true,
+    });
+  });
+
+  it('windowConfig は受け付けて新しいキーに直す（中央に配置は捨てる）', () => {
+    expect(
+      parseOne({
+        windowConfig: {
+          title: '*',
+          processName: 'x.exe',
+          moveToActiveMonitorCenter: true,
+          activateWindow: false,
+        },
+      })
+    ).toEqual({
+      id: 'item1aaa',
+      type: 'item',
+      displayName: 'x',
+      path: 'notepad.exe',
+      window: { processName: 'x.exe' },
+      activateWindow: false,
+    });
+  });
+
+  it('windowConfig と新しいキーが両方あれば windowConfig を優先し、ifOpen・waitSeconds は残す', () => {
+    const item = parseOne({
+      window: { processName: 'old.exe' },
+      placement: { x: 1, y: 1 },
+      ifOpen: 'openNew',
+      waitSeconds: 5,
+      windowConfig: { title: 'New' },
+    });
+    expect(item).toMatchObject({
+      window: { title: 'New' },
+      activateWindow: true,
+      ifOpen: 'openNew',
+      waitSeconds: 5,
+    });
+    expect(item).not.toHaveProperty('placement');
+  });
+
+  it('windowConfig の型が合わなければ、今までどおり不正にする', () => {
+    expect(() => parseOne({ windowConfig: 'bad' })).toThrow('windowConfig must be an object');
+    expect(() => parseOne({ windowConfig: { x: '1' } })).toThrow('windowConfig.x must be a number');
   });
 });

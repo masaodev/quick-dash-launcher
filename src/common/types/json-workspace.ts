@@ -9,7 +9,7 @@
  * 末尾のコンパイル時アサーションで語彙のずれを検出する。
  */
 
-import type { WindowConfig, SetEntry, SetLaunchMode } from './launcher';
+import type { ItemWindowSwitch, SetEntry, SetLaunchMode } from './launcher';
 import type { ClipboardFormat } from './clipboard';
 import type { JsonClipboardItem, JsonLauncherItem, JsonSetItem, JsonWindowItem } from './json-data';
 
@@ -115,7 +115,7 @@ interface JsonWorkspaceItemBase {
  * 通常のアイテム（type: "item"）
  * ファイル・アプリ・URL・フォルダなどを起動する。URL/ファイル/アプリの区別は path から QDL が判定する
  */
-export interface JsonWorkspaceLauncherItem extends JsonWorkspaceItemBase {
+export interface JsonWorkspaceLauncherItem extends JsonWorkspaceItemBase, ItemWindowSwitch {
   /** アイテムタイプ */
   type: 'item';
   /**
@@ -129,8 +129,6 @@ export interface JsonWorkspaceLauncherItem extends JsonWorkspaceItemBase {
   originalPath?: string;
   /** カスタムアイコンファイル名（オプション） */
   customIcon?: string;
-  /** ウィンドウ制御設定（起動前に既存ウィンドウを探して前面化・移動する。オプション） */
-  windowConfig?: WindowConfig;
 }
 
 /**
