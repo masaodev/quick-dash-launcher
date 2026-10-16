@@ -59,7 +59,21 @@ beforeEach(() => {
   items = [item('It000001', '議事録', 0, 'GrA00001'), item('It000002', '設計', 2, 'GrA00001')];
 
   const store: WorkspaceStore = {
-    loadWorkspaces: async () => workspaces,
+    loadWorkspaces: async () => [...workspaces].sort((a, b) => a.order - b.order),
+    createWorkspace: async (name: string) => {
+      const created = { id: 'WsNew001', displayName: name, order: workspaces.length, createdAt: 0 };
+      workspaces.push(created);
+      return created;
+    },
+    renameWorkspace: async (id: string, name: string) => {
+      workspaces = workspaces.map((w) => (w.id === id ? { ...w, displayName: name } : w));
+    },
+    deleteWorkspace: vi.fn(async (id: string) => {
+      workspaces = workspaces.filter((w) => w.id !== id);
+    }),
+    reorderWorkspaces: async (ids: string[]) => {
+      workspaces = workspaces.map((w) => ({ ...w, order: ids.indexOf(w.id) }));
+    },
     loadGroups: async () => groups,
     loadItems: async () => items,
     addItem: async (app: AppItem, groupId?: string, workspaceId?: string) => {
@@ -248,5 +262,52 @@ describe('workspace list', () => {
       { id: 'Ws000001', displayName: '仕事', order: 0, groupCount: 3, itemCount: 2 },
       { id: 'Ws000002', displayName: '私用', order: 1, groupCount: 0, itemCount: 0 },
     ]);
+  });
+});
+
+describe('workspace add / update / remove', () => {
+  it('追加して位置を指定すると、その位置に入る', async () => {
+    const r = await runWorkspaceCommand('add', '--name', ['株', '--position', '0'], ctx);
+    expect(r).toMatchObject({ id: 'WsNew001', displayName: '株', order: 0 });
+    const list = (await runWorkspaceCommand('list', undefined, [], ctx)) as { id: string }[];
+    expect(list.map((w) => w.id)).toEqual(['WsNew001', 'Ws000001', 'Ws000002']);
+    expect(ctx.changed).toHaveBeenCalledTimes(1);
+  });
+
+  it('--dry-run では追加しない', async () => {
+    const r = await runWorkspaceCommand('add', '--name', ['株', '--dry-run'], ctx);
+    expect(r).toEqual({ dryRun: true, workspace: { id: null, displayName: '株' } });
+    expect(workspaces).toHaveLength(2);
+    expect(ctx.syncBeforeWrite).not.toHaveBeenCalled();
+  });
+
+  it('改名と並べ替えができ、変える前の内容も返す', async () => {
+    const r = (await runWorkspaceCommand(
+      'update',
+      '私用',
+      ['--name', '生活', '--position', '0'],
+      ctx
+    )) as { before: Record<string, unknown>; workspace: Record<string, unknown> };
+    expect(r.before).toMatchObject({ id: 'Ws000002', displayName: '私用', order: 1 });
+    expect(r.workspace).toMatchObject({ id: 'Ws000002', displayName: '生活', order: 0 });
+  });
+
+  it('変えるものが無ければ usage、空の名前も usage', async () => {
+    expect((await errorOf(runWorkspaceCommand('update', '私用', [], ctx))).code).toBe('usage');
+    expect((await errorOf(runWorkspaceCommand('update', '私用', ['--name', ' '], ctx))).code).toBe(
+      'usage'
+    );
+  });
+
+  it('中身のあるワークスペースは消さずに conflict、空のものは消す', async () => {
+    expect((await errorOf(runWorkspaceCommand('remove', '仕事', [], ctx))).code).toBe('conflict');
+    await runWorkspaceCommand('remove', '私用', [], ctx);
+    expect(workspaces.map((w) => w.id)).toEqual(['Ws000001']);
+  });
+
+  it('最後の 1 つは空でも conflict', async () => {
+    workspaces = [{ id: 'Ws000002', displayName: '私用', order: 0, createdAt: 0 }];
+    expect((await errorOf(runWorkspaceCommand('remove', '私用', [], ctx))).code).toBe('conflict');
+    expect(ctx.store.deleteWorkspace).not.toHaveBeenCalled();
   });
 });

@@ -34,6 +34,8 @@ export interface LauncherStore {
   tabs(): Promise<DataFileTab[]>;
   append(file: string, item: JsonItem): void;
   replace(item: JsonItem): void;
+  /** id を保ったまま別のデータファイルへ移す（内容も item に差し替える） */
+  move(item: JsonItem, from: string, to: string): void;
   remove(id: string): Promise<void>;
   /** 見た目はファイルでも実体がフォルダなら、末尾に区切りを付ける（登録画面と同じ） */
   markFolder(path: string): Promise<string>;
@@ -288,11 +290,16 @@ async function findEntry(key: string, ctx: LauncherCommandContext): Promise<Laun
 
 async function update(args: readonly string[], ctx: LauncherCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, {
-    values: ['name', 'path', 'args', 'memo'],
+    values: ['name', 'path', 'args', 'memo', 'file', 'tab'],
     flags: ['dry-run'],
     allowSet: true,
   });
   const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const fileKey = optionString(parsed, 'file');
+  const tabKey = optionString(parsed, 'tab');
+  const moving = fileKey !== undefined || tabKey !== undefined;
+  // 移す先は書き込みの前に決める（無いタブ・ファイルは何も読み直さずに断る）
+  const targetFile = moving ? await resolveTargetFile(ctx, fileKey, tabKey) : undefined;
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const entry = await findEntry(key, ctx);
@@ -320,15 +327,27 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
     args: optionString(parsed, 'args'),
     memo: optionString(parsed, 'memo'),
   };
-  if (
-    Object.values(fields).every((v) => v === undefined) &&
-    parsed.sets.length === 0 &&
-    parsed.unsets.length === 0
-  ) {
+  const changesBody =
+    Object.values(fields).some((v) => v !== undefined) ||
+    parsed.sets.length > 0 ||
+    parsed.unsets.length > 0;
+  if (!changesBody && !moving) {
     throw new CliError(
       'usage',
-      mainI18n.t('cli.errors.needChanges', { options: '--name --path --args --memo --set --unset' })
+      mainI18n.t('cli.errors.needChanges', {
+        options: '--name --path --args --memo --set --unset --file --tab',
+      })
     );
+  }
+  // --tab は、そのタブのどれかのファイルに既にあれば移さない（タブが複数のファイルを持つとき）
+  const alreadyThere =
+    targetFile === entry.file ||
+    (tabKey !== undefined &&
+      (await ctx.store.tabs()).some((t) => t.name === tabKey && t.files.includes(entry.file)));
+  const moveTo = targetFile !== undefined && !alreadyThere ? targetFile : undefined;
+  if (moveTo && current.type === 'item' && current.autoImportRuleId) {
+    // 取込は取り込み先のファイルの中だけで入れ替えるので、移すと次の取込で同じものがまた足される
+    throw new CliError('conflict', mainI18n.t('cli.errors.autoImportedNotMovable'));
   }
   const { merged, setKeys } = applyPatch(
     current as unknown as Record<string, unknown>,
@@ -338,14 +357,39 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
   if (current.type === 'set' && setKeys.includes('entries')) {
     checkCliSetEntries(merged.entries, await ctx.store.load());
   }
+  const tabs = await ctx.store.tabs();
+  const before = view(entry, tabs);
+  if (!changesBody && !moveTo) {
+    // 今と同じタブ・ファイルを指定しただけ。書き込まず、変えていないことを返す
+    return { ...(dryRun ? { dryRun: true } : {}), unchanged: true, before, item: before };
+  }
   const item = validateAsDataItem(merged, setKeys);
   item.updatedAt = Date.now();
-  const tabs = await ctx.store.tabs();
-  const result = { before: view(entry, tabs), item: view({ item, file: entry.file }, tabs) };
+  const file = moveTo ?? entry.file;
+  const result = {
+    before,
+    item: view({ item, file }, tabs),
+    ...(moveTo ? { moved: { from: entry.file, to: moveTo } } : {}),
+  };
   if (dryRun) return { dryRun: true, ...result };
 
-  ctx.store.replace(item);
-  ctx.changed(mainI18n.t('cli.changed.launcherUpdated', { name: itemName(item) }));
+  if (moveTo) {
+    try {
+      ctx.store.move(item, entry.file, moveTo);
+    } catch (error) {
+      // 破損ファイル・書き込みの失敗
+      throw new CliError('unavailable', (error as Error).message);
+    }
+    ctx.changed(
+      mainI18n.t('cli.changed.launcherMoved', {
+        name: itemName(item),
+        tab: tabOf(moveTo, tabs) ?? moveTo,
+      })
+    );
+  } else {
+    ctx.store.replace(item);
+    ctx.changed(mainI18n.t('cli.changed.launcherUpdated', { name: itemName(item) }));
+  }
   return result;
 }
 

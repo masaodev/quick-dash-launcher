@@ -4,7 +4,7 @@ import { createChildLogger } from '@common/logger';
 import PathManager from '../../config/pathManager.js';
 import { SettingsService } from '../settingsService.js';
 import { loadEditableItems } from '../data/editableItemsStore.js';
-import { appendJsonItems, replaceItemById } from '../data/dataItemWriter.js';
+import { appendJsonItems, moveItemToFile, replaceItemById } from '../data/dataItemWriter.js';
 import { deleteItemsById } from '../../ipc/editHandlers.js';
 import { withFolderMarker } from '../../utils/folderPathProbe.js';
 import { reapplySettingsFromDisk } from '../../ipc/settingsHandlers.js';
@@ -44,6 +44,7 @@ export function createLauncherStore(configFolder: string): LauncherStore {
     },
     append: (file, item) => appendJsonItems(configFolder, file, [item]),
     replace: (item) => replaceItemById(configFolder, item),
+    move: (item, from, to) => moveItemToFile(configFolder, item, from, to),
     remove: (id) => deleteItemsById(configFolder, [{ id }]),
     markFolder: withFolderMarker,
     newId: generateUniqueId,
@@ -77,6 +78,12 @@ export function createCliContext(
     launcher: createLauncherStore(configFolder),
     workspace: {
       loadWorkspaces: async () => (await WorkspaceService.getInstance()).loadWorkspaces(),
+      createWorkspace: async (name) => (await WorkspaceService.getInstance()).createWorkspace(name),
+      renameWorkspace: async (id, name) =>
+        (await WorkspaceService.getInstance()).renameWorkspace(id, name),
+      deleteWorkspace: async (id) => (await WorkspaceService.getInstance()).deleteWorkspace(id),
+      reorderWorkspaces: async (ids) =>
+        (await WorkspaceService.getInstance()).reorderWorkspaces(ids),
       loadGroups: async () => (await WorkspaceService.getInstance()).loadGroups(),
       loadItems: async () => (await WorkspaceService.getInstance()).loadItems(),
       addItem: async (item, groupId, workspaceId) =>

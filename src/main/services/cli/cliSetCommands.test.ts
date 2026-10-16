@@ -41,6 +41,7 @@ beforeEach(() => {
       const i = entries.findIndex((e) => e.item.id === item.id);
       entries[i] = { ...entries[i], item };
     }),
+    move: vi.fn(),
     remove: vi.fn(async () => {}),
     markFolder: async (p: string) => p,
     newId: () => 'NewSet01',

@@ -47,12 +47,15 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `check` | 読み直さずに、直近の読み込み（起動時・F5・`reload`・CLI の書き込み前）の結果を返す |
 | `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る |
 | `launcher item add` | メイン画面にアイテムを足す |
-| `launcher item update <id か表示名>` | メイン画面のアイテムを変える |
+| `launcher item update <id か表示名>` | メイン画面のアイテムを変える・別のタブ（データファイル）へ移す |
 | `launcher item remove <id か表示名>` | メイン画面のアイテムを消す |
 | `launcher set row list <セット>` | セットの行の一覧。行番号（0 始まり）と行の名前を付ける |
 | `launcher set row add <セット>` | セットに行を足す |
 | `launcher set row remove <セット> <行番号>` | セットの行を消す。最後の 1 行は消さない |
 | `workspace list` | ワークスペースの一覧（グループ数・アイテム数つき） |
+| `workspace add` | ワークスペースを足す |
+| `workspace update <id か名前>` | ワークスペースの名前・並び順を変える |
+| `workspace remove <id か名前>` | 空のワークスペースを消す |
 | `workspace item list` | ワークスペースのアイテムの一覧。`--workspace`・`--group`・`--grep` で絞る |
 | `workspace item add` | ワークスペースにアイテムを足す |
 | `workspace item update <id か表示名>` | ワークスペースのアイテムを変える・移す |
@@ -66,17 +69,17 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 | オプション | 使えるコマンド | 内容 |
 | --- | --- | --- |
-| `--name` | item add（必須。フォルダ取込を除く）／update、group add（必須）／update | 表示名 |
+| `--name` | item add（必須。フォルダ取込を除く）／update、group add（必須）／update、workspace add（必須）／update | 表示名 |
 | `--path` | item add（必須。セットを除く）／update、set row add | ファイル・フォルダ・URL・コマンド。相対パスは `qdl` を実行したフォルダが基準。セットでは行の開くもの |
 | `--args` | item add／update、set row add | コマンドライン引数。セットでは `--path` の行にだけ付けられる |
 | `--item` | launcher item add（`--type set`）、set row add | 行の開くものにする登録済みのアイテム（id か表示名）。`--path` とはどちらか一方 |
 | `--label` | launcher item add（`--type set`）、set row add | 行の名前 |
 | `--memo` | item add／update | メモ |
-| `--file` `--tab` | launcher item add | 足すデータファイル、またはタブ（その先頭のデータファイル）。省略時は `datafiles/data.json` |
+| `--file` `--tab` | launcher item add／update | 足す（update では移す）データファイル、またはタブ（その先頭のデータファイル）。add で省略したときは `datafiles/data.json` |
 | `--type` | launcher item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`window`（ウィンドウ操作） |
 | `--group` | workspace item add／update | 入れるグループ。update で `""` を渡すと未分類へ移す |
 | `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる |
-| `--position` | workspace item add／update、set row add | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。set row add では行を差し込む位置（省略時は最後） |
+| `--position` | workspace item add／update、workspace add／update、set row add | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの並び。set row add では行を差し込む位置（省略時は最後） |
 | `--color` | workspace group add／update | `primary` `success` `danger` `warning` `info` `secondary` `purple` `teal` `pink` `indigo` `orange` `cyan`、または `#rrggbb` |
 | `--parent` | workspace group add／update | 親グループ（2 段まで）。update で `""` を渡すと最上位へ移す |
 | `--set key=value` | item add／update | 専用のオプションが無い項目（例 `--set windowTitle=メモ帳`、`--set entries='[{"itemId":"…"}]'`）。値が JSON の配列・オブジェクト・数値・`true`／`false`ならその型になる |
@@ -93,7 +96,8 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **書き込んだ後**: 開いている画面に反映し、「CLI: …を追加しました」のようなトーストで知らせる（失敗・`--dry-run`・一覧では出さない）
 - **セットの作り方**: `launcher item add --type set --name <名前>` に、最初の行を `--item <id か表示名>` か `--path <パス>`（`--args`）で渡す（`--label` で行の名前）。`--set entries='[…]'` で行をまとめて渡してもよいが、`--item`・`--path` とは併用できない。2 行目からは `launcher set row add` で足す
 - **セットの行にできるもの**: 開くものだけ。`--item` で指せるのは種類 `item`（通常のアイテム）と `window`（ウィンドウ操作）のアイテムで、フォルダ取込・セットなどは断る（フォルダ取込の中身は `--path` で行にする）。対象ウィンドウとウィンドウ位置は CLI からは付けず、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付ける
-- **触れないもの**: クリップボードアイテムは足せず、変えられない（画面の操作で作るもの）。消すことはできる。中身のあるグループは消さない。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
+- **別のタブへ移す**: `launcher item update <id か表示名> --tab <タブ>`（か `--file`）。id を保ったまま移すので、セットの行は切れない。ほかの項目の変更と同時にもできる。移す先に書いてから元のファイルから消す（途中で失敗しても、消えずに 2 つのファイルに残る）。そのタブのどれかのデータファイルに既にあれば移さず、`"unchanged": true` を返す。自動取込で入ったアイテムは移さない（取込は取り込み先のファイルの中で入れ替えるので、次の取込でまた足される）
+- **触れないもの**: クリップボードアイテムは足せず、変えられない（画面の操作で作るもの）。消すことはできる。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
 - **ワークスペースに足せる種類**: 通常のアイテムだけ。ウィンドウ操作・セットを足すのは画面で行う（既にあるものは update で変えられる）
 
 ### 出力
@@ -102,7 +106,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 - `list`: 配列。各要素に場所を付ける（メイン画面は `file`・`tab`、ワークスペースは `location: ["ワークスペース名", "グループ", "サブグループ"]`）
 - `add`: 足したもの（採番した `id` を含む）
-- `update`: `{ "before": 変える前, "item": 変えた後 }`（グループは `group`）
+- `update`: `{ "before": 変える前, "item": 変えた後 }`（グループは `group`、ワークスペースは `workspace`）。別のタブへ移したときは `"moved": { "from", "to" }` を付ける
 - `remove`: `{ "removed": 消したもの }`
 - `set row list`・`set row add`・`set row remove`: `{ "set": { id, displayName, file, tab }, "entries": [ 行 ] }`（変えた後の全部の行）。各行に行番号 `index` と行の名前 `name` を付け、指しているアイテムが見つからない行には `"missing": true` を付ける
 - `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので `id` は無い）
@@ -122,7 +126,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `not_found` | 指定したものが無い | 2 |
 | `ambiguous` | 表示名が複数に当たった（`candidates` に候補） | 2 |
 | `invalid` | 内容が検証を通らない | 1 |
-| `conflict` | 今の状態ではできない（中身のあるグループや、セットの最後の 1 行を消すなど） | 1 |
+| `conflict` | 今の状態ではできない（中身のあるグループ・ワークスペースや、セットの最後の 1 行を消す、自動取込のアイテムを移すなど） | 1 |
 | `unavailable` | 設定ファイルが読めない（破損など） | 1 |
 | `internal` | 想定外の失敗 | 1 |
 
@@ -177,7 +181,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 ### 現在の制限
 
-1. **扱えるのはアイテム・セットの行・ワークスペースのグループまで**: タブ・データファイルの追加と削除、`settings.json` の変更（ホットキーなど）、アーカイブ、ワークスペース自体の追加と削除はできません。メイン画面のアイテムを別のデータファイルへ移すこともできません
+1. **扱えるのはアイテム・セットの行・ワークスペースとそのグループまで**: タブ・データファイルの追加と削除、`settings.json` の変更（ホットキーなど）、アーカイブはできません
 2. **アンインストールしても PATH は残る**: アンインストールしても PATH の項目と `%LOCALAPPDATA%\quick-dash-launcher\bin` は残ります。先に管理画面で「QuickDashLauncher CLI を使えるようにする」を外してからアンインストールしてください
 3. **Windows のみ**: 名前付きパイプを使うので、本体と同じく Windows でだけ動きます
 
