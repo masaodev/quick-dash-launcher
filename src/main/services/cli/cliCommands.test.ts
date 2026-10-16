@@ -53,6 +53,14 @@ function context(overrides: Partial<CliContext> = {}): CliContext {
     lastReport: vi.fn(() => report()),
     syncBeforeWrite: vi.fn(async () => {}),
     clipboard: { save: vi.fn(), read: vi.fn(() => null) },
+    tabs: {
+      load: vi.fn(),
+      filesOnDisk: () => [],
+      countItems: vi.fn(),
+      createFile: vi.fn(),
+      deleteFile: vi.fn(),
+      save: vi.fn(),
+    },
     launcher: {
       load: vi.fn(async () => {
         throw new Error('ディスクが読めない');

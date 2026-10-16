@@ -17,6 +17,7 @@ import {
   validateAsDataItem,
 } from './cliShared.js';
 import type { ClipboardTextStore } from './cliShared.js';
+import { normalizeDataFileName as normalizeFileName } from './cliTabCommands.js';
 import { checkCliSetEntries, entryFromOptions } from './cliSetCommands.js';
 
 /**
@@ -92,12 +93,6 @@ function candidate(entry: LauncherEntry, tabs: DataFileTab[]): CliCandidate {
     displayName: itemName(entry.item),
     location: [tabOf(entry.file, tabs) ?? entry.file],
   };
-}
-
-function normalizeFileName(name: string): string {
-  const withDir =
-    name.includes('/') || name.includes('\\') ? name.replace(/\\/g, '/') : `datafiles/${name}`;
-  return withDir.endsWith('.json') ? withDir : `${withDir}.json`;
 }
 
 async function resolveTargetFile(
