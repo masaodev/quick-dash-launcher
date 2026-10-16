@@ -247,6 +247,43 @@ describe('executeSet', () => {
     expect(calls).toEqual(['place:1', 'maximize:1']);
   });
 
+  it('前面に出さない行は、位置を当てて最大化する間の前面を控えて戻す（前面に出す行は控えない）', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'QDL_main', processName: 'WindowsTerminal.exe' },
+      { hwnd: 2n, title: 'a.png - ペイント', processName: 'mspaint.exe' },
+    ]);
+    deps.holdForeground = (hwnd) => {
+      calls.push(`hold:${hwnd}`);
+      return () => calls.push(`release:${hwnd}`);
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: '並べる',
+      launchMode: 'sequential',
+      entries: [
+        {
+          itemId: 'term1aaa',
+          window: { processName: 'WindowsTerminal.exe' },
+          placement: { x: 0, y: 0, width: 960, height: 1040, state: 'maximized' },
+        },
+        {
+          window: { processName: 'mspaint.exe' },
+          placement: { x: 0, y: 0, width: 960, height: 1040, state: 'maximized' },
+          activateWindow: true,
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual([
+      'hold:1',
+      'place:1',
+      'maximize:1',
+      'release:1',
+      'place:2',
+      'maximize:2',
+    ]);
+  });
+
   it('無ければ開いてウィンドウが出るのを待ってから位置を合わせる', async () => {
     const { deps, calls } = makeDeps();
     const set: SetItem = {
