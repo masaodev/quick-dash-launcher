@@ -259,7 +259,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     const customIcon =
       (isLauncherItem(item) && item.icon) ||
       (isWindowInfo(item) && item.icon) ||
-      (isClipboardItem(item) && item.customIcon);
+      ((isClipboardItem(item) || isSetItem(item)) && item.icon);
 
     if (customIcon) {
       return <img src={customIcon} alt="" width="24" height="24" />;

@@ -4,7 +4,7 @@ import {
   convertEditableJsonItemToRegisterItem,
   getDefaultTab,
 } from '@common/utils/dataConverters';
-import { DIR_OPTIONS_DEFAULTS, isEditableJsonItem, isEditingLauncherItem } from '@common/types';
+import { DIR_OPTIONS_DEFAULTS, isEditableJsonItem } from '@common/types';
 import type { RegisterItem, EditingAppItem, DataFileTab, EditableJsonItem } from '@common/types';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
@@ -40,24 +40,13 @@ export function useModalInitializer() {
     onLoadCustomIcon: (index: number, customIconFileName: string) => Promise<void>
   ): Promise<RegisterItem[]> => {
     try {
-      let item: RegisterItem;
-      let customIconFileName: string | undefined;
+      // カスタムアイコンは変換後の RegisterItem から読む（アイテム・クリップボード・セットのどれでも入る）
+      const item: RegisterItem = isEditableJsonItem(editingItem)
+        ? convertEditableJsonItemToRegisterItem(editingItem, tabs)
+        : convertEditingAppItemToRegisterItem(editingItem, tabs);
 
-      if (isEditableJsonItem(editingItem)) {
-        item = convertEditableJsonItemToRegisterItem(editingItem, tabs);
-        const itemType = editingItem.item.type;
-        if ((itemType === 'item' || itemType === 'clipboard') && 'customIcon' in editingItem.item) {
-          customIconFileName = editingItem.item.customIcon;
-        }
-      } else {
-        item = convertEditingAppItemToRegisterItem(editingItem, tabs);
-        if (isEditingLauncherItem(editingItem) && editingItem.customIcon) {
-          customIconFileName = editingItem.customIcon;
-        }
-      }
-
-      if (customIconFileName) {
-        await onLoadCustomIcon(0, customIconFileName);
+      if (item.customIcon) {
+        await onLoadCustomIcon(0, item.customIcon);
       }
 
       return [item];
