@@ -103,6 +103,11 @@ export function createCliContext(
         (await WorkspaceService.getInstance()).updateGroup(id, updates),
       deleteGroup: async (id, deleteItems) =>
         (await WorkspaceService.getInstance()).deleteGroup(id, deleteItems),
+      archiveGroup: async (id) => (await WorkspaceService.getInstance()).archiveGroup(id),
+      loadArchivedGroups: async () => (await WorkspaceService.getInstance()).loadArchivedGroups(),
+      loadArchivedItems: async () => (await WorkspaceService.getInstance()).loadArchivedItems(),
+      moveGroupToWorkspace: async (id, workspaceId) =>
+        (await WorkspaceService.getInstance()).moveGroupToWorkspace(id, workspaceId),
     },
     markFolder: withFolderMarker,
     changed: (target, message) => {

@@ -405,7 +405,8 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   launcher set row list|add|remove       メインウィンドウのセットの行
   workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
-  workspace group list|add|update|remove   ワークスペースのグループ
+  workspace group list|add|update|remove|archive   ワークスペースのグループ
+  workspace archive list|restore           アーカイブしたグループ
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
   reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
   status                                   本体の版・設定フォルダなどを表示する
@@ -456,6 +457,9 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
   qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
   qdl workspace group remove <id か名前>      空のグループを削除（--dry-run）
+  qdl workspace group archive <id か名前>     サブグループ・アイテムごとアーカイブする（--dry-run）
+  qdl workspace archive list                  アーカイブしたグループの一覧（--grep）
+  qdl workspace archive restore <id か名前>   復元する（--workspace <復元先>。省略時は元のワークスペース、--dry-run）
 
 --group・--parent・--workspace は id か表示名の完全一致です。--color は primary success danger warning
 info secondary purple teal pink indigo orange cyan か #rrggbb。グループは 2 段まで入れ子にできます。
@@ -496,7 +500,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       unknownVerb: '不明な操作です: {{command}}',
       missingVerb: '操作を指定してください（list / add / update / remove）',
       missingWorkspaceNoun:
-        'workspace の後に list / add / update / remove / item / group を指定してください',
+        'workspace の後に list / add / update / remove / item / group / archive を指定してください',
+      missingArchiveVerb: '操作を指定してください（list / restore）',
       badJson: '依頼を JSON として読めません',
       badShape: '依頼の形が正しくありません',
       versionMismatch:
@@ -557,6 +562,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       workspace: 'ワークスペース',
       group: 'グループ',
       workspaceItem: 'ワークスペースのアイテム',
+      archivedGroup: 'アーカイブのグループ',
     },
     changed: {
       launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
@@ -572,6 +578,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       groupAdded: 'CLI: ワークスペースにグループ「{{name}}」を追加しました',
       groupUpdated: 'CLI: ワークスペースのグループ「{{name}}」を変更しました',
       groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
+      groupArchived: 'CLI: グループ「{{name}}」をアーカイブしました',
+      groupRestored: 'CLI: グループ「{{name}}」をワークスペース「{{workspace}}」に復元しました',
       setEntryAdded: 'CLI: セット「{{set}}」に「{{name}}」の行を追加しました',
       setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },

@@ -404,7 +404,8 @@ Commands:
   launcher set row list|add|remove       Rows of a set in the launcher
   workspace list|add|update|remove         Workspaces themselves
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
-  workspace group list|add|update|remove   Groups in workspaces
+  workspace group list|add|update|remove|archive   Groups in workspaces
+  workspace archive list|restore           Archived groups
   check                                    Show the result of the last load (invalid entries, new IDs, outside changes) without reloading
   reload                                   Reload the settings files (same as F5 in the launcher)
   status                                   Show the app version, the settings folder, and more
@@ -455,6 +456,10 @@ Works with workspaces (workspace.json).
   qdl workspace group add                     Add a group (--name is required. --color --parent --workspace --dry-run)
   qdl workspace group update <id or name>     Change a group (--name --color --parent <parent> ("" for top level) --dry-run)
   qdl workspace group remove <id or name>     Delete an empty group (--dry-run)
+  qdl workspace group archive <id or name>    Archive a group with its subgroups and items (--dry-run)
+  qdl workspace archive list                  List archived groups (--grep)
+  qdl workspace archive restore <id or name>  Restore an archived group (--workspace <target>; defaults to
+                                              its original workspace. --dry-run)
 
 --group, --parent, and --workspace take an id or an exact display name. --color is primary, success, danger,
 warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. Groups can be nested two levels deep.
@@ -494,7 +499,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
       missingVerb: 'Specify an action (list / add / update / remove)',
-      missingWorkspaceNoun: 'After workspace, specify list, add, update, remove, item, or group',
+      missingWorkspaceNoun:
+        'After workspace, specify list, add, update, remove, item, group, or archive',
+      missingArchiveVerb: 'Specify an action (list / restore)',
       badJson: "Can't read the request as JSON",
       badShape: 'The request is malformed',
       versionMismatch:
@@ -553,6 +560,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       workspace: 'workspace',
       group: 'group',
       workspaceItem: 'workspace item',
+      archivedGroup: 'archived group',
     },
     changed: {
       launcherAdded: 'CLI: Added "{{name}}" to the launcher',
@@ -568,6 +576,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       groupAdded: 'CLI: Added the group "{{name}}" to the workspace',
       groupUpdated: 'CLI: Changed the group "{{name}}" in the workspace',
       groupRemoved: 'CLI: Deleted the group "{{name}}" from the workspace',
+      groupArchived: 'CLI: Archived the group "{{name}}"',
+      groupRestored: 'CLI: Restored the group "{{name}}" to the workspace "{{workspace}}"',
       setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
       setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },
