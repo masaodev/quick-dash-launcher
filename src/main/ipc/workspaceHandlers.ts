@@ -274,6 +274,7 @@ export function setupWorkspaceHandlers(): void {
           throw new Error(mainI18n.t('launcher.messages.clipboardDataMissing'));
         }
 
+        // 成功のトーストは画面側が結果を見て出す（書き戻す前に出すと、終わっていないように見える）
         const restored = await launchItem(
           {
             type: 'clipboard',

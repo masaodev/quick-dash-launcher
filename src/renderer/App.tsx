@@ -282,12 +282,14 @@ function App(): React.ReactElement {
         });
         await window.electronAPI.executeWindowOperation(item);
       } else if (isClipboardItem(item)) {
-        await window.electronAPI.showToastWindow({
-          displayName: item.displayName,
-          itemType: 'clipboard',
-        });
+        // 書き戻しは一瞬なので、書き戻してから「コピーしました」を出す（前に出すと終わっていないように見える）
         const restored = await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
-        if (!restored.success) {
+        if (restored.success) {
+          await window.electronAPI.showToastWindow({
+            displayName: item.displayName,
+            itemType: 'clipboard',
+          });
+        } else {
           await window.electronAPI.showToastWindow({
             type: 'error',
             message: t('launcher.messages.launchFailed', {

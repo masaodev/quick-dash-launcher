@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import type { ClipboardContentSource } from '@common/types/clipboard';
 
 import { ClipboardService } from '../services/clipboardService.js';
 
@@ -20,5 +21,9 @@ export function setupClipboardHandlers(): void {
   );
   ipcMain.handle(IPC_CHANNELS.CLIPBOARD_DUPLICATE_DATA, (_e, ref: string) =>
     service.duplicateClipboardData(ref)
+  );
+  ipcMain.handle(IPC_CHANNELS.CLIPBOARD_SAVE_TEXT, (_e, text: string) => service.saveText(text));
+  ipcMain.handle(IPC_CHANNELS.CLIPBOARD_READ_CONTENT, (_e, source: ClipboardContentSource) =>
+    service.readContent(source)
   );
 }

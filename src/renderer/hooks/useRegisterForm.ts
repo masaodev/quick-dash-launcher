@@ -13,6 +13,7 @@ import { detectItemType } from '@common/utils/itemTypeDetector';
 import { DIR_OPTIONS_DEFAULTS } from '@common/types';
 
 import { debugInfo } from '../utils/debug';
+import { hasClipboardContent, saveClipboardText } from '../utils/clipboardText';
 
 import { useModalInitializer } from './useModalInitializer';
 import { useToast } from './useToast';
@@ -78,6 +79,17 @@ export function useRegisterForm(
   ): Promise<RegisterItem[] | null> => {
     const results = await Promise.all(
       itemsToCommit.map(async (item) => {
+        if (item.itemCategory === 'clipboard' && item.clipboardText !== undefined) {
+          try {
+            return await saveClipboardText(item);
+          } catch (error) {
+            debugInfo('クリップボードのテキストの保存に失敗:', error);
+            showError(
+              (error instanceof Error && error.message) || t('register.errors.clipboardSaveFailed')
+            );
+            return item;
+          }
+        }
         if (!needsClipboardCommit(item)) {
           return item;
         }
@@ -105,7 +117,9 @@ export function useRegisterForm(
     );
 
     const hasCommitError = results.some(
-      (item) => needsClipboardCommit(item) && !item.clipboardDataRef
+      (item) =>
+        (needsClipboardCommit(item) && !item.clipboardDataRef) ||
+        (item.itemCategory === 'clipboard' && item.clipboardText !== undefined)
     );
     return hasCommitError ? null : results;
   };
@@ -209,6 +223,7 @@ export function useRegisterForm(
         delete item.clipboardSavedAt;
         delete item.clipboardPreview;
         delete item.clipboardSessionId;
+        delete item.clipboardText;
       };
 
       switch (value) {
@@ -301,7 +316,7 @@ export function useRegisterForm(
       }
 
       if (item.itemCategory === 'clipboard') {
-        if (!item.clipboardSessionId && !item.clipboardDataRef) {
+        if (!hasClipboardContent(item)) {
           newErrors[i].path = t('register.errors.clipboardRequired');
         }
       }
