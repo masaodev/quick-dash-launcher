@@ -393,6 +393,8 @@ export function linkEntryToWindow(
   };
   if (window.windowState !== 'minimized') {
     linked.placement = placementFromWindow(window, desktopCount);
+    // 全デスクトップに表示する行は、デスクトップの番号を持たない
+    if (entry.pinToAllDesktops) delete linked.placement.virtualDesktopNumber;
   }
   return linked;
 }

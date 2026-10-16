@@ -142,6 +142,42 @@ describe('launcher item add', () => {
     expect(r).toMatchObject({ type: 'set', entries: [{ itemId: 'Memo0001' }] });
   });
 
+  it('ウィンドウ切り替えはセットの行と同じキーで渡せる', async () => {
+    const r = await runLauncherItemCommand(
+      'add',
+      [
+        '--name',
+        'メモ',
+        '--path',
+        'notepad.exe',
+        '--set',
+        'window={"processName":"notepad.exe"}',
+        '--set',
+        'placement={"x":0,"y":0}',
+      ],
+      ctx
+    );
+    expect(r).toMatchObject({
+      window: { processName: 'notepad.exe' },
+      placement: { x: 0, y: 0 },
+    });
+  });
+
+  it('古い windowConfig= も受け付け、新しいキーに直して書く', async () => {
+    await runLauncherItemCommand(
+      'update',
+      ['Memo0001', '--set', 'windowConfig={"title":"*","processName":"notepad.exe","x":10}'],
+      ctx
+    );
+    const saved = entries.find((e) => e.item.id === 'Memo0001')!.item;
+    expect(saved).not.toHaveProperty('windowConfig');
+    expect(saved).toMatchObject({
+      window: { processName: 'notepad.exe' },
+      placement: { x: 10 },
+      activateWindow: true,
+    });
+  });
+
   it('その種類に無い項目を --set すると、黙って落とさずに invalid', async () => {
     const e = await errorOf(
       runLauncherItemCommand(

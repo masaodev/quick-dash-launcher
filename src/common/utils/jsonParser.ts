@@ -15,6 +15,7 @@ import type {
   JsonLayoutItem,
   JsonSetItem,
   SetEntry,
+  WindowConfig,
 } from '@common/types';
 import type { ClipboardFormat } from '@common/types/clipboard';
 import { isRecord } from '@common/types/guards';
@@ -23,6 +24,7 @@ import { getFallbackT } from '@common/i18n';
 import type { TFunction } from 'i18next';
 
 import { normalizeWindowTitleForProcessOnly } from './windowTitle';
+import { replaceWindowConfig } from './itemWindowConversion';
 
 // ============================================================
 // ID生成
@@ -484,9 +486,13 @@ export function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLaun
   validateOptionalString(obj, item, 'autoImportRuleId');
   validateTypedFields(obj, item, ['updatedAt'], 'number');
 
-  if (obj.windowConfig !== undefined) {
-    item.windowConfig = validateWindowConfig(obj.windowConfig);
-  }
+  // 旧形式の windowConfig は、その場で新しいキーに直す（移行が保留になった間や、古い CLI の --set でも動きを変えない）
+  const source =
+    obj.windowConfig !== undefined
+      ? replaceWindowConfig({ ...obj, windowConfig: validateWindowConfig(obj.windowConfig) })!
+      : obj;
+  Object.assign(item, pickWindowSwitchFields(source));
+  if (typeof source.pinToAllDesktops === 'boolean') item.pinToAllDesktops = source.pinToAllDesktops;
 
   return item;
 }
@@ -720,6 +726,46 @@ function compact<T extends object>(obj: T): T {
 }
 
 /**
+ * セットの行と単一アイテムに共通の、ウィンドウ切り替えの項目（window・placement・ifOpen・activateWindow・
+ * waitSeconds）を読む。型の合わない値・中身の無い値は持たない
+ */
+function pickWindowSwitchFields(
+  source: Record<string, unknown>
+): Pick<SetEntry, 'window' | 'placement' | 'ifOpen' | 'activateWindow' | 'waitSeconds'> {
+  const result: Pick<
+    SetEntry,
+    'window' | 'placement' | 'ifOpen' | 'activateWindow' | 'waitSeconds'
+  > = {};
+  if (isRecord(source.window)) {
+    const window = compact({
+      processName: pickString(source.window, 'processName'),
+      title: pickString(source.window, 'title'),
+    });
+    // 中身の無い見つけ方は、どのウィンドウにも合ってしまうので持たない
+    if (window.processName || window.title) result.window = window;
+  }
+  if (isRecord(source.placement)) {
+    const p = source.placement;
+    const placement = compact({
+      x: pickNumber(p, 'x'),
+      y: pickNumber(p, 'y'),
+      width: pickNumber(p, 'width'),
+      height: pickNumber(p, 'height'),
+      virtualDesktopNumber: pickDesktopNumber(p),
+      state: p.state === 'maximized' ? ('maximized' as const) : undefined,
+    });
+    // 中身の無い位置は持たない（位置のある行に数えられてしまう）
+    if (Object.keys(placement).length > 0) result.placement = placement;
+  }
+  if (source.ifOpen === 'move' || source.ifOpen === 'openNew') result.ifOpen = source.ifOpen;
+  if (typeof source.activateWindow === 'boolean') result.activateWindow = source.activateWindow;
+  const waitSeconds = pickNumber(source, 'waitSeconds');
+  if (waitSeconds !== undefined && waitSeconds > 0) result.waitSeconds = waitSeconds;
+
+  return result;
+}
+
+/**
  * セットの行を検証する
  */
 export function validateSetEntry(entry: unknown, index: number): SetEntry {
@@ -737,39 +783,16 @@ export function validateSetEntry(entry: unknown, index: number): SetEntry {
   const label = pickString(entry, 'label');
   if (label) result.label = label;
 
-  if (isRecord(entry.window)) {
-    const window = compact({
-      processName: pickString(entry.window, 'processName'),
-      title: pickString(entry.window, 'title'),
-    });
-    // 中身の無い見つけ方は、どのウィンドウにも合ってしまうので持たない
-    if (window.processName || window.title) result.window = window;
-  }
-  if (isRecord(entry.placement)) {
-    const p = entry.placement;
-    const placement = compact({
-      x: pickNumber(p, 'x'),
-      y: pickNumber(p, 'y'),
-      width: pickNumber(p, 'width'),
-      height: pickNumber(p, 'height'),
-      virtualDesktopNumber: pickDesktopNumber(p),
-      state: p.state === 'maximized' ? ('maximized' as const) : undefined,
-    });
-    // 中身の無い位置は持たない（位置のある行に数えられてしまう）
-    if (Object.keys(placement).length > 0) result.placement = placement;
-  }
-  if (entry.ifOpen === 'move' || entry.ifOpen === 'openNew') result.ifOpen = entry.ifOpen;
-  if (typeof entry.activateWindow === 'boolean') result.activateWindow = entry.activateWindow;
-  const waitSeconds = pickNumber(entry, 'waitSeconds');
-  if (waitSeconds !== undefined && waitSeconds > 0) result.waitSeconds = waitSeconds;
+  Object.assign(result, pickWindowSwitchFields(entry));
+  if (entry.pinToAllDesktops === true) result.pinToAllDesktops = true;
 
   return result;
 }
 
 /**
- * WindowConfigを検証
+ * 旧形式の windowConfig を検証する（新しいキーに直す前。型の合わない値は今までどおり不正にする）
  */
-function validateWindowConfig(config: unknown): JsonLauncherItem['windowConfig'] {
+function validateWindowConfig(config: unknown): WindowConfig {
   if (typeof config !== 'object' || config === null) {
     throw new Error('windowConfig must be an object');
   }
@@ -777,7 +800,7 @@ function validateWindowConfig(config: unknown): JsonLauncherItem['windowConfig']
   const obj = config as Record<string, unknown>;
 
   // titleはオプションとして扱う（古いデータとの互換性のため）
-  const result: NonNullable<JsonLauncherItem['windowConfig']> = {
+  const result: WindowConfig = {
     title: '',
   };
 

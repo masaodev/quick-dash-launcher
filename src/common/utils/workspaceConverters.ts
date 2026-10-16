@@ -26,6 +26,7 @@ import type { RegisterItem, WindowOperationConfig } from '../types/register';
 
 import { windowInfoToWindowItem } from './windowInfoConverter';
 import { pickWindowPlacement } from './windowPlacement.js';
+import { itemWindowSwitchFields, pickItemWindowSwitch } from './itemWindowConversion.js';
 
 /** undefined の値を持つキーを落とす（ファイルに `"args": undefined` のような穴を残さないため） */
 function compact<T extends object>(obj: T): T {
@@ -44,7 +45,7 @@ function launcherBody(item: LauncherItem): WorkspaceItemUpdate {
     args: item.args,
     originalPath: item.originalPath,
     customIcon: item.customIcon,
-    windowConfig: item.windowConfig,
+    ...pickItemWindowSwitch(item),
     memo: item.memo,
   });
 }
@@ -159,7 +160,7 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         icon: item.icon,
         targetTab: '',
         customIcon: item.customIcon,
-        windowConfig: item.windowConfig,
+        ...pickItemWindowSwitch(item),
         itemCategory: 'item',
         memo: item.memo,
       };
@@ -213,7 +214,7 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         path: registerItem.path,
         args: registerItem.args || undefined,
         customIcon: registerItem.customIcon,
-        windowConfig: registerItem.windowConfig,
+        ...itemWindowSwitchFields(registerItem),
         memo,
       });
   }

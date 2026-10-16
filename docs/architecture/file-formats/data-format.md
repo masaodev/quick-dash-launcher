@@ -123,7 +123,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ## 3. アイテムタイプ詳細
 
-フィールドの一覧・型は、型定義（`src/common/types/json-data.ts`。`WindowConfig`・`SetEntry` は `src/common/types/launcher.ts`）を正とします（[6 章](#6-データ型定義typescript)）。この章には、各アイテムの必須フィールド・既定値・省略時の扱い・注意点と、実行時の挙動だけを書きます。
+フィールドの一覧・型は、型定義（`src/common/types/json-data.ts`。`ItemWindowSwitch`・`SetEntry` は `src/common/types/launcher.ts`）を正とします（[6 章](#6-データ型定義typescript)）。この章には、各アイテムの必須フィールド・既定値・省略時の扱い・注意点と、実行時の挙動だけを書きます。
 
 - 全アイテムが `id`（必須。8 文字の英数字、2.3）と、任意の `memo`（自由記述メモ）・`updatedAt`（更新日時、Unix タイムスタンプ ms）を持つ
 - 読み込み時の検証は `src/common/utils/jsonParser.ts` が行う。必須フィールドが欠けた・型が違うアイテムはスキップされる（5.1）。スキーマにない未知のフィールドは黙って落ちる
@@ -135,7 +135,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 #### 3.1.1. フィールドの要点
 
 - **必須**: `type: "item"`・`displayName`（表示名）・`path`（ファイルパス・URL・コマンド）。`displayName` と `path` は空文字不可
-- **任意**: `args`（コマンドライン引数）・`customIcon`（3.1.4）・`windowConfig`（3.1.5）・`autoImportRuleId`
+- **任意**: `args`（コマンドライン引数）・`customIcon`（3.1.4）・ウィンドウ切り替えの `window`・`placement`・`ifOpen`・`activateWindow`・`waitSeconds`・`pinToAllDesktops`（3.1.5）・`autoImportRuleId`
 - `autoImportRuleId` は自動取込ルールの ID。このフィールドがあるアイテムは自動取込の管理対象になる
 
 #### 3.1.2. サポートされるパス種類
@@ -214,19 +214,23 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 - **配置場所**: `config/icon-cache/custom/`
 - **対応形式**: `.png`, `.jpg`, `.jpeg`, `.ico`, `.svg`
 
-#### 3.1.5. ウィンドウ制御設定（WindowConfig）
+#### 3.1.5. ウィンドウ切り替え（ItemWindowSwitch）
 
-アイテム起動時のウィンドウ検索・位置・サイズ制御を設定できます。
+開く前に既存のウィンドウを探し、見つかればそれを前に出します（位置があれば位置も合わせます）。キーの形はセットの行（3.3.2）と同じで、実行もセットの行と同じ処理です。
 
 ##### 3.1.5.1. フィールドの要点
 
-- **`title`**: 検索するウィンドウタイトル（ワイルドカード可、3.1.5.2）。型定義では必須だが、読み込み時は古いデータとの互換のため省略を許し、`''` で補う（`validateWindowConfig`）
-- **`processName`**: プロセス名で絞り込む（部分一致）
-- **`x`・`y`・`width`・`height`**: 指定した値だけ変更する（仮想スクリーン座標、3.1.5.5）。省略時は変更しない
-- **`moveToActiveMonitorCenter`**（既定 false）: マウスカーソルのあるモニターの中央へ移動する。`x`・`y` は計算した中央座標で置き換わる
-- **`virtualDesktopNumber`**: 移動先の仮想デスクトップ番号（1 始まり）。省略時は移動しない。`pinToAllDesktops` が true のときは使わない
-- **`activateWindow`**（既定 true）: false のときは前面化しない
-- **`pinToAllDesktops`**（既定 false）: 全仮想デスクトップに表示する（全デスクトップに表示）
+| キー | 意味 | 既定値・省略時 |
+| --- | --- | --- |
+| `window` | 探すウィンドウ（`processName`＝exe 名、部分一致／`title`＝ウィンドウタイトル、ワイルドカード可、3.1.5.2）。`title` を省略するとプロセス名だけで探す | ウィンドウ切り替えをしない（普通に開くだけ） |
+| `placement` | ウィンドウ位置（`x`・`y`・`width`・`height`＝仮想スクリーン座標系、3.1.5.5／`virtualDesktopNumber`＝1 始まりの整数／`state: "maximized"`＝最大化） | 位置を合わせない（見つかれば前に出すだけ） |
+| `ifOpen` | ウィンドウが既に開いていたとき。`"move"`＝開かずに前に出す（位置があれば合わせる）／`"openNew"`＝いつも開く | `"move"` |
+| `activateWindow` | 見つけたウィンドウを前面に出すか | `true`（出す。セットの行の既定 `false` とは違う） |
+| `waitSeconds` | 位置があるとき、開いてからウィンドウが出るのを待つ秒数 | 30 |
+| `pinToAllDesktops` | 全仮想デスクトップにピン止めする。ピン止めしたときは `placement.virtualDesktopNumber` を使わない | `false` |
+
+- `window` が無い（`processName`・`title` のどちらも無い）アイテムでは、ほかのキーがあっても使わない
+- 型の合わない値は、セットの行と同じく黙って捨てる（3.3.4。`pinToAllDesktops` は真偽値だけ）
 
 ##### 3.1.5.2. ワイルドカード検索
 
@@ -242,15 +246,14 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ##### 3.1.5.3. 動作仕様
 
-1. **ウィンドウ検索**: アイテム起動前に、`title`で指定されたウィンドウを検索
-   - ワイルドカード文字（`*` または `?`）が含まれている場合はワイルドカードマッチング
-   - 含まれていない場合は完全一致検索
-   - 大文字小文字を区別しない
-   - `processName`が指定されている場合、プロセス名でも絞り込み
-2. **ウィンドウ発見時**:
-   - 3.4.2 の「ウィンドウ発見時」と同じ手順（全デスクトップに表示 → 復元 → 位置・サイズ → 仮想デスクトップ移動 → ウィンドウのあるデスクトップへの切り替え → アクティブ化）でウィンドウを操作する（`tryActivateWindow`、`src/main/utils/windowActivator.ts`）
-   - 通常起動は実行しない。ただし `activateWindow` が true で前面化に失敗したときは、通常起動に進む（`src/main/ipc/itemHandlers.ts` の `openItem`）
-3. **ウィンドウ未発見時**: 通常通りアイテムを起動
+アイテムを「セットの 1 行」（`itemId` がそのアイテムで、`window`・`placement`・`ifOpen`・`waitSeconds` はアイテムの値、`activateWindow` はアイテムの値か `true`）として実行します（`executeLauncherItem`、`src/main/services/launch/setExecutor.ts`）。メイン画面・ワークスペース・登録画面の「試しに実行」のどれから開いても同じです。
+
+1. **位置が無いとき**: `window` に合うウィンドウが見つかれば前に出して終わり（Windows に前面化を断られても開き直さない）。見つからなければ開く。開いたウィンドウは動かさない
+2. **位置があるとき**: 見つかれば位置を合わせて前に出す。見つからなければ開き、`waitSeconds` 秒まで待って出てきたウィンドウに位置を合わせる。位置の当て方（画面に入らない位置・今は無い仮想デスクトップの扱いなど）はセットの位置のある行（3.3.5 の 3）と同じ
+3. **`ifOpen` が `"openNew"`**: 開いていても開く（位置があれば、開く前からあったウィンドウを除いて新しいものを待つ）
+4. **前に出すとき**: `placement.virtualDesktopNumber` の指定もピン止めも無く、ウィンドウが別の仮想デスクトップにあれば、そのデスクトップへ切り替える（セットの実行では切り替えない）
+5. **知らせ方**: 進み具合の表示は出さない。うまくいかなかったとき（待ちきれなかった、位置を当てられなかった、など）だけ警告のトーストで出す（待ちきれなかったときは「ウィンドウが出るのを N 秒待ちましたが、見つかりませんでした」）
+6. **重ねて実行しない**: 同じアイテム（同じ `id`）を実行中にもう一度実行しても何もしない（セットと同じ）
 
 ##### 3.1.5.4. 使用例
 
@@ -260,13 +263,9 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
   "type": "item",
   "displayName": "Chrome (右半分)",
   "path": "chrome.exe",
-  "windowConfig": {
-    "title": "Google Chrome",
-    "x": 960,
-    "y": 0,
-    "width": 960,
-    "height": 1080
-  }
+  "window": { "processName": "chrome.exe", "title": "*Google Chrome" },
+  "placement": { "x": 960, "y": 0, "width": 960, "height": 1080 },
+  "activateWindow": true
 }
 ```
 
@@ -280,6 +279,24 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 詳細は **[ウィンドウ制御システム](../window-control.md#ウィンドウ位置サイズ制御)** を参照してください。
 
+##### 3.1.5.6. 旧形式（windowConfig）からの変換
+
+v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブジェクト（`title`・`processName`・`x`・`y`・`width`・`height`・`virtualDesktopNumber`・`activateWindow`・`pinToAllDesktops`・`moveToActiveMonitorCenter`）に書いていました。データファイルの読み込みの最後に 1 回だけ新しいキーへ変換して書き戻します（`src/main/services/data/dataFileLoader.ts`、変換の中身は `src/common/utils/itemWindowConversion.ts`）。ワークスペースも同じ規則で変換します（[ワークスペースファイル形式](workspace-format.md#6-旧形式からの移行)）。
+
+| 元（`windowConfig` の中） | 変換後 |
+| --- | --- |
+| `title` | `window.title`。空と `"*"` は書かない（プロセス名だけで探す） |
+| `processName` | `window.processName` |
+| `x`・`y`・`width`・`height`・`virtualDesktopNumber` | `placement` にまとめる（1 つも無ければ `placement` を付けない） |
+| `activateWindow` | `false` ならそのまま、省略・`true` なら `true` を書く |
+| `pinToAllDesktops` | `true` のときだけ書く |
+| `moveToActiveMonitorCenter` | 捨てる（単一アイテムでは廃止。ウィンドウアイテムにはある） |
+
+- `title`・`processName` のどちらも無い（空の）`windowConfig` は、何にも合わない設定なので消すだけにする
+- `windowConfig` と新しいキーが両方あれば `windowConfig` を優先する（`ifOpen`・`waitSeconds` は残す）
+- 変換は戻せないので、書き換える前に全設定ファイルのスナップショットを 1 回だけ作る。旧グループ・旧ウィンドウ配置のセットへの変換（3.3.6）も要るときは `backup/<日時>_pre-set-migration/`、`windowConfig` だけのときは `backup/<日時>_pre-window-migration/`（`BackupService.createPreWindowMigrationSnapshot`）。`backupEnabled` に関係なく作り、作れなければ変換しない
+- 読めないデータファイルがあってセットへの変換と一緒に保留したとき、変換前に QDL の外で書いたとき、CLI で `--set windowConfig=…` を渡したときも、読み込み時の検証がその場で新しいキーに直すので、動きは変わらない（`validateJsonLauncherItem`）。型の合わない `windowConfig`（オブジェクトでない、`x` が数値でない など）は今までどおりアイテムごと不正にする
+
 #### 3.1.6. ショートカットファイルの自動解析
 
 `path` が実在する `.lnk` ファイルのとき、読み込み時にショートカットを解析します（`processShortcut`、`src/main/services/data/directoryScanner.ts`）：
@@ -287,7 +304,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 1. **ターゲットパス抽出**: ショートカットが指すファイル・フォルダのパスを取り出す（`path` は `.lnk` のまま）
 2. **引数抽出**: ショートカットに設定されたコマンドライン引数を使う（JSON の `args` は使わない）
 3. **表示名**: JSON の `displayName` をそのまま使う。ショートカットのファイル名（`.lnk` を除く）を表示名にするのは、フォルダ取込（3.2）で展開したときだけ
-4. **その他の項目**: `id`・`memo`・`customIcon`・`windowConfig`・`autoImportRuleId` は JSON の値を使う
+4. **その他の項目**: `id`・`memo`・`customIcon`・ウィンドウ切り替え（3.1.5）・`autoImportRuleId` は JSON の値を使う
 
 解析できなかったときは、通常のアイテムとして扱います。
 
@@ -381,6 +398,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 | `ifOpen` | 対象ウィンドウが既に開いていたとき。`"move"`＝開かずに位置だけ合わせる／`"openNew"`＝もう 1 つ開く | `"move"` |
 | `activateWindow` | 位置を合わせたウィンドウを前面に出すか | `false`（出さない。v0.8.0-beta.10 までは `true`） |
 | `waitSeconds` | 開いてからウィンドウが出るのを待つ秒数 | 30 |
+| `pinToAllDesktops` | 対象ウィンドウを全仮想デスクトップにピン止めする（位置のある行・無い行のどちらも）。ピン止めする行は `placement.virtualDesktopNumber` を使わない（画面からは書かない）。`true` のときだけ書く | `false` |
 
 - `itemId` で指せるのは通常アイテム（`type: "item"`）とウィンドウアイテム（`type: "window"`）。セット・クリップボードを指した行は実行時に失敗する（`src/main/services/launch/setExecutor.ts`）
 - `itemId`・`open`・`window`・`placement` をどれも持たない行は、旧グループの見つからない名前を `label` だけ残したもの。実行時に「アイテムが見つかりません」で失敗する
@@ -430,7 +448,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 `validateJsonSetItem`・`validateSetEntry`（`src/common/utils/jsonParser.ts`）が検証する。
 
 - `displayName` が空でない文字列でない、`entries` が配列でない、行がオブジェクトでないときは、セット全体が不正（5.1）
-- 行の中は知っているキーだけを写し、型の合わないものは黙って捨てる。捨てられるのは、空文字の文字列、有限の数でない数値、`path` の無い `open`、`"maximized"` 以外の `state`、`"move"`・`"openNew"` 以外の `ifOpen`、真偽値でない `activateWindow`、0 以下の `waitSeconds`、1 以上の整数でない `placement.virtualDesktopNumber`（0・負の数・小数）、未知のキー。中身の無い `window`（`processName`・`title` のどちらも無い）と `placement`（キーが 1 つも無い）も捨てる（どのウィンドウにも合う・位置のある行に数えられるのを防ぐ）
+- 行の中は知っているキーだけを写し、型の合わないものは黙って捨てる。捨てられるのは、空文字の文字列、有限の数でない数値、`path` の無い `open`、`"maximized"` 以外の `state`、`"move"`・`"openNew"` 以外の `ifOpen`、真偽値でない `activateWindow`、0 以下の `waitSeconds`、`true` でない `pinToAllDesktops`、1 以上の整数でない `placement.virtualDesktopNumber`（0・負の数・小数）、未知のキー。中身の無い `window`（`processName`・`title` のどちらも無い）と `placement`（キーが 1 つも無い）も捨てる（どのウィンドウにも合う・位置のある行に数えられるのを防ぐ）
 - `launchMode` は `"sequential"`・`"parallel"` 以外なら捨てる（順番に開く扱い）
 
 #### 3.3.5. 動作仕様
@@ -438,8 +456,8 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 実行は `executeSet`（`src/main/services/launch/setExecutor.ts`）。
 
 1. **開き方**: 順番に開くときは、行を開いてから次の行を開くまで 100ms（`GROUP_LAUNCH_DELAY_MS`、`src/common/constants.ts`）あける。ウィンドウを待って位置を合わせる処理は並行して続け、次の行はその完了を待たない。同時に開くときは全部の行を一度に始める
-2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。開くものの無い行（動かすだけ）は、`window` に合うウィンドウを前に出す（無ければ飛ばす。`window` が空なら失敗）。それ以外は、`ifOpen` が `"move"` で `window`（無ければアイテムの `windowConfig`）に合うウィンドウが見つかれば前に出すだけ（Windows に前面化を断られても開き直さない）、無ければ開く
-3. **位置のある行**: `window` で探す（3.3.2）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからないとき、開くものの無い行は飛ばす（ウィンドウアイテムを指す行は失敗）。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。合うウィンドウが複数あれば、`placement.virtualDesktopNumber` のデスクトップにあるものを先に使う。見つかったら、最小化の解除・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する（前面に出さない行では、位置を当ててから最大化するまでの間に前面が移ったら、元の前面のウィンドウに戻す。Windows の最大化の解除と最大化は、前面に出さずに行う手段が無いため）。記録した位置の中心がどの画面にも入らない（モニターを外したなど）ときは、主画面（左上が 0,0 の画面）の作業領域に収まる大きさにして、その中央に当てる。当てた後に読み直した位置（x・y）がずれていれば（管理者権限で動くウィンドウなど）、その行は失敗（「ウィンドウを動かせませんでした」）にする。大きさは見ない。`virtualDesktopNumber` が今のデスクトップの数より大きい（今は無いデスクトップ）ときは、番号を外して位置だけ当て、その行は失敗（「デスクトップ N がありません。位置だけ合わせました」）にする。利用者の見ているデスクトップは切り替えない
+2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。開くものの無い行（動かすだけ）は、`window` に合うウィンドウを前に出す（無ければ飛ばす。`window` が空なら失敗）。それ以外は、`ifOpen` が `"move"` で `window`（無ければ指すアイテムのウィンドウ切り替えの `windowConfig`。そのときはアイテムの `placement`・`activateWindow`・`pinToAllDesktops` も当てる、3.1.5）に合うウィンドウが見つかれば前に出すだけ（Windows に前面化を断られても開き直さない）、無ければ開く。行の `pinToAllDesktops` が `true` なら、前に出すウィンドウにピン止めも当てる
+3. **位置のある行**: `window` で探す（3.3.2）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからないとき、開くものの無い行は飛ばす（ウィンドウアイテムを指す行は失敗）。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。合うウィンドウが複数あれば、`placement.virtualDesktopNumber` のデスクトップにあるものを先に使う。見つかったら、最小化の解除・ピン止め（`pinToAllDesktops`）・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する（前面に出さない行では、位置を当ててから最大化するまでの間に前面が移ったら、元の前面のウィンドウに戻す。Windows の最大化の解除と最大化は、前面に出さずに行う手段が無いため）。記録した位置の中心がどの画面にも入らない（モニターを外したなど）ときは、主画面（左上が 0,0 の画面）の作業領域に収まる大きさにして、その中央に当てる。当てた後に読み直した位置（x・y）がずれていれば（管理者権限で動くウィンドウなど）、その行は失敗（「ウィンドウを動かせませんでした」）にする。大きさは見ない。`virtualDesktopNumber` が今のデスクトップの数より大きい（今は無いデスクトップ）ときは、番号を外して位置だけ当て、その行は失敗（「デスクトップ N がありません。位置だけ合わせました」）にする。利用者の見ているデスクトップは切り替えない。行の `pinToAllDesktops` が `true` なら、仮想デスクトップは移さず（今は無いデスクトップの番号でも失敗にしない）全仮想デスクトップにピン止めする
 4. **取り合わない**: 1 回の実行の中で、ある行が使うと決めたウィンドウは、ほかの行の候補から外す
 5. **探す相手が決まらない行**: `window` が無く開くものが exe でない（URL など）行は、位置があっても開くだけ
 6. **失敗**: 行ごとに失敗しても残りを続ける。開けなかった行（パスが無いなど）は、ウィンドウを待たずにその理由で失敗にする。位置のある行が 1 つでもあれば進み具合を画面の隅に出し（中止できる）、行ごとの結果はそこに出す。無ければ、失敗した行の名前を警告のトーストで出す
@@ -460,7 +478,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 - `id`・`displayName`・`memo`・`updatedAt` は引き継ぐ。`customIcon` は旧ウィンドウ配置だけが持っていたので、そこからだけ引き継ぐ
 - 有るのに読めない（ロック・権限）、または JSON として壊れたデータファイルが 1 つでもあれば、変換を保留する（そのファイルのアイテムを指す名前を解決できず、名前だけの行にしてしまうため）。直れば次の読み込みで変換する
 - 検証に通らない旧グループ・旧ウィンドウ配置は変換せずに残す（未知の `type` として読み込みから外れる。5.1）
-- 変換は戻せないので、書き換える前に全設定ファイルのスナップショット `backup/<日時>_pre-set-migration/` を作る（`backupEnabled` に関係なく作る。`BackupService.createPreSetMigrationSnapshot`）。作れなければ変換しない
+- 変換は戻せないので、書き換える前に全設定ファイルのスナップショット `backup/<日時>_pre-set-migration/` を作る（`backupEnabled` に関係なく作る。`BackupService.createPreSetMigrationSnapshot`）。作れなければ変換しない。単一アイテムの `windowConfig` の変換（3.1.5.6）も、同じ読み込みで続けて当て、スナップショットはこの 1 回で済ませる
 
 ### 3.4. ウィンドウアイテム（JsonWindowItem）
 
@@ -469,7 +487,13 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 #### 3.4.1. フィールドの要点
 
 - **必須**: `type: "window"`・`displayName`（表示名）・`windowTitle`（検索するウィンドウタイトル）。どちらも空文字不可。ただし `windowTitle` が空でも `processName` があれば、読み込み時に `"*"` へ補正する（下の「プロセス名だけで検索したいとき」）
-- **任意**: `processName`・`x`・`y`・`width`・`height`・`moveToActiveMonitorCenter`・`virtualDesktopNumber`・`activateWindow`・`pinToAllDesktops`。意味と既定値は `windowConfig`（3.1.5.1）と同じ（`activateWindow` は既定 true、`moveToActiveMonitorCenter`・`pinToAllDesktops` は既定 false）
+- **任意**: 次のとおり
+  - `processName`: プロセス名で絞り込む（部分一致）
+  - `x`・`y`・`width`・`height`: 指定した値だけ変更する（仮想スクリーン座標、3.1.5.5）。省略時は変更しない
+  - `moveToActiveMonitorCenter`（既定 false）: マウスカーソルのあるモニターの中央へ移動する。`x`・`y` は計算した中央座標で置き換わる
+  - `virtualDesktopNumber`: 移動先の仮想デスクトップ番号（1 始まり）。省略時は移動しない。`pinToAllDesktops` が true のときは使わない
+  - `activateWindow`（既定 true）: false のときは前面化しない
+  - `pinToAllDesktops`（既定 false）: 全仮想デスクトップにピン止めする
 
 #### 3.4.2. 動作仕様
 
@@ -791,7 +815,7 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
 | 対象 | 場所 | 主な型 |
 | --- | --- | --- |
 | ファイルに書く JSON の形 | `src/common/types/json-data.ts` | `JsonDataFile`、`JsonItem`（union）、`JsonLauncherItem`・`JsonDirItem`・`JsonSetItem`・`JsonWindowItem`・`JsonClipboardItem`、`JsonDirOptions`（旧形式の `JsonGroupItem`・`JsonLayoutItem` は変換のためだけに残る）、型ガード `isJson*Item()` |
-| 表示・実行用の内部型 | `src/common/types/launcher.ts` | `LauncherItem`・`SetItem`・`WindowItem`・`ClipboardItem`・`AppItem`、`WindowConfig`、`SetEntry` |
+| 表示・実行用の内部型 | `src/common/types/launcher.ts` | `LauncherItem`・`SetItem`・`WindowItem`・`ClipboardItem`・`AppItem`、`ItemWindowSwitch`（単一アイテムのウィンドウ切り替え）、`SetEntry`、`WindowConfig`（ウィンドウアイテムの実行とウィンドウ操作の内部で使う） |
 | 検索 | `src/common/types/search.ts` | `SearchMode`・`SearchHistoryEntry`・`SearchHistoryState` |
 
 **要点:**

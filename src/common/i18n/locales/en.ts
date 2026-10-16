@@ -535,7 +535,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       setItemType:
         "Items of type {{type}} can't be rows of a set (only {{types}}. Use --path for the contents of an imported folder)",
       setRowUnknownKeys:
-        'Row {{index}} has unknown keys: {{keys}} (itemId, open, label, window, placement, ifOpen, activateWindow, waitSeconds)',
+        'Row {{index}} has unknown keys: {{keys}} (itemId, open, label, window, placement, ifOpen, activateWindow, waitSeconds, pinToAllDesktops)',
       setRowEmpty: 'Row {{index}} has nothing to open (itemId, open) and no target window (window)',
       setRowItemNotFound: "Row {{index}}: couldn't find the item with itemId {{id}}",
       setNoPathArgs:
@@ -616,6 +616,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       notOpen: "Not open, so it wasn't moved",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
       desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
+      itemWindowTimedOut:
+        'Waited {{seconds}} seconds for the window to appear, but it was not found',
     },
     errors: {
       itemNotFound: "Couldn't find the item this row points to",
@@ -728,22 +730,30 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       find: 'Target window',
       processName: 'Exe name',
       processNamePlaceholder: 'Example: notepad.exe',
+      processNameNote: 'Part of the name works too (e.g. sakura)',
       windowTitle: 'Window title',
       windowTitlePlaceholder: 'Leave empty to accept any title',
+      windowTitleNote: 'Matches the whole title. * matches any text (e.g. *Obsidian)',
       anyTitle: 'Any title',
       anyTitleHint: 'Search by exe name only (any title)',
-      titleParts: 'Search by part:',
+      titleParts: 'Search by part of the title',
       revertTitle: '↺ Revert',
       matchNone: 'Matching windows now: 0',
       matchOne: 'Matching windows now: 1 ({{title}})',
       matchMany: 'Matching windows now: {{count}} (other windows match too)',
-      findHint:
-        'When the set opens, the window matching these two is moved to the recorded window position. The exe name can be partial; the title must match as a whole (* matches any text, e.g. *Obsidian).',
+      findLead: 'When the set opens, the matching window is moved to the recorded window position.',
+      pickFromWindow: '🔍 Choose from open windows',
       placement: 'Window position',
       recorded: 'Recorded window position',
       noPlacement: 'Not recorded yet',
-      takeFromWindow: 'Take from an open window',
+      updatePlacement: '📍 Update window position',
+      updatePlacementNoMatch: 'No matching window is open',
+      updatePlacementNote:
+        "Records the matching window's current position and size again (conditions unchanged)",
       clearPlacement: 'Remove window position',
+      pinToAllDesktops: '📌 Show on all desktops',
+      pickPlacementTitle: "Which window's position should be recorded?",
+      pickPlacementConfirm: 'Record',
       desktop: 'Virtual desktop',
       desktopKeep: "Don't change",
       behavior: 'When opening',
@@ -756,6 +766,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       wait: 'Wait for the window to appear (seconds)',
       minimizedPicked:
         'This window is minimized, so only the target window was taken. Restore it before taking the window position',
+      minimizedNotUpdated:
+        'This window is minimized, so its window position was not taken. Restore it, then press again',
     },
     placement: {
       none: 'No window position',
@@ -1324,6 +1336,11 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     path: 'Path:',
     pathPlaceholder: 'Enter a file path, URL, or custom URI',
     itemOptions: 'Options (arguments, icon)',
+    windowSwitch: {
+      toggle: 'Options (switch to window, window position)',
+      findLead:
+        'When this item opens and a matching window is already open, it switches to that window instead of opening it again.',
+    },
     dirOptions: 'Folder import options',
     args: 'Arguments:',
     argsPlaceholder: 'Command-line arguments (for executables and apps only)',
@@ -1346,11 +1363,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     },
   },
   windowConfig: {
-    reuseTitle: 'Reuse an existing window',
     actionTitle: 'Window action',
     stepSearch: '1. Find the window by title or process name',
     stepAct: '2. If found, do the actions below',
-    stepLaunch: "3. If not found, open the item's path",
     searchHeading: '🔍 1. Find the window',
     selectWindow: 'Choose window',
     windowTitle: 'Window title:',
@@ -1381,7 +1396,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     byNumber: 'By number',
     desktopNumber: 'Desktop number:',
     desktopNumberPlaceholder: 'Starts at 1',
-    optionsToggle: 'Options (switch to window)',
   },
   clipboardEditor: {
     formats: {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import type { EditableJsonItem, JsonSetItem } from '../types';
+import type { EditableJsonItem, JsonLauncherItem, JsonSetItem } from '../types';
 
 import {
   convertEditableJsonItemToRegisterItem,
@@ -43,5 +43,40 @@ describe('dataConverters のセット', () => {
       customIcon: 'layout-icon.png',
       memo: 'メモ',
     });
+  });
+});
+
+describe('dataConverters の単一アイテムのウィンドウ切り替え', () => {
+  const item: JsonLauncherItem = {
+    id: 'Item0001',
+    type: 'item',
+    displayName: '一時メモ',
+    path: 'C:/memo.txt',
+    window: { processName: 'sakura.exe', title: '*一時メモ.txt*' },
+    placement: { x: 10, y: 20, width: 800, height: 600, state: 'maximized' },
+    ifOpen: 'openNew',
+    waitSeconds: 15,
+    pinToAllDesktops: true,
+  };
+  const editable: EditableJsonItem = {
+    item,
+    displayText: '',
+    meta: { sourceFile: 'datafiles/data.json', lineNumber: 0, isValid: true },
+  };
+  const tabs = [{ name: 'メイン', files: ['datafiles/data.json'] }];
+
+  it('編集用に変換して戻しても、ifOpen・waitSeconds・placement.state が消えない', () => {
+    const registerItem = convertEditableJsonItemToRegisterItem(editable, tabs);
+    expect(registerItem.window).toEqual(item.window);
+
+    const saved = convertRegisterItemToJsonItem(registerItem, item.id);
+    expect(saved).toMatchObject({
+      window: item.window,
+      placement: item.placement,
+      ifOpen: 'openNew',
+      waitSeconds: 15,
+      pinToAllDesktops: true,
+    });
+    expect(saved).not.toHaveProperty('windowConfig');
   });
 });

@@ -2,34 +2,35 @@
  * 画面: セットの行の詳細
  * 画面仕様: docs/screens/set-editor-modals.md#5-行の詳細
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import type { SetEntry, WindowInfo } from '@common/types';
+import type { SetEntry } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
-import { ANY_WINDOW_TITLE } from '@common/utils/windowTitle';
-import {
-  decideWindowMatch,
-  isUnresolvedEntry,
-  matchesWindow,
-  placementFromWindow,
-} from '@common/utils/setWindowMatching';
+import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
+import { useWindowEnvironment } from '../hooks/useWindowEnvironment';
 import {
   catalogItemToEntry,
   describeSetEntry,
   entryOpensAsTab,
-  placementText,
   SET_KIND_ICONS,
-  titleParts,
-  windowPickNotes,
   type SetCatalogItem,
 } from '../utils/setEditing';
 import '../styles/components/SetEditor.css';
 
 import SetItemPickerModal from './SetItemPickerModal';
 import WindowSelectorModal from './WindowSelectorModal';
+import {
+  OpenBehaviorFields,
+  orUndefined,
+  pickFromWindow,
+  WindowMatchFields,
+  WindowPlacementFields,
+  withoutDesktop,
+  type WindowPickNote,
+} from './WindowSwitchFields';
 import { Button } from './ui';
 
 /** 行が開くものの持ち方（画面の選択肢） */
@@ -48,11 +49,6 @@ interface SetEntryDetailModalProps {
   screens: readonly ScreenArea[];
   onClose: () => void;
   onChange: (entry: SetEntry) => void;
-}
-
-/** 空の文字列は undefined にする（保存したときに空のキーを書かない） */
-function orUndefined(value: string): string | undefined {
-  return value.trim() === '' ? undefined : value;
 }
 
 /**
@@ -74,58 +70,18 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   /** 「アイテム」を選んだが、まだアイテムを選んでいない間も選択肢を保つ */
   const [openKind, setOpenKind] = useState<OpenKind>(entry ? openKindOf(entry) : 'none');
   /** 最後に選んだウィンドウについて知らせること */
-  const [pickNotes, setPickNotes] = useState<Array<'minimized' | 'elevated'>>([]);
-  /** 今開いているウィンドウ（タイトル欄の「今合うウィンドウ」を数える） */
-  const [windows, setWindows] = useState<WindowInfo[]>([]);
-  /** 仮想デスクトップの数（2 未満なら、ウィンドウから位置を取るときに番号を記録しない） */
-  const [desktopCount, setDesktopCount] = useState(0);
-  const [desktopNames, setDesktopNames] = useState<Record<number, string | undefined>>({});
+  const [pickNotes, setPickNotes] = useState<WindowPickNote[]>([]);
+  /** 今開いているウィンドウ・仮想デスクトップ（別の行を開いたら読み直す） */
+  const { windows, desktopCount, desktopNames } = useWindowEnvironment({
+    active: entry !== null,
+    reloadKey: entry,
+  });
 
   useEffect(() => {
     setDraft(entry);
     setOpenKind(entry ? openKindOf(entry) : 'none');
     setPickNotes([]);
-    if (!entry) return;
-    let alive = true;
-    window.electronAPI
-      .getAllWindowsAllDesktops()
-      .then((all) => {
-        if (alive) setWindows(all);
-      })
-      .catch(() => {
-        if (alive) setWindows([]);
-      });
-    window.electronAPI
-      .getVirtualDesktopInfo()
-      .then((info) => {
-        if (!alive) return;
-        setDesktopCount(info.supported ? info.desktopCount : 0);
-        setDesktopNames(info.desktopNames ?? {});
-      })
-      .catch(() => {
-        if (alive) setDesktopCount(0);
-      });
-    return () => {
-      alive = false;
-    };
   }, [entry]);
-
-  /** 開いたときのタイトル（元に戻す先・候補の元） */
-  const initialTitle = entry?.window?.title;
-  const draftWindow = draft?.window;
-  const matched = useMemo(
-    () => (draftWindow ? windows.filter((w) => matchesWindow(draftWindow, w)) : []),
-    [draftWindow, windows]
-  );
-  // 候補は開いたときのタイトルから作る。* を含む（もう一部だけにしてある）なら、今合う 1 つのウィンドウのタイトルから
-  const entryWindow = entry?.window;
-  const parts = useMemo(() => {
-    if (initialTitle && !/[*?]/.test(initialTitle)) return titleParts(initialTitle);
-    // タイトルが空か、もう一部だけにしてある: 今合う 1 つのウィンドウのタイトルから作る
-    const now = entryWindow ? windows.filter((w) => matchesWindow(entryWindow, w)) : [];
-    if (now.length === 1) return titleParts(now[0].title);
-    return initialTitle ? titleParts(initialTitle) : [];
-  }, [initialTitle, entryWindow, windows]);
 
   const close = () => {
     if (draft) {
@@ -149,12 +105,6 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   const view = describeSetEntry(draft, catalog);
   const update = (patch: Partial<SetEntry>) =>
     setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
-  const updateWindow = (patch: Partial<NonNullable<SetEntry['window']>>) => {
-    const next = { ...(draft.window ?? {}), ...patch };
-    update({ window: next.processName || next.title ? next : undefined });
-  };
-  const updatePlacement = (patch: Partial<NonNullable<SetEntry['placement']>>) =>
-    update({ placement: { ...(draft.placement ?? {}), ...patch } });
   const changeOpenKind = (kind: OpenKind) => {
     setOpenKind(kind);
     if (kind === 'path') {
@@ -288,198 +238,40 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               )}
             </div>
 
-            <div className="set-detail-group">
-              <div className="set-detail-group-title">{t('set.detail.find')}</div>
-              <label className="set-detail-label" htmlFor="set-detail-process">
-                {t('set.detail.processName')}
-              </label>
-              <input
-                id="set-detail-process"
-                type="text"
-                placeholder={t('set.detail.processNamePlaceholder')}
-                value={draft.window?.processName ?? ''}
-                onChange={(e) => updateWindow({ processName: orUndefined(e.target.value) })}
-              />
-              <label className="set-detail-label set-detail-label-top" htmlFor="set-detail-title">
-                {t('set.detail.windowTitle')}
-              </label>
-              {/* 欄 → 一部だけで探す候補 → 今合うウィンドウ の順。元に戻すは欄に対する操作なので欄の右 */}
-              <div className="set-title-field">
-                <div className="set-title-row">
-                  <input
-                    id="set-detail-title"
-                    type="text"
-                    placeholder={t('set.detail.windowTitlePlaceholder')}
-                    value={draft.window?.title ?? ''}
-                    onChange={(e) => updateWindow({ title: orUndefined(e.target.value) })}
-                  />
-                  {initialTitle && draft.window?.title !== initialTitle && (
-                    <button
-                      type="button"
-                      className="set-title-revert"
-                      onClick={() => updateWindow({ title: initialTitle })}
-                    >
-                      {t('set.detail.revertTitle')}
-                    </button>
-                  )}
-                </div>
-                {(parts.length > 0 || draft.window?.processName) && (
-                  <div className="set-title-parts">
-                    <span>{t('set.detail.titleParts')}</span>
-                    {draft.window?.processName && (
-                      <button
-                        type="button"
-                        className="set-title-part"
-                        title={t('set.detail.anyTitleHint')}
-                        onClick={() => updateWindow({ title: ANY_WINDOW_TITLE })}
-                      >
-                        {t('set.detail.anyTitle')}
-                      </button>
-                    )}
-                    {parts.map((part) => (
-                      <button
-                        key={part}
-                        type="button"
-                        className="set-title-part"
-                        onClick={() => updateWindow({ title: `*${part}*` })}
-                      >
-                        {part}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {draft.window && (
-                  <span
-                    className={`set-title-match${
-                      matched.length === 1 ? ' one' : matched.length > 1 ? ' many' : ''
-                    }`}
-                  >
-                    {matched.length === 0
-                      ? t('set.detail.matchNone')
-                      : matched.length === 1
-                        ? t('set.detail.matchOne', { title: matched[0].title })
-                        : t('set.detail.matchMany', { count: matched.length })}
-                  </span>
-                )}
-              </div>
-              <span />
-              <small className="set-detail-hint">{t('set.detail.findHint')}</small>
-            </div>
+            <WindowMatchFields
+              idPrefix="set-detail"
+              value={draft.window}
+              initial={entry.window}
+              windows={windows}
+              lead={t('set.detail.findLead')}
+              onPickWindow={() => setPicking(true)}
+              onChange={(window) => update({ window })}
+            />
 
-            <div className="set-detail-group">
-              <div className="set-detail-group-title">{t('set.detail.placement')}</div>
-              <span className="set-detail-label">{t('set.detail.recorded')}</span>
-              <span className="set-detail-pair">
-                <span className="set-row-place">
-                  {draft.placement
-                    ? `📍 ${placementText(draft, screens, desktopNames)}`
-                    : t('set.detail.noPlacement')}
-                </span>
-                <Button variant="secondary" size="sm" onClick={() => setPicking(true)}>
-                  {t('set.detail.takeFromWindow')}
-                </Button>
-                {draft.placement && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => update({ placement: undefined })}
-                  >
-                    {t('set.detail.clearPlacement')}
-                  </Button>
-                )}
-              </span>
-              {(entryOpensAsTab(view) || pickNotes.length > 0) && (
-                <>
-                  <span />
-                  <span>
-                    {entryOpensAsTab(view) && (
-                      <span className="set-info">{t('set.update.tabNote')}</span>
-                    )}
-                    {pickNotes.includes('minimized') && (
-                      <span className="set-note">{t('set.detail.minimizedPicked')}</span>
-                    )}
-                    {pickNotes.includes('elevated') && (
-                      <span className="set-note">{t('set.update.elevatedNote')}</span>
-                    )}
-                  </span>
-                </>
-              )}
-              {draft.placement && (
-                <>
-                  <label className="set-detail-label" htmlFor="set-detail-desktop">
-                    {t('set.detail.desktop')}
-                  </label>
-                  <input
-                    id="set-detail-desktop"
-                    type="number"
-                    min={1}
-                    step={1}
-                    placeholder={t('set.detail.desktopKeep')}
-                    value={draft.placement.virtualDesktopNumber ?? ''}
-                    onChange={(e) => {
-                      // 1 以上の整数だけ（0・負の数・小数は「変えない」と同じ空にする）
-                      const n = Number(e.target.value);
-                      updatePlacement({
-                        virtualDesktopNumber:
-                          e.target.value !== '' && Number.isInteger(n) && n >= 1 ? n : undefined,
-                      });
-                    }}
-                  />
-                </>
-              )}
-            </div>
+            <WindowPlacementFields
+              idPrefix="set-detail"
+              placement={draft.placement}
+              pinToAllDesktops={draft.pinToAllDesktops}
+              match={draft.window}
+              windows={windows}
+              desktopCount={desktopCount}
+              screens={screens}
+              desktopNames={desktopNames}
+              onChange={update}
+              onUpdated={setPickNotes}
+              tabNote={entryOpensAsTab(view)}
+              pickNotes={pickNotes}
+            />
 
-            <div className="set-detail-group">
-              <div className="set-detail-group-title">{t('set.detail.behavior')}</div>
-              <label className="set-detail-label" htmlFor="set-detail-ifopen">
-                {t('set.detail.ifOpen')}
-              </label>
-              <select
-                id="set-detail-ifopen"
-                value={draft.ifOpen ?? 'move'}
-                onChange={(e) =>
-                  update({ ifOpen: e.target.value === 'openNew' ? 'openNew' : undefined })
-                }
-              >
-                <option value="move">{t('set.detail.ifOpenMove')}</option>
-                <option value="openNew">{t('set.detail.ifOpenNew')}</option>
-              </select>
-              {draft.placement && (
-                <>
-                  <label className="set-detail-label" htmlFor="set-detail-activate">
-                    {t('set.detail.activate')}
-                  </label>
-                  <select
-                    id="set-detail-activate"
-                    value={draft.activateWindow === true ? 'yes' : 'no'}
-                    onChange={(e) =>
-                      update({ activateWindow: e.target.value === 'yes' ? true : undefined })
-                    }
-                  >
-                    <option value="no">{t('set.detail.activateNo')}</option>
-                    <option value="yes">{t('set.detail.activateYes')}</option>
-                  </select>
-                  <label className="set-detail-label" htmlFor="set-detail-wait">
-                    {t('set.detail.wait')}
-                  </label>
-                  <input
-                    id="set-detail-wait"
-                    type="number"
-                    min={1}
-                    placeholder="30"
-                    value={draft.waitSeconds ?? ''}
-                    onChange={(e) =>
-                      update({
-                        waitSeconds:
-                          e.target.value === '' || Number(e.target.value) <= 0
-                            ? undefined
-                            : Number(e.target.value),
-                      })
-                    }
-                  />
-                </>
-              )}
-            </div>
+            <OpenBehaviorFields
+              idPrefix="set-detail"
+              ifOpen={draft.ifOpen}
+              activateWindow={draft.activateWindow}
+              waitSeconds={draft.waitSeconds}
+              hasPlacement={!!draft.placement}
+              activateByDefault={false}
+              onChange={update}
+            />
           </div>
           <div className="modal-actions">
             <Button variant="primary" onClick={close}>
@@ -508,14 +300,19 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
         onClose={() => setPicking(false)}
         onSelect={(w) => {
           setPicking(false);
-          const match = decideWindowMatch(w);
-          // 最小化中は座標が画面の外になるので、動かすウィンドウだけ取る
+          const picked = pickFromWindow(w, desktopCount);
+          // 最小化中は座標が画面の外になるので、対象ウィンドウだけ取る
           update(
-            w.windowState === 'minimized'
-              ? { window: match }
-              : { window: match, placement: placementFromWindow(w, desktopCount) }
+            picked.placement
+              ? {
+                  window: picked.window,
+                  placement: draft.pinToAllDesktops
+                    ? withoutDesktop(picked.placement)
+                    : picked.placement,
+                }
+              : { window: picked.window }
           );
-          setPickNotes(windowPickNotes(w));
+          setPickNotes(picked.notes);
         }}
       />
     </>,

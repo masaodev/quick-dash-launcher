@@ -12,6 +12,7 @@ import {
 } from '@common/types';
 import type { JsonItem } from '@common/types';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
+import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { refineItemType } from '../../utils/folderPathProbe.js';
 
@@ -61,7 +62,7 @@ export async function convertJsonItemToAppItems(
           ...lnkItem,
           id: jsonItem.id,
           customIcon: jsonItem.customIcon,
-          windowConfig: jsonItem.windowConfig,
+          ...pickItemWindowSwitch(jsonItem),
           memo: jsonItem.memo,
           autoImportRuleId: jsonItem.autoImportRuleId,
         });
@@ -75,7 +76,7 @@ export async function convertJsonItemToAppItems(
       type: await refineItemType(jsonItem.path, detectItemTypeSync(jsonItem.path)),
       args: jsonItem.args,
       customIcon: jsonItem.customIcon,
-      windowConfig: jsonItem.windowConfig,
+      ...pickItemWindowSwitch(jsonItem),
       sourceFile,
       lineNumber,
       id: jsonItem.id,

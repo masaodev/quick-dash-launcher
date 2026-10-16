@@ -330,6 +330,13 @@
   background-color: var(--color-gray-200);
 }
 
+/* たたんでいても見出しの横に出す要約（単一アイテムのウィンドウ位置） */
+.options-toggle-summary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .toggle-icon {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);

@@ -68,7 +68,8 @@
 | **ウィンドウを追加**（`SetAddWindowsModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ ウィンドウを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#3-ウィンドウを追加) |
 | **ウィンドウ位置を更新**（`SetUpdatePositionsModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「📍 ウィンドウ位置を更新」クリック時 | [set-editor-modals.md](./set-editor-modals.md#4-ウィンドウ位置を更新) |
 | **行の詳細**（`SetEntryDetailModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの行の「✏️」クリック・行のダブルクリック時 | [set-editor-modals.md](./set-editor-modals.md#5-行の詳細) |
-| **ウィンドウ選択モーダル**（`WindowSelectorModal`） | アイテム登録・編集、ワークスペースアイテム編集のウィンドウ設定で「ウィンドウから取得」クリック時<br>ウィンドウ位置を更新の「ウィンドウを選ぶ」「別のウィンドウにする」、行の詳細の「開いているウィンドウから取り込む」 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
+| **ウィンドウ位置を記録するウィンドウを選ぶ**（`WindowPlacementPickModal`） | 行の詳細・単一アイテムのウィンドウ切り替えの「📍 ウィンドウ位置を更新」で、合うウィンドウが 2 つ以上のとき | [set-editor-modals.md](./set-editor-modals.md#55-ウィンドウ位置を更新) |
+| **ウィンドウ選択モーダル**（`WindowSelectorModal`） | アイテム登録・編集、ワークスペースアイテム編集で、単一アイテムの「🔍 開いているウィンドウから選ぶ」・ウィンドウ操作の「ウィンドウを選択」クリック時<br>ウィンドウ位置を更新の「ウィンドウを選ぶ」「別のウィンドウにする」、行の詳細の「🔍 開いているウィンドウから選ぶ」 | [register-modal.md](./register-modal.md#522-ウィンドウ選択モーダル) |
 
 ### 共通ダイアログ
 
@@ -91,7 +92,8 @@
 | **ホットキー入力** | 起動ホットキー・「ウィンドウ検索で起動」のホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
 | **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-内容を書く取り込む) |
 | **カラーピッカー**（`ColorPicker`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「🎨 カラーを変更」 | [workspace-window.md](./workspace-window.md#583-グループを右クリックして色を変更) |
-| **ウィンドウ設定エディター** | ウィンドウ設定（タイトル・位置・サイズ）の編集 | [register-modal.md](./register-modal.md#55-ウィンドウ設定を入力) |
+| **ウィンドウ切り替えの欄**（`ItemWindowSwitchEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📄 単一アイテム」のとき（対象ウィンドウ・ウィンドウ位置・開くときの動き。セットの行の詳細と同じ部品） | [register-modal.md](./register-modal.md#55-ウィンドウ切り替えウィンドウ位置を入力) |
+| **ウィンドウ操作設定エディター**（`WindowConfigEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「🪟 ウィンドウ操作」のとき（タイトル・位置・サイズ） | [register-modal.md](./register-modal.md#57-ウィンドウ操作設定を入力) |
 | **カスタムアイコンエディター** | カスタムアイコンの選択・削除 | [register-modal.md](./register-modal.md#512-カスタムアイコンを設定) |
 
 ## 関連ドキュメント

@@ -28,9 +28,17 @@ vi.mock('../overlayWindowService.js', () => ({
 }));
 vi.mock('../mainI18n.js', () => ({ mainI18n: { t: (key: string) => key } }));
 
+import { showToastWindow } from '../overlayWindowService.js';
 import type { LaunchResult } from '../../utils/itemLauncher';
 
-import { buildSetWindowConfig, executeSet, type SetExecutorDeps } from './setExecutor';
+import {
+  buildSetWindowConfig,
+  executeLauncherItem,
+  executeSet,
+  notifyLauncherItemFailure,
+  type ExecutableLauncherItem,
+  type SetExecutorDeps,
+} from './setExecutor';
 
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
 
@@ -46,7 +54,8 @@ const items: Record<string, AppItem> = {
     type: 'app',
     displayName: 'Windows Terminal',
     path: 'wt.exe',
-    windowConfig: { title: '*Terminal*' },
+    window: { title: '*Terminal*' },
+    activateWindow: true,
   },
   miss1aaa: {
     id: 'miss1aaa',
@@ -238,6 +247,101 @@ describe('executeSet', () => {
     const result = await executeSet(set, resolve, deps, logger);
     expect(calls).toEqual(['launch:https://mail.google.com/', 'activate:*Terminal*:true']);
     expect(result.successCount).toBe(2);
+  });
+
+  it('置き場所の無い行がアイテムを指すとき、アイテムのウィンドウ切り替えの位置・ピン止めも当てる', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'memo.txt - sakura', processName: 'sakura.exe' },
+    ]);
+    const withSwitch: Record<string, AppItem> = {
+      memo1aaa: {
+        id: 'memo1aaa',
+        type: 'file',
+        displayName: 'メモ',
+        path: 'C:\\memo.txt',
+        window: { processName: 'sakura.exe' },
+        placement: { x: 10, y: 20 },
+        activateWindow: false,
+        pinToAllDesktops: true,
+      },
+    };
+    const set: SetItem = { type: 'set', displayName: 'x', entries: [{ itemId: 'memo1aaa' }] };
+    await executeSet(set, (id) => withSwitch[id], deps, logger);
+    expect(deps.activate).toHaveBeenCalledWith(
+      {
+        title: '*',
+        processName: 'sakura.exe',
+        x: 10,
+        y: 20,
+        activateWindow: false,
+        pinToAllDesktops: true,
+      },
+      'メモ',
+      logger
+    );
+  });
+
+  it('行の「全デスクトップに表示」は、位置のある行ではウィンドウ位置と一緒にピン止めを当てる', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'memo.txt - sakura', processName: 'sakura.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        {
+          window: { processName: 'sakura.exe' },
+          placement: { x: 10, y: 20, width: 300, height: 200 },
+          pinToAllDesktops: true,
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(deps.applyConfig).toHaveBeenCalledWith(
+      1n,
+      expect.objectContaining({ x: 10, y: 20, pinToAllDesktops: true }),
+      expect.any(String),
+      logger
+    );
+  });
+
+  it('行の「全デスクトップに表示」は、位置の無い行でもピン止めを当てる（動かすだけの行・開く行）', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'memo.txt - sakura', processName: 'sakura.exe' },
+      { hwnd: 2n, title: 'Windows Terminal', processName: 'WindowsTerminal.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        { window: { processName: 'sakura.exe' }, pinToAllDesktops: true },
+        { itemId: 'term1aaa', window: { title: '*Terminal*' }, pinToAllDesktops: true },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(deps.activate).toHaveBeenCalledWith(
+      { title: '*', processName: 'sakura.exe', pinToAllDesktops: true },
+      expect.any(String),
+      logger
+    );
+    expect(deps.activate).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '*Terminal*', pinToAllDesktops: true }),
+      'Windows Terminal',
+      logger
+    );
+  });
+
+  it('「全デスクトップに表示」の無い行は、ピン止めを当てない', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'memo.txt - sakura', processName: 'sakura.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [{ window: { processName: 'sakura.exe' }, placement: { x: 0, y: 0 } }],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(vi.mocked(deps.applyConfig).mock.calls[0][1]).not.toHaveProperty('pinToAllDesktops');
   });
 
   it('同じアプリのウィンドウが 2 つあり、見つけ方が同じ行が 2 つあると、別々のウィンドウを動かす', async () => {
@@ -596,6 +700,164 @@ describe('executeSet', () => {
     deps.progress = undefined;
     const again = await executeSet(set, resolve, deps, logger);
     expect(again.skipped).toBeUndefined();
+  });
+});
+
+describe('executeLauncherItem（単一アイテムをセットの 1 行として実行する）', () => {
+  const terminal: ExecutableLauncherItem = {
+    id: 'term2aaa',
+    type: 'app',
+    displayName: 'Windows Terminal',
+    path: 'wt.exe',
+    window: { processName: 'WindowsTerminal.exe' },
+  };
+
+  it('位置が無ければ、見つかったウィンドウを前面に出すだけで開かない（別のデスクトップなら切り替える）', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'QDL_main', processName: 'WindowsTerminal.exe' },
+    ]);
+    const result = await executeLauncherItem(terminal, deps, logger);
+    expect(calls).toEqual(['activate:*:true']);
+    expect(deps.activate).toHaveBeenCalledWith(
+      { title: '*', processName: 'WindowsTerminal.exe', activateWindow: true },
+      'Windows Terminal',
+      logger,
+      { followDesktop: true }
+    );
+    expect(result.successCount).toBe(1);
+  });
+
+  it('位置が無く見つからなければ、開くだけで待たない', async () => {
+    const { deps, calls } = makeDeps();
+    const result = await executeLauncherItem(terminal, deps, logger);
+    expect(calls).toEqual(['activate:*:false', 'launch:wt.exe']);
+    expect(deps.sleep).not.toHaveBeenCalled();
+    expect(result.errorCount).toBe(0);
+  });
+
+  it('前面に出さない設定（activateWindow: false）とピン止めをウィンドウ操作に渡す', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'QDL_main', processName: 'WindowsTerminal.exe' },
+    ]);
+    await executeLauncherItem(
+      { ...terminal, activateWindow: false, pinToAllDesktops: true },
+      deps,
+      logger
+    );
+    expect(deps.activate).toHaveBeenCalledWith(
+      {
+        title: '*',
+        processName: 'WindowsTerminal.exe',
+        activateWindow: false,
+        pinToAllDesktops: true,
+      },
+      'Windows Terminal',
+      logger,
+      { followDesktop: true }
+    );
+  });
+
+  it('位置があれば、見つかったウィンドウに位置を当てて前面に出す（進み具合の表示は出さない）', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'QDL_main', processName: 'WindowsTerminal.exe' },
+    ]);
+    deps.progress = { show: vi.fn(), send: vi.fn(), onCancel: vi.fn(() => () => {}) };
+    const result = await executeLauncherItem(
+      { ...terminal, placement: { x: 0, y: 0, width: 800, height: 600 }, pinToAllDesktops: true },
+      deps,
+      logger
+    );
+    expect(calls).toEqual(['place:1']);
+    expect(deps.applyConfig).toHaveBeenCalledWith(
+      1n,
+      expect.objectContaining({
+        x: 0,
+        width: 800,
+        activateWindow: true,
+        pinToAllDesktops: true,
+      }),
+      'Windows Terminal',
+      logger,
+      { followDesktop: true }
+    );
+    expect(deps.progress.show).not.toHaveBeenCalled();
+    expect(deps.progress.send).not.toHaveBeenCalled();
+    expect(result.successCount).toBe(1);
+  });
+
+  it('位置があり見つからなければ、開いてウィンドウが出るのを待ってから位置を当てる', async () => {
+    const { deps, calls } = makeDeps();
+    const result = await executeLauncherItem(
+      {
+        type: 'app',
+        displayName: 'Obsidian',
+        path: 'C:\\Apps\\Obsidian\\Obsidian.exe',
+        window: { processName: 'Obsidian.exe' },
+        placement: { x: 960, y: 0 },
+      },
+      deps,
+      logger
+    );
+    expect(calls).toEqual(['launch:C:\\Apps\\Obsidian\\Obsidian.exe', 'place:99']);
+    expect(result.errorCount).toBe(0);
+  });
+
+  it('ifOpen が openNew なら、開いていても開く', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'QDL_main', processName: 'WindowsTerminal.exe' },
+    ]);
+    await executeLauncherItem({ ...terminal, ifOpen: 'openNew' }, deps, logger);
+    expect(calls).toEqual(['launch:wt.exe']);
+  });
+
+  it('待ちきれなければ失敗にし、待った秒数をトーストで知らせる', async () => {
+    const { deps } = makeDeps();
+    const item: ExecutableLauncherItem = {
+      ...terminal,
+      placement: { x: 0, y: 0 },
+      waitSeconds: 1,
+    };
+    const result = await executeLauncherItem(item, deps, logger);
+    expect(result.entries).toEqual([
+      { index: 0, name: 'Windows Terminal', success: false, error: 'layout.timedOut' },
+    ]);
+    vi.mocked(showToastWindow).mockClear();
+    await notifyLauncherItemFailure(item, result);
+    expect(showToastWindow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayName: 'Windows Terminal',
+        type: 'warning',
+        message: 'set.run.itemWindowTimedOut',
+      })
+    );
+  });
+
+  it('うまくいったときはトーストを出さない', async () => {
+    vi.mocked(showToastWindow).mockClear();
+    await notifyLauncherItemFailure(terminal, {
+      successCount: 1,
+      errorCount: 0,
+      cancelled: false,
+      entries: [{ index: 0, name: 'Windows Terminal', success: true }],
+    });
+    expect(showToastWindow).not.toHaveBeenCalled();
+  });
+
+  it('同じアイテムを実行中にもう一度開いても重ねて開かない', async () => {
+    const { deps, calls } = makeDeps();
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    deps.launch = vi.fn(async (item): Promise<LaunchResult> => {
+      calls.push(`launch:${item.path}`);
+      await gate;
+      return { success: true };
+    });
+    const first = executeLauncherItem(terminal, deps, logger);
+    const second = await executeLauncherItem(terminal, deps, logger);
+    expect(second.skipped).toBe(true);
+    release();
+    await first;
+    expect(calls).toEqual(['activate:*:false', 'launch:wt.exe']);
   });
 });
 

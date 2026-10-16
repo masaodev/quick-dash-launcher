@@ -7,6 +7,8 @@
 
 import type { JsonItem } from '@common/types';
 
+import { pickItemWindowSwitch } from './itemWindowConversion';
+
 /**
  * displayTextのフィールドをエスケープする
  *
@@ -30,7 +32,8 @@ export function jsonItemToDisplayText(item: JsonItem): string {
   switch (item.type) {
     case 'item': {
       const parts = [item.displayName, item.path];
-      const hasWindowConfig = item.windowConfig !== undefined;
+      const windowSwitch = pickItemWindowSwitch(item);
+      const hasWindowConfig = Object.keys(windowSwitch).length > 0;
       const hasCustomIcon = item.customIcon !== undefined;
 
       if (item.args || hasCustomIcon || hasWindowConfig) {
@@ -40,7 +43,7 @@ export function jsonItemToDisplayText(item: JsonItem): string {
         parts.push(item.customIcon ?? '');
       }
       if (hasWindowConfig) {
-        parts.push(JSON.stringify(item.windowConfig));
+        parts.push(JSON.stringify(windowSwitch));
       }
       return parts.map(escapeDisplayTextField).join(',');
     }

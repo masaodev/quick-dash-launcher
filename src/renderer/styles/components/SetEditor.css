@@ -423,7 +423,7 @@
 
 /* ===== 行の詳細 ===== */
 
-/* ラベルの列（いちばん長い「ウィンドウが出るのを待つ（秒）」）と、位置のボタン 2 つが 1 行に入る幅 */
+/* ラベルの列（いちばん長い「ウィンドウが出るのを待つ（秒）」）と、ウィンドウ位置のボタン 2 つが 1 行に入る幅 */
 .set-detail-modal {
   max-width: 760px;
 }
@@ -456,6 +456,47 @@
   border-bottom: 1px solid var(--color-gray-300);
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
+}
+
+/* 見出しの右にボタンを置く枠（対象ウィンドウの「開いているウィンドウから選ぶ」） */
+.set-detail-group-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+/* 枠の先頭に置く 1 文の説明 */
+.set-detail-lead {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* 欄の下に補足・候補・ボタンを縦に重ねる列 */
+.set-field-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+/* ボタンを横に並べる行（折り返すときはボタンごと。ボタンの文字は折り返さない） */
+.set-detail-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.set-nowrap {
+  white-space: nowrap;
+}
+
+/* 記録したウィンドウ位置の言葉 */
+.set-placement-text {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
 }
 
 .set-detail-label {
@@ -517,14 +558,7 @@
   min-width: 0;
 }
 
-/* タイトル欄まわり: 欄 → 一部だけで探す候補 → 今合うウィンドウ */
-.set-title-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  min-width: 0;
-}
-
+/* タイトル欄まわり: 欄 → 探し方の補足 → 一部だけで探す候補 → 今合うウィンドウ（.set-field-col の中） */
 .set-title-row {
   display: flex;
   align-items: center;
@@ -552,13 +586,23 @@
   background-color: var(--bg-hover);
 }
 
+/* 一部だけで探す候補: 小見出しを上に置き、チップだけを下に並べる */
+.set-title-parts-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.set-title-parts-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
 .set-title-parts {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
 }
 
 /* 候補は印（.set-chip）と同じ大きさの丸い形 */
@@ -604,4 +648,65 @@
 .set-detail-label-top {
   align-self: start;
   line-height: var(--input-height-sm);
+}
+
+/* 枠の中のチェック（単一アイテムの「全デスクトップに表示」）。入力欄の高さ・余白を当てない */
+.set-detail-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.set-detail-group .set-detail-check input {
+  height: auto;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== ウィンドウ位置を記録するウィンドウを選ぶ（合うウィンドウが 2 つ以上のとき） ===== */
+
+.set-placement-pick-modal {
+  width: 90%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
+}
+
+.set-placement-pick-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 50vh;
+  overflow-y: auto;
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-section);
+}
+
+.set-placement-pick-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+}
+
+.set-placement-pick-row + .set-placement-pick-row {
+  border-top: var(--border-light);
+}
+
+.set-placement-pick-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.set-placement-pick-row input {
+  margin: 0;
+}
+
+/* 2 段目: exe 名・今のウィンドウ位置 */
+.set-placement-pick-details span + span {
+  margin-left: var(--spacing-md);
 }

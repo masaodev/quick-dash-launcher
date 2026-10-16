@@ -328,18 +328,19 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 ### 機能概要
 
-**基本動作:**
+**基本動作（単一アイテム）:**
 
-1. アイテム起動前に、指定されたウィンドウタイトルでウィンドウを検索
-2. ウィンドウが見つかった場合:
-   - ウィンドウをアクティブ化（前面に表示）
-   - 位置・サイズが設定されている場合は、ウィンドウを移動・リサイズ
-   - 通常起動は実行しない
-3. ウィンドウが見つからない場合: 通常通りアイテムを起動
+単一アイテムのウィンドウ切り替えは、アイテムを「セットの 1 行」として、セットと同じ処理（`executeLauncherItem`、`src/main/services/launch/setExecutor.ts`）で実行します。
+
+1. アイテム起動前に、指定されたウィンドウ（タイトル・プロセス名）を検索
+2. ウィンドウが見つかった場合: 位置の指定があれば移動・リサイズし、前面に出す（既定）。通常起動は実行しない
+3. ウィンドウが見つからない場合: アイテムを起動する。位置の指定があれば、ウィンドウが出るのを待って（既定 30 秒）位置を合わせる。無ければ起動するだけ
+
+ウィンドウ操作アイテム（`type: "window"`）は、見つかったウィンドウを操作するだけで、見つからなければ何も起動しません。
 
 ### データ形式
 
-ウィンドウ設定は、通常アイテムでは data.json のアイテムの `windowConfig` オブジェクトに、ウィンドウ操作アイテム（`type: "window"`）ではアイテム自身のフィールド（タイトルは `windowTitle`、ほかは `windowConfig` と同じ名前）に書きます。
+単一アイテムでは data.json のアイテムに、セットの行と同じキー（`window`・`placement`・`ifOpen`・`activateWindow`・`waitSeconds`）と `pinToAllDesktops` を書きます。ウィンドウ操作アイテムではアイテム自身のフィールド（`windowTitle`・`processName`・`x`・`y`・`width`・`height`・`moveToActiveMonitorCenter`・`virtualDesktopNumber`・`activateWindow`・`pinToAllDesktops`）に書きます。
 
 ```json
 {
@@ -347,21 +348,17 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
   "type": "item",
   "displayName": "VSCode",
   "path": "code.exe",
-  "windowConfig": {
-    "title": "Visual Studio Code",
-    "x": 100,
-    "y": 200,
-    "width": 800,
-    "height": 600
-  }
+  "window": { "title": "Visual Studio Code" },
+  "placement": { "x": 100, "y": 200, "width": 800, "height": 600 },
+  "activateWindow": true
 }
 ```
 
-フィールド・既定値・例の正本は **[データファイル形式 - ウィンドウ制御設定](file-formats/data-format.md#315-ウィンドウ制御設定windowconfig)** と **[ウィンドウアイテム](file-formats/data-format.md#34-ウィンドウアイテムjsonwindowitem)** です。以下の使用例は `windowConfig` の部分だけを示します。
+フィールド・既定値・例の正本は **[データファイル形式 - ウィンドウ切り替え](file-formats/data-format.md#315-ウィンドウ切り替えitemwindowswitch)** と **[ウィンドウアイテム](file-formats/data-format.md#34-ウィンドウアイテムjsonwindowitem)** です。以下の使用例はウィンドウ操作アイテムのフィールドだけを示します。
 
 ### アクティブモニター中央への移動
 
-`moveToActiveMonitorCenter`フィールドを使用することで、マウスカーソルがあるモニター（アクティブモニター）の中央にウィンドウを自動的に移動できます。
+ウィンドウ操作アイテムの`moveToActiveMonitorCenter`フィールドを使用することで、マウスカーソルがあるモニター（アクティブモニター）の中央にウィンドウを自動的に移動できます（単一アイテムでは廃止しました。旧形式の `windowConfig` から変換するときに捨てます）。
 
 **動作仕様:**
 
@@ -373,8 +370,8 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **使用例:**
 
-- アクティブモニターの中央に移動（サイズ指定あり）: `{ "title": "Visual Studio Code", "moveToActiveMonitorCenter": true, "width": 1600, "height": 900 }`
-- アクティブモニターの中央に移動（サイズ指定なし、現在のサイズを維持）: `{ "title": "Google Chrome", "moveToActiveMonitorCenter": true }`
+- アクティブモニターの中央に移動（サイズ指定あり）: `{ "windowTitle": "Visual Studio Code", "moveToActiveMonitorCenter": true, "width": 1600, "height": 900 }`
+- アクティブモニターの中央に移動（サイズ指定なし、現在のサイズを維持）: `{ "windowTitle": "Google Chrome", "moveToActiveMonitorCenter": true }`
 
 ### マルチモニタ対応（固定座標指定）
 
@@ -389,9 +386,10 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **使用例（デュアルモニタ、固定座標）:**
 
-- Chrome（セカンダリ全体）: `{ "title": "Google Chrome", "x": 1920, "y": 0, "width": 1920, "height": 1080 }`
-- VSCode（プライマリの左半分）: `{ "title": "Visual Studio Code", "x": 0, "y": 0, "width": 960, "height": 1080 }`
-- Slack（プライマリの右半分）: `{ "title": "Slack", "x": 960, "y": 0, "width": 960, "height": 1080 }`
+- Chrome（セカンダリ全体）: `{ "windowTitle": "Google Chrome", "x": 1920, "y": 0, "width": 1920, "height": 1080 }`
+- VSCode（プライマリの左半分）: `{ "windowTitle": "Visual Studio Code", "x": 0, "y": 0, "width": 960, "height": 1080 }`
+- Slack（プライマリの右半分）: `{ "windowTitle": "Slack", "x": 960, "y": 0, "width": 960, "height": 1080 }`
+- 単一アイテムでは同じ値を `placement` に書く（例: `"window": { "title": "Slack" }, "placement": { "x": 960, "y": 0, "width": 960, "height": 1080 }`）
 
 ### 実装詳細
 
@@ -412,8 +410,9 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 1. **itemHandlers.ts / workspaceHandlers.ts**
    - アイテム起動リクエストを受信
-   - `tryActivateWindow()` を呼び出してウィンドウアクティブ化を試行
-   - アクティブ化失敗時は `launchItem()` で通常起動
+   - 単一アイテムでウィンドウ切り替え（`window`）があれば、`executeLauncherItem()`（`setExecutor.ts`）でセットの 1 行として実行する。見つかれば `tryActivateWindow()`／`applyWindowConfig()` に `followDesktop` を付けて渡し、見つからなければ `launchItem()` で開く（位置があれば出てくるのを待って `applyWindowConfig()` を当てる）。うまくいかなかったときだけトーストで知らせる
+   - ウィンドウ切り替えの無い単一アイテムは `launchItem()` で開くだけ
+   - ウィンドウ操作アイテムは `tryActivateWindow()` で探して操作する
 
 2. **windowActivator.ts**
    - ウィンドウ設定（WindowConfig）を受け取る
@@ -423,7 +422,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
      - `setWindowBounds()` で位置・サイズを設定
      - 移す先のデスクトップ番号の指定が無く、呼び出し元が `followDesktop` を指定していれば（アイテム・ウィンドウ操作アイテム。セットの実行は指定しない）、ウィンドウが別の仮想デスクトップにあるときそのデスクトップへ切り替える（`switchToWindowDesktop()`）
      - `activateWindow()` でウィンドウをアクティブ化
-   - ウィンドウが見つからない場合は通常起動へフォールバック
+   - ウィンドウが見つからない場合は見つからなかったことを返す（開くかどうかは呼び出し元が決める）
 
 3. **itemLauncher.ts**
    - アイテムタイプに応じた起動処理を統一
@@ -522,7 +521,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **単一アイテムのウィンドウ設定:**
 
-CSV 形式（`data*.txt`）では 5 番目の列にウィンドウタイトルの文字列か JSON を書いていた。v0.6.1 で CSV を廃止し、今は `windowConfig` オブジェクトだけを読む（文字列は受け付けない。`validateWindowConfig`、`src/common/utils/jsonParser.ts`）。
+CSV 形式（`data*.txt`）では 5 番目の列にウィンドウタイトルの文字列か JSON を書いていた。v0.6.1 で CSV を廃止し、`windowConfig` オブジェクトだけを読むようにした（文字列は受け付けない）。v0.8.0-beta.11 の後、セットの行と同じキー（`window`・`placement` など）に変え、`windowConfig` は読み込み時に 1 回だけ変換する（[データファイル形式 3.1.5.6](file-formats/data-format.md#3156-旧形式windowconfigからの変換)。検証は `validateJsonLauncherItem`、`src/common/utils/jsonParser.ts`）。
 
 **ウィンドウ操作アイテム:**
 

@@ -27,6 +27,10 @@ import type {
 } from '@common/types';
 import { JSON_WORKSPACE_VERSION } from '@common/types';
 import { isRecord } from '@common/types/guards';
+import {
+  convertLegacyWindowConfigs,
+  hasLegacyWindowConfig,
+} from '@common/utils/itemWindowConversion';
 
 import {
   detectExternalChange,
@@ -129,6 +133,11 @@ export interface WorkspaceFileStoreHooks {
     /** 変換する前のスナップショットを作る（変換するものがあるときだけ呼ぶ。失敗したら投げる） */
     snapshot: () => Promise<void>;
   }>;
+  /**
+   * 単一アイテムの windowConfig だけを変換する前のスナップショットを作る（_pre-window-migration。失敗したら投げる）。
+   * セットへの変換もあるときは prepareSetMigration の snapshot だけを使う。省略すると windowConfig だけの変換はしない（テスト）
+   */
+  createPreWindowMigrationSnapshot?: () => Promise<void>;
   /** 補完・移行に使う現在時刻 */
   now?: () => number;
 }
@@ -348,51 +357,30 @@ export class WorkspaceFileStore {
       this.importLegacyDetachedIfPresent();
     }
 
-    // 旧形式のグループ・ウィンドウ配置 → セット（戻せないので、変換前に全設定ファイルのスナップショットを残す）
+    // 旧形式のグループ・ウィンドウ配置 → セット、単一アイテムの windowConfig → ウィンドウ切り替えの新しいキー
+    // （戻せないので、変換前に全設定ファイルのスナップショットを 1 回だけ残す）
     let forceRewriteMain = false;
     let forceRewriteArchive = false;
     if (
       mainReport.status === 'ok' &&
       archiveReport.status === 'ok' &&
-      this.hooks.prepareSetMigration &&
       mainContent !== null &&
       archiveContent !== null
     ) {
       try {
-        const main = JSON.parse(mainContent) as unknown;
-        const archive = JSON.parse(archiveContent) as unknown;
-        const mainItems = isRecord(main) && Array.isArray(main.items) ? main.items : undefined;
-        const archiveItems =
-          isRecord(archive) && Array.isArray(archive.items) ? archive.items : undefined;
-        if (hasLegacySetItems(mainItems) || hasLegacySetItems(archiveItems)) {
-          const { resolveName, parallel, snapshot } = await this.hooks.prepareSetMigration();
-          const mode = parallel ? 'parallel' : 'sequential';
-          const mainConverted =
-            mainItems && isRecord(main)
-              ? convertLegacySetItems(mainItems, resolveName, mode)
-              : null;
-          const archiveConverted =
-            archiveItems && isRecord(archive)
-              ? convertLegacySetItems(archiveItems, resolveName, mode)
-              : null;
-          // 変換できるものが無い（壊れた旧アイテムだけ）なら、スナップショットも作らない（読み込みのたびに増えるのを防ぐ）
-          if (mainConverted?.changed || archiveConverted?.changed) {
-            await snapshot();
-            if (mainConverted?.changed && isRecord(main)) {
-              mainContent = JSON.stringify({ ...main, items: mainConverted.items });
-              forceRewriteMain = true;
-            }
-            if (archiveConverted?.changed && isRecord(archive)) {
-              archiveContent = JSON.stringify({ ...archive, items: archiveConverted.items });
-              forceRewriteArchive = true;
-            }
+        const migrated = await this.migrateLegacyItems(mainContent, archiveContent);
+        if (migrated) {
+          if (migrated.mainContent !== null) {
+            mainContent = migrated.mainContent;
+            forceRewriteMain = true;
+          }
+          if (migrated.archiveContent !== null) {
+            archiveContent = migrated.archiveContent;
+            forceRewriteArchive = true;
           }
         }
       } catch (error) {
-        logger.error(
-          { error },
-          'ワークスペースのグループ・ウィンドウ配置をセットに変換できませんでした'
-        );
+        logger.error({ error }, 'ワークスペースの旧形式のアイテムを新しい形に変換できませんでした');
       }
     }
 
@@ -555,6 +543,78 @@ export class WorkspaceFileStore {
     report.status = 'corrupted';
     report.error = error instanceof Error ? error.message : String(error);
     this.corruptedFiles.add(report.file);
+  }
+
+  /**
+   * main・archive の中の旧形式のアイテムを変換する（グループ・ウィンドウ配置 → セット、windowConfig → 新しいキー）
+   *
+   * スナップショットは 1 回だけ作る（セットへの変換があれば _pre-set-migration、windowConfig だけなら
+   * _pre-window-migration）。変換するものが無ければ何もしない（読み込みのたびにスナップショットが増えるのを防ぐ）
+   *
+   * @returns 書き換えた内容（変えていないファイルは null）。変換しなければ undefined
+   */
+  private async migrateLegacyItems(
+    mainContent: string,
+    archiveContent: string
+  ): Promise<{ mainContent: string | null; archiveContent: string | null } | undefined> {
+    const main = JSON.parse(mainContent) as unknown;
+    const archive = JSON.parse(archiveContent) as unknown;
+    const mainItems = isRecord(main) && Array.isArray(main.items) ? main.items : undefined;
+    const archiveItems =
+      isRecord(archive) && Array.isArray(archive.items) ? archive.items : undefined;
+
+    const needsSets =
+      !!this.hooks.prepareSetMigration &&
+      (hasLegacySetItems(mainItems) || hasLegacySetItems(archiveItems));
+    const needsWindows =
+      (needsSets || !!this.hooks.createPreWindowMigrationSnapshot) &&
+      (hasLegacyWindowConfig(mainItems) || hasLegacyWindowConfig(archiveItems));
+    if (!needsSets && !needsWindows) return undefined;
+
+    const sets = needsSets ? await this.hooks.prepareSetMigration!() : undefined;
+    let setsChanged = false;
+    const convertItems = (items: unknown[] | undefined): unknown[] | null => {
+      if (!items) return null;
+      let next = items;
+      let changed = false;
+      if (sets) {
+        const converted = convertLegacySetItems(
+          next,
+          sets.resolveName,
+          sets.parallel ? 'parallel' : 'sequential'
+        );
+        if (converted.changed) {
+          next = converted.items;
+          changed = setsChanged = true;
+        }
+      }
+      if (needsWindows) {
+        const converted = convertLegacyWindowConfigs(next);
+        if (converted.changed) {
+          next = converted.items;
+          changed = true;
+        }
+      }
+      return changed ? next : null;
+    };
+    const mainNext = convertItems(mainItems);
+    const archiveNext = convertItems(archiveItems);
+    // 変換できるものが無い（壊れた旧アイテムだけ）なら、スナップショットも作らない
+    if (!mainNext && !archiveNext) return undefined;
+
+    const windowSnapshot = this.hooks.createPreWindowMigrationSnapshot;
+    if (setsChanged || !windowSnapshot) {
+      await sets!.snapshot();
+    } else {
+      await windowSnapshot();
+    }
+    return {
+      mainContent: mainNext && isRecord(main) ? JSON.stringify({ ...main, items: mainNext }) : null,
+      archiveContent:
+        archiveNext && isRecord(archive)
+          ? JSON.stringify({ ...archive, items: archiveNext })
+          : null,
+    };
   }
 
   /**

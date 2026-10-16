@@ -32,6 +32,7 @@ graph TD
     SetAddWindows[ウィンドウを追加]
     SetUpdate[ウィンドウ位置を更新]
     SetDetail[行の詳細]
+    PlacementPick[ウィンドウ位置を記録するウィンドウを選ぶ]
     WindowSelect[ウィンドウ選択モーダル]
     AppImport[アプリ取込画面]
     BackupSnapshot[バックアップスナップショットモーダル]
@@ -86,7 +87,8 @@ graph TD
 
     %% セットの小さな画面の遷移
     SetRecord -->|ウィンドウを選ぶ / 別のウィンドウにする| WindowSelect
-    SetDetail -->|開いているウィンドウから取り込む| WindowSelect
+    SetDetail -->|開いているウィンドウから選ぶ| WindowSelect
+    SetDetail -->|ウィンドウ位置を更新（合うウィンドウが 2 つ以上）| PlacementPick
     WorkspaceItemEdit -->|カスタムアイコン選択| FilePicker
 
     %% ブックマーク取込画面の遷移
@@ -112,7 +114,7 @@ graph TD
     class FirstLaunch,Main,Workspace,Detached window
     class AdminSettings,AdminItems,AdminOther adminTab
     class Register,IconProgress,WorkspaceItemEdit,WorkspaceConfirm child
-    class BookmarkImport,SetPicker,SetRecord,SetDetail,WindowSelect,AppImport,BackupSnapshot,MemoView modal
+    class BookmarkImport,SetPicker,SetRecord,SetDetail,PlacementPick,WindowSelect,AppImport,BackupSnapshot,MemoView modal
     class FilePicker,Alert,Confirm dialog
 ```
 
@@ -221,7 +223,8 @@ graph TD
 | 元画面 | 遷移先 | トリガー | 戻り方 |
 | --- | --- | --- | --- |
 | **ウィンドウ位置を更新** | **ウィンドウ選択モーダル** | 「ウィンドウを選ぶ」/ プルダウンの「別のウィンドウにする」 | キャンセル / 選択 |
-| **行の詳細** | **ウィンドウ選択モーダル** | 「開いているウィンドウから取り込む」 | キャンセル / 選択 |
+| **行の詳細** | **ウィンドウ選択モーダル** | 「🔍 開いているウィンドウから選ぶ」 | キャンセル / 選択 |
+| **行の詳細** | **ウィンドウ位置を記録するウィンドウを選ぶ**（`WindowPlacementPickModal`） | 「📍 ウィンドウ位置を更新」で合うウィンドウが 2 つ以上 | キャンセル / 記録する |
 
 ### ブックマーク取込画面から開くダイアログ
 
