@@ -39,7 +39,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | 影・フォーカス・トランジション | `--shadow`、`--shadow-{sm\|lg\|xl}`、`--focus-ring*`、`--transition-{fast\|normal\|slow\|width}` |
 | z-index と寸法 | `--z-{dropdown\|modal}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*` |
 | ワークスペースのグループ色トークン | `--group-color-{トークン}` |
-| 検索モードの色（メインウィンドウ） | `--mode-{accent\|accent-solid\|tint\|marked}`（役割の名前。値はモードで変わる） |
+| 検索モードの色（メインウィンドウ） | `--mode-{accent\|accent-solid\|tint\|surface\|marked}`（役割の名前。値はモードで変わる） |
 
 - `variables.css` に無い変数名（`--border-color`・`--text-color` など）は使わない。定義されていない変数は何も指定していないのと同じになり、枠や色が黙って消える（2026-10 に約 30 種類を既存の変数へ付け替えた）
 - ワークスペースのグループ色トークンは、`workspace.json` の `groups[].color` に保存される値に対応する。`primary`/`success`/`danger`/`warning`/`info`/`secondary` はテーマ色（`--color-*`）を参照し、それ以外（`purple` など）は固有色を持つ。トークンから CSS 変数への解決は `src/common/groupColors.ts` の `resolveGroupColorCss()` が行う。
