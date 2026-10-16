@@ -207,6 +207,20 @@ export async function reapplySettingsFromDisk(): Promise<void> {
   logger.info('設定をディスクから再適用しました');
 }
 
+/**
+ * 設定をまとめて保存し、副作用のある設定を適用して、各ウィンドウに変更を知らせる
+ * （設定画面・アイテム管理画面の保存と、CLI の launcher tab が使う）
+ */
+export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
+  const settingsService = await SettingsService.getInstance();
+  await settingsService.setMultiple(settings);
+  logger.info({ settings }, 'Settings set multiple request');
+
+  const changedKeys = Object.keys(settings) as Array<keyof AppSettings>;
+  await applySettingsEffects(changedKeys, settingsService);
+  notifySettingsChanged();
+}
+
 export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boolean) => void): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH, async () => {
     const settingsService = await SettingsService.getInstance();
@@ -231,18 +245,12 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SET_MULTIPLE,
     async (_event, settings: Partial<AppSettings>) => {
-      const settingsService = await SettingsService.getInstance();
-      await settingsService.setMultiple(settings);
-      logger.info({ settings }, 'Settings set multiple request');
+      await saveSettings(settings);
 
       if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
         setFirstLaunchMode(false);
         logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
       }
-
-      const changedKeys = Object.keys(settings) as Array<keyof AppSettings>;
-      await applySettingsEffects(changedKeys, settingsService);
-      notifySettingsChanged();
 
       return true;
     }
