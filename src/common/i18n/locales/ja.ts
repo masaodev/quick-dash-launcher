@@ -201,6 +201,9 @@ export const ja = {
       virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません。',
       noContainingFolder: 'このアイテムには親フォルダがありません',
       noContainingFolderNamed: '「{{name}}」には親フォルダがありません',
+      launchFailed: '「{{name}}」を開けませんでした: {{error}}',
+      appNotFoundInPath: 'PATH にアプリが見つかりません',
+      clipboardDataMissing: 'クリップボードのデータが見つかりません',
     },
     itemActions: {
       targets: {

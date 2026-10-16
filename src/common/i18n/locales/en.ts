@@ -201,6 +201,9 @@ export const en: LocaleMessages = {
       virtualDesktopUnsupported: "Virtual desktops aren't supported on this PC.",
       noContainingFolder: "This item doesn't have a containing folder",
       noContainingFolderNamed: '"{{name}}" doesn\'t have a containing folder',
+      launchFailed: 'Couldn\'t open "{{name}}": {{error}}',
+      appNotFoundInPath: "Couldn't find the app in PATH",
+      clipboardDataMissing: "Couldn't find the clipboard data",
     },
     itemActions: {
       targets: {

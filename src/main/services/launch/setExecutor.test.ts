@@ -28,6 +28,8 @@ vi.mock('../overlayWindowService.js', () => ({
 }));
 vi.mock('../mainI18n.js', () => ({ mainI18n: { t: (key: string) => key } }));
 
+import type { LaunchResult } from '../../utils/itemLauncher';
+
 import { buildSetWindowConfig, executeSet, type SetExecutorDeps } from './setExecutor';
 
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
@@ -46,6 +48,12 @@ const items: Record<string, AppItem> = {
     path: 'wt.exe',
     windowConfig: { title: '*Terminal*' },
   },
+  miss1aaa: {
+    id: 'miss1aaa',
+    type: 'app',
+    displayName: '消えたアプリ',
+    path: 'C:/missing/tool.exe',
+  },
 };
 
 /** 呼ばれた順を記録する偽の部品。windows は「今開いているウィンドウ」（findWindow が探す） */
@@ -53,12 +61,15 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
   const calls: string[] = [];
   const opened = [...windows];
   const deps: SetExecutorDeps = {
-    launch: vi.fn(async (item) => {
+    launch: vi.fn(async (item): Promise<LaunchResult> => {
       calls.push(`launch:${item.path}`);
       // Obsidian は開くとすぐウィンドウが出る想定
       if (item.path.endsWith('Obsidian.exe')) {
         opened.push({ hwnd: 99n, title: 'note - Obsidian', processName: 'Obsidian.exe' });
       }
+      // 「missing」を含むパスは開けない想定
+      if (item.path.includes('missing')) return { success: false, error: '見つかりません' };
+      return { success: true };
     }),
     findWindow: vi.fn((config: WindowConfig, exclude?: ReadonlySet<bigint>) => {
       const found = opened.find(
@@ -91,6 +102,27 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
 const resolve = (id: string) => items[id];
 
 describe('executeSet', () => {
+  it('開けなかった行は、待たずにその理由で失敗にする（置き場所の有無によらない）', async () => {
+    const { deps } = makeDeps();
+    const set: SetItem = {
+      type: 'set',
+      displayName: '開けない',
+      entries: [
+        { itemId: 'miss1aaa' },
+        {
+          itemId: 'miss1aaa',
+          window: { processName: 'tool.exe' },
+          placement: { x: 0, y: 0, width: 100, height: 100 },
+        },
+      ],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(result.errorCount).toBe(2);
+    expect(result.entries.map((e) => e.error)).toEqual(['見つかりません', '見つかりません']);
+    // 開けなかったのでウィンドウが出るのを待たない（500ms おきに探す待ちが無い）
+    expect(deps.sleep).not.toHaveBeenCalledWith(500);
+  });
+
   it('合うウィンドウが複数のデスクトップにあれば、置く先のデスクトップのものを動かす', async () => {
     const { deps, calls } = makeDeps([
       { hwnd: 1n, title: 'a.png - ペイント', processName: 'mspaint.exe' },
@@ -460,9 +492,10 @@ describe('executeSet', () => {
     const { deps, calls } = makeDeps();
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
-    deps.launch = vi.fn(async (item) => {
+    deps.launch = vi.fn(async (item): Promise<LaunchResult> => {
       calls.push(`launch:${item.path}`);
       await gate;
+      return { success: true };
     });
     const set: SetItem = {
       id: 'set1aaaa',

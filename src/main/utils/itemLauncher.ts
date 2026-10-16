@@ -10,6 +10,7 @@ import { Logger } from 'pino';
 import { parseArgs } from '@common/utils/argsParser';
 
 import { ClipboardService } from '../services/clipboardService.js';
+import { mainI18n } from '../services/mainI18n.js';
 
 import { noteLaunchedPath } from './folderPathProbe.js';
 import { isBareFileName, resolveFromPath } from './pathResolver.js';
@@ -25,39 +26,52 @@ export interface LaunchableItem {
   clipboardDataRef?: string;
 }
 
+/** 起動の結果（失敗のときは利用者に見せる理由） */
+export type LaunchResult = { success: true } | { success: false; error: string };
+
+/** 失敗の理由（無ければ成功）を LaunchResult にする */
+function toResult(error: string | undefined): LaunchResult {
+  return error === undefined ? { success: true } : { success: false, error };
+}
+
 /**
  * アイテムを起動する
+ *
+ * 失敗しても投げず、ログに残して { success: false } を返す（知らせるのは呼び出し側）
  */
-export async function launchItem(item: LaunchableItem, logger: Logger): Promise<void> {
+export async function launchItem(item: LaunchableItem, logger: Logger): Promise<LaunchResult> {
   try {
     switch (item.type) {
       case 'url':
       case 'customUri':
         await shell.openExternal(item.path);
-        break;
+        return { success: true };
 
       case 'file':
-      case 'folder':
-        await openPathOrLog(item.path, logger, { path: item.path, name: item.displayName });
+      case 'folder': {
+        const error = await openPathOrLog(item.path, logger, {
+          path: item.path,
+          name: item.displayName,
+        });
         // 拡張子の無いパスは、ファイルかどうかを確かめて次の読み込みの種別に反映する（起動は待たせない）
         void noteLaunchedPath(item.path).catch((error) => {
           logger.warn({ error, path: item.path }, '起動したパスの種類を確かめられませんでした');
         });
-        break;
+        return toResult(error);
+      }
 
       case 'app':
-        await launchApp(item, logger);
-        break;
+        return toResult(await launchApp(item, logger));
 
       case 'clipboard':
-        await restoreClipboard(item, logger);
-        break;
+        return toResult(await restoreClipboard(item, logger));
 
       default:
         logger.warn(
           { type: item.type, path: item.path, name: item.displayName },
           '未知のアイテムタイプです'
         );
+        return { success: true };
     }
   } catch (error) {
     logger.error(
@@ -73,10 +87,14 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
       },
       'アイテムの起動に失敗しました'
     );
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
-/** spawn でプロセスを起動し、エラーハンドリングを設定する */
+/**
+ * spawn でプロセスを起動し、起動できたか（spawn か error のどちらかが来るまで）を待つ
+ * @returns 失敗の理由（起動できたら undefined）
+ */
 function spawnDetached(
   command: string,
   args: string[],
@@ -84,7 +102,7 @@ function spawnDetached(
   logger: Logger,
   logContext: Record<string, unknown>,
   errorMessage: string
-): void {
+): Promise<string | undefined> {
   const child = spawn(command, args, {
     detached: true,
     stdio: 'ignore',
@@ -92,32 +110,40 @@ function spawnDetached(
     cwd: options.cwd,
   });
   child.unref();
-  child.on('error', (error) => {
-    logger.error({ error: error.message, ...logContext }, errorMessage);
+  return new Promise((resolve) => {
+    child.once('spawn', () => resolve(undefined));
+    child.once('error', (error) => {
+      logger.error({ error: error.message, ...logContext }, errorMessage);
+      resolve(error.message);
+    });
   });
 }
 
 /**
  * shell.openPath で開き、開けなかったらログに残す
  * shell.openPath は失敗しても例外を投げず、エラーメッセージを返すため
+ * @returns 失敗の理由（開けたら undefined）
  */
 async function openPathOrLog(
   target: string,
   logger: Logger,
   logContext: Record<string, unknown>
-): Promise<void> {
+): Promise<string | undefined> {
   const error = await shell.openPath(target);
   if (error) {
     logger.error({ ...logContext, error }, 'アイテムの起動に失敗しました');
+    return error;
   }
+  return undefined;
 }
 
-async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
+/** @returns 失敗の理由（起動できたら undefined） */
+async function launchApp(item: LaunchableItem, logger: Logger): Promise<string | undefined> {
   const logContext = { path: item.path, name: item.displayName };
 
   // 登録アプリ（shell:AppsFolder\パス）の場合はexplorer.exe経由で起動
   if (item.path.startsWith('shell:AppsFolder\\')) {
-    spawnDetached(
+    return spawnDetached(
       'explorer.exe',
       [item.path],
       {},
@@ -125,7 +151,6 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
       logContext,
       '登録アプリの起動に失敗しました'
     );
-    return;
   }
 
   // ショートカットファイルまたは引数なしの場合
@@ -134,16 +159,15 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<void> {
     const target = isBareFileName(item.path) ? await resolveFromPath(item.path) : item.path;
     if (!target) {
       logger.error(logContext, 'PATH にアプリが見つからないため起動できません');
-      return;
+      return mainI18n.t('launcher.messages.appNotFoundInPath');
     }
-    await openPathOrLog(target, logger, logContext);
-    return;
+    return openPathOrLog(target, logger, logContext);
   }
 
   // 引数ありの場合はspawnを使用（コマンドインジェクション防止）
   const args = parseArgs(item.args);
   const needsShell = /\.(cmd|bat)$/i.test(item.path);
-  spawnDetached(
+  return spawnDetached(
     item.path,
     args,
     { shell: needsShell, cwd: getWorkingDirectory(item.path) },
@@ -163,10 +187,11 @@ export function getWorkingDirectory(executablePath: string): string | undefined 
   return path.win32.isAbsolute(executablePath) ? path.win32.dirname(executablePath) : undefined;
 }
 
-async function restoreClipboard(item: LaunchableItem, logger: Logger): Promise<void> {
+/** @returns 失敗の理由（復元できたら undefined） */
+async function restoreClipboard(item: LaunchableItem, logger: Logger): Promise<string | undefined> {
   if (!item.clipboardDataRef) {
     logger.warn({ name: item.displayName }, 'クリップボードデータ参照がありません');
-    return;
+    return mainI18n.t('launcher.messages.clipboardDataMissing');
   }
 
   const clipboardService = ClipboardService.getInstance();
@@ -176,5 +201,7 @@ async function restoreClipboard(item: LaunchableItem, logger: Logger): Promise<v
       { error: result.error, dataRef: item.clipboardDataRef, name: item.displayName },
       'クリップボードの復元に失敗しました'
     );
+    return result.error ?? mainI18n.t('launcher.messages.clipboardDataMissing');
   }
+  return undefined;
 }

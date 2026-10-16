@@ -9,8 +9,12 @@ import { tryActivateWindow } from '../utils/windowActivator.js';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
-import { launchItem } from '../utils/itemLauncher.js';
-import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
+import { launchItem, type LaunchResult } from '../utils/itemLauncher.js';
+import {
+  hideLayoutProgressWindow,
+  LONG_TOAST_DURATION_MS,
+  showToastWindow,
+} from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { executeSet, notifySetFailures } from '../services/launch/setExecutor.js';
 import { mainI18n } from '../services/mainI18n.js';
@@ -23,6 +27,22 @@ function createWindowConfig(item: WindowItem): WindowConfig {
     title: item.windowTitle,
     ...pickWindowPlacement(item),
   };
+}
+
+/** アイテムを開けなかったら、理由をエラーのトーストで知らせる（メイン画面・ワークスペースで共通） */
+export async function notifyLaunchFailure(
+  displayName: string | undefined,
+  result: LaunchResult
+): Promise<void> {
+  if (result.success) return;
+  await showToastWindow({
+    type: 'error',
+    message: mainI18n.t('launcher.messages.launchFailed', {
+      name: displayName ?? '',
+      error: result.error,
+    }),
+    duration: LONG_TOAST_DURATION_MS,
+  }).catch((error) => itemLogger.error({ error }, '起動の失敗のトーストを出せませんでした'));
 }
 
 async function openItem(item: LauncherItem): Promise<void> {
@@ -53,7 +73,7 @@ async function openItem(item: LauncherItem): Promise<void> {
   }
 
   // 通常の起動処理
-  await launchItem(
+  const result = await launchItem(
     {
       type: item.type,
       path: item.path,
@@ -62,6 +82,7 @@ async function openItem(item: LauncherItem): Promise<void> {
     },
     itemLogger
   );
+  await notifyLaunchFailure(item.displayName, result);
 }
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
