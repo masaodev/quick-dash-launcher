@@ -1,9 +1,9 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DataFileTab } from '@common/types';
+import { TabStructureEdits } from '@common/utils/tabManager';
 
 import type { AdminTabStructure } from '../hooks/useAdminTabStructure';
-import { TabStructureEdits } from '../utils/tabManager';
 import { isCommitEnter } from '../utils/inlineName';
 
 type MenuEntry =

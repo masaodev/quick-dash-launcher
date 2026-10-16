@@ -1,5 +1,6 @@
-import i18next from 'i18next';
 import { DEFAULT_DATA_FILE, DataFileTab } from '@common/types';
+
+import { tabT } from './translate';
 
 /**
  * バリデーション結果
@@ -23,7 +24,7 @@ export const TabValidator = {
    */
   canRemoveFileFromTab(fileName: string, tabIndex: number, tabs: DataFileTab[]): ValidationResult {
     if (tabIndex < 0 || tabIndex >= tabs.length) {
-      return { valid: false, reason: i18next.t('itemManager.tabStructure.errors.tabNotFound') };
+      return { valid: false, reason: tabT('itemManager.tabStructure.errors.tabNotFound') };
     }
 
     const tab = tabs[tabIndex];
@@ -31,7 +32,7 @@ export const TabValidator = {
     if (tab.files.length === 1) {
       return {
         valid: false,
-        reason: i18next.t('itemManager.tabStructure.errors.tabNeedsFile'),
+        reason: tabT('itemManager.tabStructure.errors.tabNeedsFile'),
       };
     }
 
@@ -42,7 +43,7 @@ export const TabValidator = {
       if (otherTabsWithMainFile.length === 0) {
         return {
           valid: false,
-          reason: i18next.t('itemManager.tabStructure.errors.mainFileRequired', {
+          reason: tabT('itemManager.tabStructure.errors.mainFileRequired', {
             file: DEFAULT_DATA_FILE,
           }),
         };
@@ -60,7 +61,7 @@ export const TabValidator = {
     if (tab.files.includes(fileName)) {
       return {
         valid: false,
-        reason: i18next.t('itemManager.tabStructure.errors.fileAlreadyInTab'),
+        reason: tabT('itemManager.tabStructure.errors.fileAlreadyInTab'),
       };
     }
     return { valid: true };

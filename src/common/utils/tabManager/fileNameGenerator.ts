@@ -1,5 +1,6 @@
-import i18next from 'i18next';
 import { DataFileTab } from '@common/types';
+
+import { tabT } from './translate';
 
 const DATAFILES_PREFIX = 'datafiles/';
 
@@ -26,12 +27,12 @@ export const FileNameGenerator = {
     const baseName = stripPrefix(fileName);
 
     if (baseName === 'data.json') {
-      return i18next.t('itemManager.tabStructure.defaultNames.main');
+      return tabT('itemManager.tabStructure.defaultNames.main');
     }
     const match = baseName.match(/^data(\d+)\.json$/);
     if (match) {
       const num = parseInt(match[1]);
-      return i18next.t('itemManager.tabStructure.defaultNames.sub', { number: num - 1 });
+      return tabT('itemManager.tabStructure.defaultNames.sub', { number: num - 1 });
     }
     return fileName;
   },
@@ -53,7 +54,7 @@ export const FileNameGenerator = {
       const linkedTab = tabs?.find((tab) => tab.files.includes(fileName));
       tabName = linkedTab?.name ?? this.getDefaultTabName(fileName);
     }
-    return i18next.t('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName });
+    return tabT('itemManager.tabStructure.defaultNames.fileForTab', { tab: tabName });
   },
 
   /**

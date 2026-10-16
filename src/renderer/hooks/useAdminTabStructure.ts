@@ -1,14 +1,14 @@
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppSettings, DataFileTab } from '@common/types';
-
-import { logError } from '../utils/debug';
 import {
   TabStructureEdits,
   type MoveDirection,
   type TabStructure,
   type TabStructureEdit,
-} from '../utils/tabManager';
+} from '@common/utils/tabManager';
+
+import { logError } from '../utils/debug';
 
 /** アイテム管理画面から変えるタブ構成の設定 */
 export type TabStructureSettings = Pick<
