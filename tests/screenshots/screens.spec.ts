@@ -138,7 +138,6 @@ test.describe('画面仕様書の画面イメージ', () => {
     await modal.waitFor({ state: 'visible' });
     // 名前に ☆ を含むものに、頭に [bkm] を付けて取り込むルール
     await modal.locator('#bookmark-rule-name-word').fill('☆');
-    await modal.locator('.bookmark-rule-options-toggle').click();
     await modal.locator('.bookmark-rule-options-body input').first().fill('[bkm]');
     // 入力で下へ動いた本文を先頭に戻してから撮る（取込先・ルール名・条件が見えるように）
     await modal.locator('.bookmark-rule-body').evaluate((el) => el.scrollTo(0, 0));

@@ -73,7 +73,8 @@ export function useImportDestination({
 
   const destination: ImportDestination =
     destTab === NEW_TAB
-      ? { kind: 'newTab', tabName: newTabName, fileLabel: newFileLabel }
+      ? // 新しいタブにはファイルが 1 つできるだけなので、ファイル名はタブ名と同じにする
+        { kind: 'newTab', tabName: newTabName, fileLabel: newTabName }
       : destFile === NEW_FILE
         ? { kind: 'newFile', tabIndex: destTab, fileLabel: newFileLabel }
         : { kind: 'existing', fileName: destFile };
@@ -82,7 +83,7 @@ export function useImportDestination({
   const destinationText = (() => {
     const newFile = t('importCommon.newFileName', { name: newFileLabel.trim() || defaultName });
     if (destination.kind === 'newTab') {
-      return `${t('importCommon.newTabName', { name: newTabName.trim() || defaultName })} › ${newFile}`;
+      return t('importCommon.newTabName', { name: newTabName.trim() || defaultName });
     }
     const tabName = dataFileTabs[destTab]?.name ?? '';
     if (destination.kind === 'newFile') return `${tabName} › ${newFile}`;

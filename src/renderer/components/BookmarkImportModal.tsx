@@ -42,8 +42,8 @@ import ImportDestinationBand from './ImportDestinationBand';
 
 /** 取込元のプルダウンの値（ブラウザの ID か HTML ファイル） */
 type SourceValue = 'chrome' | 'edge' | 'html';
-/** プロファイルのプルダウンで「すべてのプロファイル」を表す値 */
-const ALL_PROFILES = '';
+/** プロファイルを選んでいない（プロファイルの無いブラウザ） */
+const NO_PROFILE = '';
 /** 検索の結果を一度に出す上限（それ以上は件数だけ出す） */
 const SEARCH_LIMIT = 300;
 
@@ -82,7 +82,7 @@ function BookmarkImportModal({
   const [browsers, setBrowsers] = useState<BrowserInfo[]>([]);
   const [browsersLoaded, setBrowsersLoaded] = useState(false);
   const [source, setSource] = useState<SourceValue>('chrome');
-  const [profileId, setProfileId] = useState<string>(ALL_PROFILES);
+  const [profileId, setProfileId] = useState<string>(NO_PROFILE);
   const [htmlFile, setHtmlFile] = useState<{ path: string; name: string } | null>(null);
   const [allBookmarks, setAllBookmarks] = useState<BookmarkWithFolder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -116,7 +116,7 @@ function BookmarkImportModal({
         const first = detected.find((b) => b.installed);
         if (first) {
           setSource(first.id);
-          setProfileId(first.profiles[0]?.id ?? ALL_PROFILES);
+          setProfileId(first.profiles[0]?.id ?? NO_PROFILE);
         } else {
           setSource('html');
         }
@@ -136,10 +136,8 @@ function BookmarkImportModal({
         return htmlFile ? window.electronAPI.parseBookmarkFileWithFolders(htmlFile.path) : [];
       }
       if (!browsersLoaded || !selectedBrowser) return [];
-      const profiles =
-        profileId === ALL_PROFILES
-          ? selectedBrowser.profiles
-          : selectedBrowser.profiles.filter((p) => p.id === profileId);
+      // プロファイルは 1 つだけ選ぶ（全プロファイルを混ぜると、どれのフォルダか分からなくなるため）
+      const profiles = selectedBrowser.profiles.filter((p) => p.id === profileId);
       const lists = await Promise.all(
         profiles.map((p) =>
           window.electronAPI.bookmarkAutoImportAPI.getBookmarksWithFolders(p.bookmarkPath)
@@ -281,9 +279,7 @@ function BookmarkImportModal({
     source === 'html'
       ? ''
       : `${selectedBrowser?.displayName ?? source}（${
-          profileId === ALL_PROFILES
-            ? t('bookmarkRule.allProfiles')
-            : (selectedBrowser?.profiles.find((p) => p.id === profileId)?.displayName ?? profileId)
+          selectedBrowser?.profiles.find((p) => p.id === profileId)?.displayName ?? profileId
         }）`;
   const ruleSummary = t('bookmarkImportModal.ruleSummary', {
     source: sourceText,
@@ -315,7 +311,7 @@ function BookmarkImportModal({
     setSource(value);
     if (value !== 'html') {
       const browser = browsers.find((b) => b.id === value);
-      setProfileId(browser?.profiles[0]?.id ?? ALL_PROFILES);
+      setProfileId(browser?.profiles[0]?.id ?? NO_PROFILE);
     }
   };
 
@@ -341,7 +337,7 @@ function BookmarkImportModal({
           name: effectiveRuleName,
           enabled: true,
           browserId: source as 'chrome' | 'edge',
-          profileIds: profileId === ALL_PROFILES ? [] : [profileId],
+          profileIds: [profileId],
           folderPaths: selectionRule.folderPaths,
           folderFilterMode: 'include',
           includeSubfolders: true,
@@ -559,9 +555,6 @@ function BookmarkImportModal({
                     {p.displayName}
                   </option>
                 ))}
-                {selectedBrowser.profiles.length > 1 && (
-                  <option value={ALL_PROFILES}>{t('bookmarkRule.allProfiles')}</option>
-                )}
               </select>
             )}
             {source === 'html' && (

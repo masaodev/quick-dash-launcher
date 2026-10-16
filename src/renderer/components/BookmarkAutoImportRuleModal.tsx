@@ -73,7 +73,6 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
   const [editingRule, setEditingRule] = useState<BookmarkAutoImportRule>(
     // 「サブフォルダも含める」は画面から外した（いつも含める）
     rule ? { ...rule, includeSubfolders: true } : createEmptyRule()
@@ -84,11 +83,11 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  /** 保存されていたが見つからなかったプロファイル（最初のプロファイルに置き換えたことを知らせる） */
+  const [missingProfiles, setMissingProfiles] = useState<string | null>(null);
   const [folderPanelOpen, setFolderPanelOpen] = useState(false);
-  const [namingOpen, setNamingOpen] = useState(
-    Boolean(rule && (rule.prefix || rule.suffix || rule.folderNameMode !== 'none'))
-  );
+  // 表示名の欄は幅を取らないので、初めから開いておく（閉じることもできる）
+  const [namingOpen, setNamingOpen] = useState(true);
 
   const dest = useImportDestination({
     isOpen: true,
@@ -120,28 +119,23 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
 
   useModalKeyboard({ isOpen: true, modalRef, onClose: onCancel });
 
-  // プロファイルの選択肢は、外をクリックしたら閉じる
-  useEffect(() => {
-    if (!profileMenuOpen) return;
-    const close = (e: MouseEvent) => {
-      if (!profileMenuRef.current?.contains(e.target as Node)) setProfileMenuOpen(false);
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [profileMenuOpen]);
-
   // ブラウザ検出
   useEffect(() => {
     window.electronAPI
       .detectInstalledBrowsers()
       .then((detected) => {
         setBrowsers(detected);
-        // 新規のときだけ最初のプロファイルを選ぶ。既存ルールの空配列は「全プロファイル」なのでそのまま
-        if (!rule && editingRule.profileIds.length === 0) {
-          const browser = detected.find((b) => b.id === editingRule.browserId);
-          if (browser?.installed && browser.profiles.length > 0) {
-            updateRule({ profileIds: [browser.profiles[0].id] });
+        // プロファイルは 1 つだけ選ぶ。保存されていたものが見つからなければ（「すべて」で保存した古いルールも）、
+        // 最初のプロファイルにする
+        const browser = detected.find((b) => b.id === editingRule.browserId);
+        if (browser?.installed && browser.profiles.length > 0) {
+          const found = editingRule.profileIds.find((id) =>
+            browser.profiles.some((p) => p.id === id)
+          );
+          if (!found && rule && rule.profileIds.length > 0) {
+            setMissingProfiles(rule.profileIds.join(', '));
           }
+          updateRule({ profileIds: [found ?? browser.profiles[0].id] });
         }
       })
       .catch((error) => logError('ブラウザの検出に失敗しました:', error))
@@ -244,29 +238,6 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
     updateRule({ browserId, profileIds: firstProfileId, folderPaths: [] });
   };
 
-  /** 「すべてのプロファイル」（空配列）の切り替え。外したら最初のプロファイルだけにする */
-  const handleAllProfilesToggle = () => {
-    if (editingRule.profileIds.length === 0) {
-      const first = selectedBrowser?.profiles[0];
-      updateRule({ profileIds: first ? [first.id] : [], folderPaths: [] });
-    } else {
-      updateRule({ profileIds: [], folderPaths: [] });
-    }
-  };
-
-  /** 個別のプロファイルの切り替え。最後の 1 つは外せない（空配列は「すべて」の意味になるため） */
-  const handleProfileToggle = (profileId: string) => {
-    // 今は無いプロファイルの ID（削除済みなど）は、触った時点で落とす
-    const current = editingRule.profileIds.filter((id) =>
-      selectedBrowser?.profiles.some((p) => p.id === id)
-    );
-    const next = current.includes(profileId)
-      ? current.filter((id) => id !== profileId)
-      : [...current, profileId];
-    if (next.length === 0) return;
-    updateRule({ profileIds: next, folderPaths: [] });
-  };
-
   const handleFolderToggle = (folderPath: string) => {
     setEditingRule((prev) => {
       const newFolderPaths = prev.folderPaths.includes(folderPath)
@@ -291,20 +262,6 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   };
 
   const title = rule ? t('bookmarkRule.editTitle') : t('bookmarkRule.newTitle');
-  /** 空配列＝すべてのプロファイル（あとから増えたプロファイルも対象） */
-  const isAllProfiles = editingRule.profileIds.length === 0;
-  /** 選択中のうち、今のブラウザに実在するプロファイル */
-  const selectedProfileIds = editingRule.profileIds.filter((id) =>
-    selectedBrowser?.profiles.some((p) => p.id === id)
-  );
-  const profileSummary = isAllProfiles
-    ? t('bookmarkRule.allProfiles')
-    : selectedProfileIds.length > 0
-      ? selectedProfileIds
-          .map((id) => selectedBrowser?.profiles.find((p) => p.id === id)?.displayName ?? id)
-          .join(t('common.listSeparator'))
-      : editingRule.profileIds.join(t('common.listSeparator'));
-
   const namingSummary = [
     editingRule.prefix && t('bookmarkRule.prefixSummary', { text: editingRule.prefix }),
     editingRule.suffix && t('bookmarkRule.suffixSummary', { text: editingRule.suffix }),
@@ -408,53 +365,20 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 ))}
               </select>
               {selectedBrowser && selectedBrowser.profiles.length > 0 && (
-                <div className="bookmark-rule-dropdown" ref={profileMenuRef}>
-                  <button
-                    type="button"
-                    className={`bookmark-rule-dropdown-button${profileMenuOpen ? ' open' : ''}`}
-                    aria-haspopup="true"
-                    aria-expanded={profileMenuOpen}
-                    aria-label={t('bookmarkRule.profile')}
-                    onClick={() => setProfileMenuOpen((open) => !open)}
-                  >
-                    <span>{profileSummary}</span>
-                    <span className="bookmark-rule-caret">{profileMenuOpen ? '▲' : '▼'}</span>
-                  </button>
-                  {profileMenuOpen && (
-                    <div className="bookmark-rule-dropdown-menu">
-                      {selectedBrowser.profiles.length > 1 && (
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={isAllProfiles}
-                            onChange={handleAllProfilesToggle}
-                          />
-                          {t('bookmarkRule.allProfiles')}
-                        </label>
-                      )}
-                      {selectedBrowser.profiles.map((profile) => {
-                        const checked =
-                          isAllProfiles || editingRule.profileIds.includes(profile.id);
-                        const isLastChecked =
-                          !isAllProfiles &&
-                          selectedProfileIds.length === 1 &&
-                          selectedProfileIds[0] === profile.id;
-                        return (
-                          <label key={profile.id}>
-                            <input
-                              type="checkbox"
-                              value={profile.id}
-                              checked={checked}
-                              disabled={isAllProfiles || isLastChecked}
-                              onChange={() => handleProfileToggle(profile.id)}
-                            />
-                            {profile.displayName}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                <select
+                  aria-label={t('bookmarkRule.profile')}
+                  value={editingRule.profileIds[0] ?? ''}
+                  onChange={(e) => {
+                    setMissingProfiles(null);
+                    updateRule({ profileIds: [e.target.value], folderPaths: [] });
+                  }}
+                >
+                  {selectedBrowser.profiles.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.displayName}
+                    </option>
+                  ))}
+                </select>
               )}
               <span className="bookmark-rule-status">{statusText}</span>
             </div>
@@ -463,11 +387,9 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 {t('bookmarkRule.noBrowsers')}
               </div>
             )}
-            {!isAllProfiles && selectedBrowser && selectedProfileIds.length === 0 && (
+            {missingProfiles && (
               <div className="bookmark-rule-wide field-description bookmark-rule-error">
-                {t('bookmarkRule.profilesNotFound', {
-                  profiles: editingRule.profileIds.join(', '),
-                })}
+                {t('bookmarkRule.profilesNotFound', { profiles: missingProfiles })}
               </div>
             )}
 
@@ -588,6 +510,9 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
               )}
             </div>
           </div>
+
+          {/* 上の一覧と続いて見えないよう、ルール名の下と同じ点線で区切る */}
+          <div className="bookmark-rule-divider" />
 
           {/* オプション設定（表示名）。登録画面のオプション設定と同じ畳み方 */}
           <div className="bookmark-rule-options">

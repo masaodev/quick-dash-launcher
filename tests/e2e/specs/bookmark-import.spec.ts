@@ -91,7 +91,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         await expect(footerButton).toHaveText('2 件を取り込む');
         await expect(modal.locator('.bookmark-import-sync-toggle input')).toBeDisabled();
         await expect(modal.locator('.bookmark-import-sync-note')).toHaveText(
-          'HTML ファイルは同期できません'
+          'HTML ファイルは自動取込にできません'
         );
       });
 
@@ -115,7 +115,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
     }
   });
 
-  test('フォルダごと選んだときだけ「ブラウザと同期する」が使える', async ({
+  test('フォルダごと選んだときだけ「これからも自動で取り込む」が使える', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -146,7 +146,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         await expect(modal.locator('.import-selection')).toContainText('5 件を選択中');
         await expect(syncBox).toBeEnabled();
         await expect(modal.locator('.bookmark-import-sync-toggle')).toHaveText(
-          '「開発」 フォルダをブラウザと同期する'
+          '「開発」 フォルダを、これからも自動で取り込む'
         );
         await syncBox.check();
         await expect(modal.locator('.bookmark-import-rule-name input')).toHaveAttribute(
@@ -154,8 +154,8 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
           '開発'
         );
         await expect(syncNote).toContainText('「開発」（サブフォルダも）');
-        await expect(modal.locator('.import-footer button', { hasText: '取り込む' })).toHaveText(
-          '同期を始めて 5 件を取り込む'
+        await expect(modal.locator('.import-footer button', { hasText: '取り込み' })).toHaveText(
+          '5 件を取り込み、自動取込に登録'
         );
       });
 
@@ -167,7 +167,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
           .check();
         await expect(syncBox).toBeDisabled();
         await expect(syncBox).not.toBeChecked();
-        await expect(syncNote).toContainText('1 件ずつ選んだ分があるので同期できません');
+        await expect(syncNote).toContainText('1 件ずつ選んだ分があるので自動取込にできません');
       });
 
       await test.step('検索中は同期できない。見つかった分をまとめて選べる', async () => {
@@ -175,7 +175,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         await expect(modal.locator('.bookmark-import-list-head')).toContainText(
           '見つかった 3 件をすべて選ぶ'
         );
-        await expect(syncNote).toContainText('検索中は同期できません');
+        await expect(syncNote).toContainText('検索中は自動取込にできません');
         await modal.locator('.bookmark-import-list-head input[type="checkbox"]').check();
         await expect(modal.locator('.import-selection')).toContainText('8 件を選択中');
       });
@@ -186,15 +186,15 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         await folderRow('その他のブックマーク').locator('input[type="checkbox"]').check();
         await expect(modal.locator('.import-selection')).toContainText('10 件を選択中');
         await expect(modal.locator('.bookmark-import-sync-toggle')).toHaveText(
-          'すべてのブックマークをブラウザと同期する'
+          'すべてのブックマークを、これからも自動で取り込む'
         );
       });
 
-      await test.step('「すべてのプロファイル」にすると両方のブックマークが読み込まれる', async () => {
-        await modal.locator('select[aria-label="プロファイル"]').selectOption({
-          label: 'すべてのプロファイル',
-        });
-        await expect(modal.locator('.bookmark-import-status')).toHaveText('12 件のブックマーク');
+      await test.step('プロファイルは 1 つだけ選ぶ（「すべてのプロファイル」は無い）', async () => {
+        const profileSelect = modal.locator('select[aria-label="プロファイル"]');
+        await expect(profileSelect.locator('option')).toHaveText(['個人', '仕事']);
+        await profileSelect.selectOption({ label: '仕事' });
+        await expect(modal.locator('.bookmark-import-status')).toHaveText('2 件のブックマーク');
         // 読み直すと選択は空に戻る
         await expect(modal.locator('.import-selection')).toContainText('0 件を選択中');
       });
@@ -251,17 +251,17 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         await expect(count).toHaveText('このルールで 3 件（全 10 件）');
       });
 
-      await test.step('プロファイルの ▼ で複数選べる', async () => {
-        await ruleModal.locator('button[aria-label="プロファイル"]').click();
-        await ruleModal.locator('.bookmark-rule-dropdown-menu label', { hasText: '仕事' }).click();
-        await expect(ruleModal.locator('.bookmark-rule-status')).toHaveText('12 件のブックマーク');
-        await ruleModal.locator('.bookmark-rule-dropdown-menu label', { hasText: '仕事' }).click();
+      await test.step('プロファイルは 1 つだけ選ぶ', async () => {
+        const profileSelect = ruleModal.locator('select[aria-label="プロファイル"]');
+        await expect(profileSelect.locator('option')).toHaveText(['個人', '仕事']);
+        await profileSelect.selectOption({ label: '仕事' });
+        await expect(ruleModal.locator('.bookmark-rule-status')).toHaveText('2 件のブックマーク');
+        await profileSelect.selectOption({ label: '個人' });
         await expect(ruleModal.locator('.bookmark-rule-status')).toHaveText('10 件のブックマーク');
-        await ruleModal.locator('button[aria-label="プロファイル"]').click();
       });
 
-      await test.step('オプション設定の頭に付ける文字が、一覧の名前に出る', async () => {
-        await ruleModal.locator('.bookmark-rule-options-toggle').click();
+      await test.step('オプション設定は初めから開いていて、頭に付ける文字が一覧の名前に出る', async () => {
+        await expect(ruleModal.locator('.bookmark-rule-options-body')).toBeVisible();
         await ruleModal.locator('.bookmark-rule-options-body input').first().fill('[bkm]');
         await expect(ruleModal.locator('.bookmark-rule-item').first()).toContainText('[bkm]☆');
         await expect(ruleModal.locator('.bookmark-rule-options-summary')).toHaveText(

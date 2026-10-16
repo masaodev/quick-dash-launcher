@@ -201,17 +201,15 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
     try {
       const modal = await openAppImport(electronApp, adminWindow);
 
-      await test.step('タブに「＋ 新しいタブ」を選ぶと、タブ名とファイル名の欄が出る', async () => {
+      await test.step('タブに「＋ 新しいタブ」を選ぶと、タブ名の欄だけが出る（ファイル名はタブ名と同じ）', async () => {
         await modal.getByLabel('取込先のタブ').selectOption({ label: '＋ 新しいタブ' });
-        await expect(modal.getByLabel('取込先のデータファイル')).toBeDisabled();
-        await expect(modal.locator('.import-dest input')).toHaveCount(2);
+        await expect(modal.getByLabel('取込先のデータファイル')).toHaveCount(0);
+        await expect(modal.locator('.import-dest input')).toHaveCount(1);
         await modal
           .locator('.import-dest-field', { hasText: 'タブ名' })
           .locator('input')
           .fill('ツール');
-        await expect(modal.locator('.import-echo')).toHaveText(
-          'ツール（新しいタブ） › アプリ（新規） に取り込む'
-        );
+        await expect(modal.locator('.import-echo')).toHaveText('ツール（新しいタブ） に取り込む');
       });
 
       await test.step('取り込むとタブとファイルができ、そのタブが開く', async () => {
@@ -225,7 +223,7 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
           .toEqual(['メイン', 'ツール']);
         const settings = configHelper.readSettings();
         expect(settings.dataFileTabs?.[1]?.files).toEqual(['datafiles/data2.json']);
-        expect(settings.dataFileLabels?.['datafiles/data2.json']).toBe('アプリ');
+        expect(settings.dataFileLabels?.['datafiles/data2.json']).toBe('ツール');
         expect(settings.showDataFileTabs).toBe(true);
         await expect(adminWindow.getByTestId('admin-tab').nth(1)).toHaveClass(/active/);
         await expect(
