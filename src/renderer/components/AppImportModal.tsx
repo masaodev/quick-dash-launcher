@@ -7,12 +7,17 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
-import type { NewImportFileTarget } from '../hooks/useAdminTabStructure';
+import {
+  NEW_FILE,
+  useImportDestination,
+  type ImportDestination,
+} from '../hooks/useImportDestination';
 import { logError } from '../utils/debug';
 
 import AlertDialog from './AlertDialog';
 import { Button } from './ui';
 import DuplicateHandlingSection from './DuplicateHandlingSection';
+import ImportDestinationBand from './ImportDestinationBand';
 
 /**
  * 画面: アプリ取込画面
@@ -23,13 +28,8 @@ import DuplicateHandlingSection from './DuplicateHandlingSection';
  * 新しいタブ・ファイルは「取り込む」を押した時点で作る（キャンセルなら何も作らない）。
  */
 
-/** 取込先。既存のデータファイルか、取り込むときに作る新しいデータファイル（タブごと作ることもある） */
-export type AppImportDestination = { kind: 'existing'; fileName: string } | NewImportFileTarget;
-
-/** タブのプルダウンで「＋ 新しいタブ」を表す値 */
-const NEW_TAB = -1;
-/** ファイルのプルダウンで「＋ 新しいデータファイル」を表す値 */
-const NEW_FILE = '';
+/** 取込先（ブックマーク取込と共通の形） */
+export type AppImportDestination = ImportDestination;
 
 interface FilterOptions {
   excludeUninstallers: boolean;
@@ -90,23 +90,14 @@ function AppImportModal({
   const [duplicateHandling, setDuplicateHandling] = useState<DuplicateHandlingOption>('skip');
 
   // 取込先（開くたびに「選択中のタブに新しいデータファイル」に戻す）
-  const [destTab, setDestTab] = useState<number>(initialTabIndex);
-  const [destFile, setDestFile] = useState<string>(NEW_FILE);
-  const [newTabName, setNewTabName] = useState('');
-  const [newFileLabel, setNewFileLabel] = useState('');
+  const dest = useImportDestination({
+    isOpen,
+    dataFileTabs,
+    dataFileLabels,
+    initialTabIndex,
+    defaultName: t('appImport.defaultName'),
+  });
   const [importing, setImporting] = useState(false);
-  useEffect(() => {
-    if (!isOpen) return;
-    setDestTab(initialTabIndex < dataFileTabs.length ? initialTabIndex : 0);
-    setDestFile(NEW_FILE);
-    setNewTabName(t('appImport.defaultName'));
-    setNewFileLabel(t('appImport.defaultName'));
-  }, [isOpen]);
-  const destTabFiles = useMemo(
-    () => (destTab === NEW_TAB ? [] : (dataFileTabs[destTab]?.files ?? [])),
-    [destTab, dataFileTabs]
-  );
-  const fileLabel = (fileName: string) => dataFileLabels[fileName] || fileName;
 
   // AlertDialog状態管理
   const [alertDialog, setAlertDialog] = useState<{
@@ -194,10 +185,10 @@ function AppImportModal({
 
   // 取込先にすでにあるアプリの id。新しいファイルなら、そのタブのほかのファイルと照らす
   // （印を出すだけで、新しいファイルは空なので重複の扱いは聞かない）
-  const destItems = useMemo(() => {
-    const files = destFile === NEW_FILE ? destTabFiles : [destFile];
-    return existingItems.filter((item) => files.includes(item.meta.sourceFile));
-  }, [existingItems, destFile, destTabFiles]);
+  const destItems = useMemo(
+    () => existingItems.filter((item) => dest.compareFiles.includes(item.meta.sourceFile)),
+    [existingItems, dest.compareFiles]
+  );
   const registeredIds = useMemo(
     () => new Set(checkAppDuplicates(apps, destItems).duplicateBookmarkIds),
     [apps, destItems]
@@ -350,24 +341,7 @@ function AppImportModal({
     onClose();
   }, [onClose]);
 
-  const destination: AppImportDestination =
-    destTab === NEW_TAB
-      ? { kind: 'newTab', tabName: newTabName, fileLabel: newFileLabel }
-      : destFile === NEW_FILE
-        ? { kind: 'newFile', tabIndex: destTab, fileLabel: newFileLabel }
-        : { kind: 'existing', fileName: destFile };
-
-  // フッターの「〜 に取り込む」（登録画面の「〜 に登録」と同じく、ファイルが 1 つのタブはタブ名だけ）
-  const destinationText = (() => {
-    const fallback = t('appImport.defaultName');
-    const newFile = t('appImport.newFileName', { name: newFileLabel.trim() || fallback });
-    if (destination.kind === 'newTab') {
-      return `${t('appImport.newTabName', { name: newTabName.trim() || fallback })} › ${newFile}`;
-    }
-    const tabName = dataFileTabs[destTab]?.name ?? '';
-    if (destination.kind === 'newFile') return `${tabName} › ${newFile}`;
-    return destTabFiles.length <= 1 ? tabName : `${tabName} › ${fileLabel(destFile)}`;
-  })();
+  const { destination, destinationText } = dest;
 
   // 取り込む（新しいタブ・ファイルはここで作る）
   const handleImport = async () => {
@@ -394,19 +368,19 @@ function AppImportModal({
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div
-        className="modal-content app-import-modal"
+        className="modal-content import-modal app-import-modal"
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         tabIndex={-1}
       >
-        <div className="app-import-header">
+        <div className="import-header">
           <h3>{t('appImport.title')}</h3>
-          <div className="app-import-selection">
+          <div className="import-selection">
             <span>{t('appImport.selected', { count: selectedCount })}</span>
             {selectedCount > 0 && (
               <button
                 type="button"
-                className="app-clear-selection"
+                className="import-clear-selection"
                 onClick={() => setSelectedIds(new Set())}
               >
                 {t('appImport.clearSelection')}
@@ -415,65 +389,10 @@ function AppImportModal({
           </div>
         </div>
 
-        <div className="app-import-hint">{t('appImport.hint')}</div>
+        <div className="import-hint">{t('appImport.hint')}</div>
 
         {/* 取込先（登録画面の保存先の帯と同じ形） */}
-        <div className="app-import-dest">
-          <span className="app-import-dest-label">{t('importCommon.destination')}</span>
-          <select
-            aria-label={t('appImport.destTab')}
-            value={destTab}
-            onChange={(e) => {
-              setDestTab(Number(e.target.value));
-              setDestFile(NEW_FILE);
-            }}
-          >
-            {dataFileTabs.map((tab, index) => (
-              <option key={`${index}-${tab.files[0] ?? ''}`} value={index}>
-                {tab.name}
-              </option>
-            ))}
-            <option value={NEW_TAB}>{t('appImport.newTab')}</option>
-          </select>
-          <span className="app-import-dest-sep" aria-hidden>
-            ›
-          </span>
-          <select
-            aria-label={t('appImport.destFile')}
-            value={destFile}
-            onChange={(e) => setDestFile(e.target.value)}
-            disabled={destTab === NEW_TAB}
-          >
-            <option value={NEW_FILE}>{t('appImport.newFile')}</option>
-            {destTabFiles.map((file) => (
-              <option key={file} value={file}>
-                {fileLabel(file)}
-              </option>
-            ))}
-          </select>
-          {destTab === NEW_TAB && (
-            <label className="app-import-dest-field">
-              <span>{t('appImport.tabName')}</span>
-              <input
-                type="text"
-                value={newTabName}
-                onChange={(e) => setNewTabName(e.target.value)}
-                placeholder={t('appImport.defaultName')}
-              />
-            </label>
-          )}
-          {destFile === NEW_FILE && (
-            <label className="app-import-dest-field">
-              <span>{t('appImport.fileName')}</span>
-              <input
-                type="text"
-                value={newFileLabel}
-                onChange={(e) => setNewFileLabel(e.target.value)}
-                placeholder={t('appImport.defaultName')}
-              />
-            </label>
-          )}
-        </div>
+        <ImportDestinationBand dest={dest} />
 
         <div className="app-import-body">
           {/* 検索と取込元 */}
@@ -627,7 +546,9 @@ function AppImportModal({
                             <span
                               className="app-registered-badge"
                               title={
-                                destFile === NEW_FILE ? t('appImport.registeredInTab') : undefined
+                                dest.destFile === NEW_FILE
+                                  ? t('appImport.registeredInTab')
+                                  : undefined
                               }
                             >
                               {t('appImport.registered')}
@@ -658,7 +579,7 @@ function AppImportModal({
         </div>
 
         {/* 登録済みを選んだときの扱い（既存のファイルに入れるときだけ。新しいファイルは空なので聞かない） */}
-        {destFile !== NEW_FILE && selectedRegisteredCount > 0 && (
+        {dest.destFile !== NEW_FILE && selectedRegisteredCount > 0 && (
           <DuplicateHandlingSection
             message={t('appImport.registeredSelected', { count: selectedRegisteredCount })}
             value={duplicateHandling}
@@ -667,11 +588,11 @@ function AppImportModal({
           />
         )}
 
-        <div className="app-import-footer">
-          <span className="app-import-echo">
-            {t('appImport.destinationEcho', { target: destinationText })}
+        <div className="import-footer">
+          <span className="import-echo">
+            {t('importCommon.destinationEcho', { target: destinationText })}
           </span>
-          <div className="app-modal-actions">
+          <div className="import-actions">
             <Button variant="secondary" onClick={handleClose}>
               {t('common.cancel')}
             </Button>

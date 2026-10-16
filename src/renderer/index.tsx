@@ -13,6 +13,7 @@ import './styles/components/AdminItemManager.css';
 import './styles/components/Modal.css';
 import './styles/components/RegisterModal.css';
 import './styles/components/BookmarkImport.css';
+import './styles/components/ImportModal.css';
 import './styles/components/AppImport.css';
 // 子ウィンドウ（アイテムの登録・編集、アイコン取得結果）用のスタイル
 import './styles/components/MainChildPage.css';
