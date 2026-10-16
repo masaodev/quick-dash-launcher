@@ -32,6 +32,8 @@ interface SetUpdatePositionsModalProps {
   isOpen: boolean;
   entries: SetEntry[];
   catalog: ReadonlyMap<string, SetCatalogItem>;
+  /** 行が自分で持つパスのアイコン */
+  ownIcons?: ReadonlyMap<string, string>;
   screens: readonly ScreenArea[];
   onClose: () => void;
   /** 位置を更新した結果の行（行の数と並びは変えない） */
@@ -116,6 +118,7 @@ const SetUpdatePositionsModal: React.FC<SetUpdatePositionsModalProps> = ({
   isOpen,
   entries,
   catalog,
+  ownIcons,
   screens,
   onClose,
   onConfirm,
@@ -168,7 +171,10 @@ const SetUpdatePositionsModal: React.FC<SetUpdatePositionsModalProps> = ({
     };
   }, [isOpen, entries, catalog]);
 
-  const views = useMemo(() => entries.map((e) => describeSetEntry(e, catalog)), [entries, catalog]);
+  const views = useMemo(
+    () => entries.map((e) => describeSetEntry(e, catalog, ownIcons)),
+    [entries, catalog, ownIcons]
+  );
 
   if (!isOpen) return null;
 

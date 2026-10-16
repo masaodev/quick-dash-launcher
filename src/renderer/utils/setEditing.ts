@@ -151,10 +151,56 @@ function lastSegment(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
-/** 行の表示を作る */
+/**
+ * 行が自分で持つパス（アイテムを指さない行）のアイコンを読む
+ *
+ * キャッシュにあればそれを使い、無いものだけ取り出す（登録の画面と同じ取り方）。
+ * フォルダなど、アイコンを取らない種類は読まない。
+ *
+ * @returns Map<パス, base64 データ URL>。取れなかったパスは入らない
+ */
+export async function loadSetEntryIcons(
+  entries: readonly SetEntry[]
+): Promise<Map<string, string>> {
+  const targets = new Map<string, Exclude<SetTargetKind, 'none' | 'folder'>>();
+  for (const entry of entries) {
+    if (entry.itemId || !entry.open?.path) continue;
+    const kind = kindFromPath(entry.open.path);
+    if (kind === 'none' || kind === 'folder') continue;
+    targets.set(entry.open.path, kind);
+  }
+  const icons = new Map<string, string>();
+  if (targets.size === 0) return icons;
+
+  const items = [...targets].map(
+    ([path, type]) => ({ displayName: lastSegment(path), path, type }) as LauncherItem
+  );
+  const cached: Record<string, string> = await window.electronAPI
+    .loadCachedIcons(items)
+    .catch(() => ({}));
+  for (const [path, icon] of Object.entries(cached)) {
+    if (icon) icons.set(path, icon);
+  }
+  await Promise.all(
+    [...targets]
+      .filter(([path]) => !icons.has(path))
+      .map(async ([path, type]) => {
+        const icon = await window.electronAPI.getIconForItem(path, type).catch(() => null);
+        if (icon) icons.set(path, icon);
+      })
+  );
+  return icons;
+}
+
+/**
+ * 行の表示を作る
+ *
+ * @param ownIcons 行が自分で持つパスのアイコン（loadSetEntryIcons の結果）
+ */
 export function describeSetEntry(
   entry: SetEntry,
-  catalog: ReadonlyMap<string, SetCatalogItem>
+  catalog: ReadonlyMap<string, SetCatalogItem>,
+  ownIcons?: ReadonlyMap<string, string>
 ): SetEntryView {
   if (entry.itemId) {
     const item = catalog.get(entry.itemId);
@@ -178,6 +224,7 @@ export function describeSetEntry(
   if (entry.open) {
     return {
       name: entry.label ?? lastSegment(entry.open.path),
+      icon: ownIcons?.get(entry.open.path),
       kind: kindFromPath(entry.open.path),
       holding: 'own',
       missing: false,
