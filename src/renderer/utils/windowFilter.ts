@@ -7,7 +7,7 @@ import { pickWindowPlacement } from '@common/utils/windowPlacement';
  * ウィンドウリストを仮想デスクトップタブでフィルタリング
  *
  * @param windows ウィンドウリスト
- * @param activeDesktopTab アクティブなデスクトップタブID（0=すべて, -2=ピン止め, 1以上=デスクトップ番号）
+ * @param activeDesktopTab アクティブなデスクトップタブID（0=すべて, -2=全デスクトップに表示, 1以上=デスクトップ番号）
  * @returns フィルタリングされたウィンドウリスト
  */
 export function filterWindowsByDesktopTab(

@@ -29,6 +29,7 @@ vi.mock('../overlayWindowService.js', () => ({
 vi.mock('../mainI18n.js', () => ({ mainI18n: { t: (key: string) => key } }));
 
 import { showToastWindow } from '../overlayWindowService.js';
+import type { LaunchResult } from '../../utils/itemLauncher';
 
 import {
   buildSetWindowConfig,
@@ -56,6 +57,12 @@ const items: Record<string, AppItem> = {
     window: { title: '*Terminal*' },
     activateWindow: true,
   },
+  miss1aaa: {
+    id: 'miss1aaa',
+    type: 'app',
+    displayName: '消えたアプリ',
+    path: 'C:/missing/tool.exe',
+  },
 };
 
 /** 呼ばれた順を記録する偽の部品。windows は「今開いているウィンドウ」（findWindow が探す） */
@@ -63,12 +70,15 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
   const calls: string[] = [];
   const opened = [...windows];
   const deps: SetExecutorDeps = {
-    launch: vi.fn(async (item) => {
+    launch: vi.fn(async (item): Promise<LaunchResult> => {
       calls.push(`launch:${item.path}`);
       // Obsidian は開くとすぐウィンドウが出る想定
       if (item.path.endsWith('Obsidian.exe')) {
         opened.push({ hwnd: 99n, title: 'note - Obsidian', processName: 'Obsidian.exe' });
       }
+      // 「missing」を含むパスは開けない想定
+      if (item.path.includes('missing')) return { success: false, error: '見つかりません' };
+      return { success: true };
     }),
     findWindow: vi.fn((config: WindowConfig, exclude?: ReadonlySet<bigint>) => {
       const found = opened.find(
@@ -101,6 +111,27 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
 const resolve = (id: string) => items[id];
 
 describe('executeSet', () => {
+  it('開けなかった行は、待たずにその理由で失敗にする（置き場所の有無によらない）', async () => {
+    const { deps } = makeDeps();
+    const set: SetItem = {
+      type: 'set',
+      displayName: '開けない',
+      entries: [
+        { itemId: 'miss1aaa' },
+        {
+          itemId: 'miss1aaa',
+          window: { processName: 'tool.exe' },
+          placement: { x: 0, y: 0, width: 100, height: 100 },
+        },
+      ],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(result.errorCount).toBe(2);
+    expect(result.entries.map((e) => e.error)).toEqual(['見つかりません', '見つかりません']);
+    // 開けなかったのでウィンドウが出るのを待たない（500ms おきに探す待ちが無い）
+    expect(deps.sleep).not.toHaveBeenCalledWith(500);
+  });
+
   it('合うウィンドウが複数のデスクトップにあれば、置く先のデスクトップのものを動かす', async () => {
     const { deps, calls } = makeDeps([
       { hwnd: 1n, title: 'a.png - ペイント', processName: 'mspaint.exe' },
@@ -352,6 +383,43 @@ describe('executeSet', () => {
     expect(calls).toEqual(['place:1', 'maximize:1']);
   });
 
+  it('前面に出さない行は、位置を当てて最大化する間の前面を控えて戻す（前面に出す行は控えない）', async () => {
+    const { deps, calls } = makeDeps([
+      { hwnd: 1n, title: 'QDL_main', processName: 'WindowsTerminal.exe' },
+      { hwnd: 2n, title: 'a.png - ペイント', processName: 'mspaint.exe' },
+    ]);
+    deps.holdForeground = (hwnd) => {
+      calls.push(`hold:${hwnd}`);
+      return () => calls.push(`release:${hwnd}`);
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: '並べる',
+      launchMode: 'sequential',
+      entries: [
+        {
+          itemId: 'term1aaa',
+          window: { processName: 'WindowsTerminal.exe' },
+          placement: { x: 0, y: 0, width: 960, height: 1040, state: 'maximized' },
+        },
+        {
+          window: { processName: 'mspaint.exe' },
+          placement: { x: 0, y: 0, width: 960, height: 1040, state: 'maximized' },
+          activateWindow: true,
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(calls).toEqual([
+      'hold:1',
+      'place:1',
+      'maximize:1',
+      'release:1',
+      'place:2',
+      'maximize:2',
+    ]);
+  });
+
   it('無ければ開いてウィンドウが出るのを待ってから位置を合わせる', async () => {
     const { deps, calls } = makeDeps();
     const set: SetItem = {
@@ -565,9 +633,10 @@ describe('executeSet', () => {
     const { deps, calls } = makeDeps();
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
-    deps.launch = vi.fn(async (item) => {
+    deps.launch = vi.fn(async (item): Promise<LaunchResult> => {
       calls.push(`launch:${item.path}`);
       await gate;
+      return { success: true };
     });
     const set: SetItem = {
       id: 'set1aaaa',
@@ -778,9 +847,10 @@ describe('executeLauncherItem（単一アイテムをセットの 1 行として
     const { deps, calls } = makeDeps();
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
-    deps.launch = vi.fn(async (item) => {
+    deps.launch = vi.fn(async (item): Promise<LaunchResult> => {
       calls.push(`launch:${item.path}`);
       await gate;
+      return { success: true };
     });
     const first = executeLauncherItem(terminal, deps, logger);
     const second = await executeLauncherItem(terminal, deps, logger);

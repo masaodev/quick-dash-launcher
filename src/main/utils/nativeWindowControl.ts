@@ -47,6 +47,7 @@ const GetWindowThreadProcessId = user32.func('GetWindowThreadProcessId', 'uint32
   koffi.out(koffi.pointer('uint32', 1)),
 ]);
 const SetForegroundWindow = user32.func('SetForegroundWindow', 'bool', ['void*']);
+const GetForegroundWindow = user32.func('GetForegroundWindow', 'void*', []);
 const SystemParametersInfoW = user32.func('SystemParametersInfoW', 'bool', [
   'uint32',
   'uint32',
@@ -780,6 +781,35 @@ export function restoreWindow(hwnd: number | bigint): boolean {
   } catch (error) {
     console.error(`Error restoring window ${hwnd}:`, error);
     return false;
+  }
+}
+
+/**
+ * 前面のウィンドウを控え、後で target に前面を取られていたら戻す関数を返す
+ *
+ * Windows には前面に出さずに最小化・最大化を解除する、または最大化する ShowWindow の値が
+ * 無い。呼び出し側が前面にする権利を持っていると、操作したウィンドウが前面に出るので、
+ * 「前面に出さない」操作はこれで挟む
+ * @param target 操作するウィンドウ
+ * @returns 呼ぶと、target が前面になっていれば控えたウィンドウに戻す
+ */
+export function holdForeground(target: number | bigint): () => void {
+  try {
+    const before = GetForegroundWindow();
+    const beforeAddress = before ? koffi.address(before) : 0n;
+    const targetAddress = BigInt(target);
+    if (beforeAddress === 0n || beforeAddress === targetAddress) return () => {};
+    return () => {
+      try {
+        const after = GetForegroundWindow();
+        if (after && koffi.address(after) === targetAddress) SetForegroundWindow(before);
+      } catch (error) {
+        console.error(`Error returning foreground from ${target}:`, error);
+      }
+    };
+  } catch (error) {
+    console.error('Error getting foreground window:', error);
+    return () => {};
   }
 }
 

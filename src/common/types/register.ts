@@ -54,6 +54,11 @@ export interface RegisterItem extends ItemWindowSwitch {
   clipboardPreview?: string;
   /** クリップボードセッションID（clipboard専用、登録確定前の一時保存用） */
   clipboardSessionId?: string;
+  /**
+   * 「テキストを書く」で書いた本文（clipboard専用、未保存）。値があるときは保存時にテキストだけの実データとして保存し、
+   * セッション・参照より優先する。保存済みの中身をそのまま使うときは undefined
+   */
+  clipboardText?: string;
   /** セットの行（set専用） */
   setEntries?: SetEntry[];
   /** セットの開き方（set専用） */

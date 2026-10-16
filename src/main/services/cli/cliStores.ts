@@ -4,7 +4,7 @@ import { createChildLogger } from '@common/logger';
 import PathManager from '../../config/pathManager.js';
 import { SettingsService } from '../settingsService.js';
 import { loadEditableItems } from '../data/editableItemsStore.js';
-import { appendJsonItems, replaceItemById } from '../data/dataItemWriter.js';
+import { appendJsonItems, moveItemToFile, replaceItemById } from '../data/dataItemWriter.js';
 import { deleteItemsById } from '../../ipc/editHandlers.js';
 import { withFolderMarker } from '../../utils/folderPathProbe.js';
 import { reapplySettingsFromDisk } from '../../ipc/settingsHandlers.js';
@@ -13,6 +13,7 @@ import { closeDetachedWindowsForGroup } from '../../ipc/workspaceHandlers.js';
 import { getLastLoadReport, reloadConfigFiles } from '../data/dataFileLoader.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
 import { showToastWindow } from '../overlayWindowService.js';
+import { ClipboardService } from '../clipboardService.js';
 import { mainI18n } from '../mainI18n.js';
 
 import { CliError } from './cliArgs.js';
@@ -44,6 +45,7 @@ export function createLauncherStore(configFolder: string): LauncherStore {
     },
     append: (file, item) => appendJsonItems(configFolder, file, [item]),
     replace: (item) => replaceItemById(configFolder, item),
+    move: (item, from, to) => moveItemToFile(configFolder, item, from, to),
     remove: (id) => deleteItemsById(configFolder, [{ id }]),
     markFolder: withFolderMarker,
     newId: generateUniqueId,
@@ -77,6 +79,12 @@ export function createCliContext(
     launcher: createLauncherStore(configFolder),
     workspace: {
       loadWorkspaces: async () => (await WorkspaceService.getInstance()).loadWorkspaces(),
+      createWorkspace: async (name) => (await WorkspaceService.getInstance()).createWorkspace(name),
+      renameWorkspace: async (id, name) =>
+        (await WorkspaceService.getInstance()).renameWorkspace(id, name),
+      deleteWorkspace: async (id) => (await WorkspaceService.getInstance()).deleteWorkspace(id),
+      reorderWorkspaces: async (ids) =>
+        (await WorkspaceService.getInstance()).reorderWorkspaces(ids),
       loadGroups: async () => (await WorkspaceService.getInstance()).loadGroups(),
       loadItems: async () => (await WorkspaceService.getInstance()).loadItems(),
       addItem: async (item, groupId, workspaceId) =>
@@ -96,6 +104,11 @@ export function createCliContext(
         (await WorkspaceService.getInstance()).updateGroup(id, updates),
       deleteGroup: async (id, deleteItems) =>
         (await WorkspaceService.getInstance()).deleteGroup(id, deleteItems),
+      archiveGroup: async (id) => (await WorkspaceService.getInstance()).archiveGroup(id),
+      loadArchivedGroups: async () => (await WorkspaceService.getInstance()).loadArchivedGroups(),
+      loadArchivedItems: async () => (await WorkspaceService.getInstance()).loadArchivedItems(),
+      moveGroupToWorkspace: async (id, workspaceId) =>
+        (await WorkspaceService.getInstance()).moveGroupToWorkspace(id, workspaceId),
     },
     markFolder: withFolderMarker,
     changed: (target, message) => {
@@ -106,5 +119,24 @@ export function createCliContext(
       );
     },
     beforeGroupRemoved: closeDetachedWindowsForGroup,
+    clipboard: {
+      save: (text) => {
+        const result = ClipboardService.getInstance().saveText(text);
+        if (!result.success || !result.dataFileRef) {
+          throw new CliError(
+            'unavailable',
+            result.error ?? mainI18n.t('cli.errors.saveTextFailed')
+          );
+        }
+        return {
+          dataFileRef: result.dataFileRef,
+          savedAt: result.savedAt ?? Date.now(),
+          preview: result.preview ?? '',
+          formats: result.formats ?? ['text'],
+        };
+      },
+      read: (dataFileRef) =>
+        ClipboardService.getInstance().readContent({ dataFileRef })?.text ?? null,
+    },
   };
 }

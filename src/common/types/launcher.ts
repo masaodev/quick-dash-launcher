@@ -33,7 +33,7 @@ export interface WindowConfig {
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
   activateWindow?: boolean;
-  /** 全仮想デスクトップにピン止めするかどうか（省略時はfalse） */
+  /** 全デスクトップに表示するかどうか（省略時はfalse） */
   pinToAllDesktops?: boolean;
 }
 
@@ -140,7 +140,7 @@ export interface WindowItem {
   virtualDesktopNumber?: number;
   /** ウィンドウをアクティブにするかどうか（省略時はtrue） */
   activateWindow?: boolean;
-  /** 全仮想デスクトップにピン止めするかどうか（省略時はfalse） */
+  /** 全デスクトップに表示するかどうか（省略時はfalse） */
   pinToAllDesktops?: boolean;
   /** 元のデータファイル */
   sourceFile?: string;

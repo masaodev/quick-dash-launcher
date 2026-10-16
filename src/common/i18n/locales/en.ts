@@ -86,13 +86,13 @@ export const en: LocaleMessages = {
       title: 'Add item',
       quickAdd: '📄 Add item',
       addBookmarks: '🔖 Add browser bookmarks',
-      addApps: '💻 Add installed apps',
+      addApps: '💻 Import installed apps',
     },
     settingsMenu: {
       title: 'Settings',
       settings: '⚙️ Settings',
       itemManager: '✏️ Item Manager (Ctrl+E)',
-      toggleWorkspace: '🗂️ Show workspace (Ctrl+W)',
+      toggleWorkspace: '🗂️ Show or hide workspace (Ctrl+W)',
       quit: '🚪 Exit',
     },
     desktopTabs: {
@@ -201,6 +201,9 @@ export const en: LocaleMessages = {
       virtualDesktopUnsupported: "Virtual desktops aren't supported on this PC.",
       noContainingFolder: "This item doesn't have a containing folder",
       noContainingFolderNamed: '"{{name}}" doesn\'t have a containing folder',
+      launchFailed: 'Couldn\'t open "{{name}}": {{error}}',
+      appNotFoundInPath: "Couldn't find the app in PATH",
+      clipboardDataMissing: "Couldn't find the clipboard data",
     },
     itemActions: {
       targets: {
@@ -366,7 +369,7 @@ export const en: LocaleMessages = {
       windowPin: 'Now shown on all desktops',
       windowUnpin: 'No longer shown on all desktops',
       workspaceAdd: 'Added to workspace',
-      clipboard: 'Restoring to clipboard...',
+      clipboard: 'Copied to the clipboard',
       default: 'Opening...',
     },
     groupOpening_one: 'Opening {{count}} item',
@@ -399,9 +402,10 @@ QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
   launcher set row list|add|remove       Rows of a set in the launcher
-  workspace list                           List workspaces
+  workspace list|add|update|remove         Workspaces themselves
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
-  workspace group list|add|update|remove   Groups in workspaces
+  workspace group list|add|update|remove|archive   Groups in workspaces
+  workspace archive list|restore           Archived groups
   check                                    Show the result of the last load (invalid entries, new IDs, outside changes) without reloading
   reload                                   Reload the settings files (same as F5 in the launcher)
   status                                   Show the app version, the settings folder, and more
@@ -418,10 +422,12 @@ Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect 
 
 Works with the items in the launcher (datafiles/data*.json).
 
-  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>)
+  item list                     List items (--file <data2.json> | --tab <tab name>, --grep <text>,
+                                --with-text to include clipboard text)
   item add                      Add an item (--name and --path are required. --args --memo, --file | --tab,
-                                --type item|dir|set|window, --set key=value, --dry-run)
-  item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key --dry-run)
+                                --type item|dir|set|window|clipboard, --set key=value, --dry-run)
+  item update <id or name>      Change an item (--name --path --args --memo --set key=value --unset key,
+                                --text | --text-file, --file | --tab to move it to another tab, --dry-run)
   item remove <id or name>      Delete an item (--dry-run)
   set row list <set>            List the rows of a set (row numbers are 0-based)
   set row add <set>             Add a row to a set (--item <id or name> | --path <path> [--args],
@@ -432,22 +438,32 @@ A relative --path is resolved from the folder where you run qdl. With --type set
 pass the first row with --item or --path (for example --type set --name Morning --item Notepad), and add
 more rows with set row add. The target window and its window position are set with "Add windows"
 or "Update window positions" on screen. For --type dir|window, pass the required fields with --set (for example --set windowTitle=Notepad).
+--type clipboard adds a text-only clipboard item: instead of --path, pass the text with --text or
+--text-file <file> (UTF-8, 1 MB at most). Only clipboard items that contain just text can have their text replaced.
 `,
       workspace: `Usage: qdl workspace <target> <action> [arguments]
 
 Works with workspaces (workspace.json).
 
   qdl workspace list                          List workspaces
-  qdl workspace item list                     List items (--workspace --group --grep)
+  qdl workspace add                           Add a workspace (--name is required. --position <0-based> --dry-run)
+  qdl workspace update <id or name>           Change a workspace (--name --position --dry-run)
+  qdl workspace remove <id or name>           Delete an empty workspace (--dry-run)
+  qdl workspace item list                     List items (--workspace --group --grep --with-text)
   qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
-                                              --workspace --position <0-based> --set key=value --dry-run)
-  qdl workspace item update <id or name>      Change an item (--name --path --args --memo --set --unset,
+                                              --workspace --position <0-based> --set key=value --dry-run.
+                                              With --type clipboard, --text | --text-file instead of --path)
+  qdl workspace item update <id or name>      Change an item (--name --path --args --memo --text --text-file --set --unset,
                                               --group <group> ("" for ungrouped) --workspace --position --dry-run)
   qdl workspace item remove <id or name>      Delete an item (--dry-run)
   qdl workspace group list                    List groups (--workspace --grep)
   qdl workspace group add                     Add a group (--name is required. --color --parent --workspace --dry-run)
   qdl workspace group update <id or name>     Change a group (--name --color --parent <parent> ("" for top level) --dry-run)
   qdl workspace group remove <id or name>     Delete an empty group (--dry-run)
+  qdl workspace group archive <id or name>    Archive a group with its subgroups and items (--dry-run)
+  qdl workspace archive list                  List archived groups (--grep)
+  qdl workspace archive restore <id or name>  Restore an archived group (--workspace <target>; defaults to
+                                              its original workspace. --dry-run)
 
 --group, --parent, and --workspace take an id or an exact display name. --color is primary, success, danger,
 warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. Groups can be nested two levels deep.
@@ -487,7 +503,9 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
       missingVerb: 'Specify an action (list / add / update / remove)',
-      missingWorkspaceNoun: 'After workspace, specify list, item, or group',
+      missingWorkspaceNoun:
+        'After workspace, specify list, add, update, remove, item, group, or archive',
+      missingArchiveVerb: 'Specify an action (list / restore)',
       badJson: "Can't read the request as JSON",
       badShape: 'The request is malformed',
       versionMismatch:
@@ -534,6 +552,21 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       emptyName: '--name is empty',
       groupNotEmpty:
         'The group "{{name}}" isn\'t empty ({{items}} items, {{subgroups}} subgroups). Move or delete its contents first',
+      workspaceNotEmpty:
+        'The workspace "{{name}}" isn\'t empty ({{groups}} groups, {{items}} items). Move or delete its contents first',
+      lastWorkspace: "You can't delete the last workspace",
+      textAndTextFile: 'Specify either --text or --text-file, not both',
+      textFileNotFound: "Couldn't find the --text-file file: {{file}}",
+      textFileTooLarge: 'The --text-file file is too large (1 MB at most): {{file}}',
+      emptyText: 'The text is empty',
+      needText: 'Specify the text with --text or --text-file',
+      textOnlyClipboard: '--text and --text-file can only be used with clipboard items (clipboard)',
+      clipboardOption: "Clipboard items don't take --{{option}}",
+      clipboardNotText:
+        "This clipboard item contains more than text ({{formats}}), so its text can't be replaced (you can still change its name and memo or move it; change its contents on screen)",
+      saveTextFailed: "Couldn't save the clipboard text",
+      autoImportedNotMovable:
+        "Items added by auto import can't be moved to another tab (the next import would add them again). Change the import rule's target file instead",
     },
     targets: {
       launcherItem: 'launcher item',
@@ -541,17 +574,24 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       workspace: 'workspace',
       group: 'group',
       workspaceItem: 'workspace item',
+      archivedGroup: 'archived group',
     },
     changed: {
       launcherAdded: 'CLI: Added "{{name}}" to the launcher',
       launcherUpdated: 'CLI: Changed "{{name}}" in the launcher',
       launcherRemoved: 'CLI: Deleted "{{name}}" from the launcher',
+      launcherMoved: 'CLI: Moved "{{name}}" in the launcher to the tab "{{tab}}"',
+      workspaceAdded: 'CLI: Added the workspace "{{name}}"',
+      workspaceUpdated: 'CLI: Changed the workspace "{{name}}"',
+      workspaceRemoved: 'CLI: Deleted the workspace "{{name}}"',
       workspaceItemAdded: 'CLI: Added "{{name}}" to the workspace',
       workspaceItemUpdated: 'CLI: Changed "{{name}}" in the workspace',
       workspaceItemRemoved: 'CLI: Deleted "{{name}}" from the workspace',
       groupAdded: 'CLI: Added the group "{{name}}" to the workspace',
       groupUpdated: 'CLI: Changed the group "{{name}}" in the workspace',
       groupRemoved: 'CLI: Deleted the group "{{name}}" from the workspace',
+      groupArchived: 'CLI: Archived the group "{{name}}"',
+      groupRestored: 'CLI: Restored the group "{{name}}" to the workspace "{{workspace}}"',
       setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
       setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },
@@ -842,7 +882,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     header: {
       bulkImport: 'Import items',
       addBookmarks: 'Add browser bookmarks',
-      addApps: 'Add installed apps',
+      addApps: 'Import installed apps',
       autoImportSettings: 'Bookmark auto-import settings…',
       autoImportSettingsTitle:
         'Set up rules to import browser bookmarks automatically, such as when the app starts',
@@ -1157,14 +1197,22 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     noExtension: '(none)',
     notFound: 'No installed apps were found',
     scanFailed: "Couldn't scan for apps",
-    title: 'Add installed apps',
+    title: 'Import installed apps',
     hint: 'Check the apps you want and import them. Imported apps are added as unsaved changes; select "Save changes" to keep them.',
     scanning: 'Scanning the Start menu...',
     found_one: 'Found {{count}} app in the Start menu',
     found_other: 'Found {{count}} apps in the Start menu',
     rescan: 'Scan again',
-    destinationNote: 'To import into another file, switch to it in Item Manager first',
-    filter: 'Filters',
+    destTab: 'Destination tab',
+    destFile: 'Destination data file',
+    newTab: '+ New tab',
+    newFile: '+ New data file',
+    tabName: 'Tab name',
+    fileName: 'File name',
+    defaultName: 'Apps',
+    newTabName: '{{name}} (new tab)',
+    newFileName: '{{name}} (new)',
+    destinationEcho: 'Import into {{target}}',
     searchPlaceholder: 'Search app names or paths...',
     clearSearch: 'Clear search',
     excludeUninstallers: 'Exclude uninstallers',
@@ -1173,21 +1221,20 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     filterCount_one: ' ({{count}})',
     filterCount_other: ' ({{count}})',
     showExcluded: 'Show excluded apps',
-    list_one: 'Apps ({{count}})',
-    list_other: 'Apps ({{count}})',
+    list_one: 'App name ({{count}})',
+    list_other: 'App name ({{count}})',
     toggleVisible: 'Select or clear all apps shown',
-    appName: 'App name',
     type: 'Type',
-    targetPath: 'Target path',
     registered: 'Added',
+    registeredInTab: 'Already in another data file in this tab',
     noMatches: 'No apps match',
     registeredSelected_one: '{{count}} of the selected apps is already in the destination',
     registeredSelected_other: '{{count}} of the selected apps are already in the destination',
     selected_one: '{{count}} selected',
     selected_other: '{{count}} selected',
     clearSelection: 'Clear selection',
-    import_one: 'Import ({{count}})',
-    import_other: 'Import ({{count}})',
+    import_one: 'Import {{count}} app',
+    import_other: 'Import {{count}} apps',
   },
   help: {
     shortcuts: '⌨️ Keyboard shortcuts',
@@ -1271,8 +1318,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
         sub: 'Opens nothing (does nothing if the window is not found)',
       },
       clipboard: {
-        main: 'Saves what you have copied right now',
-        sub: 'Paste text, images, and more again later',
+        main: 'Copies saved text or images to the clipboard',
+        sub: 'Then just paste with Ctrl+V',
       },
     },
     destination: 'Save to',
@@ -1304,7 +1351,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       displayNameRequired: 'Enter a display name',
       pathRequired: 'Enter a path',
       windowRequired: 'Enter a window title or process name',
-      clipboardRequired: 'Capture the clipboard',
+      clipboardRequired: 'Write some text or capture the clipboard',
       clipboardSaveFailed: "Couldn't save the clipboard data",
       iconNotFound: "Couldn't get the icon",
       iconFetchError: 'An error occurred while getting the icon',
@@ -1358,27 +1405,31 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       image: 'Image',
       file: 'File',
     },
-    savedData: 'Saved data',
-    capturedData: 'Captured data',
-    format: 'Formats:',
-    savedAt: 'Saved:',
-    capturedAt: 'Captured:',
+    content: 'Content:',
+    modeLabel: 'How to create the content',
+    modeText: 'Write text',
+    modeCapture: 'Capture from clipboard',
+    textLabel: 'Text to save',
+    textPlaceholder: 'Write the text you want to paste here',
+    textHint: 'Saves plain text only (no formatting)',
+    charCount: '{{count}} characters',
+    richTextWarning:
+      "When you save, only the text is kept. The captured formatting (HTML, RTF) and images aren't used.",
+    captureButton: 'Capture the current clipboard',
+    captureHint:
+      "Saves what is on the clipboard when you click (text, HTML, RTF, images, files). Opening this screen doesn't read the clipboard.",
     capturing: 'Capturing...',
-    overwrite: 'Replace with the current clipboard',
+    recapture: 'Capture again',
+    undo: 'Undo',
+    editAsText: 'Edit as text',
+    capturedState: 'Captured {{date}} (not saved)',
+    savedState: 'Saved {{date}}',
+    imageLimit: 'Images up to 10 MB',
+    loading: 'Loading...',
+    readFailed: "Couldn't read the saved content",
     imageAlt: 'Clipboard image',
     noPreview: 'No preview',
     captureFailed: "Couldn't capture the clipboard",
-    current: 'Current clipboard',
-    checking: 'Checking...',
-    refresh: 'Refresh',
-    estimatedSize: 'Estimated size:',
-    save: 'Save this clipboard',
-    empty: 'The clipboard is empty',
-    emptyHint: 'Copy some text or an image, and then capture it',
-    loading: 'Loading...',
-    notesLabel: 'Note:',
-    notes:
-      "Images up to 10 MB can be saved. File references are saved, but files can't be restored.",
     textFallbackName: 'Text',
   },
   dirOptions: {
@@ -1509,6 +1560,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       'Saving was stopped because a data file may be corrupted: {{files}}. Repair (or delete) the file and try again.',
     addBlockedCorrupted:
       'Adding was stopped because the data file may be corrupted: {{file}}. Repair (or delete) the file and try again.',
+    moveBlockedCorrupted:
+      'Moving was stopped because a data file may be corrupted: {{file}}. Repair (or delete) the file and try again.',
     writeFailed: "Couldn't write the data file: {{file}}",
     itemNotFound: "The item with ID {{id}} wasn't found",
     invalidTargetFile: 'The data file name to add to is invalid: {{files}}',
@@ -1555,6 +1608,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     filesPreview_other: '{{count}} files: {{first}}...',
     imageTooLarge: 'The image is larger than the limit ({{max}} MB)',
     empty: 'The clipboard is empty',
+    textEmpty: 'The text is empty',
     saveFailed: "Couldn't save the clipboard data: {{file}}",
     captureFailed: "Couldn't capture",
     sessionNotFound: "The session wasn't found",

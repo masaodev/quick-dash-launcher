@@ -1,7 +1,17 @@
 import type { Logger } from 'pino';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const spawnMock = vi.hoisted(() => vi.fn(() => ({ unref: vi.fn(), on: vi.fn() })));
+// 起動できたら spawn、起動できなければ error が来る。spawnError を入れると error にする
+const spawnState = vi.hoisted(() => ({ spawnError: undefined as Error | undefined }));
+const spawnMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    unref: vi.fn(),
+    once: vi.fn((event: string, handler: (error?: Error) => void) => {
+      if (event === 'error' && spawnState.spawnError) handler(spawnState.spawnError);
+      if (event === 'spawn' && !spawnState.spawnError) handler();
+    }),
+  }))
+);
 // PATH から探した結果を返す
 const resolveFromPathMock = vi.hoisted(() =>
   vi.fn(async (_name: string): Promise<string | null> => 'C:\\Windows\\System32\\calc.exe')
@@ -24,6 +34,7 @@ vi.mock('./pathResolver.js', async (importOriginal) => ({
 }));
 vi.mock('../services/clipboardService.js', () => ({ ClipboardService: { getInstance: vi.fn() } }));
 vi.mock('./folderPathProbe.js', () => ({ noteLaunchedPath: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../services/mainI18n.js', () => ({ mainI18n: { t: (key: string) => key } }));
 
 import { getWorkingDirectory, launchItem } from './itemLauncher';
 
@@ -49,6 +60,7 @@ describe('getWorkingDirectory', () => {
 describe('launchItem（app）', () => {
   beforeEach(() => {
     spawnMock.mockClear();
+    spawnState.spawnError = undefined;
     resolveFromPathMock.mockClear();
     shellMock.openPath.mockClear();
     vi.mocked(logger.error).mockClear();
@@ -139,4 +151,46 @@ describe('launchItem（file・folder）', () => {
       );
     }
   );
+});
+
+describe('launchItem の結果', () => {
+  beforeEach(() => {
+    spawnState.spawnError = undefined;
+    shellMock.openPath.mockReset();
+    shellMock.openPath.mockResolvedValue('');
+    resolveFromPathMock.mockReset();
+    resolveFromPathMock.mockResolvedValue('C:/Windows/System32/calc.exe');
+  });
+
+  it('開けたら success: true', async () => {
+    await expect(launchItem({ type: 'file', path: 'C:/a.txt' }, logger)).resolves.toEqual({
+      success: true,
+    });
+    await expect(
+      launchItem({ type: 'app', path: 'C:/Tools/t.exe', args: '-x' }, logger)
+    ).resolves.toEqual({ success: true });
+  });
+
+  it('shell.openPath が理由を返したら、その理由で失敗にする', async () => {
+    shellMock.openPath.mockResolvedValue('Failed to open path');
+    await expect(launchItem({ type: 'folder', path: 'C:/gone' }, logger)).resolves.toEqual({
+      success: false,
+      error: 'Failed to open path',
+    });
+  });
+
+  it('spawn が error を出したら、その理由で失敗にする', async () => {
+    spawnState.spawnError = new Error('spawn C:/Tools/t.exe ENOENT');
+    await expect(
+      launchItem({ type: 'app', path: 'C:/Tools/t.exe', args: '-x' }, logger)
+    ).resolves.toEqual({ success: false, error: 'spawn C:/Tools/t.exe ENOENT' });
+  });
+
+  it('ファイル名だけのアプリが PATH に無ければ失敗にする', async () => {
+    resolveFromPathMock.mockResolvedValue(null);
+    await expect(launchItem({ type: 'app', path: 'nothing.exe' }, logger)).resolves.toEqual({
+      success: false,
+      error: 'launcher.messages.appNotFoundInPath',
+    });
+  });
 });

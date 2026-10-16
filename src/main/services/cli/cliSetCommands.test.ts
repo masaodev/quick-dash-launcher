@@ -41,11 +41,18 @@ beforeEach(() => {
       const i = entries.findIndex((e) => e.item.id === item.id);
       entries[i] = { ...entries[i], item };
     }),
+    move: vi.fn(),
     remove: vi.fn(async () => {}),
     markFolder: async (p: string) => p,
     newId: () => 'NewSet01',
   };
-  ctx = { store, cwd: 'C:\\work', syncBeforeWrite: vi.fn(async () => {}), changed: vi.fn() };
+  ctx = {
+    store,
+    cwd: 'C:\\work',
+    syncBeforeWrite: vi.fn(async () => {}),
+    changed: vi.fn(),
+    clipboard: { save: vi.fn(), read: vi.fn(() => null) },
+  };
 });
 
 async function errorOf(promise: Promise<unknown>): Promise<CliError> {

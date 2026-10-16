@@ -52,12 +52,14 @@ function context(overrides: Partial<CliContext> = {}): CliContext {
     reload: vi.fn().mockResolvedValue(report()),
     lastReport: vi.fn(() => report()),
     syncBeforeWrite: vi.fn(async () => {}),
+    clipboard: { save: vi.fn(), read: vi.fn(() => null) },
     launcher: {
       load: vi.fn(async () => {
         throw new Error('ディスクが読めない');
       }),
       dataFiles: () => [],
       tabs: async () => [],
+      move: vi.fn(),
       append: vi.fn(),
       replace: vi.fn(),
       remove: vi.fn(),

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 
 import { isBareFileName, resolveFromPath } from './pathResolver';
 
@@ -63,5 +63,31 @@ describe('resolveFromPath', () => {
 
   it('ワイルドカード入りの名前は探さない', async () => {
     await expect(resolveFromPath('*.exe', env())).resolves.toBeNull();
+  });
+
+  describe('ストアアプリの実行エイリアス（リンク先が権限で読めない）', () => {
+    // WindowsApps\mspaint.exe はリンクに見え、fs.stat はリンク先で EACCES になる
+    const denied = () => Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    const linkStat = (isLink: boolean) => ({ isSymbolicLink: () => isLink }) as fs.Stats;
+
+    afterAll(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('リンク自体があればフルパスを返す', async () => {
+      vi.spyOn(fs.promises, 'stat').mockRejectedValue(denied());
+      vi.spyOn(fs.promises, 'lstat').mockResolvedValue(linkStat(true));
+      await expect(resolveFromPath('mspaint.exe', { PATH: second })).resolves.toBe(
+        path.join(second, 'mspaint.exe')
+      );
+      vi.restoreAllMocks();
+    });
+
+    it('リンクでなければ見つからない扱いのまま', async () => {
+      vi.spyOn(fs.promises, 'stat').mockRejectedValue(denied());
+      vi.spyOn(fs.promises, 'lstat').mockResolvedValue(linkStat(false));
+      await expect(resolveFromPath('mspaint.exe', { PATH: second })).resolves.toBeNull();
+      vi.restoreAllMocks();
+    });
   });
 });

@@ -88,13 +88,13 @@ export const ja = {
       title: 'アイテムを登録',
       quickAdd: '📄 簡易登録',
       addBookmarks: '🔖 ブラウザのブックマークを追加',
-      addApps: '💻 インストール済みアプリを追加',
+      addApps: '💻 インストール済みアプリを取り込む',
     },
     settingsMenu: {
       title: '設定',
       settings: '⚙️ 設定',
       itemManager: '✏️ アイテム管理（Ctrl+E）',
-      toggleWorkspace: '🗂️ ワークスペースを表示（Ctrl+W）',
+      toggleWorkspace: '🗂️ ワークスペースの表示/非表示（Ctrl+W）',
       quit: '🚪 アプリを終了',
     },
     desktopTabs: {
@@ -202,6 +202,9 @@ export const ja = {
       virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません。',
       noContainingFolder: 'このアイテムには親フォルダがありません',
       noContainingFolderNamed: '「{{name}}」には親フォルダがありません',
+      launchFailed: '「{{name}}」を開けませんでした: {{error}}',
+      appNotFoundInPath: 'PATH にアプリが見つかりません',
+      clipboardDataMissing: 'クリップボードのデータが見つかりません',
     },
     itemActions: {
       targets: {
@@ -367,7 +370,7 @@ export const ja = {
       windowPin: 'ウィンドウをすべてのデスクトップに表示しました',
       windowUnpin: 'ウィンドウをすべてのデスクトップに表示するのをやめました',
       workspaceAdd: 'ワークスペースに追加しました',
-      clipboard: 'クリップボードに復元しています...',
+      clipboard: 'クリップボードにコピーしました',
       default: '起動中...',
     },
     groupOpening_one: '{{count}}件のアイテムを起動します',
@@ -400,9 +403,10 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 コマンド:
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
   launcher set row list|add|remove       メインウィンドウのセットの行
-  workspace list                           ワークスペースの一覧
+  workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
-  workspace group list|add|update|remove   ワークスペースのグループ
+  workspace group list|add|update|remove|archive   ワークスペースのグループ
+  workspace archive list|restore           アーカイブしたグループ
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
   reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
   status                                   本体の版・設定フォルダなどを表示する
@@ -419,10 +423,12 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 
 メインウィンドウのアイテム（datafiles/data*.json）を扱います。
 
-  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>）
+  item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>、
+                                --with-text でクリップボードの本文も）
   item add                      追加（--name・--path は必須。--args --memo、--file | --tab、
-                                --type item|dir|set|window、--set key=value、--dry-run）
-  item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key --dry-run）
+                                --type item|dir|set|window|clipboard、--set key=value、--dry-run）
+  item update <id か表示名>     変更（--name --path --args --memo --set key=value --unset key、
+                                --text | --text-file、--file | --tab で別のタブへ移す、--dry-run）
   item remove <id か表示名>     削除（--dry-run）
   set row list <セット>         セットの行の一覧（行番号は 0 始まり）
   set row add <セット>          セットに行を足す（--item <id か表示名> | --path <パス> [--args]、
@@ -433,22 +439,31 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 --item か --path で渡します（例 --type set --name 朝 --item メモ帳）。2 行目からは set row add で
 足します。対象ウィンドウとウィンドウ位置は、画面の「ウィンドウを追加」「ウィンドウ位置を更新」で付けます。--type dir|window のときに
 要るキーは --set で渡します（例 --set windowTitle=メモ帳）。
+--type clipboard はテキストだけのクリップボードアイテムで、--path の代わりに本文を --text か
+--text-file <ファイル>（UTF-8、1 MB まで）で渡します。本文を書き換えられるのは、中身がテキストだけのものです。
 `,
       workspace: `使い方: qdl workspace <もの> <操作> [引数]
 
 ワークスペース（workspace.json）を扱います。
 
   qdl workspace list                          ワークスペースの一覧
-  qdl workspace item list                     アイテムの一覧（--workspace --group --grep）
+  qdl workspace add                           追加（--name は必須。--position <0 始まり> --dry-run）
+  qdl workspace update <id か名前>            変更（--name --position --dry-run）
+  qdl workspace remove <id か名前>            空のワークスペースを削除（--dry-run）
+  qdl workspace item list                     アイテムの一覧（--workspace --group --grep --with-text）
   qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
-                                              --workspace --position <0 始まり> --set key=value --dry-run）
-  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --set --unset、
+                                              --workspace --position <0 始まり> --set key=value --dry-run。
+                                              --type clipboard なら --path の代わりに --text | --text-file）
+  qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
                                               --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
   qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
   qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
   qdl workspace group remove <id か名前>      空のグループを削除（--dry-run）
+  qdl workspace group archive <id か名前>     サブグループ・アイテムごとアーカイブする（--dry-run）
+  qdl workspace archive list                  アーカイブしたグループの一覧（--grep）
+  qdl workspace archive restore <id か名前>   復元する（--workspace <復元先>。省略時は元のワークスペース、--dry-run）
 
 --group・--parent・--workspace は id か表示名の完全一致です。--color は primary success danger warning
 info secondary purple teal pink indigo orange cyan か #rrggbb。グループは 2 段まで入れ子にできます。
@@ -488,7 +503,9 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
       missingVerb: '操作を指定してください（list / add / update / remove）',
-      missingWorkspaceNoun: 'workspace の後に list / item / group を指定してください',
+      missingWorkspaceNoun:
+        'workspace の後に list / add / update / remove / item / group / archive を指定してください',
+      missingArchiveVerb: '操作を指定してください（list / restore）',
       badJson: '依頼を JSON として読めません',
       badShape: '依頼の形が正しくありません',
       versionMismatch:
@@ -537,6 +554,22 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       emptyName: '--name が空です',
       groupNotEmpty:
         'グループ「{{name}}」は空ではありません（アイテム {{items}} 件、サブグループ {{subgroups}} 件）。中身を移すか消してから削除してください',
+      workspaceNotEmpty:
+        'ワークスペース「{{name}}」は空ではありません（グループ {{groups}} 件、アイテム {{items}} 件）。中身を移すか消してから削除してください',
+      lastWorkspace: '最後のワークスペースは削除できません',
+      textAndTextFile: '--text と --text-file はどちらか一方を指定してください',
+      textFileNotFound: '--text-file のファイルが見つかりません: {{file}}',
+      textFileTooLarge: '--text-file のファイルが大きすぎます（1 MB まで）: {{file}}',
+      emptyText: '本文が空です',
+      needText: '本文を --text か --text-file で指定してください',
+      textOnlyClipboard:
+        '--text・--text-file はクリップボードアイテム（clipboard）だけに指定できます',
+      clipboardOption: 'クリップボードアイテムには --{{option}} を指定できません',
+      clipboardNotText:
+        'このクリップボードアイテムはテキスト以外（{{formats}}）を含むので、本文を書き換えられません（名前・メモ・移動はできます。中身を変えるときは画面で操作してください）',
+      saveTextFailed: 'クリップボードの本文を保存できませんでした',
+      autoImportedNotMovable:
+        '自動取込で入ったアイテムは別のタブへ移せません（次の取込で同じものがまた足されます）。取込のルールの取り込み先を変えてください',
     },
     targets: {
       launcherItem: 'メインウィンドウのアイテム',
@@ -544,17 +577,24 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       workspace: 'ワークスペース',
       group: 'グループ',
       workspaceItem: 'ワークスペースのアイテム',
+      archivedGroup: 'アーカイブのグループ',
     },
     changed: {
       launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
       launcherUpdated: 'CLI: メインウィンドウの「{{name}}」を変更しました',
       launcherRemoved: 'CLI: メインウィンドウの「{{name}}」を削除しました',
+      launcherMoved: 'CLI: メインウィンドウの「{{name}}」をタブ「{{tab}}」へ移しました',
+      workspaceAdded: 'CLI: ワークスペース「{{name}}」を追加しました',
+      workspaceUpdated: 'CLI: ワークスペース「{{name}}」を変更しました',
+      workspaceRemoved: 'CLI: ワークスペース「{{name}}」を削除しました',
       workspaceItemAdded: 'CLI: ワークスペースに「{{name}}」を追加しました',
       workspaceItemUpdated: 'CLI: ワークスペースの「{{name}}」を変更しました',
       workspaceItemRemoved: 'CLI: ワークスペースの「{{name}}」を削除しました',
       groupAdded: 'CLI: ワークスペースにグループ「{{name}}」を追加しました',
       groupUpdated: 'CLI: ワークスペースのグループ「{{name}}」を変更しました',
       groupRemoved: 'CLI: ワークスペースのグループ「{{name}}」を削除しました',
+      groupArchived: 'CLI: グループ「{{name}}」をアーカイブしました',
+      groupRestored: 'CLI: グループ「{{name}}」をワークスペース「{{workspace}}」に復元しました',
       setEntryAdded: 'CLI: セット「{{set}}」に「{{name}}」の行を追加しました',
       setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },
@@ -845,7 +885,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     header: {
       bulkImport: 'アイテムを一括取り込み',
       addBookmarks: 'ブラウザのブックマークを追加',
-      addApps: 'インストール済みアプリを追加',
+      addApps: 'インストール済みアプリを取り込む',
       autoImportSettings: 'ブックマーク自動取込の設定…',
       autoImportSettingsTitle:
         'ブラウザのブックマークを、ルールに従って起動時などに自動で取り込む設定',
@@ -1159,14 +1199,22 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     noExtension: '(なし)',
     notFound: 'インストール済みアプリが見つかりませんでした',
     scanFailed: 'アプリのスキャンに失敗しました',
-    title: 'インストール済みアプリの追加',
+    title: 'インストール済みアプリを取り込む',
     hint: '使うアプリにチェックを入れて取り込みます。取り込んだアプリは未保存の変更として追加され、「変更を保存」で確定します。',
     scanning: 'スタートメニューをスキャン中...',
     found_one: 'スタートメニューから {{count}} 件見つかりました',
     found_other: 'スタートメニューから {{count}} 件見つかりました',
     rescan: '再スキャン',
-    destinationNote: '別のファイルへは、アイテム管理で切り替えてから開いてください',
-    filter: '絞り込み',
+    destTab: '取込先のタブ',
+    destFile: '取込先のデータファイル',
+    newTab: '＋ 新しいタブ',
+    newFile: '＋ 新しいデータファイル',
+    tabName: 'タブ名',
+    fileName: 'ファイル名',
+    defaultName: 'アプリ',
+    newTabName: '{{name}}（新しいタブ）',
+    newFileName: '{{name}}（新規）',
+    destinationEcho: '{{target}} に取り込む',
     searchPlaceholder: 'アプリ名またはパスで検索...',
     clearSearch: '検索をクリア',
     excludeUninstallers: 'アンインストーラーを除外',
@@ -1175,21 +1223,20 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     filterCount_one: ' ({{count}}件)',
     filterCount_other: ' ({{count}}件)',
     showExcluded: '除外したものも表示',
-    list_one: 'アプリ一覧（{{count}}件）',
-    list_other: 'アプリ一覧（{{count}}件）',
+    list_one: 'アプリ名（{{count}}件）',
+    list_other: 'アプリ名（{{count}}件）',
     toggleVisible: '表示中のアプリをまとめて選ぶ・外す',
-    appName: 'アプリ名',
     type: '種別',
-    targetPath: 'ターゲットパス',
     registered: '登録済み',
+    registeredInTab: 'このタブのほかのデータファイルに登録済み',
     noMatches: '条件に一致するアプリはありません',
     registeredSelected_one: '選んだアプリのうち {{count}} 件は取込先に登録済みです',
     registeredSelected_other: '選んだアプリのうち {{count}} 件は取込先に登録済みです',
     selected_one: '{{count}} 件を選択中',
     selected_other: '{{count}} 件を選択中',
     clearSelection: '選択を解除',
-    import_one: '取り込む ({{count}}件)',
-    import_other: '取り込む ({{count}}件)',
+    import_one: '{{count}} 件を取り込む',
+    import_other: '{{count}} 件を取り込む',
   },
   help: {
     shortcuts: '⌨️ キーボードショートカット',
@@ -1273,8 +1320,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
         sub: '何も起動しません（見つからなければ何もしません）',
       },
       clipboard: {
-        main: 'いまコピーしている内容を保存しておきます',
-        sub: 'テキスト・画像などを、あとから貼り直せます',
+        main: '定型文や画像を、クリップボードにコピーします',
+        sub: 'あとは Ctrl+V で貼り付けるだけです',
       },
     },
     destination: '保存先',
@@ -1306,7 +1353,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       displayNameRequired: '表示名を入力してください',
       pathRequired: 'パスを入力してください',
       windowRequired: 'ウィンドウタイトルまたはプロセス名を入力してください',
-      clipboardRequired: 'クリップボードをキャプチャしてください',
+      clipboardRequired: 'テキストを書くか、クリップボードを取り込んでください',
       clipboardSaveFailed: 'クリップボードデータの保存に失敗しました',
       iconNotFound: 'アイコンを取得できませんでした',
       iconFetchError: 'アイコン取得中にエラーが発生しました',
@@ -1360,27 +1407,31 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       image: '画像',
       file: 'ファイル',
     },
-    savedData: '保存済みデータ',
-    capturedData: 'キャプチャ済みデータ',
-    format: 'フォーマット:',
-    savedAt: '保存日時:',
-    capturedAt: 'キャプチャ日時:',
-    capturing: 'キャプチャ中...',
-    overwrite: '現在のクリップボードで上書き',
+    content: '内容:',
+    modeLabel: '内容の作り方',
+    modeText: 'テキストを書く',
+    modeCapture: 'クリップボードから取り込む',
+    textLabel: '保存するテキスト',
+    textPlaceholder: '貼り付けたい文章をここに書きます',
+    textHint: 'テキストだけを保存します（書式なし）',
+    charCount: '{{count}} 文字',
+    richTextWarning:
+      '保存するとテキストだけになり、取り込んだ書式（HTML・RTF）や画像は使いません。',
+    captureButton: '今のクリップボードを取り込む',
+    captureHint:
+      '押したときの中身（テキスト・HTML・RTF・画像・ファイル）を保存します。画面を開いただけでは読みません。',
+    capturing: '取り込み中...',
+    recapture: '取り込み直す',
+    undo: '元に戻す',
+    editAsText: 'テキストとして編集',
+    capturedState: '取り込み {{date}}（未保存）',
+    savedState: '保存済み {{date}}',
+    imageLimit: '画像は 10MB まで',
+    loading: '読み込み中...',
+    readFailed: '保存した内容を読み込めませんでした',
     imageAlt: 'クリップボード画像',
     noPreview: 'プレビューなし',
     captureFailed: 'キャプチャに失敗しました',
-    current: '現在のクリップボード',
-    checking: '確認中...',
-    refresh: '更新',
-    estimatedSize: '推定サイズ:',
-    save: 'このクリップボードを保存',
-    empty: 'クリップボードは空です',
-    emptyHint: 'テキストや画像をコピーしてからキャプチャしてください',
-    loading: '読み込み中...',
-    notesLabel: '注意:',
-    notes:
-      '画像は最大10MBまで保存できます。ファイルの参照情報は保存されますが、復元には対応していません。',
     textFallbackName: 'テキスト',
   },
   dirOptions: {
@@ -1510,6 +1561,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       'データファイルが破損している可能性があるため保存を中止しました: {{files}}。ファイルを修復（または削除）してから再試行してください',
     addBlockedCorrupted:
       'データファイルが破損している可能性があるため登録を中止しました: {{file}}。ファイルを修復（または削除）してから再試行してください',
+    moveBlockedCorrupted:
+      'データファイルが破損している可能性があるため移動を中止しました: {{file}}。ファイルを修復（または削除）してから再試行してください',
     writeFailed: 'データファイルの書き込みに失敗しました: {{file}}',
     itemNotFound: 'ID {{id}} のアイテムが見つかりません',
     invalidTargetFile: '登録先のデータファイル名が正しくありません: {{files}}',
@@ -1556,6 +1609,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     filesPreview_other: '{{count}}個のファイル: {{first}}...',
     imageTooLarge: '画像サイズが上限（{{max}}MB）を超えています',
     empty: 'クリップボードが空です',
+    textEmpty: 'テキストが空です',
     saveFailed: 'クリップボードデータの保存に失敗しました: {{file}}',
     captureFailed: 'キャプチャに失敗しました',
     sessionNotFound: 'セッションが見つかりません',

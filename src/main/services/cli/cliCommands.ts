@@ -10,6 +10,7 @@ import type { LauncherStore } from './cliLauncherCommands.js';
 import { runLauncherSetCommand } from './cliSetCommands.js';
 import { runWorkspaceCommand } from './cliWorkspaceCommands.js';
 import type { WorkspaceStore } from './cliWorkspaceCommands.js';
+import type { ClipboardTextStore } from './cliShared.js';
 
 /**
  * CLI のコマンドの解釈と実行
@@ -36,6 +37,8 @@ export interface CliContext {
   /** 書き込んだ後: 画面に知らせ、トーストを出す */
   changed: (target: 'launcher' | 'workspace', message: string) => void;
   beforeGroupRemoved: (groupId: string) => Promise<void>;
+  /** クリップボードアイテムの実データ（テキストだけ）の読み書き */
+  clipboard: ClipboardTextStore;
 }
 
 const EXIT_BY_CODE: Record<CliErrorCode, number> = {
@@ -138,6 +141,7 @@ async function dispatch(
         cwd: req.cwd,
         syncBeforeWrite: ctx.syncBeforeWrite,
         changed: (message: string) => ctx.changed('launcher', message),
+        clipboard: ctx.clipboard,
       };
       if (noun === 'set') {
         const [setVerb, ...setArgs] = args;
@@ -158,6 +162,7 @@ async function dispatch(
         syncBeforeWrite: ctx.syncBeforeWrite,
         changed: (message) => ctx.changed('workspace', message),
         beforeGroupRemoved: ctx.beforeGroupRemoved,
+        clipboard: ctx.clipboard,
       });
     }
 

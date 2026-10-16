@@ -308,6 +308,9 @@ export const IPC_CHANNELS = {
   CLIPBOARD_DISCARD_SESSION: 'clipboard:discard-session',
   // 実データの複製（メインウィンドウとワークスペースの間で写すとき）
   CLIPBOARD_DUPLICATE_DATA: 'clipboard:duplicate-data',
+  // 登録画面の内容欄（書いたテキストの保存と、見せる中身＝全文・画像の縮小版の読み出し）
+  CLIPBOARD_SAVE_TEXT: 'clipboard:save-text',
+  CLIPBOARD_READ_CONTENT: 'clipboard:read-content',
 } as const;
 
 /**

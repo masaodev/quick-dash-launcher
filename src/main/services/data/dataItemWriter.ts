@@ -196,6 +196,55 @@ function appendToJsonFile(dataPath: string, fileName: string, items: JsonItem[])
 }
 
 /**
+ * アイテムを id を保ったまま別のデータファイルへ移す（CLI の移動。内容も newItem に差し替える）
+ *
+ * 移す先に書いてから元のファイルから消す。元を消す前に失敗しても、2 つのファイルに残るだけで消えない。
+ * id で全ファイルから消す deleteItemsById は使わない（移した先まで消え、クリップボードの実データも消す）
+ *
+ * @throws ファイル名が正しくない、どちらかのファイルが破損している、元のファイルに無い、書き込みに失敗した場合
+ */
+export function moveItemToFile(
+  configFolder: string,
+  newItem: JsonItem,
+  sourceFile: string,
+  targetFile: string
+): void {
+  for (const fileName of [sourceFile, targetFile]) {
+    if (!isValidDataFileName(fileName)) {
+      throw new Error(mainI18n.t('dataErrors.invalidTargetFile', { files: fileName }));
+    }
+  }
+  const sourcePath = path.join(configFolder, sourceFile);
+  const targetPath = path.join(configFolder, targetFile);
+  // どちらかが壊れていたら何も書かない（先に両方を読む）
+  const source = readForMove(sourcePath, sourceFile);
+  const target = readForMove(targetPath, targetFile);
+  const index = source.items.findIndex((item) => item.id === newItem.id);
+  if (index === -1) throw new Error(mainI18n.t('dataErrors.itemNotFound', { id: newItem.id }));
+
+  target.items.push(newItem);
+  if (!writeDataFile(targetPath, serializeJsonDataFile(target))) {
+    throw new Error(mainI18n.t('dataErrors.writeFailed', { file: targetFile }));
+  }
+  source.items.splice(index, 1);
+  if (!writeDataFile(sourcePath, serializeJsonDataFile(source))) {
+    throw new Error(mainI18n.t('dataErrors.writeFailed', { file: sourceFile }));
+  }
+}
+
+function readForMove(dataPath: string, fileName: string): JsonDataFile {
+  const content = FileUtils.safeReadTextFile(dataPath);
+  if (!content) return createEmptyJsonDataFile();
+  try {
+    return parseJsonDataFileLenient(content).data;
+  } catch (error) {
+    dataLogger.error({ error, dataPath }, 'JSONファイルのパースに失敗したため移動を中止します');
+    markDataFileCorrupted(fileName);
+    throw new Error(mainI18n.t('dataErrors.moveBlockedCorrupted', { file: fileName }));
+  }
+}
+
+/**
  * id まで決めた JsonItem をデータファイルの末尾に足す（CLI の追加。足した id を呼び出し側が知っている）
  *
  * @throws データファイル名が正しくない、またはファイルが破損している場合

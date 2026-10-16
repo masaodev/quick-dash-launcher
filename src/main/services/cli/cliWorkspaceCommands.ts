@@ -1,5 +1,8 @@
 import type {
   AppItem,
+  JsonClipboardItem,
+  ArchivedWorkspaceGroup,
+  ArchivedWorkspaceItem,
   MixedOrderEntry,
   Workspace,
   WorkspaceGroupUpdate,
@@ -9,6 +12,7 @@ import type {
 } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isValidGroupColor } from '@common/groupColors';
+import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -20,14 +24,18 @@ import {
   optionString,
   parseArgs,
 } from './cliArgs.js';
-import type { CliCandidate } from './cliArgs.js';
+import type { CliCandidate, ParsedArgs } from './cliArgs.js';
 import {
   applyPatch,
+  isTextOnlyClipboard,
   matchesGrep,
+  previewClipboardText,
+  readTextOption,
   resolveCliPath,
   resolveOne,
   validateAsDataItem,
 } from './cliShared.js';
+import type { ClipboardTextStore } from './cliShared.js';
 import { checkCliSetEntries } from './cliSetCommands.js';
 
 /**
@@ -37,6 +45,11 @@ import { checkCliSetEntries } from './cliSetCommands.js';
 /** WorkspaceService のうち CLI が使うもの（テストでは差し替える） */
 export interface WorkspaceStore {
   loadWorkspaces(): Promise<Workspace[]>;
+  createWorkspace(name: string): Promise<Workspace>;
+  renameWorkspace(id: string, name: string): Promise<void>;
+  /** 中のグループ・アイテムごと消す（CLI は空のワークスペースにだけ使う） */
+  deleteWorkspace(id: string): Promise<void>;
+  reorderWorkspaces(ids: string[]): Promise<void>;
   loadGroups(): Promise<WorkspaceGroupView[]>;
   loadItems(): Promise<WorkspaceItem[]>;
   addItem(item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem>;
@@ -53,6 +66,12 @@ export interface WorkspaceStore {
   ): Promise<WorkspaceGroupView>;
   updateGroup(id: string, updates: WorkspaceGroupUpdate): Promise<void>;
   deleteGroup(id: string, deleteItems: boolean): Promise<void>;
+  /** 子孫のサブグループとアイテムごとアーカイブへ移す */
+  archiveGroup(id: string): Promise<void>;
+  loadArchivedGroups(): Promise<ArchivedWorkspaceGroup[]>;
+  loadArchivedItems(): Promise<ArchivedWorkspaceItem[]>;
+  /** アーカイブ済みのグループなら、そのワークスペースへ復元する（画面の「移動先を選んで復元」と同じ） */
+  moveGroupToWorkspace(groupId: string, workspaceId: string): Promise<void>;
 }
 
 export interface WorkspaceCommandContext {
@@ -63,7 +82,12 @@ export interface WorkspaceCommandContext {
   changed(message: string): void;
   /** グループを消す前に、そのグループの切り離しウィンドウを閉じる */
   beforeGroupRemoved(groupId: string): Promise<void>;
+  /** クリップボードアイテムの実データ（テキストだけ） */
+  clipboard: ClipboardTextStore;
 }
+
+/** 検証のためだけに入れる実データの参照（保存するまで本物の参照は決まらない） */
+const CHECK_DATA_REF = 'clipboard-data/CliCheck.json';
 
 interface Snapshot {
   workspaces: Workspace[];
@@ -221,19 +245,21 @@ export async function runWorkspaceCommand(
   args: readonly string[],
   ctx: WorkspaceCommandContext
 ): Promise<unknown> {
-  if (noun === 'list') {
-    const parsed = parseArgs(verb === undefined ? args : [verb, ...args], {});
-    expectPositionals(parsed, []);
-    const s = await snapshot(ctx.store);
-    return [...s.workspaces]
-      .sort((a, b) => a.order - b.order)
-      .map((w) => ({
-        id: w.id,
-        displayName: w.displayName,
-        order: w.order,
-        groupCount: s.groups.filter((g) => g.workspaceId === w.id).length,
-        itemCount: s.items.filter((i) => i.workspaceId === w.id).length,
-      }));
+  // ワークスペース自体は「もの」を挟まない（qdl workspace list|add|update|remove）
+  const workspaceArgs = verb === undefined ? args : [verb, ...args];
+  switch (noun) {
+    case 'list': {
+      const parsed = parseArgs(workspaceArgs, {});
+      expectPositionals(parsed, []);
+      const s = await snapshot(ctx.store);
+      return sortedWorkspaces(s).map((w) => workspaceView(w, s));
+    }
+    case 'add':
+      return addWorkspace(workspaceArgs, ctx);
+    case 'update':
+      return updateWorkspace(workspaceArgs, ctx);
+    case 'remove':
+      return removeWorkspace(workspaceArgs, ctx);
   }
   if (noun === 'item') {
     switch (verb) {
@@ -257,7 +283,23 @@ export async function runWorkspaceCommand(
         return updateGroup(args, ctx);
       case 'remove':
         return removeGroup(args, ctx);
+      case 'archive':
+        return archiveGroup(args, ctx);
     }
+  }
+  if (noun === 'archive') {
+    switch (verb) {
+      case 'list':
+        return listArchive(args, ctx);
+      case 'restore':
+        return restoreArchive(args, ctx);
+    }
+    throw new CliError(
+      'usage',
+      verb
+        ? mainI18n.t('cli.errors.unknownVerb', { command: `workspace archive ${verb}` })
+        : mainI18n.t('cli.errors.missingArchiveVerb')
+    );
   }
   if (noun !== 'item' && noun !== 'group') {
     throw new CliError(
@@ -275,9 +317,136 @@ export async function runWorkspaceCommand(
   );
 }
 
-async function listItems(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
-  const parsed = parseArgs(args, { values: ['workspace', 'group', 'grep'] });
+function sortedWorkspaces(s: Snapshot): Workspace[] {
+  return [...s.workspaces].sort((a, b) => a.order - b.order);
+}
+
+function workspaceView(w: Workspace, s: Snapshot): Record<string, unknown> {
+  return {
+    id: w.id,
+    displayName: w.displayName,
+    order: w.order,
+    groupCount: s.groups.filter((g) => g.workspaceId === w.id).length,
+    itemCount: s.items.filter((i) => i.workspaceId === w.id).length,
+  };
+}
+
+/** ワークスペースを position 番目（0 始まり）に置く。範囲の外は端に寄せる */
+async function placeWorkspaceAt(
+  store: WorkspaceStore,
+  id: string,
+  position: number
+): Promise<void> {
+  const ids = sortedWorkspaces(await snapshot(store))
+    .map((w) => w.id)
+    .filter((x) => x !== id);
+  ids.splice(Math.max(0, Math.min(position, ids.length)), 0, id);
+  await store.reorderWorkspaces(ids);
+}
+
+async function addWorkspace(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['name', 'position'], flags: ['dry-run'] });
   expectPositionals(parsed, []);
+  const name = optionString(parsed, 'name');
+  if (!name?.trim()) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
+  const position = optionInt(parsed, 'position');
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (dryRun) {
+    return {
+      dryRun: true,
+      workspace: { id: null, displayName: name, ...(position !== undefined ? { position } : {}) },
+    };
+  }
+
+  await ctx.syncBeforeWrite();
+  const created = await ctx.store.createWorkspace(name);
+  if (position !== undefined) await placeWorkspaceAt(ctx.store, created.id, position);
+  ctx.changed(mainI18n.t('cli.changed.workspaceAdded', { name }));
+  const after = await snapshot(ctx.store);
+  return workspaceView(after.workspaces.find((w) => w.id === created.id) ?? created, after);
+}
+
+async function updateWorkspace(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['name', 'position'], flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const name = optionString(parsed, 'name');
+  const position = optionInt(parsed, 'position');
+  if (name === undefined && position === undefined) {
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.errors.needChanges', { options: '--name --position' })
+    );
+  }
+  if (name !== undefined && !name.trim())
+    throw new CliError('usage', mainI18n.t('cli.errors.emptyName'));
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const workspace = findWorkspace(key, s);
+  const before = workspaceView(workspace, s);
+  if (dryRun) {
+    return {
+      dryRun: true,
+      before,
+      changes: {
+        ...(name !== undefined ? { displayName: name } : {}),
+        ...(position !== undefined ? { position } : {}),
+      },
+    };
+  }
+
+  if (name !== undefined) await ctx.store.renameWorkspace(workspace.id, name);
+  if (position !== undefined) await placeWorkspaceAt(ctx.store, workspace.id, position);
+  ctx.changed(mainI18n.t('cli.changed.workspaceUpdated', { name: name ?? workspace.displayName }));
+  const after = await snapshot(ctx.store);
+  const updated = after.workspaces.find((w) => w.id === workspace.id) ?? workspace;
+  return { before, workspace: workspaceView(updated, after) };
+}
+
+async function removeWorkspace(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const workspace = findWorkspace(key, s);
+  const view = workspaceView(workspace, s);
+  // 本体の削除は中身ごと消すので、CLI では空のものだけにする（グループの削除と同じ）
+  if ((view.groupCount as number) > 0 || (view.itemCount as number) > 0) {
+    throw new CliError(
+      'conflict',
+      mainI18n.t('cli.errors.workspaceNotEmpty', {
+        name: workspace.displayName,
+        groups: String(view.groupCount),
+        items: String(view.itemCount),
+      })
+    );
+  }
+  if (s.workspaces.length <= 1) {
+    throw new CliError('conflict', mainI18n.t('cli.errors.lastWorkspace'));
+  }
+  if (dryRun) return { dryRun: true, removed: view };
+  await ctx.store.deleteWorkspace(workspace.id);
+  ctx.changed(mainI18n.t('cli.changed.workspaceRemoved', { name: workspace.displayName }));
+  return { removed: view };
+}
+
+async function listItems(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
+  const parsed = parseArgs(args, {
+    values: ['workspace', 'group', 'grep'],
+    flags: ['with-text'],
+  });
+  expectPositionals(parsed, []);
+  const withText = optionFlag(parsed, 'with-text');
   const s = await snapshot(ctx.store);
   const workspaceKey = optionString(parsed, 'workspace');
   const workspace = workspaceKey ? findWorkspace(workspaceKey, s) : undefined;
@@ -288,16 +457,48 @@ async function listItems(args: readonly string[], ctx: WorkspaceCommandContext):
     .filter((i) => !workspace || i.workspaceId === workspace.id)
     .filter((i) => groupKey === undefined || (group ? i.groupId === group.id : !i.groupId))
     .filter((i) => matchesGrep(grep, Object.values(i)))
-    .map((i) => itemView(i, s));
+    .map((i) => {
+      const v = itemView(i, s);
+      // テキストだけのクリップボードアイテムは、求められたら本文も返す（書き換える前に読むため）
+      if (withText && i.type === 'clipboard' && isTextOnlyClipboard(i.formats)) {
+        v.text = ctx.clipboard.read(i.dataFileRef);
+      }
+      return v;
+    });
 }
 
 async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, {
-    values: ['name', 'path', 'args', 'memo', 'group', 'workspace', 'position'],
+    values: [
+      'name',
+      'path',
+      'args',
+      'memo',
+      'group',
+      'workspace',
+      'position',
+      'type',
+      'text',
+      'text-file',
+    ],
     flags: ['dry-run'],
     allowSet: true,
   });
   expectPositionals(parsed, []);
+  const type = optionString(parsed, 'type') ?? 'item';
+  if (type !== 'item' && type !== 'clipboard') {
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.errors.badType', { types: 'item / clipboard', type })
+    );
+  }
+  if (type === 'clipboard') return addClipboardItem(parsed, ctx);
+  if (
+    optionString(parsed, 'text') !== undefined ||
+    optionString(parsed, 'text-file') !== undefined
+  ) {
+    throw new CliError('usage', mainI18n.t('cli.errors.textOnlyClipboard'));
+  }
   const name = optionString(parsed, 'name');
   const rawPath = optionString(parsed, 'path');
   if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
@@ -353,19 +554,105 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   return itemView(item, after);
 }
 
+/**
+ * テキストだけのクリップボードアイテムを足す（画面の「テキストを書く」と同じ）。本文は --text か --text-file
+ */
+async function addClipboardItem(
+  parsed: ParsedArgs,
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const name = optionString(parsed, 'name');
+  if (!name) throw new CliError('usage', mainI18n.t('cli.errors.needName'));
+  for (const option of ['path', 'args']) {
+    if (optionString(parsed, option) !== undefined) {
+      throw new CliError('usage', mainI18n.t('cli.errors.clipboardOption', { option }));
+    }
+  }
+  const text = readTextOption(
+    optionString(parsed, 'text'),
+    optionString(parsed, 'text-file'),
+    ctx.cwd
+  );
+  if (text === undefined) throw new CliError('usage', mainI18n.t('cli.errors.needText'));
+  const position = optionInt(parsed, 'position');
+  const dryRun = optionFlag(parsed, 'dry-run');
+  const { merged, setKeys } = applyPatch(
+    {
+      id: 'CliCheck',
+      type: 'clipboard',
+      ...previewClipboardText(text),
+      dataFileRef: CHECK_DATA_REF,
+    },
+    { displayName: name, memo: optionString(parsed, 'memo') },
+    parsed
+  );
+  // 検証が通ってから実データを保存する（断ったときに実データのファイルを残さない）
+  const checked = validateAsDataItem(merged, setKeys) as JsonClipboardItem;
+
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const place = resolvePlace(s, optionString(parsed, 'workspace'), optionString(parsed, 'group'));
+  const location = [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)];
+  if (dryRun) {
+    return { dryRun: true, item: { ...checked, id: null, dataFileRef: null, location } };
+  }
+
+  const saved = ctx.clipboard.save(text);
+  const added = await ctx.store.addItem(
+    {
+      type: 'clipboard',
+      displayName: checked.displayName,
+      clipboardDataRef: saved.dataFileRef,
+      savedAt: saved.savedAt,
+      preview: saved.preview,
+      formats: saved.formats,
+      ...(checked.memo ? { memo: checked.memo } : {}),
+      ...(checked.customIcon ? { customIcon: checked.customIcon } : {}),
+    } as AppItem,
+    place.groupId,
+    place.workspaceId
+  );
+  if (position !== undefined) {
+    await placeAt(ctx.store, added.id, place.workspaceId, place.groupId, position);
+  }
+  const after = await snapshot(ctx.store);
+  const item = after.items.find((i) => i.id === added.id) ?? added;
+  ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
+  return itemView(item, after);
+}
+
 async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
   const parsed = parseArgs(args, {
-    values: ['name', 'path', 'args', 'memo', 'group', 'workspace', 'position'],
+    values: ['name', 'path', 'args', 'memo', 'group', 'workspace', 'position', 'text', 'text-file'],
     flags: ['dry-run'],
     allowSet: true,
   });
   const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const text = readTextOption(
+    optionString(parsed, 'text'),
+    optionString(parsed, 'text-file'),
+    ctx.cwd
+  );
   const dryRun = optionFlag(parsed, 'dry-run');
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
   const current = findItem(key, s);
+  if (text !== undefined && current.type !== 'clipboard') {
+    throw new CliError('usage', mainI18n.t('cli.errors.textOnlyClipboard'));
+  }
   if (current.type === 'clipboard') {
-    throw new CliError('invalid', mainI18n.t('cli.errors.typeNotEditable', { type: current.type }));
+    for (const option of ['path', 'args']) {
+      if (optionString(parsed, option) !== undefined) {
+        throw new CliError('usage', mainI18n.t('cli.errors.clipboardOption', { option }));
+      }
+    }
+    // 画像・HTML・RTF を含むものは、本文を書き換えると中身が欠けるので断る（名前・メモ・移動はできる）
+    if (text !== undefined && !isTextOnlyClipboard(current.formats)) {
+      throw new CliError(
+        'conflict',
+        mainI18n.t('cli.errors.clipboardNotText', { formats: current.formats.join(', ') })
+      );
+    }
   }
 
   const rawPath = optionString(parsed, 'path');
@@ -380,6 +667,8 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     path: itemPath,
     args: optionString(parsed, 'args'),
     memo: optionString(parsed, 'memo'),
+    // 本文を変えたら、実データは新しいファイルに保存して参照を差し替える（画面と同じ）
+    ...(text !== undefined ? previewClipboardText(text) : {}),
   };
   const groupKey = optionString(parsed, 'group');
   const workspaceKey = optionString(parsed, 'workspace');
@@ -397,7 +686,8 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     throw new CliError(
       'usage',
       mainI18n.t('cli.errors.needChanges', {
-        options: '--name --path --args --memo --set --unset --group --workspace --position',
+        options:
+          '--name --path --args --memo --text --text-file --set --unset --group --workspace --position',
       })
     );
   }
@@ -428,6 +718,7 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     if (setKeys.includes('entries')) checkCliSetEntries(merged.entries);
   }
   validateAsDataItem({ ...merged, id: 'CliCheck' }, setKeys);
+  if (text !== undefined && !dryRun) Object.assign(merged, ctx.clipboard.save(text));
 
   const place =
     groupKey !== undefined || workspaceKey !== undefined
@@ -608,4 +899,115 @@ async function removeGroup(
   await ctx.store.deleteGroup(group.id, false);
   ctx.changed(mainI18n.t('cli.changed.groupRemoved', { name: group.displayName }));
   return { removed: view };
+}
+
+async function archiveGroup(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrGroupName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const group = findGroup(key, s);
+  // サブグループの中身も一緒にしまうので、件数は子孫まで数える
+  const ids = new Set([group.id, ...getDescendantGroupIds(group.id, s.groups)]);
+  const archived = {
+    ...groupView(group, s),
+    itemCount: s.items.filter((i) => i.groupId && ids.has(i.groupId)).length,
+    subgroupCount: ids.size - 1,
+  };
+  if (dryRun) return { dryRun: true, archived };
+  // 画面と同じく、先に切り離しウィンドウを閉じる
+  await ctx.beforeGroupRemoved(group.id);
+  await ctx.store.archiveGroup(group.id);
+  ctx.changed(mainI18n.t('cli.changed.groupArchived', { name: group.displayName }));
+  return { archived };
+}
+
+interface ArchiveSnapshot {
+  groups: ArchivedWorkspaceGroup[];
+  items: ArchivedWorkspaceItem[];
+  workspaces: Workspace[];
+}
+
+async function archiveSnapshot(store: WorkspaceStore): Promise<ArchiveSnapshot> {
+  const [groups, items, workspaces] = await Promise.all([
+    store.loadArchivedGroups(),
+    store.loadArchivedItems(),
+    store.loadWorkspaces(),
+  ]);
+  return { groups, items, workspaces };
+}
+
+/** アーカイブの単位（一緒にしまったサブグループを除く最上位のグループ） */
+function archiveRoots(a: ArchiveSnapshot): ArchivedWorkspaceGroup[] {
+  const ids = new Set(a.groups.map((g) => g.id));
+  return a.groups.filter((g) => !g.parentGroupId || !ids.has(g.parentGroupId));
+}
+
+function archivedView(group: ArchivedWorkspaceGroup, a: ArchiveSnapshot): Record<string, unknown> {
+  const ids = new Set([group.id, ...getDescendantGroupIds(group.id, a.groups)]);
+  return {
+    id: group.id,
+    displayName: group.displayName,
+    color: group.color,
+    archivedAt: new Date(group.archivedAt).toISOString(),
+    // 元のワークスペース（消えていれば null。復元すると既定のワークスペースへ戻る）
+    workspace: a.workspaces.find((w) => w.id === group.workspaceId)?.displayName ?? null,
+    itemCount: a.items.filter((i) => ids.has(i.archivedGroupId)).length,
+    subgroups: a.groups.filter((g) => g.id !== group.id && ids.has(g.id)).map((g) => g.displayName),
+  };
+}
+
+async function listArchive(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['grep'] });
+  expectPositionals(parsed, []);
+  const a = await archiveSnapshot(ctx.store);
+  const grep = optionString(parsed, 'grep');
+  return archiveRoots(a)
+    .filter((g) => matchesGrep(grep, [g.displayName]))
+    .map((g) => archivedView(g, a));
+}
+
+async function restoreArchive(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['workspace'], flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrGroupName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const a = await archiveSnapshot(ctx.store);
+  const group = resolveOne(
+    key,
+    archiveRoots(a),
+    mainI18n.t('cli.targets.archivedGroup'),
+    (g) => g.id,
+    (g) => g.displayName,
+    (g): CliCandidate => ({ id: g.id, displayName: g.displayName, location: [] })
+  );
+  const s = await snapshot(ctx.store);
+  const workspaceKey = optionString(parsed, 'workspace');
+  // 省略時は元のワークスペース。無くなっていれば既定のワークスペース
+  const target = workspaceKey
+    ? findWorkspace(workspaceKey, s)
+    : (s.workspaces.find((w) => w.id === group.workspaceId) ?? defaultWorkspace(s));
+  const before = archivedView(group, a);
+  if (dryRun) return { dryRun: true, restoring: before, workspace: target.displayName };
+
+  await ctx.store.moveGroupToWorkspace(group.id, target.id);
+  ctx.changed(
+    mainI18n.t('cli.changed.groupRestored', {
+      name: group.displayName,
+      workspace: target.displayName,
+    })
+  );
+  const after = await snapshot(ctx.store);
+  const restored = after.groups.find((g) => g.id === group.id);
+  return { restored: restored ? groupView(restored, after) : before };
 }

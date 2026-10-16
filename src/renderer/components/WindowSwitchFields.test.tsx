@@ -245,9 +245,12 @@ describe('WindowPlacementFields（📍 ウィンドウ位置を更新）', () =>
       win(3, 'メモ帳', { processName: 'notepad.exe' }),
     ]);
     fireEvent.click(button());
-    const dialog = await screen.findByRole('dialog', {
-      name: 'どのウィンドウの位置を記録しますか',
-    });
+    // 全件を流して重いときは 1 秒（既定）で出ないことがあるので待ちを長めにする
+    const dialog = await screen.findByRole(
+      'dialog',
+      { name: 'どのウィンドウの位置を記録しますか' },
+      { timeout: 5000 }
+    );
     expect(dialog.textContent).toContain('a.txt - sakura');
     expect(dialog.textContent).toContain('b.txt - sakura');
     expect(dialog.textContent).not.toContain('メモ帳');

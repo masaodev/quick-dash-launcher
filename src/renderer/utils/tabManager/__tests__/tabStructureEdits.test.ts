@@ -57,6 +57,12 @@ describe('tabStructureEdits', () => {
       if (!result.ok) throw new Error(result.reason);
       expect(result.structure.tabs[3].name).toBe('サブ4');
     });
+
+    it('データファイルの名前を指定できる', () => {
+      const result = addTab(sample(), 'アプリ', [], ' アプリ ');
+      if (!result.ok) throw new Error(result.reason);
+      expect(result.structure.labels['datafiles/data5.json']).toBe('アプリ');
+    });
   });
 
   describe('renameTab', () => {
@@ -131,6 +137,18 @@ describe('tabStructureEdits', () => {
       expect(result.structure.tabs[2].files).toEqual([D3, 'datafiles/data5.json']);
       expect(result.structure.labels['datafiles/data5.json']).toBe('Window用データファイル2');
       expect(result.filesToCreate).toEqual(['datafiles/data5.json']);
+    });
+
+    it('指定した名前が使われていれば番号を付ける', () => {
+      const result = addNewFileToTab(sample(), 0, [], 'ブックマーク☆');
+      if (!result.ok) throw new Error(result.reason);
+      expect(result.structure.labels['datafiles/data5.json']).toBe('ブックマーク☆2');
+    });
+
+    it('名前が空白だけなら既定の名前にする', () => {
+      const result = addNewFileToTab(sample(), 2, [], '  ');
+      if (!result.ok) throw new Error(result.reason);
+      expect(result.structure.labels['datafiles/data5.json']).toBe('Window用データファイル2');
     });
   });
 

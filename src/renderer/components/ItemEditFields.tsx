@@ -348,55 +348,15 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
       )}
 
       {item.itemCategory === 'clipboard' && (
-        <>
-          <ClipboardItemEditor
-            capturedData={
-              item.clipboardDataRef
-                ? {
-                    dataFileRef: item.clipboardDataRef,
-                    preview: item.clipboardPreview,
-                    formats: item.clipboardFormats || [],
-                    savedAt: item.clipboardSavedAt || Date.now(),
-                  }
-                : undefined
-            }
-            sessionData={
-              item.clipboardSessionId
-                ? {
-                    sessionId: item.clipboardSessionId,
-                    preview: item.clipboardPreview,
-                    formats: item.clipboardFormats || [],
-                    capturedAt: item.clipboardSavedAt || Date.now(),
-                  }
-                : undefined
-            }
-            onCapture={(result) => {
-              // 取り直したら、前の未確定のキャプチャは使わないので捨てる
-              if (item.clipboardSessionId && item.clipboardSessionId !== result.sessionId) {
-                window.electronAPI.clipboardAPI
-                  .discardSession(item.clipboardSessionId)
-                  .catch(() => undefined);
-              }
-              const updates: Partial<RegisterItem> = {
-                clipboardSessionId: result.sessionId,
-                clipboardFormats: result.formats,
-                clipboardSavedAt: result.capturedAt,
-                clipboardPreview: result.preview || '',
-              };
-              if (!item.displayName) {
-                const preview = result.preview || t('register.clipboardFallbackName');
-                updates.displayName =
-                  preview.length > 30 ? preview.substring(0, 30) + '...' : preview;
-              }
-              onUpdate(updates);
-            }}
-            onError={(error) => {
-              debugLog('クリップボードキャプチャエラー:', error);
-              onClipboardError(error);
-            }}
-          />
-          {errors?.path && <span className="error-message">{errors.path}</span>}
-        </>
+        <ClipboardItemEditor
+          item={item}
+          onUpdate={onUpdate}
+          onError={(error) => {
+            debugLog('クリップボードキャプチャエラー:', error);
+            onClipboardError(error);
+          }}
+          error={errors?.path}
+        />
       )}
 
       {(item.itemCategory === 'clipboard' || item.itemCategory === 'set') && customIconEditor}

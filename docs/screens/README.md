@@ -41,7 +41,7 @@
 | **初回設定画面** | 初回起動時（`hotkey`が空文字列または未設定の場合） | [first-launch-setup.md](./first-launch-setup.md) |
 | **メインウィンドウ** | 起動時デフォルト表示<br>Alt+Spaceで表示/非表示（デフォルト） | [main-window.md](./main-window.md) |
 | **管理ウィンドウ** | Ctrl+E または設定メニューから | [admin-window.md](./admin-window.md) |
-| **ワークスペースウィンドウ** | Ctrl+W<br>メインウィンドウの ⚙️ メニュー「🗂️ ワークスペースを表示」<br>設定「メインウィンドウ表示時にワークスペースを自動表示」が有効なとき、メイン画面の表示時に自動表示 | [workspace-window.md](./workspace-window.md) |
+| **ワークスペースウィンドウ** | Ctrl+W<br>メインウィンドウの ⚙️ メニュー「🗂️ ワークスペースの表示/非表示」<br>設定「メインウィンドウ表示時にワークスペースを自動表示」が有効なとき、メイン画面の表示時に自動表示 | [workspace-window.md](./workspace-window.md) |
 | **グループの切り離しウィンドウ** | ワークスペースウィンドウのグループヘッダーをウィンドウの外へドラッグしてドロップしたとき<br>前回開いていたものはワークスペースウィンドウの初回表示時に復元 | [workspace-window.md](./workspace-window.md#519-グループを切り離す)（`src/main/detachedGroupWindowManager.ts`。構成は [システム概要](../architecture/overview.md#ウィンドウとレンダラープロセスの対応)、連動非表示は [ウィンドウ制御](../architecture/window-control.md#ウィンドウ非表示の判定)） |
 | **オーバーレイウィンドウ** | 独立トーストの表示時、ウィンドウ位置を記録した行があるセットを開いたときの進み具合の表示時（1 枚を共用） | なし（`overlay.html`・`src/main/services/overlayWindowService.ts`。説明は [トースト通知](../features/toast-notifications.md#独立トースト)） |
 
@@ -61,7 +61,7 @@
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
 | **ブックマーク取込画面（ルール編集と共通）**（`BookmarkAutoImportRuleModal`） | 管理ウィンドウの一括取込メニュー「ブラウザのブックマークを追加」<br>設定「ブックマーク自動取込」の「+ ルールを追加」「編集」 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
-| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの一括取込メニュー「インストール済みアプリを追加」<br>メインウィンドウの ➕ の「💻 インストール済みアプリを追加」 | [app-import-modal.md](./app-import-modal.md) |
+| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの一括取込メニュー「インストール済みアプリを取り込む」<br>メインウィンドウの ➕ の「💻 インストール済みアプリを取り込む」 | [app-import-modal.md](./app-import-modal.md) |
 | **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | [admin-window.md](./admin-window.md#551-スナップショット一覧) |
 | **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | [main-window.md](./main-window.md#5101-メモを表示) |
 | **セットに追加するアイテム**（`SetItemPickerModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ アイテムを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) |
@@ -90,7 +90,7 @@
 | **セットの欄**（`SetEntriesEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📦 セット」のとき（行の一覧・開き方） | [register-modal.md](./register-modal.md#58-セットの行を編集) |
 | **フォルダ取込オプションエディタ** | フォルダ取込アイテムのオプション設定 | [dir-options-editor.md](./dir-options-editor.md) |
 | **ホットキー入力** | 起動ホットキー・「ウィンドウ検索で起動」のホットキーの設定入力 | [hotkey-input.md](./hotkey-input.md) |
-| **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-クリップボードを取り込む) |
+| **クリップボードアイテムエディター**（`ClipboardItemEditor`） | アイテム登録・編集で種別「📋 クリップボード」を選んだとき | [register-modal.md](./register-modal.md#519-内容を書く取り込む) |
 | **カラーピッカー**（`ColorPicker`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「🎨 カラーを変更」 | [workspace-window.md](./workspace-window.md#583-グループを右クリックして色を変更) |
 | **ウィンドウ切り替えの欄**（`ItemWindowSwitchEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「📄 単一アイテム」のとき（対象ウィンドウ・ウィンドウ位置・開くときの動き。セットの行の詳細と同じ部品） | [register-modal.md](./register-modal.md#55-ウィンドウ切り替えウィンドウ位置を入力) |
 | **ウィンドウ操作設定エディター**（`WindowConfigEditor`） | アイテム登録・編集、ワークスペースアイテム編集で種別「🪟 ウィンドウ操作」のとき（タイトル・位置・サイズ） | [register-modal.md](./register-modal.md#57-ウィンドウ操作設定を入力) |

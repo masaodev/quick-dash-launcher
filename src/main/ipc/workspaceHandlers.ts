@@ -30,6 +30,7 @@ import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
 import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
+import { mainI18n } from '../services/mainI18n.js';
 import {
   executeLauncherItem,
   executeSet,
@@ -40,6 +41,7 @@ import {
 } from '../services/launch/setExecutor.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
+import { notifyLaunchFailure } from './itemHandlers.js';
 
 /**
  * クリップボードアイテムなら実データを複製した参照に差し替える
@@ -265,17 +267,18 @@ export function setupWorkspaceHandlers(): void {
           { id: item.id, name: item.displayName, windowTitle },
           'Window operation failed: Window not found'
         );
-        throw new Error(`ウィンドウが見つかりませんでした: ${windowTitle}`);
+        throw new Error(`${mainI18n.t('layout.windowNotFound')}: ${windowTitle}`);
       }
 
       // クリップボードタイプの場合
       if (item.type === 'clipboard') {
         if (!item.dataFileRef) {
           logger.warn({ id: item.id, name: item.displayName }, 'Clipboard data ref not found');
-          throw new Error('クリップボードデータの参照が見つかりません');
+          throw new Error(mainI18n.t('launcher.messages.clipboardDataMissing'));
         }
 
-        await launchItem(
+        // 成功のトーストは画面側が結果を見て出す（書き戻す前に出すと、終わっていないように見える）
+        const restored = await launchItem(
           {
             type: 'clipboard',
             path: '',
@@ -284,6 +287,10 @@ export function setupWorkspaceHandlers(): void {
           },
           logger
         );
+        if (!restored.success) {
+          await notifyLaunchFailure(item.displayName, restored);
+          return { success: false };
+        }
 
         logger.info(
           { id: item.id, name: item.displayName },
@@ -337,7 +344,7 @@ export function setupWorkspaceHandlers(): void {
       }
 
       // 通常アイテムを起動：共通のlaunchItem関数を使用（起動種別は path から判定済み）
-      await launchItem(
+      const launched = await launchItem(
         {
           type: item.launcherType,
           path: item.path,
@@ -346,6 +353,10 @@ export function setupWorkspaceHandlers(): void {
         },
         logger
       );
+      if (!launched.success) {
+        await notifyLaunchFailure(item.displayName, launched);
+        return { success: false };
+      }
 
       logger.info(
         { id: item.id, name: item.displayName, path: item.path },
@@ -357,6 +368,11 @@ export function setupWorkspaceHandlers(): void {
         { error, id: item.id, type: item.type, name: item.displayName },
         'Failed to launch workspace item'
       );
+      // 画面側はログに残すだけなので、ここで知らせる
+      await notifyLaunchFailure(item.displayName, {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   });

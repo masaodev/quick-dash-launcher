@@ -29,6 +29,17 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   const api = window.electronAPI.workspaceAPI;
 
   const handleLaunch = withErrorHandling(async (item: WorkspaceItem) => {
+    // クリップボードは書き戻してから「コピーしました」を出す（失敗は本体側がエラーのトーストで知らせる）
+    if (item.type === 'clipboard') {
+      const result = await api.launchItem(item);
+      if (result.success) {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: 'clipboard',
+        });
+      }
+      return;
+    }
     // セットは行の名前を本体側で引いて知らせる（データファイルのアイテムはこの画面に無い）
     if (item.type !== 'set') {
       await window.electronAPI.showToastWindow({

@@ -1,40 +1,36 @@
 import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
-import React, { useState, useEffect } from 'react';
-import type { CurrentClipboardState, ClipboardFormat } from '@common/types';
+import React, { useState, useEffect, useRef } from 'react';
+import type {
+  ClipboardContent,
+  ClipboardContentSource,
+  ClipboardFormat,
+  RegisterItem,
+} from '@common/types';
 
 import '../styles/components/ClipboardItemEditor.css';
 import { logError } from '../utils/debug';
 
 import { Button } from './ui';
 
-interface CapturedDataInfo {
-  dataFileRef: string;
-  preview?: string;
-  formats: ClipboardFormat[];
-  savedAt: number;
-}
+/** 内容の作り方。新規はテキストを書く */
+type EditorMode = 'text' | 'capture';
 
-interface SessionDataInfo {
-  sessionId: string;
-  preview?: string;
-  formats: ClipboardFormat[];
-  capturedAt: number;
-}
-
-interface CaptureResult {
-  sessionId: string;
-  preview?: string;
-  formats: ClipboardFormat[];
-  capturedAt: number;
-  dataSize: number;
+/** 取り込み直す前の中身（「元に戻す」で戻す） */
+interface ContentSnapshot {
+  clipboardSessionId?: string;
+  clipboardDataRef?: string;
+  clipboardFormats?: ClipboardFormat[];
+  clipboardPreview?: string;
+  clipboardSavedAt?: number;
 }
 
 interface ClipboardItemEditorProps {
-  capturedData?: CapturedDataInfo;
-  sessionData?: SessionDataInfo;
-  onCapture: (result: CaptureResult) => void;
+  item: RegisterItem;
+  onUpdate: (fields: Partial<RegisterItem>) => void;
   onError?: (error: string) => void;
+  /** 入力チェックのエラー（内容欄の下に出す） */
+  error?: string;
 }
 
 const FORMATS: readonly ClipboardFormat[] = ['text', 'html', 'rtf', 'image', 'file'];
@@ -43,207 +39,295 @@ function formatToLabel(format: ClipboardFormat): string {
   return FORMATS.includes(format) ? i18next.t(`clipboardEditor.formats.${format}`) : format;
 }
 
-function formatDataSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+/** 表示名に使う 1 行目（30 文字まで） */
+function nameFromText(text: string): string {
+  const firstLine = text.split(/\r?\n/).find((line) => line.trim() !== '') ?? '';
+  const trimmed = firstLine.trim();
+  return trimmed.length > 30 ? trimmed.substring(0, 30) + '...' : trimmed;
 }
 
-const CLIPBOARD_CHECK_INTERVAL_MS = 3000;
-
-interface CapturedDataSectionProps {
-  capturedData?: CapturedDataInfo;
-  sessionData?: SessionDataInfo;
-  onRecapture: () => void;
-  capturing: boolean;
-  canCapture: boolean;
+function hasSavedContent(item: RegisterItem): boolean {
+  return !!item.clipboardSessionId || !!item.clipboardDataRef;
 }
 
-function CapturedDataSection({
-  capturedData,
-  sessionData,
-  onRecapture,
-  capturing,
-  canCapture,
-}: CapturedDataSectionProps): React.ReactElement {
-  const { t, i18n } = useTranslation();
-  const preview = capturedData?.preview || sessionData?.preview;
-  const formats = capturedData?.formats || sessionData?.formats || [];
-  const timestamp = capturedData?.savedAt || sessionData?.capturedAt || Date.now();
-  const isPersisted = !!capturedData;
-
-  return (
-    <div className="clipboard-captured-data">
-      <div className="section-header">
-        <h4>{isPersisted ? t('clipboardEditor.savedData') : t('clipboardEditor.capturedData')}</h4>
-      </div>
-
-      <div className="captured-info">
-        {preview && (
-          <div className="text-preview">
-            <pre>{preview}</pre>
-          </div>
-        )}
-
-        <div className="format-info">
-          <span className="label">{t('clipboardEditor.format')}</span>
-          <span className="formats">{formats.map(formatToLabel).join(', ')}</span>
-        </div>
-
-        <div className="saved-info">
-          <span className="label">
-            {isPersisted ? t('clipboardEditor.savedAt') : t('clipboardEditor.capturedAt')}
-          </span>
-          <span className="date">{new Date(timestamp).toLocaleString(i18n.language)}</span>
-        </div>
-
-        <div className="recapture-action">
-          <Button variant="secondary" onClick={onRecapture} disabled={capturing || !canCapture}>
-            {capturing ? t('clipboardEditor.capturing') : t('clipboardEditor.overwrite')}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+/** 取り込み・保存済みの中身がテキストだけか（そのままテキストとして編集できる） */
+function isTextOnly(item: RegisterItem): boolean {
+  const formats = item.clipboardFormats ?? [];
+  return hasSavedContent(item) && formats.length === 1 && formats[0] === 'text';
 }
 
-function ClipboardPreview({ state }: { state: CurrentClipboardState }): React.ReactElement {
-  const { t } = useTranslation();
-  if (state.imageThumbnail) {
-    return (
-      <div className="image-preview">
-        <img src={state.imageThumbnail} alt={t('clipboardEditor.imageAlt')} />
-      </div>
-    );
-  }
-  if (state.preview) {
-    return (
-      <div className="text-preview">
-        <pre>{state.preview}</pre>
-      </div>
-    );
-  }
-  return <div className="no-preview">{t('clipboardEditor.noPreview')}</div>;
+function initialMode(item: RegisterItem): EditorMode {
+  if (item.clipboardText !== undefined) return 'text';
+  if (!hasSavedContent(item)) return 'text';
+  return isTextOnly(item) ? 'text' : 'capture';
 }
 
+/** 中身を読む元（取り込んだばかりならセッション、そうでなければ保存済みの参照） */
+function contentSourceOf(item: RegisterItem): ClipboardContentSource {
+  return item.clipboardSessionId
+    ? { sessionId: item.clipboardSessionId }
+    : { dataFileRef: item.clipboardDataRef };
+}
+
+function snapshotOf(item: RegisterItem): ContentSnapshot {
+  return {
+    clipboardSessionId: item.clipboardSessionId,
+    clipboardDataRef: item.clipboardDataRef,
+    clipboardFormats: item.clipboardFormats,
+    clipboardPreview: item.clipboardPreview,
+    clipboardSavedAt: item.clipboardSavedAt,
+  };
+}
+
+function discardSession(sessionId: string | undefined): void {
+  if (!sessionId) return;
+  window.electronAPI.clipboardAPI.discardSession(sessionId).catch(() => undefined);
+}
+
+/**
+ * クリップボードアイテムの「内容」欄。テキストを書くか、クリップボードから取り込むかを切り替える。
+ * クリップボードは「取り込む」を押したときだけ読む（画面を開いただけでは読まない）
+ */
 const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
-  capturedData,
-  sessionData,
-  onCapture,
+  item,
+  onUpdate,
   onError,
+  error,
 }) => {
-  const { t } = useTranslation();
-  const [currentState, setCurrentState] = useState<CurrentClipboardState | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { t, i18n } = useTranslation();
+  const [mode, setMode] = useState<EditorMode>(() => initialMode(item));
+  // テキスト欄に書いた値。書くまで（edited が false の間）は item.clipboardText を空のままにし、
+  // 取り込み・保存済みの中身をそのまま使う
+  const [draft, setDraft] = useState(item.clipboardText ?? '');
+  const [edited, setEdited] = useState(item.clipboardText !== undefined);
+  // 取り込み・保存済みの中身（テキストの全文・画像の縮小版）
+  const [content, setContent] = useState<ClipboardContent | null>(null);
+  const [loadingContent, setLoadingContent] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [previous, setPrevious] = useState<ContentSnapshot | null>(null);
+  // 自分で付けた表示名（書き換えに合わせて付け直す。利用者が書き換えたら触らない）
+  const autoNameRef = useRef<string | undefined>(undefined);
+  const latestRef = useRef({ item, previous });
+  latestRef.current = { item, previous };
 
-  const checkClipboard = async () => {
-    setLoading(true);
-    try {
-      const state = await window.electronAPI.clipboardAPI.checkCurrent();
-      setCurrentState(state);
-    } catch (error) {
-      logError('クリップボード状態の確認に失敗:', error);
-    } finally {
-      setLoading(false);
-    }
+  const sourceKey = item.clipboardSessionId ?? item.clipboardDataRef;
+
+  // 閉じるとき、元に戻すために取っておいたキャプチャが使われていなければ捨てる
+  useEffect(
+    () => () => {
+      const { item: last, previous: prev } = latestRef.current;
+      if (prev?.clipboardSessionId && prev.clipboardSessionId !== last.clipboardSessionId) {
+        discardSession(prev.clipboardSessionId);
+      }
+    },
+    []
+  );
+
+  // 取り込み・保存済みの中身を読む（中身＝セッション・参照が変わったときだけ）
+  useEffect(() => {
+    let cancelled = false;
+    setContent(null);
+    setLoadingContent(!!sourceKey);
+    if (!sourceKey) return undefined;
+    window.electronAPI.clipboardAPI
+      .readContent(contentSourceOf(latestRef.current.item))
+      .then((result) => {
+        if (!cancelled) setContent(result);
+      })
+      .catch((error) => logError('クリップボードの中身の読み取りに失敗:', error))
+      .finally(() => {
+        if (!cancelled) setLoadingContent(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sourceKey]);
+
+  /** 表示名が空か、前に自分で付けた名前のままなら付け直す */
+  const autoName = (source: string): Partial<RegisterItem> => {
+    if (item.displayName && item.displayName !== autoNameRef.current) return {};
+    const name = nameFromText(source);
+    autoNameRef.current = name;
+    return { displayName: name };
   };
 
-  useEffect(() => {
-    checkClipboard();
-    const interval = setInterval(checkClipboard, CLIPBOARD_CHECK_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, []);
+  const handleTextChange = (value: string) => {
+    setDraft(value);
+    setEdited(true);
+    onUpdate({ clipboardText: value, ...autoName(value) });
+  };
+
+  const switchToText = () => {
+    if (mode === 'text') return;
+    setMode('text');
+    // 書いたことがあれば、その本文を使う。見ただけなら取り込み・保存済みの中身を使い続ける
+    if (edited) onUpdate({ clipboardText: draft });
+  };
+
+  const switchToCapture = () => {
+    if (mode === 'capture') return;
+    setMode('capture');
+    onUpdate({ clipboardText: undefined });
+  };
 
   const handleCapture = async () => {
     setCapturing(true);
     try {
       const result = await window.electronAPI.clipboardAPI.captureToSession();
-
-      if (result.success && result.sessionId) {
-        onCapture({
-          sessionId: result.sessionId,
-          preview: result.preview,
-          formats: result.formats || [],
-          capturedAt: result.capturedAt || Date.now(),
-          dataSize: result.dataSize || 0,
-        });
-      } else {
+      if (!result.success || !result.sessionId) {
         onError?.(result.error || t('clipboardEditor.captureFailed'));
+        return;
       }
+      // 取り込み直したら、前の中身を 1 つだけ取っておく（それより前の未確定のキャプチャは捨てる）
+      if (hasSavedContent(item)) {
+        if (previous?.clipboardSessionId) discardSession(previous.clipboardSessionId);
+        setPrevious(snapshotOf(item));
+      }
+      setDraft('');
+      setEdited(false);
+      onUpdate({
+        clipboardSessionId: result.sessionId,
+        clipboardFormats: result.formats || [],
+        clipboardSavedAt: result.capturedAt || Date.now(),
+        clipboardPreview: result.preview || '',
+        clipboardText: undefined,
+        ...autoName(result.preview || t('register.clipboardFallbackName')),
+      });
     } catch (error) {
-      const message = error instanceof Error ? error.message : t('clipboardEditor.captureFailed');
-      onError?.(message);
+      onError?.(error instanceof Error ? error.message : t('clipboardEditor.captureFailed'));
     } finally {
       setCapturing(false);
     }
   };
 
-  return (
-    <div className="clipboard-item-editor">
-      {/* 現在のクリップボード状態 */}
-      <div className="clipboard-current-state">
-        <div className="section-header">
-          <h4>{t('clipboardEditor.current')}</h4>
-          <Button variant="secondary" size="sm" onClick={checkClipboard} disabled={loading}>
-            {loading ? t('clipboardEditor.checking') : t('clipboardEditor.refresh')}
-          </Button>
+  const handleUndo = () => {
+    if (!previous) return;
+    discardSession(item.clipboardSessionId);
+    onUpdate({ ...previous, clipboardText: undefined });
+    setPrevious(null);
+  };
+
+  const handleEditAsText = () => {
+    if (content?.text === undefined) {
+      onError?.(t('clipboardEditor.readFailed'));
+      return;
+    }
+    setDraft(content.text);
+    setEdited(true);
+    setMode('text');
+    onUpdate({ clipboardText: content.text });
+  };
+
+  // テキストで保存すると、取り込んだ書式・画像は使わなくなる
+  const replacesRichContent =
+    mode === 'text' && edited && hasSavedContent(item) && !isTextOnly(item);
+  // テキストだけの中身は、書くまでは読んだ全文を見せる
+  const showsSavedText = !edited && isTextOnly(item);
+  const textValue = showsSavedText ? (content?.text ?? '') : draft;
+  const loadingText = showsSavedText && loadingContent;
+  const thumbnail = content?.imageThumbnail;
+
+  const renderText = () => (
+    <div className="clipboard-text">
+      <textarea
+        aria-label={t('clipboardEditor.textLabel')}
+        value={loadingText ? '' : textValue}
+        placeholder={
+          loadingText ? t('clipboardEditor.loading') : t('clipboardEditor.textPlaceholder')
+        }
+        disabled={loadingText}
+        onChange={(e) => handleTextChange(e.target.value)}
+        autoFocus={!hasSavedContent(item)}
+      />
+      {replacesRichContent ? (
+        <div className="clipboard-text-warning">{t('clipboardEditor.richTextWarning')}</div>
+      ) : (
+        <div className="clipboard-text-meta">
+          <span>{t('clipboardEditor.textHint')}</span>
+          <span>{t('clipboardEditor.charCount', { count: textValue.length })}</span>
         </div>
-
-        {currentState ? (
-          currentState.hasContent ? (
-            <div className="clipboard-preview">
-              <ClipboardPreview state={currentState} />
-
-              {/* フォーマット情報 */}
-              <div className="format-info">
-                <span className="label">{t('clipboardEditor.format')}</span>
-                <span className="formats">
-                  {currentState.formats.map(formatToLabel).join(', ')}
-                </span>
-              </div>
-
-              {/* サイズ情報 */}
-              {currentState.estimatedSize && (
-                <div className="size-info">
-                  <span className="label">{t('clipboardEditor.estimatedSize')}</span>
-                  <span className="size">{formatDataSize(currentState.estimatedSize)}</span>
-                </div>
-              )}
-
-              {/* キャプチャボタン */}
-              <div className="capture-action">
-                <Button variant="primary" onClick={handleCapture} disabled={capturing}>
-                  {capturing ? t('clipboardEditor.capturing') : t('clipboardEditor.save')}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="clipboard-empty">
-              <p>{t('clipboardEditor.empty')}</p>
-              <p className="hint">{t('clipboardEditor.emptyHint')}</p>
-            </div>
-          )
-        ) : (
-          <div className="clipboard-loading">{t('clipboardEditor.loading')}</div>
-        )}
-      </div>
-
-      {(capturedData || sessionData) && (
-        <CapturedDataSection
-          capturedData={capturedData}
-          sessionData={sessionData}
-          onRecapture={handleCapture}
-          capturing={capturing}
-          canCapture={currentState?.hasContent ?? false}
-        />
       )}
+    </div>
+  );
 
-      {/* 注意事項 */}
-      <div className="clipboard-notes">
-        <p>
-          <strong>{t('clipboardEditor.notesLabel')}</strong> {t('clipboardEditor.notes')}
-        </p>
+  const renderCapture = () => {
+    if (!hasSavedContent(item)) {
+      return (
+        <div className="clipboard-capture-empty">
+          <Button variant="primary" onClick={handleCapture} disabled={capturing}>
+            {capturing ? t('clipboardEditor.capturing') : t('clipboardEditor.captureButton')}
+          </Button>
+          <p>{t('clipboardEditor.captureHint')}</p>
+        </div>
+      );
+    }
+
+    const formats = item.clipboardFormats ?? [];
+    const savedAt = item.clipboardSavedAt
+      ? new Date(item.clipboardSavedAt).toLocaleString(i18n.language)
+      : '';
+    return (
+      <div className="clipboard-captured">
+        <div className={`clipboard-captured-body${thumbnail ? ' image' : ''}`}>
+          {thumbnail ? (
+            <img src={thumbnail} alt={t('clipboardEditor.imageAlt')} />
+          ) : item.clipboardPreview ? (
+            <pre>{item.clipboardPreview}</pre>
+          ) : (
+            <span className="clipboard-no-preview">{t('clipboardEditor.noPreview')}</span>
+          )}
+        </div>
+        <div className="clipboard-captured-meta">
+          <span>{formats.map(formatToLabel).join(' / ')}</span>
+          {formats.includes('image') && <span>{t('clipboardEditor.imageLimit')}</span>}
+          <span className={`clipboard-state${item.clipboardSessionId ? ' unsaved' : ''}`}>
+            {item.clipboardSessionId
+              ? t('clipboardEditor.capturedState', { date: savedAt })
+              : t('clipboardEditor.savedState', { date: savedAt })}
+          </span>
+          <span className="clipboard-captured-spacer" />
+          {previous && (
+            <button type="button" className="clipboard-link-button" onClick={handleUndo}>
+              {t('clipboardEditor.undo')}
+            </button>
+          )}
+          {formats.includes('text') && (
+            <button
+              type="button"
+              className="clipboard-link-button"
+              onClick={handleEditAsText}
+              disabled={loadingContent}
+            >
+              {t('clipboardEditor.editAsText')}
+            </button>
+          )}
+          <button
+            type="button"
+            className="clipboard-link-button"
+            onClick={handleCapture}
+            disabled={capturing}
+          >
+            {capturing ? t('clipboardEditor.capturing') : t('clipboardEditor.recapture')}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="form-group clipboard-content-group">
+      <label>{t('clipboardEditor.content')}</label>
+      <div className="clipboard-item-editor">
+        <div className="clipboard-mode" role="group" aria-label={t('clipboardEditor.modeLabel')}>
+          <button type="button" aria-pressed={mode === 'text'} onClick={switchToText}>
+            {t('clipboardEditor.modeText')}
+          </button>
+          <button type="button" aria-pressed={mode === 'capture'} onClick={switchToCapture}>
+            {t('clipboardEditor.modeCapture')}
+          </button>
+        </div>
+        <div className="clipboard-stage">{mode === 'text' ? renderText() : renderCapture()}</div>
+        {error && <span className="error-message">{error}</span>}
       </div>
     </div>
   );

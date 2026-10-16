@@ -127,3 +127,58 @@ describe('ClipboardService の実データの複製', () => {
     expect(service.duplicateClipboardData('clipboard-data/../settings.json')).toBeNull();
   });
 });
+
+describe('ClipboardService の書いたテキストの保存', () => {
+  it('テキストだけの実データとして保存し、その参照とプレビューを返す', () => {
+    const result = service.saveText('いつもお世話になっております。\n2 行目');
+    expect(result.success).toBe(true);
+    expect(result.formats).toEqual(['text']);
+    expect(result.preview).toBe('いつもお世話になっております。\n2 行目');
+    const id = result.dataFileRef!.replace(/^clipboard-data\//, '').replace(/\.json$/, '');
+    const saved = JSON.parse(fs.readFileSync(path.join(clipboardDir, `${id}.json`), 'utf8'));
+    expect(saved.text).toBe('いつもお世話になっております。\n2 行目');
+    expect(saved.formats).toEqual(['text']);
+  });
+
+  it('空白だけのテキストは保存しない', () => {
+    const result = service.saveText('  \n ');
+    expect(result.success).toBe(false);
+    expect(result.dataFileRef).toBeUndefined();
+  });
+});
+
+describe('ClipboardService の中身の読み出し', () => {
+  it('保存済みの実データからテキストの全文を読む', () => {
+    const long = 'あ'.repeat(500);
+    fs.writeFileSync(
+      path.join(clipboardDir, 'read1.json'),
+      JSON.stringify({ formats: ['text'], text: long, dataSize: 1500, savedAt: 1 })
+    );
+    expect(service.readContent({ dataFileRef: 'clipboard-data/read1.json' })).toEqual({
+      text: long,
+      imageThumbnail: undefined,
+    });
+  });
+
+  it('未確定のキャプチャから読む', async () => {
+    vi.spyOn(
+      service as unknown as { collectClipboardData: () => Promise<unknown> },
+      'collectClipboardData'
+    ).mockResolvedValue({
+      success: true,
+      data: {
+        clipboardData: { formats: ['text'], text: '取り込んだ文', dataSize: 1, savedAt: 1 },
+        preview: '取り込んだ文',
+      },
+    });
+    const sessionId = await capture();
+    expect(service.readContent({ sessionId })?.text).toBe('取り込んだ文');
+  });
+
+  it('無いもの・参照の形が違うものは null', () => {
+    expect(service.readContent({ sessionId: 'missing' })).toBeNull();
+    expect(service.readContent({ dataFileRef: 'clipboard-data/missing.json' })).toBeNull();
+    expect(service.readContent({ dataFileRef: 'clipboard-data/../settings.json' })).toBeNull();
+    expect(service.readContent({})).toBeNull();
+  });
+});

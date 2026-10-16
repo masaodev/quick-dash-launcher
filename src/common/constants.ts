@@ -20,7 +20,7 @@ export const MAX_BOOKMARK_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 export const DESKTOP_TAB = {
   /** すべてのウィンドウを表示 */
   ALL: 0,
-  /** ピン止めされたウィンドウを表示 */
+  /** 全デスクトップに表示中のウィンドウを表示 */
   PINNED: -2,
 } as const;
 

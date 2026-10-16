@@ -43,9 +43,13 @@ import {
   tryActivateWindow,
   type ApplyWindowOptions,
 } from '../../utils/windowActivator.js';
-import { findWindowHwndByTitle, maximizeWindow } from '../../utils/nativeWindowControl.js';
+import {
+  findWindowHwndByTitle,
+  holdForeground,
+  maximizeWindow,
+} from '../../utils/nativeWindowControl.js';
 import { getDesktopCount, getWindowDesktopNumber } from '../../utils/virtualDesktop/index.js';
-import { launchItem, type LaunchableItem } from '../../utils/itemLauncher.js';
+import { launchItem, type LaunchableItem, type LaunchResult } from '../../utils/itemLauncher.js';
 import {
   getLayoutProgressWindow,
   LONG_TOAST_DURATION_MS,
@@ -112,11 +116,13 @@ export type SetItemResolver = (itemId: string) => AppItem | undefined;
 
 /** 実行の差し替え口（テスト用） */
 export interface SetExecutorDeps {
-  launch: (item: LaunchableItem, logger: Logger) => Promise<void>;
+  launch: (item: LaunchableItem, logger: Logger) => Promise<LaunchResult>;
   findWindow: (match: WindowConfig, exclude?: ReadonlySet<bigint>) => bigint | null;
   applyConfig: typeof applyWindowConfig;
   activate: typeof tryActivateWindow;
   maximize: (hwnd: bigint) => boolean;
+  /** 前面のウィンドウを控え、呼ぶと hwnd に取られていた前面を戻す関数を返す（前面に出さない行で使う） */
+  holdForeground?: (hwnd: bigint) => () => void;
   sleep: (ms: number) => Promise<void>;
   /** 画面の範囲（物理ピクセル。どの画面にも入らない位置を主画面に収めるのに使う） */
   screens?: () => ScreenArea[];
@@ -240,6 +246,7 @@ const defaultDeps: SetExecutorDeps = {
   applyConfig: applyWindowConfig,
   activate: tryActivateWindow,
   maximize: (hwnd) => maximizeWindow(hwnd),
+  holdForeground: (hwnd) => holdForeground(hwnd),
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   desktopOf: (hwnd) => getWindowDesktopNumber(hwnd),
   desktopCount: () => getDesktopCount(),
@@ -497,8 +504,8 @@ async function runSet(
           // 前面に出すのを Windows に断られても、見つかっていれば開き直さない（二重に開かない）
           if (result.windowFound) return finish(index);
         }
-        await deps.launch(r.launch, logger);
-        return finish(index);
+        const launched = await deps.launch(r.launch, logger);
+        return finish(index, launched.success ? undefined : launched.error);
       }
 
       // 置き場所のある行。今は無い画面の位置なら、主画面に収める（見えない所へ動かさない）
@@ -529,8 +536,8 @@ async function runSet(
       );
       if (!config) {
         // 見つけ方を決められない（URL など）: 開くだけにする
-        if (r.launch) await deps.launch(r.launch, logger);
-        return finish(index);
+        const launched = r.launch ? await deps.launch(r.launch, logger) : undefined;
+        return finish(index, launched && !launched.success ? launched.error : undefined);
       }
 
       let hwnd = entry.ifOpen === 'openNew' ? null : findUnclaimed(config);
@@ -545,7 +552,8 @@ async function runSet(
           let found: bigint | null;
           while ((found = deps.findWindow(config, before)) !== null) before.add(found);
         }
-        await deps.launch(r.launch, logger);
+        const launched = await deps.launch(r.launch, logger);
+        if (!launched.success) return finish(index, launched.error);
         markOpened();
         hwnd = await waitForWindow(config, before, entry.waitSeconds ?? SET_DEFAULT_WAIT_SECONDS);
         if (hwnd === null) {
@@ -555,10 +563,20 @@ async function runSet(
       markOpened();
       if (cancelled) return finish(index, mainI18n.t('layout.cancelled'));
 
-      const applied = applyOptions
-        ? await deps.applyConfig(hwnd, withSingle(config, entry), r.name, logger, applyOptions)
-        : await deps.applyConfig(hwnd, withPin(config, entry), r.name, logger);
-      if (entry.placement.state === 'maximized') deps.maximize(hwnd);
+      // 前面に出さない行は、最大化の解除（位置を当てる前）と最大化で前面に出てしまうので、取られたら戻す
+      const applyTarget = applyOptions ? withSingle(config, entry) : withPin(config, entry);
+      const releaseForeground = applyTarget.activateWindow
+        ? undefined
+        : deps.holdForeground?.(hwnd);
+      let applied: Awaited<ReturnType<SetExecutorDeps['applyConfig']>>;
+      try {
+        applied = applyOptions
+          ? await deps.applyConfig(hwnd, applyTarget, r.name, logger, applyOptions)
+          : await deps.applyConfig(hwnd, applyTarget, r.name, logger);
+        if (entry.placement.state === 'maximized') deps.maximize(hwnd);
+      } finally {
+        releaseForeground?.();
+      }
       // 管理者権限で動くウィンドウなどは、位置を当てても動かない（大きさは見ない）
       if (applied.positionNotApplied) return finish(index, mainI18n.t('set.run.couldNotMove'));
       return finish(
