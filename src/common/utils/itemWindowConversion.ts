@@ -117,6 +117,24 @@ export function hasItemWindowSwitch(item: ItemWindowSwitch): boolean {
   return !!(item.window?.title || item.window?.processName);
 }
 
+/**
+ * パスの無い単一アイテムか（path が空で、対象ウィンドウがある）
+ *
+ * 開くものが無いので、開いたときは合うウィンドウが開いていれば切り替えるだけ（無ければ何も開かない）
+ */
+export function isPathlessItem(item: { path?: string } & ItemWindowSwitch): boolean {
+  return !item.path?.trim() && hasItemWindowSwitch(item);
+}
+
+/**
+ * 対象ウィンドウを 1 語で表す（パスの無い単一アイテムの、パスの代わりの表示に使う）
+ *
+ * exe 名とタイトルの両方があれば「exe 名 / タイトル」。どちらも無ければ空
+ */
+export function describeWindowMatch(match: SetWindowMatch | undefined): string {
+  return [match?.processName, match?.title].filter((v): v is string => !!v).join(' / ');
+}
+
 /** ItemWindowSwitch のキーを除いた形を返す（ウィンドウ切り替えを丸ごと差し替えるとき） */
 export function omitItemWindowSwitch<T extends ItemWindowSwitch>(
   source: T

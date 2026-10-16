@@ -201,7 +201,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.clickCancelButton();
     });
 
-    await test.step('空のパスでは登録できない', async () => {
+    await test.step('パスも対象ウィンドウも空では登録できない', async () => {
       await utils.openRegisterModal(electronApp);
       await utils.fillRegisterForm({
         name: 'テストアイテム',
@@ -220,7 +220,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
-      expect(errorText).toContain('パスを入力してください');
+      expect(errorText).toContain('パスか対象ウィンドウのどちらかを入力してください');
 
       await utils.clickCancelButton();
     });
@@ -364,7 +364,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await utils.clickCancelButton();
     });
 
-    await test.step('編集時にパスを空にすると保存できない', async () => {
+    await test.step('編集時にパスを空にすると（対象ウィンドウも無ければ）保存できない', async () => {
       await utils.editItemByRightClick('GitHub');
       await utils.fillRegisterForm({
         path: '',
@@ -383,7 +383,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       const errorMessage = utils.registerPage.locator('.error-message');
       await expect(errorMessage.first()).toBeVisible();
       const errorText = await errorMessage.first().textContent();
-      expect(errorText).toContain('パスを入力してください');
+      expect(errorText).toContain('パスか対象ウィンドウのどちらかを入力してください');
 
       await utils.clickCancelButton();
     });
@@ -729,6 +729,75 @@ test.describe('QuickDashLauncher - 単一アイテムのウィンドウ切り替
       await expect(fields.getByLabel('exe 名')).toHaveValue('chrome.exe');
       await expect(fields.getByLabel('ウィンドウタイトル')).toHaveValue('*GitHub*');
       await expect(fields.getByLabel('開いていたら')).toHaveValue('openNew');
+    });
+  });
+});
+
+/**
+ * パスの無い単一アイテム
+ * - 対象ウィンドウ（exe 名）だけを入れれば、パスが空でも登録できる（JSON は type: item・path: ""）
+ * - もう一度編集を開くと、ウィンドウ切り替えの折りたたみが開いた状態で出て、パスの下に補足が出る
+ */
+test.describe('QuickDashLauncher - パスの無い単一アイテム', () => {
+  test('対象ウィンドウだけで登録し、もう一度開くと切り替えるだけと分かる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+    await utils.waitForPageLoad();
+    const note = 'パスが空なので、開いているウィンドウへ切り替えるだけです';
+
+    await test.step('パスを空のまま、対象ウィンドウを入れて登録する', async () => {
+      await utils.openRegisterModal(electronApp);
+      await utils.fillRegisterForm({ name: 'パスなしメモ帳' });
+      const editor = utils.registerPage;
+      await editor
+        .locator('.options-toggle', { hasText: 'ウィンドウ切り替え・ウィンドウ位置' })
+        .click();
+      const fields = editor.getByTestId('item-window-switch');
+      await fields.getByLabel('exe 名').fill('notepad.exe');
+      // パスが空なので「開いていたら」は出さない
+      await expect(fields.getByLabel('開いていたら')).toHaveCount(0);
+      await expect(editor.getByText(note)).toBeVisible();
+      await utils.clickRegisterButton();
+      await expect(mainWindow.locator('.item', { hasText: 'パスなしメモ帳' })).toBeVisible();
+    });
+
+    await test.step('データファイルに path: "" と対象ウィンドウで書かれる', async () => {
+      await expect
+        .poll(() => {
+          const item = configHelper.getItemByDisplayName('data.json', 'パスなしメモ帳');
+          return item && isJsonLauncherItem(item)
+            ? { type: item.type, path: item.path, window: item.window }
+            : undefined;
+        })
+        .toEqual({ type: 'item', path: '', window: { processName: 'notepad.exe' } });
+    });
+
+    await test.step('一覧ではウィンドウの絵文字で出し、ツールチップにパスの代わりの説明を出す', async () => {
+      const row = mainWindow.locator('.item', { hasText: 'パスなしメモ帳' });
+      await expect(row.locator('.item-icon')).toHaveText('🪟');
+      await expect(row).toHaveAttribute(
+        'title',
+        /開いているウィンドウに切り替えるだけ: notepad\.exe/
+      );
+    });
+
+    await test.step('もう一度開くと、折りたたみが開いていて値が残っている', async () => {
+      const item = await mainWindow.evaluate(async () => {
+        const items = await window.electronAPI.loadDataFiles('internal');
+        return items.find((i) => 'path' in i && i.displayName === 'パスなしメモ帳');
+      });
+      expect(item).toMatchObject({ type: 'windowSwitch', path: '' });
+      await menuHelper.simulateLauncherMenu('edit', item as unknown as Record<string, unknown>);
+      const editor = await utils.waitForRegisterWindow(electronApp);
+      // 押さなくても開いている
+      const fields = editor.getByTestId('item-window-switch');
+      await expect(fields.getByLabel('exe 名')).toHaveValue('notepad.exe');
+      await expect(editor.getByText(note)).toBeVisible();
+      await utils.clickCancelButton();
     });
   });
 });

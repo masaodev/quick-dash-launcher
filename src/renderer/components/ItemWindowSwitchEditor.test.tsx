@@ -92,11 +92,17 @@ describe('ItemWindowSwitchEditor', () => {
     });
   });
 
-  it('パスが空なら「開いていたら」「待つ秒数」を出さない', () => {
+  it('パスが空なら開いた状態で出し、「開いていたら」「待つ秒数」を出さない', () => {
     renderEditor({ window: { processName: 'a.exe' }, placement: leftHalf }, vi.fn(), false);
-    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    // パスの無い単一アイテムは、押さなくても開いている
+    expect(screen.getByRole('button', { expanded: true })).toBeTruthy();
     expect(screen.queryByLabelText('開いていたら')).toBeNull();
     expect(screen.queryByLabelText('ウィンドウが出るのを待つ（秒）')).toBeNull();
     expect(screen.getByLabelText('前面に出す')).toBeTruthy();
+  });
+
+  it('パスも対象ウィンドウも空なら（新しく登録するとき）、たたんだまま出す', () => {
+    renderEditor({}, vi.fn(), false);
+    expect(screen.getByRole('button', { expanded: false })).toBeTruthy();
   });
 });

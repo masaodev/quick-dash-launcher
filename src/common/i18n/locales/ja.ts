@@ -157,6 +157,7 @@ export const ja = {
       expandedOptions: '設定: {{value}}',
       windowTitle: 'ウィンドウタイトル: {{value}}',
       processName: 'exe 名: {{value}}',
+      windowSwitchOnly: '開いているウィンドウに切り替えるだけ: {{target}}',
       executablePath: '実行ファイルパス: {{value}}',
       windowState: '状態: {{value}}',
       windowStates: {
@@ -364,6 +365,7 @@ export const ja = {
       file: 'ファイルを開いています...',
       folder: 'フォルダを開いています...',
       customUri: '起動中...',
+      windowSwitch: 'ウィンドウに切り替えます',
       windowOperation: 'ウィンドウ操作を実行します',
       windowActivate: 'ウィンドウを前面に出しました',
       windowClose: 'ウィンドウを閉じました',
@@ -535,6 +537,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       dirHasNoName: 'フォルダ取込（dir）は表示名を持ちません',
       needName: '--name を指定してください',
       needPath: '--path を指定してください',
+      needPathOrWindow: '--path か --set window=… を指定してください',
       argsOnlyItem: '--args は通常のアイテム（item）とセット（set）の行だけに指定できます',
       itemOnlySet: '--item と --label はセット（--type set）だけに指定できます',
       setItemAndPath: '--item と --path はどちらか一方を指定してください',
@@ -645,6 +648,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     run: {
       titleNotMatched: 'タイトルが合うウィンドウがありません（{{exe}} は開いています）',
       notOpen: '開いていないので動かしませんでした',
+      itemNotOpen: '開いていないので切り替えませんでした',
       couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
       desktopNotFound: 'デスクトップ {{number}} がありません。位置だけ合わせました',
       itemWindowTimedOut: 'ウィンドウが出るのを {{seconds}} 秒待ちましたが、見つかりませんでした',
@@ -751,6 +755,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       openKindPath: 'パス',
       item: 'アイテム',
       itemNote: 'アイテムを直すと、このセットにも効きます。',
+      inheritNote:
+        'ℹ️ アイテム「{{name}}」の設定で開きます。下で入れると、この行の設定が優先されます。',
+      inheritValue: 'アイテムの設定（{{value}}）',
+      inheritPlacement: 'アイテムの設定（📍 {{place}}）',
       pickItem: 'アイテムを選ぶ',
       otherItem: '別のアイテムにする',
       pathNote: 'このセットに書いたパス（アイテムは作りません）。',
@@ -887,6 +895,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     noName: '(名前なし)',
     pathSummary: {
       noPath: '(パスなし)',
+      windowSwitchOnly: '(パスなし・切り替えるだけ: {{target}})',
       noItems: '(アイテムなし)',
       noWindowTitle: '(ウィンドウタイトルなし)',
       noFolderPath: '(フォルダパスなし)',
@@ -1368,6 +1377,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       toggle: 'オプション設定（ウィンドウ切り替え・ウィンドウ位置）',
       findLead:
         'このアイテムを開いたとき、合うウィンドウが開いていれば、開き直さずにそのウィンドウへ切り替えます。',
+      pathlessNote: 'パスが空なので、開いているウィンドウへ切り替えるだけです',
     },
     dirOptions: 'フォルダ取込のオプション',
     args: '引数:',
@@ -1378,6 +1388,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     errors: {
       displayNameRequired: '表示名を入力してください',
       pathRequired: 'パスを入力してください',
+      pathOrWindowRequired: 'パスか対象ウィンドウのどちらかを入力してください',
       windowRequired: 'ウィンドウタイトルまたはプロセス名を入力してください',
       clipboardRequired: 'テキストを書くか、クリップボードを取り込んでください',
       clipboardSaveFailed: 'クリップボードデータの保存に失敗しました',
@@ -1713,6 +1724,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   validation: {
     emptyField: '{{field}}が空です',
     emptyTypedField: '{{type}}の{{field}}が空です',
+    pathOrWindowRequired:
+      'pathが空です（パスの無いアイテムは window の processName か title が要ります）',
     depthOutOfRange: 'depthは-1（無制限）または0以上である必要があります',
     invalidTypes: 'typesはfile, folder, bothのいずれかである必要があります',
     unknownType: '未知のアイテムタイプ: {{type}}',

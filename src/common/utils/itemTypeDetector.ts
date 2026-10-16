@@ -12,6 +12,11 @@ const STANDARD_URL_SCHEMES = new Set(['http', 'https', 'ftp']);
  * パスのパターンのみでタイプを判定する（共通ロジック）
  */
 function detectTypeFromPath(itemPath: string): LauncherItem['type'] {
+  // パスの無い単一アイテム（開いているウィンドウに切り替えるだけ）
+  if (!itemPath.trim()) {
+    return 'windowSwitch';
+  }
+
   // URLs
   if (itemPath.includes('://')) {
     const scheme = itemPath.split('://')[0];
@@ -62,6 +67,7 @@ export async function detectItemType(
   // URI・shellパスはファイルシステム上に存在しないため、ディスクへの照会を行わない
   if (
     pathKindCheck &&
+    itemPath.trim() !== '' &&
     !itemPath.includes('://') &&
     !itemPath.startsWith('shell:') &&
     !PathUtils.isCustomUriScheme(itemPath)

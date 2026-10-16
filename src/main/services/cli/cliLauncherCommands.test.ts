@@ -178,6 +178,29 @@ describe('launcher item add', () => {
     });
   });
 
+  it('--set window=… で対象ウィンドウを渡せば --path なしで足せる（パスの無い単一アイテム）', async () => {
+    const r = await runLauncherItemCommand(
+      'add',
+      ['--name', 'MS To Do', '--set', 'window={"processName":"ApplicationFrameHost.exe"}'],
+      ctx
+    );
+    expect(r).toMatchObject({
+      kind: 'windowSwitch',
+      path: '',
+      window: { processName: 'ApplicationFrameHost.exe' },
+    });
+    // --path も対象ウィンドウも無ければ、どちらかを求める
+    const none = await errorOf(runLauncherItemCommand('add', ['--name', 'x'], ctx));
+    expect(none.code).toBe('usage');
+    expect(none.message).toBe('--path か --set window=… を指定してください');
+    // 中身の無い window では足せない
+    const empty = await errorOf(
+      runLauncherItemCommand('add', ['--name', 'x', '--set', 'window={}'], ctx)
+    );
+    expect(empty.code).toBe('invalid');
+    expect(empty.message).toContain('--path か --set window=… を指定してください');
+  });
+
   it('その種類に無い項目を --set すると、黙って落とさずに invalid', async () => {
     const e = await errorOf(
       runLauncherItemCommand(

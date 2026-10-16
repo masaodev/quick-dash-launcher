@@ -3,9 +3,22 @@
  */
 import i18next from 'i18next';
 import { isIconFetchTarget } from '@common/constants';
-import type { AppItem, LauncherItem, SetEntry, WindowInfo, WorkspaceItem } from '@common/types';
+import type {
+  AppItem,
+  ItemWindowSwitch,
+  LauncherItem,
+  SetEntry,
+  SetWindowMatch,
+  WindowInfo,
+  WorkspaceItem,
+} from '@common/types';
 import { isLauncherItem, isWindowItem } from '@common/types/guards';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import {
+  hasItemWindowSwitch,
+  isPathlessItem,
+  pickItemWindowSwitch,
+} from '@common/utils/itemWindowConversion';
 import {
   computePlacementLabel,
   type PlacementLabel,
@@ -38,10 +51,32 @@ export interface SetCatalogItem {
   groupName: string;
   /** セットと同じタブか（先に並べる） */
   sameGroup: boolean;
+  /**
+   * 単一アイテムのウィンドウ切り替えの設定（対象ウィンドウがあるものだけ）。
+   * 行に対象ウィンドウもウィンドウ位置も無いとき、この設定で開く（行の詳細で案内する）
+   */
+  itemSwitch?: ItemWindowSwitch;
+  /** パスの無い単一アイテム（開くものが無いので、行は「ウィンドウを動かすだけ」） */
+  pathless?: boolean;
 }
 
-function launcherKind(item: LauncherItem): SetTargetKind {
+/**
+ * 単一アイテムの行の種類（アイコン・結び付けに使う）
+ *
+ * パスの無い単一アイテムは開くものが無く、既にあるウィンドウを探すだけなので、ウィンドウ操作と同じ 'window' にする
+ */
+function launcherKind(item: Pick<LauncherItem, 'type'>): SetTargetKind | 'window' {
+  if (item.type === 'windowSwitch') return 'window';
   return item.type === 'clipboard' ? 'none' : item.type;
+}
+
+/** 単一アイテムのウィンドウ切り替えを、追加の画面の 1 行に持たせる項目 */
+function switchFieldsOf(item: { path: string } & ItemWindowSwitch): Partial<SetCatalogItem> {
+  if (!hasItemWindowSwitch(item)) return {};
+  return {
+    itemSwitch: pickItemWindowSwitch(item),
+    ...(isPathlessItem(item) ? { pathless: true } : {}),
+  };
 }
 
 /**
@@ -74,12 +109,13 @@ export async function loadSetCatalog(
         key: item.id,
         id: item.id,
         displayName: item.displayName,
-        kind: item.type === 'window' ? 'window' : item.launcherType,
+        kind: item.type === 'window' ? 'window' : launcherKind({ type: item.launcherType }),
         path: item.type === 'item' ? item.path : undefined,
         args: item.type === 'item' ? item.args : undefined,
         icon: item.icon,
         groupName: i18next.t('set.picker.workspace'),
         sameGroup: true,
+        ...(item.type === 'item' ? switchFieldsOf(item) : {}),
       });
     }
   }
@@ -113,6 +149,7 @@ export async function loadSetCatalog(
       icon: (icons as Record<string, string>)[item.path] || item.icon,
       groupName,
       sameGroup,
+      ...switchFieldsOf(item),
     });
   }
 
@@ -139,12 +176,17 @@ export interface SetEntryView {
   /** 参照先が見つからない */
   missing: boolean;
   path?: string;
+  /** 開くものが無く、ウィンドウを動かすだけ（開くもの無しの行・パスの無い単一アイテムを指す行） */
+  moveOnly?: boolean;
+  /** 指している単一アイテムのウィンドウ切り替えの設定（行に設定が無いときに使われる） */
+  itemSwitch?: ItemWindowSwitch;
 }
 
 /** 開くもののパスから種類を決める */
 export function kindFromPath(path: string): SetTargetKind {
   const type = detectItemTypeSync(path);
-  return type === 'clipboard' ? 'none' : type;
+  // 空のパス（切り替えるだけ）・クリップボードは開くものが無い
+  return type === 'clipboard' || type === 'windowSwitch' ? 'none' : type;
 }
 
 function lastSegment(path: string): string {
@@ -209,7 +251,9 @@ export function describeSetEntry(
       kind: item.kind,
       holding: 'ref',
       missing: false,
-      path: item.path,
+      // パスの無い単一アイテムは、パスの代わりに何も出さない（行の 2 段目は対象ウィンドウの exe 名）
+      ...(item.pathless ? { moveOnly: true } : { path: item.path }),
+      ...(item.itemSwitch ? { itemSwitch: item.itemSwitch } : {}),
     };
   }
   if (entry.open) {
@@ -231,7 +275,36 @@ export function describeSetEntry(
     kind: 'none',
     holding: 'none',
     missing: false,
+    moveOnly: true,
   };
+}
+
+/**
+ * 行がアイテムのウィンドウ切り替えの設定で動くか（行に対象ウィンドウもウィンドウ位置も無く、指すアイテムにある）
+ *
+ * 実行（setExecutor）は、行に設定が無ければアイテムの設定で探して前面に出す・位置を当てる。行の詳細でそれを案内する
+ */
+export function usesItemSwitch(entry: SetEntry, view: SetEntryView): boolean {
+  return (
+    !!entry.itemId &&
+    !view.missing &&
+    !!view.itemSwitch &&
+    !hasWindowMatch(entry.window) &&
+    !entry.placement
+  );
+}
+
+/** 探す条件（exe 名かタイトル）があるか */
+function hasWindowMatch(match: SetWindowMatch | undefined): boolean {
+  return !!(match?.processName || match?.title);
+}
+
+/**
+ * 行で探すウィンドウの条件。行に無ければ、パスの無い単一アイテムの対象ウィンドウを借りる（実行と同じ）
+ */
+export function entryWindowMatch(entry: SetEntry, view: SetEntryView): SetWindowMatch | undefined {
+  if (hasWindowMatch(entry.window)) return entry.window;
+  return view.moveOnly && view.holding === 'ref' ? view.itemSwitch?.window : undefined;
 }
 
 /** 結び付けの判定に使う形にする */
@@ -244,7 +317,7 @@ export function toMatchableEntry(
   const kind = view.kind === 'window' ? 'none' : view.kind;
   return {
     index,
-    window: entry.window,
+    window: entryWindowMatch(entry, view),
     target: { kind, path: view.path },
     desktopNumber: entry.placement?.virtualDesktopNumber,
   };

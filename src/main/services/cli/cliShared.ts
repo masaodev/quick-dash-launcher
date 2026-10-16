@@ -108,6 +108,9 @@ function howToPass(key: string, example: string): string {
  * 読み込み時の検証の文言（英語）を、どの項目をどう渡せばよいかの案内に直す。知らない形はそのまま返す
  */
 export function describeValidationError(message: string): string {
+  // 単一アイテムの path が空で、対象ウィンドウも無い（パスの無い単一アイテムにもなれない）
+  if (message.startsWith('path must not be empty'))
+    return mainI18n.t('cli.errors.needPathOrWindow');
   const required = /^([\w.[\]]+) is required and must be (?:a |an )?(.+)$/.exec(message);
   if (required) {
     const [, key, expected] = required;

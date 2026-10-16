@@ -33,7 +33,7 @@ export interface WorkspaceGroupView extends WorkspaceGroup {
 }
 
 /** type: "item" の path から判定した起動種別 */
-export type LauncherItemType = 'url' | 'file' | 'folder' | 'app' | 'customUri';
+export type LauncherItemType = 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch';
 
 /** 実行時にだけ持つアイコン（icon-cache から解決。ファイルには保存しない） */
 interface RuntimeIcon {

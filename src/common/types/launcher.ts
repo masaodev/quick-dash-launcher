@@ -68,8 +68,13 @@ export interface LauncherItem extends ItemWindowSwitch {
   displayName: string;
   /** アイテムのパス、URL、またはコマンド */
   path: string;
-  /** アイテムのタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI、クリップボード） */
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard';
+  /**
+   * アイテムのタイプ（URL、ファイル、フォルダ、アプリケーション、カスタムURI、クリップボード）
+   *
+   * windowSwitch は「パスの無い単一アイテム」（path が空で、window だけを持つ）。何も開かず、
+   * 開いているウィンドウに切り替えるだけ（保存形式には書かない。path から判定する）
+   */
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch' | 'clipboard';
   /** アイテムのアイコン（base64エンコードされたデータURL、オプション） */
   icon?: string;
   /** カスタムアイコンのファイル名（custom-iconsフォルダ内の相対パス、オプション） */

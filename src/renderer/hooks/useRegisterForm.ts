@@ -14,6 +14,7 @@ import { DIR_OPTIONS_DEFAULTS } from '@common/types';
 
 import { debugInfo } from '../utils/debug';
 import { hasClipboardContent, saveClipboardText } from '../utils/clipboardText';
+import { registerPathError } from '../utils/registerItemValidation';
 
 import { useModalInitializer } from './useModalInitializer';
 import { useToast } from './useToast';
@@ -259,7 +260,16 @@ export function useRegisterForm(
 
   const handlePathBlur = async (index: number) => {
     const item = items[index];
-    if (item.itemCategory === 'clipboard' || !item.path?.trim()) {
+    if (item.itemCategory === 'clipboard') {
+      return;
+    }
+    if (!item.path?.trim()) {
+      // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
+      if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
+        const newItems = [...items];
+        newItems[index] = { ...item, type: 'windowSwitch', icon: undefined };
+        setItems(newItems);
+      }
       return;
     }
 
@@ -294,13 +304,9 @@ export function useRegisterForm(
         newErrors[i].displayName = t('register.errors.displayNameRequired');
       }
 
-      if (
-        item.itemCategory !== 'set' &&
-        item.itemCategory !== 'window' &&
-        item.itemCategory !== 'clipboard' &&
-        !item.path.trim()
-      ) {
-        newErrors[i].path = t('register.errors.pathRequired');
+      const pathError = registerPathError(item);
+      if (pathError) {
+        newErrors[i].path = t(pathError);
       }
 
       if (item.itemCategory === 'set' && (item.setEntries ?? []).length === 0) {

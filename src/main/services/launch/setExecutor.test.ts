@@ -63,6 +63,14 @@ const items: Record<string, AppItem> = {
     displayName: '消えたアプリ',
     path: 'C:/missing/tool.exe',
   },
+  todo1aaa: {
+    id: 'todo1aaa',
+    type: 'windowSwitch',
+    displayName: 'MS To Do',
+    path: '',
+    window: { processName: 'ApplicationFrameHost.exe', title: 'Microsoft To Do' },
+    placement: { x: 10, y: 20, width: 300, height: 400 },
+  },
 };
 
 /** 呼ばれた順を記録する偽の部品。windows は「今開いているウィンドウ」（findWindow が探す） */
@@ -861,6 +869,104 @@ describe('executeLauncherItem（単一アイテムをセットの 1 行として
   });
 });
 
+describe('パスの無い単一アイテム', () => {
+  const todo: ExecutableLauncherItem = {
+    id: 'todo2aaa',
+    type: 'windowSwitch',
+    displayName: 'MS To Do',
+    path: '',
+    window: { processName: 'ApplicationFrameHost.exe', title: 'Microsoft To Do' },
+  };
+  const todoWindow = {
+    hwnd: 5n,
+    title: 'Microsoft To Do',
+    processName: 'ApplicationFrameHost.exe',
+  };
+
+  it('開いていれば切り替えるだけで、何も開かない（前面に出すかは設定どおり）', async () => {
+    const { deps, calls } = makeDeps([todoWindow]);
+    const result = await executeLauncherItem({ ...todo, activateWindow: false }, deps, logger);
+    expect(calls).toEqual(['activate:Microsoft To Do:true']);
+    expect(deps.activate).toHaveBeenCalledWith(
+      { title: 'Microsoft To Do', processName: 'ApplicationFrameHost.exe', activateWindow: false },
+      'MS To Do',
+      logger,
+      { followDesktop: true }
+    );
+    expect(deps.launch).not.toHaveBeenCalled();
+    expect(result.entries).toEqual([{ index: 0, name: 'MS To Do', success: true }]);
+  });
+
+  it('開いていなければ何も開かずに飛ばし、情報のトーストで知らせる', async () => {
+    const { deps } = makeDeps();
+    const result = await executeLauncherItem(todo, deps, logger);
+    expect(deps.launch).not.toHaveBeenCalled();
+    expect(result.entries).toEqual([{ index: 0, name: 'MS To Do', success: true, skipped: true }]);
+    vi.mocked(showToastWindow).mockClear();
+    await notifyLauncherItemFailure(todo, result);
+    expect(showToastWindow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayName: 'MS To Do',
+        itemType: 'windowSwitch',
+        type: 'info',
+        message: 'set.run.itemNotOpen',
+      })
+    );
+  });
+
+  it('ウィンドウ位置があれば、開いているウィンドウに当てる。開いていなければ待たずに飛ばす', async () => {
+    const placed = { ...todo, placement: { x: 0, y: 0, width: 800, height: 600 } };
+    const open = makeDeps([todoWindow]);
+    await executeLauncherItem(placed, open.deps, logger);
+    expect(open.calls).toEqual(['place:5']);
+
+    const closed = makeDeps();
+    const result = await executeLauncherItem(placed, closed.deps, logger);
+    expect(closed.deps.launch).not.toHaveBeenCalled();
+    expect(closed.deps.sleep).not.toHaveBeenCalledWith(500);
+    expect(result.entries[0].skipped).toBe(true);
+  });
+
+  it('セットの行が指したとき、行に探す条件が無ければアイテムの対象ウィンドウを借りる（開くものは無い）', async () => {
+    const { deps, calls } = makeDeps([todoWindow]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'TODOset',
+      entries: [
+        { itemId: 'todo1aaa' },
+        { itemId: 'todo1aaa', placement: { x: 1, y: 2, width: 3, height: 4 } },
+      ],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(deps.launch).not.toHaveBeenCalled();
+    // 位置の無い行はアイテムの設定（ウィンドウ位置も含む）で前面に出し、位置のある行は行の位置を当てる
+    expect(deps.activate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Microsoft To Do',
+        processName: 'ApplicationFrameHost.exe',
+        x: 10,
+        width: 300,
+      }),
+      'MS To Do',
+      logger
+    );
+    expect(calls).toContain('place:5');
+    expect(result.errorCount).toBe(0);
+  });
+
+  it('セットの行が指して開いていなければ、失敗にせず飛ばす', async () => {
+    const { deps } = makeDeps();
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'TODOset',
+      entries: [{ itemId: 'todo1aaa', placement: { x: 1, y: 2 } }],
+    };
+    const result = await executeSet(set, resolve, deps, logger);
+    expect(deps.launch).not.toHaveBeenCalled();
+    expect(result.entries).toEqual([{ index: 0, name: 'MS To Do', success: true, skipped: true }]);
+  });
+});
+
 describe('buildSetWindowConfig', () => {
   const launch = (path: string) => ({
     name: 'x',
@@ -873,5 +979,25 @@ describe('buildSetWindowConfig', () => {
     expect(
       buildSetWindowConfig(placement, launch('shell:AppsFolder/Microsoft.X_8wekyb3d8bbwe!App'))
     ).toBeUndefined();
+  });
+
+  it('行に探す条件が無ければ、パスの無い単一アイテムの対象ウィンドウを借りる', () => {
+    const resolved = {
+      name: 'MS To Do',
+      itemWindow: { processName: 'ApplicationFrameHost.exe', title: 'Microsoft To Do' },
+    };
+    expect(buildSetWindowConfig({ placement: { x: 1, y: 2 } }, resolved)).toMatchObject({
+      title: 'Microsoft To Do',
+      processName: 'ApplicationFrameHost.exe',
+      x: 1,
+      y: 2,
+    });
+    // 行に条件があれば行のものを使う
+    expect(
+      buildSetWindowConfig(
+        { window: { processName: 'other.exe' }, placement: { x: 1, y: 2 } },
+        resolved
+      )
+    ).toMatchObject({ title: '*', processName: 'other.exe' });
   });
 });

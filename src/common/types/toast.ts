@@ -5,6 +5,7 @@ export type ToastItemType =
   | 'folder'
   | 'app'
   | 'customUri'
+  | 'windowSwitch'
   | 'windowOperation'
   | 'windowActivate'
   | 'windowClose'

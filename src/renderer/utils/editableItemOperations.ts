@@ -15,6 +15,7 @@ import {
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { validateEditableItem } from '@common/types/editableItem';
 import { safeJsonItemToDisplayText } from '@common/utils/displayTextConverter';
+import { describeWindowMatch, hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { generateId } from '@common/utils/jsonParser';
 import {
   checkDuplicates,
@@ -545,7 +546,14 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
     case 'item': {
       const pathPart = jsonItem.path || '';
       const argsPart = jsonItem.args || '';
-      if (!pathPart) return i18next.t('itemManager.pathSummary.noPath');
+      if (!pathPart) {
+        // パスの無い単一アイテムは、切り替える先のウィンドウを出す
+        return hasItemWindowSwitch(jsonItem)
+          ? i18next.t('itemManager.pathSummary.windowSwitchOnly', {
+              target: describeWindowMatch(jsonItem.window),
+            })
+          : i18next.t('itemManager.pathSummary.noPath');
+      }
       return argsPart ? `${pathPart} ${argsPart}` : pathPart;
     }
     case 'window': {

@@ -17,7 +17,7 @@ import { useGlobalLoading } from '../useGlobalLoading';
 type IconCacheItem = {
   displayName: string;
   path: string;
-  type: 'url' | 'file' | 'folder' | 'app' | 'customUri';
+  type: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch';
   customIcon?: string;
   originalPath?: string;
 };

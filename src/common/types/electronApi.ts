@@ -96,7 +96,7 @@ export interface ElectronAPI {
   extractIcon: (filePath: string) => Promise<string | null>;
   getIconForItem: (
     filePath: string,
-    itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'clipboard'
+    itemType: 'url' | 'file' | 'folder' | 'app' | 'customUri' | 'windowSwitch' | 'clipboard'
   ) => Promise<string | null>;
   loadCachedIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
   // 統合進捗付きアイコン取得API

@@ -782,3 +782,50 @@ describe('jsonParser: 単一アイテムのウィンドウ切り替え', () => {
     expect(() => parseOne({ windowConfig: { x: '1' } })).toThrow('windowConfig.x must be a number');
   });
 });
+
+describe('jsonParser: パスの無い単一アイテム', () => {
+  const parseOne = (item: Record<string, unknown>) =>
+    parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [{ id: 'item1aaa', type: 'item', displayName: 'x', ...item }],
+      })
+    ).items[0];
+
+  it('対象ウィンドウ（exe 名かタイトル）があれば path が空でも読める', () => {
+    expect(parseOne({ path: '', window: { processName: 'ApplicationFrameHost.exe' } })).toEqual({
+      id: 'item1aaa',
+      type: 'item',
+      displayName: 'x',
+      path: '',
+      window: { processName: 'ApplicationFrameHost.exe' },
+    });
+    expect(parseOne({ path: '', window: { title: 'Microsoft To Do' } })).toMatchObject({
+      path: '',
+      window: { title: 'Microsoft To Do' },
+    });
+  });
+
+  it('旧形式の windowConfig から対象ウィンドウが取れれば、path が空でも読める', () => {
+    expect(parseOne({ path: '', windowConfig: { title: 'Microsoft To Do' } })).toMatchObject({
+      path: '',
+      window: { title: 'Microsoft To Do' },
+    });
+  });
+
+  it('path も対象ウィンドウも空なら不正にする', () => {
+    expect(() => parseOne({ path: '' })).toThrow(/path must not be empty/);
+    expect(() => parseOne({ path: '  ', window: {} })).toThrow(/path must not be empty/);
+    // タイトルが "*" だけの windowConfig は対象ウィンドウにならない
+    expect(() => parseOne({ path: '', windowConfig: { title: '*' } })).toThrow(
+      /path must not be empty/
+    );
+  });
+
+  it('path が無い・文字列でないものは今までどおり不正にする', () => {
+    expect(() => parseOne({ window: { processName: 'a.exe' } })).toThrow(/path is required/);
+    expect(() => parseOne({ path: 3, window: { processName: 'a.exe' } })).toThrow(
+      /path is required/
+    );
+  });
+});

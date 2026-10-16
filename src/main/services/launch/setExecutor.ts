@@ -9,6 +9,7 @@
  * - 置き場所の無い行は、今までのグループと同じ（アイテムにウィンドウ設定があれば、開いていれば前面に出すだけ）
  * - 置き場所のある行が 1 つでもあれば、進み具合を画面の隅に出す（中止できる）
  * - 単一アイテムのウィンドウ切り替えも、アイテムを「セットの 1 行」として同じ処理で実行する（executeLauncherItem）
+ * - パスの無い単一アイテムは開くものが無いので、行は「動かすだけ」になる（開いていなければ飛ばす）
  */
 import { ipcMain, screen } from 'electron';
 import type { Logger } from 'pino';
@@ -21,6 +22,7 @@ import type {
   LayoutExecutionProgress,
   SetEntry,
   SetItem,
+  SetWindowMatch,
   WindowConfig,
   WindowItem,
 } from '@common/types';
@@ -35,7 +37,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { ANY_WINDOW_TITLE, createTitleMatcher } from '@common/utils/windowTitle';
 import { pickWindowPlacement } from '@common/utils/windowPlacement';
 import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
-import { switchToWindowConfig } from '@common/utils/itemWindowConversion';
+import { isPathlessItem, switchToWindowConfig } from '@common/utils/itemWindowConversion';
 import { fitPlacementToScreens, type ScreenArea } from '@common/utils/placementLabel';
 
 import {
@@ -74,6 +76,11 @@ interface ResolvedEntry {
   launch?: LaunchableItem;
   /** 指しているアイテムのウィンドウ設定（置き場所の無い行で、開いていれば前面に出すのに使う） */
   itemWindowConfig?: WindowConfig;
+  /**
+   * 指しているパスの無い単一アイテムの対象ウィンドウ（開くものが無いので、行に探す条件が無ければこれで探す。
+   * 置き場所のある行でも借りる）
+   */
+  itemWindow?: SetWindowMatch;
   /** 指しているのがウィンドウ操作アイテムのとき */
   windowItem?: WindowItem;
   /** 解決できなかった理由 */
@@ -165,6 +172,15 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
     if (isWindowItem(item)) {
       return { name: item.displayName, windowItem: item };
     }
+    if (isLauncherItem(item) && isPathlessItem(item)) {
+      // 開くものが無い（動かすだけの行）。探す条件は行に無ければアイテムのものを借りる
+      return {
+        name: item.displayName,
+        itemWindow: item.window,
+        itemWindowConfig: itemWindowConfigOf(item),
+        ...(item.icon ? { icon: item.icon } : {}),
+      };
+    }
     if (isLauncherItem(item)) {
       return {
         name: item.displayName,
@@ -206,7 +222,7 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
 /**
  * 置き場所のある行で探すウィンドウの条件
  *
- * 行に見つけ方が無ければ、ウィンドウ操作アイテムの条件、または開く exe の名前から推測する
+ * 行に見つけ方が無ければ、ウィンドウ操作アイテム・パスの無い単一アイテムの条件、または開く exe の名前から推測する
  */
 export function buildSetWindowConfig(
   entry: SetEntry,
@@ -218,6 +234,9 @@ export function buildSetWindowConfig(
     if (resolved.windowItem) {
       title = resolved.windowItem.windowTitle;
       processName = resolved.windowItem.processName;
+    } else if (resolved.itemWindow) {
+      title = resolved.itemWindow.title;
+      processName = resolved.itemWindow.processName;
     } else if (resolved.launch?.type === 'app' && /\.exe$/i.test(resolved.launch.path.trim())) {
       // .lnk・.bat・shell:AppsFolder なども app と判定されるが、ウィンドウの exe 名とは合わないので推測しない
       processName = lastSegment(resolved.launch.path.trim());
@@ -425,7 +444,7 @@ async function runSet(
   };
   const skip = (index: number) => {
     results.push({ index, name: resolved[index].name, success: true, skipped: true });
-    const match = item.entries[index].window;
+    const match = item.entries[index].window ?? resolved[index].itemWindow;
     const exeOpen =
       !!match?.processName &&
       !!match.title &&
@@ -479,21 +498,18 @@ async function runSet(
           );
         }
         if (!r.launch) {
-          // 動かすだけの行で位置が無い: 開いていれば前面に出す（探す条件が空ならどのウィンドウにも合うので失敗にする）
-          if (!entry.window?.processName && !entry.window?.title) {
-            return finish(index, mainI18n.t('layout.windowNotFound'));
-          }
-          const result = await deps.activate(
-            withPin(
-              {
-                title: entry.window.title || ANY_WINDOW_TITLE,
-                processName: entry.window.processName,
-              },
-              entry
-            ),
-            r.name,
-            logger
-          );
+          // 動かすだけの行で位置が無い: 開いていれば前面に出す。行に探す条件が無ければ、パスの無い単一アイテムの
+          // 設定（ウィンドウ位置も含む）で探す。どちらも無ければどのウィンドウにも合うので失敗にする
+          const config =
+            entry.window?.processName || entry.window?.title
+              ? {
+                  title: entry.window.title || ANY_WINDOW_TITLE,
+                  processName: entry.window.processName,
+                }
+              : r.itemWindowConfig;
+          if (!config) return finish(index, mainI18n.t('layout.windowNotFound'));
+          // 単一アイテムは前面に出すかを設定どおりにし、別のデスクトップにあればそこへ切り替える
+          const result = await activate(withSingle(config, entry), r.name);
           return result.windowFound ? finish(index) : skip(index);
         }
         const itemConfig = entry.window
@@ -689,6 +705,9 @@ export type ExecutableLauncherItem = Pick<
 /**
  * ウィンドウ切り替えを持つ単一アイテムを、セットの 1 行として実行する
  *
+ * - パスの無い単一アイテムは開くものが無い（動かすだけの行）。開いていれば切り替え（位置があれば当て）、
+ *   開いていなければ何も開かずに飛ばす（結果の行に skipped が付く）
+ *
  * - 位置が無ければ、ウィンドウが見つかれば前面に出して終わり、無ければ開く（開いたウィンドウは動かさない）
  * - 位置があれば、見つからなければ開いて waitSeconds（既定 30）待ち、出てきたウィンドウに位置を当てる
  * - ifOpen が openNew なら、いつも開く
@@ -723,6 +742,8 @@ export async function executeLauncherItem(
     type: item.type,
     ...(item.args ? { args: item.args } : {}),
     ...(item.icon ? { icon: item.icon } : {}),
+    // パスの無い単一アイテムかを行の解決で見分ける（対象ウィンドウ自体は行の window で探す）
+    ...(item.window ? { window: item.window } : {}),
   };
   if (key !== undefined) runningSets.add(key);
   try {
@@ -741,14 +762,26 @@ export async function executeLauncherItem(
 /**
  * 単一アイテムのウィンドウ切り替えがうまくいかなかったことをトーストで知らせる
  *
- * うまくいったとき・二重実行で何もしなかったときは知らせない
+ * - パスの無い単一アイテムで、ウィンドウが開いていなかった（飛ばした）: 情報のトーストで知らせる
+ *   （何も起きないと壊れて見えるため）
+ * - うまくいったとき・二重実行で何もしなかったときは知らせない
  */
 export async function notifyLauncherItemFailure(
   item: Pick<ExecutableLauncherItem, 'displayName' | 'type' | 'waitSeconds'>,
   result: SetExecutionResult
 ): Promise<void> {
+  if (result.cancelled) return;
+  if (result.entries.some((entry) => entry.skipped)) {
+    await showToastWindow({
+      displayName: item.displayName,
+      itemType: item.type,
+      type: 'info',
+      message: mainI18n.t('set.run.itemNotOpen'),
+    });
+    return;
+  }
   const failed = result.entries.find((entry) => !entry.success);
-  if (!failed || result.cancelled) return;
+  if (!failed) return;
   const message =
     failed.error === mainI18n.t('layout.timedOut')
       ? mainI18n.t('set.run.itemWindowTimedOut', {

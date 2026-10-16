@@ -24,7 +24,7 @@ import { getFallbackT } from '@common/i18n';
 import type { TFunction } from 'i18next';
 
 import { normalizeWindowTitleForProcessOnly } from './windowTitle';
-import { replaceWindowConfig } from './itemWindowConversion';
+import { hasItemWindowSwitch, replaceWindowConfig } from './itemWindowConversion';
 
 // ============================================================
 // ID生成
@@ -469,8 +469,9 @@ export function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLaun
   if (typeof obj.displayName !== 'string' || !obj.displayName) {
     throw new Error('displayName is required and must be a non-empty string');
   }
-  if (typeof obj.path !== 'string' || !obj.path) {
-    throw new Error('path is required and must be a non-empty string');
+  // path は空でもよい（パスの無い単一アイテム）。ただし対象ウィンドウが要る（下で確かめる）
+  if (typeof obj.path !== 'string') {
+    throw new Error('path is required and must be a string');
   }
 
   const item: JsonLauncherItem = {
@@ -493,6 +494,10 @@ export function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLaun
       : obj;
   Object.assign(item, pickWindowSwitchFields(source));
   if (typeof source.pinToAllDesktops === 'boolean') item.pinToAllDesktops = source.pinToAllDesktops;
+
+  if (!item.path.trim() && !hasItemWindowSwitch(item)) {
+    throw new Error('path must not be empty unless window.processName or window.title is set');
+  }
 
   return item;
 }

@@ -16,6 +16,7 @@ import {
   describeSetEntry,
   entryOpensAsTab,
   SET_KIND_ICONS,
+  usesItemSwitch,
   type SetCatalogItem,
 } from '../utils/setEditing';
 import '../styles/components/SetEditor.css';
@@ -121,6 +122,12 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   const hasItem = !!draft.itemId || (isUnresolvedEntry(entry) && isUnresolvedEntry(draft));
   /** 動かすウィンドウが無い行は、開くものが無いと何もできないので「なし」を選べない */
   const noneDisabled = !draft.window && openKind !== 'none';
+  /**
+   * 行に対象ウィンドウもウィンドウ位置も無く、アイテムにウィンドウ切り替えの設定がある: 実行はアイテムの設定で動く。
+   * そのことを 1 行で案内し、値は欄の薄い字で見せる（動きは変えない）
+   */
+  const inherited =
+    openKind === 'item' && usesItemSwitch(draft, view) ? view.itemSwitch : undefined;
 
   return createPortal(
     <>
@@ -238,6 +245,12 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               )}
             </div>
 
+            {inherited && (
+              <p className="set-detail-inherit">
+                {t('set.detail.inheritNote', { name: view.name })}
+              </p>
+            )}
+
             <WindowMatchFields
               idPrefix="set-detail"
               value={draft.window}
@@ -246,6 +259,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               lead={t('set.detail.findLead')}
               onPickWindow={() => setPicking(true)}
               onChange={(window) => update({ window })}
+              inherited={inherited?.window}
             />
 
             <WindowPlacementFields
@@ -261,6 +275,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               onUpdated={setPickNotes}
               tabNote={entryOpensAsTab(view)}
               pickNotes={pickNotes}
+              inheritedPlacement={inherited?.placement}
             />
 
             <OpenBehaviorFields

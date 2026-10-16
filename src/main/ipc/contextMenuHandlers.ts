@@ -167,8 +167,8 @@ function setupLauncherContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      // パス系の項目はパスを持つアイテムだけ（セット・クリップボード・ウィンドウ操作には出さない）
-      const hasPathMenu = isLauncherItem(item);
+      // パス系の項目はパスを持つアイテムだけ（セット・クリップボード・ウィンドウ操作・パスの無い単一アイテムには出さない）
+      const hasPathMenu = isLauncherItem(item) && item.type !== 'windowSwitch';
       const hasParentFolder = hasPathMenu && item.type !== 'url' && item.type !== 'customUri';
       const isShortcut = hasPathMenu && item.originalPath !== undefined;
       const hasMemo = 'memo' in item && item.memo && item.memo.trim().length > 0;
@@ -284,8 +284,8 @@ function setupWorkspaceContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      // パス系のメニューは通常アイテム（path を持つ）だけに出す
-      const isLauncher = item.type === 'item';
+      // パス系のメニューは通常アイテム（path を持つ）だけに出す（パスの無い単一アイテムには出さない）
+      const isLauncher = item.type === 'item' && item.launcherType !== 'windowSwitch';
       const hasParentFolder =
         isLauncher && item.launcherType !== 'url' && item.launcherType !== 'customUri';
       const isShortcut = isLauncher && item.originalPath !== undefined;
