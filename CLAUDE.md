@@ -49,7 +49,7 @@ npm run lint && npm run type-check  # 品質チェック
 | エージェント | 用途 |
 | --- | --- |
 | `e2e-test-runner` | E2Eテスト実行・失敗分析（出力が大きいので分離する） |
-| `doc-verifier` | ドキュメント 1 本をコードと照合し、指定の範囲で直して報告（`docs-check` スキルが、照合する文書が多いときに使う） |
+| `doc-verifier` | ドキュメント 1 本をコードと照合し、指定の範囲で直して報告（`docs-check` スキルが、照合する文書が多いときに使う。点検の残りを直すときは `model: "sonnet"` で起動する＝docs-check の `leftovers`） |
 
 ## カスタムコマンド・スキル
 
