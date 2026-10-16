@@ -86,7 +86,6 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 | `BackupSnapshotModal` | `AdminSettingsBackupSection` | `Admin*` |
 | `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings`、`AdminItemManagerView`（取込モード） | `Admin*` |
 | `AppImportModal` | `AdminItemManagerView` | `Admin*` |
-| `AutoImportFilterDropdown` | `AdminItemManagerView` | `AdminItemManager*` |
 | `MissingIconNotice` | `App`（メインウィンドウ） | `Launcher*` |
 
 メインウィンドウの子ウィンドウ（登録・編集、アイコン取得結果）の部品（`RegisterModal`・`RegisterPlacementBar`・`RegisterWindowPage`・`IconProgressDetailModal`・`MainChildPage`）はプレフィックスなしで、子ウィンドウに付けるプレフィックスはまだ決めていない。

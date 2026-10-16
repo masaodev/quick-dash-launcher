@@ -23,6 +23,7 @@ import {
   removeItems,
   replaceItem,
   reorderItemNumbers,
+  type InlineItemType,
   type RebaseConflict,
 } from '../utils/editableItemOperations';
 
@@ -214,10 +215,10 @@ export function useAdminItemEditing(
     [updateWorking]
   );
 
-  /** 空のアイテムを先頭に追加し、その id を返す */
+  /** 空のアイテム（単一アイテムかフォルダ取込）を先頭に追加し、その id を返す */
   const addBlankItem = useCallback(
-    (sourceFile: string): string => {
-      const blank = createBlankItem(sourceFile);
+    (sourceFile: string, type: InlineItemType = 'item'): string => {
+      const blank = createBlankItem(sourceFile, type);
       updateWorking((working) => reorderItemNumbers([blank, ...working]));
       return blank.item.id;
     },

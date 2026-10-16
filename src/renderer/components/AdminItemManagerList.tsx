@@ -104,13 +104,18 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
       ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
       : 0;
 
-  // 追加直後のアイテム: 見える位置へスクロールして名前セルを編集状態にする
+  // 追加直後のアイテム: 見える位置へスクロールして名前セル（名前の無いフォルダ取込はパスセル）を編集状態にする
   useEffect(() => {
     if (!autoEditItemId) return;
     const index = editableItems.findIndex((item) => item.item.id === autoEditItemId);
     if (index === -1) return;
     rowVirtualizer.scrollToIndex(index);
-    editing.beginNameEditFor(autoEditItemId);
+    const added = editableItems[index];
+    if (added.item.type === 'dir') {
+      editing.startPathEdit(added);
+    } else {
+      editing.beginNameEditFor(autoEditItemId);
+    }
     onAutoEditHandled();
   }, [autoEditItemId, editableItems]);
 

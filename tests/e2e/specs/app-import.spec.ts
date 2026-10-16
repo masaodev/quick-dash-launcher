@@ -50,13 +50,10 @@ async function stubScan(electronApp: ElectronApplication): Promise<void> {
   }, SCANNED_APPS);
 }
 
-/** アイテム管理の「アイテムを一括取り込み ▼」から項目を選ぶ */
+/** アイテム管理の「＋ アイテムを追加」の横の「▼」から項目を選ぶ */
 async function chooseImportMenu(adminWindow: Page, itemText: string): Promise<void> {
-  await adminWindow
-    .locator('.dropdown-trigger-btn', { hasText: 'アイテムを一括取り込み' })
-    .first()
-    .click();
-  await adminWindow.locator('.dropdown-item', { hasText: itemText }).click();
+  await adminWindow.locator('.toolbar-split .toolbar-split-toggle').click();
+  await adminWindow.locator('.toolbar-split .dropdown-item', { hasText: itemText }).click();
 }
 
 /** アプリ取込画面を開く（スキャンは固定の結果） */

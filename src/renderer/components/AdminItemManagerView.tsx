@@ -37,13 +37,11 @@ import {
 } from '../utils/editableItemOperations';
 
 import AdminItemManagerList from './AdminItemManagerList';
-import AdminItemManagerHeader from './AdminItemManagerHeader';
 import AdminItemManagerTabBar from './AdminItemManagerTabBar';
-import AutoImportFilterDropdown from './AutoImportFilterDropdown';
+import AdminItemManagerToolbar from './AdminItemManagerToolbar';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
 import AppImportModal, { type AppImportDestination } from './AppImportModal';
 import ConfirmDialog from './ConfirmDialog';
-import { Button } from './ui/Button';
 
 interface EditModeViewProps {
   editing: AdminItemEditing;
@@ -58,7 +56,7 @@ interface EditModeViewProps {
   onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
-  /** 設定「ブックマーク自動取込」を開く（一括取込メニュー・手動取込モーダルの案内から） */
+  /** 設定「ブックマーク自動取込」を開く（追加の ▼ メニュー・手動取込モーダルの案内から） */
   onOpenAutoImportSettings?: () => void;
 }
 
@@ -246,7 +244,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   );
 
   // リンク切れ（パスが実在しない）。ネットワークパスは応答に時間がかかることがあるので、
-  // 自動では確認せず、ツールメニューの「リンク切れを確認」を押したときだけ確認する
+  // 自動では確認せず、「整理 ▼」の「リンク切れを確認」を押したときだけ確認する
   const [missingOnly, setMissingOnly] = useState(false);
   const pathCheck = useAdminPathExistence(baseVersion);
   const missingIds = useMemo(() => {
@@ -346,14 +344,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     void openDetailEditor(item, newType);
   };
 
-  const handleAddItem = () => {
+  /** 空のアイテムを先頭に追加する（フォルダ取込はパスの入力から始まる） */
+  const addBlank = (type: 'item' | 'dir') => {
     // 追加した行が検索・フィルタで隠れないように、絞り込みを外してから追加する
     if (searchQuery) onSearchChange('');
     setAutoImportFilter('all');
     setMissingOnly(false);
-    const id = editing.addBlankItem(selectedDataFile);
+    const id = editing.addBlankItem(selectedDataFile, type);
     setAutoEditItemId(id);
   };
+  const handleAddItem = () => addBlank('item');
+  const handleAddFolder = () => addBlank('dir');
 
   const runSave = async () => {
     const saved = await editing.saveChanges();
@@ -649,74 +650,33 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onSelectFile={setSelectedDataFile}
         structure={tabStructure}
       />
-      <AdminItemManagerHeader
+      <AdminItemManagerToolbar
+        onAddItem={handleAddItem}
+        onAddFolder={handleAddFolder}
         onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
         onOpenAppImport={() => setIsAppImportModalOpen(true)}
         onOpenAutoImportSettings={onOpenAutoImportSettings}
-        onCheckMissingPaths={() => void handleCheckMissingPaths()}
-        checkingMissingPaths={pathCheck.checking}
+        searchQuery={searchQuery}
+        onSearchChange={onSearchChange}
+        autoImportFilter={autoImportFilter}
+        onAutoImportFilterChange={setAutoImportFilter}
+        rules={currentFileRules}
+        ruleNames={autoImportRuleMap}
         missingOnly={missingOnly}
         missingOnlyAvailable={pathCheck.hasChecked}
         onToggleMissingOnly={() => setMissingOnly((prev) => !prev)}
+        onCheckMissingPaths={() => void handleCheckMissingPaths()}
+        checkingMissingPaths={pathCheck.checking}
         onDedupe={handleDedupe}
+        selectedCount={visibleSelectedItems.length}
+        onDeleteSelected={handleDeleteSelected}
+        onDuplicateSelected={() => editing.duplicateItems(visibleSelectedItems)}
+        onClearSelection={() => editing.selectAll(filteredItems, false)}
+        hasUnsavedChanges={hasUnsavedChanges}
+        unsavedCount={changedIds.size + deletedCount}
+        onDiscard={handleDiscardChanges}
+        onSave={handleSaveChanges}
       />
-
-      {/* ツールバーエリア */}
-      <div className="edit-mode-toolbar">
-        <div className="toolbar-left">
-          <Button
-            variant="primary"
-            onClick={handleAddItem}
-            title={t('itemManager.toolbar.addItemTitle')}
-          >
-            {t('itemManager.toolbar.addItem')}
-          </Button>
-          <Button
-            variant="danger"
-            onClick={handleDeleteSelected}
-            disabled={visibleSelectedItems.length === 0}
-            title={t('itemManager.toolbar.deleteSelectedTitle')}
-          >
-            {t('itemManager.toolbar.deleteSelected')}
-            {visibleSelectedItems.length > 0 ? ` (${visibleSelectedItems.length})` : ''}
-          </Button>
-          <AutoImportFilterDropdown
-            filter={autoImportFilter}
-            onChange={setAutoImportFilter}
-            rules={currentFileRules}
-            ruleNames={autoImportRuleMap}
-          />
-          <div className="toolbar-search">
-            <div className="search-input-container">
-              <input
-                type="text"
-                placeholder={t('itemManager.toolbar.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="search-input"
-              />
-              {searchQuery && (
-                <button
-                  className="close-btn close-btn-sm search-clear-button"
-                  onClick={() => onSearchChange('')}
-                  type="button"
-                  aria-label={t('itemManager.toolbar.clearSearch')}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="toolbar-right">
-          <Button variant="secondary" onClick={handleDiscardChanges} disabled={!hasUnsavedChanges}>
-            {t('itemManager.toolbar.discard')}
-          </Button>
-          <Button variant="primary" onClick={handleSaveChanges} disabled={!hasUnsavedChanges}>
-            {t('itemManager.toolbar.save')}
-          </Button>
-        </div>
-      </div>
 
       {loadError ? (
         <div className="edit-mode-load-error" data-testid="edit-mode-load-error">

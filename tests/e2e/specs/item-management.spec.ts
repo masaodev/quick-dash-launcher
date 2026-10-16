@@ -322,10 +322,10 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await googleCheckbox.click();
       });
 
-      await test.step('選択したアイテムを削除ボタンをクリック', async () => {
-        const deleteSelectedButton = adminWindow.locator(
-          'button:has-text("選択したアイテムを削除")'
-        );
+      await test.step('選択中の操作に切り替わったツールバーの「削除」をクリック', async () => {
+        const toolbar = adminWindow.locator('.edit-mode-toolbar.is-selecting');
+        await expect(toolbar.locator('.toolbar-selection-count')).toHaveText('2 件を選択中');
+        const deleteSelectedButton = toolbar.locator('button', { hasText: /^削除$/ });
 
         // 削除ボタンをクリック（カスタムConfirmDialogが表示される）
         await deleteSelectedButton.click();
@@ -376,9 +376,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
     try {
       await test.step('重複が無い状態では何も削除されない', async () => {
-        await adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
+        await adminWindow.locator('.organize-dropdown .dropdown-trigger-btn').click();
         await adminWindow
-          .locator('.tools-dropdown .dropdown-item', { hasText: '重複を削除' })
+          .locator('.organize-dropdown .dropdown-item', { hasText: '重複を削除' })
           .click();
         // 確認ダイアログは出ず、トーストで知らせる
         await expect(adminWindow.locator('[data-testid="confirm-dialog"]')).not.toBeVisible();
@@ -403,9 +403,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       });
 
       await test.step('重複を削除して保存する', async () => {
-        await adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
+        await adminWindow.locator('.organize-dropdown .dropdown-trigger-btn').click();
         await adminWindow
-          .locator('.tools-dropdown .dropdown-item', { hasText: '重複を削除' })
+          .locator('.organize-dropdown .dropdown-item', { hasText: '重複を削除' })
           .click();
         const confirmDialog = adminWindow.locator('[data-testid="confirm-dialog"]');
         await expect(confirmDialog).toBeVisible();
@@ -643,21 +643,32 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
 
     try {
-      await test.step('GitHub をチェックし、検索欄で Delete キーを押す', async () => {
+      await test.step('検索欄で Delete キーを押しても何も消えない', async () => {
+        const searchInput = adminWindow.locator('input.search-input');
+        await searchInput.fill('gitx');
+        await searchInput.press('Delete');
+        await searchInput.press('Backspace');
+        await expect(searchInput).toHaveValue('git');
+        await expect(adminWindow.locator('.unsaved-changes')).not.toBeVisible();
+      });
+
+      await test.step('GitHub をチェックし、名前セルの入力欄で Delete キーを押す', async () => {
+        // 行を選ぶとツールバーは選択中の操作に切り替わり、検索欄は隠れる
         const githubRow = adminWindow.locator('.raw-item-row[data-item-id="base0001"]');
         await githubRow.locator('input[type="checkbox"]').click();
+        await expect(adminWindow.locator('input.search-input')).toHaveCount(0);
 
-        const searchInput = adminWindow.locator('input.search-input');
-        await searchInput.fill('git');
-        await searchInput.press('ArrowLeft');
-        await searchInput.press('Delete');
+        await githubRow.locator('.name-column .editable-cell').click();
+        const nameInput = githubRow.locator('.name-column .edit-input');
+        await nameInput.press('Home');
+        await nameInput.press('Delete');
+        await nameInput.press('Escape');
 
         await expect(githubRow).toBeVisible();
         await expect(adminWindow.locator('.unsaved-changes')).not.toBeVisible();
       });
 
       await test.step('一覧にフォーカスを戻して Delete キーを押すと確認ダイアログが出る', async () => {
-        await adminWindow.locator('input.search-input').clear();
         await adminWindow.locator('.edit-mode-view').focus();
         await adminWindow.keyboard.press('Delete');
 
@@ -739,21 +750,68 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     }
   });
 
-  // ==================== リンク切れ確認テスト ====================
-
-  test('ツールメニューの「リンク切れを確認」で印が付き、「リンク切れのみ表示」で絞り込める', async ({
+  test('「＋ アイテムを追加」の ▼ から、フォルダ取込をパスの入力から追加できる', async ({
     electronApp,
     mainWindow,
   }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
-    const openTools = async () =>
-      adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
-    const toolItem = (text: string) =>
-      adminWindow.locator('.tools-dropdown .dropdown-item', { hasText: text });
 
     try {
-      await test.step('確認するまでは印も件数も出ず、「リンク切れのみ表示」は選べない', async () => {
+      await test.step('変更が無いあいだは保存ボタンを出さず「保存済み」と出す', async () => {
+        await expect(adminWindow.locator('.edit-mode-toolbar .toolbar-saved')).toHaveText(
+          '保存済み'
+        );
+        await expect(adminWindow.locator('button', { hasText: '変更を保存' })).toHaveCount(0);
+      });
+
+      await test.step('▼ の「フォルダの中身を追加」で、先頭にフォルダ取込が入りパス欄が編集状態になる', async () => {
+        await adminWindow.locator('.toolbar-split .toolbar-split-toggle').click();
+        await adminWindow
+          .locator('.toolbar-split .dropdown-item', { hasText: 'フォルダの中身を追加' })
+          .click();
+
+        const firstRow = adminWindow.locator('.raw-item-row').first();
+        await expect(firstRow.locator('select.type-select')).toHaveValue('dir');
+        const pathInput = firstRow.locator('.content-column .edit-input');
+        await expect(pathInput).toBeFocused();
+        await pathInput.fill('C:\\Windows');
+        await pathInput.press('Enter');
+        await expect(firstRow.locator('.content-column')).toContainText('C:\\Windows');
+      });
+
+      await test.step('変更があると件数と「変更を破棄」「変更を保存」が出る', async () => {
+        const toolbar = adminWindow.locator('.edit-mode-toolbar');
+        await expect(toolbar.locator('.toolbar-unsaved-count')).toHaveText('変更 1 件');
+        await expect(toolbar.locator('button', { hasText: '変更を保存' })).toBeVisible();
+        await toolbar.locator('button', { hasText: '変更を破棄' }).click();
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
+        await expect(toolbar.locator('.toolbar-saved')).toBeVisible();
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  // ==================== リンク切れ確認テスト ====================
+
+  test('「整理 ▼」の「リンク切れを確認」で印が付き、「絞り込み ▼」の「リンク切れだけ表示」で絞り込める', async ({
+    electronApp,
+    mainWindow,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    const openOrganize = async () =>
+      adminWindow.locator('.organize-dropdown .dropdown-trigger-btn').click();
+    const organizeItem = (text: string) =>
+      adminWindow.locator('.organize-dropdown .dropdown-item', { hasText: text });
+    const filterButton = adminWindow.locator('.filter-dropdown .dropdown-trigger-btn');
+    const missingOnlyItem = adminWindow.locator('.filter-dropdown .dropdown-item', {
+      hasText: 'リンク切れだけ表示',
+    });
+
+    try {
+      await test.step('確認するまでは印も件数も出ず、「リンク切れだけ表示」は選べない', async () => {
         await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
         const firstRow = adminWindow.locator('.raw-item-row').first();
         await firstRow.locator('.name-column .edit-input').fill('壊れたリンク');
@@ -765,30 +823,33 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
         await expect(adminWindow.locator('.raw-item-row.missing-path')).toHaveCount(0);
         await expect(adminWindow.locator('.edit-mode-status .missing-count')).toHaveCount(0);
-        await openTools();
-        await expect(toolItem('リンク切れのみ表示')).toBeDisabled();
+        await filterButton.click();
+        await expect(missingOnlyItem).toBeDisabled();
         // メニューを閉じる（トグル）
-        await adminWindow.locator('.tools-dropdown .dropdown-trigger-btn').click();
-        await expect(toolItem('リンク切れのみ表示')).toHaveCount(0);
+        await filterButton.click();
+        await expect(missingOnlyItem).toHaveCount(0);
       });
 
       await test.step('「リンク切れを確認」で存在しないパスに印が付く（URL・shell:・コマンド名は対象外）', async () => {
-        await openTools();
-        await toolItem('リンク切れを確認').click();
+        await openOrganize();
+        await organizeItem('リンク切れを確認').click();
         const firstRow = adminWindow.locator('.raw-item-row').first();
         await expect(firstRow.locator('.missing-path-label')).toBeVisible({ timeout: 15000 });
         await expect(adminWindow.locator('.raw-item-row.missing-path')).toHaveCount(1);
         await expect(adminWindow.locator('.edit-mode-status .missing-count')).toContainText('1 件');
       });
 
-      await test.step('「リンク切れのみ表示」で絞り込み、もう一度で全件に戻る', async () => {
-        await openTools();
-        await toolItem('リンク切れのみ表示').click();
+      await test.step('「リンク切れだけ表示」で絞り込み、条件の ✕ で全件に戻る', async () => {
+        await filterButton.click();
+        await missingOnlyItem.click();
         await expect(adminWindow.locator('.raw-item-row')).toHaveCount(1);
         await expect(adminWindow.locator('.raw-item-row').first()).toContainText('壊れたリンク');
+        await expect(filterButton).toContainText('絞り込み (1)');
 
-        await openTools();
-        await toolItem('リンク切れのみ表示').click();
+        const chips = adminWindow.getByTestId('item-filter-chips');
+        await expect(chips).toContainText('リンク切れだけ');
+        await chips.getByRole('button', { name: '「リンク切れだけ」の絞り込みを外す' }).click();
+        await expect(chips).toHaveCount(0);
         await expect
           .poll(async () => adminWindow.locator('.raw-item-row').count())
           .toBeGreaterThan(1);

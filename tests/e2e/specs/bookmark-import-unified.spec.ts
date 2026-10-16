@@ -61,13 +61,10 @@ async function stubBrowsers(electronApp: ElectronApplication): Promise<void> {
   );
 }
 
-/** アイテム管理の「アイテムを一括取り込み ▼」から項目を選ぶ */
+/** アイテム管理の「＋ アイテムを追加」の横の「▼」から項目を選ぶ */
 async function chooseImportMenu(adminWindow: Page, itemText: string): Promise<void> {
-  await adminWindow
-    .locator('.dropdown-trigger-btn', { hasText: 'アイテムを一括取り込み' })
-    .first()
-    .click();
-  await adminWindow.locator('.dropdown-item', { hasText: itemText }).click();
+  await adminWindow.locator('.toolbar-split .toolbar-split-toggle').click();
+  await adminWindow.locator('.toolbar-split .dropdown-item', { hasText: itemText }).click();
 }
 
 /**
@@ -92,7 +89,7 @@ test.describe('QuickDashLauncher - ブックマーク取込（入口統合）', 
     );
 
     try {
-      await test.step('一括取込メニューから取込画面が開く（設定のルール編集と同じ画面）', async () => {
+      await test.step('追加の ▼ メニューから取込画面が開く（設定のルール編集と同じ画面）', async () => {
         await chooseImportMenu(adminWindow, 'ブラウザのブックマークを追加');
         const modal = adminWindow.locator(IMPORT_MODAL);
         await modal.waitFor({ state: 'visible', timeout: 10000 });

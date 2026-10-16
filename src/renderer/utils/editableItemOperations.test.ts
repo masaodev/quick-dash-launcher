@@ -85,6 +85,14 @@ describe('editableItemOperations', () => {
     expect(createBlankItem(FILE).item.id).not.toBe(blank.item.id);
   });
 
+  it('createBlankItem に dir を渡すと、名前を持たない空のフォルダ取込を作ること', () => {
+    const blank = createBlankItem(FILE, 'dir');
+    expect(blank.item).toMatchObject({ type: 'dir', path: '' });
+    expect(blank.item).not.toHaveProperty('displayName');
+    expect(blank.meta.sourceFile).toBe(FILE);
+    expect(blank.meta.isValid).toBe(false);
+  });
+
   it('refreshEditableItem は表示テキストと検証結果を作り直すこと', () => {
     const [item] = rows([launcher('a', 'C:\\a')]);
     const refreshed = refreshEditableItem(item, { ...item.item, displayName: '' } as JsonItem);
