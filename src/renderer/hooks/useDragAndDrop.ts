@@ -14,6 +14,16 @@ function isWorkspaceItemDrag(e: DragEvent): boolean {
   return !!e.dataTransfer?.types.includes(WORKSPACE_ITEM_DRAG_TYPE.toLowerCase());
 }
 
+/**
+ * 落とせば登録できるもの（ファイル・URL・テキスト）を持つドラッグか
+ *
+ * ワークスペースのグループのように、どれも持たないドラッグでは「ドロップして登録」を出さない（落としても何も起きないため）
+ */
+function hasDroppableData(e: DragEvent): boolean {
+  const types = e.dataTransfer?.types ?? [];
+  return types.includes('Files') || types.includes('text/uri-list') || types.includes('text/plain');
+}
+
 /** ファイル・URL とワークスペースのアイテムのドラッグ&ドロップイベントを管理するフック */
 export function useDragAndDrop(
   onFilesDropped: (paths: string[]) => void,
@@ -46,7 +56,11 @@ export function useDragAndDrop(
 
     function handleDragOver(e: DragEvent): void {
       preventDefaultAndStop(e);
-      setDragOverKind(onWorkspaceItemDropped && isWorkspaceItemDrag(e) ? 'workspaceItem' : 'files');
+      if (onWorkspaceItemDropped && isWorkspaceItemDrag(e)) {
+        setDragOverKind('workspaceItem');
+      } else {
+        setDragOverKind(hasDroppableData(e) ? 'files' : null);
+      }
     }
 
     function handleDragLeave(e: DragEvent): void {

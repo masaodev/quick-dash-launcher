@@ -135,8 +135,8 @@ export function setupDataHandlers(configFolder: string) {
 
   ipcMain.handle(IPC_CHANNELS.PATH_GET_KIND, (_event, filePath: string) => getPathKind(filePath));
 
-  ipcMain.handle(IPC_CHANNELS.GET_DEFAULT_BROWSER, () => getDefaultBrowser());
-  ipcMain.handle(IPC_CHANNELS.GET_FILE_HANDLER, (_event, extension: string) =>
+  ipcMain.handle(IPC_CHANNELS.BROWSER_GET_DEFAULT, () => getDefaultBrowser());
+  ipcMain.handle(IPC_CHANNELS.FILE_GET_HANDLER, (_event, extension: string) =>
     getFileHandler(extension)
   );
 

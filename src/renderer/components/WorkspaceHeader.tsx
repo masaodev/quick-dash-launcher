@@ -50,7 +50,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
 
   return (
     <div className="workspace-header">
-      <h1>Workspace</h1>
+      <h1>{t('workspace.title')}</h1>
       <div className="workspace-header-controls">
         <button
           className={`action-btn workspace-control-btn ${isFilterVisible ? 'active' : ''}`}

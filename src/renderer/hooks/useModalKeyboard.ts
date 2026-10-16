@@ -57,13 +57,15 @@ interface UseModalKeyboardOptions {
   modalRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
   onEscape?: () => boolean | void;
+  /** Tab・Shift+Tab を画面で使うとき true を返す（フォーカスの移動はしない） */
+  onTab?: (event: KeyboardEvent) => boolean;
 }
 
 /**
  * モーダル共通のキーボードハンドラ
  *
  * Escape: モーダルを閉じる（上に重ねたダイアログが開いているとき、onEscapeがtrueを返したときはスキップ）
- * Tab: モーダル内でフォーカストラップ
+ * Tab: モーダル内でフォーカストラップ（onTab が true を返したときは画面に任せる）
  * 入力フィールド内の通常操作: 許可
  * その他: 背景への伝播を阻止
  *
@@ -75,11 +77,14 @@ export function useModalKeyboard({
   modalRef,
   onClose,
   onEscape,
+  onTab,
 }: UseModalKeyboardOptions): void {
   const onCloseRef = useRef(onClose);
   const onEscapeRef = useRef(onEscape);
+  const onTabRef = useRef(onTab);
   onCloseRef.current = onClose;
   onEscapeRef.current = onEscape;
+  onTabRef.current = onTab;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -101,6 +106,10 @@ export function useModalKeyboard({
       if (event.key === 'Tab') {
         // 上に重ねた画面があれば、その画面のフォーカスの閉じ込めに任せる（先に止めると上の画面の端で下へ抜ける）
         if (hasOverlayAbove(modal)) return;
+        if (onTabRef.current?.(event)) {
+          suppressEvent(event);
+          return;
+        }
         const focusableElements = modal.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );

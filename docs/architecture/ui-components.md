@@ -7,7 +7,7 @@ QuickDashLauncherで使う共通UIコンポーネントの規約を書く。実�
 - **一貫性**: 全画面で同じ見た目・操作感のUI部品を使う
 - **型安全**: props を TypeScript で定義し、誤用を防ぐ
 - **CSS変数連携**: スタイルは `variables.css` のデザイントークンで書く
-- **段階的移行**: 既存のCSSクラスによる実装と共存させ、触る箇所から順次置き換える
+- **CSSクラスとの共存**: 文字のあるボタンは Buttonコンポーネントで書き、アイコンだけのボタン・タブ・メニューの項目などの特殊なボタンは専用のCSSクラスで書く（[使い分けガイド](#使い分けガイド)）
 
 ## Buttonコンポーネント
 
@@ -31,9 +31,7 @@ props はコードを正とし、ここには写さない。決まりとして�
 
 ### Buttonコンポーネントを使う場合
 
-- モーダルのアクションボタン（確定、キャンセル、削除）
-- フォームの送信ボタン
-- ダイアログのOK/キャンセル
+文字のあるボタンはすべて Buttonコンポーネントを使う。モーダル・ダイアログのアクションボタン（確定・キャンセル・削除）、フォームの送信ボタン、入力欄の横の小さなボタン（ファイルを選択など）も同じ。色はコンポーネントの CSS に書かず、配置（余白・幅・寄せ）だけを `className` で足す（[css-design.md](css-design.md) の推奨と同じ）。
 
 ### 従来のCSSクラスを使う場合
 
@@ -91,4 +89,4 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 | `AutoImportFilterDropdown` | `AdminItemManagerView` | `AdminItemManager*` |
 | `MissingIconNotice` | `App`（メインウィンドウ） | `Launcher*` |
 
-メインウィンドウの子ウィンドウ（登録・編集、アイコン取得結果）の部品（`RegisterModal`・`RegisterWindowPage`・`IconProgressDetailModal`・`MainChildPage`）はプレフィックスなしで、子ウィンドウに付けるプレフィックスはまだ決めていない。
+メインウィンドウの子ウィンドウ（登録・編集、アイコン取得結果）の部品（`RegisterModal`・`RegisterPlacementBar`・`RegisterWindowPage`・`IconProgressDetailModal`・`MainChildPage`）はプレフィックスなしで、子ウィンドウに付けるプレフィックスはまだ決めていない。

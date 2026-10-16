@@ -28,9 +28,9 @@ export const IPC_CHANNELS = {
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
   /** 既定のブラウザの exe と表示名（登録・編集画面の「変換」） */
-  GET_DEFAULT_BROWSER: 'browser:get-default',
+  BROWSER_GET_DEFAULT: 'browser:get-default',
   /** 拡張子に関連付けられたプログラムの exe と表示名（登録・編集画面の「変換」） */
-  GET_FILE_HANDLER: 'file:get-handler',
+  FILE_GET_HANDLER: 'file:get-handler',
 
   // アイコン操作
   FETCH_FAVICON: 'fetch-favicon',
@@ -247,7 +247,7 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_MENU_RENAME_ITEM: 'workspace-menu-rename-item',
   EVENT_WORKSPACE_MENU_EDIT_ITEM: 'workspace-menu-edit-item',
   // 「メインウィンドウに登録」: メインプロセス → メインウィンドウ（ワークスペースのアイテムを初期値にして登録画面を開く）
-  EVENT_REGISTER_WORKSPACE_ITEM_TO_MAIN: 'register-workspace-item-to-main',
+  EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN: 'workspace-menu-register-to-main',
   EVENT_WORKSPACE_MENU_SHOW_MEMO: 'workspace-menu-show-memo',
   EVENT_WORKSPACE_MENU_COPY_PATH: 'workspace-menu-copy-path',
   EVENT_WORKSPACE_MENU_COPY_PARENT_PATH: 'workspace-menu-copy-parent-path',

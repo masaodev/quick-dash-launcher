@@ -152,7 +152,14 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
   - データファイル・ワークスペース（アーカイブを含む）のどこからも消えたアイテムのパスは、次の読み込みで `path-type-cache.json` から外す（読めなかったファイルがあるときは外さない）。パスの照合は大文字・小文字を区別しない
   - フォルダ取込で展開したアイテムと、ショートカット（`.lnk`）のリンク先は、読み込みのたびにディスクで確かめているので、拡張子が無くてもファイルと判定される
 - **HTTP/HTTPS URL**: `https://example.com`
-- **カスタムURIスキーマ**: `obsidian://`, `vscode://`, `ms-excel://` など
+- **カスタムURIスキーマ**: `obsidian://`, `vscode://`, `ms-todo:` など
+- **Office の URI**: `ms-excel:ofe|u|https://contoso.sharepoint.com/.../Book.xlsx`
+  - パス欄の「変換」で SharePoint・OneDrive の URL から作る形。`ofe|u|` は編集用、`ofv|u|` は読み取り専用、`ofe|ofc|u|` は SharePoint 標準の編集用（Excel だけ）。Word は `ms-word:`、PowerPoint は `ms-powerpoint:` で始まる
+- **ブラウザの exe ＋引数で URL を渡す形**: `path` に `C:\Program Files\Google\Chrome\Application\chrome.exe`、`args` に `--new-window https://example.com`
+  - パス欄の「変換」で作る形。アプリのウィンドウは `--app=https://example.com`、シークレットは `--incognito https://example.com`（Edge は `--inprivate`。Firefox は `-new-window`・`-private-window` で、アプリのウィンドウの形は無い）
+  - 関連付けがブラウザのファイル（`.md` など）は、引数の URL が `file:///C:/path/to/note.md` の形になる（ネットワークパスは `file://server/share/...`）。ファイルはシークレットの形にしない
+- **スタートメニューのアプリ**: `shell:AppsFolder\<AppID>`
+  - アプリ取込で登録する形。これ以外の `shell:` で始まるパスはフォルダと判定する
 - **ショートカットファイル**: `C:\path\to\shortcut.lnk`
 
 #### 3.1.3. 基本的な使用例

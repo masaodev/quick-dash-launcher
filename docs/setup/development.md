@@ -75,7 +75,7 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 | `VITE_PORT` | Vite開発サーバーのポート番号 | `9001`, `9002` |
 | `HOTKEY` | 起動ホットキー（設定ファイルを上書き） | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
 | `QUICK_DASH_CONFIG_DIR` | 設定フォルダのパス（絶対パスまたは相対パス） | `./tests/dev/full` |
-| `WINDOW_PIN_MODE` | 起動時の固定モード（`normal`・`alwaysOnTop`・`stayVisible`。それ以外は無視） | `stayVisible` |
+| `WINDOW_PIN_MODE` | 起動時のピン留めモード（`normal`・`alwaysOnTop`・`stayVisible`。それ以外は無視） | `stayVisible` |
 | `SHOW_WINDOW_ON_STARTUP` | `1` で起動時にメインウィンドウを表示する | `1` |
 | `SKIP_SPLASH_WINDOW` | `1` でスプラッシュウィンドウを出さない | `1` |
 | `DISABLE_GLOBAL_HOTKEY` | `1` でグローバルホットキーを登録しない | `1` |
@@ -154,7 +154,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 
 ### ウィンドウの動作
 
-メインウィンドウの表示・非表示・固定モード・子ウィンドウの扱いは [ウィンドウ制御](../architecture/window-control.md) を正とする。サイズと表示位置の設定項目は [設定ファイルの形式](../architecture/file-formats/settings-format.md) を参照。
+メインウィンドウの表示・非表示・ピン留めモード・子ウィンドウの扱いは [ウィンドウ制御](../architecture/window-control.md) を正とする。サイズと表示位置の設定項目は [設定ファイルの形式](../architecture/file-formats/settings-format.md) を参照。
 
 ### データファイル形式
 
@@ -169,6 +169,8 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 ### データ読み込みと重複排除
 
 データファイルの読み込み（`src/main/services/data/dataFileLoader.ts`。起動時と F5 で呼ばれる）は、タブ単位で重複を除く。同じタブの中で重複したアイテムは 1 つだけ読み、別のタブにあるものは両方読む。重複の判定とタブに属さないファイルの扱いは [データファイル形式 - 重複排除ルール](../architecture/file-formats/data-format.md#4-重複排除ルール) を参照（判定キーの組み立ては `jsonItemConverter.ts`）。
+
+読み込みの最後に、旧グループ・旧ウィンドウ配置をセットへ変換して書き戻す（`setMigration.ts`。仕様は [データファイル形式 3.3.6](../architecture/file-formats/data-format.md#336-旧形式からの変換)）。
 
 ### アイテムタイプの検出
 
@@ -209,6 +211,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 - アイコン取得: `src/main/services/icon/iconFetcher.ts` の `getIconForItem()`（アイコン用 IPC が直接、ワークスペースの IPC は `services/iconService.ts` 経由で使う）
 - アイテムの起動: `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
 - ウィンドウの検索・アクティブ化・位置とサイズの設定: `src/main/utils/windowActivator.ts`
+- セットの実行: `src/main/services/launch/setExecutor.ts`（行ごとに開くものを開き、ウィンドウを位置に合わせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
 - 登録・編集フォームの部品: `src/renderer/components/ItemEditFields.tsx`（アイテム 1 件分の編集欄。状態は持たず、読み込み・保存は呼び出し側）。メインの登録・編集（`RegisterModal`）とワークスペースのアイテム編集（`WorkspaceItemEditModal`）の両方が使う。ワークスペースは `placement` を渡さず（保存先の欄を出さない）、`typeLocked` で種別を固定する。中の部品に `WindowConfigEditor.tsx`（ウィンドウ設定）・`CustomIconEditor.tsx`（カスタムアイコン）など
 
 ### パフォーマンス最適化

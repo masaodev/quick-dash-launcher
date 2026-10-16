@@ -2,7 +2,7 @@
  * 画面: セットに追加するアイテム
  * 画面仕様: docs/screens/set-editor-modals.md#2-セットに追加するアイテム
  */
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -41,6 +41,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -51,7 +52,6 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
     setSelected(new Set());
     onClose();
   };
-  useModalKeyboard({ isOpen, modalRef, onClose: close });
 
   const groups = useMemo(() => {
     const names: string[] = [];
@@ -67,6 +67,34 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
         (!q || item.displayName.toLowerCase().includes(q))
     );
   }, [catalog, query, group]);
+
+  // 検索欄で Tab・Shift+Tab を押すと、上のタブを順に切り替える（メインウィンドウの Tab と同じ。検索中は合うアイテムの無いタブを飛ばす）
+  const switchGroupByTab = (event: KeyboardEvent): boolean => {
+    if (document.activeElement !== searchRef.current || groups.length <= 1) return false;
+    const tabs: (string | null)[] = [null, ...groups];
+    const q = query.trim().toLowerCase();
+    const hasMatch = (tab: string | null) =>
+      !q ||
+      catalog.some(
+        (item) =>
+          (tab === null || item.groupName === tab) && item.displayName.toLowerCase().includes(q)
+      );
+    const step = event.shiftKey ? -1 : 1;
+    const current = tabs.indexOf(group);
+    for (let i = 1; i < tabs.length; i++) {
+      const next = tabs[(current + step * i + tabs.length) % tabs.length];
+      if (hasMatch(next)) {
+        setGroup(next);
+        return true;
+      }
+    }
+    return true;
+  };
+  useModalKeyboard({ isOpen, modalRef, onClose: close, onTab: switchGroupByTab });
+  // useModalKeyboard が開いたときにモーダル本体へフォーカスを移すので、その後で検索欄へ戻す（autoFocus だと先に当たって外れる）
+  useEffect(() => {
+    if (isOpen) searchRef.current?.focus();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -137,8 +165,8 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
         <input
           type="text"
           className="set-search"
+          ref={searchRef}
           value={query}
-          autoFocus
           placeholder={t('set.picker.search')}
           onChange={(e) => setQuery(e.target.value)}
         />
