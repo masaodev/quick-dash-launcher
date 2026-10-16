@@ -89,16 +89,17 @@ export function refreshEditableItem(
   };
 }
 
-/** 先頭に追加する空の新規アイテム（id はこの時点で本採番する） */
-export function createBlankItem(sourceFile: string): EditableJsonItem {
+/** 先頭に追加する空の新規アイテム（id はこの時点で本採番する。種類は単一アイテムかフォルダ取込） */
+export function createBlankItem(
+  sourceFile: string,
+  type: InlineItemType = 'item'
+): EditableJsonItem {
+  const id = generateId();
+  const updatedAt = Date.now();
   return toEditableItem(
-    {
-      id: generateId(),
-      type: 'item',
-      displayName: '',
-      path: '',
-      updatedAt: Date.now(),
-    },
+    type === 'dir'
+      ? { id, type: 'dir', path: '', updatedAt }
+      : { id, type: 'item', displayName: '', path: '', updatedAt },
     sourceFile
   );
 }

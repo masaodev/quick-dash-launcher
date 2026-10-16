@@ -119,10 +119,7 @@ test.describe('画面仕様書の画面イメージ', () => {
       })) as typeof dialog.showOpenDialog;
     }, sample);
 
-    await admin
-      .locator('.dropdown-trigger-btn', { hasText: 'アイテムを一括取り込み' })
-      .first()
-      .click();
+    await admin.locator('.toolbar-split .toolbar-split-toggle').click();
     await admin.locator('.dropdown-item', { hasText: 'ブラウザのブックマークを追加' }).click();
     const modal = admin.locator('.auto-import-rule-modal.import-mode');
     await modal.waitFor({ state: 'visible' });
@@ -167,10 +164,7 @@ test.describe('画面仕様書の画面イメージ', () => {
       ipcMain.handle('scan-installed-apps', () => ({ apps: scanned, scanDuration: 1 }));
     }, apps);
 
-    await admin
-      .locator('.dropdown-trigger-btn', { hasText: 'アイテムを一括取り込み' })
-      .first()
-      .click();
+    await admin.locator('.toolbar-split .toolbar-split-toggle').click();
     await admin.locator('.dropdown-item', { hasText: 'インストール済みアプリを追加' }).click();
     const modal = admin.locator('.app-import-modal');
     await modal.waitFor({ state: 'visible' });
