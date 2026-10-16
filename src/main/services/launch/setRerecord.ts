@@ -1,8 +1,8 @@
 /**
- * メイン画面の右クリック「今の位置を記録し直す」
+ * メイン画面の右クリック「位置を更新」
  *
  * 置き場所のある行のウィンドウを今の画面から探し、位置を取り直してデータファイルに保存する。
- * 行の追加・削除はしない（それは編集画面の「今の位置を記録」）。結果はトーストで知らせる
+ * 行の追加・削除はしない（行を足すのは編集画面の「ウィンドウを追加」）。結果はトーストで知らせる
  */
 import * as path from 'path';
 
@@ -46,7 +46,7 @@ export async function rerecordSetPositions(shown: SetItem): Promise<void> {
   const result = rerecordSetPlacements(item.entries, windows, getDesktopCount());
   itemLogger.info(
     { setName: item.displayName, changed: result.changed, notFound: result.notFound },
-    'セットの位置を記録し直しました'
+    'セットの位置を更新しました'
   );
 
   if (result.changed > 0) {

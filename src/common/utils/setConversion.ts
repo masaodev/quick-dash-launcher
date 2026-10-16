@@ -80,7 +80,7 @@ export function convertLayoutEntryToSetEntry(entry: LayoutWindowEntry): SetEntry
   if (entry.virtualDesktopNumber !== undefined) {
     placement.virtualDesktopNumber = entry.virtualDesktopNumber;
   }
-  // 座標の無いエントリに空の位置を付けると「位置のある行」に数えられる（📍・記録し直し・進み具合の表示）
+  // 座標の無いエントリに空の位置を付けると「位置のある行」に数えられる（📍・位置を更新・進み具合の表示）
   if (Object.keys(placement).length > 0) result.placement = placement;
   return result;
 }

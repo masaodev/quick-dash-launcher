@@ -31,7 +31,7 @@ export const ITEM_CATEGORY_ICONS: Readonly<Record<RegisterItem['itemCategory'], 
   clipboard: '📋',
 };
 
-/** 行の無いセットに渡す空の配列（描き直しのたびに新しい配列を渡すと、記録の画面が選んだ内容をやり直す） */
+/** 行の無いセットに渡す空の配列（描き直しのたびに新しい配列を渡すと、位置を更新の画面が選んだ内容をやり直す） */
 const NO_SET_ENTRIES: SetEntry[] = [];
 
 /** フォームの 1 項目に入れられる値 */

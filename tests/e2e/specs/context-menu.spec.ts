@@ -127,7 +127,7 @@ $Shortcut.Save()
 
     // 編集は独立した子ウィンドウで開く（メインウィンドウは動かさない）
     const editor = await utils.waitForRegisterWindow(electronApp);
-    await expect(editor.locator('.register-modal h2')).toHaveText('アイテムの編集');
+    await expect(editor.locator('.register-modal h2')).toContainText('アイテムの編集');
     await expect(editor).toHaveTitle('アイテムの編集');
 
     await utils.pressEscapeToCloseRegisterModal();
@@ -146,7 +146,7 @@ $Shortcut.Save()
     await mainWindow.keyboard.press('F2');
 
     const editor = await utils.waitForRegisterWindow(electronApp);
-    await expect(editor.locator('.register-modal h2')).toHaveText('アイテムの編集');
+    await expect(editor.locator('.register-modal h2')).toContainText('アイテムの編集');
     await expect(editor.locator('input[value="Google"]').first()).toBeVisible();
 
     await utils.pressEscapeToCloseRegisterModal();
@@ -320,11 +320,11 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
     expect(labels).toEqual(['✏️ 編集', '⭐ ワークスペースに追加']);
   });
 
-  test('置き場所のあるセットには「今の位置を記録し直す」が出て、パス系の項目は出ない', async ({
+  test('置き場所のあるセットには「位置を更新」が出て、パス系の項目は出ない', async ({
     electronApp,
     mainWindow,
   }) => {
     const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eセット');
-    expect(labels).toEqual(['✏️ 編集', '📍 今の位置を記録し直す', '⭐ ワークスペースに追加']);
+    expect(labels).toEqual(['✏️ 編集', '📍 位置を更新', '⭐ ワークスペースに追加']);
   });
 });

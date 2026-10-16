@@ -16,7 +16,8 @@ import { logError } from '../utils/debug';
 import '../styles/components/SetEditor.css';
 
 import SetItemPickerModal from './SetItemPickerModal';
-import SetRecordModal from './SetRecordModal';
+import SetAddWindowsModal from './SetAddWindowsModal';
+import SetUpdatePositionsModal from './SetUpdatePositionsModal';
 import SetEntryDetailModal from './SetEntryDetailModal';
 import { Button } from './ui';
 
@@ -36,7 +37,7 @@ interface SetEntriesEditorProps {
 /**
  * セットの行の一覧（登録・編集画面の中身）
  *
- * アイテムの追加・今の位置の記録・行の詳細はここから開く。行はドラッグか上下のボタンで並べ替える
+ * アイテムの追加・ウィンドウの追加・位置の更新・行の詳細はここから開く。行はドラッグか上下のボタンで並べ替える
  */
 const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   entries,
@@ -51,7 +52,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   const [catalog, setCatalog] = useState<SetCatalogItem[]>([]);
   const [screens, setScreens] = useState<ScreenArea[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [recordOpen, setRecordOpen] = useState(false);
+  const [addWindowsOpen, setAddWindowsOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
   const [detailIndex, setDetailIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   /** ドラッグ中に、落とす先になっている行 */
@@ -238,8 +240,17 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         <Button variant="secondary" size="sm" onClick={() => setPickerOpen(true)}>
           {t('set.editor.addItems')}
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => setRecordOpen(true)}>
-          {t('set.editor.record')}
+        <Button variant="secondary" size="sm" onClick={() => setAddWindowsOpen(true)}>
+          {t('set.editor.addWindows')}
+        </Button>
+        {/* 更新する行が無いときは押せない */}
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={entries.length === 0}
+          onClick={() => setUpdateOpen(true)}
+        >
+          {t('set.editor.updatePositions')}
         </Button>
         <span className="set-launch-mode">
           {t('set.editor.launchMode')}
@@ -274,13 +285,20 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         onClose={() => setPickerOpen(false)}
         onAdd={(items) => setEntries([...entries, ...items.map(catalogItemToEntry)])}
       />
-      <SetRecordModal
-        isOpen={recordOpen}
+      <SetAddWindowsModal
+        isOpen={addWindowsOpen}
         entries={entries}
         catalog={catalogById}
-        catalogList={catalog}
         screens={screens}
-        onClose={() => setRecordOpen(false)}
+        onClose={() => setAddWindowsOpen(false)}
+        onAdd={(added) => setEntries([...entries, ...added])}
+      />
+      <SetUpdatePositionsModal
+        isOpen={updateOpen}
+        entries={entries}
+        catalog={catalogById}
+        screens={screens}
+        onClose={() => setUpdateOpen(false)}
         onConfirm={setEntries}
       />
       <SetEntryDetailModal

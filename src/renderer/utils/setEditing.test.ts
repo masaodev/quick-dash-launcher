@@ -118,6 +118,13 @@ describe('entryFromWindow', () => {
     expect(entryFromWindow(w).label).toBe('TODOキャンパス - vault - Obsidian v1.9');
   });
 
+  it('今の位置を持つ。最小化中のウィンドウは位置を持たない（座標が画面の外になる）', () => {
+    expect(entryFromWindow(win({})).placement).toMatchObject({ x: 960, y: 0, width: 960 });
+    const minimized = entryFromWindow(win({ windowState: 'minimized', x: -32000, y: -32000 }));
+    expect(minimized.placement).toBeUndefined();
+    expect(minimized.window?.processName).toBe('Obsidian.exe');
+  });
+
   it('タイトルが空なら exe 名（拡張子なし）にする', () => {
     const w = win({ title: '  ' });
     expect(entryFromWindow(w).label).toBe('Obsidian');
@@ -206,7 +213,7 @@ describe('仮想デスクトップの記録と表示', () => {
     ).not.toMatch(/2$/);
   });
 
-  it('記録の画面のウィンドウは、デスクトップが 2 つ以上のときだけ番号・全デスクトップを添える', () => {
+  it('ウィンドウを選ぶ画面のウィンドウは、デスクトップが 2 つ以上のときだけ番号・全デスクトップを添える', () => {
     const plain = windowPlacementText(win({ desktopNumber: 2 }), screens, 1);
     expect(windowPlacementText(win({ desktopNumber: 2 }), screens, 3)).not.toBe(plain);
     expect(windowPlacementText(win({ desktopNumber: 2 }), screens, 3)).toMatch(/2$/);
@@ -216,7 +223,7 @@ describe('仮想デスクトップの記録と表示', () => {
     expect(windowPlacementText(win({ isPinned: true }), screens, 1)).toBe(plain);
   });
 
-  it('記録の画面の最大化中のウィンドウは、記録した後の行と同じ表示にする', () => {
+  it('ウィンドウを選ぶ画面の最大化中のウィンドウは、記録した後の行と同じ表示にする', () => {
     const w = win({ windowState: 'maximized', x: -8, y: -8, width: 1936, height: 1056 });
     expect(windowPlacementText(w, screens, 1)).toBe(placementText(entryFromWindow(w, 1), screens));
   });
