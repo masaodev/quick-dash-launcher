@@ -671,6 +671,30 @@ describe('jsonParser: セット', () => {
     expect((file.items[0] as { entries: object[] }).entries[0]).not.toHaveProperty('window');
   });
 
+  it('行の pinToAllDesktops は true のときだけ持つ', () => {
+    const file = parseJsonDataFile(
+      JSON.stringify({
+        version: JSON_DATA_VERSION,
+        items: [
+          {
+            id: 'set1aaaa',
+            type: 'set',
+            displayName: 'x',
+            entries: [
+              { itemId: 'abcd1234', pinToAllDesktops: true },
+              { itemId: 'abcd1234', pinToAllDesktops: false },
+              { itemId: 'abcd1234', pinToAllDesktops: 'yes' },
+            ],
+          },
+        ],
+      })
+    );
+    const entries = (file.items[0] as { entries: object[] }).entries;
+    expect(entries[0]).toEqual({ itemId: 'abcd1234', pinToAllDesktops: true });
+    expect(entries[1]).not.toHaveProperty('pinToAllDesktops');
+    expect(entries[2]).not.toHaveProperty('pinToAllDesktops');
+  });
+
   it('行がオブジェクトでなければエラー', () => {
     expect(() =>
       parseJsonDataFile(

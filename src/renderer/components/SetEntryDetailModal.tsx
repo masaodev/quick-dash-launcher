@@ -28,6 +28,8 @@ import {
   pickFromWindow,
   WindowMatchFields,
   WindowPlacementFields,
+  withoutDesktop,
+  type WindowPickNote,
 } from './WindowSwitchFields';
 import { Button } from './ui';
 
@@ -68,7 +70,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   /** 「アイテム」を選んだが、まだアイテムを選んでいない間も選択肢を保つ */
   const [openKind, setOpenKind] = useState<OpenKind>(entry ? openKindOf(entry) : 'none');
   /** 最後に選んだウィンドウについて知らせること */
-  const [pickNotes, setPickNotes] = useState<Array<'minimized' | 'elevated'>>([]);
+  const [pickNotes, setPickNotes] = useState<WindowPickNote[]>([]);
   /** 今開いているウィンドウ・仮想デスクトップ（別の行を開いたら読み直す） */
   const { windows, desktopCount, desktopNames } = useWindowEnvironment({
     active: entry !== null,
@@ -241,32 +243,24 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               value={draft.window}
               initial={entry.window}
               windows={windows}
-              hint={t('set.detail.findHint')}
+              lead={t('set.detail.findLead')}
+              onPickWindow={() => setPicking(true)}
               onChange={(window) => update({ window })}
             />
 
             <WindowPlacementFields
               idPrefix="set-detail"
               placement={draft.placement}
+              pinToAllDesktops={draft.pinToAllDesktops}
+              match={draft.window}
+              windows={windows}
+              desktopCount={desktopCount}
               screens={screens}
               desktopNames={desktopNames}
-              onTakeFromWindow={() => setPicking(true)}
-              onChange={(placement) => update({ placement })}
-              notes={
-                (entryOpensAsTab(view) || pickNotes.length > 0) && (
-                  <>
-                    {entryOpensAsTab(view) && (
-                      <span className="set-info">{t('set.update.tabNote')}</span>
-                    )}
-                    {pickNotes.includes('minimized') && (
-                      <span className="set-note">{t('set.detail.minimizedPicked')}</span>
-                    )}
-                    {pickNotes.includes('elevated') && (
-                      <span className="set-note">{t('set.update.elevatedNote')}</span>
-                    )}
-                  </>
-                )
-              }
+              onChange={update}
+              onUpdated={setPickNotes}
+              tabNote={entryOpensAsTab(view)}
+              pickNotes={pickNotes}
             />
 
             <OpenBehaviorFields
@@ -310,7 +304,12 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
           // 最小化中は座標が画面の外になるので、対象ウィンドウだけ取る
           update(
             picked.placement
-              ? { window: picked.window, placement: picked.placement }
+              ? {
+                  window: picked.window,
+                  placement: draft.pinToAllDesktops
+                    ? withoutDesktop(picked.placement)
+                    : picked.placement,
+                }
               : { window: picked.window }
           );
           setPickNotes(picked.notes);

@@ -276,6 +276,8 @@ export function rerecordSetPlacements(
     // 編集画面の「位置を更新」と同じく、今の状態をそのまま記録する（仮想デスクトップの番号が空だった行にも
     // 今のデスクトップの番号を入れる。全デスクトップに表示中で番号が無ければ空、デスクトップが 1 つなら入れない）
     const placement = placementFromWindow(found, desktopCount);
+    // 全デスクトップに表示する行は、デスクトップの番号を持たない
+    if (entry.pinToAllDesktops) delete placement.virtualDesktopNumber;
     if (samePlacement(entry.placement, placement)) return entry;
     changed++;
     return { ...entry, placement };

@@ -250,6 +250,69 @@ describe('executeSet', () => {
     );
   });
 
+  it('行の「全デスクトップに表示」は、位置のある行ではウィンドウ位置と一緒にピン止めを当てる', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'memo.txt - sakura', processName: 'sakura.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        {
+          window: { processName: 'sakura.exe' },
+          placement: { x: 10, y: 20, width: 300, height: 200 },
+          pinToAllDesktops: true,
+        },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(deps.applyConfig).toHaveBeenCalledWith(
+      1n,
+      expect.objectContaining({ x: 10, y: 20, pinToAllDesktops: true }),
+      expect.any(String),
+      logger
+    );
+  });
+
+  it('行の「全デスクトップに表示」は、位置の無い行でもピン止めを当てる（動かすだけの行・開く行）', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'memo.txt - sakura', processName: 'sakura.exe' },
+      { hwnd: 2n, title: 'Windows Terminal', processName: 'WindowsTerminal.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        { window: { processName: 'sakura.exe' }, pinToAllDesktops: true },
+        { itemId: 'term1aaa', window: { title: '*Terminal*' }, pinToAllDesktops: true },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(deps.activate).toHaveBeenCalledWith(
+      { title: '*', processName: 'sakura.exe', pinToAllDesktops: true },
+      expect.any(String),
+      logger
+    );
+    expect(deps.activate).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '*Terminal*', pinToAllDesktops: true }),
+      'Windows Terminal',
+      logger
+    );
+  });
+
+  it('「全デスクトップに表示」の無い行は、ピン止めを当てない', async () => {
+    const { deps } = makeDeps([
+      { hwnd: 1n, title: 'memo.txt - sakura', processName: 'sakura.exe' },
+    ]);
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [{ window: { processName: 'sakura.exe' }, placement: { x: 0, y: 0 } }],
+    };
+    await executeSet(set, resolve, deps, logger);
+    expect(vi.mocked(deps.applyConfig).mock.calls[0][1]).not.toHaveProperty('pinToAllDesktops');
+  });
+
   it('同じアプリのウィンドウが 2 つあり、見つけ方が同じ行が 2 つあると、別々のウィンドウを動かす', async () => {
     const { deps, calls } = makeDeps([
       { hwnd: 1n, title: '文字コード表', processName: 'charmap.exe' },

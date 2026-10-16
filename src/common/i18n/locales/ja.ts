@@ -518,7 +518,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       setItemType:
         '種類 {{type}} のアイテムはセットの行にできません（{{types}} のみ。フォルダ取込の中身は --path で）',
       setRowUnknownKeys:
-        '行 {{index}} に知らないキーがあります: {{keys}}（itemId・open・label・window・placement・ifOpen・activateWindow・waitSeconds）',
+        '行 {{index}} に知らないキーがあります: {{keys}}（itemId・open・label・window・placement・ifOpen・activateWindow・waitSeconds・pinToAllDesktops）',
       setRowEmpty:
         '行 {{index}} に、開くもの（itemId・open）も対象ウィンドウ（window）もありません',
       setRowItemNotFound: '行 {{index}} の itemId {{id}} のアイテムが見つかりません',
@@ -693,22 +693,30 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       find: '対象ウィンドウ',
       processName: 'exe 名',
       processNamePlaceholder: '例: notepad.exe',
+      processNameNote: '一部でも探せます（例: sakura）',
       windowTitle: 'ウィンドウタイトル',
       windowTitlePlaceholder: '空ならタイトルは問わない',
+      windowTitleNote: '全体が同じものを探します。* は任意の文字（例: *Obsidian）',
       anyTitle: 'タイトルを問わない',
       anyTitleHint: 'exe 名だけで探します（タイトルは問いません）',
-      titleParts: '一部だけで探す:',
+      titleParts: 'タイトルの一部だけで探す',
       revertTitle: '↺ 元に戻す',
       matchNone: '今合うウィンドウ: 0 件',
       matchOne: '今合うウィンドウ: 1 件（{{title}}）',
       matchMany: '今合うウィンドウ: {{count}} 件（別のウィンドウにも当たります）',
-      findHint:
-        'このセットを開いたとき、この 2 つに合うウィンドウを記録したウィンドウ位置へ動かします。exe 名は一部でもよく、タイトルは全体が同じものを探します（* は任意の文字。例: *Obsidian）。',
+      findLead: 'このセットを開いたとき、合うウィンドウを記録したウィンドウ位置へ動かします。',
+      pickFromWindow: '🔍 開いているウィンドウから選ぶ',
       placement: 'ウィンドウ位置',
       recorded: '記録したウィンドウ位置',
       noPlacement: 'まだ記録していません',
-      takeFromWindow: '開いているウィンドウから取り込む',
+      updatePlacement: '📍 ウィンドウ位置を更新',
+      updatePlacementNoMatch: '合うウィンドウが開いていません',
+      updatePlacementNote:
+        '今合うウィンドウの、今の位置と大きさを記録し直します（条件は変えません）',
       clearPlacement: 'ウィンドウ位置を外す',
+      pinToAllDesktops: '📌 全デスクトップに表示',
+      pickPlacementTitle: 'どのウィンドウの位置を記録しますか',
+      pickPlacementConfirm: '記録する',
       desktop: '仮想デスクトップ',
       desktopKeep: '変えない',
       behavior: '開くときの動き',
@@ -721,6 +729,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       wait: 'ウィンドウが出るのを待つ（秒）',
       minimizedPicked:
         '最小化中のウィンドウなので、対象ウィンドウだけ取りました。ウィンドウ位置は元の大きさに戻してから取ってください',
+      minimizedNotUpdated:
+        '最小化中のウィンドウなので、ウィンドウ位置は取りませんでした。元の大きさに戻してから押してください',
     },
     placement: {
       none: 'ウィンドウ位置なし',
@@ -1283,9 +1293,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     itemOptions: 'オプション設定（引数・アイコン）',
     windowSwitch: {
       toggle: 'オプション設定（ウィンドウ切り替え・ウィンドウ位置）',
-      findHint:
-        'このアイテムを開いたとき、この 2 つに合うウィンドウが開いていれば、開き直さずにそのウィンドウへ切り替えます。exe 名は一部でもよく、タイトルは全体が同じものを探します（* は任意の文字。例: *Obsidian）。',
-      pinToAllDesktops: '📌 全デスクトップに表示',
+      findLead:
+        'このアイテムを開いたとき、合うウィンドウが開いていれば、開き直さずにそのウィンドウへ切り替えます。',
     },
     dirOptions: 'フォルダ取込のオプション',
     args: '引数:',

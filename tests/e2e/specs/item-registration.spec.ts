@@ -704,7 +704,7 @@ test.describe('QuickDashLauncher - 単一アイテムのウィンドウ切り替
       await fields.getByLabel('exe 名').fill('chrome.exe');
       await fields.getByLabel('ウィンドウタイトル').fill('*GitHub*');
       await fields.getByLabel('開いていたら').selectOption('openNew');
-      await expect(fields.getByText(/今合うウィンドウ/)).toBeVisible();
+      await expect(fields.getByText(/今合うウィンドウ: /)).toBeVisible();
       const editor = utils.registerPage;
       // 更新するとすぐ閉じるので、閉じるのを先に待ち始める
       await Promise.all([

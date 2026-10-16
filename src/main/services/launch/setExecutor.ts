@@ -299,18 +299,13 @@ export async function executeSet(
   }
 }
 
-/** 単一アイテムを 1 行として実行するときだけの動き（セットの実行では渡さない） */
-interface SingleItemOptions {
-  /** 全仮想デスクトップにピン止めする */
-  pinToAllDesktops?: boolean;
-}
-
 async function runSet(
   item: Pick<SetItem, 'displayName' | 'entries' | 'launchMode'>,
   resolve: SetItemResolver,
   deps: SetExecutorDeps,
   logger: Logger,
-  single?: SingleItemOptions
+  /** 単一アイテムを 1 行として実行する（セットの実行では渡さない） */
+  single = false
 ): Promise<SetExecutionResult> {
   const parallel = item.launchMode === 'parallel';
   logger.info(
@@ -320,18 +315,15 @@ async function runSet(
 
   const resolved = item.entries.map((entry) => resolveSetEntry(entry, resolve));
   /**
-   * 単一アイテムは今までどおり、前面に出すウィンドウが別の仮想デスクトップにあればそこへ切り替え、
-   * ピン止めも当てる（セットの実行は利用者のデスクトップを変えない）
+   * 単一アイテムは今までどおり、前面に出すウィンドウが別の仮想デスクトップにあればそこへ切り替える
+   * （セットの実行は利用者のデスクトップを変えない）
    */
   const applyOptions: ApplyWindowOptions | undefined = single ? { followDesktop: true } : undefined;
+  /** 行の「全デスクトップに表示」を当てる（セットの行・単一アイテムで同じ） */
+  const withPin = (config: WindowConfig, entry: SetEntry): WindowConfig =>
+    entry.pinToAllDesktops ? { ...config, pinToAllDesktops: true } : config;
   const withSingle = (config: WindowConfig, entry: SetEntry): WindowConfig =>
-    single
-      ? {
-          ...config,
-          activateWindow: entry.activateWindow !== false,
-          ...(single.pinToAllDesktops ? { pinToAllDesktops: true } : {}),
-        }
-      : config;
+    withPin(single ? { ...config, activateWindow: entry.activateWindow !== false } : config, entry);
   const activate = (config: WindowConfig, name: string) =>
     applyOptions
       ? deps.activate(config, name, logger, applyOptions)
@@ -473,7 +465,7 @@ async function runSet(
             title: r.windowItem.windowTitle || ANY_WINDOW_TITLE,
             ...pickWindowPlacement(r.windowItem),
           };
-          const result = await deps.activate(config, r.name, logger);
+          const result = await deps.activate(withPin(config, entry), r.name, logger);
           return finish(
             index,
             result.windowFound ? undefined : mainI18n.t('layout.windowNotFound')
@@ -485,10 +477,13 @@ async function runSet(
             return finish(index, mainI18n.t('layout.windowNotFound'));
           }
           const result = await deps.activate(
-            {
-              title: entry.window.title || ANY_WINDOW_TITLE,
-              processName: entry.window.processName,
-            },
+            withPin(
+              {
+                title: entry.window.title || ANY_WINDOW_TITLE,
+                processName: entry.window.processName,
+              },
+              entry
+            ),
             r.name,
             logger
           );
@@ -516,7 +511,9 @@ async function runSet(
       }
       // 今は無い仮想デスクトップ（デスクトップを減らした後など）: 位置だけ合わせて知らせる
       const desktopCount = deps.desktopCount?.() ?? 0;
+      // 全デスクトップに表示する行は、デスクトップの番号を使わない
       const missingDesktop =
+        !entry.pinToAllDesktops &&
         fitted.virtualDesktopNumber !== undefined &&
         desktopCount > 0 &&
         fitted.virtualDesktopNumber > desktopCount
@@ -560,7 +557,7 @@ async function runSet(
 
       const applied = applyOptions
         ? await deps.applyConfig(hwnd, withSingle(config, entry), r.name, logger, applyOptions)
-        : await deps.applyConfig(hwnd, config, r.name, logger);
+        : await deps.applyConfig(hwnd, withPin(config, entry), r.name, logger);
       if (entry.placement.state === 'maximized') deps.maximize(hwnd);
       // 管理者権限で動くウィンドウなどは、位置を当てても動かない（大きさは見ない）
       if (applied.positionNotApplied) return finish(index, mainI18n.t('set.run.couldNotMove'));
@@ -700,6 +697,7 @@ export async function executeLauncherItem(
     ...(item.ifOpen ? { ifOpen: item.ifOpen } : {}),
     ...(item.waitSeconds !== undefined ? { waitSeconds: item.waitSeconds } : {}),
     activateWindow: item.activateWindow ?? true,
+    ...(item.pinToAllDesktops === true ? { pinToAllDesktops: true } : {}),
   };
   const launcher: LauncherItem = {
     displayName: item.displayName,
@@ -715,7 +713,7 @@ export async function executeLauncherItem(
       (itemId) => (itemId === SINGLE_ITEM_ROW_ID ? launcher : undefined),
       { ...deps, progress: undefined },
       logger,
-      { pinToAllDesktops: item.pinToAllDesktops === true }
+      true
     );
   } finally {
     if (key !== undefined) runningSets.delete(key);

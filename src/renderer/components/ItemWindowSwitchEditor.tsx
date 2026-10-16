@@ -2,13 +2,13 @@
  * 単一アイテムの「オプション設定（ウィンドウ切り替え・ウィンドウ位置）」
  *
  * 中身はセットの行の詳細と同じ部品（対象ウィンドウ・ウィンドウ位置・開くときの動き）。
- * 違いは、開くものの枠が無い（上のパスが開くもの）・前面に出すの既定が「出す」・全デスクトップに表示がある、の 3 つ。
+ * 違いは、開くものの枠が無い（上のパスが開くもの）・説明文の主語・前面に出すの既定が「出す」、の 3 つ。
  * 画面仕様: docs/screens/register-modal.md#単一アイテムのウィンドウ切り替え
  */
 import React, { useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import type { ItemWindowSwitch, LauncherItem, SetPlacement } from '@common/types';
+import type { ItemWindowSwitch, LauncherItem } from '@common/types';
 import { opensAsTab, type SetTargetKind } from '@common/utils/setWindowMatching';
 
 import { useWindowEnvironment } from '../hooks/useWindowEnvironment';
@@ -20,13 +20,9 @@ import {
   placementSummary,
   WindowMatchFields,
   WindowPlacementFields,
+  withoutDesktop,
+  type WindowPickNote,
 } from './WindowSwitchFields';
-
-/** 全デスクトップに表示するときは、デスクトップの番号を持たない */
-function withoutDesktop(placement: SetPlacement): SetPlacement {
-  const { virtualDesktopNumber: _drop, ...rest } = placement;
-  return rest;
-}
 
 interface ItemWindowSwitchEditorProps {
   /** 編集中のウィンドウ切り替え */
@@ -51,7 +47,7 @@ const ItemWindowSwitchEditor: React.FC<ItemWindowSwitchEditorProps> = ({
   /** 開いたときの対象ウィンドウ（「元に戻す」の先・一部だけで探す候補の元） */
   const [initialWindow] = useState(value.window);
   /** 最後に選んだウィンドウについて知らせること */
-  const [pickNotes, setPickNotes] = useState<Array<'minimized' | 'elevated'>>([]);
+  const [pickNotes, setPickNotes] = useState<WindowPickNote[]>([]);
   // たたんでいても見出しの横にウィンドウ位置を出すので、画面の並びと仮想デスクトップは最初から読む
   const { windows, desktopCount, desktopNames, screens } = useWindowEnvironment({
     active: true,
@@ -88,50 +84,24 @@ const ItemWindowSwitchEditor: React.FC<ItemWindowSwitchEditorProps> = ({
               value={value.window}
               initial={initialWindow}
               windows={windows}
-              hint={t('register.windowSwitch.findHint')}
+              lead={t('register.windowSwitch.findLead')}
+              onPickWindow={() => setPicking(true)}
               onChange={(window) => onChange({ window })}
             />
 
             <WindowPlacementFields
               idPrefix={idPrefix}
               placement={placement}
+              pinToAllDesktops={value.pinToAllDesktops}
+              match={value.window}
+              windows={windows}
+              desktopCount={desktopCount}
               screens={screens}
               desktopNames={desktopNames}
-              onTakeFromWindow={() => setPicking(true)}
-              onChange={(next) => onChange({ placement: next })}
-              desktopDisabled={!!value.pinToAllDesktops}
-              notes={
-                (tabNote || pickNotes.length > 0) && (
-                  <>
-                    {tabNote && <span className="set-info">{t('set.update.tabNote')}</span>}
-                    {pickNotes.includes('minimized') && (
-                      <span className="set-note">{t('set.detail.minimizedPicked')}</span>
-                    )}
-                    {pickNotes.includes('elevated') && (
-                      <span className="set-note">{t('set.update.elevatedNote')}</span>
-                    )}
-                  </>
-                )
-              }
-              desktopExtra={
-                <label className="set-detail-check">
-                  <input
-                    type="checkbox"
-                    checked={!!value.pinToAllDesktops}
-                    onChange={(e) =>
-                      onChange(
-                        e.target.checked
-                          ? {
-                              pinToAllDesktops: true,
-                              placement: placement && withoutDesktop(placement),
-                            }
-                          : { pinToAllDesktops: undefined }
-                      )
-                    }
-                  />
-                  {t('register.windowSwitch.pinToAllDesktops')}
-                </label>
-              }
+              onChange={onChange}
+              onUpdated={setPickNotes}
+              tabNote={tabNote}
+              pickNotes={pickNotes}
             />
 
             <OpenBehaviorFields

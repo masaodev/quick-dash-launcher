@@ -398,6 +398,7 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
 | `ifOpen` | 対象ウィンドウが既に開いていたとき。`"move"`＝開かずに位置だけ合わせる／`"openNew"`＝もう 1 つ開く | `"move"` |
 | `activateWindow` | 位置を合わせたウィンドウを前面に出すか | `false`（出さない。v0.8.0-beta.10 までは `true`） |
 | `waitSeconds` | 開いてからウィンドウが出るのを待つ秒数 | 30 |
+| `pinToAllDesktops` | 対象ウィンドウを全仮想デスクトップにピン止めする（位置のある行・無い行のどちらも）。ピン止めする行は `placement.virtualDesktopNumber` を使わない（画面からは書かない）。`true` のときだけ書く | `false` |
 
 - `itemId` で指せるのは通常アイテム（`type: "item"`）とウィンドウアイテム（`type: "window"`）。セット・クリップボードを指した行は実行時に失敗する（`src/main/services/launch/setExecutor.ts`）
 - `itemId`・`open`・`window`・`placement` をどれも持たない行は、旧グループの見つからない名前を `label` だけ残したもの。実行時に「アイテムが見つかりません」で失敗する
@@ -447,7 +448,7 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
 `validateJsonSetItem`・`validateSetEntry`（`src/common/utils/jsonParser.ts`）が検証する。
 
 - `displayName` が空でない文字列でない、`entries` が配列でない、行がオブジェクトでないときは、セット全体が不正（5.1）
-- 行の中は知っているキーだけを写し、型の合わないものは黙って捨てる。捨てられるのは、空文字の文字列、有限の数でない数値、`path` の無い `open`、`"maximized"` 以外の `state`、`"move"`・`"openNew"` 以外の `ifOpen`、真偽値でない `activateWindow`、0 以下の `waitSeconds`、1 以上の整数でない `placement.virtualDesktopNumber`（0・負の数・小数）、未知のキー。中身の無い `window`（`processName`・`title` のどちらも無い）と `placement`（キーが 1 つも無い）も捨てる（どのウィンドウにも合う・位置のある行に数えられるのを防ぐ）
+- 行の中は知っているキーだけを写し、型の合わないものは黙って捨てる。捨てられるのは、空文字の文字列、有限の数でない数値、`path` の無い `open`、`"maximized"` 以外の `state`、`"move"`・`"openNew"` 以外の `ifOpen`、真偽値でない `activateWindow`、0 以下の `waitSeconds`、`true` でない `pinToAllDesktops`、1 以上の整数でない `placement.virtualDesktopNumber`（0・負の数・小数）、未知のキー。中身の無い `window`（`processName`・`title` のどちらも無い）と `placement`（キーが 1 つも無い）も捨てる（どのウィンドウにも合う・位置のある行に数えられるのを防ぐ）
 - `launchMode` は `"sequential"`・`"parallel"` 以外なら捨てる（順番に開く扱い）
 
 #### 3.3.5. 動作仕様
@@ -455,8 +456,8 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
 実行は `executeSet`（`src/main/services/launch/setExecutor.ts`）。
 
 1. **開き方**: 順番に開くときは、行を開いてから次の行を開くまで 100ms（`GROUP_LAUNCH_DELAY_MS`、`src/common/constants.ts`）あける。ウィンドウを待って位置を合わせる処理は並行して続け、次の行はその完了を待たない。同時に開くときは全部の行を一度に始める
-2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。開くものの無い行（動かすだけ）は、`window` に合うウィンドウを前に出す（無ければ飛ばす。`window` が空なら失敗）。それ以外は、`ifOpen` が `"move"` で `window`（無ければ指すアイテムのウィンドウ切り替えの `window`。そのときはアイテムの `placement`・`activateWindow`・`pinToAllDesktops` も当てる、3.1.5）に合うウィンドウが見つかれば前に出すだけ（Windows に前面化を断られても開き直さない）、無ければ開く
-3. **位置のある行**: `window` で探す（3.3.2）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからないとき、開くものの無い行は飛ばす（ウィンドウアイテムを指す行は失敗）。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。合うウィンドウが複数あれば、`placement.virtualDesktopNumber` のデスクトップにあるものを先に使う。見つかったら、最小化の解除・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する。記録した位置の中心がどの画面にも入らない（モニターを外したなど）ときは、主画面（左上が 0,0 の画面）の作業領域に収まる大きさにして、その中央に当てる。当てた後に読み直した位置（x・y）がずれていれば（管理者権限で動くウィンドウなど）、その行は失敗（「ウィンドウを動かせませんでした」）にする。大きさは見ない。`virtualDesktopNumber` が今のデスクトップの数より大きい（今は無いデスクトップ）ときは、番号を外して位置だけ当て、その行は失敗（「デスクトップ N がありません。位置だけ合わせました」）にする。利用者の見ているデスクトップは切り替えない
+2. **位置の無い行**: 指すアイテムがウィンドウアイテムなら、そのウィンドウを探して前に出す。開くものの無い行（動かすだけ）は、`window` に合うウィンドウを前に出す（無ければ飛ばす。`window` が空なら失敗）。それ以外は、`ifOpen` が `"move"` で `window`（無ければ指すアイテムのウィンドウ切り替えの `window`。そのときはアイテムの `placement`・`activateWindow`・`pinToAllDesktops` も当てる、3.1.5）に合うウィンドウが見つかれば前に出すだけ（Windows に前面化を断られても開き直さない）、無ければ開く。行の `pinToAllDesktops` が `true` なら、前に出すウィンドウにピン止めも当てる
+3. **位置のある行**: `window` で探す（3.3.2）。`ifOpen` が `"move"` で見つかれば開かずに動かす。見つからないとき、開くものの無い行は飛ばす（ウィンドウアイテムを指す行は失敗）。見つからない、または `"openNew"` なら開いて、500ms（`SET_WINDOW_POLL_MS`）おきに `waitSeconds` 秒まで探す。`"openNew"` のときは開く前からあったウィンドウを除く。合うウィンドウが複数あれば、`placement.virtualDesktopNumber` のデスクトップにあるものを先に使う。見つかったら、最小化の解除・ピン止め（`pinToAllDesktops`）・位置と大きさ・仮想デスクトップ・前面化を当て（`applyWindowConfig`、`src/main/utils/windowActivator.ts`）、`state` が `"maximized"` なら最大化する。記録した位置の中心がどの画面にも入らない（モニターを外したなど）ときは、主画面（左上が 0,0 の画面）の作業領域に収まる大きさにして、その中央に当てる。当てた後に読み直した位置（x・y）がずれていれば（管理者権限で動くウィンドウなど）、その行は失敗（「ウィンドウを動かせませんでした」）にする。大きさは見ない。`virtualDesktopNumber` が今のデスクトップの数より大きい（今は無いデスクトップ）ときは、番号を外して位置だけ当て、その行は失敗（「デスクトップ N がありません。位置だけ合わせました」）にする。利用者の見ているデスクトップは切り替えない。行の `pinToAllDesktops` が `true` なら、仮想デスクトップは移さず（今は無いデスクトップの番号でも失敗にしない）全仮想デスクトップにピン止めする
 4. **取り合わない**: 1 回の実行の中で、ある行が使うと決めたウィンドウは、ほかの行の候補から外す
 5. **探す相手が決まらない行**: `window` が無く開くものが exe でない（URL など）行は、位置があっても開くだけ
 6. **失敗**: 行ごとに失敗しても残りを続ける。位置のある行が 1 つでもあれば進み具合を画面の隅に出し（中止できる）、行ごとの結果はそこに出す。無ければ、失敗した行の名前を警告のトーストで出す

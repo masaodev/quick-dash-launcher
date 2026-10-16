@@ -169,6 +169,7 @@ const SET_ENTRY_KEYS = new Set([
   'ifOpen',
   'activateWindow',
   'waitSeconds',
+  'pinToAllDesktops',
 ]);
 
 /**

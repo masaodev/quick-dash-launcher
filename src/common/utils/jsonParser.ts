@@ -784,6 +784,7 @@ export function validateSetEntry(entry: unknown, index: number): SetEntry {
   if (label) result.label = label;
 
   Object.assign(result, pickWindowSwitchFields(entry));
+  if (entry.pinToAllDesktops === true) result.pinToAllDesktops = true;
 
   return result;
 }

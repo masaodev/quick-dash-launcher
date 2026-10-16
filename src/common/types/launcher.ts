@@ -310,6 +310,8 @@ export interface SetEntry {
   activateWindow?: boolean;
   /** 開いてからウィンドウが出るのを待つ秒数（既定 30） */
   waitSeconds?: number;
+  /** この行のウィンドウを全仮想デスクトップにピン止めするか（既定 false。true のときだけ書く） */
+  pinToAllDesktops?: boolean;
 }
 
 /** セットの開き方: sequential＝順番に（既定）／parallel＝同時に */

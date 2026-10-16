@@ -4,7 +4,7 @@
  * セットの行の詳細（SetEntryDetailModal）と、単一アイテムの登録・編集（ItemWindowSwitchEditor）が同じ部品を使う。
  * 画面仕様: docs/screens/set-editor-modals.md#5-行の詳細・docs/screens/register-modal.md
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SetPlacement, SetWindowMatch, WindowInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
@@ -18,6 +18,7 @@ import {
 import { placementText, titleParts, windowPickNotes } from '../utils/setEditing';
 import '../styles/components/SetEditor.css';
 
+import WindowPlacementPickModal from './WindowPlacementPickModal';
 import { Button } from './ui';
 
 /** 空の文字列は undefined にする（保存したときに空のキーを書かない） */
@@ -34,8 +35,22 @@ export function placementSummary(
   return placementText({ placement }, screens, desktopNames);
 }
 
+/** 全デスクトップに表示するときは、デスクトップの番号を持たない */
+export function withoutDesktop(placement: SetPlacement): SetPlacement {
+  const { virtualDesktopNumber: _drop, ...rest } = placement;
+  return rest;
+}
+
 /**
- * 「開いているウィンドウから取り込む」で選んだウィンドウから、対象ウィンドウとウィンドウ位置を作る
+ * 選んだウィンドウについて知らせること
+ * - minimized: 「開いているウィンドウから選ぶ」で最小化中のウィンドウを選んだ（対象ウィンドウだけ取った）
+ * - minimizedNotUpdated: 「ウィンドウ位置を更新」で最小化中のウィンドウだった（位置は取らなかった）
+ * - elevated: 管理者権限で動いている
+ */
+export type WindowPickNote = 'minimized' | 'minimizedNotUpdated' | 'elevated';
+
+/**
+ * 「開いているウィンドウから選ぶ」で選んだウィンドウから、対象ウィンドウとウィンドウ位置を作る
  *
  * 最小化中は座標が画面の外になるので、対象ウィンドウだけ取る（placement は返さない＝前のまま）
  */
@@ -45,7 +60,7 @@ export function pickFromWindow(
 ): {
   window: SetWindowMatch;
   placement?: SetPlacement;
-  notes: Array<'minimized' | 'elevated'>;
+  notes: WindowPickNote[];
 } {
   const window = decideWindowMatch(w);
   const notes = windowPickNotes(w);
@@ -62,19 +77,22 @@ interface WindowMatchFieldsProps {
   initial: SetWindowMatch | undefined;
   /** 今開いているウィンドウ（「今合うウィンドウ」を数える） */
   windows: readonly WindowInfo[];
-  /** 枠の下の説明（セットと単一アイテムで主語が違う） */
-  hint: string;
+  /** 枠の先頭の 1 文（セットと単一アイテムで主語が違う） */
+  lead: string;
+  /** 「🔍 開いているウィンドウから選ぶ」（ウィンドウを選ぶ画面を開く。exe 名・タイトル・ウィンドウ位置をまとめて入れる） */
+  onPickWindow: () => void;
   /** exe 名もタイトルも空になったら undefined */
   onChange: (window: SetWindowMatch | undefined) => void;
 }
 
-/** 対象ウィンドウ（exe 名・ウィンドウタイトル・一部だけで探す候補・今合うウィンドウ） */
+/** 対象ウィンドウ（開いているウィンドウから選ぶ・exe 名・ウィンドウタイトル・一部だけで探す候補・今合うウィンドウ） */
 export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
   idPrefix,
   value,
   initial,
   windows,
-  hint,
+  lead,
+  onPickWindow,
   onChange,
 }) => {
   const { t } = useTranslation();
@@ -99,22 +117,32 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
 
   return (
     <div className="set-detail-group">
-      <div className="set-detail-group-title">{t('set.detail.find')}</div>
-      <label className="set-detail-label" htmlFor={`${idPrefix}-process`}>
+      {/* 条件ごと入れ直すボタンは、対象ウィンドウの見出しの右に置く */}
+      <div className="set-detail-group-title set-detail-group-title-row">
+        <span>{t('set.detail.find')}</span>
+        <Button variant="secondary" size="sm" className="set-nowrap" onClick={onPickWindow}>
+          {t('set.detail.pickFromWindow')}
+        </Button>
+      </div>
+      <p className="set-detail-lead">{lead}</p>
+      <label className="set-detail-label set-detail-label-top" htmlFor={`${idPrefix}-process`}>
         {t('set.detail.processName')}
       </label>
-      <input
-        id={`${idPrefix}-process`}
-        type="text"
-        placeholder={t('set.detail.processNamePlaceholder')}
-        value={value?.processName ?? ''}
-        onChange={(e) => update({ processName: orUndefined(e.target.value) })}
-      />
+      <div className="set-field-col">
+        <input
+          id={`${idPrefix}-process`}
+          type="text"
+          placeholder={t('set.detail.processNamePlaceholder')}
+          value={value?.processName ?? ''}
+          onChange={(e) => update({ processName: orUndefined(e.target.value) })}
+        />
+        <small className="set-detail-hint">{t('set.detail.processNameNote')}</small>
+      </div>
       <label className="set-detail-label set-detail-label-top" htmlFor={`${idPrefix}-title`}>
         {t('set.detail.windowTitle')}
       </label>
-      {/* 欄 → 一部だけで探す候補 → 今合うウィンドウ の順。元に戻すは欄に対する操作なので欄の右 */}
-      <div className="set-title-field">
+      {/* 欄 → 探し方の補足 → 一部だけで探す候補 → 今合うウィンドウ の順。元に戻すは欄に対する操作なので欄の右 */}
+      <div className="set-field-col">
         <div className="set-title-row">
           <input
             id={`${idPrefix}-title`}
@@ -133,29 +161,33 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
             </button>
           )}
         </div>
+        <small className="set-detail-hint">{t('set.detail.windowTitleNote')}</small>
         {(parts.length > 0 || value?.processName) && (
-          <div className="set-title-parts">
-            <span>{t('set.detail.titleParts')}</span>
-            {value?.processName && (
-              <button
-                type="button"
-                className="set-title-part"
-                title={t('set.detail.anyTitleHint')}
-                onClick={() => update({ title: ANY_WINDOW_TITLE })}
-              >
-                {t('set.detail.anyTitle')}
-              </button>
-            )}
-            {parts.map((part) => (
-              <button
-                key={part}
-                type="button"
-                className="set-title-part"
-                onClick={() => update({ title: `*${part}*` })}
-              >
-                {part}
-              </button>
-            ))}
+          // 小見出しを上に置き、チップだけを下に並べる（チップの途中で 1 つだけ落ちる形にしない）
+          <div className="set-title-parts-box">
+            <span className="set-title-parts-label">{t('set.detail.titleParts')}</span>
+            <div className="set-title-parts">
+              {value?.processName && (
+                <button
+                  type="button"
+                  className="set-title-part"
+                  title={t('set.detail.anyTitleHint')}
+                  onClick={() => update({ title: ANY_WINDOW_TITLE })}
+                >
+                  {t('set.detail.anyTitle')}
+                </button>
+              )}
+              {parts.map((part) => (
+                <button
+                  key={part}
+                  type="button"
+                  className="set-title-part"
+                  onClick={() => update({ title: `*${part}*` })}
+                >
+                  {part}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {value && (
@@ -172,54 +204,101 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
           </span>
         )}
       </div>
-      <span />
-      <small className="set-detail-hint">{hint}</small>
     </div>
   );
 };
 
+/** ウィンドウ位置の枠が変えるもの（どちらのキーも毎回入れる。undefined は外す） */
+export interface WindowPlacementPatch {
+  placement: SetPlacement | undefined;
+  pinToAllDesktops: true | undefined;
+}
+
 interface WindowPlacementFieldsProps {
   idPrefix: string;
   placement: SetPlacement | undefined;
+  /** 全デスクトップに表示するか */
+  pinToAllDesktops: boolean | undefined;
+  /** 今の対象ウィンドウ（「📍 ウィンドウ位置を更新」はこれに合うウィンドウの位置を取る） */
+  match: SetWindowMatch | undefined;
+  /** 今開いているウィンドウ（対象ウィンドウの「今合うウィンドウ」と同じ一覧。ボタンを押せるかを決める） */
+  windows: readonly WindowInfo[];
+  desktopCount: number;
   screens: readonly ScreenArea[];
   desktopNames: Readonly<Record<number, string | undefined>>;
-  /** 「開いているウィンドウから取り込む」（ウィンドウを選ぶ画面を開く） */
-  onTakeFromWindow: () => void;
-  onChange: (placement: SetPlacement | undefined) => void;
-  /** 記録したウィンドウ位置の下に添える知らせ（タブで開く・最小化中だった など）。無ければ行を出さない */
-  notes?: React.ReactNode;
-  /** 仮想デスクトップの欄の横に置くもの（単一アイテムの「全デスクトップに表示」）。あればウィンドウ位置が無くても行を出す */
-  desktopExtra?: React.ReactNode;
-  /** 仮想デスクトップの番号を入れさせない（全デスクトップに表示するとき） */
-  desktopDisabled?: boolean;
+  onChange: (patch: WindowPlacementPatch) => void;
+  /** 「📍 ウィンドウ位置を更新」で選んだウィンドウについて知らせること（無ければ空） */
+  onUpdated: (notes: WindowPickNote[]) => void;
+  /** タブとして開く種類なら、ウィンドウごと動く旨を添える */
+  tabNote?: boolean;
+  /** 最後に選んだウィンドウについて知らせること（記録したウィンドウ位置の下に添える） */
+  pickNotes?: readonly WindowPickNote[];
 }
 
-/** ウィンドウ位置（記録したウィンドウ位置・取り込む・外す・仮想デスクトップ） */
+/** ウィンドウ位置（記録したウィンドウ位置・ウィンドウ位置を更新・外す・仮想デスクトップ・全デスクトップに表示） */
 export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
   idPrefix,
   placement,
+  pinToAllDesktops,
+  match,
+  windows,
+  desktopCount,
   screens,
   desktopNames,
-  onTakeFromWindow,
   onChange,
-  notes,
-  desktopExtra,
-  desktopDisabled = false,
+  onUpdated,
+  tabNote = false,
+  pickNotes = [],
 }) => {
   const { t } = useTranslation();
+  const pinned = pinToAllDesktops === true;
+  /** 合うウィンドウが 2 つ以上のとき、選ぶ画面に並べるウィンドウ（空なら閉じている） */
+  const [choices, setChoices] = useState<WindowInfo[]>([]);
+  const matchedCount = useMemo(
+    () => (match ? windows.filter((w) => matchesWindow(match, w)).length : 0),
+    [match, windows]
+  );
+  const change = (next: SetPlacement | undefined, pin: boolean = pinned) =>
+    onChange({
+      placement: next && pin ? withoutDesktop(next) : next,
+      pinToAllDesktops: pin ? true : undefined,
+    });
+
+  /** 選んだウィンドウの今の位置を記録する（exe 名・タイトルは変えない。最小化中は位置を取らない） */
+  const record = (w: WindowInfo) => {
+    setChoices([]);
+    const picked = pickFromWindow(w, desktopCount);
+    if (picked.placement) change(picked.placement);
+    onUpdated(picked.notes.map((note) => (note === 'minimized' ? 'minimizedNotUpdated' : note)));
+  };
+
+  /** 押した時点のウィンドウを読み直して、合うものから位置を取る（欄を開いた後にウィンドウを動かしていることが多い） */
+  const updateFromWindow = async () => {
+    if (!match) return;
+    let now: WindowInfo[];
+    try {
+      now = await window.electronAPI.getAllWindowsAllDesktops();
+    } catch {
+      now = [...windows];
+    }
+    const found = now.filter((w) => matchesWindow(match, w));
+    if (found.length === 1) record(found[0]);
+    else if (found.length > 1) setChoices(found);
+  };
+
   const desktopInput = placement && (
     <input
       id={`${idPrefix}-desktop`}
       type="number"
       min={1}
       step={1}
-      disabled={desktopDisabled}
+      disabled={pinned}
       placeholder={t('set.detail.desktopKeep')}
       value={placement.virtualDesktopNumber ?? ''}
       onChange={(e) => {
         // 1 以上の整数だけ（0・負の数・小数は「変えない」と同じ空にする）
         const n = Number(e.target.value);
-        onChange({
+        change({
           ...placement,
           virtualDesktopNumber:
             e.target.value !== '' && Number.isInteger(n) && n >= 1 ? n : undefined,
@@ -231,47 +310,74 @@ export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
   return (
     <div className="set-detail-group">
       <div className="set-detail-group-title">{t('set.detail.placement')}</div>
-      <span className="set-detail-label">{t('set.detail.recorded')}</span>
-      <span className="set-detail-pair">
-        <span className="set-row-place">
+      <span className="set-detail-label set-detail-label-top">{t('set.detail.recorded')}</span>
+      {/* 1 行目に位置の言葉、2 行目にボタン、3 行目に短い補足（ボタンが途中で折り返さない並び） */}
+      <div className="set-field-col">
+        <span className="set-placement-text">
           {placement
             ? `📍 ${placementSummary(placement, screens, desktopNames)}`
             : t('set.detail.noPlacement')}
         </span>
-        <Button variant="secondary" size="sm" onClick={onTakeFromWindow}>
-          {t('set.detail.takeFromWindow')}
-        </Button>
-        {placement && (
-          <Button variant="secondary" size="sm" onClick={() => onChange(undefined)}>
-            {t('set.detail.clearPlacement')}
+        <span className="set-detail-buttons">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="set-nowrap"
+            disabled={matchedCount === 0}
+            title={matchedCount === 0 ? t('set.detail.updatePlacementNoMatch') : undefined}
+            onClick={() => void updateFromWindow()}
+          >
+            {t('set.detail.updatePlacement')}
           </Button>
+          {placement && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="set-nowrap"
+              onClick={() => change(undefined)}
+            >
+              {t('set.detail.clearPlacement')}
+            </Button>
+          )}
+        </span>
+        <small className="set-detail-hint">{t('set.detail.updatePlacementNote')}</small>
+        {tabNote && <span className="set-info">{t('set.update.tabNote')}</span>}
+        {pickNotes.includes('minimized') && (
+          <span className="set-note">{t('set.detail.minimizedPicked')}</span>
         )}
+        {pickNotes.includes('minimizedNotUpdated') && (
+          <span className="set-note">{t('set.detail.minimizedNotUpdated')}</span>
+        )}
+        {pickNotes.includes('elevated') && (
+          <span className="set-note">{t('set.update.elevatedNote')}</span>
+        )}
+      </div>
+      {placement ? (
+        <label className="set-detail-label" htmlFor={`${idPrefix}-desktop`}>
+          {t('set.detail.desktop')}
+        </label>
+      ) : (
+        <span className="set-detail-label">{t('set.detail.desktop')}</span>
+      )}
+      <span className="set-detail-pair">
+        {desktopInput}
+        <label className="set-detail-check">
+          <input
+            type="checkbox"
+            checked={pinned}
+            onChange={(e) => change(placement, e.target.checked)}
+          />
+          {t('set.detail.pinToAllDesktops')}
+        </label>
       </span>
-      {notes && (
-        <>
-          <span />
-          <span>{notes}</span>
-        </>
-      )}
-      {(placement || desktopExtra) && (
-        <>
-          {placement ? (
-            <label className="set-detail-label" htmlFor={`${idPrefix}-desktop`}>
-              {t('set.detail.desktop')}
-            </label>
-          ) : (
-            <span className="set-detail-label">{t('set.detail.desktop')}</span>
-          )}
-          {desktopExtra ? (
-            <span className="set-detail-pair">
-              {desktopInput}
-              {desktopExtra}
-            </span>
-          ) : (
-            desktopInput
-          )}
-        </>
-      )}
+      <WindowPlacementPickModal
+        windows={choices}
+        desktopCount={desktopCount}
+        screens={screens}
+        desktopNames={desktopNames}
+        onClose={() => setChoices([])}
+        onPick={record}
+      />
     </div>
   );
 };
