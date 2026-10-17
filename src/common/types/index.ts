@@ -119,6 +119,7 @@ export {
 export type {
   AppSettings,
   WindowPinMode,
+  PinLevel,
   WindowPositionMode,
   WorkspacePositionMode,
   DetachedPositionMode,

@@ -28,7 +28,7 @@ import {
   isDetachedGroupWindow,
   showAllDetachedGroupWindows,
 } from './detachedGroupWindowManager.js';
-import { getWorkspaceWindow } from './workspaceWindowManager.js';
+import { bringPinnedWorkspaceToFront, getWorkspaceWindow } from './workspaceWindowManager.js';
 import { moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
@@ -425,24 +425,9 @@ export function getWindowPinMode(): WindowPinMode {
  * ウィンドウピンモードを設定し、ウィンドウの動作を更新する
  * @param mode 設定するWindowPinMode
  */
-function setWindowPinMode(mode: WindowPinMode): void {
+export function setWindowPinMode(mode: WindowPinMode): void {
   windowPinMode = mode;
   updateWindowBehavior();
-}
-
-/**
- * 次のピンモードに循環的に切り替える
- * normal -> alwaysOnTop -> stayVisible -> normal
- * @returns 切り替え後のWindowPinMode
- */
-export function cycleWindowPinMode(): WindowPinMode {
-  const modes: WindowPinMode[] = ['normal', 'alwaysOnTop', 'stayVisible'];
-  const currentIndex = modes.indexOf(windowPinMode);
-  const nextIndex = (currentIndex + 1) % modes.length;
-  const nextMode = modes[nextIndex];
-
-  setWindowPinMode(nextMode);
-  return nextMode;
 }
 
 /**
@@ -693,6 +678,9 @@ async function showMainWindowInternal(
 
   await toggleDetachedWindowsIfEnabled(true);
   timer?.log('detached-windows-shown');
+
+  // ピン留めしたワークスペースは、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+  bringPinnedWorkspaceToFront();
 
   // 表示したまま別の仮想デスクトップにある（ピン留め中など）と show() では出てこない
   bringMainWindowToCurrentDesktop();

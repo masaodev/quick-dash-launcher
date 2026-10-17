@@ -4,13 +4,14 @@
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { WorkspaceItem, WorkspaceGroupView } from '@common/types';
+import type { PinLevel, WorkspaceItem, WorkspaceGroupView } from '@common/types';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
 
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
+import PinButton from './components/PinButton';
 import WorkspaceTabBar from './components/WorkspaceTabBar';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
@@ -48,8 +49,8 @@ function getDetachedGroupIdFromWindow(): string | null {
 const WorkspaceApp: React.FC = () => {
   const { t } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isPinned, setIsPinned] = useState(false);
-  const [detachedPinMode, setDetachedPinMode] = useState(0);
+  // ピン留めの段階（このウィンドウ＝ワークスペース本体か切り離しウィンドウのもの）
+  const [pinLevel, setPinLevel] = useState<PinLevel>(0);
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string>();
   const [isArchiveMode, setIsArchiveMode] = useState(false);
@@ -146,11 +147,7 @@ const WorkspaceApp: React.FC = () => {
   );
 
   useEffect(() => {
-    if (isDetached) {
-      window.electronAPI.workspaceAPI.getCallerPinMode().then(setDetachedPinMode);
-    } else {
-      window.electronAPI.workspaceAPI.getAlwaysOnTop().then(setIsPinned);
-    }
+    window.electronAPI.pin.get().then(setPinLevel);
 
     const syncBackgroundTransparent = async () => {
       const settings = await window.electronAPI.getSettings();
@@ -261,10 +258,6 @@ const WorkspaceApp: React.FC = () => {
     } catch (error) {
       logError('Failed to archive workspace group:', error);
     }
-  };
-
-  const handleTogglePin = async () => {
-    setIsPinned(await window.electronAPI.workspaceAPI.toggleAlwaysOnTop());
   };
 
   const handleClose = () => {
@@ -451,34 +444,6 @@ const WorkspaceApp: React.FC = () => {
     />
   ));
 
-  const handleCycleDetachedPin = async () => {
-    setDetachedPinMode(await window.electronAPI.workspaceAPI.cycleCallerPinMode());
-  };
-
-  /** ピンモードに応じたラベルを返す */
-  function getPinLabel(mode: number): string {
-    switch (mode) {
-      case 1:
-        return t('workspace.detached.pinAlwaysOnTop');
-      case 2:
-        return t('workspace.detached.unpin');
-      default:
-        return t('workspace.detached.pinStayVisible');
-    }
-  }
-
-  /** ピンモードに応じたCSSクラスを返す */
-  function getPinClassName(mode: number): string {
-    switch (mode) {
-      case 1:
-        return 'action-btn workspace-pin-btn pin-stay-visible';
-      case 2:
-        return 'action-btn workspace-pin-btn pin-always-on-top';
-      default:
-        return 'action-btn workspace-pin-btn';
-    }
-  }
-
   // 切り離しウィンドウモード: 対象グループとその子孫のみ表示
   if (detachedGroupId) {
     const descendantIds = getDescendantGroupIds(detachedGroupId, groups);
@@ -500,14 +465,7 @@ const WorkspaceApp: React.FC = () => {
           }}
         />
         <div className="detached-window-controls">
-          <button
-            className={getPinClassName(detachedPinMode)}
-            onClick={handleCycleDetachedPin}
-            title={getPinLabel(detachedPinMode)}
-            aria-label={getPinLabel(detachedPinMode)}
-          >
-            📌
-          </button>
+          <PinButton level={pinLevel} onLevelChange={setPinLevel} className="workspace-pin-btn" />
           <button
             className="action-btn workspace-close-btn"
             onClick={handleCloseDetached}
@@ -535,8 +493,8 @@ const WorkspaceApp: React.FC = () => {
         onAddGroup={() =>
           actions.handleAddGroup(displayGroups.length, undefined, activeWorkspaceId)
         }
-        isPinned={isPinned}
-        onTogglePin={handleTogglePin}
+        pinLevel={pinLevel}
+        onPinLevelChange={setPinLevel}
         onClose={handleClose}
       />
       <WorkspaceTabBar

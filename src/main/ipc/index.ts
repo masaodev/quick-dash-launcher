@@ -25,14 +25,14 @@ export function setupIPCHandlers(
   extensionsFolder: string,
   getMainWindow: () => BrowserWindow | null,
   getWindowPinMode: () => WindowPinMode,
-  cycleWindowPinMode: () => WindowPinMode,
+  setWindowPinMode: (mode: WindowPinMode) => void,
   setFirstLaunchMode: (isFirstLaunch: boolean) => void
 ) {
   setupDataHandlers(configFolder);
   setupItemHandlers();
   setupConfigHandlers(configFolder);
   setupIconHandlers(faviconsFolder, iconsFolder, extensionsFolder);
-  setupWindowHandlers(getWindowPinMode, cycleWindowPinMode);
+  setupWindowHandlers(getWindowPinMode, setWindowPinMode);
   registerEditHandlers(configFolder);
   setupSettingsHandlers(setFirstLaunchMode);
   setupSplashHandlers(getMainWindow);

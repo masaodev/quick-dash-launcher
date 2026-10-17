@@ -29,6 +29,11 @@ export const en: LocaleMessages = {
       success: 'Success',
       info: 'Information',
     },
+    pin: {
+      off: 'Not pinned. Click to keep it visible; right-click for always on top',
+      stayVisible: 'Pinned: stays visible. Click to unpin',
+      alwaysOnTop: 'Pinned: always on top. Click to unpin',
+    },
   },
   launcher: {
     search: {
@@ -68,11 +73,6 @@ export const en: LocaleMessages = {
       openContainingFolder: 'Open containing folder',
       searchHistory: 'Search history',
       switchTab: 'Switch tab',
-    },
-    pinMode: {
-      normal: 'Normal → Always on top',
-      alwaysOnTop: 'Always on top → Stay visible',
-      stayVisible: 'Stay visible → Normal',
     },
     refreshMenu: {
       title: 'Reload and fetch',
@@ -291,6 +291,10 @@ export const en: LocaleMessages = {
     ready: 'Ready',
   },
   menu: {
+    pin: {
+      stayVisible: '📌 Stay visible (keep it open)',
+      alwaysOnTop: '⬆️ Always on top',
+    },
     copyPath: '📋 Copy path',
     copyParentPath: '📋 Copy containing folder path',
     openParentFolder: '📂 Open containing folder',
@@ -1860,8 +1864,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       expandAll: 'Expand all',
       collapseAll: 'Collapse all',
       addGroup: 'Add group',
-      pin: 'Pin (always on top)',
-      unpin: 'Unpin',
       menu: 'Settings',
       openSettings: '⚙️ Settings',
       alignLeft: '⬅️ Move to left edge',
@@ -1920,9 +1922,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     restoredGroupName: '{{name}} (restored)',
     defaultWorkspaceName: 'Default',
     detached: {
-      pinStayVisible: 'Stay visible',
-      pinAlwaysOnTop: 'Always on top',
-      unpin: 'Unpin',
       close: 'Close',
       closeLabel: 'Close detached window',
     },

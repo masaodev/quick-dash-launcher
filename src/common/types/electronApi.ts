@@ -21,7 +21,7 @@ import type {
   AppSettings,
   IconProgress,
   LayoutExecutionProgress,
-  WindowPinMode,
+  PinLevel,
   SearchHistoryEntry,
   SetItem,
   AppItem,
@@ -127,9 +127,14 @@ export interface ElectronAPI {
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
   onWorkspaceChanged: (callback: () => void) => () => void;
-  // 3段階ピンモードAPI
-  getWindowPinMode: () => Promise<WindowPinMode>;
-  cycleWindowPinMode: () => Promise<WindowPinMode>;
+  /** ピン留め。呼んだウィンドウ（メイン・ワークスペース・切り離し）が対象 */
+  pin: {
+    get: () => Promise<PinLevel>;
+    /** 段階を変え、変えた後の段階を返す */
+    set: (level: PinLevel) => Promise<PinLevel>;
+    /** 📌 の右クリックメニュー（表示固定・常に最前面）を出し、閉じた後の段階を返す */
+    showMenu: () => Promise<PinLevel>;
+  };
   /** true のあいだ、メインウィンドウの Esc を隠す処理に回さずページで受ける（複数選択の解除・確認の取り消し） */
   setEscapeHandledByPage: (handled: boolean) => void;
   registerItems: (items: RegisterItem[]) => Promise<void>;
@@ -333,8 +338,6 @@ export interface ElectronAPI {
       rootGroupId: string,
       states: Record<string, boolean>
     ) => Promise<{ success: boolean }>;
-    getCallerPinMode: () => Promise<number>;
-    cycleCallerPinMode: () => Promise<number>;
   };
   // ウィンドウ検索API
   getAllWindowsAllDesktops: () => Promise<WindowInfo[]>;

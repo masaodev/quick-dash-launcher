@@ -17,7 +17,7 @@ import {
   createTray,
   getMainWindow,
   getWindowPinMode,
-  cycleWindowPinMode,
+  setWindowPinMode,
   setFirstLaunchMode,
   registerGlobalShortcut,
   showMainWindow,
@@ -212,7 +212,7 @@ app.whenReady().then(async () => {
     PathManager.getExtensionsFolder(),
     getMainWindow,
     getWindowPinMode,
-    cycleWindowPinMode,
+    setWindowPinMode,
     setFirstLaunchMode
   );
 
