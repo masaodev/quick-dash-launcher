@@ -7,7 +7,12 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { SetEntry, WindowInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
-import { autoLinkWindows, canAutoLink, matchesWindow } from '@common/utils/setWindowMatching';
+import {
+  autoLinkWindows,
+  canAutoLink,
+  matchesWindow,
+  placementFromWindow,
+} from '@common/utils/setWindowMatching';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
@@ -27,6 +32,7 @@ import { logError } from '../utils/debug';
 import '../styles/components/SetEditor.css';
 
 import WindowSelectorModal from './WindowSelectorModal';
+import PlacementMinimap from './PlacementMinimap';
 import { Button } from './ui';
 
 interface SetUpdatePositionsModalProps {
@@ -265,6 +271,7 @@ const SetUpdatePositionsModal: React.FC<SetUpdatePositionsModalProps> = ({
               {linkedIndexes.map((i) => {
                 const w = assign.get(i)!;
                 const minimizedPick = w.windowState === 'minimized';
+                const before = entries[i].placement;
                 return (
                   <div key={`l${i}`} className="set-record-row">
                     {iconOf(i)}
@@ -281,7 +288,27 @@ const SetUpdatePositionsModal: React.FC<SetUpdatePositionsModalProps> = ({
                           : t('set.update.noPlacement')}
                       </span>
                     ) : (
-                      <Place text={placeOf(w)} />
+                      <span className="set-record-place-with-map">
+                        {/* 前の位置（破線）と新しい位置を重ねた図 */}
+                        <PlacementMinimap
+                          screens={screens}
+                          placements={[
+                            ...(before ? [{ placement: before, variant: 'before' as const }] : []),
+                            { placement: placementFromWindow(w, desktopCount) },
+                          ]}
+                          size="tiny"
+                          label={placeOf(w)}
+                          caption={
+                            before
+                              ? t('set.update.mapCaption', {
+                                  before: placementText(entries[i], screens, desktopNames) ?? '',
+                                  after: placeOf(w),
+                                })
+                              : placeOf(w)
+                          }
+                        />
+                        <Place text={placeOf(w)} />
+                      </span>
                     )}
                     <select
                       className="set-record-action"

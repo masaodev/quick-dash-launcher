@@ -95,7 +95,7 @@ function contains(rect: PixelRect, px: number, py: number): boolean {
 }
 
 /** 画面を左から（同じなら上から）並べる */
-function sortScreens(screens: readonly ScreenArea[]): ScreenArea[] {
+export function sortScreens(screens: readonly ScreenArea[]): ScreenArea[] {
   return [...screens].sort((a, b) => a.bounds.x - b.bounds.x || a.bounds.y - b.bounds.y);
 }
 

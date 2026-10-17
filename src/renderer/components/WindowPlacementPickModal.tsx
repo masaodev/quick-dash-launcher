@@ -12,6 +12,7 @@ import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { windowPlacementText } from '../utils/setEditing';
 import '../styles/components/SetEditor.css';
 
+import { WindowMinimap } from './PlacementMinimap';
 import { Button } from './ui';
 
 interface WindowPlacementPickModalProps {
@@ -73,7 +74,12 @@ const WindowPlacementPickModal: React.FC<WindowPlacementPickModalProps> = ({
                   <span className="set-row-title-text">{w.title}</span>
                   <span className="set-row-details set-placement-pick-details">
                     {w.processName && <span>{w.processName}</span>}
-                    <span>{place}</span>
+                    <span className="set-sub-with-map">
+                      {w.windowState !== 'minimized' && (
+                        <WindowMinimap window={w} screens={screens} desktopCount={desktopCount} />
+                      )}
+                      {place}
+                    </span>
                   </span>
                 </span>
               </label>

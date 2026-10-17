@@ -21,6 +21,7 @@ import SetItemPickerModal from './SetItemPickerModal';
 import SetAddWindowsModal from './SetAddWindowsModal';
 import SetUpdatePositionsModal from './SetUpdatePositionsModal';
 import SetEntryDetailModal from './SetEntryDetailModal';
+import PlacementMinimap, { MinimapSvg } from './PlacementMinimap';
 import { Button } from './ui';
 
 interface SetEntriesEditorProps {
@@ -62,6 +63,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   /** ドラッグ中に、落とす先になっている行 */
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  /** マウスが乗っている行（セット全体の図で、その行の位置だけを濃くする） */
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   /** 仮想デスクトップの名前（置き場所の表示に添える） */
   const [desktopNames, setDesktopNames] = useState<Record<number, string | undefined>>({});
 
@@ -139,9 +142,29 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     setEntries(next);
   };
 
+  /** セット全体の図に描く位置（添字＝行。位置の無い行は描かれない）。番号は行の頭の番号と同じ */
+  const mapPlacements = entries.map((entry, index) => ({
+    placement: entry.placement ?? {},
+    tag: String(index + 1),
+  }));
+  const hasPlacement = entries.some((entry) => entry.placement?.x !== undefined);
+
   return (
     <div className="form-group vertical-layout set-editor">
       <label>{t('set.editor.rows')}</label>
+      {/* セット全体の図: 位置のある行を番号つきで 1 枚にまとめる */}
+      {hasPlacement && screens.length > 0 && (
+        <div className="set-editor-map">
+          <MinimapSvg
+            screens={screens}
+            placements={mapPlacements}
+            size="medium"
+            highlight={hoverIndex}
+            label={t('set.editor.mapLabel')}
+          />
+          <span className="set-muted">{t('set.editor.mapHint')}</span>
+        </div>
+      )}
       <div className="set-editor-rows">
         {entries.length === 0 ? (
           <div className="set-empty">{t('set.editor.empty')}</div>
@@ -160,6 +183,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     : ''
                 }${view.missing ? ' missing' : ''}`}
                 draggable
+                onMouseEnter={hasPlacement ? () => setHoverIndex(index) : undefined}
+                onMouseLeave={hasPlacement ? () => setHoverIndex(null) : undefined}
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move';
                   setDragIndex(index);
@@ -190,6 +215,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                 <span className="set-drag-handle" aria-hidden>
                   ⠿
                 </span>
+                {hasPlacement && <span className="set-row-number">{index + 1}</span>}
                 <span className="set-row-icon">
                   {view.icon ? <img src={view.icon} alt="" /> : (SET_KIND_ICONS[view.kind] ?? '📄')}
                 </span>
@@ -217,7 +243,18 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     )
                   )}
                 </span>
-                {place && <span className="set-row-place">📍 {place}</span>}
+                {place && entry.placement && (
+                  <span className="set-row-place set-row-place-with-map">
+                    <PlacementMinimap
+                      screens={screens}
+                      placements={[{ placement: entry.placement }]}
+                      size="tiny"
+                      label={place}
+                      caption={place}
+                    />
+                    📍 {place}
+                  </span>
+                )}
                 <span className="set-row-actions">
                   <button
                     type="button"

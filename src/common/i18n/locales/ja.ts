@@ -682,6 +682,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       empty: 'まだ何も入っていません。下のボタンでアイテムを追加します。',
       addItems: '＋ アイテムを追加',
       addWindows: '＋ ウィンドウを追加',
+      mapLabel: 'セットのウィンドウ位置の図',
+      mapHint: '数字は行の番号。行にマウスを乗せると、その行の位置が濃くなります',
       updatePositions: '📍 ウィンドウ位置を更新',
       launchMode: '開き方',
       sequential: '順番に開く',
@@ -716,6 +718,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       note: '足した行は「ウィンドウを動かすだけ」の行です（開いているときだけ動かします）。閉じていても開きたいときは、足したあとに行の詳細 ✏️ で開くもの（アイテムかパス）を足します。タイトルは全体が同じウィンドウを探します。タブの切り替えや更新でタイトルが変わるものは、行の詳細 ✏️ で一部だけにできます。',
     },
     update: {
+      mapCaption: '破線＝前の位置（{{before}}）／青＝新しい位置（{{after}}）',
       title: 'ウィンドウ位置を更新',
       description: 'いま開いているウィンドウから、このセットの行のウィンドウ位置を取り直します。',
       loading: 'ウィンドウを調べています…',

@@ -124,6 +124,36 @@
   white-space: nowrap;
 }
 
+/* 位置の言葉の前に極小の図を置く */
+.set-row-place-with-map {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* 行の番号（セット全体の図の番号と同じ） */
+.set-row-number {
+  min-width: 1.2em;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* セット全体の図（行の一覧の上） */
+.set-editor > .set-editor-map {
+  align-self: stretch;
+}
+
+.set-editor-map {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-xs) var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
 /* 行の横に添える灰色の文字（アイテムの追加の「追加済み」・タブの名前） */
 .set-row-aside {
   font-size: var(--font-size-sm);
@@ -405,6 +435,14 @@
   vertical-align: -2px;
 }
 
+/* 前後を重ねた図と、新しい位置の言葉 */
+.set-record-place-with-map {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
 .set-record-place {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -491,6 +529,17 @@
 
 .set-nowrap {
   white-space: nowrap;
+}
+
+/* 記録したウィンドウ位置の図と言葉（図が左、言葉が右。狭いときは言葉が図の右で折り返す） */
+.set-placement-with-map {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.set-placement-with-map > .set-placement-text {
+  min-width: 0;
 }
 
 /* 記録したウィンドウ位置の言葉 */
@@ -704,6 +753,24 @@
 
 .set-placement-pick-row input {
   margin: 0;
+}
+
+/* 2 段目の言葉の前に極小の図を置く（ウィンドウを追加・ウィンドウを選ぶ） */
+.set-sub-with-map {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.set-record-sub.set-sub-with-map {
+  display: flex;
+}
+
+.set-sub-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 2 段目: exe 名・今のウィンドウ位置 */
