@@ -65,7 +65,12 @@ npx playwright test -g "新規アイテムを登録できる"                   
 - **テストファイル**: `tests/e2e/specs/*.spec.ts`（機能別）
 - **フィクスチャ・ヘルパー・テンプレートの構成**: [tests/e2e/README.md](../../tests/e2e/README.md)
 - **実行**: `npm run test:e2e`（ビルド込み）
-- **GitHub Actions**: `.github/workflows/e2e.yml` が GitHub の Windows ランナー（windows-2022）で全件を流す。毎日 3:00（日本時間）と手動起動（Actions の「E2E」→ Run workflow。`spec` に spec のパスを入れるとそれだけ流す）。PR の CI（`ci.yml`）には含めない。ランナーは英語版の Windows で、画面は 1024×768、マウスのカーソルは画面の中央にある。表示言語はテンプレートの `settings.json` で決め、マウスの位置に結果が左右されないように書く。失敗したテストの画像とトレースは、実行の Artifacts（`e2e-test-results`）に 7 日残る
+- **GitHub Actions**: `.github/workflows/e2e.yml` が GitHub の Windows ランナー（windows-2022）で全件を流す。main へのマージ（docs・Markdown・`.claude/` だけの変更は除く）と手動起動（Actions の「E2E」→ Run workflow、または `gh workflow run e2e.yml --ref <ブランチ>`。`spec` に spec のパスを入れるとそれだけ流す）。PR の CI（`ci.yml`）には含めない。ランナーは英語版の Windows で、画面は 1024×768、マウスのカーソルは画面の中央にある。表示言語はテンプレートの `settings.json` で決め、マウスの位置に結果が左右されないように書く。失敗したテストの画像とトレースは、実行の Artifacts（`e2e-test-results`）に 7 日残る
+- **流し分け**: 全件は CI で流し、手元では原則流さない（手元の PC は普段使いの PC で、操作が入ると落ちることがあるため）
+  - 作業中に直した所を確かめる・画面の見た目を目で確かめる → 手元で関係する spec だけ（`npx playwright test tests/e2e/specs/<名前>.spec.ts`）か、開発用インスタンスで開く
+  - 画面や動きに関わる PR → マージ前にそのブランチで CI の全件を手動で流し、通ってからマージする（迷ったら流す）
+  - main へのマージ後 → CI が自動で全件を流す。落ちたら Artifacts の画像・トレースを見て、手元でその spec を再現して直す
+  - リリースの前 → main の最新の E2E が通っていることを確かめる（[/release-version](../../.claude/commands/git-workflow/release-version.md) の事前要件）
 - **README のデモ GIF の撮影**: `npm run docs:demo-gif`（`tests/demo-gif/` がデモデータ（5 タブ。メインに案件・アプリも含めて約 130 件。中身は `demo-content-ja.ts`、書き出しは `demo-data.ts`）で起動して操作し、ffmpeg の画面キャプチャでメインウィンドウの範囲を録画する。`scripts/make-demo-gif.mjs` がそれを `docs/images/demo-main.gif` にする。英語の README 用は `npm run docs:demo-gif:en`（環境変数 `DEMO_LANG=en`。英語の画面と `demo-content-en.ts` のデータで撮り、`docs/images/demo-main-en.gif` にする）。撮影中はウィンドウが最前面に固定されるので、その範囲に他のウィンドウを重ねない。画面下の説明文（字幕）は既定では出さず、`DEMO_CAPTIONS=1` で出す。ffmpeg が要る。通常の E2E には含めない）
 - **README の画面イメージの撮影**: `npm run docs:readme-images`（同じデモデータで起動し、README の「画面」に載せる管理画面・登録画面（単一アイテム・フォルダ取込）を `docs/images/readme-admin.png`・`readme-register-item.png`・`readme-register-dir.png` に保存する。英語の README 用は `npm run docs:readme-images:en` で、名前の末尾に `-en` を付けて保存する。画面にパスが写るので、デモ用のフォルダを `subst` で空いているドライブ（S: など）に割り当ててから撮り、終わったら外す。見比べ用の別案は `test-results/readme-images/`（英語は `readme-images-en/`）に置く。通常の E2E には含めない）
 - **画面イメージの撮影**: `npm run docs:screenshots`（`tests/screenshots/`。通常の E2E には含めない。決まりは [画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）

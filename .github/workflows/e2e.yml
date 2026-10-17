@@ -1,5 +1,7 @@
 # E2E ワークフロー（Playwright + Electron）
-# PR の CI（ci.yml）とは分け、手動起動と毎晩 1 回だけ流す（準備を含めて 1 回 12 分ほどかかるため）。
+# PR の CI（ci.yml）とは分け、main へのマージ（push）と手動起動で流す（準備を含めて 1 回 12 分ほどかかるため）。
+# 画面や動きに関わる PR は、マージ前にブランチを指定して手動で流す（gh workflow run e2e.yml --ref <ブランチ>）。
+# 続けてマージしたときは、古い実行を止めて最新のコミットだけを流す（concurrency）。
 # GitHub の Windows ランナー（windows-2022）にもデスクトップの画面（1024x768）があるので、Electron のウィンドウを開ける。
 # OS は英語版で、マウスのカーソルは画面の中央にある（テストはこの 2 つで結果が変わらないように書く）
 
@@ -12,9 +14,14 @@ on:
         description: '流す spec（空なら全件。例 tests/e2e/specs/multi-tab.spec.ts）'
         required: false
         default: ''
-  # 毎日 3:00（日本時間）。main に変化が無くても流す
-  schedule:
-    - cron: '0 18 * * *'
+  # docs・Markdown・Claude の設定だけの変更では流さない
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.claude/**'
 
 permissions:
   contents: read
