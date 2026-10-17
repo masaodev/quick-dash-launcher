@@ -109,6 +109,7 @@ Added English README and ...
 - すべての変更がコミット済みである（クリーンな状態）
 - リモートリポジトリへのプッシュ権限がある
 - GitHub Actionsが正しく設定されている
+- main の最新のコードの変更で E2E（`e2e.yml`）が通っている（`gh run list --workflow e2e.yml --branch main --limit 1`。docs だけの変更では流れないので、最新の実行が成功していればよい。失敗・実行中ならリリースを止めてユーザーに伝える）
 
 ## 処理フロー
 
