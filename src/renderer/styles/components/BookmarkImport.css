@@ -290,6 +290,27 @@
   background-color: var(--bg-section);
 }
 
+.bookmark-import-sync-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-lg);
+}
+
+/* 右端の「ブックマーク自動取込（ルール N 件）」 */
+.bookmark-import-sync-link {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .bookmark-import-sync-toggle {
   display: flex;
   align-items: center;

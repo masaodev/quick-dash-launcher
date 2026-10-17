@@ -778,6 +778,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           onSaveAsRule={handleBookmarkSaveAsRule}
           onCancel={() => setIsBookmarkModalOpen(false)}
           onOpenAutoImportSettings={onOpenAutoImportSettings}
+          autoImportRuleCount={autoImportSettings.rules.length}
         />
       )}
 

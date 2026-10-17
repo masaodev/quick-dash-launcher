@@ -65,6 +65,8 @@ interface BookmarkImportModalProps {
   onCancel: () => void;
   /** 設定「ブックマーク自動取込」を開く（既存ルールの確認用。モーダルは閉じる） */
   onOpenAutoImportSettings?: () => void;
+  /** 設定にある自動取込のルールの数（帯のリンクに出す） */
+  autoImportRuleCount: number;
 }
 
 function BookmarkImportModal({
@@ -76,6 +78,7 @@ function BookmarkImportModal({
   onSaveAsRule,
   onCancel,
   onOpenAutoImportSettings,
+  autoImportRuleCount,
 }: BookmarkImportModalProps): ReactElement {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -514,21 +517,7 @@ function BookmarkImportModal({
           </div>
         </div>
 
-        <div className="import-hint import-hint-with-action">
-          <span>{t('bookmarkImportModal.hint')}</span>
-          {onOpenAutoImportSettings && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                onCancel();
-                onOpenAutoImportSettings();
-              }}
-            >
-              {t('bookmarkRule.openAutoImportSettings')}
-            </Button>
-          )}
-        </div>
+        <div className="import-hint">{t('bookmarkImportModal.hint')}</div>
 
         <ImportDestinationBand dest={dest} />
 
@@ -658,15 +647,32 @@ function BookmarkImportModal({
 
         {/* 自動取込の帯（フッターの上。重複時の処理と同じ置き方） */}
         <div className={`bookmark-import-sync${asRule ? ' on' : ''}`}>
-          <label className="bookmark-import-sync-toggle">
-            <input
-              type="checkbox"
-              checked={asRule}
-              disabled={!canSync}
-              onChange={(e) => setAsRule(e.target.checked)}
-            />
-            {syncLabel}
-          </label>
+          <div className="bookmark-import-sync-row">
+            <label className="bookmark-import-sync-toggle">
+              <input
+                type="checkbox"
+                checked={asRule}
+                disabled={!canSync}
+                onChange={(e) => setAsRule(e.target.checked)}
+              />
+              {syncLabel}
+            </label>
+            {/* 設定の「ブックマーク自動取込」へ。ルールが 0 件でも出し、自動取込があることに気づけるようにする */}
+            {onOpenAutoImportSettings && (
+              <button
+                type="button"
+                className="bookmark-import-sync-link"
+                onClick={() => {
+                  onCancel();
+                  onOpenAutoImportSettings();
+                }}
+              >
+                {autoImportRuleCount > 0
+                  ? t('bookmarkImportModal.autoImportLink', { count: autoImportRuleCount })
+                  : t('bookmarkImportModal.autoImportLinkNone')}
+              </button>
+            )}
+          </div>
           {asRule ? (
             <>
               <label className="bookmark-import-rule-name">

@@ -1144,7 +1144,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     newTitle: 'Add a bookmark import rule',
     editTitle: 'Edit bookmark import rule',
     hint: 'Bookmarks that match are imported into the destination again at startup and other times, so changes made in the browser are reflected.',
-    openAutoImportSettings: 'Open auto-import settings',
     name: 'Rule name:',
     namePlaceholder: '{{name}} (named from the conditions if left blank)',
     source: 'Source:',
@@ -1247,9 +1246,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       "You can't set up auto-import while searching. Clear the search and select whole folders",
     syncPartial:
       "Some bookmarks are selected one by one, so they can't be auto-imported. Select whole folders",
+    autoImportLink_one: 'Bookmark auto-import ({{count}} rule)',
+    autoImportLink_other: 'Bookmark auto-import ({{count}} rules)',
+    autoImportLinkNone: 'Bookmark auto-import (no rules yet)',
     ruleName: 'Rule name',
     ruleSummary:
-      'Rule to save: {{source}} · {{folders}}. You can add name filters or display names later in Settings > Bookmark auto-import',
+      'Rule to save: {{source}} · {{folders}}. You can add name filters or display names later in Bookmark auto-import',
     ruleAllFolders: 'All folders (including ones added later)',
     ruleFolders: '{{folders}} (with subfolders)',
     allBookmarksRuleName: 'All bookmarks',

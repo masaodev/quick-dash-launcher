@@ -302,11 +302,15 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
     await stubBrowsers(electronApp);
 
     try {
-      await test.step('取込画面の案内から設定の該当カテゴリを開く（取込画面は閉じる）', async () => {
+      await test.step('取込画面の自動取込の帯のリンクから設定の該当カテゴリを開く（取込画面は閉じる）', async () => {
         await chooseImportMenu(adminWindow, 'ブラウザのブックマークを取り込む');
         const modal = adminWindow.locator(IMPORT_MODAL);
         await modal.waitFor({ state: 'visible', timeout: 10000 });
-        await modal.locator('.import-hint .btn', { hasText: '自動取込の設定を開く' }).click();
+        // 帯の右端のリンク。ルールが無くても出す
+        await expect(modal.locator('.bookmark-import-sync-link')).toHaveText(
+          'ブックマーク自動取込（ルールはまだありません）'
+        );
+        await modal.locator('.bookmark-import-sync-link').click();
         await expect(
           adminWindow.locator('.menu-item.active', { hasText: 'ブックマーク自動取込' })
         ).toBeVisible({ timeout: 5000 });
