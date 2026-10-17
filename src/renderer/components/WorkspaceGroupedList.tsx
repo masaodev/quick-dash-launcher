@@ -634,12 +634,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         onMoveItemToGroup(itemId, groupId);
       }
     } catch (error) {
+      // 失敗は本体側がエラーのトーストで知らせる
       logError('ワークスペースへのアイテム追加に失敗:', error);
-      await window.electronAPI.showToastWindow({
-        displayName: t('workspace.title'),
-        itemType: 'workspaceAdd',
-        message: t('launcher.messages.addToWorkspaceFailed'),
-      });
     }
 
     setDraggedElement(null);
