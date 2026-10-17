@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "plc00001",
+      "type": "item",
+      "displayName": "GitHub",
+      "path": "https://github.com/"
+    },
+    {
+      "id": "plc00002",
+      "type": "item",
+      "displayName": "メモ帳",
+      "path": "notepad.exe",
+      "window": { "processName": "notepad.exe" },
+      "placement": { "x": 100, "y": 50, "width": 800, "height": 600 }
+    },
+    {
+      "id": "plc00003",
+      "type": "item",
+      "displayName": "電卓",
+      "path": "calc.exe"
+    },
+    {
+      "id": "plc00004",
+      "type": "set",
+      "displayName": "位置つきセット",
+      "entries": [
+        { "itemId": "plc00001", "placement": { "x": 0, "y": 0, "width": 640, "height": 480 } },
+        { "itemId": "plc00003" },
+        {
+          "itemId": "plc00002",
+          "placement": { "x": 200, "y": 100, "width": 700, "height": 500, "state": "maximized" }
+        }
+      ]
+    }
+  ]
+}

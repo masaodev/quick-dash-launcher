@@ -21,6 +21,7 @@ import SetItemPickerModal from './SetItemPickerModal';
 import SetAddWindowsModal from './SetAddWindowsModal';
 import SetUpdatePositionsModal from './SetUpdatePositionsModal';
 import SetEntryDetailModal from './SetEntryDetailModal';
+import PlacementMinimap, { MinimapSvg } from './PlacementMinimap';
 import { Button } from './ui';
 
 interface SetEntriesEditorProps {
@@ -62,6 +63,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   /** ドラッグ中に、落とす先になっている行 */
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  /** マウスが乗っている行（セット全体の図で、その行の位置だけを濃くする） */
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   /** 仮想デスクトップの名前（置き場所の表示に添える） */
   const [desktopNames, setDesktopNames] = useState<Record<number, string | undefined>>({});
 
@@ -139,9 +142,29 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     setEntries(next);
   };
 
+  /** セット全体の図に描く位置（添字＝行。位置の無い行は描かれない）。番号は行の頭の番号と同じ */
+  const mapPlacements = entries.map((entry, index) => ({
+    placement: entry.placement ?? {},
+    tag: String(index + 1),
+  }));
+  const hasPlacement = entries.some((entry) => entry.placement?.x !== undefined);
+
   return (
     <div className="form-group vertical-layout set-editor">
       <label>{t('set.editor.rows')}</label>
+      {/* セット全体の図: 位置のある行を番号つきで 1 枚にまとめる */}
+      {hasPlacement && screens.length > 0 && (
+        <div className="set-editor-map">
+          <MinimapSvg
+            screens={screens}
+            placements={mapPlacements}
+            size="medium"
+            highlight={hoverIndex}
+            label={t('set.editor.mapLabel')}
+          />
+          <span className="set-muted">{t('set.editor.mapHint')}</span>
+        </div>
+      )}
       <div className="set-editor-rows">
         {entries.length === 0 ? (
           <div className="set-empty">{t('set.editor.empty')}</div>
@@ -160,6 +183,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     : ''
                 }${view.missing ? ' missing' : ''}`}
                 draggable
+                onMouseEnter={hasPlacement ? () => setHoverIndex(index) : undefined}
+                onMouseLeave={hasPlacement ? () => setHoverIndex(null) : undefined}
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move';
                   setDragIndex(index);
@@ -190,6 +215,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                 <span className="set-drag-handle" aria-hidden>
                   ⠿
                 </span>
+                {hasPlacement && <span className="set-row-number">{index + 1}</span>}
                 <span className="set-row-icon">
                   {view.icon ? <img src={view.icon} alt="" /> : (SET_KIND_ICONS[view.kind] ?? '📄')}
                 </span>
@@ -217,7 +243,25 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     )
                   )}
                 </span>
-                {place && <span className="set-row-place">📍 {place}</span>}
+                {/* 図と位置の言葉は決まった幅の列に置き、行ごとに縦をそろえる（位置の無い行は空けておく） */}
+                {hasPlacement && (
+                  <>
+                    <span className="set-row-map">
+                      {place && entry.placement && (
+                        <PlacementMinimap
+                          screens={screens}
+                          placements={[{ placement: entry.placement }]}
+                          size="tiny"
+                          label={place}
+                          caption={place}
+                        />
+                      )}
+                    </span>
+                    <span className="set-row-place set-row-place-column" title={place}>
+                      {place && `📍 ${place}`}
+                    </span>
+                  </>
+                )}
                 <span className="set-row-actions">
                   <button
                     type="button"
@@ -296,14 +340,29 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         </span>
       </div>
       {error && <span className="error-message">{error}</span>}
-      <small>
+      {/* 開き方の説明は「開き方」の真下に右寄せで小さく */}
+      <span className="set-launch-hint">
         {t(launchMode === 'parallel' ? 'set.editor.hintParallel' : 'set.editor.hint')}
+      </span>
+      {/* ボタンの使い方と、動かすだけの行の注意は 1 行に 1 つ */}
+      <ul className="set-editor-tips">
+        <li>
+          <b>{t('set.editor.addWindows')}</b>: {t('set.editor.tipAddWindows')}
+        </li>
+        <li>
+          <b>{t('set.editor.updatePositions')}</b>: {t('set.editor.tipUpdatePositions')}
+        </li>
         {/* 動かすだけの行があるときだけ、閉じていると動かないことと、開くものの足し方を添える */}
         {entries.some((entry) => {
           const view = describeSetEntry(entry, catalogById);
           return view.moveOnly && !view.missing;
-        }) && t('set.editor.moveOnlyHint')}
-      </small>
+        }) && (
+          <li>
+            <span className="set-chip set-chip-open">{t('set.editor.moveOnly')}</span>{' '}
+            {t('set.editor.moveOnlyHint')}
+          </li>
+        )}
+      </ul>
 
       <SetItemPickerModal
         isOpen={pickerOpen}

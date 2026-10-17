@@ -124,6 +124,69 @@
   white-space: nowrap;
 }
 
+/* 行の極小の図の列（図の幅に固定。位置の無い行も同じ幅を空ける） */
+.set-row-map {
+  display: flex;
+  flex: 0 0 56px;
+}
+
+/* 位置の言葉の列（幅を決めて左寄せ。長い言葉は省略し、全文はカーソルを当てると出る） */
+.set-row-place-column {
+  flex: 0 0 230px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 行の番号（セット全体の図の番号と同じ） */
+.set-row-number {
+  min-width: 1.2em;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 開き方の説明（「開き方」の真下に右寄せ） */
+.set-editor > .set-launch-hint {
+  align-self: flex-end;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* ボタンの使い方と動かすだけの行の注意（1 行に 1 つ） */
+.set-editor > .set-editor-tips {
+  align-self: stretch;
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.set-editor-tips b {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.set-editor-tips .set-chip {
+  margin-left: 0;
+  vertical-align: 0;
+}
+
+/* セット全体の図（行の一覧の上） */
+.set-editor > .set-editor-map {
+  align-self: stretch;
+}
+
+.set-editor-map {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-xs) var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
 /* 行の横に添える灰色の文字（アイテムの追加の「追加済み」・タブの名前） */
 .set-row-aside {
   font-size: var(--font-size-sm);
@@ -405,6 +468,14 @@
   vertical-align: -2px;
 }
 
+/* 前後を重ねた図と、新しい位置の言葉 */
+.set-record-place-with-map {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
 .set-record-place {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -491,6 +562,17 @@
 
 .set-nowrap {
   white-space: nowrap;
+}
+
+/* 記録したウィンドウ位置の図と言葉（図が左、言葉が右。狭いときは言葉が図の右で折り返す） */
+.set-placement-with-map {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.set-placement-with-map > .set-placement-text {
+  min-width: 0;
 }
 
 /* 記録したウィンドウ位置の言葉 */
@@ -704,6 +786,24 @@
 
 .set-placement-pick-row input {
   margin: 0;
+}
+
+/* 2 段目の言葉の前に極小の図を置く（ウィンドウを追加・ウィンドウを選ぶ） */
+.set-sub-with-map {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.set-record-sub.set-sub-with-map {
+  display: flex;
+}
+
+.set-sub-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 2 段目: exe 名・今のウィンドウ位置 */

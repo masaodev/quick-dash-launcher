@@ -1,0 +1,100 @@
+/* ウィンドウ位置の図（ミニマップ）
+ *
+ * 画面＝薄い灰色の枠、ウィンドウが乗っている画面＝薄い青、タスクバーなど作業領域の外＝濃いめの灰色、
+ * 記録した位置＝青の半透明（上辺を濃くしてタイトルバーの向きを示す）、前の位置＝灰色の破線、
+ * 今は無い画面の位置＝赤の破線
+ */
+
+.placement-minimap {
+  display: block;
+  flex-shrink: 0;
+}
+
+.placement-minimap-trigger {
+  display: inline-flex;
+  flex-shrink: 0;
+  cursor: help;
+  border-radius: var(--border-radius-sm);
+}
+
+.placement-minimap-trigger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.pm-screen {
+  fill: var(--color-gray-200);
+  stroke: var(--color-gray-600);
+  stroke-width: 1;
+}
+
+.pm-screen-active {
+  fill: var(--bg-info-light);
+}
+
+.pm-outside {
+  fill: var(--color-gray-400);
+}
+
+.pm-screen-number {
+  fill: var(--color-gray-700);
+  font-weight: var(--font-weight-semibold);
+}
+
+.pm-window {
+  fill: var(--color-primary);
+  fill-opacity: 0.28;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+}
+
+.placement-minimap-tiny .pm-window {
+  stroke-width: 1;
+}
+
+.pm-titlebar {
+  fill: var(--color-primary);
+}
+
+.pm-window-before {
+  fill: none;
+  fill-opacity: 1;
+  stroke: var(--color-gray-700);
+  stroke-dasharray: 4 3;
+}
+
+.pm-window-offscreen {
+  fill: var(--bg-danger-light);
+  fill-opacity: 1;
+  stroke: var(--color-danger);
+  stroke-dasharray: 4 3;
+}
+
+.pm-window-number {
+  fill: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.pm-dim {
+  opacity: 0.25;
+}
+
+/* マウスを乗せたときの大きな図（モーダルより手前に出す） */
+.placement-minimap-popover {
+  position: fixed;
+  z-index: var(--z-popover);
+  padding: var(--spacing-sm);
+  background-color: var(--bg-app);
+  border: var(--border-light);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+
+.placement-minimap-caption {
+  max-width: 420px;
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}

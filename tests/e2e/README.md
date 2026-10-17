@@ -22,6 +22,7 @@ tests/e2e/
 │   ├── with-tabs/       # タブ機能テスト用
 │   ├── with-multi-file-tabs/  # 複数ファイルのタブ用
 │   ├── with-groups/     # セットのテスト用（旧形式のグループのまま置き、読み込み時のセットへの変換も確かめる）
+│   ├── with-set-placements/  # ウィンドウ位置の図のテスト用（ウィンドウ位置を持つ単一アイテムとセット）
 │   ├── with-shortcuts/  # ショートカット用
 │   ├── with-workspace-v1/  # ワークスペース移行テスト用
 │   ├── with-backup/     # バックアップ機能テスト用

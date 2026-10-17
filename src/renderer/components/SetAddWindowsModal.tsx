@@ -24,6 +24,7 @@ import { logError } from '../utils/debug';
 import '../styles/components/WindowSelectorModal.css';
 import '../styles/components/SetEditor.css';
 
+import { WindowMinimap } from './PlacementMinimap';
 import { Button } from './ui';
 
 interface SetAddWindowsModalProps {
@@ -288,10 +289,18 @@ const SetAddWindowsModal: React.FC<SetAddWindowsModalProps> = ({
                     <span className="set-record-main" title={w.title}>
                       {w.title || windowProcessLabel(w)}
                     </span>
-                    <span className="set-record-sub" title={w.executablePath}>
-                      {addedAs !== undefined
-                        ? t('set.addWindows.added', { name: addedAs })
-                        : subLine(w)}
+                    <span className="set-record-sub set-sub-with-map" title={w.executablePath}>
+                      {/* 図の場所は図が無い行（最小化中・追加済み）でも空け、言葉の頭をそろえる */}
+                      <span className="set-row-map">
+                        {addedAs === undefined && w.windowState !== 'minimized' && (
+                          <WindowMinimap window={w} screens={screens} desktopCount={desktopCount} />
+                        )}
+                      </span>
+                      <span className="set-sub-text">
+                        {addedAs !== undefined
+                          ? t('set.addWindows.added', { name: addedAs })
+                          : subLine(w)}
+                      </span>
                     </span>
                     {w.isElevated && addedAs === undefined && (
                       <span className="set-note">{t('set.update.elevatedNote')}</span>

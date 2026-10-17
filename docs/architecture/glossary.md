@@ -65,6 +65,7 @@
 | 開くもの | what to open | 参照先 | 行が開くもの。登録済みのアイテムか、セットに書いたパス | `itemId`・`open` |
 | 対象ウィンドウ | target window | 動かすウィンドウ、見つけ方、window to move | 行が使うウィンドウ。exe 名とウィンドウタイトルで探し、ウィンドウ位置へ動かす | `window` |
 | ウィンドウ位置 | window position | 置き場所 | 行のウィンドウを置く場所と大きさ・仮想デスクトップ（旧称: 位置） | `placement` |
+| ウィンドウ位置の図 | window position map | ミニマップ | 画面の並びを縮めた図に、ウィンドウ位置を重ねたもの | `PlacementMinimap`、`computeMinimapLayout` |
 | ウィンドウを追加 | add windows | 行として追加 | 開いているウィンドウを選んで、今のウィンドウ位置を持つ動かすだけの行としてセットに足すこと | `SetAddWindowsModal` |
 | ウィンドウ位置を更新 | update window positions | 今の位置を記録、記録し直す | 開いているウィンドウから、セットの今ある行のウィンドウ位置を取り直すこと（行は足さない。旧称: 位置を更新） | `SetUpdatePositionsModal`、`rerecordSetPositions` |
 | 動かすだけ | move only | 並べるだけ | 何も開かず、既にあるウィンドウを動かすだけの行 | — |

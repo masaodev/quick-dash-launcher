@@ -677,6 +677,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       empty: 'Nothing here yet. Add items with the button below.',
       addItems: '+ Add items',
       addWindows: '+ Add windows',
+      mapLabel: 'Map of the window positions in this set',
+      mapHint: 'Numbers are row numbers. Hover a row to highlight its position.',
       updatePositions: '📍 Update window positions',
       launchMode: 'How to open',
       sequential: 'One after another',
@@ -688,11 +690,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       remove: 'Remove row',
       detail: 'Row details',
       entriesRequired: 'Add at least one row to the set',
-      hint: 'Rows open from the top. To turn open windows into rows, press "Add windows". After rearranging the windows, press "Update window positions".',
-      hintParallel:
-        'All rows open at once. To turn open windows into rows, press "Add windows". After rearranging the windows, press "Update window positions".',
-      moveOnlyHint:
-        '"Moves a window only" rows move the window only while it is open (add something to open in Row details ✏️).',
+      hint: 'Rows open from the top',
+      hintParallel: 'All rows open at once',
+      tipAddWindows: 'Turns open windows into rows, with their current positions',
+      tipUpdatePositions:
+        'After rearranging the windows, press this to update the rows to their current positions',
+      moveOnlyHint: 'rows move the window only while it is open (add something to open with ✏️)',
     },
     addWindows: {
       title: 'Add windows',
@@ -711,6 +714,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       note: 'Rows added here are "Moves a window only" rows: they move the window while it is open. To open it even when it is closed, add what to open (an item or a path) in Row details ✏️ afterwards. Rows look for a window with the whole title; if the title changes (switching tabs, updates), search by part of it in Row details ✏️.',
     },
     update: {
+      mapCaption: 'Dashed = previous position ({{before}}) / Blue = new position ({{after}})',
       title: 'Update window positions',
       description:
         'Takes the window positions for the rows of this set again from the open windows.',

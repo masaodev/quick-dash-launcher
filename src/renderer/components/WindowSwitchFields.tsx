@@ -18,6 +18,7 @@ import {
 import { placementText, titleParts, windowPickNotes } from '../utils/setEditing';
 import '../styles/components/SetEditor.css';
 
+import PlacementMinimap from './PlacementMinimap';
 import WindowPlacementPickModal from './WindowPlacementPickModal';
 import { Button } from './ui';
 
@@ -303,6 +304,10 @@ export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
     else if (found.length > 1) setChoices(found);
   };
 
+  /** 図に描く位置（自分の位置が無ければ、引き継ぐ位置）と、その言葉 */
+  const shownPlacement = placement ?? inheritedPlacement;
+  const shownText = placementSummary(shownPlacement, screens, desktopNames) ?? '';
+
   const desktopInput = placement && (
     <input
       id={`${idPrefix}-desktop`}
@@ -330,15 +335,23 @@ export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
       <span className="set-detail-label set-detail-label-top">{t('set.detail.recorded')}</span>
       {/* 1 行目に位置の言葉、2 行目にボタン、3 行目に短い補足（ボタンが途中で折り返さない並び） */}
       <div className="set-field-col">
-        {placement ? (
-          <span className="set-placement-text">
-            📍 {placementSummary(placement, screens, desktopNames)}
-          </span>
-        ) : inheritedPlacement ? (
-          <span className="set-placement-text set-placement-inherited">
-            {t('set.detail.inheritPlacement', {
-              place: placementSummary(inheritedPlacement, screens, desktopNames) ?? '',
-            })}
+        {shownPlacement ? (
+          // 言葉の左に図。図にマウスを乗せると大きな図が出る
+          <span className="set-placement-with-map">
+            <PlacementMinimap
+              screens={screens}
+              placements={[{ placement: shownPlacement }]}
+              size="small"
+              label={shownText}
+              caption={shownText}
+            />
+            {placement ? (
+              <span className="set-placement-text">📍 {shownText}</span>
+            ) : (
+              <span className="set-placement-text set-placement-inherited">
+                {t('set.detail.inheritPlacement', { place: shownText })}
+              </span>
+            )}
           </span>
         ) : (
           <span className="set-placement-text">{t('set.detail.noPlacement')}</span>
