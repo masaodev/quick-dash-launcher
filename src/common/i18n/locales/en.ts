@@ -96,6 +96,10 @@ export const en: LocaleMessages = {
       emptyTab: 'This tab has no items yet',
       add: '📄 Add item…',
     },
+    workspaceButton: {
+      open: 'Open the workspace (Ctrl+W)',
+      close: 'Close the workspace (Ctrl+W)',
+    },
     settingsMenu: {
       title: 'Settings',
       settings: '⚙️ Settings',

@@ -105,6 +105,9 @@ const electronAPI: ElectronAPI = {
   onDataChanged: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_DATA_CHANGED, callback),
   onSettingsChanged: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_SETTINGS_CHANGED, callback),
+  isWorkspaceOpen: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_IS_OPEN),
+  onWorkspaceOpenChanged: (callback) =>
+    createEventListener<boolean>(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, callback),
   onWorkspaceChanged: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.WORKSPACE_CHANGED, callback),
   pin: {

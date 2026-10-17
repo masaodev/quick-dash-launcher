@@ -98,6 +98,10 @@ export const ja = {
       emptyTab: 'このタブにはまだアイテムがありません',
       add: '📄 アイテムを追加…',
     },
+    workspaceButton: {
+      open: 'ワークスペースを開く（Ctrl+W）',
+      close: 'ワークスペースを閉じる（Ctrl+W）',
+    },
     settingsMenu: {
       title: '設定',
       settings: '⚙️ 設定',
