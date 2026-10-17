@@ -70,7 +70,7 @@ describe('loadReportService', () => {
 
     const toast = formatLoadReportToast(report);
     expect(toast).toContain('外部編集された');
-    expect(toast).toContain('5 件読込');
+    expect(toast).toContain('5 件読み込み');
     expect(toast).toContain('2 件スキップ');
     expect(toast).toContain('1 件に ID を採番');
   });

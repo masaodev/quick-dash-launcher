@@ -159,7 +159,7 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     await nameInput.fill('編集したメモ');
     await Promise.all([
       editor.waitForEvent('close', { timeout: 10000 }),
-      editor.locator('.modal-actions button', { hasText: '更新' }).click(),
+      editor.locator('.modal-actions button', { hasText: '保存' }).click(),
     ]);
 
     let after:

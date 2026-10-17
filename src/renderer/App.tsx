@@ -780,7 +780,8 @@ function App(): React.ReactElement {
           </span>
           <span>
             <strong>Enter</strong>:{t('launcher.closeConfirm.close')}
-            {'\u3000'}
+          </span>
+          <span>
             <strong>Esc</strong>:{t('launcher.closeConfirm.cancel')}
           </span>
         </div>

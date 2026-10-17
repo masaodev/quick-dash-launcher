@@ -144,7 +144,7 @@ describe('tooltipTextGenerator', () => {
       expect(result).not.toContain('行番号:');
     });
 
-    it('フォルダ取込展開アイテムの場合、展開元IDが表示される', () => {
+    it('フォルダ取込展開アイテムの場合、取込元 ID が表示される', () => {
       const item: LauncherItem = {
         displayName: 'test.exe',
         path: 'C:\\folder\\test.exe',
@@ -158,7 +158,7 @@ describe('tooltipTextGenerator', () => {
 
       const result = getTooltipText(item);
 
-      expect(result).toContain('展開元ID: dir-abc1');
+      expect(result).toContain('取込元 ID: dir-abc1');
       expect(result).toContain('取込元: C:\\folder');
       expect(result).toContain('設定: 深さ: 2、種類: ファイルのみ、条件: *.pdf');
       // 個別IDフィールドは持たないことを確認（展開元IDとは異なる）

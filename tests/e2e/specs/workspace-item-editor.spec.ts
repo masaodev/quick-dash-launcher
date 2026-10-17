@@ -101,7 +101,7 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
       await nameInput.fill('編集後');
       await Promise.all([
         editor.waitForEvent('close', { timeout: 10000 }),
-        editor.locator('.modal-actions button', { hasText: '更新' }).click(),
+        editor.locator('.modal-actions button', { hasText: '保存' }).click(),
       ]);
       await expect(
         workspaceWindow.locator('.workspace-item-card', { hasText: '編集後' })

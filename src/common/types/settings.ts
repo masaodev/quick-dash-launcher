@@ -9,7 +9,7 @@ import { BookmarkAutoImportSettings } from './bookmarkAutoImport';
  */
 export type WindowPinMode =
   | 'normal' // 通常モード: フォーカスが外れたら非表示、最上面ではない
-  | 'alwaysOnTop' // 常に最上面モード: 常に最上面に表示、フォーカスが外れても非表示にならない
+  | 'alwaysOnTop' // 常に最前面モード: 常に最前面に表示、フォーカスが外れても非表示にならない
   | 'stayVisible'; // 表示固定モード: 最上面ではないが、フォーカスが外れても非表示にならない
 
 /**

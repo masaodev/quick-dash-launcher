@@ -120,7 +120,7 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
         .first()
         .fill('空のセット');
       await utils.registerPage
-        .locator('.register-modal .modal-actions button:is(:has-text("登録"), :has-text("更新"))')
+        .locator('.register-modal .modal-actions button:is(:has-text("登録"), :has-text("保存"))')
         .first()
         .click();
       expect(await utils.isRegisterModalVisible()).toBe(true);
@@ -212,7 +212,7 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
           .first()
           .fill('開発環境スタート改');
         const updateButton = detailWindow
-          .locator('.register-modal .modal-actions button:is(:has-text("登録"), :has-text("更新"))')
+          .locator('.register-modal .modal-actions button:is(:has-text("登録"), :has-text("保存"))')
           .first();
         await adminUtils.closeRegisterModalBy(() => updateButton.click());
 

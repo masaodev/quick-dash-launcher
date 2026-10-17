@@ -114,7 +114,7 @@ export class TestUtils {
   }
 
   /**
-   * F5 でデータ再読込を要求する
+   * F5 でデータの再読み込みを要求する
    *
    * F5 は React の onKeyDown（.app / 検索入力）で処理されるため、フォーカスが外れていると
    * キー入力が捨てられる。検索入力にフォーカスを戻してから押す
@@ -382,7 +382,7 @@ export class TestUtils {
         predicate: async (window) => {
           // タイトルは表示言語で変わるので、ページの URL でも見分ける
           const title = await window.title();
-          return window.url().includes('admin.html') || title.includes('設定・管理');
+          return window.url().includes('admin.html') || title.includes('管理ウィンドウ');
         },
         timeout: 10000,
       }),

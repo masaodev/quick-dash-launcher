@@ -78,7 +78,7 @@ body {
   background: var(--color-gray-600);
 }
 
-/* ウィンドウ検索: 2 つ以上を閉じる前の確認の帯（一覧の下。Enter で閉じる・Esc でやめる） */
+/* ウィンドウ検索: 2 つ以上を閉じる前の確認の帯（一覧の下。Enter で閉じる・Esc でキャンセル。項目の間は gap で空ける） */
 .window-close-confirm {
   flex-shrink: 0;
   display: flex;

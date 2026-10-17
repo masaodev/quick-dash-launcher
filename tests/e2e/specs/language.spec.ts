@@ -29,14 +29,14 @@ test.describe('QuickDashLauncher - 表示言語', () => {
 
     await test.step('E2E のひな形は日本語で始まる', async () => {
       await utils.waitForPageLoad();
-      await expect(searchBox).toHaveAttribute('placeholder', 'アイテムを検索...');
+      await expect(searchBox).toHaveAttribute('placeholder', 'アイテムを検索…');
       await expect(mainWindow.locator('html')).toHaveAttribute('lang', 'ja');
     });
 
     await test.step('settings.json を English にして F5 すると英語になる', async () => {
       configHelper.updateSettings({ language: 'en' });
       await utils.reloadWithF5();
-      await expect(searchBox).toHaveAttribute('placeholder', 'Search items...');
+      await expect(searchBox).toHaveAttribute('placeholder', 'Search items…');
       await expect(mainWindow.locator('.search-mode-label')).toHaveText('🔍 Normal search');
       await expect(mainWindow.locator('html')).toHaveAttribute('lang', 'en');
       // メインウィンドウの他の文言（ヒント行）も英語になる
@@ -78,11 +78,11 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       await expect(adminWindow.locator('.settings-menu .menu-item').first()).toHaveText(
         '⚙️ 基本設定'
       );
-      await expect(searchBox).toHaveAttribute('placeholder', 'アイテムを検索...');
+      await expect(searchBox).toHaveAttribute('placeholder', 'アイテムを検索…');
       const workspaceWindow = await getWorkspaceWindow(electronApp);
       await expect(workspaceWindow.locator('.workspace-control-btn').first()).toHaveAttribute(
         'title',
-        'フィルタ'
+        '絞り込み'
       );
       expect(configHelper.readSettings().language).toBe('ja');
     });

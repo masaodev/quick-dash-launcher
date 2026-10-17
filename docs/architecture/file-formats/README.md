@@ -82,8 +82,8 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
 - **バックアップ対象**: `datafiles/data*.json`、`settings.json`、`workspace.json`、`workspace-archive.json`、`workspace-ui-state.json`、（旧形式の `workspace-detached.json` が残っていれば）それも、（設定により）`clipboard-data/*.json`
 - **変更検知トリガー**: `datafiles/data*.json`・`settings.json`・`workspace.json`・`workspace-archive.json`の変更で判定
 - **作成タイミング**: 起動時に1日1回（ローカル時刻の日付で判定）、変更がある場合のみ（`backupEnabled` が無効なら作らない）
-- **保持件数**: 設定可能（`backupRetention`、デフォルト値は設定ファイルを参照）。超えた古いものから消す。`_pre-external` と、`_pre-set-migration`・`_pre-window-migration` それぞれの新しい 2 つは数えない（消さない）
-- **リストア前自動バックアップ**: リストア実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
+- **保持件数**: 設定可能（`backupRetention`、既定値は設定ファイルを参照）。超えた古いものから消す。`_pre-external` と、`_pre-set-migration`・`_pre-window-migration` それぞれの新しい 2 つは数えない（消さない）
+- **復元前の自動バックアップ**: 復元の実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
 - **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
 - **セット変換前スナップショット**: データファイル・ワークスペースファイルの旧グループ・旧ウィンドウ配置をセットに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-set-migration/` を作成（`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つ（データファイル用とワークスペース用）は前の版に戻すときの拠り所なので `backupRetention` で数えずに残し、3 つ目より古いものは通常のスナップショットと一緒に数える（`src/main/services/backupService.ts` の `cleanupOldSnapshots`）
