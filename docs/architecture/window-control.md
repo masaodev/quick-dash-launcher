@@ -388,7 +388,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 | `src/main/ipc/workspaceHandlers.ts` | ワークスペースアイテム起動のエントリーポイント |
 | `src/main/services/launch/itemOpener.ts` | 単一アイテムを開く処理（上の 2 つが共用。`openSingleItem()`） |
 | `src/main/utils/windowActivator.ts` | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
-| `src/main/utils/itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 |
+| `src/main/utils/itemLauncher.ts` | URL/ファイル/フォルダ/アプリ/カスタムURI/クリップボードの起動処理を統一 |
 | `src/main/utils/windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 |
 | `src/main/utils/nativeWindowControl.ts` | ネイティブWindows API経由のウィンドウ制御 |
 
@@ -412,7 +412,8 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 3. **itemLauncher.ts**
    - アイテムタイプに応じた起動処理を統一
-   - URL、ファイル、アプリ、カスタムURIをサポート
+   - URL、ファイル、フォルダ、アプリ、カスタムURI、クリップボード（書き戻し）をサポート
+   - `launchItem()` は失敗しても例外を投げず、ログに残して `LaunchResult` を返す。利用者への通知は呼び出し側（`notifyLaunchFailure()`、`itemOpener.ts`）が行う
    - コマンドインジェクション対策を実装
 
 4. **windowMatcher.ts**
@@ -440,8 +441,8 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **使用例:**
 
-- デスクトップ2にウィンドウを移動: `{ "title": "Visual Studio Code", "virtualDesktopNumber": 2 }`
-- デスクトップ3に移動し、位置・サイズも調整: `{ "title": "Google Chrome", "virtualDesktopNumber": 3, "x": 100, "y": 100, "width": 1600, "height": 900 }`
+- デスクトップ2にウィンドウを移動: `"window": { "title": "Visual Studio Code" }, "placement": { "virtualDesktopNumber": 2 }`
+- デスクトップ3に移動し、位置・サイズも調整: `"window": { "title": "Google Chrome" }, "placement": { "x": 100, "y": 100, "width": 1600, "height": 900, "virtualDesktopNumber": 3 }`
 
 **技術実装:**
 
@@ -472,8 +473,8 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **動作仕様:**
 
-- `activateWindow`フィールドで制御（省略時は`true`）
-- `true`: ウィンドウをアクティブ化（前面に表示）【既定】
+- `activateWindow`フィールドで制御（省略時は、単一アイテムでは`true`、セットの行では`false`）
+- `true`: ウィンドウをアクティブ化（前面に表示）【単一アイテムの既定】
 - `false`: 位置・サイズ調整や仮想デスクトップ移動のみ実行、アクティブ化しない
 
 **ユースケース:**
@@ -484,8 +485,8 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **使用例:**
 
-- 位置・サイズ調整のみ実行（アクティブ化しない）: `{ "title": "Slack", "x": 960, "y": 0, "width": 960, "height": 1080, "activateWindow": false }`
-- 仮想デスクトップ移動のみ実行（アクティブ化しない）: `{ "title": "Teams", "virtualDesktopNumber": 2, "activateWindow": false }`
+- 位置・サイズ調整のみ実行（アクティブ化しない）: `"window": { "title": "Slack" }, "placement": { "x": 960, "y": 0, "width": 960, "height": 1080 }, "activateWindow": false`
+- 仮想デスクトップ移動のみ実行（アクティブ化しない）: `"window": { "title": "Teams" }, "placement": { "virtualDesktopNumber": 2 }, "activateWindow": false`
 
 ### システムウィンドウの除外
 
@@ -507,7 +508,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **単一アイテムのウィンドウ設定:**
 
-CSV 形式（`data*.txt`）では 5 番目の列にウィンドウタイトルの文字列か JSON を書いていた。v0.6.1 で CSV を廃止し、`windowConfig` オブジェクトだけを読むようにした（文字列は受け付けない）。v0.8.0-beta.11 の後、セットの行と同じキー（`window`・`placement` など）に変え、`windowConfig` は読み込み時に 1 回だけ変換する（[データファイル形式 3.1.5.6](file-formats/data-format.md#3156-旧形式windowconfigからの変換)。検証は `validateJsonLauncherItem`、`src/common/utils/jsonParser.ts`）。
+CSV 形式（`data*.txt`）では 5 番目の列にウィンドウタイトルの文字列か JSON を書いていた。v0.6.1 で CSV を廃止し、`windowConfig` オブジェクトだけを読むようにした（文字列は受け付けない）。v0.8.0-beta.12 の後、セットの行と同じキー（`window`・`placement` など）に変え、`windowConfig` は読み込み時に 1 回だけ変換する（[データファイル形式 3.1.5.6](file-formats/data-format.md#3156-旧形式windowconfigからの変換)。検証は `validateJsonLauncherItem`、`src/common/utils/jsonParser.ts`）。
 
 **ウィンドウ操作アイテム:**
 

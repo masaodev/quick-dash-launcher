@@ -3,7 +3,6 @@
  *
  * 中身はセットの行の詳細と同じ部品（対象ウィンドウ・ウィンドウ位置・開くときの動き）。
  * 違いは、開くものの枠が無い（上のパスが開くもの）・説明文の主語・前面に出すの既定が「出す」、の 3 つ。
- * 画面仕様: docs/screens/register-modal.md#単一アイテムのウィンドウ切り替え
  */
 import React, { useId, useState } from 'react';
 import { createPortal } from 'react-dom';

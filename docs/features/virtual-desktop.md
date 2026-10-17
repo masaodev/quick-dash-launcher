@@ -37,7 +37,7 @@ Windows 10 以降で、Windows が仮想デスクトップの情報を記録し�
 
 移す先のデスクトップ番号を指定していないアイテムで、既に開いているウィンドウを前に出すときは、ウィンドウが別のデスクトップにあればそのデスクトップへ切り替える（そのままでは見えないため）。番号を指定しているときは、ウィンドウをそのデスクトップへ移し、今のデスクトップは切り替えない。セットの実行中は切り替えない。
 
-種別ごとの説明は [アイテムの種別](./item-categories.md)、入力欄は [登録画面の画面仕様（ウィンドウ切り替え・ウィンドウ位置）](../screens/register-modal.md#55-ウィンドウ切り替えウィンドウ位置を入力)、データの形式は [ウィンドウ切り替え](../architecture/file-formats/data-format.md#315-ウィンドウ切り替えitemwindowswitch)、仕組みは [ウィンドウ制御 - 仮想デスクトップ移動機能](../architecture/window-control.md#仮想デスクトップ移動機能)。
+種別ごとの説明は [アイテムの種別](./item-categories.md)、データの形式は [ウィンドウ切り替え](../architecture/file-formats/data-format.md#315-ウィンドウ切り替えitemwindowswitch)、仕組みは [ウィンドウ制御 - 仮想デスクトップ移動機能](../architecture/window-control.md#仮想デスクトップ移動機能)。
 
 ## ワークスペース
 
