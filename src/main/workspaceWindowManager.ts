@@ -2,6 +2,7 @@ import { BrowserWindow, Display, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WorkspacePositionMode } from '@common/types';
+import { CURSOR_MONITOR_DISPLAY_INDEX } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
 import PathManager from './config/pathManager.js';
@@ -11,7 +12,7 @@ import {
   unPinWindow,
 } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
-import { isPositionOnScreen } from './utils/screenPosition.js';
+import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
@@ -234,8 +235,11 @@ export function getWorkspaceAlwaysOnTop(): boolean {
   return isWorkspacePinned;
 }
 
-/** 指定インデックスのディスプレイを取得（範囲外はプライマリ） */
+/** 指定インデックスのディスプレイを取得（CURSOR_MONITOR_DISPLAY_INDEX はカーソルのあるモニター、範囲外はプライマリ） */
 function getDisplayByIndex(displayIndex: number): Display {
+  if (displayIndex === CURSOR_MONITOR_DISPLAY_INDEX) {
+    return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  }
   const displays = screen.getAllDisplays();
   if (displayIndex >= 0 && displayIndex < displays.length) {
     return displays[displayIndex];
@@ -274,16 +278,21 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
       const targetDisplay = getDisplayByIndex(targetIndex);
       const workArea = targetDisplay.workArea;
       const isLeft = positionMode === 'primaryLeft' || positionMode === 'displayLeft';
-      const x = isLeft ? workArea.x : workArea.x + workArea.width - bounds.width;
-      const clampedHeight = Math.min(bounds.height, workArea.height);
-      workspaceWindow.setBounds({
+      const width = Math.min(bounds.width, workArea.width);
+      const x = isLeft ? workArea.x : workArea.x + workArea.width - width;
+      // 高さはそのディスプレイの作業領域に合わせる（高さの違うモニターを行き来しても縮んだままにしない）
+      setBoundsAcrossDisplays(workspaceWindow, {
         x,
         y: workArea.y,
-        width: bounds.width,
-        height: clampedHeight,
+        width,
+        height: workArea.height,
       });
       const side = isLeft ? '左' : '右';
-      windowLogger.info(`ワークスペースをディスプレイ${targetIndex + 1}の${side}端に配置`);
+      const target =
+        targetIndex === CURSOR_MONITOR_DISPLAY_INDEX
+          ? 'カーソルのあるディスプレイ'
+          : `ディスプレイ${targetIndex + 1}`;
+      windowLogger.info(`ワークスペースを${target}の${side}端に配置`);
       break;
     }
 

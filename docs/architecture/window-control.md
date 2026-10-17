@@ -292,6 +292,27 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 - 全仮想デスクトップに表示しているときは移さない（どのデスクトップにも出ているため）。全仮想デスクトップへの表示は、表示するたびに当て直す
 - **実装場所**: `src/main/workspaceWindowManager.ts`、`src/main/utils/virtualDesktop/windowOperations.ts`
 
+### ワークスペースウィンドウの表示位置
+
+表示するたびに `setWorkspacePosition()` で `workspacePositionMode` に従って置き直す。
+
+- **ディスプレイの左端・右端**（`displayLeft`・`displayRight`）: `workspaceTargetDisplayIndex` のディスプレイの作業領域の端に、作業領域の高さで置く。`-1`（`CURSOR_MONITOR_DISPLAY_INDEX`）はマウスカーソルのあるディスプレイ（`screen.getDisplayNearestPoint(screen.getCursorScreenPoint())`）で、メインウィンドウと一緒に出すたびにカーソル側のディスプレイへ移る
+- ⚙️ メニューの「左端に寄せる」「右端に寄せる」は、配置先をカーソルのあるディスプレイの番号にする。ただし `-1` のときは `-1` のまま残す
+- **固定位置**（`fixed`）: 最後に動かした位置
+- 拡大率の違うディスプレイへ移すとサイズがずれることがあるので、当てたサイズとずれていればもう一度当てる（`setBoundsAcrossDisplays()`、`src/main/utils/screenPosition.ts`）
+
+### 切り離しウィンドウの表示位置
+
+`detachedPositionMode` が `saved`（既定）なら、最後に置いた場所に出す。`cursorMonitor` なら、メインウィンドウと一緒に出すとき（`hideDetachedWithMainWindow` がオン）に、ピン留めしていない切り離しウィンドウを、マウスカーソルのあるディスプレイの同じ位置へ移してから出す（`showAllDetachedGroupWindows({ placeOnCursorMonitor })`、`src/main/detachedGroupWindowManager.ts`）。アプリを起動して前回のウィンドウを開き直すときも同じ。
+
+位置は「載っているディスプレイの作業領域に対する位置」（`MonitorAnchor`）として覚える。計算は純粋関数（`src/main/utils/monitorAnchor.ts`）。
+
+- 縦・横それぞれで、作業領域の端から 20px 未満（モニター端への吸着と同じ距離）なら端を、それ以外は作業領域の中央を基準にし、基準からの距離を覚える。端にくっつけたウィンドウは大きさの違うディスプレイでも端に出て、メインウィンドウ（既定ではディスプレイの中央に出る）の横に置いたウィンドウはメインとの位置関係を保つ
+- はみ出す分は作業領域の中へ寄せる。作業領域より大きいウィンドウは、表示するときだけ作業領域の大きさまで縮める（覚えているサイズは変えない）
+- 覚え直すのは、人が動かしたとき（`moved`）だけ。QDL が位置を当て直した直後 1 秒の移動・サイズ変更は保存しない（小さいディスプレイで縮めたサイズや寄せた位置で上書きしないため）。中身に合わせた高さの自動調整（`resized`）では、サイズだけ保存して基準は変えない
+- 覚えた位置は `workspace-ui-state.json` の `anchor` に保存する（[ワークスペースファイル形式 4](file-formats/workspace-format.md#4-workspace-ui-statejson)）。無いとき（古いファイル）は今の位置から求める
+- 座標・サイズは Electron の DIP（拡大率を除いた単位）で扱う。拡大率の違うディスプレイへの移し方はワークスペースウィンドウと同じ（`setBoundsAcrossDisplays()`）
+
 ### アイテム編集ウィンドウ（独立した子ウィンドウ）
 
 ワークスペースアイテムの「編集」は、ワークスペースウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.37 以降）。

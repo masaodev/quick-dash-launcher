@@ -38,6 +38,7 @@ export const SETTINGS_RESET_KEYS: Record<
     'workspaceVisibleOnAllDesktops',
     'detachedVisibleOnAllDesktops',
     'hideDetachedWithMainWindow',
+    'detachedPositionMode',
     'windowSnapEnabled',
   ],
   backup: ['backupEnabled', 'backupRetention', 'backupIncludeClipboard'],

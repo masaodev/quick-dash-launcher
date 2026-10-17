@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CURSOR_MONITOR_DISPLAY_INDEX } from '@common/types';
 import type {
   AppSettings,
+  DetachedPositionMode,
   DisplayInfo,
   WindowPositionMode,
   WorkspacePositionMode,
@@ -38,6 +40,15 @@ const WINDOW_POSITION_OPTIONS: readonly WindowPositionMode[] = [
   'cursorMonitorCenter',
   'cursor',
   'fixed',
+];
+
+/** 切り離しウィンドウの表示位置の選択肢（文言は settings.workspace.<文言キー>・<文言キー>Description） */
+const DETACHED_POSITION_OPTIONS: Array<{
+  value: DetachedPositionMode;
+  text: 'detachedPositionSaved' | 'detachedPositionCursorMonitor';
+}> = [
+  { value: 'saved', text: 'detachedPositionSaved' },
+  { value: 'cursorMonitor', text: 'detachedPositionCursorMonitor' },
 ];
 
 /** ワークスペースの表示・連動に関するチェックボックス設定（文言は settings.workspace.<文言キー>・<文言キー>Description） */
@@ -194,6 +205,31 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
           </div>
         </div>
 
+        {/* 切り離しウィンドウの表示位置 */}
+        <div className="setting-item">
+          <label>{t('settings.workspace.detachedPosition')}</label>
+          <div className="position-options">
+            {DETACHED_POSITION_OPTIONS.map(({ value, text }) => (
+              <label key={value} className="position-option">
+                <input
+                  type="radio"
+                  name="detachedPositionMode"
+                  value={value}
+                  checked={editedSettings.detachedPositionMode === value}
+                  onChange={() => handleSettingChange('detachedPositionMode', value)}
+                  disabled={isLoading}
+                />
+                <div className="option-content">
+                  <div className="option-title">{t(`settings.workspace.${text}`)}</div>
+                  <div className="option-description">
+                    {t(`settings.workspace.${text}Description`)}
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* 表示位置設定 */}
         <div className="setting-item">
           <label>{t('settings.workspace.position')}</label>
@@ -222,6 +258,9 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                       }
                       disabled={isLoading}
                     >
+                      <option value={CURSOR_MONITOR_DISPLAY_INDEX}>
+                        {t('settings.workspace.cursorDisplay')}
+                      </option>
                       {displays.map((display) => (
                         <option key={display.index} value={display.index}>
                           {display.label}

@@ -58,7 +58,8 @@ async function toggleDetachedWindowsIfEnabled(show: boolean): Promise<void> {
   const hideDetached = await settingsService.get('hideDetachedWithMainWindow');
   if (hideDetached) {
     if (show) {
-      showAllDetachedGroupWindows();
+      const positionMode = await settingsService.get('detachedPositionMode');
+      showAllDetachedGroupWindows({ placeOnCursorMonitor: positionMode === 'cursorMonitor' });
     } else {
       hideAllDetachedGroupWindows();
     }

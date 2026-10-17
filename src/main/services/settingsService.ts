@@ -65,6 +65,7 @@ export class SettingsService {
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     hideDetachedWithMainWindow: true,
+    detachedPositionMode: 'saved',
     windowSnapEnabled: true,
   };
 

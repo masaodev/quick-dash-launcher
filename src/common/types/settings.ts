@@ -31,6 +31,16 @@ export type WorkspacePositionMode =
   | 'displayRight' // 指定ディスプレイの右端に配置（デフォルト）
   | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
 
+/** workspaceTargetDisplayIndex でカーソルのあるモニターを指す値 */
+export const CURSOR_MONITOR_DISPLAY_INDEX = -1;
+
+/**
+ * 切り離しウィンドウの表示位置モード
+ */
+export type DetachedPositionMode =
+  | 'saved' // 置いた場所に表示する（既定）
+  | 'cursorMonitor'; // メインウィンドウと一緒に出すとき、カーソルのあるモニターの同じ位置に表示する
+
 /**
  * ディスプレイ情報を表すインターフェース
  */
@@ -117,7 +127,7 @@ export interface AppSettings {
   autoShowWorkspace: boolean;
   /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
-  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、デフォルト: 0） */
+  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、-1＝カーソルのあるモニター、デフォルト: 0） */
   workspaceTargetDisplayIndex: number;
   /** 固定位置のX座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
   workspacePositionX: number;
@@ -137,6 +147,8 @@ export interface AppSettings {
   bookmarkAutoImport: BookmarkAutoImportSettings;
   /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
   hideDetachedWithMainWindow: boolean;
+  /** 切り離しウィンドウの表示位置モード（デフォルト: 'saved'） */
+  detachedPositionMode: DetachedPositionMode;
   /** ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true） */
   windowSnapEnabled: boolean;
 }

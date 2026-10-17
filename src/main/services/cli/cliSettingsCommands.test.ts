@@ -28,6 +28,7 @@ beforeEach(() => {
     workspaceOpacity: 100,
     workspacePositionMode: 'displayRight',
     workspaceTargetDisplayIndex: 0,
+    detachedPositionMode: 'saved',
     windowPositionX: 0,
     showKeyboardHints: true,
   } as AppSettings;
@@ -149,6 +150,18 @@ describe('settings set', () => {
     await run('set', 'workspaceTargetDisplayIndex', '1');
     expect(settings.workspaceTargetDisplayIndex).toBe(1);
     expect((await errorOf(run('set', 'workspaceTargetDisplayIndex', '2'))).code).toBe('invalid');
+    expect((await errorOf(run('set', 'workspaceTargetDisplayIndex', '-2'))).code).toBe('invalid');
+  });
+
+  it('ディスプレイの番号 -1 はマウスカーソルのあるディスプレイ', async () => {
+    await run('set', 'workspaceTargetDisplayIndex', '-1');
+    expect(settings.workspaceTargetDisplayIndex).toBe(-1);
+  });
+
+  it('切り離しウィンドウの表示位置は saved か cursorMonitor', async () => {
+    await run('set', 'detachedPositionMode', 'cursorMonitor');
+    expect(settings.detachedPositionMode).toBe('cursorMonitor');
+    expect((await errorOf(run('set', 'detachedPositionMode', 'cursor'))).code).toBe('invalid');
   });
 
   it('起動時のタブは、タブに入っているデータファイルで指す', async () => {

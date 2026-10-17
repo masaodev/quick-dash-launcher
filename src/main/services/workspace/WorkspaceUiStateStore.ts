@@ -4,6 +4,7 @@ import { isRecord } from '@common/types/guards';
 
 import { PathManager } from '../../config/pathManager.js';
 import { JsonFileStore } from '../jsonFileStore.js';
+import { isMonitorAnchor } from '../../utils/monitorAnchor.js';
 
 /**
  * ワークスペースの UI 状態（config/workspace-ui-state.json）
@@ -42,6 +43,9 @@ function coerceDetachedWindowState(raw: unknown): DetachedWindowState | null {
   };
   if (raw.pinMode === 0 || raw.pinMode === 1 || raw.pinMode === 2) {
     state.pinMode = raw.pinMode;
+  }
+  if (isMonitorAnchor(raw.anchor)) {
+    state.anchor = raw.anchor;
   }
   return state;
 }
