@@ -83,6 +83,13 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   const [memoModalOpen, setMemoModalOpen] = useState(false);
   const [memoModalItem, setMemoModalItem] = useState<{ name: string; memo: string } | null>(null);
 
+  // マウスを動かしたときだけ、指したアイテムを選ぶ。矢印キーで一覧がスクロールして、止まっているカーソルの下に
+  // 別のアイテムが来ても選択を変えない（そのとき届く mouseenter・mousemove は移動量が 0）
+  const handleItemMouseMove = (e: React.MouseEvent, index: number): void => {
+    if (e.movementX === 0 && e.movementY === 0) return;
+    if (index !== selectedIndex) onItemSelect(index);
+  };
+
   const rowVirtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => listRef.current,
@@ -426,7 +433,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                   }
                   onItemExecute(item);
                 }}
-                onMouseEnter={() => onItemSelect(index)}
+                onMouseMove={(e) => handleItemMouseMove(e, index)}
                 onContextMenu={(e) => handleContextMenu(e, item)}
                 title={getTooltipText(item, nameOfItem)}
               >
