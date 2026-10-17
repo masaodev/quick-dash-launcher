@@ -1,3 +1,5 @@
+import type { WorkspaceItem } from '@common/types';
+
 import { logError, logWarn } from '../utils/debug';
 
 export function useFileOperations() {
@@ -19,18 +21,27 @@ export function useFileOperations() {
     return filePaths;
   };
 
+  /**
+   * パスからワークスペースへ足す。足せたアイテムを返す（足せなかったものは本体側がトーストで知らせる）
+   */
   const addItemsFromFilePaths = async (
     filePaths: string[],
     onItemsAdded: () => void,
     groupId?: string,
     workspaceId?: string
-  ): Promise<void> => {
-    if (filePaths.length === 0) return;
+  ): Promise<WorkspaceItem[]> => {
+    if (filePaths.length === 0) return [];
     try {
-      await window.electronAPI.workspaceAPI.addItemsFromPaths(filePaths, groupId, workspaceId);
+      const added = await window.electronAPI.workspaceAPI.addItemsFromPaths(
+        filePaths,
+        groupId,
+        workspaceId
+      );
       onItemsAdded();
+      return added;
     } catch (error) {
       logError('Failed to add items from file paths:', error);
+      return [];
     }
   };
 
@@ -44,12 +55,13 @@ export function useFileOperations() {
     }
   };
 
+  /** URL をワークスペースへ足す。足せたか返す（失敗は本体側がトーストで知らせる） */
   const addUrlItem = async (
     url: string,
     onItemsAdded: () => void,
     groupId?: string,
     workspaceId?: string
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     try {
       const icon = await fetchFaviconSafely(url);
       await window.electronAPI.workspaceAPI.addItem(
@@ -58,8 +70,10 @@ export function useFileOperations() {
         workspaceId
       );
       onItemsAdded();
+      return true;
     } catch (error) {
       logError('Failed to add URL item:', error);
+      return false;
     }
   };
 
