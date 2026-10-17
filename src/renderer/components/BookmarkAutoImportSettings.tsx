@@ -19,6 +19,7 @@ import {
 import type { ImportDestination } from '../hooks/useImportDestination';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
+import { bookmarkFolderLabel } from '../utils/bookmarkFolderLabel';
 
 import { Button } from './ui';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
@@ -234,6 +235,22 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       .join(', ');
   };
 
+  /** ルール一覧のフォルダの表示（一番上のフォルダは画面の言葉にし、除くときはそう書く） */
+  const describeFolders = (rule: BookmarkAutoImportRule): string => {
+    if (rule.folderPaths.length === 0) return t('bookmarkAutoImport.allFolders');
+    const names = rule.folderPaths
+      .map((path) =>
+        path
+          .split('/')
+          .map((name) => bookmarkFolderLabel(name, t))
+          .join(' / ')
+      )
+      .join(t('common.listSeparator'));
+    return rule.folderFilterMode === 'exclude'
+      ? t('bookmarkAutoImport.exceptFolders', { folders: names })
+      : names;
+  };
+
   if (isLoading) {
     return <div className="auto-import-empty">{t('bookmarkAutoImport.loading')}</div>;
   }
@@ -333,7 +350,11 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
                 <div className="rule-source">
                   {getBrowserDisplayName(rule.browserId)}
                   {` > ${rule.profileIds.length > 0 ? getProfileNames(rule) : t('bookmarkAutoImport.allProfiles')}`}
-                  {` > ${rule.folderPaths.length > 0 ? rule.folderPaths.join(', ') : t('bookmarkAutoImport.allFolders')}`}
+                  {` > ${describeFolders(rule)}`}
+                  {rule.namePattern &&
+                    t('bookmarkAutoImport.nameCondition', { word: rule.namePattern })}
+                  {rule.urlPattern &&
+                    t('bookmarkAutoImport.urlCondition', { word: rule.urlPattern })}
                 </div>
                 <div className="rule-target">
                   {dataFileLabels[rule.targetFile]

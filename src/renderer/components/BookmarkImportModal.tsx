@@ -262,11 +262,14 @@ function BookmarkImportModal({
         .join(t('common.listSeparator'));
   const effectiveRuleName = ruleName.trim() || autoRuleName;
 
+  // フォルダ名は 2 つまで出し、3 つ以上は数でまとめる（どれかは「保存されるルール」の行で分かる）
   const syncLabel = !canSync
     ? t('bookmarkImportModal.syncDefault')
     : selectionRule.allFolders
       ? t('bookmarkImportModal.syncAll')
-      : t('bookmarkImportModal.syncFolders', { folders: ruleFolderNames });
+      : selectionRule.folderPaths.length > 2
+        ? t('bookmarkImportModal.syncManyFolders', { count: selectionRule.folderPaths.length })
+        : t('bookmarkImportModal.syncFolders', { folders: ruleFolderNames });
   const syncDisabledReason =
     source === 'html'
       ? t('bookmarkImportModal.syncHtml')
@@ -653,36 +656,38 @@ function BookmarkImportModal({
           />
         )}
 
+        {/* 自動取込の帯（フッターの上。重複時の処理と同じ置き方） */}
+        <div className={`bookmark-import-sync${asRule ? ' on' : ''}`}>
+          <label className="bookmark-import-sync-toggle">
+            <input
+              type="checkbox"
+              checked={asRule}
+              disabled={!canSync}
+              onChange={(e) => setAsRule(e.target.checked)}
+            />
+            {syncLabel}
+          </label>
+          {asRule ? (
+            <>
+              <label className="bookmark-import-rule-name">
+                <span>{t('bookmarkImportModal.ruleName')}</span>
+                <input
+                  type="text"
+                  value={ruleName}
+                  onChange={(e) => setRuleName(e.target.value)}
+                  placeholder={autoRuleName}
+                />
+              </label>
+              <span className="bookmark-import-sync-note">{ruleSummary}</span>
+            </>
+          ) : (
+            syncDisabledReason && (
+              <span className="bookmark-import-sync-note">{syncDisabledReason}</span>
+            )
+          )}
+        </div>
+
         <div className="import-footer">
-          <div className="bookmark-import-sync">
-            <label className="bookmark-import-sync-toggle">
-              <input
-                type="checkbox"
-                checked={asRule}
-                disabled={!canSync}
-                onChange={(e) => setAsRule(e.target.checked)}
-              />
-              {syncLabel}
-            </label>
-            {asRule ? (
-              <>
-                <label className="bookmark-import-rule-name">
-                  <span>{t('bookmarkImportModal.ruleName')}</span>
-                  <input
-                    type="text"
-                    value={ruleName}
-                    onChange={(e) => setRuleName(e.target.value)}
-                    placeholder={autoRuleName}
-                  />
-                </label>
-                <span className="bookmark-import-sync-note">{ruleSummary}</span>
-              </>
-            ) : (
-              syncDisabledReason && (
-                <span className="bookmark-import-sync-note">{syncDisabledReason}</span>
-              )
-            )}
-          </div>
           <span className="import-echo">
             {t('importCommon.destinationEcho', { target: dest.destinationText })}
           </span>

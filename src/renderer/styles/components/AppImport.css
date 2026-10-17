@@ -169,8 +169,10 @@
   border-radius: var(--border-radius);
   font-size: var(--font-size-xs);
   white-space: nowrap;
-  background-color: var(--color-info-light);
-  color: var(--color-info);
+  /* 選んだ行（薄い青）の上でも読めるよう、緑系の淡い地に濃い文字 */
+  background-color: var(--bg-success-light);
+  color: var(--text-success);
+  border: 1px solid var(--text-success);
 }
 
 /* タイプ列 */

@@ -274,19 +274,20 @@
   margin-bottom: 0;
 }
 
-/* フッターの左: 「〜をブラウザと同期する」とルール名 */
-.bookmark-import-modal .import-footer {
-  flex-wrap: wrap;
-}
-
+/* 自動取込の帯（フッターの上。重複時の処理と同じく区画の幅いっぱい） */
 .bookmark-import-sync {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  flex: 1 1 320px;
-  min-width: 0;
-  margin-right: auto;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
   font-size: var(--font-size-sm);
+}
+
+.bookmark-import-sync.on {
+  background-color: var(--bg-section);
 }
 
 .bookmark-import-sync-toggle {
@@ -305,7 +306,8 @@
 }
 
 .bookmark-import-rule-name input {
-  width: 200px;
+  flex: 1;
+  min-width: 0;
   height: var(--input-height-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
   font-family: var(--font-family);
@@ -331,6 +333,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding-right: var(--spacing-sm);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -413,6 +416,18 @@
   background-color: var(--color-white);
   color: var(--text-primary);
   cursor: pointer;
+}
+
+.bookmark-rule-dropdown-button {
+  max-width: 100%;
+}
+
+/* 長いときは 1 行で省略する */
+.bookmark-rule-dropdown-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .bookmark-rule-dropdown-button.open {

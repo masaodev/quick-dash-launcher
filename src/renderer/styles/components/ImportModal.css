@@ -10,7 +10,8 @@
   margin-bottom: var(--spacing-lg);
 }
 
-.import-modal h3 {
+/* 設定の画面（.settings-section h3）の中で開いても余白が増えないよう、詳しめに指定する */
+.import-modal .import-header h3 {
   margin: 0;
   font-size: var(--font-size-xl);
   color: var(--text-primary);

@@ -212,7 +212,13 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
           editingRule.folderFilterMode === 'include'
             ? 'bookmarkRule.foldersIncluded'
             : 'bookmarkRule.foldersExcluded',
-          { folders: editingRule.folderPaths.map(folderLabel).join(t('common.listSeparator')) }
+          {
+            // 3 つ以上は数でまとめる（どれかはフォルダの木で分かる）
+            folders:
+              editingRule.folderPaths.length > 2
+                ? t('bookmarkRule.foldersCount', { count: editingRule.folderPaths.length })
+                : editingRule.folderPaths.map(folderLabel).join(t('common.listSeparator')),
+          }
         );
 
   /** ルール名が空のときに使う名前（条件から作る） */
@@ -402,7 +408,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 aria-expanded={folderPanelOpen}
                 onClick={() => setFolderPanelOpen((open) => !open)}
               >
-                <span>{folderSummary}</span>
+                <span className="bookmark-rule-dropdown-text">{folderSummary}</span>
                 <span className="bookmark-rule-caret">{folderPanelOpen ? '▲' : '▼'}</span>
               </button>
             </div>
