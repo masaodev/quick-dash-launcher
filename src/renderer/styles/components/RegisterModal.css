@@ -438,9 +438,11 @@
   }
 }
 
-/* ウィンドウ切り替えの設定は縦並びで全幅にする（横並びの form-group のままだと枠が中身の幅まで縮む） */
+/* ウィンドウ切り替えの設定は縦並びで全幅にする（横並びの form-group のままだと枠が中身の幅まで縮む）。
+   折り返しは止める（縦並びで折り返すと列の幅が中身のいちばん長いもので決まり、長いパスのセットの行で横にはみ出す） */
 .register-item .form-group.vertical-layout {
   flex-direction: column;
+  flex-wrap: nowrap;
   align-items: stretch;
 }
 
