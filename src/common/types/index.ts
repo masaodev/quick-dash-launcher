@@ -60,6 +60,7 @@ export type {
   WorkspaceUiStateFile,
   DetachedWindowState,
   MonitorAnchor,
+  WorkspaceWindowState,
   MonitorAnchorEdge,
 } from './json-workspace';
 export {

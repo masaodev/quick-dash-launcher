@@ -35,6 +35,7 @@ import {
   notifySplashInitComplete,
 } from './splashWindowManager';
 import { createWorkspaceWindow, closeWorkspaceWindow } from './workspaceWindowManager';
+import { migrateRemovedWindowSettings } from './services/removedWindowSettings.js';
 import { closeAllDetachedGroupWindows } from './detachedGroupWindowManager';
 import { markAppQuitting } from './utils/managedWindow.js';
 import { destroyOverlayWindow } from './services/overlayWindowService.js';
@@ -215,6 +216,9 @@ app.whenReady().then(async () => {
     setWindowPinMode,
     setFirstLaunchMode
   );
+
+  // 設定から外した「ワークスペースの自動表示」「切り離しウィンドウも一緒に隠す」を、ワークスペースの状態と 📌 に読み替える
+  await migrateRemovedWindowSettings();
 
   // メインウィンドウ・トレイ・ワークスペースを並列作成（互いに独立）
   await Promise.all([createWindow(), createTray(), createWorkspaceWindow()]);

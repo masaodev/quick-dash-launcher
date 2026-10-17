@@ -511,11 +511,11 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
                   windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
                   windowPositionX windowPositionY windowSnapEnabled
   管理            editModeWidth（800〜2000）editModeHeight（600〜1200）
-  ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent autoShowWorkspace
+  ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent
                   workspacePositionMode（displayLeft / displayRight / fixed）
                   workspaceTargetDisplayIndex（0 始まり。-1 はメインウィンドウと同じディスプレイ）
                   workspacePositionX workspacePositionY
-                  workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops hideDetachedWithMainWindow
+                  workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops
                   detachedPositionMode（mainDisplay / saved）
   バックアップ    backupEnabled backupRetention（3〜50）backupIncludeClipboard
 
@@ -2029,18 +2029,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     workspace: {
       heading: 'ワークスペースウィンドウ',
-      autoShow: 'メインウィンドウ表示時にワークスペースを自動表示',
-      autoShowDescription:
-        '有効にすると、メインウィンドウを開いたときにワークスペースが非表示なら自動で表示します。',
-      hideDetached: 'メインウィンドウと一緒に切り離しウィンドウも隠す',
-      hideDetachedDescription:
-        '有効にすると、メインウィンドウの表示/非表示に連動して、ピン留めしていない切り離しウィンドウも表示/非表示します。フォーカスがメインウィンドウ・ワークスペース・切り離しウィンドウの間を移っている間は隠さず、それ以外のウィンドウへ移ったときに隠します。',
       detachedPosition: '切り離しウィンドウの表示位置:',
       detachedPositionSaved: '置いた場所',
       detachedPositionSavedDescription: '切り離しウィンドウを、最後に置いた場所に表示します',
       detachedPositionMainDisplay: 'メインウィンドウと同じディスプレイ（既定）',
       detachedPositionMainDisplayDescription:
-        'メインウィンドウと一緒に表示するとき、切り離しウィンドウをメインウィンドウと同じディスプレイの同じ位置へ移します。ディスプレイの端にくっつけたウィンドウは端に、それ以外はディスプレイの中央からの距離を保ちます。ピン留めしたウィンドウは動かしません。「メインウィンドウと一緒に切り離しウィンドウも隠す」が有効なときに働きます。',
+        'メインウィンドウと一緒に表示するとき、切り離しウィンドウをメインウィンドウと同じディスプレイの同じ位置へ移します。ディスプレイの端にくっつけたウィンドウは端に、それ以外はディスプレイの中央からの距離を保ちます。ピン留めしたウィンドウは動かしません。',
       position: '表示位置:',
       displayEdge: 'ディスプレイの端に配置（既定）',
       displayEdgeDescription: '選択したディスプレイの左端または右端にワークスペースを配置します',

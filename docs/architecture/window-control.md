@@ -212,8 +212,9 @@
 
 - **blur イベント**: メイン・ワークスペース・切り離しウィンドウを 1 つのまとまり（ウィンドウ群）として扱い、フォーカスがウィンドウ群の外へ出たときだけ隠す（`windowManager.ts` の `app.on('browser-window-blur')`）
   - どのウィンドウの blur でも、50ms 後にフォーカスの移動先を確認する。移動先がメイン・ワークスペース・切り離しウィンドウ、またはそれらの子ウィンドウなら何もしない。管理ウィンドウ（設定画面）はウィンドウ群に含めない
-  - 外へ出ていれば、メインウィンドウを隠す（`windowPinMode === 'normal'` で、初回起動モード・モーダルモードでなく、DevTools を開いていない場合のみ）。続けて `hideDetachedWithMainWindow` がオンなら、固定していない切り離しウィンドウも隠す。メインウィンドウが表示中でこれを隠さないモードのときは、切り離しウィンドウも残す（メインが既に隠れているときは、連動設定に従って切り離しウィンドウを隠す）
-  - ワークスペースはこの連動では隠さない
+  - 外へ出ていれば、メインウィンドウを隠す（`windowPinMode === 'normal'` で、初回起動モード・モーダルモードでなく、DevTools を開いていない場合のみ）。続けて、ピン留めしていないワークスペースと切り離しウィンドウも隠す（`toggleCompanionWindows(false)`）。メインウィンドウが表示中でこれを隠さないモードのときは、ワークスペースと切り離しウィンドウも残す（メインが既に隠れているときは、ピン留めしていないものを隠す）
+  - ワークスペースは「開いている」状態を覚えている。メインと一緒に隠れただけなら開いたままで、次にメインウィンドウを出すと一緒に出る。⭐・`Ctrl+W`・× で隠すと「閉じた」になり、メインと一緒に出なくなる（`isWorkspaceOpen`、`workspace-ui-state.json` の `workspaceWindow`）
+- **メインウィンドウを出すとき**: 開いているワークスペースが隠れていれば出し、切り離しウィンドウも出す。ピン留めしたものは、ほかのウィンドウの下にあっても手前に出す（`toggleCompanionWindows(true)`）
   - メインウィンドウの表示から 200ms 以内の blur は、200ms を過ぎてから確認する（表示直後の一時的なフォーカスの揺れで隠れないため）
 - **アイテム起動時**: `windowPinMode === 'normal'`の場合のみ非表示
 - **モーダルモード時**: `isModalMode`フラグで判定 → 子ウィンドウが開いている間は非表示にしない
@@ -296,7 +297,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 全仮想デスクトップに表示しない設定では、ワークスペースウィンドウが表示したまま別の仮想デスクトップに残ることがある。そのときは隠したり出し直したりせず、今のデスクトップへ移す（呼び寄せ。`moveWindowToCurrentDesktop()`）。
 
-- **表示するとき**（メインウィンドウ表示時の自動表示を含む）: 別のデスクトップにあれば、今のデスクトップへ移してから出す。表示中のまま別のデスクトップにあると `show()` だけでは出てこないため。自動表示はフォーカスを奪わない（`showWorkspaceWindow()`）
+- **表示するとき**（メインウィンドウと一緒に出すときを含む）: 別のデスクトップにあれば、今のデスクトップへ移してから出す。表示中のまま別のデスクトップにあると `show()` だけでは出てこないため。メインと一緒に出すときはフォーカスを奪わない（`showWorkspaceWindow()`・`showWorkspaceWithMain()`）
 - **`Ctrl+W` で切り替えるとき**: 表示したまま別のデスクトップにあれば、隠さずに今のデスクトップへ移して前に出す。隠すと、Windows がフォーカスの移り先のデスクトップへ切り替えてしまうことがあるため（`toggleWorkspaceWindow()`）
 - 全仮想デスクトップに表示しているときは移さない（どのデスクトップにも出ているため）。全仮想デスクトップへの表示は、表示するたびに当て直す
 - **実装場所**: `src/main/workspaceWindowManager.ts`、`src/main/utils/virtualDesktop/windowOperations.ts`
@@ -312,7 +313,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 ### 切り離しウィンドウの表示位置
 
-`detachedPositionMode` が `saved` なら、最後に置いた場所に出す。`mainDisplay`（既定）なら、メインウィンドウと一緒に出すとき（`hideDetachedWithMainWindow` がオン）に、ピン留めしていない切り離しウィンドウを、メインウィンドウと同じディスプレイ（`getMainWindowDisplay()`）の同じ位置へ移してから出す（`showAllDetachedGroupWindows({ placeOnMainWindowDisplay })`、`src/main/detachedGroupWindowManager.ts`）。アプリを起動して前回のウィンドウを開き直すときも同じ。
+`detachedPositionMode` が `saved` なら、最後に置いた場所に出す。`mainDisplay`（既定）なら、メインウィンドウと一緒に出すときに、ピン留めしていない切り離しウィンドウを、メインウィンドウと同じディスプレイ（`getMainWindowDisplay()`）の同じ位置へ移してから出す（`showAllDetachedGroupWindows({ placeOnMainWindowDisplay })`、`src/main/detachedGroupWindowManager.ts`）。アプリを起動して前回のウィンドウを開き直すときも同じ。
 
 位置は「載っているディスプレイの作業領域に対する位置」（`MonitorAnchor`）として覚える。計算は純粋関数（`src/main/utils/monitorAnchor.ts`）。
 

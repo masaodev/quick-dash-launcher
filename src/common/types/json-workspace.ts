@@ -260,6 +260,18 @@ export interface WorkspaceUiStateFile {
   collapsedGroups: Record<string, boolean>;
   /** 切り離しウィンドウの状態（ルートグループ id → 状態） */
   detachedWindows: Record<string, DetachedWindowState>;
+  /** ワークスペースウィンドウの状態（無ければ既定値＝閉じていて、📌 は表示固定） */
+  workspaceWindow?: WorkspaceWindowState;
+}
+
+/**
+ * ワークスペースウィンドウの状態
+ */
+export interface WorkspaceWindowState {
+  /** 開いているか（⭐・Ctrl+W・× で閉じるまで true。メインウィンドウと一緒に隠れただけなら true のまま） */
+  open: boolean;
+  /** ピン留めの段階（0=なし, 1=表示固定, 2=常に最前面） */
+  pinLevel: 0 | 1 | 2;
 }
 
 // ============================================================

@@ -7,6 +7,7 @@ import * as path from 'path';
 import type {
   AppItem,
   DetachedWindowState,
+  WorkspaceWindowState,
   Workspace,
   WorkspaceItem,
   WorkspaceItemUpdate,
@@ -499,6 +500,24 @@ export class WorkspaceService {
   public async saveDetachedPinMode(rootGroupId: string, pinMode: 0 | 1 | 2): Promise<void> {
     await this.initializeStore();
     this.uiState!.updateDetached(rootGroupId, { pinMode });
+  }
+
+  // --- ワークスペースウィンドウの状態（UI 状態） ---
+
+  public async loadWorkspaceWindowState(): Promise<WorkspaceWindowState> {
+    await this.initializeStore();
+    return this.uiState!.getWorkspaceWindow();
+  }
+
+  public async saveWorkspaceWindowState(updates: Partial<WorkspaceWindowState>): Promise<void> {
+    await this.initializeStore();
+    this.uiState!.updateWorkspaceWindow(updates);
+  }
+
+  /** ピン留めしていない切り離しウィンドウを、すべて表示固定にする（古い設定からの読み替え） */
+  public async pinAllUnpinnedDetached(): Promise<number> {
+    await this.initializeStore();
+    return this.uiState!.pinAllUnpinnedDetached();
   }
 
   public async removeDetachedWindowState(rootGroupId: string): Promise<void> {
