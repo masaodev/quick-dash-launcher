@@ -6,7 +6,12 @@
  */
 import type { SetPlacement } from '../types/launcher';
 
-import { sortScreens, type PixelRect, type ScreenArea } from './placementLabel';
+import {
+  screenIndexOfCenter,
+  sortScreens,
+  type PixelRect,
+  type ScreenArea,
+} from './placementLabel';
 
 /** 図に重ねるウィンドウ位置。before＝前の位置（位置を更新の確認で破線にする） */
 export interface MapPlacementInput {
@@ -44,16 +49,15 @@ export interface MinimapLayout {
   windows: MapWindow[];
 }
 
-/** 中心点が入っている画面（sorted の添字。無ければ -1） */
-function screenIndexOf(rect: PixelRect, sorted: readonly ScreenArea[]): number {
-  const cx = rect.x + rect.width / 2;
-  const cy = rect.y + rect.height / 2;
-  return sorted.findIndex(
-    (s) =>
-      cx >= s.bounds.x &&
-      cx < s.bounds.x + s.bounds.width &&
-      cy >= s.bounds.y &&
-      cy < s.bounds.y + s.bounds.height
+/** 図に描ける位置か（座標と大きさがそろっている。デスクトップ番号や最大化だけの位置は描けない） */
+export function hasPlacementRect(
+  placement: SetPlacement | undefined
+): placement is SetPlacement & { x: number; y: number; width: number; height: number } {
+  return (
+    placement?.x !== undefined &&
+    placement.y !== undefined &&
+    placement.width !== undefined &&
+    placement.height !== undefined
   );
 }
 
@@ -91,10 +95,10 @@ export function computeMinimapLayout(
   const sorted = sortScreens(screens);
 
   const rects = placements.flatMap((p, index) => {
+    if (!hasPlacementRect(p.placement)) return [];
     const { x, y, width: w, height: h } = p.placement;
-    if (x === undefined || y === undefined || w === undefined || h === undefined) return [];
     let rect: PixelRect = { x, y, width: w, height: h };
-    const screenIndex = screenIndexOf(rect, sorted);
+    const screenIndex = screenIndexOfCenter(rect, sorted);
     if (p.placement.state === 'maximized' && screenIndex !== -1) {
       const work = sorted[screenIndex].workArea;
       rect = work.width > 0 && work.height > 0 ? { ...work } : { ...sorted[screenIndex].bounds };

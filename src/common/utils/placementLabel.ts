@@ -94,6 +94,17 @@ function contains(rect: PixelRect, px: number, py: number): boolean {
   return px >= rect.x && px < rect.x + rect.width && py >= rect.y && py < rect.y + rect.height;
 }
 
+/**
+ * 矩形の中心点が入っている画面の添字（無ければ -1）
+ *
+ * 位置の言葉（computePlacementLabel）と図（placementMap.ts）が同じ規則で画面を決めるよう、ここだけで判定する
+ */
+export function screenIndexOfCenter(rect: PixelRect, screens: readonly ScreenArea[]): number {
+  const cx = rect.x + rect.width / 2;
+  const cy = rect.y + rect.height / 2;
+  return screens.findIndex((s) => contains(s.bounds, cx, cy));
+}
+
 /** 画面を左から（同じなら上から）並べる */
 export function sortScreens(screens: readonly ScreenArea[]): ScreenArea[] {
   return [...screens].sort((a, b) => a.bounds.x - b.bounds.x || a.bounds.y - b.bounds.y);
@@ -119,7 +130,7 @@ export function computePlacementLabel(
   const sorted = sortScreens(screens);
   const cx = x + width / 2;
   const cy = y + height / 2;
-  const index = sorted.findIndex((s) => contains(s.bounds, cx, cy));
+  const index = screenIndexOfCenter({ x, y, width, height }, sorted);
   if (index === -1) return { kind: 'offscreen' };
 
   const screenNumber = sorted.length > 1 ? index + 1 : undefined;
@@ -165,7 +176,7 @@ export function fitPlacementToScreens(
   if (screens.length === 0 || x === undefined || y === undefined) return placement;
   const w = width ?? 0;
   const h = height ?? 0;
-  if (screens.some((s) => contains(s.bounds, x + w / 2, y + h / 2))) return placement;
+  if (screenIndexOfCenter({ x, y, width: w, height: h }, screens) !== -1) return placement;
 
   const primary = screens.find((s) => contains(s.bounds, 0, 0)) ?? screens[0];
   const work =

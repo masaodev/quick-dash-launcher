@@ -127,12 +127,12 @@
 /* 行の極小の図の列（図の幅に固定。位置の無い行も同じ幅を空ける） */
 .set-row-map {
   display: flex;
-  flex: 0 0 56px;
+  flex: 0 0 var(--minimap-tiny-width);
 }
 
 /* 位置の言葉の列（幅を決めて左寄せ。長い言葉は省略し、全文はカーソルを当てると出る） */
 .set-row-place-column {
-  flex: 0 0 230px;
+  flex: 0 0 var(--set-row-place-width);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

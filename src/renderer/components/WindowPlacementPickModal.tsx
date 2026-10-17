@@ -73,7 +73,12 @@ const WindowPlacementPickModal: React.FC<WindowPlacementPickModalProps> = ({
                 {/* 図は行の頭の決まった幅の列に置き、行ごとに縦をそろえる（最小化中は空ける） */}
                 <span className="set-row-map">
                   {w.windowState !== 'minimized' && (
-                    <WindowMinimap window={w} screens={screens} desktopCount={desktopCount} />
+                    <WindowMinimap
+                      window={w}
+                      screens={screens}
+                      desktopCount={desktopCount}
+                      desktopNames={desktopNames}
+                    />
                   )}
                 </span>
                 <span className="set-row-name">

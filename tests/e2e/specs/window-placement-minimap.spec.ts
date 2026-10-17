@@ -76,8 +76,21 @@ test.describe('QuickDashLauncher - ウィンドウ位置の図', () => {
         await expect(map.locator('g:not(.pm-dim) > .pm-window-number')).toHaveText('1');
       });
 
+      await test.step('位置の無い行に乗せても、どの位置も薄くならない', async () => {
+        await rows.nth(1).hover();
+        await expect(map.locator('.pm-dim')).toHaveCount(0);
+      });
+
+      await test.step('乗せた行を消しても、薄いまま残らない', async () => {
+        await rows.nth(0).hover();
+        await expect(map.locator('.pm-dim')).toHaveCount(1);
+        await rows.nth(0).locator('button[aria-label="行を削除"]').click();
+        await expect(rows).toHaveCount(2);
+        await expect(map.locator('.pm-dim')).toHaveCount(0);
+      });
+
       await test.step('行の極小の図に乗せると大きな図が出る', async () => {
-        await rows.nth(2).locator('.placement-minimap-trigger').hover();
+        await rows.nth(1).locator('.placement-minimap-trigger').hover();
         await expect(register.locator('.placement-minimap-popover svg')).toBeVisible();
       });
     } finally {

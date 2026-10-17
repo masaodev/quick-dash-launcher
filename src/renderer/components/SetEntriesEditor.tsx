@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import type { SetEntry, SetLaunchMode } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
+import { hasPlacementRect } from '@common/utils/placementMap';
 
 import {
   catalogItemToEntry,
@@ -21,7 +22,7 @@ import SetItemPickerModal from './SetItemPickerModal';
 import SetAddWindowsModal from './SetAddWindowsModal';
 import SetUpdatePositionsModal from './SetUpdatePositionsModal';
 import SetEntryDetailModal from './SetEntryDetailModal';
-import PlacementMinimap, { MinimapSvg } from './PlacementMinimap';
+import PlacementMinimap, { SetPlacementMap, type SetPlacementMapHandle } from './PlacementMinimap';
 import { Button } from './ui';
 
 interface SetEntriesEditorProps {
@@ -63,8 +64,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   /** ドラッグ中に、落とす先になっている行 */
   const [overIndex, setOverIndex] = useState<number | null>(null);
-  /** マウスが乗っている行（セット全体の図で、その行の位置だけを濃くする） */
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  /** セット全体の図（マウスが乗っている行の位置だけを濃くする。状態は図の中に持ち、一覧は描き直さない） */
+  const mapRef = useRef<SetPlacementMapHandle>(null);
   /** 仮想デスクトップの名前（置き場所の表示に添える） */
   const [desktopNames, setDesktopNames] = useState<Record<number, string | undefined>>({});
 
@@ -143,11 +144,15 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   };
 
   /** セット全体の図に描く位置（添字＝行。位置の無い行は描かれない）。番号は行の頭の番号と同じ */
-  const mapPlacements = entries.map((entry, index) => ({
-    placement: entry.placement ?? {},
-    tag: String(index + 1),
-  }));
-  const hasPlacement = entries.some((entry) => entry.placement?.x !== undefined);
+  const mapPlacements = useMemo(
+    () =>
+      entries.map((entry, index) => ({
+        placement: entry.placement ?? {},
+        tag: String(index + 1),
+      })),
+    [entries]
+  );
+  const hasPlacement = entries.some((entry) => hasPlacementRect(entry.placement));
 
   return (
     <div className="form-group vertical-layout set-editor">
@@ -155,11 +160,10 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
       {/* セット全体の図: 位置のある行を番号つきで 1 枚にまとめる */}
       {hasPlacement && screens.length > 0 && (
         <div className="set-editor-map">
-          <MinimapSvg
+          <SetPlacementMap
+            ref={mapRef}
             screens={screens}
             placements={mapPlacements}
-            size="medium"
-            highlight={hoverIndex}
             label={t('set.editor.mapLabel')}
           />
           <span className="set-muted">{t('set.editor.mapHint')}</span>
@@ -183,9 +187,11 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     : ''
                 }${view.missing ? ' missing' : ''}`}
                 draggable
-                onMouseEnter={hasPlacement ? () => setHoverIndex(index) : undefined}
-                onMouseLeave={hasPlacement ? () => setHoverIndex(null) : undefined}
+                onMouseEnter={hasPlacement ? () => mapRef.current?.highlight(index) : undefined}
+                onMouseLeave={hasPlacement ? () => mapRef.current?.highlight(null) : undefined}
                 onDragStart={(e) => {
+                  // ドラッグ中は mouseleave が来ないので、ここで強調を外す
+                  mapRef.current?.highlight(null);
                   e.dataTransfer.effectAllowed = 'move';
                   setDragIndex(index);
                 }}
@@ -247,7 +253,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                 {hasPlacement && (
                   <>
                     <span className="set-row-map">
-                      {place && entry.placement && (
+                      {place && hasPlacementRect(entry.placement) && (
                         <PlacementMinimap
                           screens={screens}
                           placements={[{ placement: entry.placement }]}
@@ -358,8 +364,11 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
           return view.moveOnly && !view.missing;
         }) && (
           <li>
-            <span className="set-chip set-chip-open">{t('set.editor.moveOnly')}</span>{' '}
-            {t('set.editor.moveOnlyHint')}
+            {/* 印は文の中のタグ（<chip>）にし、語順は辞書の文に任せる */}
+            <Trans
+              i18nKey="set.editor.moveOnlyHint"
+              components={{ chip: <span className="set-chip set-chip-open" /> }}
+            />
           </li>
         )}
       </ul>
