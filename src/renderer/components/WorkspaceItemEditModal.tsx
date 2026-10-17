@@ -13,6 +13,7 @@ import { isWorkspaceTryExecuteBlocked } from '../utils/registerItemExecution';
 
 import FilePickerDialog from './FilePickerDialog';
 import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
+import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui';
 import '../styles/components/ItemConverterMenu.css';
 
@@ -46,6 +47,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  // 「ワークスペースから削除」の確認（一覧の右クリック・× と同じく、確かめてから消す）
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { showError } = useToast();
 
   const {
@@ -228,7 +231,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   {t('register.tryRun')}
                 </Button>
                 <div className="modal-actions-right">
-                  <Button variant="danger" onClick={handleDelete}>
+                  <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
                     {t('workspace.edit.remove')}
                   </Button>
                   <Button variant="secondary" onClick={handleCancel}>
@@ -251,6 +254,19 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+        onConfirm={() => {
+          setConfirmingDelete(false);
+          void handleDelete();
+        }}
+        title={t('workspace.edit.removeTitle')}
+        message={t('workspace.edit.removeConfirm', { name: item?.displayName ?? '' })}
+        confirmText={t('workspace.edit.remove')}
+        danger={true}
+      />
 
       <FilePickerDialog
         isOpen={filePickerState.isOpen}

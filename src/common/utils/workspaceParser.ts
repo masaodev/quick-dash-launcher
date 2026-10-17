@@ -131,8 +131,21 @@ class IssueCollector {
   /** @param t - 理由の文言を引く関数 */
   constructor(readonly t: TFunction) {}
 
-  normalized(section: Section | undefined, index: number, reason: string, id?: string): void {
-    this.issues.push({ index, kind: 'normalized', id, reason, ...(section && { section }) });
+  normalized(
+    section: Section | undefined,
+    index: number,
+    reason: string,
+    id?: string,
+    code?: JsonItemIssue['code']
+  ): void {
+    this.issues.push({
+      index,
+      kind: 'normalized',
+      id,
+      reason,
+      ...(section && { section }),
+      ...(code && { code }),
+    });
     this.modified = true;
   }
 
@@ -602,7 +615,7 @@ function breakGroupCycles(
     }
     if (reason) {
       delete group.parentGroupId;
-      issues.normalized('groups', indexes[i], reason, group.id);
+      issues.normalized('groups', indexes[i], reason, group.id, 'groupFlattened');
     }
   });
 }

@@ -164,9 +164,13 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
     ]);
     await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
 
+    // 削除は確認を通す
+    await editor.locator('.modal-actions button', { hasText: 'ワークスペースから削除' }).click();
+    const confirm = editor.getByTestId('confirm-dialog');
+    await expect(confirm).toContainText('「消すアイテム」をワークスペースから削除しますか？');
     await Promise.all([
       editor.waitForEvent('close', { timeout: 10000 }),
-      editor.locator('.modal-actions button', { hasText: 'ワークスペースから削除' }).click(),
+      editor.getByTestId('confirm-dialog-confirm-button').click(),
     ]);
     await expect(
       workspaceWindow.locator('.workspace-item-card', { hasText: '消すアイテム' })

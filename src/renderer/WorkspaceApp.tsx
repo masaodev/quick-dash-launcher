@@ -347,10 +347,28 @@ const WorkspaceApp: React.FC = () => {
     }
   };
 
+  // アイテムの削除（右クリック・カードの ×）は、確認の子ウィンドウで確かめてから消す
+  const handleRemoveItem = async (id: string) => {
+    try {
+      const name = items.find((i) => i.id === id)?.displayName ?? '';
+      const result = await window.electronAPI.workspaceAPI.openConfirm({
+        title: t('workspace.edit.removeTitle'),
+        message: t('workspace.edit.removeConfirm', { name }),
+        confirmText: t('workspace.edit.remove'),
+        cancelText: t('common.cancel'),
+        danger: true,
+      });
+      if (!result) return;
+      await actions.handleRemove(id);
+    } catch (error) {
+      logError('Failed to confirm workspace item removal:', error);
+    }
+  };
+
   // handlers と ui の共通部分（通常モード・切り離しモードで共用）
   const normalHandlers = {
     onLaunch: actions.handleLaunch,
-    onRemoveItem: actions.handleRemove,
+    onRemoveItem: (id: string) => void handleRemoveItem(id),
     onUpdateDisplayName: (id: string, displayName: string) => {
       actions.handleUpdateDisplayName(id, displayName);
       setEditingId(null);

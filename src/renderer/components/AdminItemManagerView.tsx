@@ -269,11 +269,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     } else {
       showWarning(
         t('itemManager.missingCheck.someMissing', {
+          count: summary.missing,
           checked: summary.checked,
-          missing: summary.missing,
           unknownNote,
         }),
-        { duration: 8000 }
+        { duration: 5000 }
       );
     }
   };
@@ -541,12 +541,18 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       const names = items
         .map((item) => t('itemManager.quotedName', { name: describeItem(item) }))
         .join(t('common.listSeparator'));
-      const message =
+      const question =
         items.length === 1
           ? t('itemManager.deleteConfirmOne', { names })
           : items.length <= 3
             ? t('itemManager.deleteConfirmFew', { names, count: items.length })
             : t('itemManager.deleteConfirmMany', { count: items.length });
+      // ファイルを消すのかと迷わないよう、何が消えるかを添える（クリップボードは保存した中身も消える）
+      const notes: string[] = [t('itemManager.deleteKeepsFiles')];
+      if (items.some((item) => item.item.type === 'clipboard')) {
+        notes.push(t('itemManager.deleteClipboardData'));
+      }
+      const message = `${question}\n\n${notes.join('\n')}`;
       openConfirmDialog({ message, confirmText: t('itemManager.deleteButton'), danger: true }, () =>
         editing.deleteItems(items)
       );
@@ -754,7 +760,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           </span>
         )}
         {pathCheck.hasChecked && (
-          <span className="missing-count">
+          <span className="missing-count" title={t('itemManager.missingCheck.statusTitle')}>
             {t('itemManager.status.missing', { count: missingIds.size })}
           </span>
         )}

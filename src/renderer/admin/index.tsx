@@ -26,7 +26,11 @@ const root = ReactDOM.createRoot(rootElement);
 void initRendererI18n().then(() => {
   root.render(
     <React.StrictMode>
-      <ToastProvider position="bottom-right">
+      {/* アイテム管理の下の件数の帯（合計・入力不備・リンク切れ）に重ならないよう、その分上げる */}
+      <ToastProvider
+        position="bottom-right"
+        bottomOffset="calc(var(--spacing-lg) + var(--admin-status-bar-height))"
+      >
         <AdminApp />
       </ToastProvider>
     </React.StrictMode>

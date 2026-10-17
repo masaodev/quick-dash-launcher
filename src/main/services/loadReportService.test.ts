@@ -41,6 +41,7 @@ describe('loadReportService', () => {
       accepted: 4,
       skipped: 1,
       idAssigned: 1,
+      groupsFlattened: 0,
       corruptedFiles: ['datafiles/data3.json'],
       externallyChangedFiles: ['datafiles/data.json'],
     });
@@ -72,5 +73,30 @@ describe('loadReportService', () => {
     expect(toast).toContain('5 件読込');
     expect(toast).toContain('2 件スキップ');
     expect(toast).toContain('1 件に ID を採番');
+  });
+
+  it('深すぎる・循環するグループを最上位へ移したときは、ほかの補正と違って知らせること', () => {
+    const report = buildLoadReport(
+      [
+        okFile({
+          file: 'workspace.json',
+          issues: [
+            { index: -1, kind: 'normalized', reason: 'version を補いました' },
+            {
+              index: 3,
+              kind: 'normalized',
+              id: 'GrDeep01',
+              reason: '深すぎる',
+              section: 'groups',
+              code: 'groupFlattened',
+            },
+          ],
+        }),
+      ],
+      null
+    );
+
+    expect(report.summary.groupsFlattened).toBe(1);
+    expect(formatLoadReportToast(report)).toContain('グループ 1 件を最上位へ移動');
   });
 });
