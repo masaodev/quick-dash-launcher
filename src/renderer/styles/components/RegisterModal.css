@@ -26,6 +26,10 @@
   flex: 1;
   overflow-y: auto;
   margin-bottom: var(--spacing-lg);
+  /* スクロールバーは入力欄に重ねず外枠の右の余白に出し、出ても消えても入力欄の幅を変えない */
+  scrollbar-gutter: stable;
+  margin-right: calc(-1 * var(--spacing-xl));
+  padding-right: calc(var(--spacing-xl) - var(--scrollbar-width));
 }
 
 .register-item {
@@ -347,6 +351,11 @@
   transition: transform var(--transition-fast);
   display: inline-block;
   width: 12px;
+}
+
+/* ▼ は ▶ と字の大きさが違うので、開いたときも ▶ を回して下に向ける */
+.toggle-icon.open {
+  transform: rotate(90deg);
 }
 
 .options-content {

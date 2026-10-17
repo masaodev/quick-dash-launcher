@@ -75,7 +75,7 @@ const ItemWindowSwitchEditor: React.FC<ItemWindowSwitchEditorProps> = ({
         aria-expanded={expanded}
         onClick={() => setExpanded((open) => !open)}
       >
-        <span className="toggle-icon">{expanded ? '▼' : '▶'}</span>
+        <span className={`toggle-icon${expanded ? ' open' : ''}`}>▶</span>
         <span>{t('register.windowSwitch.toggle')}</span>
         {summary && <span className="set-row-place options-toggle-summary">📍 {summary}</span>}
       </button>

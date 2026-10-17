@@ -263,7 +263,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
       {(item.itemCategory === 'item' || item.itemCategory === 'dir') && (
         <div className="options-section">
           <button type="button" className="options-toggle" onClick={onToggleOptions}>
-            <span className="toggle-icon">{optionsOpen ? '▼' : '▶'}</span>
+            <span className={`toggle-icon${optionsOpen ? ' open' : ''}`}>▶</span>
             {item.itemCategory === 'item' ? t('register.itemOptions') : t('register.dirOptions')}
           </button>
 
