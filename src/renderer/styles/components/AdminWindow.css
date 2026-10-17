@@ -84,6 +84,33 @@
   font-weight: bold;
 }
 
+/* 畳める節（設定画面「ウィンドウ」の詳しい設定） */
+.settings-details > summary {
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: bold;
+}
+
+.settings-details[open] > summary {
+  margin-bottom: 15px;
+}
+
+.settings-details h4 {
+  margin: var(--spacing-xl) 0 var(--spacing-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+}
+
+/* 節と節のあいだに置く補足 */
+.settings-note {
+  margin: -15px 0 30px;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
 .settings-section-description {
   margin: -10px 0 15px 0;
   color: var(--text-muted);

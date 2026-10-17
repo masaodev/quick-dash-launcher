@@ -2002,57 +2002,74 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
     },
     windowSize: {
-      heading: 'Window size',
+      heading: 'Size',
       launcher: 'Launcher',
-      admin: 'Settings window',
+      admin: 'Manager',
       width: 'Width:',
       height: 'Height:',
     },
     windowPosition: {
-      heading: 'Window position',
-      center: 'Center of the screen (fixed)',
-      centerDescription: 'Always shows the window in the center of the primary monitor',
-      cursorMonitorCenter: 'Center of the screen (follows the mouse)',
+      heading: 'Launcher',
+      label: 'Where to show:',
+      cursorMonitorCenter: 'Center of the display with the mouse cursor (default)',
       cursorMonitorCenterDescription:
-        'Shows the window in the center of the monitor with the mouse pointer (for multiple monitors)',
-      cursor: 'Near the mouse pointer',
-      cursorDescription: 'Shows the window near the mouse pointer',
-      fixed: 'Fixed position (manual)',
+        'Shows it in the center of the display the mouse cursor is on',
+      cursor: 'Near the mouse cursor',
+      cursorDescription:
+        'Shows it near the mouse cursor (the search box comes close to the cursor)',
+      center: 'Center of the primary display',
+      centerDescription:
+        'Always shows it in the center of the primary display (the one set as main in Windows settings)',
+      fixed: 'Where you last moved it',
       fixedDescription: 'Remembers where you moved the window and shows it there next time',
     },
+    windowNote:
+      'Whether a window hides with the launcher or stays is set with its 📌. Pinned windows stay and come to the front when you press the hotkey. Windows you close with × stay closed.',
     workspace: {
       heading: 'Workspace window',
-      detachedPosition: 'Detached window position:',
-      detachedPositionSaved: 'Where you placed it',
-      detachedPositionSavedDescription: 'Shows each detached window where you last placed it',
-      detachedPositionMainDisplay: 'Same display as the launcher (default)',
-      detachedPositionMainDisplayDescription:
-        'When shown with the launcher, moves each detached window to the same spot on the display the launcher is on. Windows touching an edge of the display stay at that edge; others keep their distance from the center of the display. Pinned windows stay where they are.',
-      position: 'Position:',
-      displayEdge: 'Edge of a display (default)',
-      displayEdgeDescription:
-        'Places the workspace at the left or right edge of the selected display',
-      mainWindowDisplay: 'Same display as the launcher',
+      position: 'Where to show:',
+      displayLabel: 'Display',
+      mainWindowDisplay: 'Same display as the launcher (default)',
       missingDisplay: 'Display {{number}} (not connected; showing on the primary display)',
-      leftEdge: 'Left edge',
-      rightEdge: 'Right edge',
-      fixed: 'Fixed position (manual)',
-      fixedDescription: 'Remembers where you moved the workspace and shows it there next time',
-      opacity: 'Opacity:',
+      edgeLabel: 'Edge',
+      leftEdge: 'Left',
+      rightEdge: 'Right (default)',
+      fixedActive:
+        'Not used because "Show the workspace where you last moved it" is on in Advanced settings',
+    },
+    detached: {
+      heading: 'Detached windows',
+      position: 'Where to show:',
+      mainDisplay: 'Same display as the launcher (default)',
+      mainDisplayDescription:
+        'When shown with the launcher, moves each detached window to the same spot on the display the launcher is on. Windows touching an edge of the display stay at that edge; others keep their distance from the center of the display. Pinned windows stay where they are.',
+      saved: 'Where you last placed it',
+      savedDescription: 'Shows each detached window where you last placed it',
+    },
+    windowDetails: {
+      summary: 'Advanced settings',
+      workspacePlacement: 'Where to show the workspace',
+      workspaceFixed: 'Show the workspace where you last moved it',
+      workspaceFixedDescription:
+        'When on, the workspace is shown where you last moved it instead of at the edge of a display.',
+      appearance: 'Appearance',
+      opacity: 'Workspace opacity:',
       opacityDescription:
-        'Sets the opacity of the workspace window (0% = fully transparent, 100% = opaque).',
-      backgroundTransparent: 'Make only the background transparent (not items or groups)',
+        'How solid the workspace window itself is (0% = fully transparent, 100% = fully opaque). Does not apply to detached windows.',
+      opacityDisabled: 'Not available while "Make only the background transparent" is on.',
+      backgroundTransparent: 'Make only the background transparent',
       backgroundTransparentDescription:
-        'When on, only the background is transparent; items and groups appear as usual.',
-      visibleOnAllDesktops: 'Show on all virtual desktops',
-      visibleOnAllDesktopsDescription:
-        'When on, the workspace window appears on every virtual desktop.',
-      detachedVisibleOnAllDesktops: 'Also show detached windows on all virtual desktops',
+        'When on, only the background is transparent and items and groups are shown as usual. Also applies to detached windows.',
+      virtualDesktops: 'Virtual desktops',
+      workspaceVisibleOnAllDesktops: 'Show the workspace on all virtual desktops',
+      workspaceVisibleOnAllDesktopsDescription:
+        'When on, the workspace window appears on every virtual desktop (the Windows 10/11 virtual desktop feature).',
+      detachedVisibleOnAllDesktops: 'Show detached windows on all virtual desktops',
       detachedVisibleOnAllDesktopsDescription:
         'When on, detached windows also appear on every virtual desktop.',
-      windowSnap: 'Snap windows to monitor edges',
+      windowSnap: 'Snap to display edges',
       windowSnapDescription:
-        'When on, the workspace window and detached windows snap to the edge of the monitor when you move them close to it.',
+        'Snaps the workspace window and detached windows to the edge of a display when you move them close to it.',
     },
     backup: {
       heading: 'Backup',
