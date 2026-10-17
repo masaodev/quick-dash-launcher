@@ -15,6 +15,7 @@ import {
   isPathEditable,
 } from '../utils/adminItemDisplay';
 import { describePathAndArgs, getItemKey } from '../utils/editableItemOperations';
+import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 import { activateOnEnterOrSpace } from '../utils/keyboardActivation';
 
 export interface AdminItemManagerRowProps {
@@ -114,17 +115,18 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     if (iconData) {
       return <img src={iconData} alt="" className="item-icon-image" />;
     }
+    // アイコンが無いときは、メイン画面と同じ種類ごとの絵文字を出す
+    if (jsonItem.type === 'clipboard') return <span className="folder-emoji">📋</span>;
+    if (jsonItem.type === 'set') return <span className="folder-emoji">📦</span>;
+    if (jsonItem.type === 'dir') return <span className="folder-emoji">🗂️</span>;
     if (jsonItem.type !== 'item') return null;
-    // アイコンがない場合、フォルダなら絵文字表示（読み込み時の判定がなければパスから判定）
-    const path = jsonItem.path || '';
-    if (path && (item.meta.launcherType ?? detectItemTypeSync(path)) === 'folder') {
-      return <span className="folder-emoji">📁</span>;
-    }
     // パスの無い単一アイテム（開いているウィンドウに切り替えるだけ）
     if (isPathlessItem(jsonItem)) {
       return <span className="folder-emoji">🪟</span>;
     }
-    return null;
+    // 単一アイテムは種類（読み込み時の判定がなければパスから判定）の絵文字
+    const type = item.meta.launcherType ?? detectItemTypeSync(jsonItem.path || '');
+    return <span className="folder-emoji">{ITEM_TYPE_ICONS[type] ?? ITEM_TYPE_ICONS.file}</span>;
   };
 
   const renderNameCell = () => {

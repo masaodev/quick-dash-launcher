@@ -19,6 +19,7 @@ function report(): LoadReport {
       accepted: 3,
       skipped: 1,
       idAssigned: 0,
+      groupsFlattened: 0,
       corruptedFiles: [],
       externallyChangedFiles: [],
     },

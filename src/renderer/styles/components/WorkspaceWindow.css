@@ -118,17 +118,69 @@ html:has(.workspace-window.background-transparent) {
 
 /* ==================== ワークスペースタブバー ==================== */
 
+/* タブだけを内側でスクロールさせ、アーカイブと＋は右端に固定する */
 .workspace-tab-bar {
   padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--bg-header);
   border-bottom: var(--border-light);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.workspace-tab-scroll {
+  display: flex;
+  gap: inherit; /* タブの間隔は .tab-bar と同じ */
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
 }
 
-.workspace-tab-bar::-webkit-scrollbar {
+.workspace-tab-scroll::-webkit-scrollbar {
   display: none; /* Chromium */
+}
+
+/* 続きがある側の端をぼかす（mask は不透明度だけを使うので、色は何でもよい） */
+.workspace-tab-scroll.fade-right {
+  mask-image: linear-gradient(
+    to right,
+    var(--color-white) calc(100% - var(--spacing-xl)),
+    transparent
+  );
+}
+
+.workspace-tab-scroll.fade-left {
+  mask-image: linear-gradient(
+    to left,
+    var(--color-white) calc(100% - var(--spacing-xl)),
+    transparent
+  );
+}
+
+.workspace-tab-scroll.fade-left.fade-right {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    var(--color-white) var(--spacing-xl),
+    var(--color-white) calc(100% - var(--spacing-xl)),
+    transparent
+  );
+}
+
+/* 長いワークスペース名は省略する（全体はツールチップで見える） */
+.workspace-tab-scroll .tab-button {
+  max-width: var(--workspace-tab-max-width);
+  overflow: hidden;
+}
+
+.workspace-tab-name {
+  /* タブは縦並び（中央寄せ）の作りなので、幅の上限を付けないと両端が切れる */
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* アーカイブタブ */

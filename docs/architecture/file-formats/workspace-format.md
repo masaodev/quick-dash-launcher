@@ -98,7 +98,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | **order** | number | ✓* | 同じ親の中での並び順 |
 | **createdAt** | number | ✓* | 作成日時（ms） |
 | **workspaceId** | string | ✓ | 所属ワークスペース。存在しなければ既定ワークスペースへ寄せる（`normalized`） |
-| **parentGroupId** | string | - | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。不正（`invalid`）なグループへの参照は残す |
+| **parentGroupId** | string | - | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。循環・深さ超過で最上位へ移したときは issue に `code: "groupFlattened"` を付け、読み込みレポートの `summary.groupsFlattened` に数え、トーストで知らせ、ログにグループの ID を warn で残す。不正（`invalid`）なグループへの参照は残す |
 
 折りたたみ状態（旧 `collapsed`）はここには無い（[4. workspace-ui-state.json](#4-workspace-ui-statejson)）。
 

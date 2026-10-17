@@ -140,6 +140,7 @@
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --text-shadow-on-color: 0 0 3px rgba(0, 0, 0, 0.6); /* 色の上に載せる白い文字の縁取り */
 
   /* フォーカスリング */
   --focus-ring: 0 0 0 1px var(--color-primary);
@@ -166,6 +167,8 @@
   --minimap-dim-opacity: 0.25; /* セット全体の図で、乗せていない行の位置 */
   --set-row-place-width: 230px; /* セットの行の位置の言葉の列 */
   --set-row-name-min-width: 200px; /* セットの行の名前の列（これより狭いときは位置の列を縮める） */
+  --admin-status-bar-height: 36px; /* アイテム管理の下の件数の帯（トーストをその上に出す） */
+  --workspace-tab-max-width: 160px; /* ワークスペースのタブ名の最大幅（超えたら省略） */
   --input-height-lg: 40px;
   --input-height-sm: 34px;
   --input-height: 32px;

@@ -11,6 +11,7 @@ import { logError } from '../utils/debug';
 import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 
 import MemoViewModal from './MemoViewModal';
+import { Button } from './ui/Button';
 import '../styles/components/MemoViewModal.css';
 
 interface ItemListProps {
@@ -27,6 +28,10 @@ interface ItemListProps {
   onEditItem?: (item: AppItem) => void | Promise<void>;
   /** ウィンドウを閉じる（右クリックの「ウィンドウを閉じる」） */
   onCloseWindow?: (win: WindowInfo) => Promise<void>;
+  /** 一覧が空のときの案内（検索で 0 件／空のタブ）。null なら何も出さない */
+  emptyState?: LauncherEmptyState | null;
+  /** 空のタブの案内の「アイテムを追加…」 */
+  onAddItem?: () => void;
   /** 右クリックの固定・固定解除（pin: true で固定） */
   onPinWindows?: (wins: WindowInfo[], pin: boolean) => Promise<void>;
   /** 右クリックの仮想デスクトップへの移動 */
@@ -36,6 +41,10 @@ interface ItemListProps {
   /** id からアイテムの名前を引く（セットのツールチップに行の名前を出す。絞り込みの外のアイテムも引く） */
   nameOfItem?: (itemId: string) => string | undefined;
 }
+
+/** 一覧が空のときの案内の種類 */
+export type LauncherEmptyState =
+  { kind: 'noMatch'; query: string; windowMode: boolean } | { kind: 'emptyTab' };
 
 export interface WindowListSelection {
   isMarked: (hwnd: WindowInfo['hwnd']) => boolean;
@@ -65,6 +74,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onMoveWindows,
   windowSelection,
   nameOfItem,
+  emptyState,
+  onAddItem,
 }) => {
   const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
@@ -328,6 +339,38 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   return (
     <>
       <div className="item-list" ref={listRef}>
+        {items.length === 0 && emptyState && (
+          <div className="item-list-empty" role="status">
+            {emptyState.kind === 'noMatch' ? (
+              <>
+                <p>
+                  {t(
+                    emptyState.windowMode
+                      ? 'launcher.empty.noMatchWindow'
+                      : 'launcher.empty.noMatch',
+                    { query: emptyState.query }
+                  )}
+                </p>
+                <p className="item-list-empty-hint">
+                  {t(
+                    emptyState.windowMode
+                      ? 'launcher.empty.noMatchWindowHint'
+                      : 'launcher.empty.noMatchHint'
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                <p>{t('launcher.empty.emptyTab')}</p>
+                {onAddItem && (
+                  <Button variant="secondary" size="sm" onClick={onAddItem}>
+                    {t('launcher.empty.add')}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        )}
         <div className="item-list-inner" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const index = virtualRow.index;

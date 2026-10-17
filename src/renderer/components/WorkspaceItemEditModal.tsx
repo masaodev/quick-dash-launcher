@@ -74,6 +74,22 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     updateItem,
   } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave);
 
+  /**
+   * 「ワークスペースから削除」は、一覧の右クリック・× と同じ確認の子ウィンドウ（この画面が親）で確かめてから消す。
+   * 名前は編集中の値ではなく保存済みの名前を出す
+   */
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    const result = await window.electronAPI.workspaceAPI.openConfirm({
+      title: t('workspace.edit.removeTitle'),
+      message: t('workspace.edit.removeConfirm', { name: editingItem.displayName }),
+      confirmText: t('workspace.edit.remove'),
+      cancelText: t('common.cancel'),
+      danger: true,
+    });
+    if (result) await handleDelete();
+  };
+
   // 上に重ねたダイアログ（セットのアイテムの追加など）の Escape は useModalKeyboard がそちらに任せる
   useModalKeyboard({ isOpen, modalRef, onClose: handleCancel });
 
@@ -228,7 +244,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   {t('register.tryRun')}
                 </Button>
                 <div className="modal-actions-right">
-                  <Button variant="danger" onClick={handleDelete}>
+                  <Button variant="danger" onClick={() => void handleConfirmDelete()}>
                     {t('workspace.edit.remove')}
                   </Button>
                   <Button variant="secondary" onClick={handleCancel}>

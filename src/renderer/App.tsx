@@ -738,6 +738,14 @@ function App(): React.ReactElement {
       <LauncherItemList
         items={filteredItems}
         nameOfItem={nameOfMainItem}
+        emptyState={
+          searchQuery.trim()
+            ? { kind: 'noMatch', query: searchQuery.trim(), windowMode: searchMode === 'window' }
+            : searchMode === 'normal'
+              ? { kind: 'emptyTab' }
+              : null
+        }
+        onAddItem={() => void openRegisterWindow()}
         selectedIndex={selectedIndex}
         onItemExecute={handleExecuteItem}
         onItemSelect={setSelectedIndex}
