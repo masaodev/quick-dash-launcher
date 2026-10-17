@@ -232,7 +232,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     const profiles = browsers.find((b) => b.id === rule.browserId)?.profiles ?? [];
     return rule.profileIds
       .map((id) => profiles.find((p) => p.id === id)?.displayName ?? id)
-      .join(', ');
+      .join(t('common.listSeparator'));
   };
 
   /** ルール一覧のフォルダの表示（一番上のフォルダは画面の言葉にし、除くときはそう書く） */

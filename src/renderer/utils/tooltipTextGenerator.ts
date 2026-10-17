@@ -167,7 +167,7 @@ function getClipboardItemTooltip(clipboardItem: ClipboardItem): string {
         ? t(`launcher.tooltip.clipboardFormatNames.${f as (typeof formatKeys)[number]}`)
         : f
     )
-    .join(', ');
+    .join(t('common.listSeparator'));
   lines.push(t('launcher.tooltip.clipboardFormats', { value: formats }));
 
   if (clipboardItem.preview) {
