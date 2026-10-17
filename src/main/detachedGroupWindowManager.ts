@@ -40,6 +40,12 @@ const webContentsIdToGroupId = new Map<number, string>();
 /** 生成中の groupId（二重要求の抑止用） */
 const creatingGroupIds = new Set<string>();
 
+/**
+ * まだ初めての表示をしていない groupId。中身に合わせて大きさを決めた後（またはしばらく待った後）に 1 回だけ出す。
+ * 隠したまま作ったもの（起動時に開き直した 📌 なしのもの）は入れない。メインウィンドウと一緒に出る
+ */
+const pendingInitialShow = new Set<string>();
+
 /** groupId → 最後に動かしたときの、載っていたモニターに対する位置 */
 const detachedAnchors = new Map<string, MonitorAnchor>();
 
@@ -101,6 +107,17 @@ export function setDetachedPinMode(groupId: string, next: DetachedPinMode): Deta
       .catch(() => {});
   }
   return next;
+}
+
+/**
+ * 中身に合わせて大きさを決めたときに呼ぶ。まだ初めての表示をしていなければ true を返して、表示待ちを外す
+ * （隠れているウィンドウや、隠したまま作ったウィンドウを、大きさの調整のたびに出さないため）
+ */
+export function takeDetachedInitialShow(win: BrowserWindow): boolean {
+  for (const [groupId, w] of detachedWindows) {
+    if (w === win) return pendingInitialShow.delete(groupId);
+  }
+  return false;
 }
 
 /** フォーカスを奪わずにウィンドウを前面に表示する */
@@ -205,11 +222,12 @@ function createStandaloneWindow(
   groupId: string,
   options: BrowserWindowConstructorOptions,
   pinMode: DetachedPinMode,
-  skipFocus: boolean
+  skipFocus: boolean,
+  startHidden: boolean
 ): { success: boolean } {
   const win = new BrowserWindow(options);
   win.loadURL(buildDetachedWindowUrl(groupId));
-  setupDetachedWindow(win, groupId, pinMode, skipFocus);
+  setupDetachedWindow(win, groupId, pinMode, skipFocus, startHidden);
   windowLogger.info(`切り離しウィンドウを直接作成しました: ${groupId}`);
   return { success: true };
 }
@@ -217,12 +235,13 @@ function createStandaloneWindow(
 /**
  * 切り離しグループウィンドウを作成する（既存ならフォーカスのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
+ * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（メインウィンドウと一緒に出る）
  */
 export async function createDetachedGroupWindow(
   groupId: string,
   cursorX?: number,
   cursorY?: number,
-  options?: { skipFocus?: boolean }
+  options?: { skipFocus?: boolean; startHiddenUnlessPinned?: boolean }
 ): Promise<{ success: boolean }> {
   const existing = detachedWindows.get(groupId);
   if (existing && !existing.isDestroyed()) {
@@ -299,6 +318,7 @@ export async function createDetachedGroupWindow(
   };
 
   const skipFocus = options?.skipFocus ?? false;
+  const startHidden = (options?.startHiddenUnlessPinned ?? false) && savedPinMode === 0;
 
   if (savedAnchor) {
     detachedAnchors.set(groupId, savedAnchor);
@@ -320,12 +340,12 @@ export async function createDetachedGroupWindow(
       options: windowOptions,
     });
     if (win) {
-      setupDetachedWindow(win, groupId, savedPinMode, skipFocus);
+      setupDetachedWindow(win, groupId, savedPinMode, skipFocus, startHidden);
       windowLogger.info(`切り離しウィンドウをレンダラー共有で作成しました: ${groupId}`);
       return { success: true };
     }
     windowLogger.warn({ groupId }, 'レンダラー共有での生成に失敗したため直接生成します');
-    return createStandaloneWindow(groupId, windowOptions, savedPinMode, skipFocus);
+    return createStandaloneWindow(groupId, windowOptions, savedPinMode, skipFocus, startHidden);
   } finally {
     creatingGroupIds.delete(groupId);
   }
@@ -339,7 +359,8 @@ function setupDetachedWindow(
   win: BrowserWindow,
   groupId: string,
   pinMode: DetachedPinMode,
-  skipFocus: boolean
+  skipFocus: boolean,
+  startHidden: boolean
 ): void {
   win.setMenuBarVisibility(false);
   win.setMenu(null);
@@ -350,11 +371,18 @@ function setupDetachedWindow(
   const wcId = win.webContents.id;
   webContentsIdToGroupId.set(wcId, groupId);
 
-  const cancelFallbackShow = scheduleFallbackShow(
-    win,
-    () => (skipFocus ? showWithoutFocus(win) : win.show()),
-    SHOW_FALLBACK_TIMEOUT_MS
-  );
+  if (!startHidden) pendingInitialShow.add(groupId);
+  const cancelFallbackShow = startHidden
+    ? () => {}
+    : scheduleFallbackShow(
+        win,
+        () => {
+          if (!pendingInitialShow.delete(groupId)) return;
+          if (skipFocus) showWithoutFocus(win);
+          else win.show();
+        },
+        SHOW_FALLBACK_TIMEOUT_MS
+      );
 
   // bounds 保存用のデバウンスタイマー。QDL が位置を当て直したときの移動は保存しない
   // （小さいモニターで縮めたサイズや寄せた位置で、覚えている位置を上書きしないため）
@@ -436,6 +464,7 @@ function setupDetachedWindow(
 }
 
 function forgetPlacement(groupId: string): void {
+  pendingInitialShow.delete(groupId);
   detachedAnchors.delete(groupId);
   detachedSizes.delete(groupId);
   programmaticMoveAt.delete(groupId);
@@ -534,8 +563,12 @@ export async function applyDetachedVisibilityOnAllDesktops(): Promise<void> {
 /**
  * 前回開いていた切り離しウィンドウを復元する（存在するグループのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
+ * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（起動時。メインウィンドウと一緒に出る）
  */
-export async function restoreDetachedWindows(options?: { skipFocus?: boolean }): Promise<void> {
+export async function restoreDetachedWindows(options?: {
+  skipFocus?: boolean;
+  startHiddenUnlessPinned?: boolean;
+}): Promise<void> {
   try {
     const workspaceService = await WorkspaceService.getInstance();
     const openGroupIds = await workspaceService.loadOpenDetachedGroupIds();
