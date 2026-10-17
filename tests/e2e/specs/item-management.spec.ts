@@ -112,7 +112,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(firstRow.locator('.name-column')).toContainText('-');
         await expect(firstRow.locator('.content-column')).toContainText('https://new-item.com');
         await typeSelect.selectOption('item');
-        await expect(firstRow.locator('.name-column')).toContainText('(名前なし)');
+        await expect(firstRow.locator('.name-column')).toContainText('（名前なし）');
 
         // 名前を入れ直す
         await firstRow.locator('.name-column .editable-cell').click();
@@ -225,7 +225,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
       await test.step('更新ボタンをクリック', async () => {
         const updateButton = detailWindow
-          .locator('.register-modal button', { hasText: '更新' })
+          .locator('.register-modal button', { hasText: '保存' })
           .first();
         // 詳細編集ウィンドウが閉じ、内容は未保存の変更として一覧に反映される（まだ保存しない）
         await adminUtils.closeRegisterModalBy(() => updateButton.click());
@@ -627,7 +627,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
           adminWindow.locator('.raw-item-row[data-item-id="base0001"] .name-column')
         ).toContainText(/^GitHub$/);
         // 追加した空行は消えている
-        await expect(adminWindow.locator('.raw-item-row', { hasText: '(名前なし)' })).toHaveCount(
+        await expect(adminWindow.locator('.raw-item-row', { hasText: '（名前なし）' })).toHaveCount(
           0
         );
         expect(configHelper.hasItemByDisplayName('data.json', 'Google')).toBe(true);
@@ -767,10 +767,10 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(adminWindow.locator('button', { hasText: '変更を保存' })).toHaveCount(0);
       });
 
-      await test.step('▼ の「フォルダの中身を追加」で、先頭にフォルダ取込が入りパス欄が編集状態になる', async () => {
+      await test.step('▼ の「フォルダ取込を追加」で、先頭にフォルダ取込が入りパス欄が編集状態になる', async () => {
         await adminWindow.locator('.toolbar-split .toolbar-split-toggle').click();
         await adminWindow
-          .locator('.toolbar-split .dropdown-item', { hasText: 'フォルダの中身を追加' })
+          .locator('.toolbar-split .dropdown-item', { hasText: 'フォルダ取込を追加' })
           .click();
 
         const firstRow = adminWindow.locator('.raw-item-row').first();
@@ -846,7 +846,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await missingOnlyItem.click();
         await expect(adminWindow.locator('.raw-item-row')).toHaveCount(1);
         await expect(adminWindow.locator('.raw-item-row').first()).toContainText('壊れたリンク');
-        await expect(filterButton).toContainText('絞り込み (1)');
+        await expect(filterButton).toContainText('絞り込み（1）');
 
         const chips = adminWindow.getByTestId('item-filter-chips');
         await expect(chips).toContainText('リンク切れだけ');

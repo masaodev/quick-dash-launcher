@@ -699,7 +699,7 @@ test.describe('QuickDashLauncher - 単一アイテムのウィンドウ切り替
       // 更新するとすぐ閉じるので、閉じるのを先に待ち始める
       await Promise.all([
         editor.waitForEvent('close', { timeout: 10000 }),
-        editor.locator('.modal-actions button', { hasText: '更新' }).click(),
+        editor.locator('.modal-actions button', { hasText: '保存' }).click(),
       ]);
     });
 

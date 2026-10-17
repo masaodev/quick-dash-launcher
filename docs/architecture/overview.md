@@ -43,7 +43,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 - **about:blank で開く理由**: `window.open` の子ウィンドウをURLへナビゲーションさせると、Electron 44では preload が適用されない
 - **preload の登録**: `session.registerPreloadScript` でセッション単位に登録し、`window.open` の子ウィンドウを含む全ウィンドウに共通適用する（各 `BrowserWindow` の `webPreferences.preload` は指定しない）
 - **注意**: プロセスを共有するウィンドウはJSスレッドも共有する。重い処理を行うウィンドウは独立プロセスにすること
-- **副次効果**: 開き元（メイン・ワークスペース・管理）では `setWindowOpenHandler` により、生成待ちに対応しない `window.open`（外部リンク等）は全て拒否される
+- **副次効果**: 開き元（メイン・ワークスペース・管理）では `setWindowOpenHandler` により、生成待ちに対応しない `window.open`（外部リンク等）はすべて拒否される
 - **IPC**: `window:open-child` / `window:child-written`（[IPCチャンネル](ipc-channels.md#windowopen-child-イベント)）
 - **ナビゲーションの制御**: QDL の画面はページ側から別の URL へ移ることが無いので、すべての画面でページ側から始まる移動（メインフレームの `will-navigate`、iframe の `will-frame-navigate`）を止めてログに残す（`src/main/utils/navigationGuard.ts`）。外部のページが preload の API を使えないようにする多層防御。メインプロセスからの読み込み・再読み込みは対象外。今と同じ URL への移動も通す（開発サーバーで Vite が依存の最適化のあとに移り直すのを止めると、スプラッシュが閉じなくなる）。about:blank への移動は Electron が通知を出さないので止められない（画面が空白になるだけ）
 - **CSP**: ビルドした画面の HTML には、ビルドの最後に CSP の meta を入れる（`scripts/viteCspPlugin.ts`。開発サーバーには入れない）。スクリプトは QDL 自身のファイルと、HTML に書いたインラインスクリプト（ハッシュで指定）だけを許し、インラインのイベントハンドラー（`onclick` など）と eval は許さない。画像は data: URL も許す（アイコンはメインプロセスが data: URL にして渡す）。子ウィンドウは開き元の CSP も引き継ぐので、全 HTML のインラインスクリプトのハッシュを 1 つの CSP にまとめ、全画面に同じものを入れる。HTML にインラインのハンドラーを書くと動かないので、`addEventListener` を使う

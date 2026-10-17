@@ -277,14 +277,14 @@ describe('validateEditableItem', () => {
   });
 
   describe('未知のタイプ', () => {
-    it('未知のアイテムタイプの場合、エラーを返す', () => {
+    it('未知の種別の場合、エラーを返す', () => {
       const item = {
         id: 'test-29',
         type: 'unknown',
       } as unknown as JsonItem;
       const result = validateEditableItem(item, t);
       expect(result.isValid).toBe(false);
-      expect(result.error).toBe('未知のアイテムタイプ: unknown');
+      expect(result.error).toBe('未知の種別: unknown');
     });
   });
 });

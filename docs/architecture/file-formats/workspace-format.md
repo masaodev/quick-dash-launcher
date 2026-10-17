@@ -69,7 +69,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | **version** | string | ✓ | `"2.0"`。無いファイルは旧形式として移行される |
-| **workspaces** | Workspace[] | ✓ | 1 件以上。0 件なら既定ワークスペースを作る（名前は作るときの表示言語で「デフォルト」／「Default」） |
+| **workspaces** | Workspace[] | ✓ | 1 件以上。0 件なら既定ワークスペースを作る（名前は作るときの表示言語で「既定」／「Default」） |
 | **groups** | WorkspaceGroup[] | ✓ | |
 | **items** | WorkspaceItem[] | ✓ | |
 
@@ -170,7 +170,7 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 
 - `collapsedGroups`: メインのワークスペースウィンドウでの折りたたみ（true のものだけ持つ）
 - `detachedWindows`: 切り離しウィンドウの状態（ルートグループ id → 状態）
-- 存在しなくなったグループの状態は、グループ削除・アーカイブ・再読込のたびに捨てる（`pruneMissingGroups`）
+- 存在しなくなったグループの状態は、グループ削除・アーカイブ・再読み込みのたびに捨てる（`pruneMissingGroups`）
 
 ---
 
@@ -184,7 +184,7 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 | 寛容パース | JSON 構文エラー・ルート構造の不正・配列フィールドの型違い（配列以外）だけ `corrupted`。配列フィールドが無ければ空配列を補う（`normalized`）。要素単位の不正は `invalid`（読み込みから外し、書き戻し時に配列の末尾へ残す）。ただしオブジェクトでない要素は残さず削除する。id の欠落/不正/重複は採番（`idAssigned`）し、参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId`）を追随させる。宙に浮いた参照・`version`・省略した `order` 等は補正（`normalized`） |
 | レポート | 読み込みレポート（[データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え)。CLI の `qdl reload`・`qdl check` が返す）の `files[]` に `workspace.json` / `workspace-archive.json` がデータファイルと並ぶ。ワークスペースの `issues[]` は `section`（`workspaces` / `groups` / `items`）を持ち、`index` はその配列内の位置 |
 | 外部変更検知 | データファイルと同じ `dataFileTracker`。前回読んだ/書いた内容と違えば `externallyChanged`、`backupEnabled` なら変更前を `backup/*_pre-external/` に残す |
-| 楽観ロック | 書き込み前に現在のファイル内容を確認し、QDL の外で変更されていれば書かずに拒否（メイン画面で F5 を押して再読込するよう促すトーストを出す）。読み直せば再び書ける |
+| 楽観ロック | 書き込み前に現在のファイル内容を確認し、QDL の外で変更されていれば書かずに拒否（メイン画面で F5 を押して再読み込みするよう促すトーストを出す）。読み直せば再び書ける |
 | 破損時 | どちらか 1 ファイルでも読めなければ両ファイルの書き込みを拒否する（空のキャッシュで上書きして復旧不能にしない）。ワークスペース画面は空になり、エラーのトースト「設定ファイルの読み込みに失敗しました（破損の可能性）: <ファイル名>」で通知（`src/main/services/data/dataFileLoader.ts`） |
 | バックアップ | `workspace.json` / `workspace-archive.json` は日次スナップショットの変更検知トリガー。`workspace-ui-state.json` はバックアップには含むがトリガーではない |
 

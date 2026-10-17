@@ -80,7 +80,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ### 3.1. バージョン情報
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **createdWithVersion** | string | - | この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） |
 | **updatedWithVersion** | string | - | この設定ファイルを最後に更新したアプリバージョン |
@@ -91,19 +91,19 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 
 #### 表示言語
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **language** | string | "auto" | 画面に使う言語<br>`auto`: Windows の最初の表示言語が日本語なら日本語、それ以外は英語<br>`ja`: 日本語<br>`en`: 英語<br>不正な値は `auto` とみなす。変えると開いているすべてのウィンドウにすぐ反映される |
 
 ### 3.2. ホットキー設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **hotkey** | string | "" | ランチャー起動ホットキー<br>空の場合はホットキー未設定（初回セットアップで設定）<br>修飾キー（Ctrl・Alt・Shift など）1 つ以上と通常キー 1 つを `+` でつなぐ。形が合わない値は登録しない<br>例: "Alt+Space", "Ctrl+Shift+L" |
+| **hotkey** | string | "" | メインウィンドウのホットキー<br>空の場合はホットキー未設定（初回セットアップで設定）<br>修飾キー（Ctrl・Alt・Shift など）1 つ以上と通常キー 1 つを `+` でつなぐ。形が合わない値は登録しない<br>例: "Alt+Space", "Ctrl+Shift+L" |
 
 ### 3.3. ウィンドウサイズ設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **windowWidth** | number | 600 | ウィンドウの初期幅（ピクセル） |
 | **windowHeight** | number | 400 | ウィンドウの初期高さ（ピクセル） |
@@ -112,7 +112,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 
 ### 3.4. 自動起動・CLI 設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **autoLaunch** | boolean | false | Windows起動時にアプリを自動起動するか |
 | **cliEnabled** | boolean | false | QuickDashLauncher CLI（`qdl` コマンド）を PATH から使えるようにするか |
@@ -123,7 +123,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 ### 3.5. バックアップ設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **backupEnabled** | boolean | true | バックアップ機能の有効/無効（2026-10 に既定を true にした。それより前に初回起動した人の設定ファイルには false が書き込まれているので変わらない） |
 | **backupRetention** | number | 10 | バックアップファイルの保存件数上限<br>古いバックアップから自動削除 |
@@ -131,7 +131,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 ### 3.6. データファイルタブ設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面では基本設定の「表示」にある「複数タブを表示」 |
 | **defaultFileTab** | string | "datafiles/data.json" | メイン画面を開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
@@ -153,7 +153,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 ### 3.7. ウィンドウ表示位置設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **windowPositionMode** | WindowPositionMode | "cursorMonitorCenter" | ウィンドウ表示位置モード |
 | **windowPositionX** | number | 0 | 固定位置のX座標（windowPositionMode='fixed'時に使用） |
@@ -170,7 +170,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 ### 3.8. ワークスペース設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **workspaceOpacity** | number | 100 | ワークスペースウィンドウの不透明度（0-100%） |
 | **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウの背景のみを透過するか |
@@ -179,8 +179,8 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **workspaceTargetDisplayIndex** | number | 0 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり） |
 | **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
 | **workspacePositionY** | number | 0 | 固定位置のY座標（workspacePositionMode='fixed'時に使用） |
-| **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウを全仮想デスクトップに表示するか |
-| **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）を全仮想デスクトップに表示するか |
+| **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウをすべての仮想デスクトップに表示するか |
+| **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）をすべての仮想デスクトップに表示するか |
 | **hideDetachedWithMainWindow** | boolean | true | メインウィンドウの表示/非表示に連動して、固定していない切り離しウィンドウも表示/非表示にするか<br>フォーカスがメイン・ワークスペース・切り離しウィンドウ（とそこから開いた編集・確認ウィンドウ）の中にある間は隠さず、外へ出たときに隠す（管理ウィンドウは外扱い）。判定の詳細は [ウィンドウ制御](../window-control.md#ウィンドウ非表示の判定) |
 | **windowSnapEnabled** | boolean | true | ワークスペースウィンドウ・切り離しウィンドウをモニター端に近づけたときに吸着（スナップ）させるか |
 
@@ -189,7 +189,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | 値 | 説明 |
 | --- | --- |
 | **displayLeft** | 指定ディスプレイの左端に配置 |
-| **displayRight** | 指定ディスプレイの右端に配置（デフォルト） |
+| **displayRight** | 指定ディスプレイの右端に配置（既定） |
 | **fixed** | 固定位置に表示（手動で移動した位置を記憶） |
 | **primaryLeft** | @deprecated プライマリディスプレイの左端に配置（後方互換性のため、displayLeftに移行） |
 | **primaryRight** | @deprecated プライマリディスプレイの右端に配置（後方互換性のため、displayRightに移行） |
@@ -202,19 +202,19 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 ### 3.10. 追加ホットキー設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **itemSearchHotkey** | string | "Ctrl+Alt+Space" | ウィンドウ検索の起動ホットキー<br>空の場合は無効<br>例: "Ctrl+Alt+W" |
 
 ### 3.11. ブックマーク自動取込設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **bookmarkAutoImport** | BookmarkAutoImportSettings | `{autoRunOnStartup: false, rules: []}` | ブックマーク自動取込の設定<br>`autoRunOnStartup`: 起動時に有効なルール（`enabled: true`）を自動実行するか<br>`rules`: 取込ルール（`BookmarkAutoImportRule[]`）の配列。ルールの項目は `src/common/types/bookmarkAutoImport.ts` を参照 |
 
 ### 3.12. 表示設定
 
-| フィールド | 型 | デフォルト値 | 説明 |
+| フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **showKeyboardHints** | boolean | true | メインウィンドウの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
 

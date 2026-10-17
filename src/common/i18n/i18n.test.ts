@@ -59,8 +59,8 @@ describe('辞書', () => {
 describe('createI18n', () => {
   it('言語ごとの文言を返し、切り替えられること', async () => {
     const i18n = createI18n('ja');
-    expect(i18n.t('launcher.search.placeholder')).toBe('アイテムを検索...');
+    expect(i18n.t('launcher.search.placeholder')).toBe('アイテムを検索…');
     await i18n.changeLanguage('en');
-    expect(i18n.t('launcher.search.placeholder')).toBe('Search items...');
+    expect(i18n.t('launcher.search.placeholder')).toBe('Search items…');
   });
 });

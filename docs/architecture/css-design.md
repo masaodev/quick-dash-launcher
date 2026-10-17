@@ -4,7 +4,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 ## 設計原則
 
-- **統一性**: 全てのUIコンポーネントで一貫したスタイルを使う
+- **統一性**: すべてのUIコンポーネントで一貫したスタイルを使う
 - **保守性**: 色やサイズは一箇所（`variables.css`）で管理する
 - **拡張性**: 新しいコンポーネントも同じ変数・共通クラスの上に作る
 - **再利用性**: 繰り返し現れるスタイルは共通クラスにする
@@ -61,7 +61,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | `.btn-primary` / `.btn-secondary` / `.btn-danger` / `.btn-danger-solid` | `Button.css` | 種類別の色（Buttonコンポーネントの `variant`。使い分けは [ui-components.md](ui-components.md#buttonコンポーネント)）。無効の見た目は `.btn:disabled` で全種類共通 |
 | `.btn-sm` / `.btn-lg` | `Button.css` | サイズ（`md` はクラスなし） |
 | `.btn-full-width` | `Button.css` | 幅いっぱいに広げる |
-| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウとワークスペースのヘッダー：登録・設定・更新・ピン留めなど）。押している状態は `.active`（青）。ピンの状態は `.pin-stay-visible`（表示固定・青）と `.pin-always-on-top`（最上面・赤） |
+| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウとワークスペースのヘッダー：登録・設定・更新・ピン留めなど）。押している状態は `.active`（青）。ピンの状態は `.pin-stay-visible`（表示固定・青）と `.pin-always-on-top`（最前面・赤） |
 | `.close-btn` | `common.css` | 閉じる・削除の ×（下の「閉じる・削除ボタンクラス」） |
 
 ### その他の共通クラス
@@ -74,7 +74,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | テーブル | `.table-base` | 一覧表（行の `selected`/`readonly`/`edited` 状態つき） |
 | モーダル | `.modal-overlay-base`、`.modal-content-base`、`.modal-header-base`、`.modal-footer-base` | モーダルの骨格 |
 | ユーティリティ | `.loading-overlay`、`.text-*`、`.font-*`、`.mb-*`、`.cursor-*`、`.overflow-*`、`.no-drag`/`.drag` | 単一目的の小さな指定 |
-| 透過度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value` | 設定画面のワークスペース透過度 |
+| 不透明度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value` | 設定画面のワークスペース不透明度 |
 
 ### 閉じる・削除ボタンクラス
 

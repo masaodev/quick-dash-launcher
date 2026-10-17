@@ -129,7 +129,7 @@ describe('WorkspaceArchiveManager', () => {
       expect(groups.loadGroups()).toHaveLength(3);
     });
 
-    it('同名グループがあれば "(復元)" を付け、親が無くなっていればトップレベルにすること', () => {
+    it('同名グループがあれば 「（復元）」を付け、親が無くなっていればトップレベルにすること', () => {
       const { parent, child } = seedTree();
       manager.archiveGroup(child.id, groups.loadGroups(), items.loadItems());
       groups.deleteGroup(parent.id, false, items.loadItems());
@@ -140,7 +140,7 @@ describe('WorkspaceArchiveManager', () => {
         groups.loadGroups(),
         items.loadItems()
       );
-      expect(restoredGroup.displayName).toBe('子 (復元)');
+      expect(restoredGroup.displayName).toBe('子（復元）');
       expect(restoredGroup).not.toHaveProperty('parentGroupId');
     });
 

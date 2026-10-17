@@ -180,7 +180,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
 
       await test.step('基本設定カテゴリで自動起動設定をON/OFFできる', async () => {
         // デフォルトで基本設定が選択されている
-        const autoLaunchLabel = adminWindow.locator('label', { hasText: '起動時に自動実行' });
+        const autoLaunchLabel = adminWindow.locator('label', {
+          hasText: 'Windows へのサインイン時に起動する',
+        });
         const autoLaunchCheckbox = autoLaunchLabel.locator('input[type="checkbox"]');
         const initialState = await autoLaunchCheckbox.isChecked();
 
@@ -279,7 +281,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(positionSection).toBeVisible();
       });
 
-      await test.step('デフォルトは画面中央（自動切替）が選択されている', async () => {
+      await test.step('既定は画面中央（自動で切り替え）が選択されている', async () => {
         const cursorMonitorCenterRadio = adminWindow.locator(
           'input[name="windowPositionMode"][value="cursorMonitorCenter"]'
         );
@@ -338,7 +340,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
  */
 async function pressEscapeAsRealInput(electronApp: ElectronApplication): Promise<void> {
   await electronApp.evaluate(({ BrowserWindow }) => {
-    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle().includes('設定・管理'));
+    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle().includes('管理ウィンドウ'));
     win?.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
     win?.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
   });

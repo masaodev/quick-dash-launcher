@@ -152,7 +152,7 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
       for (const win of windows) {
         if (await isWorkspaceWindow(win)) continue;
         const title = await win.title();
-        if (title !== '設定・管理') {
+        if (title !== '管理ウィンドウ') {
           const url = win.url();
           if (!url.includes('admin.html') && !url.includes('splash.html')) {
             return win;
