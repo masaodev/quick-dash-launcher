@@ -5,11 +5,34 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { debugLog, logError } from './debug';
 
 /** 「試しに実行」ボタンを出さない種別 */
-const NON_EXECUTABLE_CATEGORIES: ReadonlyArray<RegisterItem['itemCategory']> = ['dir', 'clipboard'];
+const NON_EXECUTABLE_CATEGORIES: ReadonlyArray<RegisterItem['itemCategory']> = ['dir'];
 
 /** 登録フォームの内容を保存前に「試しに実行」できる種別か */
 export function canTryExecute(item: RegisterItem | undefined): boolean {
   return !!item && !NON_EXECUTABLE_CATEGORIES.includes(item.itemCategory);
+}
+
+/**
+ * 「試しに実行」を押せなくするか。クリップボードは保存済みの実データをコピーするので、
+ * 取り込み直した直後や書きかけのテキストなど、まだ保存していない中身のときは試せない
+ */
+/**
+ * ワークスペースの編集画面の「試しに実行」を押せなくするか。こちらは取り込み直した直後・書きかけでも
+ * 保存済みの中身で試す（workspaceTrialItem）ので、保存済みの実データが無いときだけ押せなくする
+ */
+export function isWorkspaceTryExecuteBlocked(item: RegisterItem | undefined): boolean {
+  if (!item || item.itemCategory !== 'clipboard') return false;
+  return !item.clipboardDataRef || !!item.clipboardDataMissing;
+}
+
+export function isTryExecuteBlocked(item: RegisterItem | undefined): boolean {
+  if (!item || item.itemCategory !== 'clipboard') return false;
+  return (
+    !!item.clipboardSessionId ||
+    item.clipboardText !== undefined ||
+    !item.clipboardDataRef ||
+    !!item.clipboardDataMissing
+  );
 }
 
 /**

@@ -15,6 +15,31 @@ async function getWorkspaceWindow(electronApp: ElectronApplication): Promise<Pag
   return electronApp.waitForEvent('window', { predicate: isWorkspace, timeout: 10000 });
 }
 
+/**
+ * 確認ウィンドウ（独立した子ウィンドウ）を待つ（workspace-groups.spec.ts と同じ）
+ *
+ * about:blank で開いてから中身を書き込むので、確認ダイアログが描かれるまで繰り返し探す
+ */
+async function waitForConfirmWindow(electronApp: ElectronApplication): Promise<Page> {
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    for (const win of electronApp.windows()) {
+      if (win.isClosed()) continue;
+      try {
+        if (
+          (await win.locator('.confirm-window-page [data-testid="confirm-dialog"]').count()) > 0
+        ) {
+          return win;
+        }
+      } catch {
+        // 書き込み前・閉じた直後のウィンドウは無視する
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error('確認ウィンドウが開きませんでした');
+}
+
 /** タイトルが Workspace のウィンドウ（本体）の bounds をメインプロセスから読む */
 async function getWorkspaceBounds(
   electronApp: ElectronApplication
@@ -62,7 +87,7 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
       ),
     ]);
     await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
-    await expect(editor.locator('h2')).toHaveText('ワークスペースアイテムの編集');
+    await expect(editor.locator('h2')).toContainText('ワークスペースアイテムの編集');
     await expect(editor).toHaveTitle('アイテムの編集');
 
     await test.step('本体のサイズ・位置は変わらない', async () => {
@@ -164,13 +189,55 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
     ]);
     await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
 
+    // 削除は確認の子ウィンドウを通す（名前は保存済みの名前）
+    await editor.locator('.modal-actions button', { hasText: 'ワークスペースから削除' }).click();
+    const confirm = await waitForConfirmWindow(electronApp);
+    await expect(confirm.getByTestId('confirm-dialog')).toContainText(
+      '「消すアイテム」をワークスペースから削除しますか？'
+    );
     await Promise.all([
       editor.waitForEvent('close', { timeout: 10000 }),
-      editor.locator('.modal-actions button', { hasText: 'ワークスペースから削除' }).click(),
+      confirm.getByTestId('confirm-dialog-confirm-button').click(),
     ]);
     await expect(
       workspaceWindow.locator('.workspace-item-card', { hasText: '消すアイテム' })
     ).toHaveCount(0, { timeout: 10000 });
+  });
+
+  test('右クリックの「削除」は確認を通し、キャンセルすれば消えない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const added = await workspaceWindow.evaluate(() =>
+      window.electronAPI.workspaceAPI.addItem({
+        displayName: '右クリックで消す',
+        path: 'C:\\Windows\\System32\\notepad.exe',
+        type: 'app',
+      })
+    );
+    const card = workspaceWindow.locator('.workspace-item-card', { hasText: '右クリックで消す' });
+    await expect(card).toBeVisible({ timeout: 10000 });
+    const menu = new NativeMenuTestHelper(electronApp, workspaceWindow);
+
+    // キャンセルすれば残る
+    await menu.simulateWorkspaceMenu('remove', added.id);
+    let confirm = await waitForConfirmWindow(electronApp);
+    await expect(confirm.getByTestId('confirm-dialog')).toContainText(
+      '「右クリックで消す」をワークスペースから削除しますか？'
+    );
+    await confirm.getByTestId('confirm-dialog-cancel-button').click();
+    await expect(card).toBeVisible();
+
+    // 確かめれば消える
+    await menu.simulateWorkspaceMenu('remove', added.id);
+    confirm = await waitForConfirmWindow(electronApp);
+    await confirm.getByTestId('confirm-dialog-confirm-button').click();
+    await expect(card).toHaveCount(0, { timeout: 10000 });
   });
 });
 

@@ -9,9 +9,10 @@ import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEdi
 import { logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 import { toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
+import { isWorkspaceTryExecuteBlocked } from '../utils/registerItemExecution';
 
 import FilePickerDialog from './FilePickerDialog';
-import ItemEditFields from './ItemEditFields';
+import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
 import { Button } from './ui';
 import '../styles/components/ItemConverterMenu.css';
 
@@ -72,6 +73,22 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     replacePathFromDrop,
     updateItem,
   } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave);
+
+  /**
+   * 「ワークスペースから削除」は、一覧の右クリック・× と同じ確認の子ウィンドウ（この画面が親）で確かめてから消す。
+   * 名前は編集中の値ではなく保存済みの名前を出す
+   */
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    const result = await window.electronAPI.workspaceAPI.openConfirm({
+      title: t('workspace.edit.removeTitle'),
+      message: t('workspace.edit.removeConfirm', { name: editingItem.displayName }),
+      confirmText: t('workspace.edit.remove'),
+      cancelText: t('common.cancel'),
+      danger: true,
+    });
+    if (result) await handleDelete();
+  };
 
   // 上に重ねたダイアログ（セットのアイテムの追加など）の Escape は useModalKeyboard がそちらに任せる
   useModalKeyboard({ isOpen, modalRef, onClose: handleCancel });
@@ -176,7 +193,18 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
         >
-          <h2>{t('workspace.edit.title')}</h2>
+          <h2 className="register-title">
+            {item && (
+              <span className="register-title-icon" aria-hidden>
+                {item.icon ? (
+                  <img src={item.icon} alt="" />
+                ) : (
+                  ITEM_CATEGORY_ICONS[item.itemCategory]
+                )}
+              </span>
+            )}
+            {t('workspace.edit.title')}
+          </h2>
 
           {loading ? (
             <div className="loading">{t('register.loading')}</div>
@@ -205,11 +233,18 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
               </div>
 
               <div className="modal-actions">
-                <Button variant="secondary" onClick={handleExecute}>
+                <Button
+                  variant="secondary"
+                  onClick={handleExecute}
+                  disabled={isWorkspaceTryExecuteBlocked(item)}
+                  title={
+                    isWorkspaceTryExecuteBlocked(item) ? t('register.tryRunDataMissing') : undefined
+                  }
+                >
                   {t('register.tryRun')}
                 </Button>
                 <div className="modal-actions-right">
-                  <Button variant="danger" onClick={handleDelete}>
+                  <Button variant="danger" onClick={() => void handleConfirmDelete()}>
                     {t('workspace.edit.remove')}
                   </Button>
                   <Button variant="secondary" onClick={handleCancel}>

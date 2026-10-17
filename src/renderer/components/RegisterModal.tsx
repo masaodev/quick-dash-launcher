@@ -12,7 +12,11 @@ import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { useRegisterForm } from '../hooks/useRegisterForm';
 import { useToast } from '../hooks/useToast';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
-import { canTryExecute, tryExecuteRegisterItem } from '../utils/registerItemExecution';
+import {
+  canTryExecute,
+  isTryExecuteBlocked,
+  tryExecuteRegisterItem,
+} from '../utils/registerItemExecution';
 
 import FilePickerDialog from './FilePickerDialog';
 import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
@@ -298,7 +302,14 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
 
               <div className="modal-actions">
                 {canTryExecute(items[0]) && (
-                  <Button variant="secondary" onClick={() => tryExecuteRegisterItem(items[0])}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => tryExecuteRegisterItem(items[0])}
+                    disabled={isTryExecuteBlocked(items[0])}
+                    title={
+                      isTryExecuteBlocked(items[0]) ? t('register.tryRunSaveFirst') : undefined
+                    }
+                  >
                     {t('register.tryRun')}
                   </Button>
                 )}

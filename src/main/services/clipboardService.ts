@@ -458,6 +458,10 @@ export class ClipboardService {
    */
   readContent(source: ClipboardContentSource): ClipboardContent | null {
     try {
+      // 保存済みの参照なのにファイルが無いときは、読み取りの失敗と分けて知らせる
+      if (!source.sessionId && source.dataFileRef && this.dataFileMissing(source.dataFileRef)) {
+        return { missing: true };
+      }
       const data = this.loadData(source);
       if (!data) return null;
       return {
@@ -468,6 +472,12 @@ export class ClipboardService {
       logger.error({ error, source }, 'クリップボードの中身の読み取りに失敗しました');
       return null;
     }
+  }
+
+  /** 参照の形が正しいのに、実データのファイルが無いか（形が違う参照は false） */
+  private dataFileMissing(dataFileRef: string): boolean {
+    const id = this.extractIdFromRef(dataFileRef);
+    return !!id && !fs.existsSync(PathManager.getClipboardDataFilePath(id));
   }
 
   private loadData(source: ClipboardContentSource): SerializableClipboard | null {

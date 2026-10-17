@@ -3,7 +3,7 @@ import type { RegisterItem } from '@common/types';
 /** クリップボードアイテムの中身が決まっているか（書いた本文があるか、取り込み・保存済みの中身があるか） */
 export function hasClipboardContent(item: RegisterItem): boolean {
   if (item.clipboardText !== undefined) return item.clipboardText.trim() !== '';
-  return !!item.clipboardSessionId || !!item.clipboardDataRef;
+  return !!item.clipboardSessionId || (!!item.clipboardDataRef && !item.clipboardDataMissing);
 }
 
 /**

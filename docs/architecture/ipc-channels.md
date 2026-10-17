@@ -98,6 +98,15 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - **受け手の動作**: メイン画面は `load-data-files` を `internal` で呼び直す。管理画面は一覧を読み直す
 - **送信元**: `notifyDataChanged()`（`src/main/ipc/notifications.ts`）。アイテムの登録・更新・削除のほか、データファイルの作成・削除、ブックマーク自動取込の後にも呼ばれる
 
+### `clipboard:read-content`
+
+登録・編集画面のクリップボードの内容欄に見せる中身（テキストの全文・画像の縮小版）を、未確定のキャプチャ（セッション ID）か保存済みの実データ（`dataFileRef`）から読む（`ClipboardService.readContent`、`src/main/services/clipboardService.ts`）。
+
+- **方向**: レンダラープロセス → メインプロセス（`invoke`）
+- **返り値**: `ClipboardContent`（`src/common/types/clipboard.ts`）か `null`
+- 保存済みの参照で、参照の形は正しいのに実データのファイル（`clipboard-data/<id>.json`）が無いときは `{ missing: true }` を返す。画面はこれを見て警告を出し、保存を止める（[登録・編集 - 内容を書く・取り込む](../screens/register-modal.md#519-内容を書く取り込む)）
+- それ以外で読めないとき（参照の形が違う・セッションが無い・読み取りの失敗）は `null`
+
 ## 設定
 
 ### `settings:set-multiple`
@@ -191,7 +200,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 | `window.name` の接頭辞（以降が要求 ID） | `main-child:` | `workspace-confirm:` |
 
 - ワークスペースのアイテムをメインウィンドウに登録するときは、要求の `prefillItems` に初期値のアイテムを載せる。右クリックの「メインウィンドウに登録」は、メインプロセスがメインウィンドウを出してから `workspace-menu-register-to-main` イベント（メインプロセス → メインウィンドウ。パラメータはワークスペースのアイテム）で知らせ、メインウィンドウが `window:open-main-child` を呼ぶ
-- 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る
+- 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る（`MainChildWindowReturn` は、「更新」なら `{ kind: 'register', items }`、「削除」なら `{ kind: 'delete' }`。削除は管理画面で未保存の削除になる）
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う
 - 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）

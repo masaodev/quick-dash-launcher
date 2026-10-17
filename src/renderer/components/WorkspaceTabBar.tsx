@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Workspace } from '@common/types';
 
+import { useTabBarScroll } from '../hooks/useTabBarScroll';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
 import ConfirmDialog from './ConfirmDialog';
@@ -36,7 +37,33 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragSourceId = useRef<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const tabBarRef = useRef<HTMLDivElement>(null);
+  const { tabBarRef, handleWheel } = useTabBarScroll(
+    isArchiveActive ? 'archive' : activeWorkspaceId
+  );
+  // タブが収まらないとき、続きがある側の端をぼかす（スクロールバーは隠しているので、続きがあると分かるように）
+  const [overflow, setOverflow] = useState({ left: false, right: false });
+
+  const updateOverflow = () => {
+    const el = tabBarRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 1;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    setOverflow((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
+  };
+
+  // ウィンドウの幅が変わったら測り直す
+  useEffect(() => {
+    const el = tabBarRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // タブの数・名前・名前の編集・選んだタブ（見える位置まで動く）が変わったら測り直す
+  useEffect(() => {
+    updateOverflow();
+  });
 
   useEffect(() => {
     if (editingId !== null && inputRef.current) {
@@ -108,12 +135,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     }
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    if (tabBarRef.current) {
-      tabBarRef.current.scrollLeft += e.deltaY;
-    }
-  };
-
   // D&D handlers
   const handleDragStart = (e: React.DragEvent, wsId: string) => {
     if (editingId) return;
@@ -160,49 +181,56 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
 
   return (
     <>
-      <div className="tab-bar workspace-tab-bar" ref={tabBarRef} onWheel={handleWheel}>
-        {workspaces.map((ws) => {
-          const isActive = !isArchiveActive && ws.id === activeWorkspaceId;
+      <div className="tab-bar workspace-tab-bar">
+        <div
+          className={`workspace-tab-scroll${overflow.left ? ' fade-left' : ''}${overflow.right ? ' fade-right' : ''}`}
+          ref={tabBarRef}
+          onWheel={handleWheel}
+          onScroll={updateOverflow}
+        >
+          {workspaces.map((ws) => {
+            const isActive = !isArchiveActive && ws.id === activeWorkspaceId;
 
-          return (
-            <button
-              key={ws.id}
-              className={`tab-button ${isActive ? 'active' : ''} ${dragOverId === ws.id ? 'drag-over' : ''}`}
-              onClick={() => onTabClick(ws.id)}
-              onDoubleClick={() => handleDoubleClick(ws)}
-              onContextMenu={(e) => handleContextMenu(e, ws)}
-              title={ws.displayName}
-              draggable={editingId !== ws.id}
-              onDragStart={(e) => handleDragStart(e, ws.id)}
-              onDragOver={(e) => handleDragOver(e, ws.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, ws.id)}
-              onDragEnd={handleDragEnd}
-            >
-              {editingId === ws.id ? (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={handleEditKeyDown}
-                  onBlur={handleSaveEdit}
-                  onClick={(e) => e.stopPropagation()}
-                  className="tab-name-input"
-                />
-              ) : (
-                ws.displayName
-              )}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={ws.id}
+                className={`tab-button ${isActive ? 'active' : ''} ${dragOverId === ws.id ? 'drag-over' : ''}`}
+                onClick={() => onTabClick(ws.id)}
+                onDoubleClick={() => handleDoubleClick(ws)}
+                onContextMenu={(e) => handleContextMenu(e, ws)}
+                title={ws.displayName}
+                draggable={editingId !== ws.id}
+                onDragStart={(e) => handleDragStart(e, ws.id)}
+                onDragOver={(e) => handleDragOver(e, ws.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, ws.id)}
+                onDragEnd={handleDragEnd}
+              >
+                {editingId === ws.id ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={handleEditKeyDown}
+                    onBlur={handleSaveEdit}
+                    onClick={(e) => e.stopPropagation()}
+                    className="tab-name-input"
+                  />
+                ) : (
+                  <span className="workspace-tab-name">{ws.displayName}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
         {onArchiveClick && (
           <button
             className={`tab-button archive-tab ${isArchiveActive ? 'active' : ''}`}
             onClick={onArchiveClick}
             title={t('workspace.tabs.archive')}
           >
-            📦
+            🗄️
           </button>
         )}
         <button

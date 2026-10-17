@@ -107,10 +107,13 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
   const [previous, setPrevious] = useState<ContentSnapshot | null>(null);
   // 自分で付けた表示名（書き換えに合わせて付け直す。利用者が書き換えたら触らない）
   const autoNameRef = useRef<string | undefined>(undefined);
-  const latestRef = useRef({ item, previous });
-  latestRef.current = { item, previous };
+  const latestRef = useRef({ item, previous, onUpdate });
+  latestRef.current = { item, previous, onUpdate };
 
   const sourceKey = item.clipboardSessionId ?? item.clipboardDataRef;
+  // 保存済みの実データが無く、まだ取り込み直しも書き直しもしていない
+  const dataMissing =
+    !!item.clipboardDataMissing && !item.clipboardSessionId && item.clipboardText === undefined;
 
   // 閉じるとき、元に戻すために取っておいたキャプチャが使われていなければ捨てる
   useEffect(
@@ -132,7 +135,15 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
     window.electronAPI.clipboardAPI
       .readContent(contentSourceOf(latestRef.current.item))
       .then((result) => {
-        if (!cancelled) setContent(result);
+        if (cancelled) return;
+        setContent(result);
+        // 保存済みの参照の実データが無い（保存させず、警告を出す）
+        const missing = !!result?.missing;
+        // 読み取り中に親の行が変わることがあるので、最新の onUpdate を使う
+        const latest = latestRef.current;
+        if (missing !== !!latest.item.clipboardDataMissing) {
+          latest.onUpdate({ clipboardDataMissing: missing || undefined });
+        }
       })
       .catch((error) => logError('クリップボードの中身の読み取りに失敗:', error))
       .finally(() => {
@@ -271,7 +282,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
         <div className={`clipboard-captured-body${thumbnail ? ' image' : ''}`}>
           {thumbnail ? (
             <img src={thumbnail} alt={t('clipboardEditor.imageAlt')} />
-          ) : item.clipboardPreview ? (
+          ) : item.clipboardPreview && !dataMissing ? (
             <pre>{item.clipboardPreview}</pre>
           ) : (
             <span className="clipboard-no-preview">{t('clipboardEditor.noPreview')}</span>
@@ -280,18 +291,20 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
         <div className="clipboard-captured-meta">
           <span>{formats.map(formatToLabel).join(' / ')}</span>
           {formats.includes('image') && <span>{t('clipboardEditor.imageLimit')}</span>}
-          <span className={`clipboard-state${item.clipboardSessionId ? ' unsaved' : ''}`}>
-            {item.clipboardSessionId
-              ? t('clipboardEditor.capturedState', { date: savedAt })
-              : t('clipboardEditor.savedState', { date: savedAt })}
-          </span>
+          {!dataMissing && (
+            <span className={`clipboard-state${item.clipboardSessionId ? ' unsaved' : ''}`}>
+              {item.clipboardSessionId
+                ? t('clipboardEditor.capturedState', { date: savedAt })
+                : t('clipboardEditor.savedState', { date: savedAt })}
+            </span>
+          )}
           <span className="clipboard-captured-spacer" />
           {previous && (
             <button type="button" className="clipboard-link-button" onClick={handleUndo}>
               {t('clipboardEditor.undo')}
             </button>
           )}
-          {formats.includes('text') && (
+          {formats.includes('text') && !dataMissing && (
             <button
               type="button"
               className="clipboard-link-button"
@@ -318,6 +331,11 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
     <div className="form-group clipboard-content-group">
       <label>{t('clipboardEditor.content')}</label>
       <div className="clipboard-item-editor">
+        {dataMissing && (
+          <div className="clipboard-data-missing" role="alert">
+            {t('clipboardEditor.dataMissing')}
+          </div>
+        )}
         <div className="clipboard-mode" role="group" aria-label={t('clipboardEditor.modeLabel')}>
           <button type="button" aria-pressed={mode === 'text'} onClick={switchToText}>
             {t('clipboardEditor.modeText')}

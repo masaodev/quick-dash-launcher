@@ -8,6 +8,7 @@ import i18next from 'i18next';
 import {
   isJsonLauncherItem,
   type DuplicateHandlingOption,
+  type JsonDirOptions,
   type JsonItem,
   type ScannedAppItem,
   type SimpleBookmarkItem,
@@ -541,6 +542,28 @@ export function changeItemType(jsonItem: JsonItem, newType: InlineItemType): Jso
   }
 }
 
+/** フォルダ取込のオプションの短い要約（例「2 階層・ファイルのみ・除外 *4k*」。指定が無ければ空） */
+export function describeDirOptionsShort(options: JsonDirOptions): string {
+  const parts: string[] = [];
+  if (options.depth !== undefined) {
+    parts.push(
+      options.depth === 0
+        ? i18next.t('dirOptions.short.depthCurrent')
+        : options.depth < 0
+          ? i18next.t('dirOptions.short.depthUnlimited')
+          : i18next.t('dirOptions.short.depth', { count: options.depth })
+    );
+  }
+  if (options.types === 'file' || options.types === 'folder') {
+    parts.push(i18next.t(`dirOptions.short.${options.types}`));
+  }
+  if (options.filter) parts.push(i18next.t('dirOptions.short.filter', { value: options.filter }));
+  if (options.exclude) {
+    parts.push(i18next.t('dirOptions.short.exclude', { value: options.exclude }));
+  }
+  return parts.join(i18next.t('dirOptions.short.separator'));
+}
+
 /** 一覧の「パスと引数」列に出す文字列（並べ替えにも使う） */
 export function describePathAndArgs(jsonItem: JsonItem): string {
   switch (jsonItem.type) {
@@ -559,13 +582,9 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
     }
     case 'dir': {
       const dirPath = jsonItem.path || '';
-      const options = jsonItem.options || {};
-      const optionStrs: string[] = [];
-      if (options.depth !== undefined) optionStrs.push(`depth=${options.depth}`);
-      if (options.types) optionStrs.push(`types=${options.types}`);
-      if (options.exclude) optionStrs.push(`exclude=${options.exclude}`);
       if (!dirPath) return i18next.t('itemManager.pathSummary.noFolderPath');
-      return optionStrs.length > 0 ? `${dirPath} [${optionStrs.join(', ')}]` : dirPath;
+      const options = describeDirOptionsShort(jsonItem.options || {});
+      return options ? i18next.t('dirOptions.short.withPath', { path: dirPath, options }) : dirPath;
     }
     case 'clipboard': {
       const formats = jsonItem.formats?.join(', ') || '';

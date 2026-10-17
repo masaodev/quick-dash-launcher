@@ -28,13 +28,18 @@ export function orUndefined(value: string): string | undefined {
   return value.trim() === '' ? undefined : value;
 }
 
-/** ウィンドウ位置を言葉にする（例: 画面 1・右半分・デスクトップ 2） */
+/**
+ * ウィンドウ位置を言葉にする（例: 画面 1・右半分・デスクトップ 2）
+ *
+ * 全デスクトップに表示するときは、デスクトップの番号を付けない
+ */
 export function placementSummary(
   placement: SetPlacement | undefined,
   screens: readonly ScreenArea[],
-  desktopNames?: Readonly<Record<number, string | undefined>>
+  desktopNames?: Readonly<Record<number, string | undefined>>,
+  pinToAllDesktops?: boolean
 ): string | undefined {
-  return placementText({ placement }, screens, desktopNames);
+  return placementText({ placement, pinToAllDesktops }, screens, desktopNames);
 }
 
 /** 全デスクトップに表示するときは、デスクトップの番号を持たない */
@@ -307,7 +312,7 @@ export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
 
   /** 図に描く位置（自分の位置が無ければ、引き継ぐ位置）と、その言葉 */
   const shownPlacement = placement ?? inheritedPlacement;
-  const shownText = placementSummary(shownPlacement, screens, desktopNames) ?? '';
+  const shownText = placementSummary(shownPlacement, screens, desktopNames, pinned) ?? '';
 
   const desktopInput = placement && (
     <input

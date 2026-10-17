@@ -15,6 +15,8 @@ interface ToastProviderProps {
   children?: React.ReactNode;
   /** トースト表示位置 */
   position?: ToasterProps['position'];
+  /** 下端からの距離（画面の下に帯がある画面では、その高さの分だけ上げて重ならないようにする） */
+  bottomOffset?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ interface ToastProviderProps {
 export const ToastProvider: React.FC<ToastProviderProps> = ({
   children,
   position = 'bottom-right',
+  bottomOffset = 'var(--spacing-lg)',
 }) => {
   return (
     <>
@@ -81,7 +84,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
         }}
         containerStyle={{
           // メインウィンドウ内で適切な位置に表示
-          bottom: 'var(--spacing-lg)',
+          bottom: bottomOffset,
           right: 'var(--spacing-lg)',
         }}
         gutter={8} // spacing-sm相当（8px）

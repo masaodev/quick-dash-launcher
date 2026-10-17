@@ -10,10 +10,9 @@ import { DIR_OPTIONS_DEFAULTS } from '@common/types/json-data';
 import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { LauncherItem } from '@common/types';
 
-function applyPrefixSuffix(name: string, prefix?: string, suffix?: string): string {
-  if (prefix) name = `${prefix}: ${name}`;
-  if (suffix) name = `${name} (${suffix})`;
-  return name;
+/** 表示名の前後に、入力したとおりの文字を付ける（区切りや括弧は足さない） */
+export function applyPrefixSuffix(name: string, prefix?: string, suffix?: string): string {
+  return `${prefix ?? ''}${name}${suffix ?? ''}`;
 }
 
 function processItem(

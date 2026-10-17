@@ -36,6 +36,8 @@ export interface LoadReport {
     accepted: number;
     skipped: number;
     idAssigned: number;
+    /** 深すぎる・循環するため最上位へ移したワークスペースのグループの数 */
+    groupsFlattened: number;
     corruptedFiles: string[];
     externallyChangedFiles: string[];
   };
@@ -61,12 +63,14 @@ export function buildLoadReport(
   let accepted = 0;
   let skipped = 0;
   let idAssigned = 0;
+  let groupsFlattened = 0;
 
   for (const file of files) {
     accepted += file.accepted;
     for (const issue of file.issues) {
       if (issue.kind === 'invalid') skipped++;
       if (issue.kind === 'idAssigned') idAssigned++;
+      if (issue.code === 'groupFlattened') groupsFlattened++;
     }
   }
 
@@ -77,6 +81,7 @@ export function buildLoadReport(
       accepted,
       skipped,
       idAssigned,
+      groupsFlattened,
       corruptedFiles: files.filter((f) => f.status !== 'ok').map((f) => f.file),
       externallyChangedFiles: files.filter((f) => f.externallyChanged).map((f) => f.file),
     },
@@ -89,8 +94,8 @@ export function buildLoadReport(
  * 人向けのトースト文言（問題があるときだけ返す）
  */
 export function formatLoadReportToast(report: LoadReport): string | null {
-  const { skipped, idAssigned, externallyChangedFiles } = report.summary;
-  if (skipped === 0 && idAssigned === 0) {
+  const { skipped, idAssigned, groupsFlattened, externallyChangedFiles } = report.summary;
+  if (skipped === 0 && idAssigned === 0 && groupsFlattened === 0) {
     return null;
   }
 
@@ -98,6 +103,9 @@ export function formatLoadReportToast(report: LoadReport): string | null {
   const parts: string[] = [t('loadReport.accepted', { count: report.summary.accepted })];
   if (skipped > 0) parts.push(t('loadReport.skipped', { count: skipped }));
   if (idAssigned > 0) parts.push(t('loadReport.idAssigned', { count: idAssigned }));
+  if (groupsFlattened > 0) {
+    parts.push(t('loadReport.groupsFlattened', { count: groupsFlattened }));
+  }
   const key =
     externallyChangedFiles.length > 0 ? 'loadReport.externalSummary' : 'loadReport.summary';
   return t(key, { parts: parts.join(t('loadReport.separator')) });

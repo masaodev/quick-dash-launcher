@@ -53,6 +53,15 @@
   border-width: 3px;
 }
 
+/* 今の色の印（どの色の上でも見えるよう、白い文字に暗い影を付ける） */
+.color-picker-check {
+  color: var(--color-white);
+  font-size: var(--font-size-xl);
+  font-weight: bold;
+  text-shadow: var(--text-shadow-on-color);
+  pointer-events: none;
+}
+
 .color-picker-option.selected:hover {
   border-color: var(--color-primary-hover);
 }
