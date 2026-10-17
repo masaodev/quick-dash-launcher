@@ -1435,6 +1435,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     loading: 'Loading item...',
     tryRun: '⚡ Try it',
     tryRunSaveFirst: 'Unsaved content cannot be tried. Save first to try it.',
+    tryRunDataMissing: 'There is no saved clipboard content to try.',
     delete: 'Delete',
     update: 'Update',
     add: 'Add',

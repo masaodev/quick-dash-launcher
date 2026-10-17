@@ -9,7 +9,7 @@ import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEdi
 import { logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 import { toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
-import { isTryExecuteBlocked } from '../utils/registerItemExecution';
+import { isWorkspaceTryExecuteBlocked } from '../utils/registerItemExecution';
 
 import FilePickerDialog from './FilePickerDialog';
 import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
@@ -220,8 +220,10 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                 <Button
                   variant="secondary"
                   onClick={handleExecute}
-                  disabled={isTryExecuteBlocked(item)}
-                  title={isTryExecuteBlocked(item) ? t('register.tryRunSaveFirst') : undefined}
+                  disabled={isWorkspaceTryExecuteBlocked(item)}
+                  title={
+                    isWorkspaceTryExecuteBlocked(item) ? t('register.tryRunDataMissing') : undefined
+                  }
                 >
                   {t('register.tryRun')}
                 </Button>

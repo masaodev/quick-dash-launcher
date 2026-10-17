@@ -107,8 +107,8 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
   const [previous, setPrevious] = useState<ContentSnapshot | null>(null);
   // 自分で付けた表示名（書き換えに合わせて付け直す。利用者が書き換えたら触らない）
   const autoNameRef = useRef<string | undefined>(undefined);
-  const latestRef = useRef({ item, previous });
-  latestRef.current = { item, previous };
+  const latestRef = useRef({ item, previous, onUpdate });
+  latestRef.current = { item, previous, onUpdate };
 
   const sourceKey = item.clipboardSessionId ?? item.clipboardDataRef;
   // 保存済みの実データが無く、まだ取り込み直しも書き直しもしていない
@@ -139,8 +139,10 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
         setContent(result);
         // 保存済みの参照の実データが無い（保存させず、警告を出す）
         const missing = !!result?.missing;
-        if (missing !== !!latestRef.current.item.clipboardDataMissing) {
-          onUpdate({ clipboardDataMissing: missing || undefined });
+        // 読み取り中に親の行が変わることがあるので、最新の onUpdate を使う
+        const latest = latestRef.current;
+        if (missing !== !!latest.item.clipboardDataMissing) {
+          latest.onUpdate({ clipboardDataMissing: missing || undefined });
         }
       })
       .catch((error) => logError('クリップボードの中身の読み取りに失敗:', error))
@@ -280,7 +282,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
         <div className={`clipboard-captured-body${thumbnail ? ' image' : ''}`}>
           {thumbnail ? (
             <img src={thumbnail} alt={t('clipboardEditor.imageAlt')} />
-          ) : item.clipboardPreview ? (
+          ) : item.clipboardPreview && !dataMissing ? (
             <pre>{item.clipboardPreview}</pre>
           ) : (
             <span className="clipboard-no-preview">{t('clipboardEditor.noPreview')}</span>
@@ -302,7 +304,7 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
               {t('clipboardEditor.undo')}
             </button>
           )}
-          {formats.includes('text') && (
+          {formats.includes('text') && !dataMissing && (
             <button
               type="button"
               className="clipboard-link-button"

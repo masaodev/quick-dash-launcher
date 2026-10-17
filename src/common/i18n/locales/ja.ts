@@ -1437,6 +1437,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     loading: 'アイテム情報を読み込み中...',
     tryRun: '⚡ 試しに実行',
     tryRunSaveFirst: 'まだ保存していない中身は試せません。保存すると試せます',
+    tryRunDataMissing: '保存したクリップボードの中身が無いので試せません',
     delete: '削除',
     update: '更新',
     add: '登録',

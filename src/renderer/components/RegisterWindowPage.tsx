@@ -28,7 +28,8 @@ interface RegisterWindowPageProps {
  * このウィンドウは閉じるだけでよい
  *
  * 管理画面の詳細編集（returnToOpener）では保存せず、フォームの内容を開き元へ返して閉じる。
- * 管理画面が未保存の編集状態に反映し、「変更を保存」で確定する。削除はここでは出さない
+ * 管理画面が未保存の編集状態に反映し、「変更を保存」で確定する。削除も開き元へ返し、
+ * 管理画面で未保存の削除にする
  */
 const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, request }) => {
   const { t } = useTranslation();

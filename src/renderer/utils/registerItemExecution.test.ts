@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { RegisterItem } from '@common/types';
 
-import { canTryExecute, isTryExecuteBlocked } from './registerItemExecution';
+import {
+  canTryExecute,
+  isTryExecuteBlocked,
+  isWorkspaceTryExecuteBlocked,
+} from './registerItemExecution';
 
 const base: RegisterItem = {
   displayName: 'テスト',
@@ -46,5 +50,19 @@ describe('isTryExecuteBlocked', () => {
 
   it('クリップボード以外は押せる', () => {
     expect(isTryExecuteBlocked(base)).toBe(false);
+  });
+});
+
+describe('isWorkspaceTryExecuteBlocked', () => {
+  const clip: RegisterItem = { ...base, itemCategory: 'clipboard', clipboardDataRef: 'a.json' };
+
+  it('取り込み直した直後・書きかけでも、保存済みの中身があれば押せる', () => {
+    expect(isWorkspaceTryExecuteBlocked({ ...clip, clipboardSessionId: 's1' })).toBe(false);
+    expect(isWorkspaceTryExecuteBlocked({ ...clip, clipboardText: 'あ' })).toBe(false);
+  });
+
+  it('保存済みの実データが無いときは押せない', () => {
+    expect(isWorkspaceTryExecuteBlocked({ ...clip, clipboardDataMissing: true })).toBe(true);
+    expect(isWorkspaceTryExecuteBlocked({ ...clip, clipboardDataRef: undefined })).toBe(true);
   });
 });
