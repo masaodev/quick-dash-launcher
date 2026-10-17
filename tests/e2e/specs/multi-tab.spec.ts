@@ -820,14 +820,16 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await test.step('↓キーを11回押して全アイテムを巡回', async () => {
       const visitedItems: string[] = [];
 
+      const selectedItem = mainWindow.locator('.item.selected');
       for (let i = 0; i < 11; i++) {
-        const selectedItem = mainWindow.locator('.item.selected');
-        const itemText = await selectedItem.textContent();
-        if (itemText) {
-          visitedItems.push(itemText);
-        }
+        const itemText = (await selectedItem.textContent()) ?? '';
+        visitedItems.push(itemText);
 
         await utils.sendShortcut('ArrowDown');
+        // 選択が次へ移ってから読む（遅い環境では押した直後だと同じアイテムを読む）
+        if (i < 10) {
+          await expect(selectedItem).not.toHaveText(itemText);
+        }
       }
 
       // 11個の異なるアイテムを訪問したことを確認
