@@ -739,6 +739,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       parallel: 'All at once',
       moveOnly: 'Moves a window only',
       missing: "Couldn't find the item",
+      expanded: 'Replaced with a path',
+      expandedHint:
+        'Replaced the workspace item "{{name}}" with a path written in this set, because sets in the launcher can\'t point to workspace items. Changes to the original item won\'t apply to this set',
       moveUp: 'Move up',
       moveDown: 'Move down',
       remove: 'Remove row',
