@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Workspace } from '@common/types';
 
+import { useTabBarScroll } from '../hooks/useTabBarScroll';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
 import ConfirmDialog from './ConfirmDialog';
@@ -36,7 +37,9 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragSourceId = useRef<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const tabBarRef = useRef<HTMLDivElement>(null);
+  const { tabBarRef, handleWheel } = useTabBarScroll(
+    isArchiveActive ? 'archive' : activeWorkspaceId
+  );
   // タブが収まらないとき、続きがある側の端をぼかす（スクロールバーは隠しているので、続きがあると分かるように）
   const [overflow, setOverflow] = useState({ left: false, right: false });
 
@@ -48,23 +51,19 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     setOverflow((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
   };
 
-  // タブの数・名前・ウィンドウの幅が変わったら測り直す
+  // ウィンドウの幅が変わったら測り直す
   useEffect(() => {
-    updateOverflow();
     const el = tabBarRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(updateOverflow);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [workspaces]);
+  }, []);
 
-  // 選んだタブが見えるところまで動かす
+  // タブの数・名前・名前の編集・選んだタブ（見える位置まで動く）が変わったら測り直す
   useEffect(() => {
-    tabBarRef.current
-      ?.querySelector('.tab-button.active')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     updateOverflow();
-  }, [activeWorkspaceId, isArchiveActive]);
+  });
 
   useEffect(() => {
     if (editingId !== null && inputRef.current) {
@@ -133,12 +132,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     if (deleteConfirmId) {
       onDeleteWorkspace(deleteConfirmId);
       setDeleteConfirmId(null);
-    }
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    if (tabBarRef.current) {
-      tabBarRef.current.scrollLeft += e.deltaY;
     }
   };
 

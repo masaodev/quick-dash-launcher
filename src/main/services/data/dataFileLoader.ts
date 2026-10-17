@@ -534,7 +534,7 @@ async function reloadConfigFilesInternal(
     });
   }
 
-  // スキップ・採番があったときだけ知らせる（毎回の読込では出さない）
+  // スキップ・採番・グループの最上位への移動があったときだけ知らせる（毎回の読込では出さない）
   const issueToast = formatLoadReportToast(report);
   if (issueToast) {
     showToastWindow({

@@ -524,6 +524,9 @@
 }
 
 .edit-mode-status {
+  /* トーストはこの高さの分だけ上に出す（ToastProvider の bottomOffset） */
+  box-sizing: border-box;
+  min-height: var(--admin-status-bar-height);
   display: flex;
   justify-content: space-between;
   align-items: center;

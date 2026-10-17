@@ -13,7 +13,6 @@ import { isWorkspaceTryExecuteBlocked } from '../utils/registerItemExecution';
 
 import FilePickerDialog from './FilePickerDialog';
 import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
-import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui';
 import '../styles/components/ItemConverterMenu.css';
 
@@ -47,8 +46,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  // 「ワークスペースから削除」の確認（一覧の右クリック・× と同じく、確かめてから消す）
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { showError } = useToast();
 
   const {
@@ -76,6 +73,22 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     replacePathFromDrop,
     updateItem,
   } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave);
+
+  /**
+   * 「ワークスペースから削除」は、一覧の右クリック・× と同じ確認の子ウィンドウ（この画面が親）で確かめてから消す。
+   * 名前は編集中の値ではなく保存済みの名前を出す
+   */
+  const handleConfirmDelete = async () => {
+    if (!editingItem) return;
+    const result = await window.electronAPI.workspaceAPI.openConfirm({
+      title: t('workspace.edit.removeTitle'),
+      message: t('workspace.edit.removeConfirm', { name: editingItem.displayName }),
+      confirmText: t('workspace.edit.remove'),
+      cancelText: t('common.cancel'),
+      danger: true,
+    });
+    if (result) await handleDelete();
+  };
 
   // 上に重ねたダイアログ（セットのアイテムの追加など）の Escape は useModalKeyboard がそちらに任せる
   useModalKeyboard({ isOpen, modalRef, onClose: handleCancel });
@@ -231,7 +244,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   {t('register.tryRun')}
                 </Button>
                 <div className="modal-actions-right">
-                  <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
+                  <Button variant="danger" onClick={() => void handleConfirmDelete()}>
                     {t('workspace.edit.remove')}
                   </Button>
                   <Button variant="secondary" onClick={handleCancel}>
@@ -254,19 +267,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           )}
         </div>
       </div>
-
-      <ConfirmDialog
-        isOpen={confirmingDelete}
-        onClose={() => setConfirmingDelete(false)}
-        onConfirm={() => {
-          setConfirmingDelete(false);
-          void handleDelete();
-        }}
-        title={t('workspace.edit.removeTitle')}
-        message={t('workspace.edit.removeConfirm', { name: item?.displayName ?? '' })}
-        confirmText={t('workspace.edit.remove')}
-        danger={true}
-      />
 
       <FilePickerDialog
         isOpen={filePickerState.isOpen}
