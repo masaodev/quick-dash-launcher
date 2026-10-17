@@ -1152,6 +1152,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     browser: 'Browser',
     noBrowsers: 'No installed browsers were found',
     profile: 'Profile',
+    profilesNarrowed:
+      'This rule was saved with several or all profiles. Saving keeps only "{{profile}}"',
     profilesNotFound: "The saved profiles ({{profiles}}) weren't found. Choose them again",
     selectFile: 'Choose file',
     noFile: 'None selected',
@@ -1282,7 +1284,6 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
     edit: 'Edit',
     delete: 'Delete',
     allProfiles: 'All profiles',
-    exceptFolders: 'All except {{folders}}',
     nameCondition: ' · name contains "{{word}}"',
     urlCondition: ' · URL contains "{{word}}"',
     allFolders: 'All folders',

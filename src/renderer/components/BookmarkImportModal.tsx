@@ -248,7 +248,8 @@ function BookmarkImportModal({
     () => selectionAsRule(allBookmarks, selected),
     [allBookmarks, selected]
   );
-  const canSync = selectionRule.ok && source !== 'html' && !isSearching;
+  // プロファイルの無いブラウザでは、取り込む先のプロファイルを決められないのでルールにしない
+  const canSync = selectionRule.ok && source !== 'html' && !isSearching && profileId !== NO_PROFILE;
   useEffect(() => {
     if (!canSync) setAsRule(false);
   }, [canSync]);

@@ -83,8 +83,8 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  /** 保存されていたが見つからなかったプロファイル（最初のプロファイルに置き換えたことを知らせる） */
-  const [missingProfiles, setMissingProfiles] = useState<string | null>(null);
+  /** 保存されていたプロファイルを置き換えたときの知らせ（見つからない・複数やすべてで保存されていた） */
+  const [profileNotice, setProfileNotice] = useState<string | null>(null);
   const [folderPanelOpen, setFolderPanelOpen] = useState(false);
   // 表示名の欄は幅を取らないので、初めから開いておく（閉じることもできる）
   const [namingOpen, setNamingOpen] = useState(true);
@@ -132,10 +132,22 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
           const found = editingRule.profileIds.find((id) =>
             browser.profiles.some((p) => p.id === id)
           );
-          if (!found && rule && rule.profileIds.length > 0) {
-            setMissingProfiles(rule.profileIds.join(', '));
+          const resolved = found ?? browser.profiles[0].id;
+          if (rule && rule.profileIds.length !== 1) {
+            // 複数・すべてのプロファイルで保存されていたルール。保存すると 1 つになることを知らせる
+            const name = browser.profiles.find((p) => p.id === resolved)?.displayName ?? resolved;
+            setProfileNotice(t('bookmarkRule.profilesNarrowed', { profile: name }));
+          } else if (!found && rule) {
+            setProfileNotice(
+              t('bookmarkRule.profilesNotFound', { profiles: rule.profileIds.join(', ') })
+            );
           }
-          updateRule({ profileIds: [found ?? browser.profiles[0].id] });
+          if (editingRule.profileIds.length !== 1 || editingRule.profileIds[0] !== resolved) {
+            // 別のプロファイルに替わるときは、フォルダの指定も外す（手で選び替えたときと同じ）
+            updateRule(
+              found ? { profileIds: [resolved] } : { profileIds: [resolved], folderPaths: [] }
+            );
+          }
         }
       })
       .catch((error) => logError('ブラウザの検出に失敗しました:', error))
@@ -375,7 +387,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                   aria-label={t('bookmarkRule.profile')}
                   value={editingRule.profileIds[0] ?? ''}
                   onChange={(e) => {
-                    setMissingProfiles(null);
+                    setProfileNotice(null);
                     updateRule({ profileIds: [e.target.value], folderPaths: [] });
                   }}
                 >
@@ -393,9 +405,9 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
                 {t('bookmarkRule.noBrowsers')}
               </div>
             )}
-            {missingProfiles && (
+            {profileNotice && (
               <div className="bookmark-rule-wide field-description bookmark-rule-error">
-                {t('bookmarkRule.profilesNotFound', { profiles: missingProfiles })}
+                {profileNotice}
               </div>
             )}
 

@@ -81,10 +81,10 @@ export function useImportDestination({
 
   // フッターの「〜 に取り込む」（登録画面の「〜 に登録」と同じく、ファイルが 1 つのタブはタブ名だけ）
   const destinationText = (() => {
-    const newFile = t('importCommon.newFileName', { name: newFileLabel.trim() || defaultName });
     if (destination.kind === 'newTab') {
       return t('importCommon.newTabName', { name: newTabName.trim() || defaultName });
     }
+    const newFile = t('importCommon.newFileName', { name: newFileLabel.trim() || defaultName });
     const tabName = dataFileTabs[destTab]?.name ?? '';
     if (destination.kind === 'newFile') return `${tabName} › ${newFile}`;
     return destTabFiles.length <= 1 ? tabName : `${tabName} › ${fileLabel(destFile)}`;

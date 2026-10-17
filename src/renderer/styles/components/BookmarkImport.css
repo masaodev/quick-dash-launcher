@@ -423,9 +423,9 @@
 }
 
 /* フォルダのプルダウン風のボタン（押すと木が開く） */
-
 .bookmark-rule-dropdown-button {
   display: inline-flex;
+  max-width: 100%;
   align-items: center;
   gap: var(--spacing-sm);
   height: var(--input-height-sm);
@@ -437,10 +437,6 @@
   background-color: var(--color-white);
   color: var(--text-primary);
   cursor: pointer;
-}
-
-.bookmark-rule-dropdown-button {
-  max-width: 100%;
 }
 
 /* 長いときは 1 行で省略する */

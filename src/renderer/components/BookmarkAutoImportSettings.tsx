@@ -247,7 +247,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       )
       .join(t('common.listSeparator'));
     return rule.folderFilterMode === 'exclude'
-      ? t('bookmarkAutoImport.exceptFolders', { folders: names })
+      ? t('bookmarkRule.foldersExcluded', { folders: names })
       : names;
   };
 

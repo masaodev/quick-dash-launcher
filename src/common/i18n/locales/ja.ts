@@ -1155,6 +1155,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     browser: 'ブラウザ',
     noBrowsers: 'インストール済みブラウザが見つかりません',
     profile: 'プロファイル',
+    profilesNarrowed:
+      '複数・すべてのプロファイルで保存されていたルールです。保存すると「{{profile}}」だけになります',
     profilesNotFound:
       '保存されているプロファイル（{{profiles}}）が見つかりません。選び直してください',
     selectFile: 'ファイルを選択',
@@ -1284,7 +1286,6 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
     edit: '編集',
     delete: '削除',
     allProfiles: '全プロファイル',
-    exceptFolders: '{{folders}} を除く',
     nameCondition: ' ・ 名前に「{{word}}」',
     urlCondition: ' ・ URL に「{{word}}」',
     allFolders: '全フォルダ',
