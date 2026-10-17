@@ -1704,6 +1704,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       'Adding was stopped because the data file may be corrupted: {{file}}. Repair (or delete) the file and try again.',
     moveBlockedCorrupted:
       'Moving was stopped because a data file may be corrupted: {{file}}. Repair (or delete) the file and try again.',
+    deleteBlockedCorrupted:
+      'Deleting was stopped because a data file may be corrupted: {{files}}. Repair (or delete) the file and try again.',
     writeFailed: "Couldn't write the data file: {{file}}",
     itemNotFound: "The item with ID {{id}} wasn't found",
     invalidTargetFile: 'The data file name to add to is invalid: {{files}}',
