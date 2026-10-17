@@ -211,6 +211,8 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | `hideDetachedWithMainWindow: false` | 開いている切り離しウィンドウのうち、ピン留めしていないものを表示固定にする |
 | それ以外 | 読み替えない（消すだけ） |
 
+同じ起動時の処理で、`workspacePositionMode` の古い値 `primaryLeft`・`primaryRight` も `displayLeft`・`displayRight` に読み替え、`workspaceTargetDisplayIndex` をプライマリディスプレイの番号にする（古い値のままだと、設定画面でディスプレイを選んでも効かないため。`planLegacyWorkspacePosition()`）。
+
 ### 3.9. 旧グループの開き方（削除した設定）
 
 `parallelGroupLaunch`（旧グループを並列起動するか）は、旧グループをセットにまとめたときに設定から削除した。開き方はセットごとに持つ（`launchMode`。[データファイル形式 3.3](data-format.md#33-セットjsonsetitem)）。

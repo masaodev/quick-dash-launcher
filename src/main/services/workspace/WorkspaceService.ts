@@ -8,6 +8,8 @@ import type {
   AppItem,
   DetachedWindowState,
   WorkspaceWindowState,
+  WorkspaceHintKey,
+  PinLevel,
   Workspace,
   WorkspaceItem,
   WorkspaceItemUpdate,
@@ -497,7 +499,7 @@ export class WorkspaceService {
     this.uiState!.updateDetached(rootGroupId, anchor ? { bounds, anchor } : { bounds });
   }
 
-  public async saveDetachedPinMode(rootGroupId: string, pinMode: 0 | 1 | 2): Promise<void> {
+  public async saveDetachedPinMode(rootGroupId: string, pinMode: PinLevel): Promise<void> {
     await this.initializeStore();
     this.uiState!.updateDetached(rootGroupId, { pinMode });
   }
@@ -512,6 +514,12 @@ export class WorkspaceService {
   public async saveWorkspaceWindowState(updates: Partial<WorkspaceWindowState>): Promise<void> {
     await this.initializeStore();
     this.uiState!.updateWorkspaceWindow(updates);
+  }
+
+  /** 1 回だけ出す案内を、まだ出していなければ「出した」と覚えて true を返す */
+  public async takeHint(key: WorkspaceHintKey): Promise<boolean> {
+    await this.initializeStore();
+    return this.uiState!.takeHint(key);
   }
 
   /** ピン留めしていない切り離しウィンドウを、すべて表示固定にする（古い設定からの読み替え） */

@@ -38,6 +38,7 @@ import { moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
+import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -435,6 +436,7 @@ export function getWindowPinMode(): WindowPinMode {
 export function setWindowPinMode(mode: WindowPinMode): void {
   windowPinMode = mode;
   updateWindowBehavior();
+  notifyPinLevel(mainWindow, pinModeToLevel(mode));
 }
 
 /**

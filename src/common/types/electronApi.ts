@@ -138,6 +138,8 @@ export interface ElectronAPI {
     set: (level: PinLevel) => Promise<PinLevel>;
     /** 📌 の右クリックメニュー（表示固定・常に最前面）を出し、閉じた後の段階を返す */
     showMenu: () => Promise<PinLevel>;
+    /** メインプロセス側で段階が変わったとき（このウィンドウの分だけ届く） */
+    onChanged: (callback: (level: PinLevel) => void) => () => void;
   };
   /** true のあいだ、メインウィンドウの Esc を隠す処理に回さずページで受ける（複数選択の解除・確認の取り消し） */
   setEscapeHandledByPage: (handled: boolean) => void;

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
+  PinLevel,
   IconProgress,
   LayoutExecutionProgress,
   AppItem,
@@ -114,6 +115,8 @@ const electronAPI: ElectronAPI = {
     get: () => ipcRenderer.invoke(IPC_CHANNELS.PIN_GET),
     set: (level) => ipcRenderer.invoke(IPC_CHANNELS.PIN_SET, level),
     showMenu: () => ipcRenderer.invoke(IPC_CHANNELS.PIN_SHOW_MENU),
+    onChanged: (callback) =>
+      createEventListener<PinLevel>(IPC_CHANNELS.EVENT_PIN_CHANGED, callback),
   },
   setEscapeHandledByPage: (handled) =>
     ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_ESCAPE_HANDLED_BY_PAGE, handled),

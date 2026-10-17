@@ -54,12 +54,13 @@ import {
   hideAllDetachedGroupWindows,
   showAllDetachedGroupWindows,
   getGroupIdByWebContentsId,
-  getDetachedPinMode,
-  setDetachedPinMode,
+  getDetachedPinLevel,
+  setDetachedPinLevel,
   isDetachedGroupWindow,
   takeDetachedInitialShow,
 } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/index.js';
+import { showHintOnce } from '../services/workspaceHints.js';
 import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
 import { isPinLevel, levelToPinMode, pinModeToLevel, showPinMenu } from '../utils/pinMenu.js';
 
@@ -98,9 +99,9 @@ export function setupWindowHandlers(
     if (groupId) {
       return {
         window: win,
-        get: () => getDetachedPinMode(groupId),
+        get: () => getDetachedPinLevel(groupId),
         set: async (level) => {
-          setDetachedPinMode(groupId, level);
+          setDetachedPinLevel(groupId, level);
           const ws = await WorkspaceService.getInstance();
           await ws.saveDetachedPinMode(groupId, level);
         },
@@ -243,8 +244,12 @@ export function setupWindowHandlers(
   // 切り離しウィンドウ
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
-    (_event, groupId: string, cursorX?: number, cursorY?: number) =>
-      createDetachedGroupWindow(groupId, cursorX, cursorY)
+    async (_event, groupId: string, cursorX?: number, cursorY?: number) => {
+      const result = await createDetachedGroupWindow(groupId, cursorX, cursorY);
+      // 初めて切り離したときだけ、メインと一緒に出入りすることと 📌 を伝える
+      if (result.success) void showHintOnce('groupDetached');
+      return result;
+    }
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>

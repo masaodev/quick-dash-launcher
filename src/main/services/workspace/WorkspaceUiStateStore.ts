@@ -1,10 +1,11 @@
 import type {
   DetachedWindowState,
+  WorkspaceHintKey,
   WorkspaceUiStateFile,
   WorkspaceWindowState,
 } from '@common/types';
 import { WORKSPACE_UI_STATE_VERSION } from '@common/types';
-import { isRecord } from '@common/types/guards';
+import { isPinLevel, isRecord, isWorkspaceHintKey } from '@common/types/guards';
 
 import { PathManager } from '../../config/pathManager.js';
 import { JsonFileStore } from '../jsonFileStore.js';
@@ -45,7 +46,7 @@ function coerceDetachedWindowState(raw: unknown): DetachedWindowState | null {
     collapsedStates: coerceBooleanRecord(raw.collapsedStates),
     bounds: { x: x as number, y: y as number, width: width as number, height: height as number },
   };
-  if (raw.pinMode === 0 || raw.pinMode === 1 || raw.pinMode === 2) {
+  if (isPinLevel(raw.pinMode)) {
     state.pinMode = raw.pinMode;
   }
   if (isMonitorAnchor(raw.anchor)) {
@@ -59,10 +60,9 @@ export const DEFAULT_WORKSPACE_WINDOW_STATE: WorkspaceWindowState = { open: fals
 
 function coerceWorkspaceWindowState(raw: unknown): WorkspaceWindowState | undefined {
   if (!isRecord(raw)) return undefined;
-  const pinLevel =
-    raw.pinLevel === 0 || raw.pinLevel === 1 || raw.pinLevel === 2
-      ? raw.pinLevel
-      : DEFAULT_WORKSPACE_WINDOW_STATE.pinLevel;
+  const pinLevel = isPinLevel(raw.pinLevel)
+    ? raw.pinLevel
+    : DEFAULT_WORKSPACE_WINDOW_STATE.pinLevel;
   return { open: raw.open === true, pinLevel };
 }
 
@@ -77,11 +77,13 @@ export function coerceWorkspaceUiState(raw: unknown): WorkspaceUiStateFile | nul
     }
   }
   const workspaceWindow = coerceWorkspaceWindowState(raw.workspaceWindow);
+  const shownHints = Array.isArray(raw.shownHints) ? raw.shownHints.filter(isWorkspaceHintKey) : [];
   return {
     version: WORKSPACE_UI_STATE_VERSION,
     collapsedGroups: coerceBooleanRecord(raw.collapsedGroups),
     detachedWindows,
     ...(workspaceWindow && { workspaceWindow }),
+    ...(shownHints.length > 0 && { shownHints }),
   };
 }
 
@@ -138,6 +140,18 @@ export class WorkspaceUiStateStore {
       ...updates,
     };
     this.file.write(state);
+  }
+
+  // --- 1 回だけ出す案内 ---
+
+  /** まだ出していなければ「出した」と覚えて true を返す（出していれば false） */
+  takeHint(key: WorkspaceHintKey): boolean {
+    const state = this.read();
+    const shown = state.shownHints ?? [];
+    if (shown.includes(key)) return false;
+    state.shownHints = [...shown, key];
+    this.file.write(state);
+    return true;
   }
 
   // --- 切り離しウィンドウ ---
