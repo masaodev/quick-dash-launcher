@@ -834,7 +834,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       // 11個の異なるアイテムを訪問したことを確認
       const uniqueItems = new Set(visitedItems);
-      expect(uniqueItems.size).toBe(11);
+      expect(uniqueItems.size, `選択の順: ${visitedItems.join(' → ')}`).toBe(11);
     });
 
     await test.step('最初のアイテムに戻っていることを確認', async () => {

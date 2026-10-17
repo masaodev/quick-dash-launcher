@@ -6,6 +6,11 @@ name: E2E
 
 on:
   workflow_dispatch:
+    inputs:
+      spec:
+        description: '流す spec（空なら全件。例 tests/e2e/specs/multi-tab.spec.ts）'
+        required: false
+        default: ''
   # 毎日 3:00（日本時間）。main に変化が無くても流す
   schedule:
     - cron: '0 18 * * *'
@@ -63,7 +68,7 @@ jobs:
           (Get-CimInstance Win32_OperatingSystem).Caption
 
       - name: E2E tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- ${{ inputs.spec }}
 
       # 失敗したテストの画像とトレースを残す（https://trace.playwright.dev で開ける）
       - name: Upload test results
