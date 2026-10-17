@@ -265,7 +265,7 @@ describe('workspaceConverters: 表示', () => {
     expect(describeWorkspaceItem(pathlessItem, t)).toBe(
       '開いているウィンドウに切り替えるだけ: chrome.exe / *Chrome'
     );
-    expect(describeWorkspaceItem(groupItem, t)).toBe('セット: 2件');
+    expect(describeWorkspaceItem(groupItem, t)).toBe('セット: 2 件');
     expect(describeWorkspaceItem(clipboardItem, t)).toBe('クリップボード: hello');
   });
 

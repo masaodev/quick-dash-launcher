@@ -133,7 +133,7 @@ test.describe('QuickDashLauncher - セットの実行', () => {
         },
         { timeout: 5000 }
       )
-      .toMatch(/📦[\s\S]*E2Eセット[\s\S]*1件のアイテムを起動します/);
+      .toMatch(/📦[\s\S]*E2Eセット[\s\S]*1 件のアイテムを起動します/);
   });
 });
 

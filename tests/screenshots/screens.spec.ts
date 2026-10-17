@@ -114,7 +114,7 @@ test.describe('画面仕様書の画面イメージ', () => {
     await stubBrowsers(electronApp);
 
     await admin.locator('.toolbar-split .toolbar-split-toggle').click();
-    await admin.locator('.dropdown-item', { hasText: 'ブラウザのブックマークを取り込む' }).click();
+    await admin.locator('.dropdown-item', { hasText: 'ブラウザのブックマークから追加' }).click();
     const modal = admin.locator('.bookmark-import-modal');
     await modal.waitFor({ state: 'visible' });
     // 「開発」フォルダをまとめて選び、開いて中身も見せる
@@ -179,7 +179,7 @@ test.describe('画面仕様書の画面イメージ', () => {
     }, apps);
 
     await admin.locator('.toolbar-split .toolbar-split-toggle').click();
-    await admin.locator('.dropdown-item', { hasText: 'インストール済みアプリを取り込む' }).click();
+    await admin.locator('.dropdown-item', { hasText: 'インストール済みアプリから追加' }).click();
     const modal = admin.locator('.app-import-modal');
     await modal.waitFor({ state: 'visible' });
     await modal.locator('.app-table tbody tr', { hasText: '電卓' }).click();

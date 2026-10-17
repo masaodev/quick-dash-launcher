@@ -1396,7 +1396,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       toggleWorkspace: 'Show or hide the workspace (in the launcher)',
       open: 'Open the selected item',
       openFolder: "Open the selected item's containing folder",
-      edit: 'Edit the selected item',
+      edit: 'Edit the selected item (in normal search mode)',
       select: 'Select an item',
       history: 'Browse search history',
       switchTab: 'Switch tabs (when tabs are shown)',

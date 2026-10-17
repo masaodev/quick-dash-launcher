@@ -100,8 +100,8 @@ describe('tooltipTextGenerator', () => {
 
       const result = getTooltipText(item);
 
-      expect(result).toContain('セット: 2件');
-      expect(result).toContain('ウィンドウ位置のある行: 1件');
+      expect(result).toContain('セット: 2 件');
+      expect(result).toContain('ウィンドウ位置のある行: 1 件');
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('ID: abc12345');
     });

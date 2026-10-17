@@ -292,13 +292,13 @@ describe('setEntriesSummary', () => {
       { open: { path: 'C:/tools/notepad.exe' } },
       { window: { processName: 'sticky.exe' } },
     ];
-    expect(setEntriesSummary(entries, nameOf)).toBe('行: Gmail、一時メモ、notepad.exe ほか1件');
+    expect(setEntriesSummary(entries, nameOf)).toBe('行: Gmail、一時メモ、notepad.exe ほか 1 件');
   });
 
   it('3 行以下なら名前だけ。名前を引けない行は件数に回す', () => {
     expect(setEntriesSummary([{ itemId: 'gmail1aa' }], nameOf)).toBe('行: Gmail');
     expect(setEntriesSummary([{ itemId: 'gmail1aa' }, { itemId: 'nobody11' }], nameOf)).toBe(
-      '行: Gmail ほか1件'
+      '行: Gmail ほか 1 件'
     );
   });
 

@@ -75,7 +75,8 @@ html:has(.workspace-window.background-transparent) {
 
 .workspace-settings-menu {
   position: absolute;
-  top: 100%;
+  /* ヘッダーの下の余白の分だけ上げて、⚙ ボタンのすぐ下に出す */
+  top: calc(100% - var(--spacing-md));
   right: var(--spacing-md);
   margin-top: 4px;
   min-width: 180px;
@@ -95,7 +96,6 @@ html:has(.workspace-window.background-transparent) {
   border: none;
   background-color: transparent;
   text-align: left;
-  white-space: nowrap;
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   cursor: pointer;
