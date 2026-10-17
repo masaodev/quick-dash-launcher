@@ -118,6 +118,16 @@ describe('WorkspaceUiStateStore', () => {
           },
           noBounds: { collapsedStates: {} },
           badBounds: { collapsedStates: {}, bounds: { x: '1', y: 2, width: 3, height: 4 } },
+          withAnchor: {
+            collapsedStates: {},
+            bounds: { x: 1, y: 2, width: 3, height: 4 },
+            anchor: { horizontal: 'end', offsetX: 0, vertical: 'center', offsetY: -10 },
+          },
+          badAnchor: {
+            collapsedStates: {},
+            bounds: { x: 1, y: 2, width: 3, height: 4 },
+            anchor: { horizontal: 'right', offsetX: 0, vertical: 'center', offsetY: 0 },
+          },
         },
       })
     ).toEqual({
@@ -128,6 +138,16 @@ describe('WorkspaceUiStateStore', () => {
           collapsedStates: { x: true },
           bounds: { x: 1, y: 2, width: 3, height: 4 },
           pinMode: 2,
+        },
+        withAnchor: {
+          collapsedStates: {},
+          bounds: { x: 1, y: 2, width: 3, height: 4 },
+          anchor: { horizontal: 'end', offsetX: 0, vertical: 'center', offsetY: -10 },
+        },
+        // 位置の基準が読めなければ基準だけ捨て、ウィンドウの状態は残す
+        badAnchor: {
+          collapsedStates: {},
+          bounds: { x: 1, y: 2, width: 3, height: 4 },
         },
       },
     });

@@ -55,7 +55,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "workspaceBackgroundTransparent": false,
   "autoShowWorkspace": false,
   "workspacePositionMode": "displayRight",
-  "workspaceTargetDisplayIndex": 0,
+  "workspaceTargetDisplayIndex": -1,
   "workspacePositionX": 0,
   "workspacePositionY": 0,
   "workspaceVisibleOnAllDesktops": true,
@@ -68,6 +68,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
     "rules": []
   },
   "hideDetachedWithMainWindow": true,
+  "detachedPositionMode": "mainDisplay",
   "windowSnapEnabled": true
 }
 ```
@@ -176,12 +177,13 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウの背景のみを透過するか |
 | **autoShowWorkspace** | boolean | false | メイン画面表示時にワークスペースを自動表示するか |
 | **workspacePositionMode** | WorkspacePositionMode | "displayRight" | ワークスペースウィンドウの表示位置モード |
-| **workspaceTargetDisplayIndex** | number | 0 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり） |
+| **workspaceTargetDisplayIndex** | number | -1 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり）。`-1`（既定）はメインウィンドウと同じディスプレイで、表示するたびにそのディスプレイの端へ移す（高さはそのディスプレイの作業領域に合わせる）。番号のディスプレイが接続されていなければプライマリに出す |
 | **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
 | **workspacePositionY** | number | 0 | 固定位置のY座標（workspacePositionMode='fixed'時に使用） |
 | **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウをすべての仮想デスクトップに表示するか |
 | **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）をすべての仮想デスクトップに表示するか |
 | **hideDetachedWithMainWindow** | boolean | true | メインウィンドウの表示/非表示に連動して、固定していない切り離しウィンドウも表示/非表示にするか<br>フォーカスがメイン・ワークスペース・切り離しウィンドウ（とそこから開いた編集・確認ウィンドウ）の中にある間は隠さず、外へ出たときに隠す（管理ウィンドウは外扱い）。判定の詳細は [ウィンドウ制御](../window-control.md#ウィンドウ非表示の判定) |
+| **detachedPositionMode** | DetachedPositionMode | "mainDisplay" | 切り離しウィンドウの表示位置モード（[3.8.2](#382-detachedpositionmode-値)） |
 | **windowSnapEnabled** | boolean | true | ワークスペースウィンドウ・切り離しウィンドウをモニター端に近づけたときに吸着（スナップ）させるか |
 
 #### 3.8.1. WorkspacePositionMode 値
@@ -193,6 +195,13 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **fixed** | 固定位置に表示（手動で移動した位置を記憶） |
 | **primaryLeft** | @deprecated プライマリディスプレイの左端に配置（後方互換性のため、displayLeftに移行） |
 | **primaryRight** | @deprecated プライマリディスプレイの右端に配置（後方互換性のため、displayRightに移行） |
+
+#### 3.8.2. DetachedPositionMode 値
+
+| 値 | 説明 |
+| --- | --- |
+| **mainDisplay** | 既定。メインウィンドウと一緒に表示するとき（`hideDetachedWithMainWindow` がオンのとき）、ピン留めしていない切り離しウィンドウを、メインウィンドウと同じディスプレイの同じ位置へ移す。位置の決め方は [ウィンドウ制御 - 切り離しウィンドウの表示位置](../window-control.md#切り離しウィンドウの表示位置) |
+| **saved** | 最後に置いた場所に表示する |
 
 ### 3.9. 旧グループの開き方（削除した設定）
 

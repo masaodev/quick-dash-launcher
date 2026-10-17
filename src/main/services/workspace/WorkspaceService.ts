@@ -486,12 +486,14 @@ export class WorkspaceService {
     this.uiState!.updateDetached(rootGroupId, { collapsedStates: states });
   }
 
+  /** 位置・サイズを保存する。anchor（載っているモニターに対する位置）を渡せば一緒に保存する */
   public async saveDetachedBounds(
     rootGroupId: string,
-    bounds: DetachedWindowState['bounds']
+    bounds: DetachedWindowState['bounds'],
+    anchor?: DetachedWindowState['anchor']
   ): Promise<void> {
     await this.initializeStore();
-    this.uiState!.updateDetached(rootGroupId, { bounds });
+    this.uiState!.updateDetached(rootGroupId, anchor ? { bounds, anchor } : { bounds });
   }
 
   public async saveDetachedPinMode(rootGroupId: string, pinMode: 0 | 1 | 2): Promise<void> {

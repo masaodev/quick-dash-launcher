@@ -231,6 +231,23 @@ export interface DetachedWindowState {
   bounds: { x: number; y: number; width: number; height: number };
   /** ピン留めモード */
   pinMode?: 0 | 1 | 2;
+  /** 最後に動かしたときの、載っていたモニターに対する位置（カーソルのモニターに出すときに使う） */
+  anchor?: MonitorAnchor;
+}
+
+/** モニターに対する位置の基準（横は左端・中央・右端、縦は上端・中央・下端） */
+export type MonitorAnchorEdge = 'start' | 'center' | 'end';
+
+/**
+ * モニターの作業領域に対するウィンドウの位置
+ * offset は基準からの距離（start＝作業領域の始端からウィンドウの始端、end＝ウィンドウの終端から作業領域の終端、
+ * center＝作業領域の中央からウィンドウの中央へ。右・下が正）
+ */
+export interface MonitorAnchor {
+  horizontal: MonitorAnchorEdge;
+  offsetX: number;
+  vertical: MonitorAnchorEdge;
+  offsetY: number;
 }
 
 /**

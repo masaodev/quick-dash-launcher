@@ -32,6 +32,7 @@ import { getWorkspaceWindow } from './workspaceWindowManager.js';
 import { moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
+import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -58,7 +59,8 @@ async function toggleDetachedWindowsIfEnabled(show: boolean): Promise<void> {
   const hideDetached = await settingsService.get('hideDetachedWithMainWindow');
   if (hideDetached) {
     if (show) {
-      showAllDetachedGroupWindows();
+      const positionMode = await settingsService.get('detachedPositionMode');
+      showAllDetachedGroupWindows({ placeOnMainWindowDisplay: positionMode === 'mainDisplay' });
     } else {
       hideAllDetachedGroupWindows();
     }
@@ -195,6 +197,11 @@ export async function createWindow(): Promise<BrowserWindow> {
 
   // ワークスペース・オーバーレイはこのレンダラーから window.open で開き、プロセスを共有する
   registerChildWindowOpener('main', mainWindow.webContents);
+
+  // ワークスペース・切り離しウィンドウを「メインウィンドウと同じディスプレイ」に出すための基準
+  registerMainWindowBoundsProvider(() =>
+    mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : null
+  );
 
   mainWindow.on('show', () => {
     windowShownAt = Date.now();

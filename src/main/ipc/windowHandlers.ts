@@ -9,6 +9,7 @@ import type {
   WorkspacePositionMode,
   AdminTab,
 } from '@common/types';
+import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -235,7 +236,11 @@ export function setupWindowHandlers(
     IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE,
     async (_event, mode: WorkspacePositionMode) => {
       const settingsService = await SettingsService.getInstance();
-      if (mode === 'displayLeft' || mode === 'displayRight') {
+      // 左端・右端を選び直したときは、カーソルのあるディスプレイを対象にする
+      // （「メインウィンドウと同じディスプレイ」に出す設定なら、そのまま残す）
+      const followsMainWindow =
+        (await settingsService.get('workspaceTargetDisplayIndex')) === MAIN_WINDOW_DISPLAY_INDEX;
+      if ((mode === 'displayLeft' || mode === 'displayRight') && !followsMainWindow) {
         const cursorPoint = screen.getCursorScreenPoint();
         const cursorDisplay = screen.getDisplayNearestPoint(cursorPoint);
         const allDisplays = screen.getAllDisplays();

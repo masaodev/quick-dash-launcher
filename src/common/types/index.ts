@@ -59,6 +59,8 @@ export type {
   JsonArchivedWorkspaceItem,
   WorkspaceUiStateFile,
   DetachedWindowState,
+  MonitorAnchor,
+  MonitorAnchorEdge,
 } from './json-workspace';
 export {
   JSON_WORKSPACE_VERSION,
@@ -119,10 +121,12 @@ export type {
   WindowPinMode,
   WindowPositionMode,
   WorkspacePositionMode,
+  DetachedPositionMode,
   DisplayInfo,
   AutoLaunchStatus,
   StoreAutoLaunchState,
 } from './settings';
+export { MAIN_WINDOW_DISPLAY_INDEX } from './settings';
 
 // アイコン関連の型
 export type {
