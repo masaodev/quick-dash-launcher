@@ -20,6 +20,7 @@ import { createDataFile, deleteDataFile } from '../data/dataFileOps.js';
 import { notifyDataChanged, notifyWorkspaceChanged } from '../../ipc/notifications.js';
 import { closeDetachedWindowsForGroup } from '../../ipc/workspaceHandlers.js';
 import { getLastLoadReport, reloadConfigFiles } from '../data/dataFileLoader.js';
+import { convertJsonItemToAppItems } from '../data/jsonItemConverter.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
 import { showToastWindow } from '../overlayWindowService.js';
 import { ClipboardService } from '../clipboardService.js';
@@ -200,6 +201,12 @@ export function createCliContext(
       );
     },
     beforeGroupRemoved: closeDetachedWindowsForGroup,
+    // メイン画面の読み込みと同じ変換（.lnk はリンク先を読む）。フォルダ取込は中身に展開されるので 1 件にならない
+    launcherAppItem: async (entry) => {
+      const converted = await convertJsonItemToAppItems(entry.item, entry.file, 0, new Set(), 0);
+      return entry.item.type !== 'dir' && converted.length === 1 ? converted[0] : undefined;
+    },
+    duplicateClipboardData: (ref) => ClipboardService.getInstance().duplicateClipboardData(ref),
     clipboard: {
       save: (text) => {
         const result = ClipboardService.getInstance().saveText(text);

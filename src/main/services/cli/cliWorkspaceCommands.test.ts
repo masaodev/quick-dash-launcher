@@ -12,6 +12,7 @@ import type {
 import { CliError } from './cliArgs';
 import { runWorkspaceCommand } from './cliWorkspaceCommands';
 import type { WorkspaceCommandContext, WorkspaceStore } from './cliWorkspaceCommands';
+import type { LauncherEntry } from './cliLauncherCommands';
 
 let workspaces: Workspace[];
 let groups: WorkspaceGroupView[];
@@ -172,7 +173,83 @@ beforeEach(() => {
       })),
       read: vi.fn((ref: string) => `本文:${ref}`),
     },
+    launcher: {
+      load: async () => launcherEntries,
+      dataFiles: () => ['datafiles/data.json', 'datafiles/data2.json'],
+      tabs: async () => [
+        { name: 'メイン', files: ['datafiles/data.json'] },
+        { name: '仕事', files: ['datafiles/data2.json'] },
+      ],
+      append: vi.fn(),
+      replace: vi.fn(),
+      move: vi.fn(),
+      remove: vi.fn(),
+      markFolder: async (p: string) => p,
+      newId: () => 'NewId001',
+    },
+    // 本体の変換（convertJsonItemToAppItems）の代わり。フォルダ取込は 1 件にならないので undefined
+    launcherAppItem: vi.fn(async ({ item: json }: LauncherEntry) => {
+      if (json.type === 'dir') return undefined;
+      if (json.type === 'clipboard') {
+        const { dataFileRef, ...rest } = json;
+        return { ...rest, clipboardDataRef: dataFileRef } as AppItem;
+      }
+      if (json.type === 'item') return { ...json, type: 'url' } as AppItem;
+      return json as unknown as AppItem;
+    }),
+    duplicateClipboardData: vi.fn((ref: string) => ref.replace('.json', '-copy.json')),
   };
+});
+
+let launcherEntries: LauncherEntry[];
+beforeEach(() => {
+  launcherEntries = [
+    {
+      item: {
+        id: 'Gmail001',
+        type: 'item',
+        displayName: 'Gmail',
+        path: 'https://mail.google.com/',
+      },
+      file: 'datafiles/data.json',
+    },
+    {
+      item: {
+        id: 'SetMorn1',
+        type: 'set',
+        displayName: '朝',
+        entries: [{ itemId: 'Gmail001' }, { open: { path: 'C:\\memo.txt' }, label: 'メモ' }],
+        launchMode: 'sequential',
+      },
+      file: 'datafiles/data2.json',
+    },
+    {
+      item: {
+        id: 'Clip0001',
+        type: 'clipboard',
+        displayName: 'スクショ',
+        dataFileRef: 'clipboard-data/Clip0001.json',
+        savedAt: 1,
+        preview: '',
+        formats: ['image'],
+      },
+      file: 'datafiles/data.json',
+    },
+    { item: { id: 'Dir00001', type: 'dir', path: 'C:\\tools' }, file: 'datafiles/data.json' },
+    {
+      item: { id: 'Dup00001', type: 'item', displayName: '重複', path: 'C:\\a' },
+      file: 'datafiles/data.json',
+    },
+    {
+      item: { id: 'Dup00002', type: 'item', displayName: '重複', path: 'C:\\b' },
+      file: 'datafiles/data2.json',
+    },
+    {
+      item: { id: 'Bad00001', type: 'item', displayName: '壊れた', path: '' },
+      file: 'datafiles/data.json',
+      invalid: 'path が空です',
+    },
+  ] as LauncherEntry[];
 });
 
 async function errorOf(promise: Promise<unknown>): Promise<CliError> {
@@ -475,5 +552,91 @@ describe('workspace のクリップボードアイテム（テキスト）', () 
     >[];
     expect(listed.find((v) => v.id === 'ClipW001')?.text).toBe('本文:clipboard-data/Saved001.json');
     expect(listed.find((v) => v.id === 'ClipW002')).not.toHaveProperty('text');
+  });
+});
+
+describe('workspace item add --from（メインウィンドウのアイテムを写す）', () => {
+  it('セットを行ごと写し、行はメインウィンドウのアイテムを id で指したまま', async () => {
+    const addItem = vi.spyOn(ctx.store, 'addItem');
+    const r = await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', '朝', '--group', '案件A', '--position', '0'],
+      ctx
+    );
+    expect(addItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'set',
+        displayName: '朝',
+        entries: [{ itemId: 'Gmail001' }, { open: { path: 'C:\\memo.txt' }, label: 'メモ' }],
+        launchMode: 'sequential',
+      }),
+      'GrA00001',
+      'Ws000001'
+    );
+    expect(r).toMatchObject({
+      location: ['仕事', '案件A'],
+      from: { id: 'SetMorn1', displayName: '朝', location: ['仕事'] },
+    });
+    expect(ctx.syncBeforeWrite).toHaveBeenCalled();
+    expect(ctx.changed).toHaveBeenCalled();
+  });
+
+  it('--name で名前を変えて写せ、--dry-run では足さずに写す中身を返す', async () => {
+    const r = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', 'SetMorn1', '--name', '朝の準備', '--dry-run'],
+      ctx
+    )) as { dryRun: boolean; item: Record<string, unknown> };
+    expect(r.dryRun).toBe(true);
+    expect(r.item).toMatchObject({ type: 'set', displayName: '朝の準備', id: null });
+    expect(r.item.entries).toHaveLength(2);
+    expect(items).toHaveLength(2);
+    expect(ctx.syncBeforeWrite).not.toHaveBeenCalled();
+  });
+
+  it('クリップボードアイテムは実データを複製し、ワークスペース側に自分のファイルを持たせる', async () => {
+    const addItem = vi.spyOn(ctx.store, 'addItem');
+    await runWorkspaceCommand('item', 'add', ['--from', 'スクショ'], ctx);
+    expect(ctx.duplicateClipboardData).toHaveBeenCalledWith('clipboard-data/Clip0001.json');
+    expect(addItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'clipboard',
+        clipboardDataRef: 'clipboard-data/Clip0001-copy.json',
+        formats: ['image'],
+      }),
+      undefined,
+      'Ws000001'
+    );
+  });
+
+  it('フォルダ取込は conflict、不正なアイテムは invalid、名前が複数なら候補つきで ambiguous', async () => {
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'add', ['--from', 'Dir00001'], ctx))).code
+    ).toBe('conflict');
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'add', ['--from', '壊れた'], ctx))).code
+    ).toBe('invalid');
+    const e = await errorOf(runWorkspaceCommand('item', 'add', ['--from', '重複'], ctx));
+    expect(e.code).toBe('ambiguous');
+    expect(e.candidates?.map((c) => c.location)).toEqual([['メイン'], ['仕事']]);
+    expect((await errorOf(runWorkspaceCommand('item', 'add', ['--from', '無い'], ctx))).code).toBe(
+      'not_found'
+    );
+  });
+
+  it('中身を決めるオプションとは一緒に使えない（usage）', async () => {
+    for (const extra of [
+      ['--path', 'C:\\x'],
+      ['--memo', 'm'],
+      ['--type', 'set'],
+      ['--text', 't'],
+      ['--set', 'args=x'],
+      ['--name', ' '],
+    ]) {
+      const e = await errorOf(runWorkspaceCommand('item', 'add', ['--from', '朝', ...extra], ctx));
+      expect(e.code).toBe('usage');
+    }
   });
 });

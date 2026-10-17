@@ -11,6 +11,8 @@ import type {
   WorkspaceItemUpdate,
 } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
+import { appItemToWorkspaceItemBody } from '@common/utils/workspaceConverters';
+import { isClipboardItem } from '@common/types/guards';
 import { isValidGroupColor } from '@common/groupColors';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
@@ -37,6 +39,8 @@ import {
 } from './cliShared.js';
 import type { ClipboardTextStore } from './cliShared.js';
 import { checkCliSetEntries } from './cliSetCommands.js';
+import { findLauncherEntry, launcherCandidate } from './cliLauncherCommands.js';
+import type { LauncherEntry, LauncherStore } from './cliLauncherCommands.js';
 
 /**
  * qdl workspace … — ワークスペース（workspace.json）のワークスペース・グループ・アイテム
@@ -84,6 +88,12 @@ export interface WorkspaceCommandContext {
   beforeGroupRemoved(groupId: string): Promise<void>;
   /** クリップボードアイテムの実データ（テキストだけ） */
   clipboard: ClipboardTextStore;
+  /** --from: 写す元のメイン画面のアイテム */
+  launcher: LauncherStore;
+  /** --from: データファイルの項目を、画面が持つ実行時の形にする（.lnk はリンク先を読む。フォルダ取込は undefined） */
+  launcherAppItem(entry: LauncherEntry): Promise<AppItem | undefined>;
+  /** --from: クリップボードアイテムの実データを複製し、新しい参照を返す（できなければ null） */
+  duplicateClipboardData(dataFileRef: string): string | null;
 }
 
 /** 検証のためだけに入れる実データの参照（保存するまで本物の参照は決まらない） */
@@ -480,11 +490,14 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
       'type',
       'text',
       'text-file',
+      'from',
     ],
     flags: ['dry-run'],
     allowSet: true,
   });
   expectPositionals(parsed, []);
+  const from = optionString(parsed, 'from');
+  if (from !== undefined) return addFromLauncher(parsed, from, ctx);
   const type = optionString(parsed, 'type') ?? 'item';
   if (type === 'window') throw new CliError('usage', mainI18n.t('cli.errors.windowTypeRemoved'));
   if (type !== 'item' && type !== 'clipboard') {
@@ -556,6 +569,77 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   const item = after.items.find((i) => i.id === added.id) ?? added;
   ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
   return itemView(item, after);
+}
+
+/**
+ * メイン画面のアイテムを写して足す（右クリックの「ワークスペースに追加」と同じ）。
+ * セットの行はメイン画面のアイテムを id で指したまま。クリップボードは実データを複製して自分のファイルを持たせる
+ */
+async function addFromLauncher(
+  parsed: ParsedArgs,
+  from: string,
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  for (const option of ['path', 'args', 'memo', 'type', 'text', 'text-file']) {
+    if (optionString(parsed, option) !== undefined) {
+      throw new CliError('usage', mainI18n.t('cli.errors.fromOption', { option }));
+    }
+  }
+  if (parsed.sets.length > 0) {
+    throw new CliError('usage', mainI18n.t('cli.errors.fromOption', { option: 'set' }));
+  }
+  const name = optionString(parsed, 'name');
+  if (name !== undefined && !name.trim()) {
+    throw new CliError('usage', mainI18n.t('cli.errors.emptyName'));
+  }
+  const position = optionInt(parsed, 'position');
+  const dryRun = optionFlag(parsed, 'dry-run');
+
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const entry = await findLauncherEntry(from, ctx.launcher);
+  const source = launcherCandidate(entry, await ctx.launcher.tabs());
+  if (entry.item.type === 'dir') {
+    throw new CliError('conflict', mainI18n.t('cli.errors.fromDir', { name: source.displayName }));
+  }
+  if (entry.invalid) {
+    throw new CliError(
+      'invalid',
+      mainI18n.t('cli.errors.fromInvalid', { name: source.displayName, reason: entry.invalid })
+    );
+  }
+  const appItem = await ctx.launcherAppItem(entry);
+  if (!appItem) {
+    throw new CliError('conflict', mainI18n.t('cli.errors.fromDir', { name: source.displayName }));
+  }
+  const renamed = name ? ({ ...appItem, displayName: name.trim() } as AppItem) : appItem;
+
+  const s = await snapshot(ctx.store);
+  const place = resolvePlace(s, optionString(parsed, 'workspace'), optionString(parsed, 'group'));
+  if (dryRun) {
+    return {
+      dryRun: true,
+      item: {
+        ...appItemToWorkspaceItemBody(renamed),
+        id: null,
+        location: [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)],
+      },
+      from: source,
+    };
+  }
+
+  // 画面と同じく、複製できなければ元の参照のまま足す
+  const copiedRef = isClipboardItem(renamed)
+    ? ctx.duplicateClipboardData(renamed.clipboardDataRef)
+    : null;
+  const toAdd = copiedRef ? ({ ...renamed, clipboardDataRef: copiedRef } as AppItem) : renamed;
+  const added = await ctx.store.addItem(toAdd, place.groupId, place.workspaceId);
+  if (position !== undefined) {
+    await placeAt(ctx.store, added.id, place.workspaceId, place.groupId, position);
+  }
+  const after = await snapshot(ctx.store);
+  const item = after.items.find((i) => i.id === added.id) ?? added;
+  ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
+  return { ...itemView(item, after), from: source };
 }
 
 /**

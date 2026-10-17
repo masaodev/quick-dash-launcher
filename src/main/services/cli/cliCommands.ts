@@ -13,7 +13,7 @@ import type { TabStore } from './cliTabCommands.js';
 import { runSettingsCommand } from './cliSettingsCommands.js';
 import type { SettingsStore } from './cliSettingsCommands.js';
 import { runWorkspaceCommand } from './cliWorkspaceCommands.js';
-import type { WorkspaceStore } from './cliWorkspaceCommands.js';
+import type { WorkspaceCommandContext, WorkspaceStore } from './cliWorkspaceCommands.js';
 import type { ClipboardTextStore } from './cliShared.js';
 
 /**
@@ -47,6 +47,9 @@ export interface CliContext {
   beforeGroupRemoved: (groupId: string) => Promise<void>;
   /** クリップボードアイテムの実データ（テキストだけ）の読み書き */
   clipboard: ClipboardTextStore;
+  /** ワークスペースの item add --from（メイン画面のアイテムを写す） */
+  launcherAppItem: WorkspaceCommandContext['launcherAppItem'];
+  duplicateClipboardData: WorkspaceCommandContext['duplicateClipboardData'];
 }
 
 const EXIT_BY_CODE: Record<CliErrorCode, number> = {
@@ -178,6 +181,9 @@ async function dispatch(
         changed: (message) => ctx.changed('workspace', message),
         beforeGroupRemoved: ctx.beforeGroupRemoved,
         clipboard: ctx.clipboard,
+        launcher: ctx.launcher,
+        launcherAppItem: ctx.launcherAppItem,
+        duplicateClipboardData: ctx.duplicateClipboardData,
       });
     }
 
