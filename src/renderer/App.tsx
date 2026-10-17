@@ -61,6 +61,7 @@ function App(): React.ReactElement {
   }, [mainItems]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [pinLevel, setPinLevel] = useState<PinLevel>(0);
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>('normal');
   const [windowList, setWindowList] = useState<WindowInfo[]>([]);
@@ -517,6 +518,10 @@ function App(): React.ReactElement {
     };
     loadPinState();
 
+    window.electronAPI.isWorkspaceOpen().then(setIsWorkspaceOpen);
+    const cleanupWorkspaceOpenChanged =
+      window.electronAPI.onWorkspaceOpenChanged(setIsWorkspaceOpen);
+
     const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
       await withLoading(t('launcher.loading.data'), () => loadItems('internal'));
@@ -545,6 +550,7 @@ function App(): React.ReactElement {
       cleanupWindowShownItemSearch();
       cleanupWindowHidden();
       cleanupDataChanged();
+      cleanupWorkspaceOpenChanged();
       cleanupChildResult();
       cleanupRegisterWorkspaceItem();
     };
@@ -689,6 +695,7 @@ function App(): React.ReactElement {
           onOpenRegisterModal={() => void openRegisterWindow()}
           pinLevel={pinLevel}
           onPinLevelChange={setPinLevel}
+          isWorkspaceOpen={isWorkspaceOpen}
         />
         <div className="drag-handle">⋮⋮</div>
       </div>

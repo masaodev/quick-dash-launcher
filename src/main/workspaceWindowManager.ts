@@ -1,6 +1,7 @@
 import { BrowserWindow, Display, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 import type { PinLevel, WorkspacePositionMode } from '@common/types';
 import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 
@@ -81,6 +82,10 @@ function setWorkspaceOpen(open: boolean): void {
   if (isWorkspaceOpen === open) return;
   isWorkspaceOpen = open;
   persistWorkspaceWindowState();
+  // メインウィンドウの ⭐ ボタンの押し込み表示を合わせる
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, open);
+  }
 }
 
 /** ワークスペースが開いているか（閉じていない） */

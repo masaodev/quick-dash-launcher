@@ -30,6 +30,7 @@ import {
   getWorkspaceAlwaysOnTop,
   toggleWorkspaceAlwaysOnTop,
   getWorkspacePinLevel,
+  isWorkspaceWindowOpen,
   setWorkspacePinLevel,
   getWorkspaceWindow,
   setWorkspacePosition,
@@ -185,6 +186,7 @@ export function setupWindowHandlers(
   });
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_IS_OPEN, () => isWorkspaceWindowOpen());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;

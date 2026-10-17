@@ -143,6 +143,7 @@ export const IPC_CHANNELS = {
   // ワークスペース - ウィンドウ制御
   WORKSPACE_TOGGLE_WINDOW: 'workspace:toggle-window',
   WORKSPACE_HIDE_WINDOW: 'workspace:hide-window',
+  WORKSPACE_IS_OPEN: 'workspace:is-open',
   WORKSPACE_GET_ALWAYS_ON_TOP: 'workspace:get-always-on-top',
   WORKSPACE_TOGGLE_ALWAYS_ON_TOP: 'workspace:toggle-always-on-top',
   WORKSPACE_SET_SIZE: 'workspace:set-size',
@@ -209,6 +210,7 @@ export const IPC_CHANNELS = {
   EVENT_WINDOW_HIDDEN: 'window-hidden',
   EVENT_DATA_CHANGED: 'data-changed',
   EVENT_SETTINGS_CHANGED: 'settings-changed',
+  EVENT_WORKSPACE_OPEN_CHANGED: 'workspace-open-changed',
   EVENT_SET_ACTIVE_TAB: 'set-active-tab',
   /** 管理ウィンドウの × が押された。未保存の確認はレンダラーが行い、閉じるなら HIDE_EDIT_WINDOW を呼ぶ */
   EVENT_ADMIN_CLOSE_REQUESTED: 'admin-close-requested',

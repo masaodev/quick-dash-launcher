@@ -126,6 +126,10 @@ export interface ElectronAPI {
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
+  /** ワークスペースが開いているか（⭐ ボタンの押し込み表示） */
+  isWorkspaceOpen: () => Promise<boolean>;
+  /** ワークスペースを開いた・閉じたとき */
+  onWorkspaceOpenChanged: (callback: (open: boolean) => void) => () => void;
   onWorkspaceChanged: (callback: () => void) => () => void;
   /** ピン留め。呼んだウィンドウ（メイン・ワークスペース・切り離し）が対象 */
   pin: {
