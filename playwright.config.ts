@@ -18,17 +18,15 @@ export default defineConfig({
   // テストが失敗したときの挙動
   fullyParallel: false,
 
-  // 失敗したテストのリトライ回数
-  retries: process.env.CI ? 2 : 0,
+  // 失敗したテストのリトライ回数。手元も 1 回流し直す（普段使いの PC で、操作が入ると落ちることがあるため。
+  // 流し直して通ったものは flaky と出るので、記録は残る）
+  retries: process.env.CI ? 2 : 1,
 
-  // ワーカー数（CI環境では1、ローカルでは2に制限してリソース競合を防ぐ）
+  // ワーカー数（CI 環境・手元とも 1。並列にすると落ちやすくなるため）
   workers: process.env.CI ? 1 : 1,
 
   // レポーター設定
-  reporter: [
-    ['list'],
-    process.env.CI ? ['github'] : ['dot'],
-  ],
+  reporter: [['list'], process.env.CI ? ['github'] : ['dot']],
 
   // 全テストでの共通設定
   use: {
