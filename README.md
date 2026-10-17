@@ -93,7 +93,7 @@ Edit everything you've added, tab by tab. To open it, select ⚙ > **Item Manage
 
 ### Add item
 
-Add one item at a time. To open it, select ➕ > **Add item** in the launcher, or drag and drop a file onto it.
+Add one item at a time. To open it, select ➕ > **Add item…** in the launcher, or drag and drop a file onto it.
 
 <p align="center">
   <img src="docs/images/readme-register-item-en.png" alt="The Add item window, adding a URL named Timesheet." />

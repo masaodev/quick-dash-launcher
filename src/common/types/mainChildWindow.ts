@@ -43,11 +43,14 @@ export interface IconProgressDetailWindowRequest {
   results: IconProgressResult[];
 }
 
-/** 子ウィンドウが開き元へ返す内容（returnToOpener のとき。閉じるまでに返さなければ null） */
-export interface MainChildWindowReturn {
-  kind: 'register';
-  items: RegisterItem[];
-}
+/**
+ * 子ウィンドウが開き元へ返す内容（returnToOpener のとき。閉じるまでに返さなければ null）
+ *
+ * - register: 編集したフォームの内容
+ * - delete: 「削除」を押した（開き元で未保存の削除にする）
+ */
+export type MainChildWindowReturn =
+  { kind: 'register'; items: RegisterItem[] } | { kind: 'delete' };
 
 /**
  * 子ウィンドウでの操作結果（子ウィンドウ → メインプロセス → メイン画面へ中継）

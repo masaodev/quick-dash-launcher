@@ -509,6 +509,15 @@ async function reloadConfigFilesInternal(
   // CLI の reload・check が返せるよう、直近の結果を覚えておく
   const report = buildLoadReport([...data.fileReports, ...workspaceReports], preChangeSnapshot);
   lastLoadReport = report;
+  const flattenedGroupIds = workspaceReports.flatMap((f) =>
+    f.issues.filter((i) => i.code === 'groupFlattened').map((i) => i.id)
+  );
+  if (flattenedGroupIds.length > 0) {
+    dataLogger.warn(
+      { groupIds: flattenedGroupIds },
+      'ワークスペースのグループを最上位へ移しました（深すぎる・循環）'
+    );
+  }
 
   // 破損ファイルがあった場合は無通知でアイテムが消えたように見えないよう警告する
   const corruptedFiles = [
@@ -525,7 +534,7 @@ async function reloadConfigFilesInternal(
     });
   }
 
-  // スキップ・採番があったときだけ知らせる（毎回の読込では出さない）
+  // スキップ・採番・グループの最上位への移動があったときだけ知らせる（毎回の読込では出さない）
   const issueToast = formatLoadReportToast(report);
   if (issueToast) {
     showToastWindow({

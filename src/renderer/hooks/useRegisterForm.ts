@@ -308,7 +308,9 @@ export function useRegisterForm(
 
       if (item.itemCategory === 'clipboard') {
         if (!hasClipboardContent(item)) {
-          newErrors[i].path = t('register.errors.clipboardRequired');
+          newErrors[i].path = item.clipboardDataMissing
+            ? t('register.errors.clipboardDataMissing')
+            : t('register.errors.clipboardRequired');
         }
       }
     }

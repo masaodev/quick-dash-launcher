@@ -8,8 +8,6 @@ interface RegisterPlacementBarProps {
   dataFileLabels: Record<string, string>;
   onTargetTabChange: (targetTab: string) => void;
   onTargetFileChange: (targetFile: string) => void;
-  /** 右端に出す画面の状態（「新規登録」「編集」） */
-  modeLabel: string;
 }
 
 /**
@@ -37,7 +35,6 @@ const RegisterPlacementBar: React.FC<RegisterPlacementBarProps> = ({
   dataFileLabels,
   onTargetTabChange,
   onTargetFileChange,
-  modeLabel,
 }) => {
   const { t } = useTranslation();
   const selectedTab = availableTabs.find((tab) => tab.files.includes(item.targetTab));
@@ -74,7 +71,6 @@ const RegisterPlacementBar: React.FC<RegisterPlacementBarProps> = ({
           </select>
         </>
       )}
-      <span className="register-dest-mode">{modeLabel}</span>
     </div>
   );
 };

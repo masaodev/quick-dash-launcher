@@ -346,8 +346,10 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
 - **`types`**（既定 `"both"`）: 取り込む種類。`"file"`・`"folder"`・`"both"` のどれか
 - **`filter`**: 取り込むファイル名の glob パターン（例: `"*.ps1"`、`"*.{doc,docx,pdf}"`）
 - **`exclude`**: 除外する glob パターン（例: `"node_modules"`、`"*.{tmp,temp,bak}"`）
-- **`prefix`**: 表示名の前に付ける。結果は `プレフィックス: アイテム名`
-- **`suffix`**: 表示名の後に付ける。結果は `アイテム名 (サフィックス)`
+- **`prefix`**: 表示名の前に付ける文字。区切りや括弧は足さず、`prefix` ＋ アイテム名とそのままつなぐ（例: `"【仕事】"` → `【仕事】アイテム名`）
+- **`suffix`**: 表示名の後に付ける文字。同じく、アイテム名 ＋ `suffix` とそのままつなぐ（例: `"（Dev）"` → `アイテム名（Dev）`）
+
+以前は `プレフィックス: アイテム名`・`アイテム名 (サフィックス)` の形に区切りと括弧を足していた。今ある値は書き換えていないので、以前に設定した `prefix`・`suffix` は区切りと括弧の無い表示名になる。
 
 #### 3.2.3. 使用例
 
@@ -369,7 +371,7 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
         "types": "file",
         "filter": "*.{js,ts}",
         "exclude": "node_modules",
-        "prefix": "Src"
+        "prefix": "【Src】"
       }
     },
     {
@@ -378,7 +380,7 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
       "path": "C:\\Scripts",
       "options": {
         "filter": "*.ps1",
-        "prefix": "Script"
+        "prefix": "【Script】"
       }
     }
   ]
@@ -391,7 +393,7 @@ v0.8.0-beta.11 までは、ウィンドウ切り替えを `windowConfig` オブ�
 
 1. **スキャン実行**: 指定されたフォルダをオプションに従ってスキャン
 2. **アイテム生成**: 検出されたファイル/フォルダをアイテムとして生成（`.lnk` は 3.1.6 の解析を行い、ファイル名を表示名にする）
-3. **表示名生成**: prefix/suffixがあれば表示名に適用
+3. **表示名生成**: prefix/suffixがあれば、表示名の前後にそのままつなぐ（3.2.2）
 4. **アイコン**: 読み込み時は、キャッシュ済みのアイコンを読み込むだけ（`src/renderer/App.tsx` の `loadItems`）。キャッシュにないアイコンの取得・抽出は、利用者がアイコンの取得を操作したときに行う（`src/renderer/hooks/useIconFetcher.ts`）
 
 ### 3.3. セット（JsonSetItem）
@@ -675,7 +677,7 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 | --- | --- |
 | 反映タイミング | 起動時・F5・完全リフレッシュ・CLI の `qdl reload`、またはアプリ内の操作・CLI の書き込みに伴う再読込。編集画面（アイテム管理）は表示のたびに読み直す |
 | 読み込みレポート | 読み込みのたびに結果（受理・スキップ・採番・補正・外部変更・破損）をまとめ、直近の 1 回分をメモリに持つ。ファイルには書き出さない。CLI の `qdl reload`・`qdl check` が返す。データファイルに加えてワークスペースファイル（`workspace.json` / `workspace-archive.json`）も並ぶ。詳細は[ワークスペースファイル形式](workspace-format.md)を参照 |
-| トースト | スキップまたは採番があったときだけ「データ: N 件読込・M 件スキップ・K 件に ID を採番」の形で表示する（外部変更を検知したときは先頭が「外部編集されたデータ:」になる） |
+| トースト | スキップ・採番、またはワークスペースのグループの最上位への移動（深すぎる・循環）があったときだけ「データ: N 件読込・M 件スキップ・K 件に ID を採番・深すぎる・循環するグループ L 件を最上位へ移動」の形で表示する（0 件の部分は出さない。ほかの補正では出さない）（外部変更を検知したときは先頭が「外部編集されたデータ:」になる） |
 | 変更前スナップショット | 前回読み込み時（または QDL 自身の書き込み時）と内容が違うファイルを検知すると、**変更前の内容**を `config/backup/YYYY-MM-DDTHH-MM-SS_pre-external/` に保存する（`backupEnabled` が true のとき。`backupRetention` とは別枠で最新 10 件を保持）。QDL の外の変更で壊れたときの戻し先。**検知は QDL 起動中の編集 → 次の再読込（F5・CLI の `qdl reload`、またはアプリ内の操作・CLI の書き込みに伴う再読込）のときだけ**（前回の内容はメモリ上で覚えているため、QDL 終了中に編集した内容は起動時に反映はされるが外部変更としては検知されず、スナップショットも作られない） |
 | 楽観ロック | 編集画面の保存は全ファイルを全量上書きするため、読み込み時のファイル内容ハッシュを保存時に照合し、読み込み後に外部で変更されていれば保存を拒否して再読込する（`saveEditableItems` の `expectedHashes`） |
 | ID 指定の更新 | メイン画面と CLI からの編集・削除は毎回ディスクを読み直して該当 ID だけ差し替えるため、外部変更と共存できる |
@@ -692,6 +694,7 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
     "accepted": 42,
     "skipped": 1,
     "idAssigned": 2,
+    "groupsFlattened": 0,
     "corruptedFiles": [],
     "externallyChangedFiles": ["datafiles/data.json"]
   },
@@ -740,6 +743,7 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
 
 | フィールド | 説明 |
 | --- | --- |
+| `summary.groupsFlattened` | 深すぎる・循環するため最上位へ移したワークスペースのグループの数（`code: "groupFlattened"` の issue の数） |
 | `files[]` | データファイル（`datafiles/data*.json`）に加えて、ワークスペースファイル（`workspace.json` / `workspace-archive.json`）も同じ形式で並ぶ |
 | `files[].status` | `ok` / `corrupted`（JSON として壊れている。`error` に理由） / `unreadable`（読めない） |
 | `files[].accepted` | 受理したアイテム数（`dir` の展開前。JSON 上の要素数） |
@@ -747,6 +751,7 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
 | `files[].issues[].index` | 書き戻し後の `items` 配列内の位置。ファイル単位の問題や削除した要素は `-1`（`reason` に元の位置） |
 | `files[].issues[].reason` | 問題の説明。表示言語の文（例は日本語）。項目の形の検証（必須の項目が無い等）は英語 |
 | `files[].issues[].section` | 問題があった配列名（`workspaces` / `groups` / `items`）。ワークスペースファイルのときだけ付く（データファイルは `items` しか無いため省略） |
+| `files[].issues[].code` | 画面で知らせる補正の種類。今は、深すぎる・循環するワークスペースのグループを最上位へ移したときの `groupFlattened` だけ（ほかの issue には付かない） |
 | `files[].rewritten` | 採番・補正のためファイルを書き戻したか |
 | `preChangeSnapshot` | 外部変更の検知時に作った変更前スナップショットのフォルダ名。なければ `null` |
 

@@ -74,8 +74,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
             style={{ backgroundColor: resolveGroupColorCss(token) }}
             onClick={() => onSelectColor(token)}
             title={t(`groupColors.${token}`)}
+            aria-label={t(`groupColors.${token}`)}
+            aria-pressed={currentColor === token}
             type="button"
-          />
+          >
+            {/* 今の色。青い色に青い枠だけでは見えないので、白い ✓ を重ねる */}
+            {currentColor === token && <span className="color-picker-check">✓</span>}
+          </button>
         ))}
       </div>
     </div>

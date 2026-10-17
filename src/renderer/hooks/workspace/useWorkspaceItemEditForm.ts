@@ -116,7 +116,9 @@ export function useWorkspaceItemEditForm(
     }
 
     if (item.itemCategory === 'clipboard' && !hasClipboardContent(item)) {
-      newErrors.path = t('register.errors.clipboardRequired');
+      newErrors.path = item.clipboardDataMissing
+        ? t('register.errors.clipboardDataMissing')
+        : t('register.errors.clipboardRequired');
     }
 
     setErrors(newErrors);

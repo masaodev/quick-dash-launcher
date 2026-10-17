@@ -15,7 +15,7 @@ const BASIC_FILTERS = [
 ] as const;
 
 interface AdminItemManagerToolbarProps {
-  /** 追加: ボタン本体と「▼」の「1 件追加」 */
+  /** 追加: ボタン本体と「▼」の「一覧に行を追加」 */
   onAddItem: () => void;
   /** 追加「▼」: フォルダ取込のアイテムを追加 */
   onAddFolder: () => void;

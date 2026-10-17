@@ -100,8 +100,8 @@ describe('tooltipTextGenerator', () => {
 
       const result = getTooltipText(item);
 
-      expect(result).toContain('セット: 2件');
-      expect(result).toContain('ウィンドウ位置のある行: 1件');
+      expect(result).toContain('セット: 2 件');
+      expect(result).toContain('ウィンドウ位置のある行: 1 件');
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('ID: abc12345');
     });
@@ -125,7 +125,7 @@ describe('tooltipTextGenerator', () => {
       expect(result).toContain('データファイル: data.json');
       expect(result).toContain('行番号: 20');
       expect(result).toContain('取込元: C:\\folder');
-      expect(result).toContain('設定: 深さ:無制限, タイプ:ファイルとフォルダ');
+      expect(result).toContain('設定: 深さ: 無制限、種類: ファイルとフォルダ');
     });
 
     it('IDが設定されている場合、IDが表示され行番号は表示されない', () => {
@@ -160,7 +160,7 @@ describe('tooltipTextGenerator', () => {
 
       expect(result).toContain('展開元ID: dir-abc1');
       expect(result).toContain('取込元: C:\\folder');
-      expect(result).toContain('設定: 深さ:2, タイプ:ファイルのみ, フィルター:*.pdf');
+      expect(result).toContain('設定: 深さ: 2、種類: ファイルのみ、条件: *.pdf');
       // 個別IDフィールドは持たないことを確認（展開元IDとは異なる）
       expect(result).not.toMatch(/^ID: /m); // 行頭に"ID: "がないことを確認
       expect(result).not.toContain('行番号:');

@@ -161,7 +161,7 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
     const item = resolve(entry.itemId);
     if (!item) {
       return {
-        name: entry.label ?? entry.itemId,
+        name: entry.label ?? mainI18n.t('set.missingItemName'),
         error: mainI18n.t('set.errors.itemNotFound'),
       };
     }

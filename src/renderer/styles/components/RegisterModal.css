@@ -43,14 +43,9 @@
   border-bottom: var(--border-light);
 }
 
-.register-dest-label,
-.register-dest-mode {
+.register-dest-label {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
-}
-
-.register-dest-mode {
-  margin-left: auto;
 }
 
 .register-dest-sep {
@@ -171,6 +166,7 @@
 .register-item .form-group {
   margin-bottom: var(--spacing-sm);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-sm);
 }
@@ -197,6 +193,8 @@
 .register-item .form-group:has(.memo-textarea) {
   flex-direction: column;
   align-items: stretch;
+  /* 上のオプションの枠に付かないよう、区切りの余白をとる */
+  margin-top: var(--spacing-md);
 }
 
 .register-item .form-group:has(.memo-textarea) label {
@@ -214,11 +212,15 @@
   padding-top: var(--spacing-xs);
 }
 
-.register-item .form-group small {
-  display: block;
-  width: 100%;
-  margin-top: var(--spacing-xs);
-  margin-left: 120px;
+/*
+ * 横並びの行の下に出すエラーと補足は、次の段に回して入力欄の左端にそろえる
+ * （ラベルの幅 120px ＋ 行の gap の分だけ下げる）
+ */
+.register-item .form-group:not(.vertical-layout) > .error-message,
+.register-item .form-group:not(.vertical-layout) > small {
+  flex: 0 0 calc(100% - 120px - var(--spacing-sm));
+  margin-top: 0;
+  margin-left: calc(120px + var(--spacing-sm));
 }
 
 /* グループアイテムリストなどの特殊なフォームグループは縦並びを維持 */
@@ -232,6 +234,8 @@
 }
 
 .register-item .form-group.vertical-layout small {
+  display: block;
+  margin-top: var(--spacing-xs);
   margin-left: 0;
 }
 
@@ -434,19 +438,13 @@
   }
 }
 
-/* エラーメッセージの配置調整（path-input-group内） */
-.path-input-group .error-message {
-  width: 100%;
-  margin-left: 120px;
-}
-
 /* ウィンドウ切り替えの設定は縦並びで全幅にする（横並びの form-group のままだと枠が中身の幅まで縮む） */
 .register-item .form-group.vertical-layout {
   flex-direction: column;
   align-items: stretch;
 }
 
-/* パスの無い単一アイテムの補足（パス欄の下。ラベルの幅だけ下げるのは .form-group small と同じ） */
+/* パスの無い単一アイテムの補足（パス欄の下。位置は .form-group > small と同じ） */
 .register-item .form-group small.path-pathless-note {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);

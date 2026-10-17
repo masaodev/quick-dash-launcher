@@ -224,15 +224,15 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       const itemCount = mainWindow.locator('.item-count-display');
       await expect(itemCount).toBeVisible();
 
-      // アイテム数が「〇〇件」形式で表示されることを確認
+      // アイテム数が「〇〇 件」形式で表示されることを確認
       const countText = await itemCount.textContent();
-      expect(countText).toMatch(/\d+件/);
+      expect(countText).toMatch(/\d+ 件/);
     });
 
     await test.step('初期アイテム数を取得', async () => {
       const itemCount = mainWindow.locator('.item-count-display');
       initialCount = (await itemCount.textContent()) || '';
-      expect(initialCount).toMatch(/\d+件/);
+      expect(initialCount).toMatch(/\d+ 件/);
     });
 
     await test.step('検索を実行してアイテム数が減少することを確認', async () => {

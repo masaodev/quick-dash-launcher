@@ -227,7 +227,7 @@ export function describeSetEntry(
     const item = catalog.get(entry.itemId);
     if (!item) {
       return {
-        name: entry.label ?? entry.itemId,
+        name: entry.label ?? i18next.t('set.missingItemName'),
         kind: 'none',
         holding: 'ref',
         missing: true,
@@ -354,7 +354,8 @@ export function placementText(
   if (!entry.placement) return undefined;
   const place = formatPlacementLabel(computePlacementLabel(entry.placement, screens));
   const desktop = entry.placement.virtualDesktopNumber;
-  return desktop === undefined
+  // 全デスクトップに表示するときは、どのデスクトップかは意味がないので出さない
+  return desktop === undefined || entry.pinToAllDesktops
     ? place
     : i18next.t('set.placement.onDesktop', { place, desktop: desktopLabel(desktop, desktopNames) });
 }

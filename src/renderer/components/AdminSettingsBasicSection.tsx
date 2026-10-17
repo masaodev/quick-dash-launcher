@@ -65,6 +65,7 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           <label htmlFor="language">{t('settings.language.label')}</label>
           <select
             id="language"
+            className="select-base"
             value={editedSettings.language}
             onChange={(e) => {
               if (isLanguageSetting(e.target.value)) {

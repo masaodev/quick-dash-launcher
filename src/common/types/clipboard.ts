@@ -74,6 +74,8 @@ export interface ClipboardContent {
   text?: string;
   /** 画像の縮小版（data URL） */
   imageThumbnail?: string;
+  /** 保存済みの参照を読んだが、実データのファイルが無かった */
+  missing?: boolean;
 }
 
 /**

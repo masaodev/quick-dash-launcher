@@ -160,6 +160,10 @@ export interface JsonItemIssue {
    * 問題があった配列（ワークスペースファイルのみ。データファイルは items しか無いので省略）
    */
   section?: 'workspaces' | 'groups' | 'items';
+  /**
+   * 画面で知らせたい補正の種類（今は、深すぎる・循環するグループを最上位へ移したときの 'groupFlattened' だけ）
+   */
+  code?: 'groupFlattened';
 }
 
 /** 寛容パースの結果 */

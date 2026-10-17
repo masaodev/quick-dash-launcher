@@ -8,6 +8,8 @@ import {
   changeItemType,
   createBlankItem,
   dedupeFileItems,
+  describeDirOptionsShort,
+  describePathAndArgs,
   diffItems,
   duplicateItems,
   filterEditableItems,
@@ -410,5 +412,25 @@ describe('editableItemOperations', () => {
       autoImportRuleId?: string;
     };
     expect(mdn.autoImportRuleId).toBeUndefined();
+  });
+});
+
+describe('describePathAndArgs（フォルダ取込）', () => {
+  it('オプションを訳した短い要約をパスに添える', () => {
+    const dir: JsonItem = {
+      id: 'dir00001',
+      type: 'dir',
+      path: 'C:/Windows/Web',
+      options: { depth: 2, types: 'file', filter: '*.jpg', exclude: '*4k*' },
+    };
+    expect(describePathAndArgs(dir)).toBe(
+      'C:/Windows/Web（2 階層・ファイルのみ・条件 *.jpg・除外 *4k*）'
+    );
+  });
+
+  it('深さ 0 は「このフォルダのみ」、指定の無いものは書かない', () => {
+    expect(describeDirOptionsShort({ depth: 0 })).toBe('このフォルダのみ');
+    expect(describeDirOptionsShort({ depth: -1, types: 'both' })).toBe('すべての階層');
+    expect(describeDirOptionsShort({})).toBe('');
   });
 });

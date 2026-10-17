@@ -179,6 +179,17 @@
   flex: 1;
 }
 
+/* 保存済みの実データが見つからないときの警告 */
+.clipboard-data-missing {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-warning);
+  background-color: var(--bg-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--border-radius-sm);
+}
+
 .clipboard-state {
   padding: var(--spacing-xxs) var(--spacing-xs);
   font-size: var(--font-size-xs);

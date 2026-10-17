@@ -6,7 +6,7 @@ import type {
   EditableJsonItem,
   RegisterWindowRequest,
 } from '@common/types';
-import { isEditableJsonItem } from '@common/types';
+import { isEditableJsonItem, isEditingLauncherItem } from '@common/types';
 
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
@@ -28,12 +28,20 @@ interface RegisterWindowPageProps {
  * このウィンドウは閉じるだけでよい
  *
  * 管理画面の詳細編集（returnToOpener）では保存せず、フォームの内容を開き元へ返して閉じる。
- * 管理画面が未保存の編集状態に反映し、「変更を保存」で確定する。削除はここでは出さない
+ * 管理画面が未保存の編集状態に反映し、「変更を保存」で確定する。削除も開き元へ返し、
+ * 管理画面で未保存の削除にする
  */
 const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, request }) => {
   const { t } = useTranslation();
   const { showError } = useToast();
   const [deleteTarget, setDeleteTarget] = useState<EditingAppItem | null>(null);
+  // フォルダの中身から開いたアイテムは、消すとフォルダ取込のアイテムごと消えるので削除を出さない
+  const canDelete = !(
+    request.editingItem &&
+    !isEditableJsonItem(request.editingItem) &&
+    isEditingLauncherItem(request.editingItem) &&
+    request.editingItem.isDirExpanded
+  );
   /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち */
   const pendingSave = useRef<Promise<void> | null>(null);
 
@@ -93,6 +101,17 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
   const handleConfirmDelete = useCallback(async () => {
     const target = deleteTarget;
     if (!target) return;
+    if (request.returnToOpener) {
+      // 管理画面の詳細編集: 消すのは管理画面（未保存の削除になり、「変更を保存」で確定する）
+      setDeleteTarget(null);
+      pendingSave.current = window.electronAPI
+        .returnMainChildWindowValue(requestId, { kind: 'delete' })
+        .catch((error) => {
+          logError('削除を管理画面へ返せませんでした:', error);
+        });
+      close();
+      return;
+    }
     try {
       if (!target.jsonItemId) {
         throw new Error(t('register.itemIdNotFound'));
@@ -106,7 +125,7 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       showError(t('register.deleteFailed'));
       setDeleteTarget(null);
     }
-  }, [deleteTarget, showError, t]);
+  }, [close, deleteTarget, request.returnToOpener, requestId, showError, t]);
 
   return (
     <>
@@ -120,7 +139,7 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
         prefillItems={request.prefillItems}
         currentTab={request.currentTab}
         initialCategory={request.initialCategory}
-        onDelete={request.returnToOpener ? undefined : handleDeleteRequest}
+        onDelete={canDelete ? handleDeleteRequest : undefined}
       />
       <ConfirmDialog
         isOpen={deleteTarget !== null}

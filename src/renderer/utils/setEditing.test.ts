@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import i18next from 'i18next';
 import type { SetEntry, WindowInfo } from '@common/types';
 
 import {
@@ -75,6 +76,13 @@ describe('describeSetEntry', () => {
     expect(
       describeSetEntry({ window: { processName: 'notepad.exe' }, placement: { x: 0 } }, new Map())
     ).toMatchObject({ holding: 'none', missing: false });
+  });
+
+  it('指すアイテムが見つからず名前も無い行は、内部の ID ではなく消えたアイテムとして出す', () => {
+    const view = describeSetEntry({ itemId: 'gone0000' }, new Map());
+    expect(view.missing).toBe(true);
+    expect(view.name).not.toBe('gone0000');
+    expect(view.name).toBe(i18next.t('set.missingItemName'));
   });
 });
 
@@ -292,13 +300,13 @@ describe('setEntriesSummary', () => {
       { open: { path: 'C:/tools/notepad.exe' } },
       { window: { processName: 'sticky.exe' } },
     ];
-    expect(setEntriesSummary(entries, nameOf)).toBe('行: Gmail、一時メモ、notepad.exe ほか1件');
+    expect(setEntriesSummary(entries, nameOf)).toBe('行: Gmail、一時メモ、notepad.exe ほか 1 件');
   });
 
   it('3 行以下なら名前だけ。名前を引けない行は件数に回す', () => {
     expect(setEntriesSummary([{ itemId: 'gmail1aa' }], nameOf)).toBe('行: Gmail');
     expect(setEntriesSummary([{ itemId: 'gmail1aa' }, { itemId: 'nobody11' }], nameOf)).toBe(
-      '行: Gmail ほか1件'
+      '行: Gmail ほか 1 件'
     );
   });
 
@@ -332,6 +340,16 @@ describe('仮想デスクトップの記録と表示', () => {
     expect(
       placementText({ placement: { ...entry.placement, virtualDesktopNumber: undefined } }, screens)
     ).not.toMatch(/2$/);
+  });
+
+  it('全デスクトップに表示する行は、デスクトップの番号を添えない', () => {
+    const entry: SetEntry = {
+      placement: { x: 960, y: 0, width: 960, height: 1040, virtualDesktopNumber: 2 },
+      pinToAllDesktops: true,
+    };
+    expect(placementText(entry, screens)).toBe(
+      placementText({ placement: { ...entry.placement, virtualDesktopNumber: undefined } }, screens)
+    );
   });
 
   it('ウィンドウを選ぶ画面のウィンドウは、デスクトップが 2 つ以上のときだけ番号・全デスクトップを添える', () => {

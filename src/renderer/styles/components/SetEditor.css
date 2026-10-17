@@ -10,12 +10,11 @@
   align-self: stretch;
 }
 
+/* 行の一覧は高さを決めず、登録画面全体の 1 か所でスクロールする（内側でもスクロールすると 2 重になる） */
 .set-editor-rows {
   border: var(--border-light);
   border-radius: var(--border-radius);
   background-color: var(--bg-section);
-  max-height: 360px;
-  overflow-y: auto;
 }
 
 .set-editor-row,
@@ -79,10 +78,11 @@
 }
 
 /* 名前の欄（1 段目は名前と印、2 段目は開くもの。ウィンドウを選ぶ画面と同じ 12px の灰色） */
+/* 名前に幅を残す（狭いときは位置の言葉の列のほうを縮める） */
 .set-row-name {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 var(--set-row-name-min-width);
   min-width: 0;
 }
 
@@ -95,7 +95,9 @@
 
 .set-row-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  column-gap: var(--spacing-xs);
   min-width: 0;
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
@@ -132,7 +134,7 @@
 
 /* 位置の言葉の列（幅を決めて左寄せ。長い言葉は省略し、全文はカーソルを当てると出る） */
 .set-row-place-column {
-  flex: 0 0 var(--set-row-place-width);
+  flex: 0 1 var(--set-row-place-width);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
