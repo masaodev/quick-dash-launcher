@@ -410,6 +410,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
   launcher set row list|add|remove       メインウィンドウのセットの行
   launcher tab list|add|update|remove    メインウィンドウのタブとデータファイルの構成
+  launcher tab file add|update|remove    タブのデータファイル（作る・名前を変える・外す）
   settings get|set                         本体の設定（ホットキー・ウィンドウなど。qdl settings --help）
   workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
@@ -424,7 +425,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 標準エラーに説明。code は usage / not_found / ambiguous / invalid / conflict / unavailable / internal。
 書き込むコマンドは --dry-run で、書き込まずに結果だけを確かめられます。
 
-終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 CLI と本体の版の不一致
+終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 やり取りの誤り（CLI と本体の版の不一致・依頼が大きすぎる・読めないなど）
 `,
       launcher: `使い方: qdl launcher item <操作> [引数]
         qdl launcher set row <操作> <セット> [引数]
