@@ -7,8 +7,12 @@ import { screen } from 'electron';
 import PathManager from '../../config/pathManager.js';
 import { SettingsService } from '../settingsService.js';
 import { loadEditableItems } from '../data/editableItemsStore.js';
-import { appendJsonItems, moveItemToFile, replaceItemById } from '../data/dataItemWriter.js';
-import { deleteItemsById } from '../../ipc/editHandlers.js';
+import {
+  appendJsonItems,
+  deleteItemsById,
+  moveItemToFile,
+  replaceItemById,
+} from '../data/dataItemWriter.js';
 import { withFolderMarker } from '../../utils/folderPathProbe.js';
 import {
   notifySettingsChanged,
@@ -58,7 +62,7 @@ export function createLauncherStore(configFolder: string): LauncherStore {
     append: (file, item) => appendJsonItems(configFolder, file, [item]),
     replace: (item) => replaceItemById(configFolder, item),
     move: (item, from, to) => moveItemToFile(configFolder, item, from, to),
-    remove: (id) => deleteItemsById(configFolder, [{ id }]),
+    remove: (id) => deleteItemsById(configFolder, [id]),
     markFolder: withFolderMarker,
     newId: generateUniqueId,
   };
