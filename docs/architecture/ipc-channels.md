@@ -35,7 +35,10 @@ const settings = await window.electronAPI.getSettings();
 | 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`window:set-escape-handled-by-page`・`layout-cancel`・`close-layout-progress-window`） |
 | イベント（メイン→レンダラー） | `webContents.send` | `ipcRenderer.on` | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など） |
 
-- **エラーの返し方**: 失敗は例外として `invoke` 側に伝わる（`createSafeIpcHandler`（`src/main/utils/ipcWrapper.ts`）はログを出してから再スローする）。一部のチャンネルは `{ success: boolean, error?: string }` を返す。どちらの形かはハンドラーと `ElectronAPI` の型で確認する
+- **エラーの返し方**: 失敗は例外として `invoke` 側に伝わる（`createSafeIpcHandler`（`src/main/utils/ipcWrapper.ts`）はログを出してから再スローする）。一部のチャンネルは `{ success: boolean, error?: string }` を返す。どちらの形かはハンドラーと `ElectronAPI` の型で確認する。**新しく足すハンドラーは例外で投げる**（返り値で失敗を返す形は増やさない）
+- **失敗を利用者に知らせる**: 設定フォルダのファイルを書き換える操作（保存・削除・名前の変更・並べ替え・追加・移動など）の失敗は、ログに残すだけにせず利用者に知らせる。知らせるのはどちらか一方にして、二重に出さない
+  - ワークスペースの書き換えは、メイン側の `withWorkspaceService`／`withWorkspaceChange`（`src/main/ipc/workspaceHandlers.ts`）がトーストで知らせる。外部編集との競合・破損・書き込み失敗は警告、それ以外はエラー（`workspaceErrors.changeFailed`）。グループの開閉のような表示の状態だけの保存は知らせない。画面側は `logError` で記録するだけでよい
+  - 画面の中で結果を出す操作（管理画面の保存など）は、画面側が `useToast()` の `showError` や画面内のメッセージで知らせる
 - **イベントの購読**: preload の `on*` 関数（`onDataChanged` など）は購読解除用の関数を返す。React の `useEffect` のクリーンアップで必ず呼ぶ
 - **Esc の扱い**: メインウィンドウの Esc は、メインプロセスの `before-input-event` が受けて隠す。レンダラーが `window:set-escape-handled-by-page` で true を送っているあいだ（ウィンドウ検索で選択中・閉じる確認の帯を表示中）は、隠さずにページへ渡す。状態はメインプロセスが 1 つだけ持ち、レンダラーは変わるたびに送る
 - **ファイルのパス取得**: ドロップされた `File` からパスを得る `getPathForFile` は IPC ではなく、preload 内で `webUtils.getPathForFile` を呼ぶ

@@ -299,13 +299,18 @@ const WorkspaceApp: React.FC = () => {
     try {
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         const filePaths = await extractFilePaths(e.dataTransfer.files);
-        await addItemsFromFilePaths(filePaths, loadAllDataWithLoading, groupId, activeWorkspaceId);
-        for (const filePath of filePaths) {
-          const fileName = filePath.split(/[/\\]/).pop() || filePath;
+        const added = await addItemsFromFilePaths(
+          filePaths,
+          loadAllDataWithLoading,
+          groupId,
+          activeWorkspaceId
+        );
+        // 足せたものだけ知らせる（足せなかったものは本体側がエラーのトーストで知らせる）
+        for (const item of added) {
           await window.electronAPI.showToastWindow({
-            displayName: fileName,
+            displayName: item.displayName,
             itemType: 'workspaceAdd',
-            path: filePath,
+            ...('path' in item && { path: item.path }),
           });
         }
       } else if (e.dataTransfer) {
@@ -317,7 +322,7 @@ const WorkspaceApp: React.FC = () => {
             .map((url) => url.trim())
             .filter((url) => url && url.startsWith('http'));
           for (const url of urls) {
-            await addUrlItem(url, () => {}, groupId, activeWorkspaceId);
+            if (!(await addUrlItem(url, () => {}, groupId, activeWorkspaceId))) continue;
             await window.electronAPI.showToastWindow({
               displayName: url,
               itemType: 'workspaceAdd',

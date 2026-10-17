@@ -199,7 +199,6 @@ export const en: LocaleMessages = {
       openFailed: "Couldn't open the item: {{reason}}",
       activateWindowFailed: "Couldn't bring the window to the front",
       noBookmarkRules: 'No bookmark import rules are turned on',
-      addToWorkspaceFailed: "Couldn't add to the workspace",
       windowAddedWithPosition:
         "When it's open, moves this window back to the recorded window position",
       windowAdded: "Switches to this window when it's open (add a path to open it when it isn't)",
@@ -1325,6 +1324,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     syncAndImport_other: 'Import {{count}} bookmarks and add to auto-import',
   },
   bookmarkAutoImport: {
+    settingsSaveFailed: "Couldn't save the auto-import settings: {{error}}",
+    ruleDeleteFailed: "Couldn't delete the rule: {{error}}",
     ruleResult: 'Bookmark import ({{name}}): {{imported}} added, {{deleted}} removed',
     manualDuplicates: '{{message}} ({{count}} also match URLs you added yourself)',
     ruleError: 'Bookmark import ({{name}}): error - {{error}}',
@@ -1730,6 +1731,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     externalChange:
       '{{file}} was changed outside QDL. Press F5 in the launcher to reload, and then try again.',
     writeFailed: "Couldn't write {{file}}. Check the free disk space and permissions.",
+    changeFailed: "Couldn't change the workspace: {{error}}",
+    addFromPathsFailed_one: "Couldn't add {{count}} item to the workspace: {{names}} ({{error}})",
+    addFromPathsFailed_other:
+      "Couldn't add {{count}} items to the workspace: {{names}} ({{error}})",
     reloadInProgress: 'The workspace is reloading. Try again in a moment.',
     corrupted:
       "{{file}} is corrupted, so it can't be written. Repair the file and press F5 to reload.",

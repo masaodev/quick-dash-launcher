@@ -146,12 +146,31 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     setDeleteConfirmRuleId(ruleId);
   }, []);
 
+  const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
   const handleDeleteConfirm = useCallback(async () => {
     if (deleteConfirmRuleId) {
-      await deleteRule(deleteConfirmRuleId, deleteAlsoItems);
+      try {
+        await deleteRule(deleteConfirmRuleId, deleteAlsoItems);
+      } catch (error) {
+        logError('ルールの削除に失敗しました:', error);
+        showError(t('bookmarkAutoImport.ruleDeleteFailed', { error: errorText(error) }));
+      }
       setDeleteConfirmRuleId(null);
     }
-  }, [deleteConfirmRuleId, deleteAlsoItems, deleteRule]);
+  }, [deleteConfirmRuleId, deleteAlsoItems, deleteRule, showError, t]);
+
+  /** 切り替えの保存に失敗したら知らせる（設定の表示は保存できたときだけ変わる） */
+  const saveToggle = useCallback(
+    async (save: () => Promise<void>) => {
+      try {
+        await save();
+      } catch (error) {
+        showError(t('bookmarkAutoImport.settingsSaveFailed', { error: errorText(error) }));
+      }
+    },
+    [showError, t]
+  );
 
   const handleExecuteRule = useCallback(
     async (rule: BookmarkAutoImportRule) => {
@@ -263,7 +282,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
           <input
             type="checkbox"
             checked={settings.autoRunOnStartup}
-            onChange={toggleAutoRunOnStartup}
+            onChange={() => saveToggle(toggleAutoRunOnStartup)}
           />
           {t('bookmarkAutoImport.autoRunOnStartup')}
         </label>
@@ -310,7 +329,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
                   <input
                     type="checkbox"
                     checked={rule.enabled}
-                    onChange={() => toggleRuleEnabled(rule.id)}
+                    onChange={() => saveToggle(() => toggleRuleEnabled(rule.id))}
                   />
                 </label>
                 <span className="auto-import-rule-name">{rule.name}</span>
