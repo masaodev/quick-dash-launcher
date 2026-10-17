@@ -86,6 +86,14 @@ describe('WorkspaceUiStateStore', () => {
     expect(store.getWorkspaceWindow()).toEqual({ open: true, pinLevel: 0 });
   });
 
+  it('takeHint は 1 回目だけ true を返し、出した案内を覚えること', () => {
+    const store = new WorkspaceUiStateStore();
+    expect(store.takeHint('workspaceOpened')).toBe(true);
+    expect(store.takeHint('workspaceOpened')).toBe(false);
+    expect(store.takeHint('groupDetached')).toBe(true);
+    expect(store.read().shownHints).toEqual(['workspaceOpened', 'groupDetached']);
+  });
+
   it('pinAllUnpinnedDetached はピン留めしていない切り離しウィンドウだけを表示固定にすること', () => {
     const store = new WorkspaceUiStateStore();
     store.updateDetached('none0001', {});

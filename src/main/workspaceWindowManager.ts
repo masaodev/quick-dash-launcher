@@ -22,6 +22,7 @@ import {
 } from './utils/managedWindow.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
 import { WorkspaceService } from './services/workspace/index.js';
+import { showHintOnce } from './services/workspaceHints.js';
 import {
   getRendererHtmlUrl,
   openChildWindow,
@@ -192,6 +193,8 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
 export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   setWorkspaceOpen(true);
   await presentWorkspaceWindow(options);
+  // 初めて開いたときだけ、📌 と × の決まりを伝える
+  void showHintOnce('workspaceOpened');
 }
 
 /**
@@ -424,8 +427,8 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
         }
         const clampedHeight = Math.min(bounds.height, primaryWorkArea.height);
         workspaceWindow.setBounds({
-          x: primaryWorkArea.width - bounds.width,
-          y: 0,
+          x: primaryWorkArea.x + primaryWorkArea.width - bounds.width,
+          y: primaryWorkArea.y,
           width: bounds.width,
           height: clampedHeight,
         });

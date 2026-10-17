@@ -370,6 +370,12 @@ export const en: LocaleMessages = {
     },
   },
   toast: {
+    hints: {
+      workspaceOpened:
+        'The workspace is pinned, so it stays when the launcher closes. Unpin it to show and hide it with the launcher. Close it with × if you do not need it',
+      groupDetached:
+        'Detached windows show and hide with the launcher. Pin one with 📌 to keep it open',
+    },
     actions: {
       url: 'Opening URL…',
       app: 'Starting app…',

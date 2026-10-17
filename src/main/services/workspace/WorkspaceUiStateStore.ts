@@ -1,5 +1,6 @@
 import type {
   DetachedWindowState,
+  WorkspaceHintKey,
   WorkspaceUiStateFile,
   WorkspaceWindowState,
 } from '@common/types';
@@ -77,11 +78,17 @@ export function coerceWorkspaceUiState(raw: unknown): WorkspaceUiStateFile | nul
     }
   }
   const workspaceWindow = coerceWorkspaceWindowState(raw.workspaceWindow);
+  const shownHints = Array.isArray(raw.shownHints)
+    ? raw.shownHints.filter(
+        (h): h is WorkspaceHintKey => h === 'workspaceOpened' || h === 'groupDetached'
+      )
+    : [];
   return {
     version: WORKSPACE_UI_STATE_VERSION,
     collapsedGroups: coerceBooleanRecord(raw.collapsedGroups),
     detachedWindows,
     ...(workspaceWindow && { workspaceWindow }),
+    ...(shownHints.length > 0 && { shownHints }),
   };
 }
 
@@ -138,6 +145,18 @@ export class WorkspaceUiStateStore {
       ...updates,
     };
     this.file.write(state);
+  }
+
+  // --- 1 回だけ出す案内 ---
+
+  /** まだ出していなければ「出した」と覚えて true を返す（出していれば false） */
+  takeHint(key: WorkspaceHintKey): boolean {
+    const state = this.read();
+    const shown = state.shownHints ?? [];
+    if (shown.includes(key)) return false;
+    state.shownHints = [...shown, key];
+    this.file.write(state);
+    return true;
   }
 
   // --- 切り離しウィンドウ ---
