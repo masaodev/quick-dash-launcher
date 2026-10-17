@@ -1,0 +1,75 @@
+# E2E ワークフロー（Playwright + Electron）
+# PR の CI（ci.yml）とは分け、手動起動と毎晩 1 回だけ流す（全件で 15 分ほどかかるため）。
+# GitHub の Windows ランナー（windows-2022）にもデスクトップの画面があるので、Electron のウィンドウを開ける
+
+name: E2E
+
+on:
+  workflow_dispatch:
+  # 毎日 3:00（日本時間）。main に変化が無くても流す
+  schedule:
+    - cron: '0 18 * * *'
+  # 試しのあいだだけ。ランナーで通るかを確かめたら消す
+  push:
+    branches:
+      - ci/e2e-on-windows-runner
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    # ci.yml・release.yml と同じ windows-2022（ネイティブモジュールのビルドをそろえるため）
+    runs-on: windows-2022
+    timeout-minutes: 60
+
+    steps:
+      # Windowsランナーは既定で改行をCRLFに変換するため止める（ci.yml と同じ）
+      - name: Keep LF line endings
+        run: git config --global core.autocrlf false
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      # node-gyp安定化のため3.11を固定（release.yml と同じ理由）
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          GYP_MSVS_VERSION: '2022'
+
+      # ランナーの画面の大きさと、デスクトップのセッションがあるかを記録する（落ちたときの手がかり）
+      - name: Show desktop info
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms
+          [System.Windows.Forms.Screen]::AllScreens | Format-Table DeviceName, Bounds, Primary -AutoSize
+          Write-Host "UserInteractive: $([Environment]::UserInteractive)"
+          Write-Host "Session: $((Get-Process -Id $PID).SessionId)"
+          (Get-CimInstance Win32_OperatingSystem).Caption
+
+      - name: E2E tests
+        run: npm run test:e2e
+
+      # 失敗したテストの画像とトレースを残す（https://trace.playwright.dev で開ける）
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: test-results/
+          retention-days: 7
