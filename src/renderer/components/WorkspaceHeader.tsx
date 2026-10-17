@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { PinLevel } from '@common/types';
+
+import PinButton from './PinButton';
 
 interface WorkspaceHeaderProps {
   isFilterVisible: boolean;
@@ -7,8 +10,8 @@ interface WorkspaceHeaderProps {
   onExpandAll: () => void;
   onCollapseAll: () => void;
   onAddGroup: () => void;
-  isPinned: boolean;
-  onTogglePin: () => void;
+  pinLevel: PinLevel;
+  onPinLevelChange: (level: PinLevel) => void;
   onClose: () => void;
 }
 
@@ -18,8 +21,8 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   onExpandAll,
   onCollapseAll,
   onAddGroup,
-  isPinned,
-  onTogglePin,
+  pinLevel,
+  onPinLevelChange,
   onClose,
 }) => {
   const { t } = useTranslation();
@@ -80,13 +83,11 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         >
           ➕
         </button>
-        <button
-          className={`action-btn workspace-pin-btn ${isPinned ? 'pin-always-on-top' : ''}`}
-          onClick={onTogglePin}
-          title={isPinned ? t('workspace.header.unpin') : t('workspace.header.pin')}
-        >
-          📌
-        </button>
+        <PinButton
+          level={pinLevel}
+          onLevelChange={onPinLevelChange}
+          className="workspace-pin-btn"
+        />
         <div className="workspace-settings-container" ref={settingsMenuRef}>
           <button
             className={`action-btn workspace-control-btn ${isSettingsMenuOpen ? 'active' : ''}`}

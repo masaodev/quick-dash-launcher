@@ -30,6 +30,11 @@ export const ja = {
       success: '成功',
       info: 'お知らせ',
     },
+    pin: {
+      off: 'ピン留め: なし。クリックすると表示固定（隠さずに残す）。右クリックで常に最前面も選べます',
+      stayVisible: 'ピン留め: 表示固定（隠さずに残します）。クリックで解除',
+      alwaysOnTop: 'ピン留め: 常に最前面。クリックで解除',
+    },
   },
   launcher: {
     search: {
@@ -70,11 +75,6 @@ export const ja = {
       openContainingFolder: '親フォルダを開く',
       searchHistory: '検索履歴',
       switchTab: 'タブの切り替え',
-    },
-    pinMode: {
-      normal: '通常モード → 常に最前面モード',
-      alwaysOnTop: '常に最前面モード → 表示固定モード',
-      stayVisible: '表示固定モード → 通常モード',
     },
     refreshMenu: {
       title: '更新・取得',
@@ -293,6 +293,10 @@ export const ja = {
     ready: '初期化完了',
   },
   menu: {
+    pin: {
+      stayVisible: '📌 表示固定（隠さずに残す）',
+      alwaysOnTop: '⬆️ 常に最前面',
+    },
     copyPath: '📋 パスをコピー',
     copyParentPath: '📋 親フォルダのパスをコピー',
     openParentFolder: '📂 親フォルダを開く',
@@ -1860,8 +1864,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       expandAll: 'すべて展開',
       collapseAll: 'すべて折りたたむ',
       addGroup: 'グループを追加',
-      pin: 'ピン留め（常に最前面）',
-      unpin: 'ピン留めを解除',
       menu: '設定',
       openSettings: '⚙️ 設定',
       alignLeft: '⬅️ 左端に寄せる',
@@ -1920,9 +1922,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     restoredGroupName: '{{name}}（復元）',
     defaultWorkspaceName: '既定',
     detached: {
-      pinStayVisible: '表示固定',
-      pinAlwaysOnTop: '常に最前面',
-      unpin: 'ピン留めを解除',
       close: '閉じる',
       closeLabel: '切り離しウィンドウを閉じる',
     },

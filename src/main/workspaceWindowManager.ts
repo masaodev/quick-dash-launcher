@@ -1,7 +1,7 @@
 import { BrowserWindow, Display, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
-import type { WorkspacePositionMode } from '@common/types';
+import type { PinLevel, WorkspacePositionMode } from '@common/types';
 import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
@@ -37,7 +37,8 @@ let workspaceWindow: BrowserWindow | null = null;
 let pendingCreate: Promise<BrowserWindow> | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let detachedRestored: boolean = false;
-let isWorkspacePinned: boolean = false;
+/** ピン留めの段階。ワークスペースは最初から表示固定（開きっぱなしで使ってもらうため） */
+let workspacePinLevel: PinLevel = 1;
 let windowSnapEnabled: boolean = true;
 
 /**
@@ -73,7 +74,7 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
   const windowOptions: BrowserWindowConstructorOptions = {
     width: windowWidth,
     height: windowHeight,
-    alwaysOnTop: false,
+    alwaysOnTop: workspacePinLevel === 2,
     frame: false,
     show: false,
     resizable: false,
@@ -215,25 +216,49 @@ export async function toggleWorkspaceWindow(): Promise<void> {
   }
 }
 
-/** ワークスペースウィンドウのピン留め状態を設定する */
-export function setWorkspaceAlwaysOnTop(isPinned: boolean): void {
-  isWorkspacePinned = isPinned;
+/** ワークスペースウィンドウのピン留めの段階を変える（2＝常に最前面のときだけ最前面にする） */
+export function setWorkspacePinLevel(level: PinLevel): PinLevel {
+  workspacePinLevel = level;
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
-    workspaceWindow.setAlwaysOnTop(isPinned);
-    windowLogger.info(`ワークスペースウィンドウのピン留め: ${isPinned ? 'ON' : 'OFF'}`);
+    workspaceWindow.setAlwaysOnTop(level === 2);
+    // setAlwaysOnTop で仮想デスクトップへの固定が外れるので当て直す
+    void applyVisibilityOnAllDesktops();
+    windowLogger.info(`ワークスペースウィンドウのピン留め: ${level}`);
   }
+  return level;
 }
 
-/** ワークスペースウィンドウのピン留め状態をトグルする */
+/** ワークスペースウィンドウのピン留めの段階 */
+export function getWorkspacePinLevel(): PinLevel {
+  return workspacePinLevel;
+}
+
+/** 常に最前面に切り替える前の段階（編集画面の「試しに実行」が一時的に最前面にして戻すため） */
+let pinLevelBeforeAlwaysOnTop: PinLevel = 0;
+
+/** 常に最前面のオン・オフを切り替える（編集画面の「試しに実行」用。元の段階に戻せる） */
 export function toggleWorkspaceAlwaysOnTop(): boolean {
-  const newState = !isWorkspacePinned;
-  setWorkspaceAlwaysOnTop(newState);
-  return newState;
+  if (workspacePinLevel === 2) {
+    setWorkspacePinLevel(pinLevelBeforeAlwaysOnTop);
+    return false;
+  }
+  pinLevelBeforeAlwaysOnTop = workspacePinLevel;
+  setWorkspacePinLevel(2);
+  return true;
 }
 
-/** ワークスペースウィンドウの現在のピン留め状態を取得する */
+/** 常に最前面かどうか（編集画面の「試しに実行」用） */
 export function getWorkspaceAlwaysOnTop(): boolean {
-  return isWorkspacePinned;
+  return workspacePinLevel === 2;
+}
+
+/**
+ * ピン留めしたワークスペースを、フォーカスを奪わずに手前へ出す（ホットキーでメインウィンドウを出すとき）
+ */
+export function bringPinnedWorkspaceToFront(): void {
+  if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+  if (workspacePinLevel === 0 || !workspaceWindow.isVisible()) return;
+  workspaceWindow.moveTop();
 }
 
 /** 指定インデックスのディスプレイを取得（MAIN_WINDOW_DISPLAY_INDEX はメインウィンドウと同じディスプレイ、範囲外はプライマリ） */

@@ -68,8 +68,10 @@ export const IPC_CHANNELS = {
   BACKUP_GET_STATUS: 'backup:get-status',
 
   // ウィンドウ操作
-  GET_WINDOW_PIN_MODE: 'get-window-pin-mode',
-  CYCLE_WINDOW_PIN_MODE: 'cycle-window-pin-mode',
+  // ピン留め（送ってきたウィンドウ＝メイン・ワークスペース・切り離しのどれかを対象にする）
+  PIN_GET: 'pin:get',
+  PIN_SET: 'pin:set',
+  PIN_SHOW_MENU: 'pin:show-menu',
   WINDOW_SET_ESCAPE_HANDLED_BY_PAGE: 'window:set-escape-handled-by-page',
   QUIT_APP: 'quit-app',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
@@ -175,8 +177,6 @@ export const IPC_CHANNELS = {
   WORKSPACE_SET_CALLER_BOUNDS: 'workspace:set-caller-bounds',
   WORKSPACE_LOAD_DETACHED_STATE: 'workspace:load-detached-state',
   WORKSPACE_SAVE_DETACHED_COLLAPSED: 'workspace:save-detached-collapsed',
-  WORKSPACE_GET_CALLER_PIN_MODE: 'workspace:get-caller-pin-mode',
-  WORKSPACE_CYCLE_CALLER_PIN_MODE: 'workspace:cycle-caller-pin-mode',
   WORKSPACE_HIDE_ALL_DETACHED: 'workspace:hide-all-detached',
   WORKSPACE_SHOW_ALL_DETACHED: 'workspace:show-all-detached',
 

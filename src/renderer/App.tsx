@@ -9,7 +9,7 @@ import { DESKTOP_TAB } from '@common/constants';
 import type {
   LauncherItem,
   AppItem,
-  WindowPinMode,
+  PinLevel,
   SearchMode,
   WindowInfo,
   IconFetchErrorRecord,
@@ -60,7 +60,7 @@ function App(): React.ReactElement {
     };
   }, [mainItems]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
+  const [pinLevel, setPinLevel] = useState<PinLevel>(0);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>('normal');
   const [windowList, setWindowList] = useState<WindowInfo[]>([]);
@@ -513,8 +513,7 @@ function App(): React.ReactElement {
     });
 
     const loadPinState = async () => {
-      const pinMode = await window.electronAPI.getWindowPinMode();
-      setWindowPinMode(pinMode);
+      setPinLevel(await window.electronAPI.pin.get());
     };
     loadPinState();
 
@@ -555,11 +554,6 @@ function App(): React.ReactElement {
     setSearchQuery(query);
     setSelectedIndex(0);
     resetNavigation();
-  };
-
-  const handleTogglePin = async () => {
-    const newPinMode = await window.electronAPI.cycleWindowPinMode();
-    setWindowPinMode(newPinMode);
   };
 
   const handleOpenBasicSettings = async () => {
@@ -689,12 +683,12 @@ function App(): React.ReactElement {
           onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
           onBookmarkAutoImport={handleBookmarkAutoImport}
           onRefreshAll={handleRefreshAllWrapper}
-          onTogglePin={handleTogglePin}
           onOpenBasicSettings={handleOpenBasicSettings}
           onOpenItemManagement={handleOpenItemManagement}
           onToggleWorkspace={handleToggleWorkspace}
           onOpenRegisterModal={() => void openRegisterWindow()}
-          windowPinMode={windowPinMode}
+          pinLevel={pinLevel}
+          onPinLevelChange={setPinLevel}
         />
         <div className="drag-handle">⋮⋮</div>
       </div>

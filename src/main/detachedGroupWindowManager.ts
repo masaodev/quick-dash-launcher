@@ -2,7 +2,7 @@ import { BrowserWindow, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
-import type { Bounds, MonitorAnchor } from '@common/types';
+import type { Bounds, MonitorAnchor, PinLevel } from '@common/types';
 
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
@@ -25,8 +25,8 @@ import { getRendererHtmlUrl, openChildWindow } from './services/childWindowServi
  */
 const SHOW_FALLBACK_TIMEOUT_MS = 1500;
 
-/** 切り離しウィンドウのピンモード: 0=通常, 1=表示固定, 2=最上面固定 */
-export type DetachedPinMode = 0 | 1 | 2;
+/** 切り離しウィンドウのピンモード（ピン留めの段階。0=なし, 1=表示固定, 2=常に最前面） */
+export type DetachedPinMode = PinLevel;
 
 /** groupId → BrowserWindow */
 const detachedWindows = new Map<string, BrowserWindow>();
@@ -86,12 +86,9 @@ export function getDetachedPinMode(groupId: string): DetachedPinMode {
 }
 
 /**
- * 指定グループの切り離しウィンドウのピンモードをサイクルする
- * 0 → 1 → 2 → 0
+ * 指定グループの切り離しウィンドウのピンモードを変える
  */
-export function cycleDetachedPinMode(groupId: string): DetachedPinMode {
-  const current = detachedPinModes.get(groupId) ?? 0;
-  const next = ((current + 1) % 3) as DetachedPinMode;
+export function setDetachedPinMode(groupId: string, next: DetachedPinMode): DetachedPinMode {
   detachedPinModes.set(groupId, next);
 
   const win = detachedWindows.get(groupId);
