@@ -55,7 +55,7 @@ export class SettingsService {
     workspaceBackgroundTransparent: false,
     autoShowWorkspace: false,
     workspacePositionMode: 'displayRight',
-    workspaceTargetDisplayIndex: 0,
+    workspaceTargetDisplayIndex: -1,
     workspacePositionX: 0,
     workspacePositionY: 0,
     workspaceVisibleOnAllDesktops: true,
@@ -65,7 +65,7 @@ export class SettingsService {
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     hideDetachedWithMainWindow: true,
-    detachedPositionMode: 'saved',
+    detachedPositionMode: 'mainDisplay',
     windowSnapEnabled: true,
   };
 

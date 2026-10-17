@@ -2,7 +2,7 @@ import { BrowserWindow, Display, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
 import type { WorkspacePositionMode } from '@common/types';
-import { CURSOR_MONITOR_DISPLAY_INDEX } from '@common/types';
+import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
 import PathManager from './config/pathManager.js';
@@ -13,6 +13,7 @@ import {
 } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
 import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
+import { getMainWindowDisplay } from './utils/referenceDisplay.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
@@ -235,10 +236,10 @@ export function getWorkspaceAlwaysOnTop(): boolean {
   return isWorkspacePinned;
 }
 
-/** 指定インデックスのディスプレイを取得（CURSOR_MONITOR_DISPLAY_INDEX はカーソルのあるモニター、範囲外はプライマリ） */
+/** 指定インデックスのディスプレイを取得（MAIN_WINDOW_DISPLAY_INDEX はメインウィンドウと同じディスプレイ、範囲外はプライマリ） */
 function getDisplayByIndex(displayIndex: number): Display {
-  if (displayIndex === CURSOR_MONITOR_DISPLAY_INDEX) {
-    return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  if (displayIndex === MAIN_WINDOW_DISPLAY_INDEX) {
+    return getMainWindowDisplay();
   }
   const displays = screen.getAllDisplays();
   if (displayIndex >= 0 && displayIndex < displays.length) {
@@ -289,8 +290,8 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
       });
       const side = isLeft ? '左' : '右';
       const target =
-        targetIndex === CURSOR_MONITOR_DISPLAY_INDEX
-          ? 'カーソルのあるディスプレイ'
+        targetIndex === MAIN_WINDOW_DISPLAY_INDEX
+          ? 'メインウィンドウと同じディスプレイ'
           : `ディスプレイ${targetIndex + 1}`;
       windowLogger.info(`ワークスペースを${target}の${side}端に配置`);
       break;

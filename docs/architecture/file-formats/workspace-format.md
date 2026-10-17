@@ -171,7 +171,7 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 
 - `collapsedGroups`: メインのワークスペースウィンドウでの折りたたみ（true のものだけ持つ）
 - `detachedWindows`: 切り離しウィンドウの状態（ルートグループ id → 状態）
-  - `anchor`: 最後に動かしたときの、載っていたディスプレイの作業領域に対する位置。`horizontal`・`vertical` は基準（`start`＝左端・上端、`center`＝中央、`end`＝右端・下端）、`offsetX`・`offsetY` は基準からの距離。設定 `detachedPositionMode` が `cursorMonitor` のときに使う（[ウィンドウ制御 - 切り離しウィンドウの表示位置](../window-control.md#切り離しウィンドウの表示位置)）。この項目を足す前のファイルには無く、無ければ今の位置から求める
+  - `anchor`: 最後に動かしたときの、載っていたディスプレイの作業領域に対する位置。`horizontal`・`vertical` は基準（`start`＝左端・上端、`center`＝中央、`end`＝右端・下端）、`offsetX`・`offsetY` は基準からの距離。設定 `detachedPositionMode` が `mainDisplay` のときに使う（[ウィンドウ制御 - 切り離しウィンドウの表示位置](../window-control.md#切り離しウィンドウの表示位置)）。この項目を足す前のファイルには無く、無ければ今の位置から求める
 - 存在しなくなったグループの状態は、グループ削除・アーカイブ・再読み込みのたびに捨てる（`pruneMissingGroups`）
 
 ---

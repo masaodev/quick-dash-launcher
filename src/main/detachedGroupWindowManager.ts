@@ -17,6 +17,7 @@ import {
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 import { computeMonitorAnchor, placeByMonitorAnchor } from './utils/monitorAnchor.js';
 import { setBoundsAcrossDisplays } from './utils/screenPosition.js';
+import { getMainWindowDisplay } from './utils/referenceDisplay.js';
 import { getRendererHtmlUrl, openChildWindow } from './services/childWindowService.js';
 
 /**
@@ -155,9 +156,9 @@ function resolveInitialPosition(
   };
 }
 
-/** カーソルのあるモニターの作業領域 */
-function getCursorWorkArea(): Bounds {
-  return screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+/** メインウィンドウと同じディスプレイの作業領域 */
+function getReferenceWorkArea(): Bounds {
+  return getMainWindowDisplay().workArea;
 }
 
 /** ウィンドウが今載っているモニターに対する位置を求める */
@@ -171,10 +172,10 @@ function isProgrammaticMove(groupId: string): boolean {
 }
 
 /**
- * 切り離しウィンドウを、覚えた位置のままカーソルのあるモニターへ移す
- * （まだ位置を覚えていなければ、今載っているモニターに対する位置を使う）
+ * 切り離しウィンドウを、覚えた位置のままメインウィンドウと同じディスプレイへ移す
+ * （まだ位置を覚えていなければ、今載っているディスプレイに対する位置を使う）
  */
-function placeOnCursorMonitor(groupId: string, win: BrowserWindow): void {
+function placeOnMainWindowDisplay(groupId: string, win: BrowserWindow): void {
   const current = win.getBounds();
   let anchor = detachedAnchors.get(groupId);
   if (!anchor) {
@@ -182,7 +183,7 @@ function placeOnCursorMonitor(groupId: string, win: BrowserWindow): void {
     detachedAnchors.set(groupId, anchor);
   }
   const size = detachedSizes.get(groupId) ?? { width: current.width, height: current.height };
-  const target = placeByMonitorAnchor(anchor, size, getCursorWorkArea());
+  const target = placeByMonitorAnchor(anchor, size, getReferenceWorkArea());
   if (
     target.x === current.x &&
     target.y === current.y &&
@@ -244,11 +245,11 @@ export async function createDetachedGroupWindow(
   const defaultHeight = 200;
 
   // スナップ設定キャッシュの初期化
-  let followCursorMonitor = false;
+  let followMainWindow = false;
   try {
     const settingsService = await SettingsService.getInstance();
     detachedWindowSnapEnabled = await settingsService.get('windowSnapEnabled');
-    followCursorMonitor = (await settingsService.get('detachedPositionMode')) === 'cursorMonitor';
+    followMainWindow = (await settingsService.get('detachedPositionMode')) === 'mainDisplay';
   } catch {
     // デフォルト値(true)のまま
   }
@@ -276,10 +277,10 @@ export async function createDetachedGroupWindow(
   let width = savedBounds?.width ?? defaultWidth;
   let height = savedBounds?.height ?? defaultHeight;
   let position = resolveInitialPosition(savedBounds, cursorX, cursorY, width, height);
-  // 前回のウィンドウを開き直すとき、カーソルのモニターに出す設定なら覚えた位置で当てる（ピン留めしたものは置いた場所のまま）
-  const placedByAnchor = followCursorMonitor && savedPinMode === 0 && savedAnchor !== null;
+  // 前回のウィンドウを開き直すとき、メインウィンドウと同じディスプレイに出す設定なら覚えた位置で当てる（ピン留めしたものは置いた場所のまま）
+  const placedByAnchor = followMainWindow && savedPinMode === 0 && savedAnchor !== null;
   if (placedByAnchor && savedAnchor) {
-    const target = placeByMonitorAnchor(savedAnchor, { width, height }, getCursorWorkArea());
+    const target = placeByMonitorAnchor(savedAnchor, { width, height }, getReferenceWorkArea());
     position = { x: target.x, y: target.y };
     width = target.width;
     height = target.height;
@@ -483,17 +484,17 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
 /**
  * すべての切り離しウィンドウを再表示する（フォーカスを奪わない）
  * ピンモード 1以上のウィンドウは既に表示されているためmoveTopのみ
- * @param options.placeOnCursorMonitor true なら、ピン留めしていないウィンドウを表示する前にカーソルのあるモニターへ移す
+ * @param options.placeOnMainWindowDisplay true なら、ピン留めしていないウィンドウを表示する前にメインウィンドウと同じディスプレイへ移す
  */
-export function showAllDetachedGroupWindows(options?: { placeOnCursorMonitor?: boolean }): {
+export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay?: boolean }): {
   success: boolean;
 } {
   for (const [groupId, win] of detachedWindows.entries()) {
     if (!win.isDestroyed()) {
       const pinMode = detachedPinModes.get(groupId) ?? 0;
       if (pinMode === 0) {
-        if (options?.placeOnCursorMonitor) {
-          placeOnCursorMonitor(groupId, win);
+        if (options?.placeOnMainWindowDisplay) {
+          placeOnMainWindowDisplay(groupId, win);
         }
         showWithoutFocus(win);
       } else {

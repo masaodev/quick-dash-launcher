@@ -1,5 +1,5 @@
 import type { AppSettings } from '@common/types';
-import { CURSOR_MONITOR_DISPLAY_INDEX } from '@common/types';
+import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 import { LANGUAGE_SETTINGS } from '@common/i18n/languages';
 
 import { mainI18n } from '../mainI18n.js';
@@ -78,7 +78,7 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   workspaceVisibleOnAllDesktops: BOOLEAN,
   detachedVisibleOnAllDesktops: BOOLEAN,
   hideDetachedWithMainWindow: BOOLEAN,
-  detachedPositionMode: { kind: 'choice', values: ['saved', 'cursorMonitor'] },
+  detachedPositionMode: { kind: 'choice', values: ['saved', 'mainDisplay'] },
   backupEnabled: BOOLEAN,
   backupRetention: { kind: 'integer', range: { min: 3, max: 50 } },
   backupIncludeClipboard: BOOLEAN,
@@ -195,7 +195,7 @@ async function parseValue(
       throw invalid(key, rule.values.join(' / '));
     case 'displayIndex': {
       // -1 はカーソルのあるモニター（画面の「カーソルのあるモニター」と同じ）
-      if (text === String(CURSOR_MONITOR_DISPLAY_INDEX)) return CURSOR_MONITOR_DISPLAY_INDEX;
+      if (text === String(MAIN_WINDOW_DISPLAY_INDEX)) return MAIN_WINDOW_DISPLAY_INDEX;
       const count = store.displayCount();
       const n = /^\d+$/.test(text) ? Number(text) : NaN;
       if (n < count) return n;

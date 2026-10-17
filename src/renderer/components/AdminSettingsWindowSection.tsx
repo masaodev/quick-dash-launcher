@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CURSOR_MONITOR_DISPLAY_INDEX } from '@common/types';
+import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 import type {
   AppSettings,
   DetachedPositionMode,
@@ -45,10 +45,10 @@ const WINDOW_POSITION_OPTIONS: readonly WindowPositionMode[] = [
 /** 切り離しウィンドウの表示位置の選択肢（文言は settings.workspace.<文言キー>・<文言キー>Description） */
 const DETACHED_POSITION_OPTIONS: Array<{
   value: DetachedPositionMode;
-  text: 'detachedPositionSaved' | 'detachedPositionCursorMonitor';
+  text: 'detachedPositionSaved' | 'detachedPositionMainDisplay';
 }> = [
+  { value: 'mainDisplay', text: 'detachedPositionMainDisplay' },
   { value: 'saved', text: 'detachedPositionSaved' },
-  { value: 'cursorMonitor', text: 'detachedPositionCursorMonitor' },
 ];
 
 /** ワークスペースの表示・連動に関するチェックボックス設定（文言は settings.workspace.<文言キー>・<文言キー>Description） */
@@ -107,6 +107,12 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
     editedSettings.workspacePositionMode === 'displayRight' ||
     editedSettings.workspacePositionMode === 'primaryLeft' ||
     editedSettings.workspacePositionMode === 'primaryRight';
+
+  // 配置先の番号のディスプレイが今は無い（外した後など）。実際はプライマリに出ているので、選択欄でそう示す
+  const isMissingTargetDisplay =
+    displays.length > 0 &&
+    editedSettings.workspaceTargetDisplayIndex !== MAIN_WINDOW_DISPLAY_INDEX &&
+    !displays.some((d) => d.index === editedSettings.workspaceTargetDisplayIndex);
 
   // 左端配置かどうか（後方互換性のためprimaryLeftも含む）
   const isLeftEdge =
@@ -258,14 +264,21 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
                       }
                       disabled={isLoading}
                     >
-                      <option value={CURSOR_MONITOR_DISPLAY_INDEX}>
-                        {t('settings.workspace.cursorDisplay')}
+                      <option value={MAIN_WINDOW_DISPLAY_INDEX}>
+                        {t('settings.workspace.mainWindowDisplay')}
                       </option>
                       {displays.map((display) => (
                         <option key={display.index} value={display.index}>
                           {display.label}
                         </option>
                       ))}
+                      {isMissingTargetDisplay && (
+                        <option value={editedSettings.workspaceTargetDisplayIndex}>
+                          {t('settings.workspace.missingDisplay', {
+                            number: editedSettings.workspaceTargetDisplayIndex + 1,
+                          })}
+                        </option>
+                      )}
                     </select>
                     <div className="edge-radio-group">
                       <label className="edge-option">

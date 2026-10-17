@@ -296,14 +296,14 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 表示するたびに `setWorkspacePosition()` で `workspacePositionMode` に従って置き直す。
 
-- **ディスプレイの左端・右端**（`displayLeft`・`displayRight`）: `workspaceTargetDisplayIndex` のディスプレイの作業領域の端に、作業領域の高さで置く。`-1`（`CURSOR_MONITOR_DISPLAY_INDEX`）はマウスカーソルのあるディスプレイ（`screen.getDisplayNearestPoint(screen.getCursorScreenPoint())`）で、メインウィンドウと一緒に出すたびにカーソル側のディスプレイへ移る
-- ⚙️ メニューの「左端に寄せる」「右端に寄せる」は、配置先をカーソルのあるディスプレイの番号にする。ただし `-1` のときは `-1` のまま残す
+- **ディスプレイの左端・右端**（`displayLeft`・`displayRight`）: `workspaceTargetDisplayIndex` のディスプレイの作業領域の端に、作業領域の高さで置く。`-1`（`MAIN_WINDOW_DISPLAY_INDEX`。既定）はメインウィンドウと同じディスプレイ（`getMainWindowDisplay()`、`src/main/utils/referenceDisplay.ts`。メインウィンドウの bounds が載っているディスプレイ）で、メインウィンドウと一緒に出すたびにメイン側のディスプレイへ移る。メインウィンドウの表示位置がどのモードでも、メインと同じディスプレイになる
+- ⚙️ メニューの「左端に寄せる」「右端に寄せる」は、配置先をマウスカーソルのあるディスプレイの番号にする。ただし `-1` のときは `-1` のまま残す
 - **固定位置**（`fixed`）: 最後に動かした位置
 - 拡大率の違うディスプレイへ移すとサイズがずれることがあるので、当てたサイズとずれていればもう一度当てる（`setBoundsAcrossDisplays()`、`src/main/utils/screenPosition.ts`）
 
 ### 切り離しウィンドウの表示位置
 
-`detachedPositionMode` が `saved`（既定）なら、最後に置いた場所に出す。`cursorMonitor` なら、メインウィンドウと一緒に出すとき（`hideDetachedWithMainWindow` がオン）に、ピン留めしていない切り離しウィンドウを、マウスカーソルのあるディスプレイの同じ位置へ移してから出す（`showAllDetachedGroupWindows({ placeOnCursorMonitor })`、`src/main/detachedGroupWindowManager.ts`）。アプリを起動して前回のウィンドウを開き直すときも同じ。
+`detachedPositionMode` が `saved` なら、最後に置いた場所に出す。`mainDisplay`（既定）なら、メインウィンドウと一緒に出すとき（`hideDetachedWithMainWindow` がオン）に、ピン留めしていない切り離しウィンドウを、メインウィンドウと同じディスプレイ（`getMainWindowDisplay()`）の同じ位置へ移してから出す（`showAllDetachedGroupWindows({ placeOnMainWindowDisplay })`、`src/main/detachedGroupWindowManager.ts`）。アプリを起動して前回のウィンドウを開き直すときも同じ。
 
 位置は「載っているディスプレイの作業領域に対する位置」（`MonitorAnchor`）として覚える。計算は純粋関数（`src/main/utils/monitorAnchor.ts`）。
 

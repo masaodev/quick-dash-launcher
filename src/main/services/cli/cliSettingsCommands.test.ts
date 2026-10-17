@@ -153,14 +153,14 @@ describe('settings set', () => {
     expect((await errorOf(run('set', 'workspaceTargetDisplayIndex', '-2'))).code).toBe('invalid');
   });
 
-  it('ディスプレイの番号 -1 はマウスカーソルのあるディスプレイ', async () => {
+  it('ディスプレイの番号 -1 はメインウィンドウと同じディスプレイ', async () => {
     await run('set', 'workspaceTargetDisplayIndex', '-1');
     expect(settings.workspaceTargetDisplayIndex).toBe(-1);
   });
 
-  it('切り離しウィンドウの表示位置は saved か cursorMonitor', async () => {
-    await run('set', 'detachedPositionMode', 'cursorMonitor');
-    expect(settings.detachedPositionMode).toBe('cursorMonitor');
+  it('切り離しウィンドウの表示位置は mainDisplay か saved', async () => {
+    await run('set', 'detachedPositionMode', 'mainDisplay');
+    expect(settings.detachedPositionMode).toBe('mainDisplay');
     expect((await errorOf(run('set', 'detachedPositionMode', 'cursor'))).code).toBe('invalid');
   });
 

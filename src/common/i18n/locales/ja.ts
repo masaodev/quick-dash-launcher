@@ -509,10 +509,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   管理            editModeWidth（800〜2000）editModeHeight（600〜1200）
   ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent autoShowWorkspace
                   workspacePositionMode（displayLeft / displayRight / fixed）
-                  workspaceTargetDisplayIndex（0 始まり。-1 はマウスカーソルのあるディスプレイ）
+                  workspaceTargetDisplayIndex（0 始まり。-1 はメインウィンドウと同じディスプレイ）
                   workspacePositionX workspacePositionY
                   workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops hideDetachedWithMainWindow
-                  detachedPositionMode（saved / cursorMonitor）
+                  detachedPositionMode（mainDisplay / saved）
   バックアップ    backupEnabled backupRetention（3〜50）backupIncludeClipboard
 
 真偽値は true / false で渡します。自動起動（autoLaunch）・ブックマークの自動取込（bookmarkAutoImport）・
@@ -637,7 +637,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       settingReadOnly: '{{key}} は CLI からは変えられません（読むだけ。画面で変えてください）',
       expectedInteger: '整数',
       expectedRange: '{{min}}〜{{max}} の整数',
-      expectedDisplayIndex: '0〜{{max}} の整数、または -1（マウスカーソルのあるディスプレイ）',
+      expectedDisplayIndex: '0〜{{max}} の整数、または -1（メインウィンドウと同じディスプレイ）',
       hotkeyInvalid: 'ホットキー「{{hotkey}}」は使えません: {{reason}}',
       hotkeyInUse:
         'ホットキー「{{hotkey}}」を登録できません（他のアプリかもう一方のホットキーで使用中）',
@@ -2035,17 +2035,18 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '有効にすると、メインウィンドウを開いたときにワークスペースが非表示なら自動で表示します。',
       hideDetached: 'メインウィンドウと一緒に切り離しウィンドウも隠す',
       hideDetachedDescription:
-        '有効にすると、メインウィンドウの表示/非表示に連動して、固定していない切り離しウィンドウも表示/非表示します。フォーカスがメインウィンドウ・ワークスペース・切り離しウィンドウの間を移っている間は隠さず、それ以外のウィンドウへ移ったときに隠します。',
+        '有効にすると、メインウィンドウの表示/非表示に連動して、ピン留めしていない切り離しウィンドウも表示/非表示します。フォーカスがメインウィンドウ・ワークスペース・切り離しウィンドウの間を移っている間は隠さず、それ以外のウィンドウへ移ったときに隠します。',
       detachedPosition: '切り離しウィンドウの表示位置:',
-      detachedPositionSaved: '置いた場所（既定）',
+      detachedPositionSaved: '置いた場所',
       detachedPositionSavedDescription: '切り離しウィンドウを、最後に置いた場所に表示します',
-      detachedPositionCursorMonitor: 'マウスカーソルのあるディスプレイ',
-      detachedPositionCursorMonitorDescription:
-        'メインウィンドウと一緒に表示するとき、切り離しウィンドウをマウスカーソルのあるディスプレイの同じ位置へ移します。ディスプレイの端にくっつけたウィンドウは端に、それ以外はディスプレイの中央からの距離を保ちます。ピン留めしたウィンドウは動かしません。「メインウィンドウと一緒に切り離しウィンドウも隠す」が有効なときに働きます。',
+      detachedPositionMainDisplay: 'メインウィンドウと同じディスプレイ（既定）',
+      detachedPositionMainDisplayDescription:
+        'メインウィンドウと一緒に表示するとき、切り離しウィンドウをメインウィンドウと同じディスプレイの同じ位置へ移します。ディスプレイの端にくっつけたウィンドウは端に、それ以外はディスプレイの中央からの距離を保ちます。ピン留めしたウィンドウは動かしません。「メインウィンドウと一緒に切り離しウィンドウも隠す」が有効なときに働きます。',
       position: '表示位置:',
       displayEdge: 'ディスプレイの端に配置（既定）',
       displayEdgeDescription: '選択したディスプレイの左端または右端にワークスペースを配置します',
-      cursorDisplay: 'マウスカーソルのあるディスプレイ',
+      mainWindowDisplay: 'メインウィンドウと同じディスプレイ',
+      missingDisplay: 'ディスプレイ {{number}}（今は接続されていないため、プライマリに表示中）',
       leftEdge: '左端',
       rightEdge: '右端',
       fixed: '固定位置（手動設定）',
