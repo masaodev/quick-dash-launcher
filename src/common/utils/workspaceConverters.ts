@@ -21,11 +21,13 @@ import type {
   WorkspaceItemUpdate,
 } from '../types';
 import { isClipboardItem, isSetItem, isWindowInfo } from '../types/guards';
-import type { RegisterItem } from '../types/register';
+import type { SetEntry } from '../types/launcher';
+import type { RegisterItem, RegisterSetEntry } from '../types/register';
 
 import { windowInfoToPathlessItem } from './windowInfoConverter';
 import {
   describeWindowMatch,
+  hasItemWindowSwitch,
   isPathlessItem,
   itemWindowSwitchFields,
   pickItemWindowSwitch,
@@ -144,6 +146,64 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
 }
 
 /**
+ * ワークスペースのアイテムを指す行を、パスを書いた行に置き換える（行の対象ウィンドウなどはそのまま残す）
+ *
+ * アイテムのウィンドウ切り替えは、セットを開いたときに使われる分だけを行へ写す。
+ * - 行に対象ウィンドウも位置も無い: アイテムのウィンドウ切り替えで動いていたので、丸ごと写す。
+ *   前面に出すかの既定がアイテム（出す）と行（出さない）で違うので、出すときは true を書く
+ * - 行に位置だけある: パスの無い単一アイテムなら、探すウィンドウにアイテムの対象ウィンドウを使っていたので写す
+ */
+function expandWorkspaceEntry(
+  entry: SetEntry,
+  item: Extract<WorkspaceItem, { type: 'item' }>
+): RegisterSetEntry | undefined {
+  const pathless = isPathlessItem(item);
+  // 開くものも対象ウィンドウも無いアイテムは、置き換えても何もしない行になるので、そのまま残す
+  if (!pathless && !item.path.trim()) return undefined;
+  const { itemId: _itemId, ...rest } = entry;
+  const result: RegisterSetEntry = { ...rest, expandedFrom: item.displayName };
+  if (!pathless)
+    result.open = item.args ? { path: item.path, args: item.args } : { path: item.path };
+  result.label ??= item.displayName;
+  if (!entry.window && hasItemWindowSwitch(item)) {
+    if (!entry.placement) {
+      const { activateWindow, ...itemSwitch } = pickItemWindowSwitch(item);
+      Object.assign(result, itemSwitch);
+      if (activateWindow !== false) result.activateWindow = true;
+    } else if (pathless) {
+      result.window = { ...item.window };
+    }
+  }
+  return result;
+}
+
+/**
+ * ワークスペースのセットの行を、メインウィンドウのセットの行にする（メインウィンドウへ登録するとき）
+ *
+ * メインウィンドウのセットは行の itemId をデータファイルのアイテムからしか探さないので、ワークスペースの
+ * アイテムを指す行はそのままでは「アイテムが見つかりません」になる。そうした行は、指す先のパス・引数を
+ * 行に書いた行に置き換え、expandedFrom に元のアイテムの名前を付ける。ワークスペースで開くときと同じく
+ * ワークスペースのアイテムを先に探すので、データファイルのアイテムを指す行は id のまま残る
+ */
+export function expandWorkspaceSetEntries(
+  entries: readonly SetEntry[],
+  workspaceItems: readonly WorkspaceItem[]
+): RegisterSetEntry[] {
+  const byId = new Map<string, WorkspaceItem>();
+  for (const item of workspaceItems) byId.set(item.id, item);
+  return entries.map((entry) => {
+    const item = entry.itemId ? byId.get(entry.itemId) : undefined;
+    const expanded = item?.type === 'item' ? expandWorkspaceEntry(entry, item) : undefined;
+    return expanded ?? { ...entry };
+  });
+}
+
+/** 画面の中だけで使う印を除いて、保存する行にする */
+export function toSavedSetEntries(entries: readonly RegisterSetEntry[]): SetEntry[] {
+  return entries.map(({ expandedFrom: _expandedFrom, ...entry }) => entry);
+}
+
+/**
  * RegisterItem をアイテム更新（置き換え）に変換する
  *
  * その種別が持つフィールドだけを返すので、別種別への変更でも古いフィールドは残らない。
@@ -167,7 +227,7 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
       return compact({
         type: 'set',
         displayName: registerItem.displayName,
-        entries: (registerItem.setEntries ?? []).map((entry) => ({ ...entry })),
+        entries: toSavedSetEntries(registerItem.setEntries ?? []),
         launchMode: registerItem.setLaunchMode,
         customIcon: registerItem.customIcon,
         memo,
