@@ -148,6 +148,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 開き方の説明（「開き方」の真下に右寄せ） */
+.set-editor > .set-launch-hint {
+  align-self: flex-end;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* ボタンの使い方と動かすだけの行の注意（1 行に 1 つ） */
+.set-editor > .set-editor-tips {
+  align-self: stretch;
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.set-editor-tips b {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.set-editor-tips .set-chip {
+  margin-left: 0;
+  vertical-align: 0;
+}
+
 /* セット全体の図（行の一覧の上） */
 .set-editor > .set-editor-map {
   align-self: stretch;

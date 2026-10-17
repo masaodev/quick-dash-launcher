@@ -690,11 +690,12 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       remove: 'Remove row',
       detail: 'Row details',
       entriesRequired: 'Add at least one row to the set',
-      hint: 'Rows open from the top. To turn open windows into rows, press "Add windows". After rearranging the windows, press "Update window positions".',
-      hintParallel:
-        'All rows open at once. To turn open windows into rows, press "Add windows". After rearranging the windows, press "Update window positions".',
-      moveOnlyHint:
-        '"Moves a window only" rows move the window only while it is open (add something to open in Row details ✏️).',
+      hint: 'Rows open from the top',
+      hintParallel: 'All rows open at once',
+      tipAddWindows: 'Turns open windows into rows, with their current positions',
+      tipUpdatePositions:
+        'After rearranging the windows, press this to update the rows to their current positions',
+      moveOnlyHint: 'rows move the window only while it is open (add something to open with ✏️)',
     },
     addWindows: {
       title: 'Add windows',

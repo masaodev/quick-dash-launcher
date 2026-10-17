@@ -340,14 +340,29 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         </span>
       </div>
       {error && <span className="error-message">{error}</span>}
-      <small>
+      {/* 開き方の説明は「開き方」の真下に右寄せで小さく */}
+      <span className="set-launch-hint">
         {t(launchMode === 'parallel' ? 'set.editor.hintParallel' : 'set.editor.hint')}
+      </span>
+      {/* ボタンの使い方と、動かすだけの行の注意は 1 行に 1 つ */}
+      <ul className="set-editor-tips">
+        <li>
+          <b>{t('set.editor.addWindows')}</b>: {t('set.editor.tipAddWindows')}
+        </li>
+        <li>
+          <b>{t('set.editor.updatePositions')}</b>: {t('set.editor.tipUpdatePositions')}
+        </li>
         {/* 動かすだけの行があるときだけ、閉じていると動かないことと、開くものの足し方を添える */}
         {entries.some((entry) => {
           const view = describeSetEntry(entry, catalogById);
           return view.moveOnly && !view.missing;
-        }) && t('set.editor.moveOnlyHint')}
-      </small>
+        }) && (
+          <li>
+            <span className="set-chip set-chip-open">{t('set.editor.moveOnly')}</span>{' '}
+            {t('set.editor.moveOnlyHint')}
+          </li>
+        )}
+      </ul>
 
       <SetItemPickerModal
         isOpen={pickerOpen}
