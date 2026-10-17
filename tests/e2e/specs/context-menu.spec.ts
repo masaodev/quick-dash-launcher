@@ -169,12 +169,13 @@ $Shortcut.Save()
 
     await test.step('パスをコピーメニュー操作でクリップボードにコピーされる', async () => {
       await menuHelper.simulateLauncherMenu('copyPath', notepadItem);
-      expect(await readClipboard()).toBe('C:\\Windows\\System32\\notepad.exe');
+      // コピーは非同期なので、書き換わるまで待つ（前の step の値が残っていることがある）
+      await expect.poll(readClipboard).toBe('C:\\Windows\\System32\\notepad.exe');
     });
 
     await test.step('親フォルダのパスをコピーメニュー操作', async () => {
       await menuHelper.simulateLauncherMenu('copyParentPath', notepadItem);
-      expect(await readClipboard()).toBe('C:\\Windows\\System32');
+      await expect.poll(readClipboard).toBe('C:\\Windows\\System32');
     });
 
     await test.step('ショートカットのリンク先パスをコピー', async () => {
@@ -188,7 +189,8 @@ $Shortcut.Save()
         type: 'app',
         originalPath: 'C:\\Windows\\System32\\notepad.exe',
       });
-      expect((await readClipboard()).toLowerCase()).toContain('notepad.exe');
+      // 前の step の値（C:\Windows\System32）と見分けるため、リンク先の exe 名まで待つ
+      await expect.poll(async () => (await readClipboard()).toLowerCase()).toContain('notepad.exe');
     });
   });
 });
