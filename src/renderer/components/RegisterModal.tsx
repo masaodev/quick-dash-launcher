@@ -235,7 +235,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
               dataFileLabels={dataFileLabels}
               onTargetTabChange={(targetTab) => form.handleTargetTabChange(0, targetTab)}
               onTargetFileChange={(targetFile) => handleItemChange(0, 'targetFile', targetFile)}
-              modeLabel={editingItem ? t('register.modeEdit') : t('register.modeAdd')}
             />
           )}
 

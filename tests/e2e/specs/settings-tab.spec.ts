@@ -399,10 +399,10 @@ test.describe('QuickDashLauncher - ヘルプタブのショートカット一覧
       shortcuts
         .locator('.shortcut-item', { hasText: 'メインウィンドウの表示/非表示' })
         .locator('kbd')
-    ).toHaveText('Alt + Space');
+    ).toHaveText('Alt+Space');
     await expect(
       shortcuts.locator('.shortcut-item', { hasText: 'ウィンドウ検索で起動' }).locator('kbd')
-    ).toHaveText('Ctrl + Alt + Q');
-    await expect(shortcuts).not.toContainText('Ctrl + Alt + W');
+    ).toHaveText('Ctrl+Alt+Q');
+    await expect(shortcuts).not.toContainText('Ctrl+Alt+W');
   });
 });

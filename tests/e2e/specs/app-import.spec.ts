@@ -59,7 +59,7 @@ async function chooseImportMenu(adminWindow: Page, itemText: string): Promise<vo
 /** アプリ取込画面を開く（スキャンは固定の結果） */
 async function openAppImport(electronApp: ElectronApplication, adminWindow: Page) {
   await stubScan(electronApp);
-  await chooseImportMenu(adminWindow, 'インストール済みアプリを取り込む');
+  await chooseImportMenu(adminWindow, 'インストール済みアプリから追加');
   const modal = adminWindow.locator(MODAL);
   await modal.waitFor({ state: 'visible', timeout: 10000 });
   await expect(modal.locator('.app-import-status')).toContainText('5 件');

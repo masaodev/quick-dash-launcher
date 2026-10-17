@@ -60,9 +60,9 @@
 
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
-| **ブックマーク取込画面**（`BookmarkImportModal`） | 管理ウィンドウの追加の ▼ メニュー「ブラウザのブックマークを取り込む」<br>メインウィンドウの ➕ の「🔖 ブラウザのブックマークを取り込む」<br>設定「ブックマーク自動取込」の「手動で取り込む」 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
+| **ブックマーク取込画面**（`BookmarkImportModal`） | 管理ウィンドウの追加の ▼ メニュー「🔖 ブラウザのブックマークから追加」<br>メインウィンドウの ➕ の「🔖 ブラウザのブックマークから追加」<br>設定「ブックマーク自動取込」の「手動で取り込む」 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
 | **ブックマークの取込ルールの追加・編集画面**（`BookmarkAutoImportRuleModal`） | 設定「ブックマーク自動取込」の「+ ルールを追加」「編集」 | [bookmark-rule-modal.md](./bookmark-rule-modal.md) |
-| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの追加の ▼ メニュー「インストール済みアプリを取り込む」<br>メインウィンドウの ➕ の「💻 インストール済みアプリを取り込む」 | [app-import-modal.md](./app-import-modal.md) |
+| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの追加の ▼ メニュー「💻 インストール済みアプリから追加」<br>メインウィンドウの ➕ の「💻 インストール済みアプリから追加」 | [app-import-modal.md](./app-import-modal.md) |
 | **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | [admin-window.md](./admin-window.md#551-スナップショット一覧) |
 | **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | [main-window.md](./main-window.md#5101-メモを表示) |
 | **セットに追加するアイテム**（`SetItemPickerModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ アイテムを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) |

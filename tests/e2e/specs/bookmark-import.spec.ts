@@ -55,7 +55,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
 
     try {
       await test.step('追加の ▼ メニューから開く。初めは何も選ばれていない', async () => {
-        await chooseImportMenu(adminWindow, 'ブラウザのブックマークを取り込む');
+        await chooseImportMenu(adminWindow, 'ブラウザのブックマークから追加');
         await modal.waitFor({ state: 'visible', timeout: 10000 });
         await expect(modal.locator('h3')).toHaveText('ブラウザのブックマークを取り込む');
         await expect(modal.locator('.import-selection')).toContainText('0 件を選択中');
@@ -132,7 +132,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
 
     try {
       await test.step('最初のプロファイルが選ばれ、そのブックマークが読み込まれる', async () => {
-        await chooseImportMenu(adminWindow, 'ブラウザのブックマークを取り込む');
+        await chooseImportMenu(adminWindow, 'ブラウザのブックマークから追加');
         await modal.waitFor({ state: 'visible', timeout: 10000 });
         await expect(modal.locator('select[aria-label="プロファイル"]')).toHaveValue('Default');
         await expect(modal.locator('.bookmark-import-status')).toHaveText('10 件のブックマーク');
@@ -303,7 +303,7 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
 
     try {
       await test.step('取込画面の自動取込の帯のリンクから設定の該当カテゴリを開く（取込画面は閉じる）', async () => {
-        await chooseImportMenu(adminWindow, 'ブラウザのブックマークを取り込む');
+        await chooseImportMenu(adminWindow, 'ブラウザのブックマークから追加');
         const modal = adminWindow.locator(IMPORT_MODAL);
         await modal.waitFor({ state: 'visible', timeout: 10000 });
         // 帯の右端のリンク。ルールが無くても出す

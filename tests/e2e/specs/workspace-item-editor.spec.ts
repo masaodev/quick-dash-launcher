@@ -119,7 +119,7 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
     await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
 
     // 保存先（タブ）の選択は無く、種別は表示だけ
-    await expect(editor.getByText('保存先タブ:')).toHaveCount(0);
+    await expect(editor.getByText('保存先タブ', { exact: true })).toHaveCount(0);
     await expect(editor.locator('select').first()).toBeDisabled();
     // パス欄にアイコン取得ボタンが付く
     await expect(editor.locator('.icon-fetch-btn')).toBeVisible();

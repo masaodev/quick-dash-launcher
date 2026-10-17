@@ -43,14 +43,9 @@
   border-bottom: var(--border-light);
 }
 
-.register-dest-label,
-.register-dest-mode {
+.register-dest-label {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
-}
-
-.register-dest-mode {
-  margin-left: auto;
 }
 
 .register-dest-sep {

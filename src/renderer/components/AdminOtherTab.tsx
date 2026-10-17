@@ -4,20 +4,17 @@ import { AppInfo } from '@common/types';
 
 import { Button } from './ui/Button';
 
-/** 設定のホットキー（"Alt+Space"）を表示用（"Alt + Space"）にする */
-function formatHotkey(hotkey: string): string {
-  return hotkey.split('+').join(' + ');
-}
-
 /** ショートカット一覧の固定のキー（説明は辞書の help.keys） */
 const FIXED_SHORTCUTS = [
-  { keys: 'Ctrl + E', text: 'toggleAdmin' },
-  { keys: 'Ctrl + W', text: 'toggleWorkspace' },
+  { keys: 'Ctrl+E', text: 'toggleAdmin' },
+  { keys: 'Ctrl+W', text: 'toggleWorkspace' },
   { keys: 'Enter', text: 'open' },
-  { keys: 'Shift + Enter', text: 'openFolder' },
+  { keys: 'Shift+Enter', text: 'openFolder' },
+  { keys: 'F2', text: 'edit' },
   { keys: '↑ / ↓', text: 'select' },
+  { keys: 'Ctrl+↑ / ↓', text: 'history' },
   { keys: 'Tab', text: 'switchTab' },
-  { keys: 'Shift + Tab', text: 'switchMode' },
+  { keys: 'Shift+Tab', text: 'switchMode' },
   { keys: 'F5', text: 'reload' },
   { keys: 'Esc', text: 'close' },
 ] as const;
@@ -72,12 +69,12 @@ const AdminOtherTab: React.FC = () => {
           <h3>{t('help.shortcuts')}</h3>
           <div className="shortcuts-grid">
             <div className="shortcut-item">
-              <kbd>{hotkeys.launch ? formatHotkey(hotkeys.launch) : t('help.notSet')}</kbd>
+              <kbd>{hotkeys.launch ? hotkeys.launch : t('help.notSet')}</kbd>
               <span>{t('help.keys.toggleLauncher')}</span>
             </div>
             {hotkeys.itemSearch && (
               <div className="shortcut-item">
-                <kbd>{formatHotkey(hotkeys.itemSearch)}</kbd>
+                <kbd>{hotkeys.itemSearch}</kbd>
                 <span>{t('help.keys.windowSearch')}</span>
               </div>
             )}

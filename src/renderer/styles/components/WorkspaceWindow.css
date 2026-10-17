@@ -25,6 +25,8 @@ html:has(.workspace-window.background-transparent) {
 
 /* ヘッダー */
 .workspace-header {
+  /* ⚙ メニューをヘッダーの右端にそろえて出す基準 */
+  position: relative;
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--color-gray-400);
   background-color: var(--bg-header);
@@ -66,17 +68,19 @@ html:has(.workspace-window.background-transparent) {
 }
 
 /* 設定ボタンとドロップダウンメニュー */
+/* メニューはボタンではなくヘッダーの右端にそろえる（幅が広いのでウィンドウの左へはみ出さないように） */
 .workspace-settings-container {
-  position: relative;
   display: inline-block;
 }
 
 .workspace-settings-menu {
   position: absolute;
   top: 100%;
-  right: 0;
+  right: var(--spacing-md);
   margin-top: 4px;
   min-width: 180px;
+  width: max-content;
+  max-width: calc(100vw - var(--spacing-md) * 2);
   background-color: var(--color-white);
   border: 1px solid var(--color-gray-400);
   border-radius: var(--border-radius);
@@ -91,6 +95,7 @@ html:has(.workspace-window.background-transparent) {
   border: none;
   background-color: transparent;
   text-align: left;
+  white-space: nowrap;
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   cursor: pointer;
