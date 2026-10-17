@@ -10,7 +10,7 @@ import {
   isJsonSetItem,
 } from '@common/types';
 import type { JsonItem } from '@common/types';
-import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { isPathlessItem, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { refineItemType } from '../../utils/folderPathProbe.js';
 
@@ -33,9 +33,13 @@ export async function convertJsonItemToAppItems(
    * 重複チェックを行い、重複でなければアイテムを追加する
    */
   function addIfUnique(item: LauncherItem): boolean {
+    // パスの無い単一アイテムはパスが空なので、対象ウィンドウで見分ける（表示名だけで重複扱いにしない）
+    const target = isPathlessItem(item)
+      ? `window:${item.window?.processName ?? ''}|${item.window?.title ?? ''}`
+      : item.path;
     const uniqueKey = item.args
-      ? `${item.displayName}|${item.path}|${item.args}`
-      : `${item.displayName}|${item.path}`;
+      ? `${item.displayName}|${target}|${item.args}`
+      : `${item.displayName}|${target}`;
 
     if (seenPaths.has(uniqueKey)) {
       dataLogger.debug(

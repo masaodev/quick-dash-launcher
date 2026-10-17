@@ -408,6 +408,7 @@ Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
   launcher set row list|add|remove       Rows of a set in the launcher
   launcher tab list|add|update|remove    Tabs and data files in the launcher
+  launcher tab file add|update|remove    Data files of a tab (create, rename, or remove)
   settings get|set                         App settings (hotkeys, windows, and more; qdl settings --help)
   workspace list|add|update|remove         Workspaces themselves
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
@@ -422,7 +423,7 @@ Output: On success, JSON on standard output. On failure, {"error": {"code", "mes
 standard output and a description on standard error. code is usage / not_found / ambiguous / invalid / conflict / unavailable / internal.
 Commands that write accept --dry-run to check the result without writing.
 
-Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 CLI and app versions don't match
+Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 communication error (CLI and app versions don't match, the request is too large or can't be read, and so on)
 `,
       launcher: `Usage: qdl launcher item <action> [arguments]
        qdl launcher set row <action> <set> [arguments]
