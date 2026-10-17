@@ -1,6 +1,7 @@
 # E2E ワークフロー（Playwright + Electron）
-# PR の CI（ci.yml）とは分け、手動起動と毎晩 1 回だけ流す（全件で 15 分ほどかかるため）。
-# GitHub の Windows ランナー（windows-2022）にもデスクトップの画面があるので、Electron のウィンドウを開ける
+# PR の CI（ci.yml）とは分け、手動起動と毎晩 1 回だけ流す（準備を含めて 1 回 12 分ほどかかるため）。
+# GitHub の Windows ランナー（windows-2022）にもデスクトップの画面（1024x768）があるので、Electron のウィンドウを開ける。
+# OS は英語版で、マウスのカーソルは画面の中央にある（テストはこの 2 つで結果が変わらないように書く）
 
 name: E2E
 
@@ -14,10 +15,6 @@ on:
   # 毎日 3:00（日本時間）。main に変化が無くても流す
   schedule:
     - cron: '0 18 * * *'
-  # 試しのあいだだけ。ランナーで通るかを確かめたら消す
-  push:
-    branches:
-      - ci/e2e-on-windows-runner
 
 permissions:
   contents: read
