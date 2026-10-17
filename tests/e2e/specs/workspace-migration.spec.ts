@@ -132,7 +132,8 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       const dev = main.groups.find((g) => g.displayName === '開発')!;
       const sub = main.groups.find((g) => g.displayName === 'サブ')!;
       expect(uiState.collapsedGroups).toEqual({ [dev.id]: true });
-      expect(uiState.detachedWindows[dev.id]).toEqual({
+      // 起動時に切り離しウィンドウを開き直すので、位置の基準（anchor）も足される
+      expect(uiState.detachedWindows[dev.id]).toMatchObject({
         collapsedStates: { [dev.id]: false, [sub.id]: true },
         bounds: { x: 10, y: 20, width: 300, height: 400 },
         pinMode: 1,
