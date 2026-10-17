@@ -315,6 +315,8 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 `detachedPositionMode` が `saved` なら、最後に置いた場所に出す。`mainDisplay`（既定）なら、メインウィンドウと一緒に出すときに、ピン留めしていない切り離しウィンドウを、メインウィンドウと同じディスプレイ（`getMainWindowDisplay()`）の同じ位置へ移してから出す（`showAllDetachedGroupWindows({ placeOnMainWindowDisplay })`、`src/main/detachedGroupWindowManager.ts`）。アプリを起動して前回のウィンドウを開き直すときも同じ。
 
+起動したときは直前の状態に戻す（`restoreWindowsOnStartup()`、`src/main/workspaceWindowManager.ts`）。開いていて 📌 ありのワークスペースはすぐに出す。× で閉じていない切り離しウィンドウは開き直し、📌 ありのものはすぐに出し、なしのものは隠したまま作る（`startHiddenUnlessPinned`。最初のホットキーでメインと一緒に出る）。切り離しウィンドウは、中身に合わせて大きさを決めた後に 1 回だけ初めての表示をする（`takeDetachedInitialShow()`）。隠れているときに大きさが変わっても出さない。
+
 位置は「載っているディスプレイの作業領域に対する位置」（`MonitorAnchor`）として覚える。計算は純粋関数（`src/main/utils/monitorAnchor.ts`）。
 
 - 縦・横それぞれで、作業領域の端から 20px 未満（モニター端への吸着と同じ距離）なら端を、それ以外は作業領域の中央を基準にし、基準からの距離を覚える。端にくっつけたウィンドウは大きさの違うディスプレイでも端に出て、メインウィンドウ（既定ではディスプレイの中央に出る）の横に置いたウィンドウはメインとの位置関係を保つ

@@ -207,6 +207,25 @@ export function hideWorkspaceWithMain(): void {
   }
 }
 
+/**
+ * 起動したときに、直前の状態へ戻す（再起動しても見え方が変わらないように）
+ * - 開いていて 📌 ありのワークスペースは、すぐに出す（📌 なしなら、最初のホットキーでメインと一緒に出る）
+ * - × で閉じていない切り離しウィンドウを開き直す。📌 ありのものはすぐに出し、なしのものは隠したまま作る
+ */
+export async function restoreWindowsOnStartup(): Promise<void> {
+  try {
+    if (isWorkspaceOpen && workspacePinLevel !== 0) {
+      await presentWorkspaceWindow({ skipFocus: true });
+    }
+    if (!detachedRestored) {
+      detachedRestored = true;
+      await restoreDetachedWindows({ skipFocus: true, startHiddenUnlessPinned: true });
+    }
+  } catch (error) {
+    windowLogger.error({ error }, '起動時のワークスペース・切り離しウィンドウの復元に失敗しました');
+  }
+}
+
 /** 位置を決めて表示する（開いているかどうかは変えない） */
 async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   try {

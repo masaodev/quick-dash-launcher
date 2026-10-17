@@ -55,6 +55,8 @@ import {
   getGroupIdByWebContentsId,
   getDetachedPinMode,
   setDetachedPinMode,
+  isDetachedGroupWindow,
+  takeDetachedInitialShow,
 } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/index.js';
 import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
@@ -259,8 +261,9 @@ export function setupWindowHandlers(
       const { x, y } = win.getBounds();
       win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
 
-      // autofit完了後、フォーカスを奪わずに初回表示
-      if (!win.isVisible()) {
+      // 中身に合わせた大きさにした後、まだ初めての表示をしていなければ、フォーカスを奪わずに出す
+      // （隠れている切り離しウィンドウは、大きさを直すたびに出さない）
+      if (!win.isVisible() && (!isDetachedGroupWindow(win) || takeDetachedInitialShow(win))) {
         showWithoutFocus(win);
       }
 
