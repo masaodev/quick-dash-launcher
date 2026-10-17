@@ -662,7 +662,7 @@ export async function notifySetFailures(
     type: 'warning',
     message: `${item.displayName}: ${mainI18n.t('set.errors.someFailed', {
       count: names.length,
-      names: names.join(', '),
+      names: names.join(mainI18n.t('common.listSeparator')),
     })}`,
     duration: LONG_TOAST_DURATION_MS,
   });

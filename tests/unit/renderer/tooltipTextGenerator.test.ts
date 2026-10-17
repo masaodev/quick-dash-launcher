@@ -223,7 +223,7 @@ describe('tooltipTextGenerator', () => {
 
       const result = getTooltipText(item);
 
-      expect(result).toContain('フォーマット: テキスト, HTML');
+      expect(result).toContain('フォーマット: テキスト、HTML');
       expect(result).toContain('プレビュー: Sample text content');
       expect(result).toContain('保存日時:');
       expect(result).toContain('データファイル: clipboard.json');
