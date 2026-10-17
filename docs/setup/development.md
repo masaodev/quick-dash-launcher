@@ -170,12 +170,13 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 
 データファイルの読み込み（`src/main/services/data/dataFileLoader.ts`。起動時と F5 で呼ばれる）は、タブ単位で重複を除く。同じタブの中で重複したアイテムは 1 つだけ読み、別のタブにあるものは両方読む。重複の判定とタブに属さないファイルの扱いは [データファイル形式 - 重複排除ルール](../architecture/file-formats/data-format.md#4-重複排除ルール) を参照（判定キーの組み立ては `jsonItemConverter.ts`）。
 
-読み込みの最後に、旧グループ・旧ウィンドウ配置をセットへ変換して書き戻す（`setMigration.ts`。仕様は [データファイル形式 3.3.6](../architecture/file-formats/data-format.md#336-旧形式からの変換)）。
+読み込みの最後に、旧形式（グループ・ウィンドウ配置→セット、単一アイテムの windowConfig と廃止したウィンドウ操作→ウィンドウ切り替えの新しいキー）を変換して書き戻す（`setMigration.ts`・`src/common/utils/itemWindowConversion.ts`。仕様は [データファイル形式 3.3.6](../architecture/file-formats/data-format.md#336-旧形式からの変換)）。
 
 ### アイテムタイプの検出
 
 判定は `src/common/utils/itemTypeDetector.ts`。パスの文字列から次の順で決める。
 
+- ウィンドウ切り替え: パスが空（開いているウィンドウに切り替えるだけ）
 - URL: `://` を含み、スキーマが `http`・`https`・`ftp`
 - カスタムURI: それ以外のスキーマ（`obsidian://`、`ms-excel:` など）
 - アプリ: `shell:AppsFolder\` で始まる、または拡張子が `.exe`・`.bat`・`.cmd`・`.com`・`.lnk`
@@ -209,9 +210,9 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 **共通化した処理の置き場所（新しく書く前に確認する）:**
 
 - アイコン取得: `src/main/services/icon/iconFetcher.ts` の `getIconForItem()`（アイコン用 IPC が直接、ワークスペースの IPC は `services/iconService.ts` 経由で使う）
-- アイテムの起動: 単一アイテムを開くのは `src/main/services/launch/itemOpener.ts` の `openSingleItem()`（ウィンドウ切り替えの有無で振り分け、失敗をトーストで知らせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）。開く処理そのものは `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI）
+- アイテムの起動: 単一アイテムを開くのは `src/main/services/launch/itemOpener.ts` の `openSingleItem()`（ウィンドウ切り替えの有無で振り分け、失敗をトーストで知らせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）。開く処理そのものは `src/main/utils/itemLauncher.ts`（URL・ファイル・フォルダ・アプリ・カスタムURI・クリップボード）
 - ウィンドウの検索・アクティブ化・位置とサイズの設定: `src/main/utils/windowActivator.ts`
-- セットの実行: `src/main/services/launch/setExecutor.ts`（行ごとに開くものを開き、ウィンドウを位置に合わせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
+- セットの実行: `src/main/services/launch/setExecutor.ts`（行ごとに開くものを開き、ウィンドウを位置に合わせる。単一アイテムのウィンドウ切り替えも、1 行のセットとして同じ処理で実行する。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
 - 登録・編集フォームの部品: `src/renderer/components/ItemEditFields.tsx`（アイテム 1 件分の編集欄。状態は持たず、読み込み・保存は呼び出し側）。メインの登録・編集（`RegisterModal`）とワークスペースのアイテム編集（`WorkspaceItemEditModal`）の両方が使う。ワークスペースは `placement` を渡さず（保存先の欄を出さない）、`typeLocked` で種別を固定する。中の部品に `ItemWindowSwitchEditor.tsx`（単一アイテムのウィンドウ切り替え）・`CustomIconEditor.tsx`（カスタムアイコン）など。ウィンドウ切り替えの 3 つの枠（対象ウィンドウ・ウィンドウ位置・開くときの動き）は `WindowSwitchFields.tsx` にあり、セットの行の詳細（`SetEntryDetailModal`）と共用する（ウィンドウ一覧・仮想デスクトップの読み込みは `hooks/useWindowEnvironment.ts`）
 
 ### パフォーマンス最適化

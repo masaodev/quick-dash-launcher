@@ -2,7 +2,6 @@
  * ウィンドウ切り替えの欄（対象ウィンドウ・ウィンドウ位置・開くときの動き）
  *
  * セットの行の詳細（SetEntryDetailModal）と、単一アイテムの登録・編集（ItemWindowSwitchEditor）が同じ部品を使う。
- * 画面仕様: docs/screens/set-editor-modals.md#5-行の詳細・docs/screens/register-modal.md
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

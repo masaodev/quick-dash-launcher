@@ -81,7 +81,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 | オプション | 使えるコマンド | 内容 |
 | --- | --- | --- |
-| `--name` | item add（必須。フォルダ取込を除く）／update、group add（必須）／update、workspace add（必須）／update | 表示名 |
+| `--name` | item add（必須。フォルダ取込と、workspace の `--from` を除く）／update、group add（必須）／update、workspace add（必須）／update | 表示名 |
 | `--path` | item add（必須。セットを除く。通常のアイテムは `--set window=…` で対象ウィンドウを渡せば省ける）／update、set row add | ファイル・フォルダ・URL・コマンド。相対パスは `qdl` を実行したフォルダが基準。セットでは行の開くもの。通常のアイテムで省くと、パスの無い単一アイテム（開いているウィンドウに切り替えるだけ）になる |
 | `--args` | item add／update、set row add | コマンドライン引数。セットでは `--path` の行にだけ付けられる |
 | `--item` | launcher item add（`--type set`）、set row add | 行の開くものにする登録済みのアイテム（id か表示名）。`--path` とはどちらか一方 |
@@ -144,7 +144,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | バックアップ | `backupEnabled`・`backupIncludeClipboard` | `true`・`false` |
 | バックアップ | `backupRetention` | 3〜50 |
 
-- **範囲の外・形の違う値**: `invalid` で断る。範囲は設定画面と同じ。古い値の `primaryLeft`・`primaryRight` は読めるが、新しくは選べない
+- **範囲の外・形の違う値**: `invalid` で断る。範囲は設定画面と同じ。知らないキーと、どのタブにも入っていない `defaultFileTab` は `not_found`。古い値の `primaryLeft`・`primaryRight` は読めるが、新しくは選べない
 - **ホットキー**: 設定画面と同じく、形式を確かめ、他のアプリともう一方のホットキーに使われていないかを確かめてから登録し直す（`--dry-run` でも使われていないかまで確かめる）。形式の誤りは `invalid`、使用中は `conflict`。登録の途中で失敗したときは元のキーに戻す。ランチャーを開く `hotkey` は空にできない
 - **読むだけの項目**: `settings get` では読めるが、`set` は `usage` で断る。自動起動（`autoLaunch`。OS のスタートアップを書き換えるうえ、Store 版は Windows 側でしか変えられない状態がある）、ブックマークの自動取込（`bookmarkAutoImport`）、CLI を使えるようにする設定（`cliEnabled`。CLI から自分を外せてしまう）、アプリが書く版（`createdWithVersion`・`updatedWithVersion`）。タブ構成（`dataFileTabs`・`dataFileLabels`）は `launcher tab` で変える
 
@@ -160,8 +160,9 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - `archive list`: 配列。各要素に `archivedAt`・元のワークスペース `workspace`（無くなっていれば `null`）・子孫までの `itemCount`・一緒にしまったサブグループの名前 `subgroups` を付ける
 - `archive restore`: `{ "restored": 戻したグループ }`。`--dry-run` では `{ "dryRun": true, "restoring": 戻すもの, "workspace": 復元先 }`
 - `tab list`: `{ "showDataFileTabs", "tabs": [ { index, name, files: [ { file, label, itemCount } ], itemCount, default } ], "unassignedFiles": [ … ] }`
-- `tab add`・`tab update`: `{ "tab": 足した・変えた後のタブ }`（update は `before` も）。`tab remove` は `{ "removed", "deletedFiles" }`、`tab file remove` は `{ "removed", "deleted", "tab" }`
+- `tab add`・`tab update`: `{ "tab": 足した・変えた後のタブ }`（update は `before` も）。`tab remove` は `{ "removed", "deletedFiles" }`、`tab file add` は `{ "file": { file, label, itemCount, created }, "tab" }`、`tab file update` は `{ "before", "file" }`、`tab file remove` は `{ "removed", "deleted", "tab" }`
 - `set row list`・`set row add`・`set row remove`: `{ "set": { id, displayName, file, tab }, "entries": [ 行 ] }`（変えた後の全部の行）。各行に行番号 `index` と行の名前 `name` を付け、指しているアイテムが見つからない行には `"missing": true` を付ける
+- `settings get <キー>`: `{ "key", "value", "writable" }`（キーを省くと `{ "settings", "writable" }`）
 - `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので `id` は無い）
 
 失敗したら、標準出力に次の形の JSON、標準エラーに人向けの文を出します。`code` は固定の英単語で、文言を変えても変えません。

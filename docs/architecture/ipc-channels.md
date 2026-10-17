@@ -69,7 +69,7 @@ const settings = await window.electronAPI.getSettings();
   - `full`: メイン画面の「完全リフレッシュ」。`explicit` に加えて、ドライブ文字で始まる拡張子の無いパスもすべてディスクで確かめ直す（`explicit` で確かめ直すのは `path-type-cache.json` に載っているパスだけ）（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
   - `internal`: 変更通知を受けた再読み込み・画面内の一覧取得。先行する `internal` の読み込みがあれば結果を共有する
 - 処理内容: フォルダ取込の展開・`.lnk` の解析・タブ単位の重複排除のあと、ワークスペースも読み直す（内容が変わっていれば `workspace-changed` を送る）
-- 旧グループ・旧ウィンドウ配置のアイテムがあれば、読み込みのときにセットへ変換して保存する（[データファイル形式 3.3.6](file-formats/data-format.md#336-旧形式からの変換)）
+- 旧形式のアイテムがあれば、読み込みのときに変換して保存する。旧グループ・旧ウィンドウ配置はセットへ、単一アイテムの `windowConfig` はウィンドウ切り替えのキーへ、ウィンドウ操作（`type: "window"`）はパスの無い単一アイテムへ変える（[データファイル形式 3.3.6](file-formats/data-format.md#336-旧形式からの変換)・[3.4](file-formats/data-format.md#34-ウィンドウ操作廃止読み込み時に変換)）
 - 外部変更（QDL の外での変更）を検知した場合は、変更前の内容をスナップショットに残す。破損ファイルや読み込み時の補正はトーストで知らせる
 - 実装: `src/main/services/data/dataFileLoader.ts`（`reloadConfigFiles()`）
 
@@ -107,7 +107,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 - **方向**: レンダラープロセス → メインプロセス（`invoke`）
 - **返り値**: `ClipboardContent`（`src/common/types/clipboard.ts`）か `null`
-- 保存済みの参照で、参照の形は正しいのに実データのファイル（`clipboard-data/<id>.json`）が無いときは `{ missing: true }` を返す。画面はこれを見て警告を出し、保存を止める（[登録・編集 - 内容を書く・取り込む](../screens/register-modal.md#519-内容を書く取り込む)）
+- 保存済みの参照で、参照の形は正しいのに実データのファイル（`clipboard-data/<id>.json`）が無いときは `{ missing: true }` を返す（読み取りの失敗と分けて、実データが消えたことを受け手が判断できるようにするため）
 - それ以外で読めないとき（参照の形が違う・セッションが無い・読み取りの失敗）は `null`
 
 ## 設定

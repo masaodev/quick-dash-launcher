@@ -88,7 +88,7 @@ graph TD
     WorkspaceItemEdit -->|🔍 開いているウィンドウから選ぶ| WindowSelect
 
     %% セットの小さな画面の遷移
-    SetRecord -->|ウィンドウを選ぶ / 別のウィンドウにする| WindowSelect
+    SetUpdate -->|ウィンドウを選ぶ / 別のウィンドウにする| WindowSelect
     SetDetail -->|開いているウィンドウから選ぶ| WindowSelect
     SetDetail -->|ウィンドウ位置を更新（合うウィンドウが 2 つ以上）| PlacementPick
     WorkspaceItemEdit -->|カスタムアイコン選択| FilePicker
@@ -116,7 +116,7 @@ graph TD
     class FirstLaunch,Main,Workspace,Detached window
     class AdminSettings,AdminItems,AdminOther adminTab
     class Register,IconProgress,WorkspaceItemEdit,WorkspaceConfirm child
-    class BookmarkImport,BookmarkRule,SetPicker,SetRecord,SetDetail,PlacementPick,WindowSelect,AppImport,BackupSnapshot,MemoView modal
+    class BookmarkImport,BookmarkRule,SetPicker,SetAddWindows,SetUpdate,SetDetail,PlacementPick,WindowSelect,AppImport,BackupSnapshot,MemoView modal
     class FilePicker,Alert,Confirm dialog
 ```
 

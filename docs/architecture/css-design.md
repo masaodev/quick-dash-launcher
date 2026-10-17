@@ -37,7 +37,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | タイポグラフィ | `--font-family`、`--font-family-mono`、`--font-size-{xxs〜3xl\|base}`、`--font-weight-{medium\|semibold}`、`--line-height-{tight\|normal\|relaxed}` |
 | 枠と角丸 | `--border-{light\|normal\|dark\|primary\|danger}`、`--border-radius`、`--border-radius-{sm\|lg\|xl}` |
 | 影・フォーカス・トランジション | `--shadow`、`--shadow-{sm\|lg\|xl}`、`--text-shadow-on-color`（色の上に載せる白い文字の縁取り）、`--focus-ring*`、`--transition-{fast\|normal\|slow\|width}` |
-| z-index と寸法 | `--z-{dropdown\|modal}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*`、画面ごとの寸法（例 `--set-row-*`、`--admin-status-bar-height`、`--workspace-tab-max-width`） |
+| z-index と寸法 | `--z-{dropdown\|modal\|popover}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*`、画面ごとの寸法（例 `--set-row-*`、`--admin-status-bar-height`、`--workspace-tab-max-width`、`--minimap-*`） |
 | ワークスペースのグループ色トークン | `--group-color-{トークン}` |
 | 検索モードの色（メインウィンドウ） | `--mode-{accent\|accent-solid\|tint\|surface\|marked}`（役割の名前。値はモードで変わる） |
 
