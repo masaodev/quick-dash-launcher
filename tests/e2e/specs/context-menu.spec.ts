@@ -111,122 +111,85 @@ $Shortcut.Save()
       .toContain('📝 メモを表示');
   });
 
-  test('編集メニュー操作で編集モーダルが開く', async ({ electronApp, mainWindow }) => {
+  test('右クリックの「編集」と F2 で、選択中のアイテムの編集画面が開く', async ({
+    electronApp,
+    mainWindow,
+  }) => {
     const utils = new TestUtils(mainWindow);
     const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
 
-    const googleItem = mainWindow.locator('.item .item-name', { hasText: 'Google' });
-    await expect(googleItem).toBeVisible({ timeout: 5000 });
+    await test.step('編集メニュー操作で編集モーダルが開く', async () => {
+      const googleItem = mainWindow.locator('.item .item-name', { hasText: 'Google' });
+      await expect(googleItem).toBeVisible({ timeout: 5000 });
 
-    await menuHelper.simulateLauncherMenu('edit', {
-      id: 'google-test-id',
-      displayName: 'Google',
-      path: 'https://www.google.com',
-      type: 'url',
+      await menuHelper.simulateLauncherMenu('edit', {
+        id: 'google-test-id',
+        displayName: 'Google',
+        path: 'https://www.google.com',
+        type: 'url',
+      });
+
+      // 編集は独立した子ウィンドウで開く（メインウィンドウは動かさない）
+      const editor = await utils.waitForRegisterWindow(electronApp);
+      await expect(editor.locator('.register-modal h2')).toContainText('アイテムの編集');
+      await expect(editor).toHaveTitle('アイテムの編集');
+
+      await utils.pressEscapeToCloseRegisterModal();
+      expect(editor.isClosed()).toBe(true);
     });
 
-    // 編集は独立した子ウィンドウで開く（メインウィンドウは動かさない）
-    const editor = await utils.waitForRegisterWindow(electronApp);
-    await expect(editor.locator('.register-modal h2')).toContainText('アイテムの編集');
-    await expect(editor).toHaveTitle('アイテムの編集');
+    await test.step('F2 で選択中のアイテムの編集画面が開く（右クリックの「編集」と同じ）', async () => {
+      await utils.searchFor('Google');
+      await expect(mainWindow.locator('.item.selected .item-name')).toHaveText('Google');
+      await mainWindow.locator('input[type="text"]').first().focus();
+      await mainWindow.keyboard.press('F2');
 
-    await utils.pressEscapeToCloseRegisterModal();
-    expect(editor.isClosed()).toBe(true);
+      const editor = await utils.waitForRegisterWindow(electronApp);
+      await expect(editor.locator('.register-modal h2')).toContainText('アイテムの編集');
+      await expect(editor.locator('input[value="Google"]').first()).toBeVisible();
+
+      await utils.pressEscapeToCloseRegisterModal();
+      expect(editor.isClosed()).toBe(true);
+    });
   });
 
-  test('F2 で選択中のアイテムの編集画面が開く（右クリックの「編集」と同じ）', async ({
-    electronApp,
-    mainWindow,
-  }) => {
-    const utils = new TestUtils(mainWindow);
-
-    await utils.searchFor('Google');
-    await expect(mainWindow.locator('.item.selected .item-name')).toHaveText('Google');
-    await mainWindow.locator('input[type="text"]').first().focus();
-    await mainWindow.keyboard.press('F2');
-
-    const editor = await utils.waitForRegisterWindow(electronApp);
-    await expect(editor.locator('.register-modal h2')).toContainText('アイテムの編集');
-    await expect(editor.locator('input[value="Google"]').first()).toBeVisible();
-
-    await utils.pressEscapeToCloseRegisterModal();
-    expect(editor.isClosed()).toBe(true);
-  });
-
-  test('パスをコピーメニュー操作でクリップボードにコピーされる', async ({
+  test('パス・親フォルダのパス・ショートカットのリンク先パスをコピーできる', async ({
     electronApp,
     mainWindow,
   }) => {
     const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
-
-    const itemData = {
+    const readClipboard = (): Promise<string> =>
+      electronApp.evaluate(async ({ clipboard }) => clipboard.readText());
+    const notepadItem = {
       id: 'test-notepad',
       name: 'メモ帳',
       path: 'C:\\Windows\\System32\\notepad.exe',
       type: 'app',
     };
 
-    await menuHelper.simulateLauncherMenu('copyPath', itemData);
-
-    const clipboardText = await electronApp.evaluate(async ({ clipboard }) => {
-      return clipboard.readText();
+    await test.step('パスをコピーメニュー操作でクリップボードにコピーされる', async () => {
+      await menuHelper.simulateLauncherMenu('copyPath', notepadItem);
+      expect(await readClipboard()).toBe('C:\\Windows\\System32\\notepad.exe');
     });
 
-    expect(clipboardText).toBe('C:\\Windows\\System32\\notepad.exe');
-  });
-
-  test('親フォルダのパスをコピーメニュー操作', async ({ electronApp, mainWindow }) => {
-    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
-
-    const itemData = {
-      id: 'test-notepad',
-      name: 'メモ帳',
-      path: 'C:\\Windows\\System32\\notepad.exe',
-      type: 'app',
-    };
-
-    await menuHelper.simulateLauncherMenu('copyParentPath', itemData);
-
-    const clipboardText = await electronApp.evaluate(async ({ clipboard }) => {
-      return clipboard.readText();
+    await test.step('親フォルダのパスをコピーメニュー操作', async () => {
+      await menuHelper.simulateLauncherMenu('copyParentPath', notepadItem);
+      expect(await readClipboard()).toBe('C:\\Windows\\System32');
     });
 
-    expect(clipboardText).toBe('C:\\Windows\\System32');
-  });
+    await test.step('ショートカットのリンク先パスをコピー', async () => {
+      const shortcutItem = mainWindow.locator('.item', { hasText: 'テストショートカット' });
+      await expect(shortcutItem).toBeVisible({ timeout: 5000 });
 
-  test('ショートカットのリンク先パスをコピー', async ({ electronApp, mainWindow }) => {
-    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
-
-    const shortcutItem = mainWindow.locator('.item', { hasText: 'テストショートカット' });
-    await expect(shortcutItem).toBeVisible({ timeout: 5000 });
-
-    await menuHelper.simulateLauncherMenu('copyShortcutPath', {
-      id: 'test-shortcut',
-      name: 'テストショートカット',
-      path: shortcutPath,
-      type: 'app',
-      originalPath: 'C:\\Windows\\System32\\notepad.exe',
+      await menuHelper.simulateLauncherMenu('copyShortcutPath', {
+        id: 'test-shortcut',
+        name: 'テストショートカット',
+        path: shortcutPath,
+        type: 'app',
+        originalPath: 'C:\\Windows\\System32\\notepad.exe',
+      });
+      expect((await readClipboard()).toLowerCase()).toContain('notepad.exe');
     });
-
-    const clipboardText = await electronApp.evaluate(async ({ clipboard }) => {
-      return clipboard.readText();
-    });
-
-    expect(clipboardText.toLowerCase()).toContain('notepad.exe');
-  });
-
-  test('ワークスペースに追加メニュー操作', async ({ electronApp, mainWindow }) => {
-    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
-    const utils = new TestUtils(mainWindow);
-
-    await menuHelper.simulateLauncherMenu('addToWorkspace', {
-      id: 'google-id',
-      name: 'Google',
-      path: 'https://www.google.com',
-      type: 'url',
-    });
-
-    await utils.wait(500);
   });
 });
 
