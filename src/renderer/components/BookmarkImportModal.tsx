@@ -446,7 +446,7 @@ function BookmarkImportModal({
               toggleFolderOpen(folder.path);
             }}
           >
-            {isOpen ? '▾' : '▸'}
+            <span className={`bookmark-import-twisty-icon${isOpen ? ' open' : ''}`}>▸</span>
           </button>
           <input
             type="checkbox"
