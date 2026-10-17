@@ -72,7 +72,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 
 ### 構成上のポイント
 
-- **データファイル**: 読み込み・変換・保存は `src/main/services/data/` に分かれる（読み込みと外部変更の検知、JSON アイテムから表示用アイテムへの変換、管理画面の一覧の保存と楽観ロック、破損ファイルの記録）
+- **データファイル**: 読み込み・変換・保存は `src/main/services/data/` に分かれる（読み込みと外部変更の検知、JSON アイテムから表示用アイテムへの変換、管理画面の一覧の保存と楽観ロック、データファイル自体の作成・削除（`dataFileOps.ts`。アイテム管理のタブ構成と CLI の `launcher tab` が使う）、破損ファイルの記録）
 - **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
 - **トースト通知**: トーストとセットの進み具合は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する
 - **子ウィンドウ**: メインのレンダラーを共有する子ウィンドウは `childWindowService.ts` で開く（[ウィンドウとレンダラープロセスの対応](#ウィンドウとレンダラープロセスの対応)）
@@ -92,7 +92,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 - **変換**: JSON アイテムを表示用の `AppItem` に変換する（`services/data/jsonItemConverter.ts`）。フォルダ取込（`type: "dir"`）はフォルダを走査して展開し、`.lnk` はリンク先を解析する（`services/data/directoryScanner.ts`）。タブ単位で重複を除き、表示名でソートする。種別はパスから決めるが、見た目だけでは分からないもの（ドット入りのフォルダ名・拡張子の無いファイル）は `utils/folderPathProbe.ts` がディスクの状態と記録（`config/path-type-cache.json`）で補う（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
 - **保存**: QDL 自身の書き込みは `services/dataFileTracker.ts` の `writeDataFile()` を通し、書いた内容を記憶する。管理画面の一覧保存は読み込み時のハッシュと照合する楽観ロック付き（`editableItemsStore.ts`）。メイン画面からの登録・編集・削除と CLI の書き込みは、都度ディスクを読み直して ID で差し替える・消す（`dataItemWriter.ts`。IPC の `editHandlers.ts` は受け口だけ）。破損中のファイルへの保存・登録は拒否する。ID で探すときは破損ファイルを飛ばして他のファイルで続け、目当ての ID が破損ファイルにあるかもしれないときは何も書かずに止める
 - **外部変更**: ファイル監視はしない。読み込んだ内容が記憶と違えば QDL の外で編集されたとみなし、変更前の内容をスナップショット（`backup/*_pre-external/`。`backupEnabled` が true のとき）に残す。読み込み結果はレポートにまとめてメモリに持ち、CLI の `reload`・`check` が返す（`services/loadReportService.ts`）
-- **形式の移行**: データファイルは `version` を補完し、旧グループ（`type: "group"`）・旧ウィンドウ配置（`type: "layout"`）を見つけたら、スナップショット（`_pre-set-migration`）を作ってからセット（`type: "set"`）に変換して書き戻す（`services/data/setMigration.ts`）。単一アイテムの旧形式 `windowConfig` も同じ読み込みでウィンドウ切り替えの新しいキーに変換する、廃止した種別「ウィンドウ操作」（`type: "window"`）もパスの無い単一アイテム（id は変えない）に変換する（セットへの変換が無ければスナップショットは `_pre-window-migration`。`common/utils/itemWindowConversion.ts`）。ワークスペースファイルも、2.0 への移行の後に同じ変換をする。ワークスペースファイルは旧形式（`version` なし）を検知すると、移行前スナップショット（`_pre-migration`）を作ってから 2.0 に変換して書き戻す（`services/workspace/WorkspaceFileStore.ts`・`workspaceMigration.ts`）
+- **形式の移行**: データファイルは `version` を補完し、旧グループ（`type: "group"`）・旧ウィンドウ配置（`type: "layout"`）を見つけたら、スナップショット（`_pre-set-migration`）を作ってからセット（`type: "set"`）に変換して書き戻す（`services/data/setMigration.ts`）。単一アイテムの旧形式 `windowConfig` も同じ読み込みでウィンドウ切り替えの新しいキーに変換し、廃止した種別「ウィンドウ操作」（`type: "window"`）もパスの無い単一アイテム（id は変えない）に変換する（セットへの変換が無ければスナップショットは `_pre-window-migration`。`common/utils/itemWindowConversion.ts`）。ワークスペースファイルも、2.0 への移行の後に同じ変換をする。ワークスペースファイルは旧形式（`version` なし）を検知すると、移行前スナップショット（`_pre-migration`）を作ってから 2.0 に変換して書き戻す（`services/workspace/WorkspaceFileStore.ts`・`workspaceMigration.ts`）
 
 パスはいずれも `src/main/`・`src/common/` からの相対。
 
