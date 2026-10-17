@@ -181,36 +181,6 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
       <div className="settings-section">
         <h3>{t('settings.workspace.heading')}</h3>
 
-        {/* 自動表示設定 */}
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.autoShowWorkspace}
-              onChange={(e) => handleSettingChange('autoShowWorkspace', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.workspace.autoShow')}
-          </label>
-          <div className="setting-description">{t('settings.workspace.autoShowDescription')}</div>
-        </div>
-
-        {/* 切り離しウィンドウ連動設定 */}
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.hideDetachedWithMainWindow}
-              onChange={(e) => handleSettingChange('hideDetachedWithMainWindow', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.workspace.hideDetached')}
-          </label>
-          <div className="setting-description">
-            {t('settings.workspace.hideDetachedDescription')}
-          </div>
-        </div>
-
         {/* 切り離しウィンドウの表示位置 */}
         <div className="setting-item">
           <label>{t('settings.workspace.detachedPosition')}</label>

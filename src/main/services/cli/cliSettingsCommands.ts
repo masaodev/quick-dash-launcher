@@ -69,7 +69,6 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   editModeHeight: { kind: 'integer', range: { min: 600, max: 1200 } },
   workspaceOpacity: { kind: 'integer', range: { min: 0, max: 100 } },
   workspaceBackgroundTransparent: BOOLEAN,
-  autoShowWorkspace: BOOLEAN,
   // primaryLeft・primaryRight は古い値なので、新しくは選ばせない
   workspacePositionMode: { kind: 'choice', values: ['displayLeft', 'displayRight', 'fixed'] },
   workspaceTargetDisplayIndex: { kind: 'displayIndex' },
@@ -77,7 +76,6 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   workspacePositionY: COORDINATE,
   workspaceVisibleOnAllDesktops: BOOLEAN,
   detachedVisibleOnAllDesktops: BOOLEAN,
-  hideDetachedWithMainWindow: BOOLEAN,
   detachedPositionMode: { kind: 'choice', values: ['saved', 'mainDisplay'] },
   backupEnabled: BOOLEAN,
   backupRetention: { kind: 'integer', range: { min: 3, max: 50 } },

@@ -130,8 +130,6 @@ export interface AppSettings {
   workspaceOpacity: number;
   /** ワークスペースウィンドウの背景のみを透過（デフォルト: false） */
   workspaceBackgroundTransparent: boolean;
-  /** メイン画面表示時にワークスペースを自動表示（デフォルト: false） */
-  autoShowWorkspace: boolean;
   /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
   /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、-1＝メインウィンドウと同じディスプレイ、デフォルト: -1） */
@@ -152,8 +150,6 @@ export interface AppSettings {
   backupIncludeClipboard: boolean;
   /** ブックマーク自動取込設定 */
   bookmarkAutoImport: BookmarkAutoImportSettings;
-  /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
-  hideDetachedWithMainWindow: boolean;
   /** 切り離しウィンドウの表示位置モード（デフォルト: 'mainDisplay'） */
   detachedPositionMode: DetachedPositionMode;
   /** ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true） */

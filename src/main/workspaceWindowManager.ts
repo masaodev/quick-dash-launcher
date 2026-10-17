@@ -20,6 +20,7 @@ import {
   hideOnClose,
 } from './utils/managedWindow.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
+import { WorkspaceService } from './services/workspace/index.js';
 import {
   getRendererHtmlUrl,
   openChildWindow,
@@ -39,6 +40,11 @@ let isWorkspaceWindowVisible: boolean = false;
 let detachedRestored: boolean = false;
 /** ピン留めの段階。ワークスペースは最初から表示固定（開きっぱなしで使ってもらうため） */
 let workspacePinLevel: PinLevel = 1;
+/**
+ * 開いているか。⭐・Ctrl+W・× で閉じるまで true（メインウィンドウと一緒に隠れただけなら true のまま）。
+ * 開いていて 📌 なしなら、メインウィンドウと一緒に出て一緒に隠れる
+ */
+let isWorkspaceOpen: boolean = false;
 let windowSnapEnabled: boolean = true;
 
 /**
@@ -60,7 +66,38 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   return pendingCreate;
 }
 
+/** 開いているか・ピン留めの段階を workspace-ui-state.json に保存する */
+function persistWorkspaceWindowState(): void {
+  WorkspaceService.getInstance()
+    .then((ws) =>
+      ws.saveWorkspaceWindowState({ open: isWorkspaceOpen, pinLevel: workspacePinLevel })
+    )
+    .catch((error) => {
+      windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の保存に失敗');
+    });
+}
+
+function setWorkspaceOpen(open: boolean): void {
+  if (isWorkspaceOpen === open) return;
+  isWorkspaceOpen = open;
+  persistWorkspaceWindowState();
+}
+
+/** ワークスペースが開いているか（閉じていない） */
+export function isWorkspaceWindowOpen(): boolean {
+  return isWorkspaceOpen;
+}
+
 async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
+  try {
+    const ws = await WorkspaceService.getInstance();
+    const state = await ws.loadWorkspaceWindowState();
+    workspacePinLevel = state.pinLevel;
+    isWorkspaceOpen = state.open;
+  } catch (error) {
+    windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の読み込みに失敗');
+  }
+
   const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   const windowWidth = 380;
   const windowHeight = screenHeight;
@@ -110,8 +147,10 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
   // 切り離しウィンドウはこのレンダラーから window.open で開く
   registerChildWindowOpener('workspace', workspaceWindow.webContents);
 
+  // × は「閉じる」。メインウィンドウと一緒に出てこなくなる
   hideOnClose(workspaceWindow, () => {
     isWorkspaceWindowVisible = false;
+    setWorkspaceOpen(false);
   });
 
   workspaceWindow.on('closed', () => {
@@ -142,10 +181,34 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
 }
 
 /**
- * ワークスペースウィンドウを表示する（存在しない場合は新規作成）
+ * ワークスペースウィンドウを開く（存在しない場合は新規作成）。閉じるまで「開いている」として覚える
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
  */
 export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
+  setWorkspaceOpen(true);
+  await presentWorkspaceWindow(options);
+}
+
+/**
+ * 開いているワークスペースを、メインウィンドウと一緒に出す（隠れているときだけ。閉じているものは出さない）
+ */
+export async function showWorkspaceWithMain(): Promise<void> {
+  if (!isWorkspaceOpen || isWorkspaceWindowVisible) return;
+  await presentWorkspaceWindow({ skipFocus: true });
+}
+
+/**
+ * メインウィンドウと一緒に隠す（📌 なしのときだけ。開いている状態は変えない）
+ */
+export function hideWorkspaceWithMain(): void {
+  if (workspacePinLevel !== 0) return;
+  if (workspaceWindow && !workspaceWindow.isDestroyed() && workspaceWindow.isVisible()) {
+    workspaceWindow.hide();
+  }
+}
+
+/** 位置を決めて表示する（開いているかどうかは変えない） */
+async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   try {
     if (!workspaceWindow || workspaceWindow.isDestroyed()) {
       await createWorkspaceWindow();
@@ -176,8 +239,9 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
   }
 }
 
-/** ワークスペースウィンドウを非表示にする */
+/** ワークスペースウィンドウを閉じる（⭐・Ctrl+W・×）。メインウィンドウと一緒に出てこなくなる */
 export function hideWorkspaceWindow(): void {
+  setWorkspaceOpen(false);
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.hide();
     windowLogger.info('ワークスペースウィンドウを非表示にしました');
@@ -219,6 +283,7 @@ export async function toggleWorkspaceWindow(): Promise<void> {
 /** ワークスペースウィンドウのピン留めの段階を変える（2＝常に最前面のときだけ最前面にする） */
 export function setWorkspacePinLevel(level: PinLevel): PinLevel {
   workspacePinLevel = level;
+  persistWorkspaceWindowState();
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.setAlwaysOnTop(level === 2);
     // setAlwaysOnTop で仮想デスクトップへの固定が外れるので当て直す

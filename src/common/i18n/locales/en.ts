@@ -510,11 +510,11 @@ Keys you can change:
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
                windowPositionX windowPositionY windowSnapEnabled
   Manager      editModeWidth (800-2000) editModeHeight (600-1200)
-  Workspace    workspaceOpacity (0-100) workspaceBackgroundTransparent autoShowWorkspace
+  Workspace    workspaceOpacity (0-100) workspaceBackgroundTransparent
                workspacePositionMode (displayLeft / displayRight / fixed)
                workspaceTargetDisplayIndex (from 0; -1 is the display the launcher is on)
                workspacePositionX workspacePositionY
-               workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops hideDetachedWithMainWindow
+               workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops
                detachedPositionMode (mainDisplay / saved)
   Backup       backupEnabled backupRetention (3-50) backupIncludeClipboard
 
@@ -2018,17 +2018,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     workspace: {
       heading: 'Workspace window',
-      autoShow: 'Also show the workspace when the launcher opens',
-      autoShowDescription: "When on, opening the launcher also shows the workspace if it's hidden.",
-      hideDetached: 'Hide detached windows with the launcher',
-      hideDetachedDescription:
-        "When on, detached windows that aren't pinned are shown and hidden along with the launcher. They stay visible while focus moves between the launcher, the workspace, and detached windows, and hide when focus moves to another window.",
       detachedPosition: 'Detached window position:',
       detachedPositionSaved: 'Where you placed it',
       detachedPositionSavedDescription: 'Shows each detached window where you last placed it',
       detachedPositionMainDisplay: 'Same display as the launcher (default)',
       detachedPositionMainDisplayDescription:
-        'When shown with the launcher, moves each detached window to the same spot on the display the launcher is on. Windows touching an edge of the display stay at that edge; others keep their distance from the center of the display. Pinned windows stay where they are. Works while "Hide detached windows with the launcher" is on.',
+        'When shown with the launcher, moves each detached window to the same spot on the display the launcher is on. Windows touching an edge of the display stay at that edge; others keep their distance from the center of the display. Pinned windows stay where they are.',
       position: 'Position:',
       displayEdge: 'Edge of a display (default)',
       displayEdgeDescription:
