@@ -2,6 +2,7 @@ import { generateUniqueId } from '@common/utils/jsonParser';
 import { setTabManagerTranslator } from '@common/utils/tabManager';
 import type { TabManagerTranslate } from '@common/utils/tabManager';
 import { createChildLogger } from '@common/logger';
+import { screen } from 'electron';
 
 import PathManager from '../../config/pathManager.js';
 import { SettingsService } from '../settingsService.js';
@@ -9,7 +10,12 @@ import { loadEditableItems } from '../data/editableItemsStore.js';
 import { appendJsonItems, moveItemToFile, replaceItemById } from '../data/dataItemWriter.js';
 import { deleteItemsById } from '../../ipc/editHandlers.js';
 import { withFolderMarker } from '../../utils/folderPathProbe.js';
-import { reapplySettingsFromDisk, saveSettings } from '../../ipc/settingsHandlers.js';
+import {
+  notifySettingsChanged,
+  reapplySettingsFromDisk,
+  saveSettings,
+} from '../../ipc/settingsHandlers.js';
+import HotkeyService from '../hotkeyService.js';
 import { createDataFile, deleteDataFile } from '../data/dataFileOps.js';
 import { notifyDataChanged, notifyWorkspaceChanged } from '../../ipc/notifications.js';
 import { closeDetachedWindowsForGroup } from '../../ipc/workspaceHandlers.js';
@@ -22,6 +28,7 @@ import { mainI18n } from '../mainI18n.js';
 import { CliError } from './cliArgs.js';
 import type { LauncherStore } from './cliLauncherCommands.js';
 import type { TabStore } from './cliTabCommands.js';
+import type { SettingsStore } from './cliSettingsCommands.js';
 import type { CliContext } from './cliCommands.js';
 
 const cliLogger = createChildLogger('cli');
@@ -96,6 +103,30 @@ export function createTabStore(configFolder: string): TabStore {
 }
 
 /**
+ * 設定の読み書きを、設定画面と同じ処理につなぐ（保存と副作用の適用・通知、ホットキーの登録）
+ */
+export function createSettingsStore(): SettingsStore {
+  return {
+    load: async () => (await SettingsService.getInstance()).getAll(),
+    displayCount: () => screen.getAllDisplays().length,
+    validateHotkey: async (hotkey) => (await SettingsService.getInstance()).validateHotkey(hotkey),
+    isHotkeyAvailable: (hotkey, key) =>
+      HotkeyService.getInstance().isHotkeyAvailable(hotkey, key === 'itemSearchHotkey'),
+    async changeHotkey(key, hotkey) {
+      const service = HotkeyService.getInstance();
+      const success =
+        key === 'hotkey'
+          ? await service.changeHotkey(hotkey)
+          : await service.changeItemSearchHotkey(hotkey);
+      // changeHotkey は設定を書くだけなので、開いている設定画面に知らせる
+      notifySettingsChanged();
+      return success;
+    },
+    save: (settings) => saveSettings(settings),
+  };
+}
+
+/**
  * CLI のコマンドに渡す道具一式（本体の処理・通知・トースト）
  */
 export function createCliContext(
@@ -125,6 +156,7 @@ export function createCliContext(
     },
     launcher: createLauncherStore(configFolder),
     tabs: createTabStore(configFolder),
+    settings: createSettingsStore(),
     workspace: {
       loadWorkspaces: async () => (await WorkspaceService.getInstance()).loadWorkspaces(),
       createWorkspace: async (name) => (await WorkspaceService.getInstance()).createWorkspace(name),
@@ -160,8 +192,9 @@ export function createCliContext(
     },
     markFolder: withFolderMarker,
     changed: (target, message) => {
+      // 設定は保存の処理が各ウィンドウに知らせ済みなので、トーストだけ出す
       if (target === 'launcher') notifyDataChanged();
-      else notifyWorkspaceChanged();
+      else if (target === 'workspace') notifyWorkspaceChanged();
       showToastWindow({ message, type: 'success' }).catch((error) =>
         cliLogger.warn({ error }, 'CLI のトーストの表示に失敗')
       );

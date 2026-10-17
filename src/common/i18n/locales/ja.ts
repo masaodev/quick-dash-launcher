@@ -403,6 +403,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
   launcher set row list|add|remove       メインウィンドウのセットの行
   launcher tab list|add|update|remove    メインウィンドウのタブとデータファイルの構成
+  settings get|set                         本体の設定（ホットキー・ウィンドウなど。qdl settings --help）
   workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove|archive   ワークスペースのグループ
@@ -479,6 +480,32 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 --group・--parent・--workspace は id か表示名の完全一致です。--color は primary success danger warning
 info secondary purple teal pink indigo orange cyan か #rrggbb。グループは 2 段まで入れ子にできます。
 `,
+      settings: `使い方: qdl settings get [<キー>]
+        qdl settings set <キー> <値> [--dry-run]
+
+本体の設定（settings.json）を扱います。キーは settings.json と同じ名前です。
+
+  get                 すべての設定と、CLI から変えられるキーの一覧（writable）
+  get <キー>          1 つの設定の値
+  set <キー> <値>     変える（--dry-run で確かめるだけ）
+
+変えられるキー:
+  表示            language（auto / ja / en）showKeyboardHints showDataFileTabs
+                  defaultFileTab（起動したときに開くタブのデータファイル。例 data2.json）
+  ホットキー      hotkey itemSearchHotkey（登録できるか確かめてから変える。itemSearchHotkey は "" で無効）
+  メイン          windowWidth（400〜2000）windowHeight（300〜1200）
+                  windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
+                  windowPositionX windowPositionY windowSnapEnabled
+  管理            editModeWidth（800〜2000）editModeHeight（600〜1200）
+  ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent autoShowWorkspace
+                  workspacePositionMode（displayLeft / displayRight / fixed）
+                  workspaceTargetDisplayIndex（0 始まり）workspacePositionX workspacePositionY
+                  workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops hideDetachedWithMainWindow
+  バックアップ    backupEnabled backupRetention（3〜50）backupIncludeClipboard
+
+真偽値は true / false で渡します。自動起動（autoLaunch）・ブックマークの自動取込（bookmarkAutoImport）・
+CLI を使えるようにする（cliEnabled）は読むだけで、画面で変えます。タブ構成は qdl launcher tab で変えます。
+`,
       seeHelp: 'qdl help で使い方を確認できます',
     },
     args: {
@@ -496,6 +523,8 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       entryIndex: '<行番号>',
       tab: '<タブの番号か名前>',
       dataFile: '<データファイル>',
+      settingKey: '<キー>',
+      settingValue: '<値>',
     },
     errors: {
       relativePath: '相対パスを解決できません（実行したフォルダが分かりません）: {{value}}',
@@ -586,6 +615,14 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       saveTextFailed: 'クリップボードの本文を保存できませんでした',
       missingTabVerb: '操作を指定してください（list / add / update / remove / file）',
       missingTabFileVerb: '操作を指定してください（add / update / remove）',
+      missingSettingsVerb: '操作を指定してください（get / set）',
+      unknownSettingKey: '設定に「{{key}}」はありません。変えられるキー: {{keys}}',
+      settingReadOnly: '{{key}} は CLI からは変えられません（読むだけ。画面で変えてください）',
+      expectedInteger: '整数',
+      expectedRange: '{{min}}〜{{max}} の整数',
+      hotkeyInvalid: 'ホットキー「{{hotkey}}」は使えません: {{reason}}',
+      hotkeyInUse:
+        'ホットキー「{{hotkey}}」を登録できません（他のアプリかもう一方のホットキーで使用中）',
       dataFileNotEmpty:
         'アイテムが入ったデータファイルが消えるのでやめました: {{files}}。アイテムを別のタブへ移すか消してから実行してください',
       fileNotInTabs: 'データファイル {{file}} はどのタブにも入っていません',
@@ -625,6 +662,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
       tabFileAdded: 'CLI: タブ「{{tab}}」にデータファイル「{{label}}」を入れました',
       tabFileUpdated: 'CLI: データファイルの名前を「{{label}}」に変えました',
       tabFileRemoved: 'CLI: タブ「{{tab}}」からデータファイル「{{label}}」を外しました',
+      settingUpdated: 'CLI: 設定 {{key}} を {{value}} にしました',
       setEntryAdded: 'CLI: セット「{{set}}」に「{{name}}」の行を追加しました',
       setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },
