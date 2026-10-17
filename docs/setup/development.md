@@ -209,7 +209,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 **共通化した処理の置き場所（新しく書く前に確認する）:**
 
 - アイコン取得: `src/main/services/icon/iconFetcher.ts` の `getIconForItem()`（アイコン用 IPC が直接、ワークスペースの IPC は `services/iconService.ts` 経由で使う）
-- アイテムの起動: `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
+- アイテムの起動: 単一アイテムを開くのは `src/main/services/launch/itemOpener.ts` の `openSingleItem()`（ウィンドウ切り替えの有無で振り分け、失敗をトーストで知らせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）。開く処理そのものは `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI）
 - ウィンドウの検索・アクティブ化・位置とサイズの設定: `src/main/utils/windowActivator.ts`
 - セットの実行: `src/main/services/launch/setExecutor.ts`（行ごとに開くものを開き、ウィンドウを位置に合わせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
 - 登録・編集フォームの部品: `src/renderer/components/ItemEditFields.tsx`（アイテム 1 件分の編集欄。状態は持たず、読み込み・保存は呼び出し側）。メインの登録・編集（`RegisterModal`）とワークスペースのアイテム編集（`WorkspaceItemEditModal`）の両方が使う。ワークスペースは `placement` を渡さず（保存先の欄を出さない）、`typeLocked` で種別を固定する。中の部品に `ItemWindowSwitchEditor.tsx`（単一アイテムのウィンドウ切り替え）・`CustomIconEditor.tsx`（カスタムアイコン）など。ウィンドウ切り替えの 3 つの枠（対象ウィンドウ・ウィンドウ位置・開くときの動き）は `WindowSwitchFields.tsx` にあり、セットの行の詳細（`SetEntryDetailModal`）と共用する（ウィンドウ一覧・仮想デスクトップの読み込みは `hooks/useWindowEnvironment.ts`）

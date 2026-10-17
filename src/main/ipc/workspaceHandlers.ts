@@ -10,7 +10,7 @@ import type {
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
-import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { isClipboardItem } from '@common/types/guards';
 
 import { ClipboardService } from '../services/clipboardService.js';
@@ -30,16 +30,14 @@ import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { mainI18n } from '../services/mainI18n.js';
 import {
-  executeLauncherItem,
   executeSet,
   isSetRunning,
-  notifyLauncherItemFailure,
   notifySetFailures,
   resolveSetEntry,
 } from '../services/launch/setExecutor.js';
+import { notifyLaunchFailure, openSingleItem } from '../services/launch/itemOpener.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
-import { notifyLaunchFailure } from './itemHandlers.js';
 
 /**
  * クリップボードアイテムなら実データを複製した参照に差し替える
@@ -299,26 +297,8 @@ export function setupWorkspaceHandlers(): void {
         return { success: true, successCount: result.successCount, errorCount: result.errorCount };
       }
 
-      // ウィンドウ切り替えがあれば、セットの 1 行と同じ処理で開く（見つかれば前面に出す・位置を当てる）
-      if (hasItemWindowSwitch(item)) {
-        const launchable = { ...item, type: item.launcherType };
-        const result = await executeLauncherItem(launchable);
-        await notifyLauncherItemFailure(launchable, result);
-        return { success: true };
-      }
-
-      // 通常アイテムを起動：共通のlaunchItem関数を使用（起動種別は path から判定済み）
-      const launched = await launchItem(
-        {
-          type: item.launcherType,
-          path: item.path,
-          args: item.args,
-          displayName: item.displayName,
-        },
-        logger
-      );
-      if (!launched.success) {
-        await notifyLaunchFailure(item.displayName, launched);
+      // 単一アイテムはメイン画面と同じ処理で開く（起動種別は path から判定済み）
+      if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
         return { success: false };
       }
 
