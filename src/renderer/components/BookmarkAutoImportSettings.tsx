@@ -4,15 +4,22 @@
  * AdminSettingsTabの「ブックマーク自動取込」カテゴリで表示される
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { BrowserInfo } from '@common/types';
+import type { BrowserInfo, DataFileTab } from '@common/types';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
+import {
+  useAdminTabStructure,
+  type ConfirmOptions,
+  type TabStructureSettings,
+} from '../hooks/useAdminTabStructure';
+import type { ImportDestination } from '../hooks/useImportDestination';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
+import { bookmarkFolderLabel } from '../utils/bookmarkFolderLabel';
 
 import { Button } from './ui';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
@@ -23,10 +30,26 @@ import '../styles/components/BookmarkAutoImport.css';
 interface BookmarkAutoImportSettingsProps {
   /** 「一度だけ取り込む」→ アイテム管理の手動取込モーダルを開く */
   onOpenManualImport?: () => void;
+  /** タブ・データファイルの構成（ルールの取込先の帯に使う） */
+  dataFileTabs: DataFileTab[];
+  dataFileLabels: Record<string, string>;
+  showDataFileTabs: boolean;
+  /** ルールの取込先に新しいタブ・データファイルを作ったとき、管理画面全体の設定に反映する */
+  onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
+}
+
+/** 新しいタブを作るときの確認（タブを表示するか）。開いているあいだだけ resolve を持つ */
+interface PendingConfirm extends ConfirmOptions {
+  message: string;
+  resolve: (ok: boolean) => void;
 }
 
 const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   onOpenManualImport,
+  dataFileTabs,
+  dataFileLabels,
+  showDataFileTabs,
+  onTabStructureSaved,
 }) => {
   const { t, i18n } = useTranslation();
   const {
@@ -45,22 +68,39 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
   const { showSuccess, showError, showWarning } = useToast();
 
   const [editingRule, setEditingRule] = useState<BookmarkAutoImportRule | null | 'new'>(null);
-  const [dataFiles, setDataFiles] = useState<string[]>([]);
-  const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
   const [deleteConfirmRuleId, setDeleteConfirmRuleId] = useState<string | null>(null);
   const [deleteAlsoItems, setDeleteAlsoItems] = useState(false);
   const [browsers, setBrowsers] = useState<BrowserInfo[]>([]);
 
-  // データファイル一覧とラベルを取得
+  // 新しいタブを作るときの「タブを表示するか」の確認
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const pendingConfirmRef = useRef<PendingConfirm | null>(null);
+  pendingConfirmRef.current = pendingConfirm;
+  const confirmAsync = useCallback(
+    (message: string, options: ConfirmOptions = {}) =>
+      new Promise<boolean>((resolve) => setPendingConfirm({ ...options, message, resolve })),
+    []
+  );
+  const closeConfirm = (ok: boolean) => {
+    pendingConfirmRef.current?.resolve(ok);
+    setPendingConfirm(null);
+  };
+
+  // ルールの取込先に新しいタブ・データファイルを作る（アイテム管理の取込画面と同じ作り方）。
+  // ここではファイルを消さないので、アイテム数の数え方と削除時の後始末は使わない
+  const tabStructure = useAdminTabStructure({
+    dataFileTabs,
+    dataFileLabels,
+    showDataFileTabs,
+    onSaved: onTabStructureSaved,
+    confirm: confirmAsync,
+    showSuccess,
+    showWarning,
+    countItems: () => ({ total: 0, unsaved: 0 }),
+    dropFileItems: () => undefined,
+  });
+
   useEffect(() => {
-    window.electronAPI
-      .getDataFiles()
-      .then(setDataFiles)
-      .catch((error) => logError('データファイル一覧の取得に失敗:', error));
-    window.electronAPI
-      .getSettings()
-      .then((appSettings) => setDataFileLabels(appSettings.dataFileLabels || {}))
-      .catch((error) => logError('設定の取得に失敗:', error));
     // ルール一覧でプロファイルを表示名で出すため（見つからなければ ID のまま）
     window.electronAPI
       .detectInstalledBrowsers()
@@ -68,17 +108,38 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       .catch((error) => logError('ブラウザの検出に失敗:', error));
   }, []);
 
-  const handleSaveRule = useCallback(
-    async (rule: BookmarkAutoImportRule) => {
+  /** ルールを保存する。取込先が新しいタブ・ファイルなら先に作る（作れなかったら false で画面は開いたまま） */
+  const handleSaveRule = async (
+    rule: BookmarkAutoImportRule,
+    destination: ImportDestination
+  ): Promise<boolean> => {
+    let targetFile: string;
+    if (destination.kind === 'existing') {
+      targetFile = destination.fileName;
+    } else {
+      const created = await tabStructure.createImportFile(destination);
+      if (!created) return false;
+      targetFile = created.fileName;
+    }
+    const saved = { ...rule, targetFile };
+    try {
       if (editingRule === 'new') {
-        await addRule(rule);
+        await addRule(saved);
       } else {
-        await updateRule(rule);
+        await updateRule(saved);
       }
-      setEditingRule(null);
-    },
-    [editingRule, addRule, updateRule]
-  );
+    } catch (error) {
+      logError('ルールの保存に失敗しました:', error);
+      showError(
+        t('itemManager.ruleSaveFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
+      return false;
+    }
+    setEditingRule(null);
+    return true;
+  };
 
   const handleDeleteRule = useCallback((ruleId: string) => {
     setDeleteAlsoItems(false);
@@ -172,6 +233,22 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     return rule.profileIds
       .map((id) => profiles.find((p) => p.id === id)?.displayName ?? id)
       .join(', ');
+  };
+
+  /** ルール一覧のフォルダの表示（一番上のフォルダは画面の言葉にし、除くときはそう書く） */
+  const describeFolders = (rule: BookmarkAutoImportRule): string => {
+    if (rule.folderPaths.length === 0) return t('bookmarkAutoImport.allFolders');
+    const names = rule.folderPaths
+      .map((path) =>
+        path
+          .split('/')
+          .map((name) => bookmarkFolderLabel(name, t))
+          .join(' / ')
+      )
+      .join(t('common.listSeparator'));
+    return rule.folderFilterMode === 'exclude'
+      ? t('bookmarkRule.foldersExcluded', { folders: names })
+      : names;
   };
 
   if (isLoading) {
@@ -273,7 +350,11 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
                 <div className="rule-source">
                   {getBrowserDisplayName(rule.browserId)}
                   {` > ${rule.profileIds.length > 0 ? getProfileNames(rule) : t('bookmarkAutoImport.allProfiles')}`}
-                  {` > ${rule.folderPaths.length > 0 ? rule.folderPaths.join(', ') : t('bookmarkAutoImport.allFolders')}`}
+                  {` > ${describeFolders(rule)}`}
+                  {rule.namePattern &&
+                    t('bookmarkAutoImport.nameCondition', { word: rule.namePattern })}
+                  {rule.urlPattern &&
+                    t('bookmarkAutoImport.urlCondition', { word: rule.urlPattern })}
                 </div>
                 <div className="rule-target">
                   {dataFileLabels[rule.targetFile]
@@ -303,12 +384,23 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       {editingRule !== null && (
         <BookmarkAutoImportRuleModal
           rule={editingRule === 'new' ? null : editingRule}
-          dataFiles={dataFiles}
+          dataFileTabs={dataFileTabs}
           dataFileLabels={dataFileLabels}
           onSave={handleSaveRule}
           onCancel={() => setEditingRule(null)}
         />
       )}
+
+      {/* 新しいタブを作るときの確認 */}
+      <ConfirmDialog
+        isOpen={pendingConfirm !== null}
+        onClose={() => closeConfirm(false)}
+        onConfirm={() => closeConfirm(true)}
+        title={pendingConfirm?.title}
+        message={pendingConfirm?.message ?? ''}
+        confirmText={pendingConfirm?.confirmText}
+        cancelText={pendingConfirm?.cancelText}
+      />
 
       {/* ルール削除確認ダイアログ */}
       <ConfirmDialog

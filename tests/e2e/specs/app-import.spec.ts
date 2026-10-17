@@ -88,21 +88,21 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
     try {
       const modal = await openAppImport(electronApp, adminWindow);
       const fileSelect = modal.getByLabel('取込先のデータファイル');
-      const importButton = modal.locator('.app-import-footer button', { hasText: '取り込む' });
+      const importButton = modal.locator('.import-footer button', { hasText: '取り込む' });
 
       await test.step('開いた時点では何も選ばれておらず、除外分は一覧に出ない', async () => {
         // アンインストーラーとアプリ以外（PDF）は除外され、3 件が並ぶ
         await expect(modal.locator('.app-table tbody tr[data-index]')).toHaveCount(3);
         await expect(modal.locator('.app-table tbody input:checked')).toHaveCount(0);
-        await expect(modal.locator('.app-import-selection')).toContainText('0 件を選択中');
+        await expect(modal.locator('.import-selection')).toContainText('0 件を選択中');
         await expect(importButton).toBeDisabled();
       });
 
       await test.step('取込先の初期値は選択中のタブの新しいデータファイル', async () => {
         await expect(modal.getByLabel('取込先のタブ')).toHaveValue('0');
         await expect(fileSelect).toHaveValue('');
-        await expect(modal.locator('.app-import-dest input')).toHaveValue('アプリ');
-        await expect(modal.locator('.app-import-echo')).toHaveText(
+        await expect(modal.locator('.import-dest input')).toHaveValue('アプリ');
+        await expect(modal.locator('.import-echo')).toHaveText(
           'メイン › アプリ（新規） に取り込む'
         );
       });
@@ -140,7 +140,7 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
           .check();
         await search.fill('');
         await expect(modal.locator('.app-table tbody input:checked')).toHaveCount(2);
-        await expect(modal.locator('.app-import-selection')).toContainText('2 件を選択中');
+        await expect(modal.locator('.import-selection')).toContainText('2 件を選択中');
         await expect(importButton).toHaveText('2 件を取り込む');
       });
 
@@ -153,8 +153,8 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
 
       await test.step('既存のファイルを選ぶと、登録済みを選んだときに重複時の処理が出る', async () => {
         await fileSelect.selectOption('datafiles/data.json');
-        await expect(modal.locator('.app-import-dest input')).toHaveCount(0);
-        await expect(modal.locator('.app-import-echo')).toHaveText('メイン に取り込む');
+        await expect(modal.locator('.import-dest input')).toHaveCount(0);
+        await expect(modal.locator('.import-echo')).toHaveText('メイン に取り込む');
         const notepadRow = modal.locator('.app-table tbody tr', { hasText: 'メモ帳' });
         await notepadRow.click();
         await expect(modal.locator('.duplicate-warning-section')).toContainText(
@@ -201,22 +201,20 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
     try {
       const modal = await openAppImport(electronApp, adminWindow);
 
-      await test.step('タブに「＋ 新しいタブ」を選ぶと、タブ名とファイル名の欄が出る', async () => {
+      await test.step('タブに「＋ 新しいタブ」を選ぶと、タブ名の欄だけが出る（ファイル名はタブ名と同じ）', async () => {
         await modal.getByLabel('取込先のタブ').selectOption({ label: '＋ 新しいタブ' });
-        await expect(modal.getByLabel('取込先のデータファイル')).toBeDisabled();
-        await expect(modal.locator('.app-import-dest input')).toHaveCount(2);
+        await expect(modal.getByLabel('取込先のデータファイル')).toHaveCount(0);
+        await expect(modal.locator('.import-dest input')).toHaveCount(1);
         await modal
-          .locator('.app-import-dest-field', { hasText: 'タブ名' })
+          .locator('.import-dest-field', { hasText: 'タブ名' })
           .locator('input')
           .fill('ツール');
-        await expect(modal.locator('.app-import-echo')).toHaveText(
-          'ツール（新しいタブ） › アプリ（新規） に取り込む'
-        );
+        await expect(modal.locator('.import-echo')).toHaveText('ツール（新しいタブ） に取り込む');
       });
 
       await test.step('取り込むとタブとファイルができ、そのタブが開く', async () => {
         await modal.locator('.app-table tbody tr', { hasText: 'Alpha Editor' }).click();
-        await modal.locator('.app-import-footer button', { hasText: '取り込む' }).click();
+        await modal.locator('.import-footer button', { hasText: '取り込む' }).click();
         // タブ表示がオフなので、表示するかを聞かれる
         await adminWindow.getByTestId('confirm-dialog-confirm-button').click();
         await expect(modal).toHaveCount(0);
@@ -225,7 +223,7 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
           .toEqual(['メイン', 'ツール']);
         const settings = configHelper.readSettings();
         expect(settings.dataFileTabs?.[1]?.files).toEqual(['datafiles/data2.json']);
-        expect(settings.dataFileLabels?.['datafiles/data2.json']).toBe('アプリ');
+        expect(settings.dataFileLabels?.['datafiles/data2.json']).toBe('ツール');
         expect(settings.showDataFileTabs).toBe(true);
         await expect(adminWindow.getByTestId('admin-tab').nth(1)).toHaveClass(/active/);
         await expect(

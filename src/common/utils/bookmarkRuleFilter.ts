@@ -23,28 +23,9 @@ export type BookmarkRuleNaming = Pick<
   'prefix' | 'suffix' | 'folderNameMode'
 >;
 
-/** 正規表現として解釈できなければ null（無効なパターンは「絞り込まない」扱い） */
-function compilePattern(pattern: string): RegExp | null {
-  if (!pattern) return null;
-  try {
-    return new RegExp(pattern, 'i');
-  } catch {
-    return null;
-  }
-}
-
-/** ルールの URL・名前パターンが正規表現として妥当かを返す（画面での警告用） */
-export function validateBookmarkRulePatterns(
-  rule: Pick<BookmarkRuleFilter, 'urlPattern' | 'namePattern'>
-): {
-  urlPatternValid: boolean;
-  namePatternValid: boolean;
-} {
-  const isValid = (pattern: string) => !pattern || compilePattern(pattern) !== null;
-  return {
-    urlPatternValid: isValid(rule.urlPattern),
-    namePatternValid: isValid(rule.namePattern),
-  };
+/** text が word を含むか（大文字小文字を区別しない。word が空なら絞り込まない） */
+function containsWord(text: string, word: string): boolean {
+  return !word || text.toLowerCase().includes(word.toLowerCase());
 }
 
 /**
@@ -52,7 +33,7 @@ export function validateBookmarkRulePatterns(
  *
  * - フォルダ: 未選択なら全フォルダ。選択があれば「選択フォルダのみ」か「選択フォルダを除外」。
  *   includeSubfolders ならサブフォルダも同じ扱い
- * - URL・名前パターン: 正規表現（大文字小文字を区別しない）。無効な正規表現は無視する
+ * - URL・名前: その文字を含むものだけ（大文字小文字を区別しない。正規表現は使わない）
  */
 export function applyBookmarkRuleFilters(
   bookmarks: BookmarkWithFolder[],
@@ -75,14 +56,11 @@ export function applyBookmarkRuleFilters(
         : filtered.filter((b) => !inSelected(b));
   }
 
-  const urlRegex = compilePattern(rule.urlPattern);
-  if (urlRegex) {
-    filtered = filtered.filter((b) => urlRegex.test(b.url));
+  if (rule.urlPattern) {
+    filtered = filtered.filter((b) => containsWord(b.url, rule.urlPattern));
   }
-
-  const nameRegex = compilePattern(rule.namePattern);
-  if (nameRegex) {
-    filtered = filtered.filter((b) => nameRegex.test(b.displayName));
+  if (rule.namePattern) {
+    filtered = filtered.filter((b) => containsWord(b.displayName, rule.namePattern));
   }
 
   return filtered;

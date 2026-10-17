@@ -87,3 +87,499 @@
 .duplicate-option:hover {
   color: var(--color-info);
 }
+
+/* ブックマーク取込画面（アイテム管理から）。枠は ImportModal.css の import-*。
+ * アプリ取込と同じく一覧が長いので、一覧だけをスクロールさせる */
+.bookmark-import-modal {
+  max-width: 960px;
+  height: var(--modal-max-height);
+  padding: var(--spacing-xl);
+}
+
+.bookmark-import-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* 取込元（ブラウザ・プロファイル）と検索を 1 行に */
+.bookmark-import-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.bookmark-import-toolbar select {
+  width: auto;
+  max-width: 220px;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+}
+
+.bookmark-import-toolbar .search-input-container {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.bookmark-import-file {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.bookmark-import-file-name,
+.bookmark-import-status {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.bookmark-import-status {
+  margin-left: auto;
+}
+
+/* フォルダの木（検索中は見つかったものの一覧） */
+.bookmark-import-list {
+  flex: 1;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  border: var(--border-light);
+  background-color: var(--color-white);
+}
+
+.bookmark-import-list-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-gray-200);
+  border-bottom: 2px solid var(--color-gray-400);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.bookmark-import-list-head label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.bookmark-import-list-note {
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+.bookmark-import-list-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.bookmark-import-row {
+  display: grid;
+  grid-template-columns: 18px 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+  padding-right: var(--spacing-md);
+  border-bottom: var(--border-light);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.bookmark-import-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.bookmark-import-row.selected {
+  background-color: var(--bg-selected);
+}
+
+.bookmark-import-twisty {
+  width: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.bookmark-import-name {
+  min-width: 0;
+}
+
+.bookmark-import-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bookmark-import-row.folder .bookmark-import-title > span:first-child {
+  font-weight: 600;
+}
+
+.bookmark-import-title .app-registered-badge {
+  margin-left: 0;
+}
+
+.bookmark-import-url {
+  margin-top: var(--spacing-xxs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.bookmark-import-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.bookmark-import-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* 重複警告は区画の幅に合わせて 1 行に詰める（アプリ取込と同じ） */
+.bookmark-import-modal .duplicate-warning-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-lg);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+}
+
+.bookmark-import-modal .duplicate-warning-message {
+  margin-bottom: 0;
+}
+
+/* 自動取込の帯（フッターの上。重複時の処理と同じく区画の幅いっぱい） */
+.bookmark-import-sync {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+}
+
+.bookmark-import-sync.on {
+  background-color: var(--bg-section);
+}
+
+.bookmark-import-sync-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-lg);
+}
+
+/* 右端の「ブックマーク自動取込（ルール N 件）」 */
+.bookmark-import-sync-link {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.bookmark-import-sync-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.bookmark-import-rule-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-left: var(--spacing-xl);
+  color: var(--text-muted);
+}
+
+.bookmark-import-rule-name input {
+  flex: 1;
+  min-width: 0;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: var(--font-family);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+}
+
+.bookmark-import-sync-note {
+  padding-left: var(--spacing-xl);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ブックマークの取込ルールの追加・編集（設定から）。枠は ImportModal.css の import-*。
+ * 入力欄は登録画面と同じ「左にラベル、右に欄」。中身が長いときは本文だけをスクロールさせる */
+.bookmark-rule-modal {
+  max-width: 960px;
+  max-height: var(--modal-max-height);
+  padding: var(--spacing-xl);
+}
+
+.bookmark-rule-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.bookmark-rule-form {
+  display: grid;
+  grid-template-columns: 7em minmax(0, 1fr);
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.bookmark-rule-label {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.bookmark-rule-wide {
+  grid-column: 2;
+}
+
+.bookmark-rule-divider {
+  border-top: 1px dashed var(--color-gray-400);
+}
+
+.bookmark-rule-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+  min-width: 0;
+}
+
+.bookmark-rule-form input[type='text'],
+.bookmark-rule-form select,
+.bookmark-rule-options-body input[type='text'],
+.bookmark-rule-options-body select {
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+}
+
+.bookmark-rule-form > input[type='text'] {
+  width: 100%;
+}
+
+.bookmark-rule-line input[type='text'] {
+  width: 240px;
+  max-width: 100%;
+}
+
+.bookmark-rule-line .field-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.bookmark-rule-status {
+  margin-left: auto;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* フォルダのプルダウン風のボタン（押すと木が開く） */
+.bookmark-rule-dropdown-button {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--spacing-sm);
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* 長いときは 1 行で省略する */
+.bookmark-rule-dropdown-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bookmark-rule-dropdown-button.open {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.bookmark-rule-caret {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* フォルダの木（フォルダだけ。中身は下の結果の一覧で見る） */
+.bookmark-rule-folders {
+  border: var(--border-light);
+  background-color: var(--color-white);
+}
+
+.bookmark-rule-folders-head {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-gray-200);
+  border-bottom: 2px solid var(--color-gray-400);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.bookmark-rule-folders-body {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.bookmark-rule-folder {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: var(--border-light);
+  cursor: pointer;
+}
+
+.bookmark-rule-folder.selected {
+  background-color: var(--bg-selected);
+}
+
+.bookmark-rule-folder-name {
+  font-weight: 600;
+}
+
+.bookmark-rule-folders-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-section);
+  font-size: var(--font-size-sm);
+}
+
+.bookmark-rule-folders-foot label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+/* このルールで取り込まれるもの */
+.bookmark-rule-result {
+  flex: none;
+  min-height: 0;
+}
+
+.bookmark-rule-result .bookmark-import-list-body {
+  max-height: 240px;
+}
+
+.bookmark-rule-item {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-bottom: var(--border-light);
+  line-height: 1.4;
+}
+
+/* オプション設定（表示名）。登録画面のオプション設定と同じ畳み方 */
+.bookmark-rule-options {
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-section);
+}
+
+.bookmark-rule-options-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: none;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bookmark-rule-options-summary {
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+.bookmark-rule-options-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-lg);
+  padding: 0 var(--spacing-md) var(--spacing-md);
+}
+
+.bookmark-rule-options-body label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.bookmark-rule-options-body input[type='text'] {
+  width: 140px;
+}
+
+.bookmark-rule-error {
+  color: var(--color-danger);
+}
+
+.bookmark-rule-line select {
+  width: auto;
+  max-width: 220px;
+}

@@ -84,7 +84,9 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 | --- | --- | --- |
 | `BookmarkAutoImportSettings` | `AdminSettingsTab` | `Admin*` |
 | `BackupSnapshotModal` | `AdminSettingsBackupSection` | `Admin*` |
-| `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings`、`AdminItemManagerView`（取込モード） | `Admin*` |
+| `BookmarkAutoImportRuleModal` | `BookmarkAutoImportSettings` | `Admin*` |
+| `BookmarkImportModal` | `AdminItemManagerView` | `Admin*` |
+| `ImportDestinationBand` | `AppImportModal`、`BookmarkImportModal`、`BookmarkAutoImportRuleModal` | `Admin*` |
 | `AppImportModal` | `AdminItemManagerView` | `Admin*` |
 | `MissingIconNotice` | `App`（メインウィンドウ） | `Launcher*` |
 

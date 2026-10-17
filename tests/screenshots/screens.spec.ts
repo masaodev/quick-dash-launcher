@@ -4,6 +4,7 @@ import type { ElectronApplication, Locator, Page } from '@playwright/test';
 
 import { test } from '../e2e/fixtures/electron-app';
 import { test as firstLaunchTest } from '../e2e/fixtures/first-launch-app';
+import { stubBrowsers } from '../e2e/helpers/fake-browsers';
 import { TestUtils } from '../e2e/helpers/test-utils';
 
 /**
@@ -109,25 +110,38 @@ test.describe('画面仕様書の画面イメージ', () => {
     await utils.waitForPageLoad();
     const admin = await utils.openAdminWindow(electronApp, 'edit');
     await admin.waitForLoadState('domcontentloaded');
-
-    // ネイティブのファイル選択ダイアログの代わりに、サンプルの HTML を返す
-    const sample = path.join(process.cwd(), 'tests', 'e2e', 'fixtures', 'bookmarks-sample.html');
-    await electronApp.evaluate(({ dialog }, p) => {
-      dialog.showOpenDialog = (async () => ({
-        canceled: false,
-        filePaths: [p],
-      })) as typeof dialog.showOpenDialog;
-    }, sample);
+    // 本人のブラウザのブックマークが写らないよう、固定のブラウザとブックマークに差し替える
+    await stubBrowsers(electronApp);
 
     await admin.locator('.toolbar-split .toolbar-split-toggle').click();
-    await admin.locator('.dropdown-item', { hasText: 'ブラウザのブックマークを追加' }).click();
-    const modal = admin.locator('.auto-import-rule-modal.import-mode');
+    await admin.locator('.dropdown-item', { hasText: 'ブラウザのブックマークを取り込む' }).click();
+    const modal = admin.locator('.bookmark-import-modal');
     await modal.waitFor({ state: 'visible' });
-    // 本人のブラウザのブックマークが写らないよう、HTML ファイルに切り替えてから撮る
-    await modal.locator('.browser-radio-group label', { hasText: 'HTML ファイル' }).click();
-    await modal.locator('button', { hasText: 'ファイルを選択' }).click();
-    await modal.locator('.folder-tree-item', { hasText: '開発' }).waitFor({ state: 'visible' });
+    // 「開発」フォルダをまとめて選び、開いて中身も見せる
+    const devFolder = modal.locator('.bookmark-import-row.folder', { hasText: '開発' }).first();
+    await devFolder.locator('input[type="checkbox"]').check();
+    await devFolder.locator('.bookmark-import-twisty').click();
     await shot(admin, 'bookmark-import-modal');
+  });
+
+  test('ブックマークの取込ルールの追加画面', async ({ electronApp, mainWindow }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const admin = await utils.openAdminWindow(electronApp, 'edit');
+    await admin.waitForLoadState('domcontentloaded');
+    await stubBrowsers(electronApp);
+
+    await admin.locator('.toolbar-split .toolbar-split-toggle').click();
+    await admin.locator('.dropdown-item', { hasText: 'ブックマーク自動取込の設定' }).click();
+    await admin.locator('.auto-import-add-rule button').click();
+    const modal = admin.locator('.bookmark-rule-modal');
+    await modal.waitFor({ state: 'visible' });
+    // 名前に ☆ を含むものに、頭に [bkm] を付けて取り込むルール
+    await modal.locator('#bookmark-rule-name-word').fill('☆');
+    await modal.locator('.bookmark-rule-options-body input').first().fill('[bkm]');
+    // 入力で下へ動いた本文を先頭に戻してから撮る（取込先・ルール名・条件が見えるように）
+    await modal.locator('.bookmark-rule-body').evaluate((el) => el.scrollTo(0, 0));
+    await shot(admin, 'bookmark-rule-modal');
   });
 
   test('アプリ取込画面', async ({ electronApp, mainWindow }) => {

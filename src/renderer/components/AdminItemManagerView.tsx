@@ -16,6 +16,7 @@ import type {
   BookmarkAutoImportRule,
 } from '@common/types/bookmarkAutoImport';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
+import { checkDuplicates } from '@common/utils/duplicateDetector';
 
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
@@ -39,7 +40,7 @@ import {
 import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerTabBar from './AdminItemManagerTabBar';
 import AdminItemManagerToolbar from './AdminItemManagerToolbar';
-import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';
+import BookmarkImportModal from './BookmarkImportModal';
 import AppImportModal, { type AppImportDestination } from './AppImportModal';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -188,16 +189,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     addRule: addAutoImportRule,
     executeRule: executeAutoImportRule,
   } = useBookmarkAutoImport();
-
-  // 取込画面のインポート先の選択肢（設定のルール編集と同じく物理ファイル一覧）
-  const [importDataFiles, setImportDataFiles] = useState<string[]>([]);
-  useEffect(() => {
-    if (!isBookmarkModalOpen) return;
-    window.electronAPI
-      .getDataFiles()
-      .then(setImportDataFiles)
-      .catch((error) => logError('データファイル一覧の取得に失敗しました:', error));
-  }, [isBookmarkModalOpen]);
 
   const autoImportRuleMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -419,23 +410,73 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     );
   };
 
-  /** 取込画面「今回だけ取り込む」: 未保存の変更として追加（印は付かない） */
-  const handleBookmarkImportOnce = (
-    bookmarks: SimpleBookmarkItem[],
-    duplicateHandling: DuplicateHandlingOption,
-    targetFile: string
-  ) => {
-    editing.importBookmarks(bookmarks, duplicateHandling, targetFile);
-    setIsBookmarkModalOpen(false);
-    showInfo(
-      t('itemManager.imported', { count: bookmarks.length, file: getFileLabel(targetFile) })
-    );
+  /**
+   * 取込画面の取込先を、実在のデータファイルにする。新しいタブ・ファイルならここで作る。
+   * 作れなかったら null（理由は警告のトーストで出す。取込画面は開いたまま）
+   */
+  const resolveImportTarget = async (
+    destination: AppImportDestination
+  ): Promise<{ tabIndex: number; fileName: string; fileLabel: string } | null> => {
+    if (destination.kind === 'existing') {
+      return {
+        tabIndex: dataFileTabs.findIndex((tab) => tab.files.includes(destination.fileName)),
+        fileName: destination.fileName,
+        fileLabel: getFileLabel(destination.fileName),
+      };
+    }
+    return tabStructure.createImportFile(destination);
   };
 
-  /** 取込画面「ルールとして保存」: 設定にルールを足してすぐ実行する（自動取込と同じ置き換え方式） */
-  const handleBookmarkSaveAsRule = async (rule: BookmarkAutoImportRule) => {
-    await addAutoImportRule(rule);
-    setIsBookmarkModalOpen(false);
+  /** 取り込んだ先のタブ・ファイルを開く */
+  const showImportTarget = (target: { tabIndex: number; fileName: string }) => {
+    if (target.tabIndex >= 0) setSelectedTabIndex(target.tabIndex);
+    setSelectedDataFile(target.fileName);
+  };
+
+  /** ブックマーク取込画面「N 件を取り込む」: 未保存の変更として追加（印は付かない） */
+  const handleBookmarkImport = async (
+    bookmarks: SimpleBookmarkItem[],
+    duplicateHandling: DuplicateHandlingOption,
+    destination: AppImportDestination
+  ): Promise<boolean> => {
+    const target = await resolveImportTarget(destination);
+    if (!target) return false;
+    // スキップのときは取込先に登録済みの分は入らない
+    const fileItems = workingItems.filter((item) => item.meta.sourceFile === target.fileName);
+    const addedCount =
+      duplicateHandling === 'skip'
+        ? checkDuplicates(bookmarks, fileItems).newCount
+        : bookmarks.length;
+    editing.importBookmarks(bookmarks, duplicateHandling, target.fileName);
+    showImportTarget(target);
+    showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
+    return true;
+  };
+
+  /**
+   * ブックマーク取込画面「同期を始めて取り込む」: 設定にルールを足してすぐ実行する（自動取込と同じ置き換え方式）。
+   * 取込先が新しいタブ・ファイルなら先に作り、そのファイルをルールの取込先にする
+   */
+  const handleBookmarkSaveAsRule = async (
+    draft: BookmarkAutoImportRule,
+    destination: AppImportDestination
+  ): Promise<boolean> => {
+    const target = await resolveImportTarget(destination);
+    if (!target) return false;
+    const rule = { ...draft, targetFile: target.fileName };
+    try {
+      await addAutoImportRule(rule);
+    } catch (error) {
+      // 取込先は作ったので、そのタブ・ファイルを開いてから知らせる（画面は開いたまま）
+      showImportTarget(target);
+      showWarning(
+        t('itemManager.ruleSaveFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
+      return false;
+    }
+    showImportTarget(target);
     let result: BookmarkAutoImportResult;
     try {
       result = await executeAutoImportRule(rule);
@@ -466,6 +507,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         t('itemManager.ruleRunFailed', { name: rule.name, error: result.errorMessage ?? '' })
       );
     }
+    return true;
   };
 
   /**
@@ -477,25 +519,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     duplicateHandling: DuplicateHandlingOption,
     destination: AppImportDestination
   ): Promise<boolean> => {
-    let target: { tabIndex: number; fileName: string; fileLabel: string };
-    if (destination.kind === 'existing') {
-      target = {
-        tabIndex: dataFileTabs.findIndex((tab) => tab.files.includes(destination.fileName)),
-        fileName: destination.fileName,
-        fileLabel: getFileLabel(destination.fileName),
-      };
-    } else {
-      const created = await tabStructure.createImportFile(destination);
-      if (!created) return false;
-      target = created;
-    }
+    const target = await resolveImportTarget(destination);
+    if (!target) return false;
     // スキップのときは取込先に登録済みの分は入らない
     const fileItems = workingItems.filter((item) => item.meta.sourceFile === target.fileName);
     const addedCount =
       duplicateHandling === 'skip' ? checkAppDuplicates(apps, fileItems).newCount : apps.length;
     editing.importApps(apps, duplicateHandling, target.fileName);
-    if (target.tabIndex >= 0) setSelectedTabIndex(target.tabIndex);
-    setSelectedDataFile(target.fileName);
+    showImportTarget(target);
     showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
     return true;
   };
@@ -738,17 +769,16 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       </div>
 
       {isBookmarkModalOpen && (
-        <BookmarkAutoImportRuleModal
-          mode="import"
-          rule={null}
-          dataFiles={importDataFiles.length > 0 ? importDataFiles : [selectedDataFile]}
-          dataFileLabels={dataFileLabels}
-          defaultTargetFile={selectedDataFile}
+        <BookmarkImportModal
           existingItems={workingItems}
-          onSave={handleBookmarkSaveAsRule}
+          dataFileTabs={dataFileTabs}
+          dataFileLabels={dataFileLabels}
+          initialTabIndex={selectedTabIndex}
+          onImport={handleBookmarkImport}
+          onSaveAsRule={handleBookmarkSaveAsRule}
           onCancel={() => setIsBookmarkModalOpen(false)}
-          onImportOnce={handleBookmarkImportOnce}
           onOpenAutoImportSettings={onOpenAutoImportSettings}
+          autoImportRuleCount={autoImportSettings.rules.length}
         />
       )}
 

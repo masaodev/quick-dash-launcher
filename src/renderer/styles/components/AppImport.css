@@ -1,45 +1,11 @@
 /* アプリ取込画面のスタイル
- * 案内はブックマーク取込画面（BookmarkAutoImport.css の auto-import-*）、取込先の帯は登録画面の保存先の帯
- * （RegisterModal.css の register-dest）、見出しの右の件数はセットのアイテム選択画面に合わせる。
+ * 見出し・案内・取込先の帯・フッターは取込画面の共通の枠（ImportModal.css の import-*）。
  * 一覧が長いので、画面全体ではなく一覧だけをスクロールさせる。
  * 検索欄・重複警告・状態表示は BookmarkImport.css の共通スタイルを使う。 */
 .app-import-modal {
   max-width: 960px;
   height: var(--modal-max-height);
   padding: var(--spacing-xl);
-}
-
-.app-import-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--spacing-xs) var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-}
-
-.app-import-modal h3 {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  color: var(--text-primary);
-}
-
-/* 見出しの右の「N 件を選択中」 */
-.app-import-selection {
-  display: flex;
-  align-items: baseline;
-  gap: var(--spacing-sm);
-  margin-left: auto;
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
-
-.app-import-hint {
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--bg-section);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
 }
 
 /* 窓が低いときは一覧の最低の高さを保ち、中身全体をスクロールさせる */
@@ -50,68 +16,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-}
-
-/* 取込先の帯（登録画面の保存先の帯と同じ形） */
-.app-import-dest {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--bg-header);
-  border: var(--border-light);
-  border-radius: var(--border-radius);
-}
-
-.app-import-dest-label,
-.app-import-dest-field > span {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-}
-
-.app-import-dest-sep {
-  color: var(--text-disabled);
-}
-
-.app-import-dest-field {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  margin-left: var(--spacing-md);
-}
-
-.app-import-dest select,
-.app-import-dest input {
-  height: var(--input-height-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-base);
-  font-family: var(--font-family);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  background-color: var(--color-white);
-  color: var(--text-primary);
-  outline: none;
-}
-
-.app-import-dest select {
-  width: 200px;
-}
-
-.app-import-dest input {
-  width: 160px;
-}
-
-.app-import-dest select:disabled {
-  background-color: var(--bg-input-disabled);
-  color: var(--text-muted);
-}
-
-.app-import-dest select:focus,
-.app-import-dest input:focus {
-  border-color: var(--color-primary);
-  box-shadow: var(--focus-ring);
 }
 
 /* 検索欄と取込元（スキャンの件数・再スキャン）を 1 行に */
@@ -265,8 +169,10 @@
   border-radius: var(--border-radius);
   font-size: var(--font-size-xs);
   white-space: nowrap;
-  background-color: var(--color-info-light);
-  color: var(--color-info);
+  /* 選んだ行（薄い青）の上でも読めるよう、緑系の淡い地に濃い文字 */
+  background-color: var(--bg-success-light);
+  color: var(--text-success);
+  border: 1px solid var(--text-success);
 }
 
 /* タイプ列 */
@@ -301,37 +207,4 @@
 
 .app-import-modal .duplicate-warning-message {
   margin-bottom: 0;
-}
-
-/* フッターはボタンの左に「〜 に取り込む」（登録画面の「〜 に登録」と同じ） */
-.app-import-footer {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
-  border-top: var(--border-light);
-}
-
-.app-import-echo {
-  min-width: 0;
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-}
-
-.app-clear-selection {
-  padding: 0;
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.app-import-modal .app-modal-actions {
-  display: flex;
-  gap: var(--spacing-sm);
 }
