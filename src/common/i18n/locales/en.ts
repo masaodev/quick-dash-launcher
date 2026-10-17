@@ -401,6 +401,7 @@ Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
   launcher set row list|add|remove       Rows of a set in the launcher
   launcher tab list|add|update|remove    Tabs and data files in the launcher
+  settings get|set                         App settings (hotkeys, windows, and more; qdl settings --help)
   workspace list|add|update|remove         Workspaces themselves
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove|archive   Groups in workspaces
@@ -478,6 +479,32 @@ Works with workspaces (workspace.json).
 --group, --parent, and --workspace take an id or an exact display name. --color is primary, success, danger,
 warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. Groups can be nested two levels deep.
 `,
+      settings: `Usage: qdl settings get [<key>]
+       qdl settings set <key> <value> [--dry-run]
+
+Works with the app settings (settings.json). Keys are the same names as in settings.json.
+
+  get                 All settings, plus the keys the CLI can change (writable)
+  get <key>           The value of one setting
+  set <key> <value>   Change a setting (--dry-run only checks it)
+
+Keys you can change:
+  Display      language (auto / ja / en) showKeyboardHints showDataFileTabs
+               defaultFileTab (the data file of the tab to open at startup, e.g. data2.json)
+  Hotkeys      hotkey itemSearchHotkey (checked before changing; "" turns off itemSearchHotkey)
+  Launcher     windowWidth (400-2000) windowHeight (300-1200)
+               windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
+               windowPositionX windowPositionY windowSnapEnabled
+  Manager      editModeWidth (800-2000) editModeHeight (600-1200)
+  Workspace    workspaceOpacity (0-100) workspaceBackgroundTransparent autoShowWorkspace
+               workspacePositionMode (displayLeft / displayRight / fixed)
+               workspaceTargetDisplayIndex (from 0) workspacePositionX workspacePositionY
+               workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops hideDetachedWithMainWindow
+  Backup       backupEnabled backupRetention (3-50) backupIncludeClipboard
+
+Pass true or false for on/off settings. Auto start (autoLaunch), bookmark auto import (bookmarkAutoImport),
+and the CLI itself (cliEnabled) are read-only here; change them in the app. Change tabs with qdl launcher tab.
+`,
       seeHelp: 'Run qdl help to see how to use it',
     },
     args: {
@@ -495,6 +522,8 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       entryIndex: '<row number>',
       tab: '<tab number or name>',
       dataFile: '<data file>',
+      settingKey: '<key>',
+      settingValue: '<value>',
     },
     errors: {
       relativePath: "Can't resolve the relative path (the current folder is unknown): {{value}}",
@@ -582,6 +611,14 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       saveTextFailed: "Couldn't save the clipboard text",
       missingTabVerb: 'Specify an action (list / add / update / remove / file)',
       missingTabFileVerb: 'Specify an action (add / update / remove)',
+      missingSettingsVerb: 'Specify an action (get / set)',
+      unknownSettingKey: 'There is no setting "{{key}}". Keys you can change: {{keys}}',
+      settingReadOnly: '{{key}} cannot be changed from the CLI (read-only; change it in the app)',
+      expectedInteger: 'an integer',
+      expectedRange: 'an integer from {{min}} to {{max}}',
+      hotkeyInvalid: 'The hotkey "{{hotkey}}" cannot be used: {{reason}}',
+      hotkeyInUse:
+        'Could not register the hotkey "{{hotkey}}" (another app or the other hotkey is using it)',
       dataFileNotEmpty:
         'Stopped because data files with items would be deleted: {{files}}. Move the items to another tab or delete them first',
       fileNotInTabs: "The data file {{file}} isn't in any tab",
@@ -621,6 +658,7 @@ warning, info, secondary, purple, teal, pink, indigo, orange, cyan, or #rrggbb. 
       tabFileAdded: 'CLI: Added the data file "{{label}}" to the tab "{{tab}}"',
       tabFileUpdated: 'CLI: Renamed the data file to "{{label}}"',
       tabFileRemoved: 'CLI: Took the data file "{{label}}" out of the tab "{{tab}}"',
+      settingUpdated: 'CLI: Set {{key}} to {{value}}',
       setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
       setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },

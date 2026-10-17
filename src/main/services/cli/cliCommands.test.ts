@@ -75,6 +75,7 @@ function context(overrides: Partial<CliContext> = {}): CliContext {
       newId: () => 'NewId001',
     },
     workspace: {} as CliContext['workspace'],
+    settings: {} as CliContext['settings'],
     markFolder: async (p) => p,
     changed: vi.fn(),
     beforeGroupRemoved: vi.fn(),

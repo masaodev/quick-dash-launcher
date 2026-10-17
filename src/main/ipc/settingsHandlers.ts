@@ -23,7 +23,7 @@ import { EnvConfig } from '../config/envConfig.js';
 import { LONG_TOAST_DURATION_MS, showToastWindow } from '../services/overlayWindowService.js';
 import { applyLanguageSetting, mainI18n } from '../services/i18nService.js';
 
-function notifySettingsChanged(): void {
+export function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(IPC_CHANNELS.EVENT_SETTINGS_CHANGED);
   }

@@ -10,6 +10,8 @@ import type { LauncherStore } from './cliLauncherCommands.js';
 import { runLauncherSetCommand } from './cliSetCommands.js';
 import { runLauncherTabCommand } from './cliTabCommands.js';
 import type { TabStore } from './cliTabCommands.js';
+import { runSettingsCommand } from './cliSettingsCommands.js';
+import type { SettingsStore } from './cliSettingsCommands.js';
 import { runWorkspaceCommand } from './cliWorkspaceCommands.js';
 import type { WorkspaceStore } from './cliWorkspaceCommands.js';
 import type { ClipboardTextStore } from './cliShared.js';
@@ -37,9 +39,11 @@ export interface CliContext {
   /** メイン画面のタブとデータファイルの構成 */
   tabs: TabStore;
   workspace: WorkspaceStore;
+  /** settings.json の設定 */
+  settings: SettingsStore;
   markFolder: (path: string) => Promise<string>;
   /** 書き込んだ後: 画面に知らせ、トーストを出す */
-  changed: (target: 'launcher' | 'workspace', message: string) => void;
+  changed: (target: 'launcher' | 'workspace' | 'settings', message: string) => void;
   beforeGroupRemoved: (groupId: string) => Promise<void>;
   /** クリップボードアイテムの実データ（テキストだけ）の読み書き */
   clipboard: ClipboardTextStore;
@@ -174,6 +178,15 @@ async function dispatch(
         changed: (message) => ctx.changed('workspace', message),
         beforeGroupRemoved: ctx.beforeGroupRemoved,
         clipboard: ctx.clipboard,
+      });
+    }
+
+    case 'settings': {
+      const [verb, ...args] = rest;
+      if (wantsHelp || verb === undefined) throw helpAsResult(mainI18n.t('cli.help.settings'));
+      return runSettingsCommand(verb, args, {
+        store: ctx.settings,
+        changed: (message) => ctx.changed('settings', message),
       });
     }
 

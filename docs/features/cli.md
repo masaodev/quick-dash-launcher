@@ -1,6 +1,6 @@
 # QuickDashLauncher CLI（qdl）
 
-QuickDashLauncher CLI は、コマンドライン（`qdl` コマンド）から、起動中の QuickDashLauncher（本体）に依頼する仕組みです。人やスクリプト、AI が、画面を操作せずにアイテム・セットの行・ワークスペースのグループを足したり変えたり、設定ファイルを読み直させたりするのに使います。
+QuickDashLauncher CLI は、コマンドライン（`qdl` コマンド）から、起動中の QuickDashLauncher（本体）に依頼する仕組みです。人やスクリプト、AI が、画面を操作せずにアイテム・セットの行・ワークスペースのグループを足したり変えたり、ホットキーなどの設定を変えたり、設定ファイルを読み直させたりするのに使います。
 
 ## 概要
 
@@ -59,6 +59,8 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `launcher tab file add <タブ>` | 新しいデータファイルを作ってタブに入れる。`--existing` で既存のファイルを入れる |
 | `launcher tab file update <データファイル>` | データファイルの名前（ラベル）を変える |
 | `launcher tab file remove <タブ> <データファイル>` | データファイルをタブから外す。ほかのタブで使っていなければディスクからも消すので、空のときだけ |
+| `settings get [<キー>]` | 本体の設定（`settings.json`）。キーを省くと全項目と、CLI から変えられるキーの一覧（`writable`）を返す |
+| `settings set <キー> <値>` | 設定を 1 項目変える。変えられるキーと値の範囲は[設定の変更](#設定の変更) |
 | `workspace list` | ワークスペースの一覧（グループ数・アイテム数つき） |
 | `workspace add` | ワークスペースを足す |
 | `workspace update <id か名前>` | ワークスペースの名前・並び順を変える |
@@ -97,7 +99,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--parent` | workspace group add／update | 親グループ（2 段まで）。update で `""` を渡すと最上位へ移す |
 | `--set key=value` | item add／update | 専用のオプションが無い項目（例 `--set options='{"depth":1}'`、`--set entries='[{"itemId":"…"}]'`）。値が JSON の配列・オブジェクト・数値・`true`／`false`ならその型になる |
 | `--unset key` | item update | 項目を外す |
-| `--dry-run` | 書き込む各コマンド | 書き込まずに、結果だけを返す |
+| `--dry-run` | 書き込む各コマンド（`settings set` を含む） | 書き込まずに、結果だけを返す |
 
 ### 決まりごと
 
@@ -114,7 +116,35 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **アーカイブ**: `workspace group archive` は、画面と同じく先に切り離しウィンドウを閉じてから、子孫のサブグループとアイテムごとしまう。`archive list`・`archive restore` で扱うのは、しまった単位（最上位のグループ）だけ。一緒にしまったサブグループは一覧の `subgroups` に名前が出て、親と一緒に戻る。`archive restore` は `--workspace` を省くと元のワークスペースへ戻し、元のワークスペースが無くなっていれば既定（先頭）のワークスペースへ戻す。どちらも画面の「移動先を選んで復元」と同じ処理で、最上位のグループとして戻る
 - **クリップボードアイテム**: CLI で足せるのは、中身がテキストだけのもの（画面の「テキストを書く」と同じ）。本文を `--text` か `--text-file` で渡すと、実データを新しいファイルに保存して参照（`dataFileRef`）を差し替える。前の実データのファイルは消さない（画面で書き換えたときと同じ）。本文を書き換えられるのは中身がテキストだけのもので、画像・HTML・RTF を含むものは `conflict` で断る（名前・メモの変更と別のタブへの移動はできる）。参照の項目（`dataFileRef`・`savedAt`・`formats`・`preview`）は `--set`・`--unset` で変えられない。今の本文は `list --with-text` で読める
 - **触れないもの**: 画像・HTML・RTF を含むクリップボードアイテムの中身（画面の操作で作るもの。名前・メモは変えられ、消すこともできる）。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
+- **設定**: `settings set` で変えられるのは[設定の変更](#設定の変更)の項目だけ
 - **ワークスペースに足せる種類**: 通常のアイテム（パスの無い単一アイテムを含む）と、テキストだけのクリップボードアイテム。セットを足すのは画面で行う（既にあるものは update で変えられる）
+
+### 設定の変更
+
+`qdl settings set <キー> <値>` で、設定画面の項目を 1 つずつ変えます。キーは `settings.json` と同じ名前（大文字・小文字も同じ）です。保存は設定画面と同じ処理を通るので、言語やワークスペースの不透明度などはその場で効き、開いている画面にも反映します。結果は `{"key", "before", "after"}` で、今と同じ値なら保存せずに `"unchanged": true` を付けます。
+
+| 分類 | キー | 値 |
+| --- | --- | --- |
+| 表示 | `language` | `auto`・`ja`・`en` |
+| 表示 | `showKeyboardHints`・`showDataFileTabs` | `true`・`false` |
+| 表示 | `defaultFileTab` | 起動したときに開くタブの、データファイル（`data2.json` など）。どれかのタブに入っているものだけ |
+| ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
+| メイン | `windowWidth`・`windowHeight` | 400〜2000・300〜1200 |
+| メイン | `windowPositionMode` | `center`・`cursor`・`cursorMonitorCenter`・`fixed` |
+| メイン | `windowPositionX`・`windowPositionY` | 整数（`fixed` のときの位置） |
+| メイン | `windowSnapEnabled` | `true`・`false` |
+| 管理 | `editModeWidth`・`editModeHeight` | 800〜2000・600〜1200 |
+| ワークスペース | `workspaceOpacity` | 0〜100 |
+| ワークスペース | `workspacePositionMode` | `displayLeft`・`displayRight`・`fixed` |
+| ワークスペース | `workspaceTargetDisplayIndex` | 0 から、接続しているディスプレイの数 − 1 まで |
+| ワークスペース | `workspacePositionX`・`workspacePositionY` | 整数（`fixed` のときの位置） |
+| ワークスペース | `workspaceBackgroundTransparent`・`autoShowWorkspace`・`workspaceVisibleOnAllDesktops`・`detachedVisibleOnAllDesktops`・`hideDetachedWithMainWindow` | `true`・`false` |
+| バックアップ | `backupEnabled`・`backupIncludeClipboard` | `true`・`false` |
+| バックアップ | `backupRetention` | 3〜50 |
+
+- **範囲の外・形の違う値**: `invalid` で断る。範囲は設定画面と同じ。古い値の `primaryLeft`・`primaryRight` は読めるが、新しくは選べない
+- **ホットキー**: 設定画面と同じく、形式を確かめ、他のアプリともう一方のホットキーに使われていないかを確かめてから登録し直す（`--dry-run` でも使われていないかまで確かめる）。形式の誤りは `invalid`、使用中は `conflict`。登録の途中で失敗したときは元のキーに戻す。ランチャーを開く `hotkey` は空にできない
+- **読むだけの項目**: `settings get` では読めるが、`set` は `usage` で断る。自動起動（`autoLaunch`。OS のスタートアップを書き換えるうえ、Store 版は Windows 側でしか変えられない状態がある）、ブックマークの自動取込（`bookmarkAutoImport`）、CLI を使えるようにする設定（`cliEnabled`。CLI から自分を外せてしまう）、アプリが書く版（`createdWithVersion`・`updatedWithVersion`）。タブ構成（`dataFileTabs`・`dataFileLabels`）は `launcher tab` で変える
 
 ### 出力
 
@@ -202,7 +232,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 ### 現在の制限
 
-1. **扱えるのはアイテム・セットの行・タブ構成・ワークスペースとそのグループ・グループのアーカイブまで**: `settings.json` のそのほかの設定（ホットキーなど）は変えられません
+1. **扱えるのはアイテム・セットの行・タブ構成・ワークスペースとそのグループ・グループのアーカイブ・設定まで**: 設定のうち自動起動・ブックマークの自動取込・CLI の有効化は読むだけです（[設定の変更](#設定の変更)）
 2. **アンインストールしても PATH は残る**: アンインストールしても PATH の項目と `%LOCALAPPDATA%\quick-dash-launcher\bin` は残ります。先に管理画面で「QuickDashLauncher CLI を使えるようにする」を外してからアンインストールしてください
 3. **Windows のみ**: 名前付きパイプを使うので、本体と同じく Windows でだけ動きます
 
