@@ -54,8 +54,8 @@ import {
   hideAllDetachedGroupWindows,
   showAllDetachedGroupWindows,
   getGroupIdByWebContentsId,
-  getDetachedPinMode,
-  setDetachedPinMode,
+  getDetachedPinLevel,
+  setDetachedPinLevel,
   isDetachedGroupWindow,
   takeDetachedInitialShow,
 } from '../detachedGroupWindowManager.js';
@@ -99,9 +99,9 @@ export function setupWindowHandlers(
     if (groupId) {
       return {
         window: win,
-        get: () => getDetachedPinMode(groupId),
+        get: () => getDetachedPinLevel(groupId),
         set: async (level) => {
-          setDetachedPinMode(groupId, level);
+          setDetachedPinLevel(groupId, level);
           const ws = await WorkspaceService.getInstance();
           await ws.saveDetachedPinMode(groupId, level);
         },
