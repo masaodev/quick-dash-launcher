@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import { ipcMain } from 'electron';
 import logger from '@common/logger';
 import type {
@@ -10,7 +12,7 @@ import type {
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
-import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { isClipboardItem } from '@common/types/guards';
 
 import { ClipboardService } from '../services/clipboardService.js';
@@ -30,16 +32,14 @@ import { closeDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { mainI18n } from '../services/mainI18n.js';
 import {
-  executeLauncherItem,
   executeSet,
   isSetRunning,
-  notifyLauncherItemFailure,
   notifySetFailures,
   resolveSetEntry,
 } from '../services/launch/setExecutor.js';
+import { notifyLaunchFailure, openSingleItem } from '../services/launch/itemOpener.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
-import { notifyLaunchFailure } from './itemHandlers.js';
 
 /**
  * クリップボードアイテムなら実データを複製した参照に差し替える
@@ -83,11 +83,16 @@ function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
 
 /**
  * WorkspaceServiceの操作を実行し、エラーログとリスローを行う共通ヘルパー
+ *
+ * 外部編集との競合・破損・書き込み失敗は、読み込みでも書き換えでも警告のトーストで知らせる。
+ * notifyFailure が true（書き換え）なら、それ以外の失敗もエラーのトーストで知らせる
+ * （画面側はログに残すだけなので、知らせないと何も起きなかったように見える）
  */
 async function withWorkspaceService<T>(
   action: (service: WorkspaceService) => Promise<T>,
   errorMsg: string,
-  errorContext?: Record<string, unknown>
+  errorContext?: Record<string, unknown>,
+  notifyFailure = false
 ): Promise<T> {
   try {
     const workspaceService = await WorkspaceService.getInstance();
@@ -106,6 +111,14 @@ async function withWorkspaceService<T>(
         type: 'warning',
         duration: LONG_TOAST_DURATION_MS,
       }).catch(() => {});
+    } else if (notifyFailure) {
+      showToastWindow({
+        message: mainI18n.t('workspaceErrors.changeFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        }),
+        type: 'error',
+        duration: LONG_TOAST_DURATION_MS,
+      }).catch(() => {});
     }
     throw error;
   }
@@ -113,13 +126,16 @@ async function withWorkspaceService<T>(
 
 /**
  * WorkspaceServiceの変更操作を実行し、成功時にnotifyWorkspaceChangedを呼び出す
+ *
+ * 失敗はトーストで知らせる。折りたたみのような表示の状態だけを保存する操作は notifyFailure を false にする
  */
 async function withWorkspaceChange<T = void>(
   action: (service: WorkspaceService) => Promise<T>,
   logMsg: string,
   errorMsg: string,
   logContext?: Record<string, unknown>,
-  errorContext?: Record<string, unknown>
+  errorContext?: Record<string, unknown>,
+  notifyFailure = true
 ): Promise<{ success: true } & Record<string, unknown>> {
   const result = await withWorkspaceService(
     async (service) => {
@@ -129,7 +145,8 @@ async function withWorkspaceChange<T = void>(
       return actionResult;
     },
     errorMsg,
-    errorContext
+    errorContext,
+    notifyFailure
   );
 
   if (result && typeof result === 'object') {
@@ -153,46 +170,73 @@ export function setupWorkspaceHandlers(): void {
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
     (_event, item: AppItem, groupId?: string, workspaceId?: string) =>
-      withWorkspaceService(async (service) => {
-        const addedItem = await service.addItem(withOwnClipboardData(item), groupId, workspaceId);
-        logger.info(
-          { id: addedItem.id, name: addedItem.displayName, groupId, workspaceId },
-          'Added item to workspace'
-        );
-        notifyWorkspaceChanged();
-        return addedItem;
-      }, 'Failed to add item to workspace')
+      withWorkspaceService(
+        async (service) => {
+          const addedItem = await service.addItem(withOwnClipboardData(item), groupId, workspaceId);
+          logger.info(
+            { id: addedItem.id, name: addedItem.displayName, groupId, workspaceId },
+            'Added item to workspace'
+          );
+          notifyWorkspaceChanged();
+          return addedItem;
+        },
+        'Failed to add item to workspace',
+        undefined,
+        true
+      )
   );
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
     (_event, filePaths: string[], groupId?: string, workspaceId?: string) =>
-      withWorkspaceService(async (service) => {
-        const addedItems: WorkspaceItem[] = [];
+      withWorkspaceService(
+        async (service) => {
+          const addedItems: WorkspaceItem[] = [];
+          const failed: { name: string; error: string }[] = [];
 
-        for (const filePath of filePaths) {
-          try {
-            // ドット入りのフォルダ名は末尾に区切り文字を付けてから判定する（拡張子のアイコンを取りに行かない）
-            const markedPath = await withFolderMarker(filePath);
-            const itemType = detectItemTypeSync(markedPath);
-            await getIconForItem(markedPath, itemType);
-            const addedItem = await service.addItemFromPath(markedPath, groupId, workspaceId);
-            addedItems.push(addedItem);
-            logger.info(
-              { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
-              'Added item from path to workspace'
-            );
-          } catch (error) {
-            logger.error({ error, path: filePath }, 'Failed to add item from path');
+          for (const filePath of filePaths) {
+            try {
+              // ドット入りのフォルダ名は末尾に区切り文字を付けてから判定する（拡張子のアイコンを取りに行かない）
+              const markedPath = await withFolderMarker(filePath);
+              const itemType = detectItemTypeSync(markedPath);
+              await getIconForItem(markedPath, itemType);
+              const addedItem = await service.addItemFromPath(markedPath, groupId, workspaceId);
+              addedItems.push(addedItem);
+              logger.info(
+                { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
+                'Added item from path to workspace'
+              );
+            } catch (error) {
+              logger.error({ error, path: filePath }, 'Failed to add item from path');
+              failed.push({
+                name: path.basename(filePath) || filePath,
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
           }
-        }
 
-        if (addedItems.length > 0) {
-          notifyWorkspaceChanged();
-        }
+          if (addedItems.length > 0) {
+            notifyWorkspaceChanged();
+          }
+          // 足せたものだけ返す。足せなかったものはここで知らせる（画面側は返ったものだけ「追加しました」と出す）
+          if (failed.length > 0) {
+            showToastWindow({
+              message: mainI18n.t('workspaceErrors.addFromPathsFailed', {
+                count: failed.length,
+                names: failed.map((f) => f.name).join(mainI18n.t('common.listSeparator')),
+                error: failed[0].error,
+              }),
+              type: 'error',
+              duration: LONG_TOAST_DURATION_MS,
+            }).catch(() => {});
+          }
 
-        return addedItems;
-      }, 'Failed to add items from paths to workspace')
+          return addedItems;
+        },
+        'Failed to add items from paths to workspace',
+        undefined,
+        true
+      )
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, (_event, id: string) =>
@@ -299,26 +343,8 @@ export function setupWorkspaceHandlers(): void {
         return { success: true, successCount: result.successCount, errorCount: result.errorCount };
       }
 
-      // ウィンドウ切り替えがあれば、セットの 1 行と同じ処理で開く（見つかれば前面に出す・位置を当てる）
-      if (hasItemWindowSwitch(item)) {
-        const launchable = { ...item, type: item.launcherType };
-        const result = await executeLauncherItem(launchable);
-        await notifyLauncherItemFailure(launchable, result);
-        return { success: true };
-      }
-
-      // 通常アイテムを起動：共通のlaunchItem関数を使用（起動種別は path から判定済み）
-      const launched = await launchItem(
-        {
-          type: item.launcherType,
-          path: item.path,
-          args: item.args,
-          displayName: item.displayName,
-        },
-        logger
-      );
-      if (!launched.success) {
-        await notifyLaunchFailure(item.displayName, launched);
+      // 単一アイテムはメイン画面と同じ処理で開く（起動種別は path から判定済み）
+      if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
         return { success: false };
       }
 
@@ -352,11 +378,16 @@ export function setupWorkspaceHandlers(): void {
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE, (_event, name: string) =>
-    withWorkspaceService(async (service) => {
-      const workspace = await service.createWorkspace(name);
-      notifyWorkspaceChanged();
-      return workspace;
-    }, 'Failed to create workspace')
+    withWorkspaceService(
+      async (service) => {
+        const workspace = await service.createWorkspace(name);
+        notifyWorkspaceChanged();
+        return workspace;
+      },
+      'Failed to create workspace',
+      undefined,
+      true
+    )
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_RENAME_WORKSPACE, (_event, id: string, name: string) =>
@@ -370,18 +401,23 @@ export function setupWorkspaceHandlers(): void {
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, (_event, id: string) =>
-    withWorkspaceService(async (service) => {
-      // 削除前に所属グループの切り離しウィンドウを閉じる
-      const groups = await service.loadGroups();
-      const wsGroups = groups.filter((g) => g.workspaceId === id);
-      for (const group of wsGroups) {
-        await closeDetachedWindowsForGroup(group.id);
-      }
-      await service.deleteWorkspace(id);
-      logger.info({ id }, 'Deleted workspace');
-      notifyWorkspaceChanged();
-      return { success: true };
-    }, 'Failed to delete workspace')
+    withWorkspaceService(
+      async (service) => {
+        // 削除前に所属グループの切り離しウィンドウを閉じる
+        const groups = await service.loadGroups();
+        const wsGroups = groups.filter((g) => g.workspaceId === id);
+        for (const group of wsGroups) {
+          await closeDetachedWindowsForGroup(group.id);
+        }
+        await service.deleteWorkspace(id);
+        logger.info({ id }, 'Deleted workspace');
+        notifyWorkspaceChanged();
+        return { success: true };
+      },
+      'Failed to delete workspace',
+      undefined,
+      true
+    )
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_WORKSPACES, (_event, ids: string[]) =>
@@ -417,7 +453,8 @@ export function setupWorkspaceHandlers(): void {
           return group;
         },
         'Failed to create workspace group',
-        { name }
+        { name },
+        true
       )
   );
 
@@ -443,7 +480,8 @@ export function setupWorkspaceHandlers(): void {
         return { success: true };
       },
       'Failed to delete workspace group',
-      { id }
+      { id },
+      true
     )
   );
 
@@ -466,7 +504,8 @@ export function setupWorkspaceHandlers(): void {
         'Batch updated groups collapsed state',
         'Failed to batch update groups collapsed state',
         { count: ids.length, collapsed },
-        { ids, collapsed }
+        { ids, collapsed },
+        false
       )
   );
 
@@ -544,7 +583,8 @@ export function setupWorkspaceHandlers(): void {
         return { success: true };
       },
       'Failed to archive workspace group',
-      { groupId }
+      { groupId },
+      true
     )
   );
 

@@ -386,6 +386,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 | --- | --- |
 | `src/main/ipc/itemHandlers.ts` | アイテム起動のエントリーポイント |
 | `src/main/ipc/workspaceHandlers.ts` | ワークスペースアイテム起動のエントリーポイント |
+| `src/main/services/launch/itemOpener.ts` | 単一アイテムを開く処理（上の 2 つが共用。`openSingleItem()`） |
 | `src/main/utils/windowActivator.ts` | ウィンドウ検索・アクティブ化・位置サイズ設定の一元管理 |
 | `src/main/utils/itemLauncher.ts` | URL/ファイル/アプリ/カスタムURIの起動処理を統一 |
 | `src/main/utils/windowMatcher.ts` | ウィンドウタイトルによるウィンドウ検索 |
@@ -394,7 +395,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 **処理フロー:**
 
 1. **itemHandlers.ts / workspaceHandlers.ts**
-   - アイテム起動リクエストを受信
+   - アイテム起動リクエストを受信し、単一アイテムは `openSingleItem()`（`itemOpener.ts`）に渡す
    - 単一アイテムでウィンドウ切り替え（`window`）があれば、`executeLauncherItem()`（`setExecutor.ts`）でセットの 1 行として実行する。見つかれば `tryActivateWindow()`／`applyWindowConfig()` に `followDesktop` を付けて渡し、見つからなければ `launchItem()` で開く（位置があれば出てくるのを待って `applyWindowConfig()` を当てる）。うまくいかなかったときだけトーストで知らせる
    - ウィンドウ切り替えの無い単一アイテムは `launchItem()` で開くだけ
    - パスの無い単一アイテムも `executeLauncherItem()` で実行する（開くものの無い行として、見つかれば切り替え、無ければ何も開かない）

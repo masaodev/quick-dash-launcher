@@ -157,12 +157,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
           ...('icon' in item && item.icon && { icon: item.icon }),
         });
       } catch (error) {
+        // 失敗は本体側がエラーのトーストで知らせる
         logError('ワークスペースへの追加に失敗しました:', error);
-        await window.electronAPI.showToastWindow({
-          displayName,
-          itemType: 'workspaceAdd',
-          message: t('launcher.messages.addToWorkspaceFailed'),
-        });
       }
     });
 
@@ -225,12 +221,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               : t('launcher.messages.windowAdded'),
           });
         } catch (error) {
+          // 失敗は本体側がエラーのトーストで知らせる
           logError('ウィンドウのワークスペースへの追加に失敗しました:', error);
-          await window.electronAPI.showToastWindow({
-            displayName: windowItem.displayName,
-            itemType: 'workspaceAdd',
-            message: t('launcher.messages.addToWorkspaceFailed'),
-          });
         }
       }),
       window.electronAPI.onWindowMenuClose((windowInfo) => {

@@ -209,7 +209,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 **共通化した処理の置き場所（新しく書く前に確認する）:**
 
 - アイコン取得: `src/main/services/icon/iconFetcher.ts` の `getIconForItem()`（アイコン用 IPC が直接、ワークスペースの IPC は `services/iconService.ts` 経由で使う）
-- アイテムの起動: `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
+- アイテムの起動: 単一アイテムを開くのは `src/main/services/launch/itemOpener.ts` の `openSingleItem()`（ウィンドウ切り替えの有無で振り分け、失敗をトーストで知らせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）。開く処理そのものは `src/main/utils/itemLauncher.ts`（URL・ファイル・アプリ・カスタムURI）
 - ウィンドウの検索・アクティブ化・位置とサイズの設定: `src/main/utils/windowActivator.ts`
 - セットの実行: `src/main/services/launch/setExecutor.ts`（行ごとに開くものを開き、ウィンドウを位置に合わせる。`itemHandlers.ts` と `workspaceHandlers.ts` が共用）
 - 登録・編集フォームの部品: `src/renderer/components/ItemEditFields.tsx`（アイテム 1 件分の編集欄。状態は持たず、読み込み・保存は呼び出し側）。メインの登録・編集（`RegisterModal`）とワークスペースのアイテム編集（`WorkspaceItemEditModal`）の両方が使う。ワークスペースは `placement` を渡さず（保存先の欄を出さない）、`typeLocked` で種別を固定する。中の部品に `ItemWindowSwitchEditor.tsx`（単一アイテムのウィンドウ切り替え）・`CustomIconEditor.tsx`（カスタムアイコン）など。ウィンドウ切り替えの 3 つの枠（対象ウィンドウ・ウィンドウ位置・開くときの動き）は `WindowSwitchFields.tsx` にあり、セットの行の詳細（`SetEntryDetailModal`）と共用する（ウィンドウ一覧・仮想デスクトップの読み込みは `hooks/useWindowEnvironment.ts`）
@@ -372,6 +372,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - **引き方**: renderer の部品・hook は `react-i18next` の `useTranslation()` の `t`、部品の外の関数（ツールチップの生成など）は `i18next.t`、main は `services/mainI18n.ts` の `mainI18n.t()`（言語の切り替えは `services/i18nService.ts`。トレイのメニューのように作り置くものは `mainI18n.on('languageChanged', …)` で作り直す。トーストの独立ウィンドウ `overlay.html` は文言を持たず、main が決めた文言を受け取って出す）。main と renderer の両方で使う `src/common` の関数は `t` を引数で受け取る。キーは型チェックされる
 - **言語の決め方**: 設定 `language`（`auto`・`ja`・`en`）。`auto` は Windows の最初の表示言語が日本語なら日本語、それ以外は英語（`src/common/i18n/languages.ts`）。各ウィンドウは描画の前に `src/renderer/i18n.ts` で初期化し、設定が変わったら言語を取り直す
 - **用語**: [用語集](../architecture/glossary.md)の言葉にそろえる。「使わない表記」が辞書に出ると単体テスト（`src/common/i18n/glossary.test.ts`）が失敗する。英語は Microsoft Writing Style Guide に合わせる（用語集の「書き方の決まり」）
+- **一覧の区切り**: 画面に出す文の中で名前を並べるときは `common.listSeparator`（日本語「、」・英語「, 」）でつなぐ。ファイル名・ID・形式名のキー・CLI の出力・ログは `', '` のまま
 - **直書きの禁止**: `src` の TypeScript ファイルすべて（テストファイルと `src/test` を除く）で、日本語の文字列・JSX のテキストを直接書くと lint が失敗する（`logger.info`・`console.error` やログ関数 `logError` などのログの文言は訳さないので対象外）。辞書の正本（`ja.ts`）、既定の名前を持つファイル（`json-workspace.ts`・`settingsService.ts`。初回起動で表示言語の名前に置き換える）、ログや開発者向けの内部エラーだけで画面に出ないファイルは、`eslint.config.mjs` の `I18N_EXEMPT_FILES` で外している。画面に出る文言を足したら、そのファイルを外したままにしない
 - **訳さないもの**: ログ・docs・Issues・コードのコメント
 

@@ -57,7 +57,7 @@ function buildToastText(options: ToastOptions): ToastText {
   if (options.itemType === 'set') {
     const names = options.itemNames ?? [];
     const count = options.itemCount || names.length;
-    const shown = names.slice(0, 3).join(', ');
+    const shown = names.slice(0, 3).join(t('common.listSeparator'));
     const remaining = count - 3;
     return {
       action: t('toast.groupOpening', { count }),

@@ -201,7 +201,6 @@ export const ja = {
       openFailed: 'アイテムの起動に失敗しました: {{reason}}',
       activateWindowFailed: 'ウィンドウを前面に出せませんでした',
       noBookmarkRules: '有効なブックマーク取込ルールがありません',
-      addToWorkspaceFailed: 'ワークスペースへの追加に失敗しました',
       windowAddedWithPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
       windowAdded:
         '開いているときに、このウィンドウへ切り替えます（パスを入れると、開いていないときに開けます）',
@@ -1331,6 +1330,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     syncAndImport_other: '{{count}} 件を取り込み、自動取込に登録',
   },
   bookmarkAutoImport: {
+    settingsSaveFailed: '自動取込の設定を保存できませんでした: {{error}}',
+    ruleDeleteFailed: 'ルールを削除できませんでした: {{error}}',
     ruleResult: 'ブックマーク取込（{{name}}）: {{imported}} 件登録, {{deleted}} 件削除',
     manualDuplicates: '{{message}}（手動で登録済みの URL と {{count}} 件重複しています）',
     ruleError: 'ブックマーク取込（{{name}}）: エラー - {{error}}',
@@ -1709,6 +1710,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       'データファイルが破損している可能性があるため登録を中止しました: {{file}}。ファイルを修復（または削除）してから再試行してください',
     moveBlockedCorrupted:
       'データファイルが破損している可能性があるため移動を中止しました: {{file}}。ファイルを修復（または削除）してから再試行してください',
+    deleteBlockedCorrupted:
+      'データファイルが破損している可能性があるため削除を中止しました: {{files}}。ファイルを修復（または削除）してから再試行してください',
     writeFailed: 'データファイルの書き込みに失敗しました: {{file}}',
     itemNotFound: 'ID {{id}} のアイテムが見つかりません',
     invalidTargetFile: '登録先のデータファイル名が正しくありません: {{files}}',
@@ -1733,6 +1736,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     externalChange:
       '{{file}} が QDL の外で変更されています。メインウィンドウで F5 を押して再読込してから操作してください',
     writeFailed: '{{file}} の書き込みに失敗しました。ディスクの空き容量や権限を確認してください',
+    changeFailed: 'ワークスペースを変更できませんでした: {{error}}',
+    addFromPathsFailed_one:
+      '{{count}} 件をワークスペースに追加できませんでした: {{names}}（{{error}}）',
+    addFromPathsFailed_other:
+      '{{count}} 件をワークスペースに追加できませんでした: {{names}}（{{error}}）',
     reloadInProgress: 'ワークスペースを再読込中です。もう一度お試しください',
     corrupted:
       '{{file}} が壊れているため書き込めません。ファイルを修復してから F5 で再読込してください',

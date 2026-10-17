@@ -540,7 +540,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
               aria-expanded={namingOpen}
               onClick={() => setNamingOpen((open) => !open)}
             >
-              <span className="bookmark-rule-caret">{namingOpen ? '▼' : '▶'}</span>
+              <span className={`bookmark-rule-caret${namingOpen ? ' open' : ''}`}>▶</span>
               <span>{t('bookmarkRule.namingOptions')}</span>
               <span className="bookmark-rule-options-summary">
                 {namingSummary || t('bookmarkRule.namingNone')}

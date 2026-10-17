@@ -8,52 +8,121 @@ import {
   createEmptyJsonDataFile,
 } from '@common/utils/jsonParser';
 import { isValidDataFileName } from '@common/utils/dataFileName';
-import { DEFAULT_DATA_FILE } from '@common/types';
+import { DEFAULT_DATA_FILE, isJsonClipboardItem } from '@common/types';
 import type { JsonDataFile, JsonItem, JsonDirOptions, SetItemFields } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
 
 import { PathManager } from '../../config/pathManager.js';
+import { ClipboardService } from '../clipboardService.js';
 import { mainI18n } from '../mainI18n.js';
 import { writeDataFile } from '../dataFileTracker.js';
 
 import { clearDataFileCorrupted, markDataFileCorrupted } from './corruptedDataFiles.js';
+
+interface DataFileEntry {
+  fileName: string;
+  filePath: string;
+  jsonData: JsonDataFile;
+}
+
+/**
+ * ID でアイテムを探すために、すべてのデータファイルを読む
+ *
+ * 破損ファイルは印を付けて飛ばし、他のファイルは読み続ける（1 つ壊れているだけで全体を止めない）。
+ * 飛ばしたファイル名は corrupted に返す
+ */
+function readDataFilesForSearch(configFolder: string): {
+  files: DataFileEntry[];
+  corrupted: string[];
+} {
+  const files: DataFileEntry[] = [];
+  const corrupted: string[] = [];
+  for (const fileName of PathManager.getDataFiles()) {
+    const filePath = path.join(configFolder, fileName);
+    const content = FileUtils.safeReadTextFile(filePath);
+    if (!content) continue;
+    try {
+      // 寛容パース: 他の不正アイテムはファイル上に残したまま、対象だけ書き換える
+      files.push({ fileName, filePath, jsonData: parseJsonDataFileLenient(content).data });
+    } catch (error) {
+      // 破損ファイルは上書きしない（喪失を防ぐ）
+      dataLogger.error({ error, filePath }, 'JSONファイルのパースに失敗したためスキップします');
+      markDataFileCorrupted(fileName);
+      corrupted.push(fileName);
+    }
+  }
+  return { files, corrupted };
+}
+
+function writeOrThrow(entry: DataFileEntry): void {
+  if (!writeDataFile(entry.filePath, serializeJsonDataFile(entry.jsonData))) {
+    throw new Error(mainI18n.t('dataErrors.writeFailed', { file: entry.fileName }));
+  }
+}
 
 /**
  * IDでアイテムを検索し、見つかったファイル上で新しい内容に差し替える
  *
  * @param configFolder - 設定フォルダのパス
  * @param newItem - 差し替え後のアイテム（id で対象を特定する）
- * @throws アイテムが見つからない場合、またはファイル操作エラー
+ * @throws アイテムが見つからない場合（破損ファイルにあるかもしれないときはその旨）、または書き込みに失敗した場合
  */
 export function replaceItemById(configFolder: string, newItem: JsonItem): void {
-  const dataFiles = PathManager.getDataFiles();
+  const { files, corrupted } = readDataFilesForSearch(configFolder);
 
-  for (const fileName of dataFiles) {
-    const filePath = path.join(configFolder, fileName);
-    const content = FileUtils.safeReadTextFile(filePath);
-    if (!content) continue;
-
-    let jsonData;
-    try {
-      // 寛容パース: 他の不正アイテムはファイル上に残したまま、対象だけ差し替える
-      jsonData = parseJsonDataFileLenient(content).data;
-    } catch (error) {
-      // 破損ファイルはスキップして他ファイルの検索を続行（上書きによる喪失を防ぐ）
-      dataLogger.error({ error, filePath }, 'JSONファイルのパースに失敗したためスキップします');
-      markDataFileCorrupted(fileName);
-      continue;
-    }
-    const itemIndex = jsonData.items.findIndex((item) => item.id === newItem.id);
-
+  for (const entry of files) {
+    const itemIndex = entry.jsonData.items.findIndex((item) => item.id === newItem.id);
     if (itemIndex !== -1) {
-      jsonData.items[itemIndex] = newItem;
-      writeDataFile(filePath, serializeJsonDataFile(jsonData));
+      entry.jsonData.items[itemIndex] = newItem;
+      writeOrThrow(entry);
       return;
     }
   }
 
+  if (corrupted.length > 0) {
+    throw new Error(mainI18n.t('dataErrors.saveBlockedCorrupted', { files: corrupted.join(', ') }));
+  }
   throw new Error(mainI18n.t('dataErrors.itemNotFound', { id: newItem.id }));
+}
+
+/**
+ * ID で全データファイルからアイテムを消す（クリップボードアイテムは実データのファイルも消す）
+ *
+ * 見つからない ID は無視する。ただし見つからない ID が破損ファイルにあるかもしれないときは、何も書かずに止める
+ * （保存先を変える編集は「消してから同じ id で登録し直す」ので、消せていないと id が重複する）
+ *
+ * @throws 破損ファイルのせいで消せたか分からない場合、または書き込みに失敗した場合
+ */
+export async function deleteItemsById(configFolder: string, ids: string[]): Promise<void> {
+  const idsToDelete = new Set(ids);
+  const { files, corrupted } = readDataFilesForSearch(configFolder);
+  const targets = files.filter((entry) =>
+    entry.jsonData.items.some((item) => idsToDelete.has(item.id))
+  );
+
+  if (corrupted.length > 0) {
+    const found = new Set(targets.flatMap((entry) => entry.jsonData.items.map((item) => item.id)));
+    if (ids.some((id) => !found.has(id))) {
+      throw new Error(
+        mainI18n.t('dataErrors.deleteBlockedCorrupted', { files: corrupted.join(', ') })
+      );
+    }
+  }
+
+  const clipboardService = ClipboardService.getInstance();
+  for (const entry of targets) {
+    for (const item of entry.jsonData.items) {
+      if (idsToDelete.has(item.id) && isJsonClipboardItem(item)) {
+        await clipboardService.deleteClipboardData(item.dataFileRef);
+      }
+    }
+    entry.jsonData = {
+      ...entry.jsonData,
+      items: entry.jsonData.items.filter((item) => !idsToDelete.has(item.id)),
+    };
+    writeOrThrow(entry);
+  }
 }
 
 /** IDでdirアイテムを更新する */

@@ -18,8 +18,19 @@ vi.mock('@common/logger', () => ({
   dataLogger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
+const deleteClipboardData = vi.hoisted(() => vi.fn(async () => true));
+vi.mock('../clipboardService.js', () => ({
+  ClipboardService: { getInstance: () => ({ deleteClipboardData }) },
+}));
+
 import { getCorruptedDataFiles, clearDataFileCorrupted } from './corruptedDataFiles';
-import { moveItemToFile, registerItems, updateSetItemById } from './dataItemWriter';
+import {
+  deleteItemsById,
+  moveItemToFile,
+  registerItems,
+  replaceItemById,
+  updateSetItemById,
+} from './dataItemWriter';
 
 function writeFile(fileName: string, content: string): void {
   fs.writeFileSync(path.join(tempRoot.dir, fileName), content, 'utf8');
@@ -237,6 +248,76 @@ describe('dataItemWriter', () => {
         )
       ).toThrow();
       expect(readItems('datafiles/data2.json')).toHaveLength(1);
+    });
+  });
+  describe('破損したデータファイルがあるとき', () => {
+    const CORRUPTED = '{ "version": "1.0", "items": [';
+
+    beforeEach(() => {
+      writeFile('datafiles/data.json', CORRUPTED);
+      writeFile(
+        'datafiles/data2.json',
+        JSON.stringify({
+          version: '1.0',
+          items: [
+            { id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe' },
+            {
+              id: 'cccccccc',
+              type: 'clipboard',
+              displayName: 'C',
+              dataFileRef: 'clipboard-data/cccccccc.json',
+              savedAt: 1,
+              formats: ['text'],
+            },
+          ],
+        })
+      );
+      deleteClipboardData.mockClear();
+    });
+
+    function readRaw(fileName: string): string {
+      return fs.readFileSync(path.join(tempRoot.dir, fileName), 'utf8');
+    }
+
+    it('差し替えは、壊れたファイルを飛ばして他のファイルで行い、壊れたファイルは書き換えないこと', () => {
+      replaceItemById(tempRoot.dir, {
+        id: 'aaaaaaaa',
+        type: 'item',
+        displayName: 'A2',
+        path: 'C:\\a.exe',
+      });
+
+      expect(readItems('datafiles/data2.json')[0].displayName).toBe('A2');
+      expect(readRaw('datafiles/data.json')).toBe(CORRUPTED);
+      expect(getCorruptedDataFiles()).toContain('datafiles/data.json');
+    });
+
+    it('差し替える id が見つからなければ、壊れたファイルの名前を挙げてエラーにすること', () => {
+      expect(() =>
+        replaceItemById(tempRoot.dir, {
+          id: 'zzzzzzzz',
+          type: 'item',
+          displayName: 'Z',
+          path: 'C:\\z.exe',
+        })
+      ).toThrow(/datafiles\/data\.json/);
+    });
+
+    it('削除は、id がすべて見つかれば壊れたファイルを飛ばして行い、実データのファイルも消すこと', async () => {
+      await deleteItemsById(tempRoot.dir, ['aaaaaaaa', 'cccccccc']);
+
+      expect(readItems('datafiles/data2.json')).toHaveLength(0);
+      expect(readRaw('datafiles/data.json')).toBe(CORRUPTED);
+      expect(deleteClipboardData).toHaveBeenCalledWith('clipboard-data/cccccccc.json');
+    });
+
+    it('消す id が壊れたファイルにあるかもしれないときは、何も消さずにエラーにすること', async () => {
+      await expect(deleteItemsById(tempRoot.dir, ['aaaaaaaa', 'zzzzzzzz'])).rejects.toThrow(
+        /datafiles\/data\.json/
+      );
+
+      expect(readItems('datafiles/data2.json')).toHaveLength(2);
+      expect(deleteClipboardData).not.toHaveBeenCalled();
     });
   });
 });

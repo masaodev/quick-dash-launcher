@@ -217,6 +217,16 @@
   cursor: pointer;
 }
 
+/* 開くと ▸ を回して下に向ける（▾ に差し替えず、開閉の印をほかの画面とそろえる） */
+.bookmark-import-twisty-icon {
+  display: inline-block;
+  transition: transform var(--transition-fast);
+}
+
+.bookmark-import-twisty-icon.open {
+  transform: rotate(90deg);
+}
+
 .bookmark-import-name {
   min-width: 0;
 }
@@ -453,8 +463,15 @@
 }
 
 .bookmark-rule-caret {
+  display: inline-block;
   font-size: var(--font-size-xs);
   color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+/* 開閉の印は ▶ を回して下に向ける（▼ と ▶ は字の大きさが違う。登録画面の .toggle-icon と同じ） */
+.bookmark-rule-caret.open {
+  transform: rotate(90deg);
 }
 
 /* フォルダの木（フォルダだけ。中身は下の結果の一覧で見る） */
