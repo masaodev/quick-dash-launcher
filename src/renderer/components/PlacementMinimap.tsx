@@ -6,11 +6,22 @@
  * 大きな図はモーダルやスクロールする一覧の外にはみ出してよいよう、body に出す。
  * 画面仕様: docs/screens/register-modal.md#ウィンドウ位置の図
  */
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { WindowInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
-import { computeMinimapLayout, type MapPlacementInput } from '@common/utils/placementMap';
+import {
+  computeMinimapLayout,
+  hasPlacementRect,
+  type MapPlacementInput,
+} from '@common/utils/placementMap';
 import { placementFromWindow } from '@common/utils/setWindowMatching';
 
 import { windowPlacementText } from '../utils/setEditing';
@@ -20,6 +31,7 @@ import '../styles/components/PlacementMinimap.css';
 /** 大きさ。tiny＝一覧の 1 行、small＝編集画面の欄、medium＝セット全体、large＝マウスを乗せたとき */
 export type MinimapSize = 'tiny' | 'small' | 'medium' | 'large';
 
+/** 図の大きさの上限。tiny と large の幅は variables.css の --minimap-tiny-width・--minimap-large-width と同じ値にする */
 const SIZES: Record<MinimapSize, { width: number; height: number }> = {
   tiny: { width: 56, height: 28 },
   small: { width: 200, height: 80 },
@@ -166,6 +178,21 @@ const PlacementMinimap: React.FC<PlacementMinimapProps> = ({ caption, ...props }
     setPos({ left, top });
   }, [open]);
 
+  // 出したままスクロール・ドラッグすると、大きな図だけが元の場所に残るので閉じる
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const options = { capture: true, passive: true };
+    window.addEventListener('scroll', close, options);
+    window.addEventListener('wheel', close, options);
+    window.addEventListener('dragstart', close, options);
+    return () => {
+      window.removeEventListener('scroll', close, options);
+      window.removeEventListener('wheel', close, options);
+      window.removeEventListener('dragstart', close, options);
+    };
+  }, [open]);
+
   if (props.screens.length === 0) return null;
   return (
     <span
@@ -200,8 +227,10 @@ export const WindowMinimap: React.FC<{
   window: WindowInfo;
   screens: readonly ScreenArea[];
   desktopCount: number;
-}> = ({ window: w, screens, desktopCount }) => {
-  const text = windowPlacementText(w, screens, desktopCount);
+  /** 仮想デスクトップの名前（隣の言葉と同じく、大きな図の言葉にも添える） */
+  desktopNames?: Readonly<Record<number, string | undefined>>;
+}> = ({ window: w, screens, desktopCount, desktopNames }) => {
+  const text = windowPlacementText(w, screens, desktopCount, desktopNames);
   return (
     <PlacementMinimap
       screens={screens}
@@ -212,5 +241,50 @@ export const WindowMinimap: React.FC<{
     />
   );
 };
+
+/** セット全体の図の操作（行にマウスが乗ったとき、その行の位置だけを濃くする） */
+export interface SetPlacementMapHandle {
+  /** placements の添字。null か、位置の無い行なら強調を外す */
+  highlight: (index: number | null) => void;
+}
+
+/**
+ * セット全体の図（行の一覧の上）
+ *
+ * 強調する行はこの中だけで持ち、行の一覧（親）を描き直さない。行が増減・並べ替わる（placements が変わる）と
+ * 強調は外れる（消した行に乗せたままだと mouseleave が来ないため）
+ */
+export const SetPlacementMap = forwardRef<
+  SetPlacementMapHandle,
+  { screens: readonly ScreenArea[]; placements: readonly MapPlacementInput[]; label: string }
+>(({ screens, placements, label }, ref) => {
+  const [hovered, setHovered] = useState<{
+    placements: readonly MapPlacementInput[];
+    index: number;
+  } | null>(null);
+  useImperativeHandle(
+    ref,
+    () => ({
+      highlight: (index) =>
+        setHovered(
+          index !== null && hasPlacementRect(placements[index]?.placement)
+            ? { placements, index }
+            : null
+        ),
+    }),
+    [placements]
+  );
+  const highlight = hovered && hovered.placements === placements ? hovered.index : null;
+  return (
+    <MinimapSvg
+      screens={screens}
+      placements={placements}
+      size="medium"
+      highlight={highlight}
+      label={label}
+    />
+  );
+});
+SetPlacementMap.displayName = 'SetPlacementMap';
 
 export default PlacementMinimap;

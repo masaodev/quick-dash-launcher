@@ -293,7 +293,12 @@ const SetAddWindowsModal: React.FC<SetAddWindowsModalProps> = ({
                       {/* 図の場所は図が無い行（最小化中・追加済み）でも空け、言葉の頭をそろえる */}
                       <span className="set-row-map">
                         {addedAs === undefined && w.windowState !== 'minimized' && (
-                          <WindowMinimap window={w} screens={screens} desktopCount={desktopCount} />
+                          <WindowMinimap
+                            window={w}
+                            screens={screens}
+                            desktopCount={desktopCount}
+                            desktopNames={desktop?.desktopNames}
+                          />
                         )}
                       </span>
                       <span className="set-sub-text">

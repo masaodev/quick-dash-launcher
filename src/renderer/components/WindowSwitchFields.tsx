@@ -8,6 +8,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SetPlacement, SetWindowMatch, WindowInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
+import { hasPlacementRect } from '@common/utils/placementMap';
 import { ANY_WINDOW_TITLE } from '@common/utils/windowTitle';
 import {
   decideWindowMatch,
@@ -338,13 +339,16 @@ export const WindowPlacementFields: React.FC<WindowPlacementFieldsProps> = ({
         {shownPlacement ? (
           // 言葉の左に図。図にマウスを乗せると大きな図が出る
           <span className="set-placement-with-map">
-            <PlacementMinimap
-              screens={screens}
-              placements={[{ placement: shownPlacement }]}
-              size="small"
-              label={shownText}
-              caption={shownText}
-            />
+            {/* 座標の無い位置（デスクトップ番号だけなど）は図に描けないので、言葉だけ */}
+            {hasPlacementRect(shownPlacement) && (
+              <PlacementMinimap
+                screens={screens}
+                placements={[{ placement: shownPlacement }]}
+                size="small"
+                label={shownText}
+                caption={shownText}
+              />
+            )}
             {placement ? (
               <span className="set-placement-text">📍 {shownText}</span>
             ) : (

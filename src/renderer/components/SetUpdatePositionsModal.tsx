@@ -13,6 +13,7 @@ import {
   matchesWindow,
   placementFromWindow,
 } from '@common/utils/setWindowMatching';
+import { hasPlacementRect } from '@common/utils/placementMap';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
@@ -271,7 +272,10 @@ const SetUpdatePositionsModal: React.FC<SetUpdatePositionsModalProps> = ({
               {linkedIndexes.map((i) => {
                 const w = assign.get(i)!;
                 const minimizedPick = w.windowState === 'minimized';
-                const before = entries[i].placement;
+                // 前の位置は、座標があるときだけ破線で重ねる（無ければ新しい位置だけ）
+                const before = hasPlacementRect(entries[i].placement)
+                  ? entries[i].placement
+                  : undefined;
                 return (
                   <div key={`l${i}`} className="set-record-row">
                     {iconOf(i)}

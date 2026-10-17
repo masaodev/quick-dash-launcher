@@ -43,7 +43,7 @@
 
 .pm-window {
   fill: var(--color-primary);
-  fill-opacity: 0.28;
+  fill-opacity: var(--minimap-window-opacity);
   stroke: var(--color-primary);
   stroke-width: 1.5;
 }
@@ -77,7 +77,7 @@
 }
 
 .pm-dim {
-  opacity: 0.25;
+  opacity: var(--minimap-dim-opacity);
 }
 
 /* マウスを乗せたときの大きな図（モーダルより手前に出す） */
@@ -93,7 +93,7 @@
 }
 
 .placement-minimap-caption {
-  max-width: 420px;
+  max-width: var(--minimap-large-width);
   margin-top: var(--spacing-xs);
   font-size: var(--font-size-sm);
   color: var(--text-muted);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { ScreenArea } from './placementLabel';
-import { computeMinimapLayout } from './placementMap';
+import { computeMinimapLayout, hasPlacementRect } from './placementMap';
 
 const area = (x: number, y: number, width: number, height: number, taskbar = 48): ScreenArea => ({
   bounds: { x, y, width, height },
@@ -116,5 +116,25 @@ describe('computeMinimapLayout', () => {
     expect(layout.width).toBe(704);
     expect(layout.height).toBe(144);
     expect(layout.screens[1].y).toBeCloseTo(0);
+  });
+
+  it('デスクトップ番号だけの位置は描かない', () => {
+    const layout = computeMinimapLayout(
+      [main],
+      [{ placement: { virtualDesktopNumber: 2 } }],
+      256,
+      144
+    )!;
+    expect(layout.windows).toHaveLength(0);
+    expect(layout.screens[0].active).toBe(false);
+  });
+});
+
+describe('hasPlacementRect', () => {
+  it('座標と大きさがそろっているときだけ真', () => {
+    expect(hasPlacementRect({ x: 0, y: 0, width: 10, height: 10 })).toBe(true);
+    expect(hasPlacementRect({ x: 0, y: 0, width: 10 })).toBe(false);
+    expect(hasPlacementRect({ virtualDesktopNumber: 2 })).toBe(false);
+    expect(hasPlacementRect(undefined)).toBe(false);
   });
 });

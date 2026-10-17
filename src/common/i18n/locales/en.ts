@@ -733,7 +733,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       tipAddWindows: 'Turns open windows into rows, with their current positions',
       tipUpdatePositions:
         'After rearranging the windows, press this to update the rows to their current positions',
-      moveOnlyHint: 'rows move the window only while it is open (add something to open with ✏️)',
+      moveOnlyHint:
+        '<chip>Moves a window only</chip> rows move the window only while it is open (add something to open with ✏️)',
     },
     addWindows: {
       title: 'Add windows',
