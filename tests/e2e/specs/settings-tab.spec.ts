@@ -11,7 +11,7 @@ import { TestUtils } from '../helpers/test-utils';
  *
  * 設定画面はサイドバーメニューで以下のカテゴリに分かれています：
  * - 基本設定: 表示言語、ホットキー、システム、表示
- * - ウィンドウ: ウィンドウサイズ、ウィンドウ表示位置、ワークスペースウィンドウ
+ * - ウィンドウ: メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウの表示する場所、詳しい設定（大きさなど）
  * - バックアップ: バックアップ
  */
 test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
@@ -73,17 +73,23 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await windowMenu.click();
         await adminUtils.wait(200);
 
-        // ウィンドウサイズセクション
-        const windowSizeSection = adminWindow
-          .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウサイズ' }) });
-        await expect(windowSizeSection).toBeVisible();
+        // メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウの節
+        for (const heading of [
+          'メインウィンドウ',
+          'ワークスペースウィンドウ',
+          '切り離しウィンドウ',
+        ]) {
+          const section = adminWindow
+            .locator('.settings-section')
+            .filter({ has: adminWindow.locator('h3', { hasText: heading }) });
+          await expect(section).toBeVisible();
+        }
 
-        // ウィンドウ表示位置セクション
-        const windowPositionSection = adminWindow
-          .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウ表示位置' }) });
-        await expect(windowPositionSection).toBeVisible();
+        // 大きさなどは「詳しい設定」に畳んである。開くと見える
+        const details = adminWindow.locator('details.settings-details');
+        await expect(details).not.toHaveAttribute('open');
+        await details.locator('summary', { hasText: '詳しい設定' }).click();
+        await expect(details.locator('h4', { hasText: '大きさ' })).toBeVisible();
       });
 
       await test.step('バックアップカテゴリに切り替えてセクションを確認', async () => {
@@ -136,6 +142,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const windowMenu = adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' });
         await windowMenu.click();
         await adminUtils.wait(200);
+
+        // 大きさは「詳しい設定」に畳んであるので開く
+        await adminWindow.locator('details.settings-details > summary').click();
 
         // 通常時の幅
         const widthInput = adminWindow.locator('#windowWidth');
@@ -255,9 +264,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     }
   });
 
-  // ==================== ウィンドウ表示位置設定テスト ====================
+  // ==================== メインウィンドウの表示する場所の設定テスト ====================
 
-  test('ウィンドウ表示位置を設定できる', async ({
+  test('メインウィンドウの表示する場所を設定できる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -274,22 +283,22 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await adminUtils.wait(200);
       });
 
-      await test.step('ウィンドウ表示位置セクションが表示される', async () => {
+      await test.step('メインウィンドウの節が表示される', async () => {
         const positionSection = adminWindow
           .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウ表示位置' }) });
+          .filter({ has: adminWindow.locator('h3', { hasText: 'メインウィンドウ' }) });
         await expect(positionSection).toBeVisible();
       });
 
-      await test.step('既定は画面中央（自動で切り替え）が選択されている', async () => {
+      await test.step('既定はマウスカーソルのあるディスプレイの中央が選択されている', async () => {
         const cursorMonitorCenterRadio = adminWindow.locator(
           'input[name="windowPositionMode"][value="cursorMonitorCenter"]'
         );
         await expect(cursorMonitorCenterRadio).toBeChecked();
       });
 
-      await test.step('画面中央（固定）を選択できる', async () => {
-        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
+      await test.step('プライマリディスプレイの中央を選択できる', async () => {
+        // メインウィンドウの節のラジオボタンを直接操作
         const centerRadio = adminWindow.locator('input[name="windowPositionMode"][value="center"]');
         await centerRadio.click({ force: true });
         await adminUtils.wait(200);
@@ -301,8 +310,8 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         expect(settings.windowPositionMode).toBe('center');
       });
 
-      await test.step('カーソル付近を選択できる', async () => {
-        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
+      await test.step('マウスカーソルの近くを選択できる', async () => {
+        // メインウィンドウの節のラジオボタンを直接操作
         const cursorRadio = adminWindow.locator('input[name="windowPositionMode"][value="cursor"]');
         await cursorRadio.click({ force: true });
         await adminUtils.wait(200);
@@ -314,8 +323,8 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         expect(settings.windowPositionMode).toBe('cursor');
       });
 
-      await test.step('固定位置（手動設定）を選択できる', async () => {
-        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
+      await test.step('最後に動かした場所を選択できる', async () => {
+        // メインウィンドウの節のラジオボタンを直接操作
         const fixedRadio = adminWindow.locator('input[name="windowPositionMode"][value="fixed"]');
         await fixedRadio.click({ force: true });
         await adminUtils.wait(200);
