@@ -309,12 +309,15 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         });
         if (result?.kind === 'register') {
           applyDetailEditRef.current(target, result.items);
+        } else if (result?.kind === 'delete') {
+          // 詳細編集で確認済みなので、ここでは確認を出さずに未保存の削除にする
+          editing.deleteItems([target]);
         }
       } catch (error) {
         logError('詳細編集ウィンドウを開けませんでした:', error);
       }
     },
-    []
+    [editing.deleteItems]
   );
 
   // AdminItemManagerList側のIPCリスナー登録effectが依存するため、

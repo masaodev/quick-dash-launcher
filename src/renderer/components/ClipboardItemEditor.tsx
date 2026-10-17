@@ -111,6 +111,9 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
   latestRef.current = { item, previous };
 
   const sourceKey = item.clipboardSessionId ?? item.clipboardDataRef;
+  // 保存済みの実データが無く、まだ取り込み直しも書き直しもしていない
+  const dataMissing =
+    !!item.clipboardDataMissing && !item.clipboardSessionId && item.clipboardText === undefined;
 
   // 閉じるとき、元に戻すために取っておいたキャプチャが使われていなければ捨てる
   useEffect(
@@ -132,7 +135,13 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
     window.electronAPI.clipboardAPI
       .readContent(contentSourceOf(latestRef.current.item))
       .then((result) => {
-        if (!cancelled) setContent(result);
+        if (cancelled) return;
+        setContent(result);
+        // 保存済みの参照の実データが無い（保存させず、警告を出す）
+        const missing = !!result?.missing;
+        if (missing !== !!latestRef.current.item.clipboardDataMissing) {
+          onUpdate({ clipboardDataMissing: missing || undefined });
+        }
       })
       .catch((error) => logError('クリップボードの中身の読み取りに失敗:', error))
       .finally(() => {
@@ -280,11 +289,13 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
         <div className="clipboard-captured-meta">
           <span>{formats.map(formatToLabel).join(' / ')}</span>
           {formats.includes('image') && <span>{t('clipboardEditor.imageLimit')}</span>}
-          <span className={`clipboard-state${item.clipboardSessionId ? ' unsaved' : ''}`}>
-            {item.clipboardSessionId
-              ? t('clipboardEditor.capturedState', { date: savedAt })
-              : t('clipboardEditor.savedState', { date: savedAt })}
-          </span>
+          {!dataMissing && (
+            <span className={`clipboard-state${item.clipboardSessionId ? ' unsaved' : ''}`}>
+              {item.clipboardSessionId
+                ? t('clipboardEditor.capturedState', { date: savedAt })
+                : t('clipboardEditor.savedState', { date: savedAt })}
+            </span>
+          )}
           <span className="clipboard-captured-spacer" />
           {previous && (
             <button type="button" className="clipboard-link-button" onClick={handleUndo}>
@@ -318,6 +329,11 @@ const ClipboardItemEditor: React.FC<ClipboardItemEditorProps> = ({
     <div className="form-group clipboard-content-group">
       <label>{t('clipboardEditor.content')}</label>
       <div className="clipboard-item-editor">
+        {dataMissing && (
+          <div className="clipboard-data-missing" role="alert">
+            {t('clipboardEditor.dataMissing')}
+          </div>
+        )}
         <div className="clipboard-mode" role="group" aria-label={t('clipboardEditor.modeLabel')}>
           <button type="button" aria-pressed={mode === 'text'} onClick={switchToText}>
             {t('clipboardEditor.modeText')}

@@ -182,8 +182,9 @@
   font-weight: 500;
 }
 
+/* .error-message はこの画面の中だけに絞る（全画面に効くと、登録画面の入力エラーまで中央寄せ・大きな余白になる） */
 .loading-message,
-.error-message,
+.window-selector-modal .error-message,
 .no-windows-message {
   display: flex;
   align-items: center;
@@ -193,7 +194,7 @@
   color: var(--text-secondary);
 }
 
-.error-message {
+.window-selector-modal .error-message {
   color: var(--color-danger);
 }
 

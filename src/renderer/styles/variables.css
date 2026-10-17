@@ -78,7 +78,9 @@
   --mode-accent: var(--color-primary); /* 線・文字（検索欄の縁・リンク・タブの下線） */
   --mode-accent-solid: var(--color-primary); /* 白文字を載せる塗り（選択行・目印・バッジ） */
   --mode-tint: var(--bg-header); /* ヘッダー・タブ・ヒント行の面 */
-  --mode-surface: var(--bg-app); /* 一覧の面（縁の線と行のすき間が白く浮かないように、モードで色を付ける） */
+  --mode-surface: var(
+    --bg-app
+  ); /* 一覧の面（縁の線と行のすき間が白く浮かないように、モードで色を付ける） */
   --mode-marked: var(--bg-selected); /* 複数選択で選んだ行 */
 
   /* テキストカラー */
@@ -163,6 +165,7 @@
   --minimap-window-opacity: 0.28; /* ウィンドウ位置の四角の塗り */
   --minimap-dim-opacity: 0.25; /* セット全体の図で、乗せていない行の位置 */
   --set-row-place-width: 230px; /* セットの行の位置の言葉の列 */
+  --set-row-name-min-width: 200px; /* セットの行の名前の列（これより狭いときは位置の列を縮める） */
   --input-height-lg: 40px;
   --input-height-sm: 34px;
   --input-height: 32px;

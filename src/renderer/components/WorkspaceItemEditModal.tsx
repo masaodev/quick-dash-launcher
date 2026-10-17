@@ -9,9 +9,10 @@ import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEdi
 import { logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
 import { toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
+import { isTryExecuteBlocked } from '../utils/registerItemExecution';
 
 import FilePickerDialog from './FilePickerDialog';
-import ItemEditFields from './ItemEditFields';
+import ItemEditFields, { ITEM_CATEGORY_ICONS } from './ItemEditFields';
 import { Button } from './ui';
 import '../styles/components/ItemConverterMenu.css';
 
@@ -176,7 +177,18 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
         >
-          <h2>{t('workspace.edit.title')}</h2>
+          <h2 className="register-title">
+            {item && (
+              <span className="register-title-icon" aria-hidden>
+                {item.icon ? (
+                  <img src={item.icon} alt="" />
+                ) : (
+                  ITEM_CATEGORY_ICONS[item.itemCategory]
+                )}
+              </span>
+            )}
+            {t('workspace.edit.title')}
+          </h2>
 
           {loading ? (
             <div className="loading">{t('register.loading')}</div>
@@ -205,7 +217,12 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
               </div>
 
               <div className="modal-actions">
-                <Button variant="secondary" onClick={handleExecute}>
+                <Button
+                  variant="secondary"
+                  onClick={handleExecute}
+                  disabled={isTryExecuteBlocked(item)}
+                  title={isTryExecuteBlocked(item) ? t('register.tryRunSaveFirst') : undefined}
+                >
                   {t('register.tryRun')}
                 </Button>
                 <div className="modal-actions-right">

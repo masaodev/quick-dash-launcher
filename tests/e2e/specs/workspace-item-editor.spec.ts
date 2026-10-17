@@ -62,7 +62,7 @@ test.describe('QuickDashLauncher - ワークスペースアイテムの編集ウ
       ),
     ]);
     await editor.locator('.workspace-editor-page').waitFor({ state: 'visible', timeout: 15000 });
-    await expect(editor.locator('h2')).toHaveText('ワークスペースアイテムの編集');
+    await expect(editor.locator('h2')).toContainText('ワークスペースアイテムの編集');
     await expect(editor).toHaveTitle('アイテムの編集');
 
     await test.step('本体のサイズ・位置は変わらない', async () => {

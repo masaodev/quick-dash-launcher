@@ -175,9 +175,14 @@ describe('ClipboardService の中身の読み出し', () => {
     expect(service.readContent({ sessionId })?.text).toBe('取り込んだ文');
   });
 
-  it('無いもの・参照の形が違うものは null', () => {
+  it('保存済みの参照なのに実データのファイルが無いときは、無いことを知らせる', () => {
+    expect(service.readContent({ dataFileRef: 'clipboard-data/missing.json' })).toEqual({
+      missing: true,
+    });
+  });
+
+  it('無いセッション・参照の形が違うものは null', () => {
     expect(service.readContent({ sessionId: 'missing' })).toBeNull();
-    expect(service.readContent({ dataFileRef: 'clipboard-data/missing.json' })).toBeNull();
     expect(service.readContent({ dataFileRef: 'clipboard-data/../settings.json' })).toBeNull();
     expect(service.readContent({})).toBeNull();
   });

@@ -43,6 +43,8 @@ export interface RegisterItem extends ItemWindowSwitch {
    * セッション・参照より優先する。保存済みの中身をそのまま使うときは undefined
    */
   clipboardText?: string;
+  /** 保存済みの参照の実データが見つからない（画面の中だけで使い、保存しない） */
+  clipboardDataMissing?: boolean;
   /** セットの行（set専用） */
   setEntries?: SetEntry[];
   /** セットの開き方（set専用） */

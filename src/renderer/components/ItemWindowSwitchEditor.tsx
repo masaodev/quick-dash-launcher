@@ -58,7 +58,10 @@ const ItemWindowSwitchEditor: React.FC<ItemWindowSwitchEditorProps> = ({
 
   const placement = value.placement;
   // 画面の並びを読むまでは「今は無い画面」と出てしまうので、要約を出さない
-  const place = screens.length > 0 ? placementSummary(placement, screens, desktopNames) : undefined;
+  const place =
+    screens.length > 0
+      ? placementSummary(placement, screens, desktopNames, value.pinToAllDesktops)
+      : undefined;
   const summary =
     place && (value.pinToAllDesktops ? t('set.placement.onAllDesktops', { place }) : place);
   const tabNote =
