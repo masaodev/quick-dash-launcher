@@ -66,7 +66,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `workspace update <id か名前>` | ワークスペースの名前・並び順を変える |
 | `workspace remove <id か名前>` | 空のワークスペースを消す |
 | `workspace item list` | ワークスペースのアイテムの一覧。`--workspace`・`--group`・`--grep` で絞る。`--with-text` でクリップボードアイテムの本文も返す |
-| `workspace item add` | ワークスペースにアイテムを足す |
+| `workspace item add` | ワークスペースにアイテムを足す。`--from` ならメイン画面のアイテム（セットなど）を写して足す |
 | `workspace item update <id か表示名>` | ワークスペースのアイテムを変える・移す |
 | `workspace item remove <id か表示名>` | ワークスペースのアイテムを消す |
 | `workspace group list` | ワークスペースのグループの一覧。`--workspace`・`--grep` で絞る |
@@ -93,6 +93,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--file` `--tab` | launcher item add／update | 足す（update では移す）データファイル、またはタブ（その先頭のデータファイル）。add で省略したときは `datafiles/data.json` |
 | `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ。廃止した `window`（ウィンドウ操作）を渡すと `usage` で断り、代わりに `--set window='{"processName":"notepad.exe","title":"…"}'` でパスの無い単一アイテムを作るよう案内する |
 | `--group` | workspace item add／update | 入れるグループ。update で `""` を渡すと未分類へ移す |
+| `--from` | workspace item add | 写す元のメイン画面のアイテム（id か表示名）。`--name`・`--group`・`--workspace`・`--position`・`--dry-run` と一緒に使え、中身を決めるオプション（`--path`・`--args`・`--memo`・`--type`・`--text`・`--text-file`・`--set`）とは使えない。決まりは下の「メイン画面から写す」 |
 | `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる。archive restore では復元先（省略時は元のワークスペース） |
 | `--position` | workspace item add／update、workspace add／update、set row add、launcher tab add／update | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの、launcher tab add／update ではタブの並び。set row add では行を差し込む位置（省略時は最後） |
 | `--color` | workspace group add／update | `primary` `success` `danger` `warning` `info` `secondary` `purple` `teal` `pink` `indigo` `orange` `cyan`、または `#rrggbb` |
@@ -117,7 +118,8 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **クリップボードアイテム**: CLI で足せるのは、中身がテキストだけのもの（画面の「テキストを書く」と同じ）。本文を `--text` か `--text-file` で渡すと、実データを新しいファイルに保存して参照（`dataFileRef`）を差し替える。前の実データのファイルは消さない（画面で書き換えたときと同じ）。本文を書き換えられるのは中身がテキストだけのもので、画像・HTML・RTF を含むものは `conflict` で断る（名前・メモの変更と別のタブへの移動はできる）。参照の項目（`dataFileRef`・`savedAt`・`formats`・`preview`）は `--set`・`--unset` で変えられない。今の本文は `list --with-text` で読める
 - **触れないもの**: 画像・HTML・RTF を含むクリップボードアイテムの中身（画面の操作で作るもの。名前・メモは変えられ、消すこともできる）。中身のあるグループ・ワークスペースは消さない。最後の 1 つのワークスペースも消さない。アーカイブからの完全削除と、アーカイブのアイテム 1 件ずつの復元はできない（画面で行う）。セットの最後の 1 行は消さない（セットごと消すときは `launcher item remove`）
 - **設定**: `settings set` で変えられるのは[設定の変更](#設定の変更)の項目だけ
-- **ワークスペースに足せる種類**: 通常のアイテム（パスの無い単一アイテムを含む）と、テキストだけのクリップボードアイテム。セットを足すのは画面で行う（既にあるものは update で変えられる）
+- **ワークスペースに足せる種類**: 新しく作れるのは、通常のアイテム（パスの無い単一アイテムを含む）と、テキストだけのクリップボードアイテム。セットと、画像などを含むクリップボードアイテムは、`--from` でメイン画面から写して足す（既にあるものは update で変えられる）
+- **メイン画面から写す**: `workspace item add --from <id か表示名>` は、メイン画面の右クリックの「ワークスペースに追加」と同じ中身を足す（.lnk はリンク先を読んだ形）。セットの行はメイン画面のアイテムを id で指したままにする。クリップボードアイテムは実データを複製し、ワークスペース側に自分のファイルを持たせる（複製できなければ元の参照のまま）。フォルダ取込は中身に展開されるので写さない（`conflict`。中のファイルは `--path` で足す）。読み込みで不正とされたアイテムは `invalid`。表示名が複数に当たれば、タブつきの候補を返して `ambiguous`。写した後に中身を変えるときは `workspace item update`
 
 ### 設定の変更
 
@@ -151,7 +153,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 成功したら、標準出力に結果の JSON を出します。
 
 - `list`: 配列。各要素に場所を付ける（メイン画面は `file`・`tab`、ワークスペースは `location: ["ワークスペース名", "グループ", "サブグループ"]`）。`--with-text` では、中身がテキストだけのクリップボードアイテムに本文 `text` を付ける
-- `add`: 足したもの（採番した `id` を含む）
+- `add`: 足したもの（採番した `id` を含む）。`--from` では写した元 `from`（`id`・`displayName`・タブの `location`）を付ける
 - `update`: `{ "before": 変える前, "item": 変えた後 }`（グループは `group`、ワークスペースは `workspace`）。別のタブへ移したときは `"moved": { "from", "to" }` を付ける
 - `remove`: `{ "removed": 消したもの }`
 - `group archive`: `{ "archived": しまったグループ }`（`itemCount`・`subgroupCount` は子孫まで数える）

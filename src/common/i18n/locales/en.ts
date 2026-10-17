@@ -464,6 +464,8 @@ Works with workspaces (workspace.json).
   qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
                                               --workspace --position <0-based> --set key=value --dry-run.
                                               With --type clipboard, --text | --text-file instead of --path)
+  qdl workspace item add --from <id or name>  Copy a launcher item (such as a set) to the workspace
+                                              (--name --group --workspace --position --dry-run)
   qdl workspace item update <id or name>      Change an item (--name --path --args --memo --text --text-file --set --unset,
                                               --group <group> ("" for ungrouped) --workspace --position --dry-run)
   qdl workspace item remove <id or name>      Delete an item (--dry-run)
@@ -606,6 +608,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       needText: 'Specify the text with --text or --text-file',
       textOnlyClipboard: '--text and --text-file can only be used with clipboard items (clipboard)',
       clipboardOption: "Clipboard items don't take --{{option}}",
+      fromOption:
+        "--{{option}} can't be used with --from (to change the contents, use workspace item update after copying)",
+      fromDir:
+        'The folder import "{{name}}" can\'t be copied to the workspace (add the files in it one by one with --path)',
+      fromInvalid: '"{{name}}" failed validation when loading, so it can\'t be copied: {{reason}}',
       clipboardNotText:
         "This clipboard item contains more than text ({{formats}}), so its text can't be replaced (you can still change its name and memo or move it; change its contents on screen)",
       saveTextFailed: "Couldn't save the clipboard text",

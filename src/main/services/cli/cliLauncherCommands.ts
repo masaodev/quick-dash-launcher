@@ -87,7 +87,8 @@ function view(entry: LauncherEntry, tabs: DataFileTab[]): Record<string, unknown
   };
 }
 
-function candidate(entry: LauncherEntry, tabs: DataFileTab[]): CliCandidate {
+/** 候補・写した元として示す形（id・表示名・タブ） */
+export function launcherCandidate(entry: LauncherEntry, tabs: DataFileTab[]): CliCandidate {
   return {
     id: entry.item.id,
     displayName: itemName(entry.item),
@@ -362,16 +363,21 @@ async function addClipboard(parsed: ParsedArgs, ctx: LauncherCommandContext): Pr
   return view({ item, file: targetFile }, tabs);
 }
 
-async function findEntry(key: string, ctx: LauncherCommandContext): Promise<LauncherEntry> {
-  const tabs = await ctx.store.tabs();
+/** メイン画面のアイテムを id か表示名の完全一致で 1 件に絞る（ワークスペースの --from でも使う） */
+export async function findLauncherEntry(key: string, store: LauncherStore): Promise<LauncherEntry> {
+  const tabs = await store.tabs();
   return resolveOne(
     key,
-    await ctx.store.load(),
+    await store.load(),
     mainI18n.t('cli.targets.launcherItem'),
     (e) => e.item.id,
     (e) => itemName(e.item),
-    (e) => candidate(e, tabs)
+    (e) => launcherCandidate(e, tabs)
   );
+}
+
+function findEntry(key: string, ctx: LauncherCommandContext): Promise<LauncherEntry> {
+  return findLauncherEntry(key, ctx.store);
 }
 
 async function update(args: readonly string[], ctx: LauncherCommandContext): Promise<unknown> {

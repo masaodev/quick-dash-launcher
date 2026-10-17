@@ -466,6 +466,8 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
                                               --workspace --position <0 始まり> --set key=value --dry-run。
                                               --type clipboard なら --path の代わりに --text | --text-file）
+  qdl workspace item add --from <id か表示名>  メインウィンドウのアイテム（セットなど）を写して追加
+                                              （--name --group --workspace --position --dry-run）
   qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
                                               --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
@@ -610,6 +612,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       textOnlyClipboard:
         '--text・--text-file はクリップボードアイテム（clipboard）だけに指定できます',
       clipboardOption: 'クリップボードアイテムには --{{option}} を指定できません',
+      fromOption:
+        '--from と一緒に --{{option}} は指定できません（中身を変えるときは、写した後に workspace item update で）',
+      fromDir:
+        'フォルダ取込「{{name}}」はワークスペースに写せません（中のファイルは --path で 1 件ずつ足してください）',
+      fromInvalid: '「{{name}}」は読み込みで不正とされたので写せません: {{reason}}',
       clipboardNotText:
         'このクリップボードアイテムはテキスト以外（{{formats}}）を含むので、本文を書き換えられません（名前・メモ・移動はできます。中身を変えるときは画面で操作してください）',
       saveTextFailed: 'クリップボードの本文を保存できませんでした',

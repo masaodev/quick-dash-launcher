@@ -79,6 +79,8 @@ function context(overrides: Partial<CliContext> = {}): CliContext {
     markFolder: async (p) => p,
     changed: vi.fn(),
     beforeGroupRemoved: vi.fn(),
+    launcherAppItem: vi.fn(async () => undefined),
+    duplicateClipboardData: vi.fn(() => null),
     ...overrides,
   };
 }
