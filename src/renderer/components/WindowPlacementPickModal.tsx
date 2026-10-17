@@ -70,16 +70,17 @@ const WindowPlacementPickModal: React.FC<WindowPlacementPickModalProps> = ({
                   checked={selected === index}
                   onChange={() => setSelected(index)}
                 />
+                {/* 図は行の頭の決まった幅の列に置き、行ごとに縦をそろえる（最小化中は空ける） */}
+                <span className="set-row-map">
+                  {w.windowState !== 'minimized' && (
+                    <WindowMinimap window={w} screens={screens} desktopCount={desktopCount} />
+                  )}
+                </span>
                 <span className="set-row-name">
                   <span className="set-row-title-text">{w.title}</span>
                   <span className="set-row-details set-placement-pick-details">
                     {w.processName && <span>{w.processName}</span>}
-                    <span className="set-sub-with-map">
-                      {w.windowState !== 'minimized' && (
-                        <WindowMinimap window={w} screens={screens} desktopCount={desktopCount} />
-                      )}
-                      {place}
-                    </span>
+                    <span>{place}</span>
                   </span>
                 </span>
               </label>

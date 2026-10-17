@@ -243,17 +243,24 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     )
                   )}
                 </span>
-                {place && entry.placement && (
-                  <span className="set-row-place set-row-place-with-map">
-                    <PlacementMinimap
-                      screens={screens}
-                      placements={[{ placement: entry.placement }]}
-                      size="tiny"
-                      label={place}
-                      caption={place}
-                    />
-                    📍 {place}
-                  </span>
+                {/* 図と位置の言葉は決まった幅の列に置き、行ごとに縦をそろえる（位置の無い行は空けておく） */}
+                {hasPlacement && (
+                  <>
+                    <span className="set-row-map">
+                      {place && entry.placement && (
+                        <PlacementMinimap
+                          screens={screens}
+                          placements={[{ placement: entry.placement }]}
+                          size="tiny"
+                          label={place}
+                          caption={place}
+                        />
+                      )}
+                    </span>
+                    <span className="set-row-place set-row-place-column" title={place}>
+                      {place && `📍 ${place}`}
+                    </span>
+                  </>
                 )}
                 <span className="set-row-actions">
                   <button
