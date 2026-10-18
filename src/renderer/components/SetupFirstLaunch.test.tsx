@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { SetupFirstLaunch } from './SetupFirstLaunch';
 
@@ -26,6 +26,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // 先に片付ける（まだ走っていない useEffect が、消したあとの electronAPI を読んで落ちないように）
+  cleanup();
   Reflect.deleteProperty(window, 'electronAPI');
 });
 
