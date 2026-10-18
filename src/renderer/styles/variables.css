@@ -177,6 +177,9 @@
   --button-height: 32px;
   --icon-size-sm: 24px;
   --icon-size: 32px;
+  --pin-badge-size: 13px; /* 📌 の「常に最前面」の ▲ の丸 */
+  --pin-badge-font-size: 7px;
+  --pin-badge-offset: -5px; /* ボタンの右上からはみ出す量（ウィンドウの端に置くボタンでは小さくする） */
   --scrollbar-width: 8px;
   --font-family-mono: monospace;
 
