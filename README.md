@@ -6,9 +6,9 @@
 
 <p align="center"><b>English</b> | <a href="README.ja.md">日本語</a></p>
 
-**Only the things you use. A launcher you fill yourself and organize with tabs.**
+**A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword.**
 
-The list shows only the folders, files, URLs, and apps you've added. Sort them into tabs such as "Work," "Personal," or "Client A," and open any of them by typing part of its name.
+Only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Work," "Personal," or "Client A."
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
