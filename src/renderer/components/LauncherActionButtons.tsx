@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PinLevel } from '@common/types';
 
 import LauncherSettingsDropdown from './LauncherSettingsDropdown';
@@ -17,6 +18,8 @@ interface ActionButtonsProps {
   onToggleWorkspace: () => void;
   onOpenRegisterModal: () => void;
   pinLevel: PinLevel;
+  /** ワークスペースが開いているか（⭐ ボタンを押し込んだ見た目にする） */
+  isWorkspaceOpen: boolean;
   onPinLevelChange: (level: PinLevel) => void;
 }
 
@@ -32,7 +35,13 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   onOpenRegisterModal,
   pinLevel,
   onPinLevelChange,
+  isWorkspaceOpen,
 }) => {
+  const { t } = useTranslation();
+  const workspaceTitle = t(
+    isWorkspaceOpen ? 'launcher.workspaceButton.close' : 'launcher.workspaceButton.open'
+  );
+
   return (
     <div className="action-buttons">
       <LauncherRefreshActionsDropdown
@@ -43,11 +52,19 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         onRefreshAll={onRefreshAll}
       />
       <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
+      <button
+        className={`action-btn ${isWorkspaceOpen ? 'toggle-on' : ''}`}
+        onClick={onToggleWorkspace}
+        title={workspaceTitle}
+        aria-label={workspaceTitle}
+        aria-pressed={isWorkspaceOpen}
+      >
+        ⭐
+      </button>
       <PinButton level={pinLevel} onLevelChange={onPinLevelChange} />
       <LauncherSettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
-        onToggleWorkspace={onToggleWorkspace}
         onQuitApp={() => window.electronAPI.quitApp()}
       />
     </div>

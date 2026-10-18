@@ -11,11 +11,11 @@ const PIN_TITLE_KEYS = {
   2: 'common.pin.alwaysOnTop',
 } as const satisfies Record<PinLevel, string>;
 
-/** 段階ごとの見た目（なしは通常のボタン） */
+/** 段階ごとの見た目（なし＝通常のボタン、表示固定＝押し込み、常に最前面＝押し込み＋黄色と ▲） */
 const PIN_CLASS_NAMES: Record<PinLevel, string> = {
   0: '',
-  1: 'pin-stay-visible',
-  2: 'pin-always-on-top',
+  1: 'toggle-on',
+  2: 'toggle-on pin-always-on-top',
 };
 
 interface PinButtonProps {

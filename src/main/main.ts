@@ -34,7 +34,11 @@ import {
   closeSplashWindow,
   notifySplashInitComplete,
 } from './splashWindowManager';
-import { createWorkspaceWindow, closeWorkspaceWindow } from './workspaceWindowManager';
+import {
+  createWorkspaceWindow,
+  closeWorkspaceWindow,
+  restoreWindowsOnStartup,
+} from './workspaceWindowManager';
 import { migrateRemovedWindowSettings } from './services/removedWindowSettings.js';
 import { closeAllDetachedGroupWindows } from './detachedGroupWindowManager';
 import { markAppQuitting } from './utils/managedWindow.js';
@@ -222,6 +226,9 @@ app.whenReady().then(async () => {
 
   // メインウィンドウ・トレイ・ワークスペースを並列作成（互いに独立）
   await Promise.all([createWindow(), createTray(), createWorkspaceWindow()]);
+
+  // 再起動しても直前と同じ見え方に戻す（📌 ありのワークスペース・切り離しウィンドウを出す）
+  void restoreWindowsOnStartup();
 
   // ホットキー登録（スプラッシュから分離、スキップ環境でも確実に実行）
   if (!EnvConfig.disableGlobalHotkey) {
