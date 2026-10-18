@@ -1235,6 +1235,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   importCommon: {
     source: 'Source',
     destination: 'Destination',
+    destinationTab: 'Destination tab',
     duplicateHandling: 'Duplicates:',
     skip: "Skip (don't import duplicate items)",
     overwrite: 'Overwrite (update existing items with the new information)',
@@ -1247,7 +1248,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     newFile: '+ New data file',
     tabName: 'Tab name',
     fileName: 'File name',
-    newTabName: '{{name}} (new tab)',
+    newTabName: 'the new "{{name}}" tab',
     newFileName: '{{name}} (new)',
     destinationEcho: 'Import into {{target}}',
   },
@@ -1535,7 +1536,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         sub: 'Then just paste with Ctrl+V',
       },
     },
-    destination: 'Save to',
+    destination: 'Save to tab',
+    placementTab: 'the "{{tab}}" tab',
+    placementTabFile: '"{{file}}" in the "{{tab}}" tab',
     destEcho: 'Add to {{dest}}',
     destEchoEdit: 'Save to {{dest}}',
     displayName: 'Display name',
@@ -1846,6 +1849,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       "Couldn't send the close request (for example, to an app running as administrator)",
   },
   sampleData: {
+    /** 初回起動で Web のアイテムを分けて入れる 2 つ目のタブの名前 */
+    webTabName: 'Web',
     readme: {
       name: '📖 How to use QuickDashLauncher (README)',
       url: 'https://github.com/masaodev/quick-dash-launcher#readme',

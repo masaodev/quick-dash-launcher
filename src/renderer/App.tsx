@@ -621,12 +621,6 @@ function App(): React.ReactElement {
         hotkey: settings.hotkey,
         autoLaunch: settings.autoLaunch,
         itemSearchHotkey: settings.itemSearchHotkey,
-        dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: t('firstLaunch.defaultTabName') }],
-        dataFileLabels: {
-          [DEFAULT_DATA_FILE]: t('itemManager.tabStructure.defaultNames.fileForTab', {
-            tab: t('firstLaunch.defaultTabName'),
-          }),
-        },
       });
       await window.electronAPI.changeHotkey(settings.hotkey);
       if (settings.itemSearchHotkey) {

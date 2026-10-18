@@ -6,7 +6,7 @@ import { app, globalShortcut, ipcMain, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
-import { createDefaultDataFile } from './utils/appHelpers';
+import { createDefaultDataFile, createFirstLaunchTabs } from './utils/appHelpers';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { BackupService } from './services/backupService.js';
@@ -195,8 +195,12 @@ app.whenReady().then(async () => {
   // 初回起動モードを設定（初回起動時はフォーカス喪失やEscapeで閉じないようにする）
   setFirstLaunchMode(isFirstLaunch);
 
-  // 初回起動時にデフォルトのdata.jsonファイルを作成
-  createDefaultDataFile();
+  // データファイルが無ければお試し用のアイテム入りで作る。初回起動では Web のアイテムを 2 つ目のタブに分け、
+  // タブを表示言語の名前で決める（ウィンドウを作る前に決めて、最初の読み込みから 2 つのタブで出す）
+  const splitWebTab = createDefaultDataFile(isFirstLaunch);
+  if (isFirstLaunch) {
+    await settingsService.setMultiple(createFirstLaunchTabs(splitWebTab));
+  }
 
   // 起動時スナップショットバックアップ（fire-and-forget: メインフローをブロックしない）
   BackupService.getInstance()

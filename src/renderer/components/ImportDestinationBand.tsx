@@ -8,7 +8,7 @@ interface ImportDestinationBandProps {
 }
 
 /**
- * 取込先の帯「取込先 [タブ ▼] › [ファイル ▼]」（登録画面の保存先の帯と同じ形）
+ * 取込先の帯「取込先タブ [タブ ▼] › [ファイル ▼]」（登録画面の保存先の帯と同じ形）
  *
  * アプリ取込・ブックマーク取込・ブックマークの取込ルールの編集で使う。状態は useImportDestination が持つ。
  * 新しいタブを選ぶとタブ名の欄だけを出す（ファイルの欄は出さない。ファイル名はタブ名と同じ）。
@@ -18,7 +18,7 @@ function ImportDestinationBand({ dest }: ImportDestinationBandProps): ReactEleme
   const { t } = useTranslation();
   return (
     <div className="import-dest">
-      <span className="import-dest-label">{t('importCommon.destination')}</span>
+      <span className="import-dest-label">{t('importCommon.destinationTab')}</span>
       <select
         aria-label={t('importCommon.destTab')}
         value={dest.destTab}

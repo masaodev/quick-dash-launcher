@@ -70,7 +70,7 @@ async function openAppImport(electronApp: ElectronApplication, adminWindow: Page
  * アプリ取込画面
  * - 開いた時点では何も選ばれていない（使うアプリだけを選ぶ）
  * - アンインストーラー・アプリ以外は既定で除外し、「除外したものも表示」で出せる
- * - 取込先の初期値は「選択中のタブに新しいデータファイル（アプリ）」。既存のファイル・新しいタブも選べる
+ * - 取込先の初期値は「選択中のタブの先頭のデータファイル」。新しいデータファイル（アプリ）・新しいタブも選べる
  * - 取込先にすでにあるアプリには「登録済み」の印が付く（新しいファイルなら、そのタブのファイルと照らす）
  * - 選んだ分だけが未保存の変更としてアイテム管理に並ぶ
  */
@@ -98,13 +98,12 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
         await expect(importButton).toBeDisabled();
       });
 
-      await test.step('取込先の初期値は選択中のタブの新しいデータファイル', async () => {
+      await test.step('取込先の初期値は選択中のタブの先頭のデータファイル', async () => {
+        await expect(modal.locator('.import-dest-label')).toHaveText('取込先タブ');
         await expect(modal.getByLabel('取込先のタブ')).toHaveValue('0');
-        await expect(fileSelect).toHaveValue('');
-        await expect(modal.locator('.import-dest input')).toHaveValue('アプリ');
-        await expect(modal.locator('.import-echo')).toHaveText(
-          'メイン › アプリ（新規） に取り込む'
-        );
+        await expect(fileSelect).toHaveValue('datafiles/data.json');
+        await expect(modal.locator('.import-dest input')).toHaveCount(0);
+        await expect(modal.locator('.import-echo')).toHaveText('「メイン」タブに取り込む');
       });
 
       await test.step('タブにあるアプリには「登録済み」が付く', async () => {
@@ -144,17 +143,7 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
         await expect(importButton).toHaveText('2 件を取り込む');
       });
 
-      await test.step('新しいファイルなら、登録済みを選んでも重複時の処理は出ない', async () => {
-        const notepadRow = modal.locator('.app-table tbody tr', { hasText: 'メモ帳' });
-        await notepadRow.click();
-        await expect(modal.locator('.duplicate-warning-section')).toHaveCount(0);
-        await notepadRow.click();
-      });
-
-      await test.step('既存のファイルを選ぶと、登録済みを選んだときに重複時の処理が出る', async () => {
-        await fileSelect.selectOption('datafiles/data.json');
-        await expect(modal.locator('.import-dest input')).toHaveCount(0);
-        await expect(modal.locator('.import-echo')).toHaveText('メイン に取り込む');
+      await test.step('既存のファイル（初期値）では、登録済みを選んだときに重複時の処理が出る', async () => {
         const notepadRow = modal.locator('.app-table tbody tr', { hasText: 'メモ帳' });
         await notepadRow.click();
         await expect(modal.locator('.duplicate-warning-section')).toContainText(
@@ -162,7 +151,18 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
         );
         await notepadRow.click();
         await expect(modal.locator('.duplicate-warning-section')).toHaveCount(0);
+      });
+
+      await test.step('新しいデータファイルを選ぶと名前の欄が出て、登録済みを選んでも重複時の処理は出ない', async () => {
         await fileSelect.selectOption('');
+        await expect(modal.locator('.import-dest input')).toHaveValue('アプリ');
+        await expect(modal.locator('.import-echo')).toHaveText(
+          '「メイン」タブの「アプリ（新規）」に取り込む'
+        );
+        const notepadRow = modal.locator('.app-table tbody tr', { hasText: 'メモ帳' });
+        await notepadRow.click();
+        await expect(modal.locator('.duplicate-warning-section')).toHaveCount(0);
+        await notepadRow.click();
       });
 
       await test.step('取り込むと新しいファイルができ、選んだ分だけが未保存の変更として並ぶ', async () => {
@@ -209,7 +209,7 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
           .locator('.import-dest-field', { hasText: 'タブ名' })
           .locator('input')
           .fill('ツール');
-        await expect(modal.locator('.import-echo')).toHaveText('ツール（新しいタブ） に取り込む');
+        await expect(modal.locator('.import-echo')).toHaveText('「ツール」タブ（新規）に取り込む');
       });
 
       await test.step('取り込むとタブとファイルができ、そのタブが開く', async () => {
