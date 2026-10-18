@@ -91,8 +91,15 @@ export const en: LocaleMessages = {
     empty: {
       noMatch: 'No items match "{{query}}"',
       noMatchWindow: 'No windows match "{{query}}"',
-      noMatchHint: 'Ctrl+↑ for search history, Shift+Tab to search windows',
+      noMatchInTab: 'No items in this tab match "{{query}}"',
+      noMatchWindowInTab: 'No windows in this tab match "{{query}}"',
+      noMatchHint: 'To find an open window, press Shift+Tab to search windows',
       noMatchWindowHint: 'Shift+Tab returns to normal search',
+      noMatchWindowNormalHint:
+        'Normal search has matching items. Shift+Tab returns to normal search',
+      otherTabsHaveItems: 'Other tabs have matching items.',
+      otherTabsHaveWindows: 'Other tabs have matching windows.',
+      switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
       add: '📄 Add item…',
     },

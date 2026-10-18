@@ -30,6 +30,7 @@ import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
+import { findNoMatchElsewhere } from './utils/noMatchElsewhere';
 import { debugLog, logError } from './utils/debug';
 import { indexById, setEntryNames } from './utils/setEditing';
 import { loadCustomIcons } from './utils/customIcons';
@@ -375,6 +376,36 @@ function App(): React.ReactElement {
     return filterItems(itemsToFilter, searchQuery, searchMode);
   }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery]);
 
+  // 検索で 0 件のとき、他のタブや通常の検索に合うものがあるか（一覧が空の案内に使う）
+  const noMatchElsewhere = useMemo(
+    () =>
+      filteredItems.length > 0
+        ? null
+        : findNoMatchElsewhere({
+            searchMode,
+            searchQuery,
+            mainItems,
+            dataFileTabs,
+            showDataFileTabs,
+            activeTab,
+            windowList,
+            showDesktopTabs,
+            activeDesktopTab,
+          }),
+    [
+      filteredItems.length,
+      searchMode,
+      searchQuery,
+      mainItems,
+      dataFileTabs,
+      showDataFileTabs,
+      activeTab,
+      windowList,
+      showDesktopTabs,
+      activeDesktopTab,
+    ]
+  );
+
   // 一覧が縮んで選択が範囲外になったら末尾に合わせる（末尾のウィンドウを閉じた後など）
   useEffect(() => {
     if (filteredItems.length > 0 && selectedIndex >= filteredItems.length) {
@@ -417,7 +448,7 @@ function App(): React.ReactElement {
     else void windowOps.closeWindows(targets);
   };
 
-  const { handleKeyDown } = useKeyboardShortcuts({
+  const { handleKeyDown, switchToNextTab } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
     dataFileTabs,
@@ -743,12 +774,21 @@ function App(): React.ReactElement {
         nameOfItem={nameOfMainItem}
         emptyState={
           searchQuery.trim()
-            ? { kind: 'noMatch', query: searchQuery.trim(), windowMode: searchMode === 'window' }
+            ? {
+                kind: 'noMatch',
+                query: searchQuery.trim(),
+                windowMode: searchMode === 'window',
+                elsewhere: noMatchElsewhere,
+              }
             : searchMode === 'normal'
               ? { kind: 'emptyTab' }
               : null
         }
         onAddItem={() => void openRegisterWindow()}
+        onSwitchTab={() => {
+          switchToNextTab();
+          searchInputRef.current?.focus();
+        }}
         selectedIndex={selectedIndex}
         onItemExecute={handleExecuteItem}
         onItemSelect={setSelectedIndex}

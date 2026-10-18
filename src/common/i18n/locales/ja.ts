@@ -93,8 +93,15 @@ export const ja = {
     empty: {
       noMatch: '「{{query}}」に合うアイテムはありません',
       noMatchWindow: '「{{query}}」に合うウィンドウはありません',
-      noMatchHint: 'Ctrl+↑ で検索履歴、Shift+Tab でウィンドウ検索に切り替えられます',
+      noMatchInTab: '「{{query}}」に合うアイテムはこのタブにはありません',
+      noMatchWindowInTab: '「{{query}}」に合うウィンドウはこのタブにはありません',
+      noMatchHint: '開いているウィンドウを探すときは Shift+Tab でウィンドウ検索に切り替えます',
       noMatchWindowHint: 'Shift+Tab で通常の検索に戻ります',
+      noMatchWindowNormalHint:
+        '通常の検索には合うアイテムがあります。Shift+Tab で通常の検索に戻ります',
+      otherTabsHaveItems: '他のタブに合うアイテムがあります。',
+      otherTabsHaveWindows: '他のタブに合うウィンドウがあります。',
+      switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
       add: '📄 アイテムを追加…',
     },

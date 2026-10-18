@@ -30,6 +30,31 @@
   color: var(--text-muted);
 }
 
+/* 「Tab:タブを切り替える」（検索欄の下の「F5:データを再読み込み」と同じ見た目） */
+.item-list-empty-key-hint {
+  margin-left: var(--spacing-xs);
+  white-space: nowrap;
+}
+
+.item-list-empty-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--mode-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.item-list-empty-link:hover {
+  color: var(--color-primary-hover);
+}
+
+.item-list-empty-link:active {
+  color: var(--color-primary-dark);
+}
+
 /* 仮想化用: 全アイテム分の高さを確保するスペーサー（絶対配置の基準） */
 .item-list-inner {
   position: relative;
