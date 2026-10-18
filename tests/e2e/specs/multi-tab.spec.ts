@@ -211,6 +211,31 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     await expect(redditItem).toBeVisible();
   });
 
+  test('検索で今のタブが 0 件のとき、他のタブにあるかどうかで案内が変わる', async ({
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const empty = mainWindow.locator('.item-list-empty');
+
+    await utils.waitForPageLoad();
+
+    await test.step('メインタブには無くサブ1タブにある語で検索すると、他のタブを案内する', async () => {
+      await utils.searchFor('Reddit');
+      await expect(empty).toContainText('「Reddit」に合うアイテムはこのタブにはありません');
+      await expect(empty).toContainText('他のタブに合うアイテムがあります');
+      await expect(empty.getByRole('button')).toHaveCount(0);
+      // タブは自動で切り替えない
+      await expect(mainWindow.locator('.tab-button.active', { hasText: 'メイン' })).toBeVisible();
+    });
+
+    await test.step('どのタブにも無い語では、ウィンドウ検索と追加を案内する', async () => {
+      await utils.searchFor('どこにもない検索語');
+      await expect(empty).toContainText('「どこにもない検索語」に合うアイテムはありません');
+      await expect(empty).toContainText('Shift+Tab でウィンドウ検索に切り替えます');
+      await expect(empty.getByRole('button', { name: /アイテムを追加/ })).toBeVisible();
+    });
+  });
+
   test('サブタブで新しいアイテムを追加して表示される', async ({ mainWindow, configHelper }) => {
     const utils = new TestUtils(mainWindow);
 

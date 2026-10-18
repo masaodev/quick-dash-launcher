@@ -9,6 +9,7 @@ import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
 import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
+import type { NoMatchElsewhere } from '../utils/noMatchElsewhere';
 
 import MemoViewModal from './MemoViewModal';
 import { Button } from './ui/Button';
@@ -30,7 +31,7 @@ interface ItemListProps {
   onCloseWindow?: (win: WindowInfo) => Promise<void>;
   /** 一覧が空のときの案内（検索で 0 件／空のタブ）。null なら何も出さない */
   emptyState?: LauncherEmptyState | null;
-  /** 空のタブの案内の「アイテムを追加…」 */
+  /** 空のタブと、どこにも合わないときの案内の「アイテムを追加…」 */
   onAddItem?: () => void;
   /** 右クリックの固定・固定解除（pin: true で固定） */
   onPinWindows?: (wins: WindowInfo[], pin: boolean) => Promise<void>;
@@ -44,7 +45,34 @@ interface ItemListProps {
 
 /** 一覧が空のときの案内の種類 */
 export type LauncherEmptyState =
-  { kind: 'noMatch'; query: string; windowMode: boolean } | { kind: 'emptyTab' };
+  | { kind: 'noMatch'; query: string; windowMode: boolean; elsewhere: NoMatchElsewhere }
+  | { kind: 'emptyTab' };
+
+/** 検索で 0 件のときの案内の 2 行（辞書のキー）。場面ごとの文言の対応はここだけで決める */
+function noMatchKeys(windowMode: boolean, elsewhere: NoMatchElsewhere) {
+  if (windowMode) {
+    if (elsewhere === 'otherTab') {
+      return {
+        title: 'launcher.empty.noMatchWindowInTab',
+        hint: 'launcher.empty.otherTabsHaveWindows',
+      } as const;
+    }
+    return {
+      title: 'launcher.empty.noMatchWindow',
+      hint:
+        elsewhere === 'normalSearch'
+          ? 'launcher.empty.noMatchWindowNormalHint'
+          : 'launcher.empty.noMatchWindowHint',
+    } as const;
+  }
+  if (elsewhere === 'otherTab') {
+    return {
+      title: 'launcher.empty.noMatchInTab',
+      hint: 'launcher.empty.otherTabsHaveItems',
+    } as const;
+  }
+  return { title: 'launcher.empty.noMatch', hint: 'launcher.empty.noMatchHint' } as const;
+}
 
 export interface WindowListSelection {
   isMarked: (hwnd: WindowInfo['hwnd']) => boolean;
@@ -343,20 +371,19 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             {emptyState.kind === 'noMatch' ? (
               <>
                 <p>
-                  {t(
-                    emptyState.windowMode
-                      ? 'launcher.empty.noMatchWindow'
-                      : 'launcher.empty.noMatch',
-                    { query: emptyState.query }
-                  )}
+                  {t(noMatchKeys(emptyState.windowMode, emptyState.elsewhere).title, {
+                    query: emptyState.query,
+                  })}
                 </p>
                 <p className="item-list-empty-hint">
-                  {t(
-                    emptyState.windowMode
-                      ? 'launcher.empty.noMatchWindowHint'
-                      : 'launcher.empty.noMatchHint'
-                  )}
+                  {t(noMatchKeys(emptyState.windowMode, emptyState.elsewhere).hint)}
                 </p>
+                {/* 通常の検索でどこにも合わないときは、そのまま登録へ進めるようにする */}
+                {!emptyState.windowMode && emptyState.elsewhere === null && onAddItem && (
+                  <Button variant="secondary" size="sm" onClick={onAddItem}>
+                    {t('launcher.empty.add')}
+                  </Button>
+                )}
               </>
             ) : (
               <>
