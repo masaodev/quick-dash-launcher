@@ -251,8 +251,9 @@ export function useRegisterForm(
     setItems(newItems);
   };
 
-  const handlePathBlur = async (index: number) => {
-    const item = items[index];
+  /** パス欄を離れたとき（または「選択」で選んだとき。pickedPath は選んだパスで、まだ items に入っていない）に種別を決め直す */
+  const handlePathBlur = async (index: number, pickedPath?: string) => {
+    const item = pickedPath === undefined ? items[index] : { ...items[index], path: pickedPath };
     if (item.itemCategory === 'clipboard') {
       return;
     }
@@ -268,7 +269,7 @@ export function useRegisterForm(
 
     const newType = await detectItemType(item.path);
     const newItems = [...items];
-    newItems[index].type = newType;
+    newItems[index] = { ...item, type: newType };
 
     if (newType === 'folder') {
       newItems[index].folderProcessing ??= 'folder';

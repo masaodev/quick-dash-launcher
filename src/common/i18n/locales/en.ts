@@ -1521,6 +1521,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     path: 'Path',
     pathPlaceholder: 'Enter a file path, URL, or custom URI',
+    dirPathPlaceholder: 'Enter the path of the folder to import',
     itemOptions: 'Options (arguments, icon)',
     windowSwitch: {
       toggle: 'Options (switch to window, window position)',
@@ -1719,6 +1720,46 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   iconFetch: {
     title: 'Get the icon from the path automatically',
     button: 'Fetch icon',
+  },
+  /** 登録・編集画面のフォルダ取込の「取り込まれるもの」（プレビュー） */
+  dirPreview: {
+    title: 'What gets imported',
+    run: 'Preview',
+    runTitle: 'Read the folder and see what will be imported',
+    cancel: 'Stop',
+    scanning: 'Counting…',
+    count_one: '{{count}} item will be imported',
+    count_other: '{{count}} items will be imported',
+    countTruncated_one: '{{count}}+ item will be imported',
+    countTruncated_other: '{{count}}+ items will be imported',
+    more_one: '{{count}} more',
+    more_other: '{{count}} more',
+    moreTruncated_one: '{{count}}+ more',
+    moreTruncated_other: '{{count}}+ more',
+    idle: 'Press "🔍 Preview" to see what will be imported',
+    idleHint: 'The folder is read only when you press it',
+    noPath: 'Choose a folder, then press "🔍 Preview"',
+    stale: 'The settings changed. Press "🔍 Preview" to count again with the current settings',
+    empty: 'Nothing to import',
+    emptyFilter: 'Nothing matches the file name filter {{filter}}',
+    emptyHint: 'Check the settings and press "🔍 Preview" again',
+    notFound: 'Folder not found (for a network folder, check that you are connected)',
+    notFolder: 'The path is not a folder',
+    timeout: 'Stopped because reading took more than {{seconds}} seconds',
+    cancelled: 'Preview stopped',
+  },
+  /** 登録・編集画面のパス欄の「選択」 */
+  pathPicker: {
+    /** フォルダ取込のボタン */
+    selectFolder: 'Choose folder',
+    /** 単一アイテムのボタン（▾ でファイルかフォルダを選ぶ） */
+    select: 'Choose',
+    title: 'Choose a file or folder and put its path here',
+    folderButtonTitle: 'Choose the folder to import and put its path here',
+    file: 'Choose file',
+    folder: 'Choose folder',
+    fileTitle: 'Choose a file',
+    folderTitle: 'Choose a folder',
   },
   dataErrors: {
     jsonParseFailed: "Couldn't parse the JSON file: {{file}}",

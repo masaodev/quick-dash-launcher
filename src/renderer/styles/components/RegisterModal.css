@@ -193,27 +193,24 @@
   flex: 1;
 }
 
-/* メモ欄は縦並びレイアウト（ラベル上・テキストエリア下） */
-.register-item .form-group:has(.memo-textarea) {
-  flex-direction: column;
-  align-items: stretch;
-  /* 上のオプションの枠に付かないよう、区切りの余白をとる */
-  margin-top: var(--spacing-md);
-}
-
-.register-item .form-group:has(.memo-textarea) label {
-  min-width: auto;
-  padding-top: 0;
-  margin-bottom: var(--spacing-xs);
-}
-
-/* textarea行はラベルを上揃え（メモ以外） */
-.register-item .form-group:has(textarea:not(.memo-textarea)) {
+/* textarea行はラベルを上揃え */
+.register-item .form-group:has(textarea) {
   align-items: flex-start;
 }
 
-.register-item .form-group:has(textarea:not(.memo-textarea)) label {
+.register-item .form-group:has(textarea) label {
   padding-top: var(--spacing-xs);
+}
+
+/* メモ（折りたたみ）。上のオプションの枠に付かないよう、区切りの余白をとる */
+.options-section.memo-section {
+  margin-top: var(--spacing-md);
+}
+
+.memo-section .memo-textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /*
@@ -338,11 +335,15 @@
   background-color: var(--color-gray-200);
 }
 
-/* たたんでいても見出しの横に出す要約（単一アイテムのウィンドウ位置） */
+/* たたんでいても見出しの横に出す要約（ウィンドウ位置・フォルダ取込の設定・メモの 1 行目）。
+   文字の大きさと色はウィンドウ位置の .set-row-place と同じ */
 .options-toggle-summary {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: normal;
+  color: var(--text-muted);
 }
 
 .toggle-icon {
@@ -421,13 +422,15 @@
 
 /* パス入力欄横のアクションボタン（色と無効の見た目は Button の secondary） */
 .icon-fetch-btn,
-.item-converter-btn {
+.item-converter-btn,
+.path-picker-btn {
   gap: var(--spacing-xs);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.icon-fetch-emoji {
+.icon-fetch-emoji,
+.path-picker-emoji {
   font-size: var(--font-size-sm);
 }
 
@@ -459,4 +462,133 @@
 .register-item .form-group small.path-pathless-note {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+}
+
+/*
+ * フォルダ取込の「登録したときの並び」（プレビュー）。
+ * 見出しの帯はオプションの折りたたみの見出し、一覧の枠はアプリ取込の一覧、
+ * 0 件などの案内はメイン画面の空の一覧、条件を変えたときの帯は自動取込の警告と同じ見た目にする
+ */
+.dir-preview {
+  margin-top: var(--spacing-sm);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.dir-preview-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) var(--spacing-md);
+  background-color: var(--bg-section);
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.dir-preview-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.dir-preview-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dir-preview-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dir-preview-stale {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-warning);
+  background-color: var(--bg-warning-light);
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.dir-preview-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--spacing-xs);
+  background-color: var(--bg-table-container);
+}
+
+/* 条件を変えた後の古い結果は薄くする（消さない） */
+.dir-preview-list.is-stale .dir-preview-item {
+  opacity: 0.5;
+}
+
+/* 行はメイン画面の一覧の行（.item）と同じ並び */
+.dir-preview-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+}
+
+.dir-preview-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.dir-preview-icon {
+  width: var(--icon-size-sm);
+  flex-shrink: 0;
+  text-align: center;
+  font-size: var(--font-size-sm);
+}
+
+.dir-preview-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 頭・後ろに付ける文字 */
+.dir-preview-affix {
+  background-color: var(--bg-edited);
+  border-radius: var(--border-radius-sm);
+}
+
+.dir-preview-where {
+  margin-left: auto;
+  padding-left: var(--spacing-md);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.dir-preview-more {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.dir-preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.dir-preview-empty p {
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+.dir-preview-empty .dir-preview-empty-hint {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
 }

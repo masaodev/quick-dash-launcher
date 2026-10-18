@@ -92,6 +92,9 @@ export const DIR_OPTIONS_DEFAULTS = {
   types: 'both' as const,
 } as const;
 
+/** 登録・編集画面のフォルダ取込のプレビューの時間切れ（応答しないネットワークのフォルダで待ち続けない） */
+export const DIR_PREVIEW_TIMEOUT_MS = 30_000;
+
 /**
  * フォルダ取込オプション（JSON保存用、すべてオプショナル）
  */
