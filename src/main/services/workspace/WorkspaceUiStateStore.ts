@@ -130,13 +130,14 @@ export class WorkspaceUiStateStore {
     return this.read().workspaceWindow ?? { ...DEFAULT_WORKSPACE_WINDOW_STATE };
   }
 
+  /** 書き込みに失敗したら投げる（古い設定からの読み替えが、失敗したまま古いキーを消さないように） */
   updateWorkspaceWindow(updates: Partial<WorkspaceWindowState>): void {
     const state = this.read();
     state.workspaceWindow = {
       ...(state.workspaceWindow ?? DEFAULT_WORKSPACE_WINDOW_STATE),
       ...updates,
     };
-    this.file.write(state);
+    this.writeOrThrow(state);
   }
 
   // --- 切り離しウィンドウ ---
@@ -159,7 +160,7 @@ export class WorkspaceUiStateStore {
     this.file.write(state);
   }
 
-  /** ピン留めしていない切り離しウィンドウを、すべて表示固定にする（古い設定からの読み替え） */
+  /** ピン留めしていない切り離しウィンドウを、すべて表示固定にする（古い設定からの読み替え。書き込みに失敗したら投げる） */
   pinAllUnpinnedDetached(): number {
     const state = this.read();
     let count = 0;
@@ -169,8 +170,14 @@ export class WorkspaceUiStateStore {
         count++;
       }
     }
-    if (count > 0) this.file.write(state);
+    if (count > 0) this.writeOrThrow(state);
     return count;
+  }
+
+  private writeOrThrow(state: WorkspaceUiStateFile): void {
+    if (!this.file.write(state)) {
+      throw new Error('Failed to write workspace-ui-state.json');
+    }
   }
 
   removeDetached(rootGroupId: string): void {

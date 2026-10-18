@@ -19,6 +19,8 @@ vi.mock('@common/logger', () => ({
   dataLogger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
+import { JsonFileStore } from '../jsonFileStore';
+
 import {
   WorkspaceUiStateStore,
   coerceWorkspaceUiState,
@@ -95,6 +97,18 @@ describe('WorkspaceUiStateStore', () => {
     expect(store.getDetached('none0001')?.pinMode).toBe(1);
     expect(store.getDetached('zero0001')?.pinMode).toBe(1);
     expect(store.getDetached('top00001')?.pinMode).toBe(2);
+  });
+
+  it('ワークスペースの状態と読み替えのピン留めは、書き込みに失敗したら投げること', () => {
+    const store = new WorkspaceUiStateStore();
+    store.updateDetached('none0001', {});
+    const write = vi.spyOn(JsonFileStore.prototype, 'write').mockReturnValue(false);
+    try {
+      expect(() => store.updateWorkspaceWindow({ open: true })).toThrow();
+      expect(() => store.pinAllUnpinnedDetached()).toThrow();
+    } finally {
+      write.mockRestore();
+    }
   });
 
   it('pruneMissingGroups は存在しないグループの状態を捨てること', () => {
