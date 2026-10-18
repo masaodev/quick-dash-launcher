@@ -1,14 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppSettings } from '@common/types';
+import { SETTING_NUMBER_RANGES } from '@common/settingRanges';
 
 type WindowSizeKey = 'windowWidth' | 'windowHeight' | 'editModeWidth' | 'editModeHeight';
 
 interface WindowSizeFieldsProps {
   widthKey: WindowSizeKey;
   heightKey: WindowSizeKey;
-  widthRange: [number, number];
-  heightRange: [number, number];
   editedSettings: AppSettings;
   isLoading: boolean;
   handleNumberInputChange: <K extends keyof AppSettings>(key: K, value: string) => void;
@@ -19,8 +18,6 @@ interface WindowSizeFieldsProps {
 const WindowSizeFields: React.FC<WindowSizeFieldsProps> = ({
   widthKey,
   heightKey,
-  widthRange,
-  heightRange,
   editedSettings,
   isLoading,
   handleNumberInputChange,
@@ -28,20 +25,20 @@ const WindowSizeFields: React.FC<WindowSizeFieldsProps> = ({
 }) => {
   const { t } = useTranslation();
   const fields = [
-    { key: widthKey, label: t('settings.windowSize.width'), range: widthRange },
-    { key: heightKey, label: t('settings.windowSize.height'), range: heightRange },
+    { key: widthKey, label: t('settings.windowSize.width') },
+    { key: heightKey, label: t('settings.windowSize.height') },
   ];
 
   return (
     <div className="settings-form-line">
-      {fields.map(({ key, label, range: [min, max] }) => (
+      {fields.map(({ key, label }) => (
         <span key={key} className="settings-form-field">
           <label htmlFor={key}>{label}</label>
           <input
             id={key}
             type="number"
-            min={min}
-            max={max}
+            min={SETTING_NUMBER_RANGES[key].min}
+            max={SETTING_NUMBER_RANGES[key].max}
             value={editedSettings[key]}
             onChange={(e) => handleNumberInputChange(key, e.target.value)}
             onBlur={handleNumberInputBlur}

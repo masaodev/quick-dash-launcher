@@ -30,7 +30,7 @@ interface AdminSettingsWindowWorkspaceProps {
 
 /**
  * 設定画面「ウィンドウ」のワークスペースウィンドウの節: 表示する場所（端とディスプレイ）・見た目・仮想デスクトップ
- * 「最後に動かした場所」（fixed）の間は、ディスプレイの選択欄を使わない
+ * 「最後に置いた場所」（fixed）の間は、ディスプレイの選択欄を使わない（理由を説明の下に出す）
  */
 const AdminSettingsWindowWorkspace: React.FC<AdminSettingsWindowWorkspaceProps> = ({
   editedSettings,
@@ -106,6 +106,12 @@ const AdminSettingsWindowWorkspace: React.FC<AdminSettingsWindowWorkspaceProps> 
         <span className="field-description">
           {t(`settings.workspace.${position.text}Description`)}
         </span>
+        {isFixed && (
+          <>
+            <span />
+            <span className="field-description">{t('settings.workspace.displayDisabled')}</span>
+          </>
+        )}
 
         <div className="settings-form-divider" />
         <span className="settings-form-label settings-form-label-top">

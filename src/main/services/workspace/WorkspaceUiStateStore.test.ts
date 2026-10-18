@@ -19,7 +19,7 @@ vi.mock('@common/logger', () => ({
   dataLogger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
-import { JsonFileStore } from '../jsonFileStore';
+import { JsonFileStore, brokenFilePath } from '../jsonFileStore';
 
 import {
   WorkspaceUiStateStore,
@@ -135,6 +135,40 @@ describe('WorkspaceUiStateStore', () => {
     fs.writeFileSync(filePath, '{ broken', 'utf8');
     const store = new WorkspaceUiStateStore();
     expect(store.read()).toEqual(createEmptyWorkspaceUiState());
+    expect(fs.readFileSync(filePath, 'utf8')).toBe('{ broken');
+  });
+
+  it('壊れたファイルは、次に書くときに別名で退避してから書くこと', () => {
+    fs.writeFileSync(filePath, '{ broken', 'utf8');
+    const store = new WorkspaceUiStateStore();
+    store.setGroupsCollapsed(['grAAAAA1'], true);
+
+    const backups = fs.readdirSync(tempRoot.dir).filter((f) => f.includes('.broken-'));
+    expect(backups).toHaveLength(1);
+    expect(backups[0]).toMatch(/^workspace-ui-state\.broken-\d{8}T\d{6}\.json$/);
+    expect(fs.readFileSync(path.join(tempRoot.dir, backups[0]), 'utf8')).toBe('{ broken');
+    expect(store.getCollapsedGroups()).toEqual({ grAAAAA1: true });
+
+    // 退避は 1 回だけ（書き直した後は読めるので、もう退避しない）
+    store.setGroupsCollapsed(['grAAAAA2'], true);
+    expect(fs.readdirSync(tempRoot.dir).filter((f) => f.includes('.broken-'))).toHaveLength(1);
+  });
+
+  it('壊れたファイルを退避できなければ書かないこと', () => {
+    fs.writeFileSync(filePath, '{ broken', 'utf8');
+    const store = new WorkspaceUiStateStore();
+    // 退避先に中身のあるフォルダを置いて、名前の変更を失敗させる
+    const now = new Date(2026, 9, 18, 16, 5, 1);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(now);
+    try {
+      const blocker = brokenFilePath(filePath, now);
+      fs.mkdirSync(blocker);
+      fs.writeFileSync(path.join(blocker, 'x'), '');
+      store.setGroupsCollapsed(['grAAAAA1'], true);
+    } finally {
+      vi.useRealTimers();
+    }
     expect(fs.readFileSync(filePath, 'utf8')).toBe('{ broken');
   });
 

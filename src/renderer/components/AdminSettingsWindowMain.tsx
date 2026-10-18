@@ -65,8 +65,6 @@ const AdminSettingsWindowMain: React.FC<AdminSettingsWindowMainProps> = ({
         <WindowSizeFields
           widthKey="windowWidth"
           heightKey="windowHeight"
-          widthRange={[400, 2000]}
-          heightRange={[300, 1200]}
           editedSettings={editedSettings}
           isLoading={isLoading}
           handleNumberInputChange={handleNumberInputChange}

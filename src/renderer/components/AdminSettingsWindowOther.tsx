@@ -51,8 +51,6 @@ const AdminSettingsWindowOther: React.FC<AdminSettingsWindowOtherProps> = ({
         <WindowSizeFields
           widthKey="editModeWidth"
           heightKey="editModeHeight"
-          widthRange={[800, 2000]}
-          heightRange={[600, 1200]}
           editedSettings={editedSettings}
           isLoading={isLoading}
           handleNumberInputChange={handleNumberInputChange}

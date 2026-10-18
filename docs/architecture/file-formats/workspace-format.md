@@ -152,7 +152,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 
 ## 4. workspace-ui-state.json
 
-QDL が管理する UI 状態。壊れていれば警告して空として扱う（上書きしない）。
+QDL が管理する UI 状態。壊れている・読めないときは警告して空として扱う。次に書くときは、読めなかったファイルを同じフォルダに `workspace-ui-state.broken-YYYYMMDDTHHmmss.json` の名前で退避してから書く（元に戻す手がかりを残す）。退避できなければ書かない（`JsonFileStore`）。
 
 ```json
 {
