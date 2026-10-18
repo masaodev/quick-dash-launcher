@@ -144,14 +144,18 @@ export class WorkspaceUiStateStore {
 
   // --- 1 回だけ出す案内 ---
 
-  /** まだ出していなければ「出した」と覚えて true を返す（出していれば false） */
-  takeHint(key: WorkspaceHintKey): boolean {
+  /** まだ「わかった」を押していない案内なら true */
+  isHintPending(key: WorkspaceHintKey): boolean {
+    return !(this.read().shownHints ?? []).includes(key);
+  }
+
+  /** 「わかった」を押した案内として覚える（もう覚えていれば何もしない） */
+  dismissHint(key: WorkspaceHintKey): void {
     const state = this.read();
     const shown = state.shownHints ?? [];
-    if (shown.includes(key)) return false;
+    if (shown.includes(key)) return;
     state.shownHints = [...shown, key];
     this.file.write(state);
-    return true;
   }
 
   // --- 切り離しウィンドウ ---

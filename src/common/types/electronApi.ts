@@ -22,6 +22,7 @@ import type {
   IconProgress,
   LayoutExecutionProgress,
   PinLevel,
+  WorkspaceHintKey,
   SearchHistoryEntry,
   SetItem,
   AppItem,
@@ -131,6 +132,15 @@ export interface ElectronAPI {
   /** ワークスペースを開いた・閉じたとき */
   onWorkspaceOpenChanged: (callback: (open: boolean) => void) => () => void;
   onWorkspaceChanged: (callback: () => void) => () => void;
+  /** 1 回だけ出す案内（ワークスペース・切り離しウィンドウの中の帯） */
+  hint: {
+    /** まだ「わかった」を押していなければ true */
+    isPending: (key: WorkspaceHintKey) => Promise<boolean>;
+    /** 「わかった」を押した */
+    dismiss: (key: WorkspaceHintKey) => Promise<void>;
+    /** どこかのウィンドウで「わかった」が押されたとき */
+    onDismissed: (callback: (key: WorkspaceHintKey) => void) => () => void;
+  };
   /** ピン留め。呼んだウィンドウ（メイン・ワークスペース・切り離し）が対象 */
   pin: {
     get: () => Promise<PinLevel>;

@@ -177,7 +177,7 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
 - `workspaceWindow`: ワークスペースウィンドウの状態。無ければ `{ "open": false, "pinLevel": 1 }`（閉じていて、📌 は表示固定）
   - `open`: 開いているか。⭐・`Ctrl+W`・× で閉じると false。メインウィンドウと一緒に隠れただけなら true のまま
   - `pinLevel`: ピン留めの段階（0・1・2）。閉じても覚えている
-- `shownHints`: 1 回だけ出す案内のうち、もう出したもの（`workspaceOpened`＝初めてワークスペースを開いたとき、`groupDetached`＝初めてグループを切り離したとき）。無ければ空
+- `shownHints`: 1 回だけ出す案内のうち、「わかった」を押したもの（`workspaceOpened`＝初めてワークスペースを開いたとき、`groupDetached`＝初めてグループを切り離したとき）。無ければ空
 - 存在しなくなったグループの状態は、グループ削除・アーカイブ・再読み込みのたびに捨てる（`pruneMissingGroups`）
 
 ---

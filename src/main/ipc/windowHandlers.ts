@@ -14,6 +14,7 @@ import type {
 import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { isWorkspaceHintKey } from '@common/types/guards';
 
 import { SettingsService } from '../services/settingsService.js';
 import {
@@ -60,7 +61,7 @@ import {
   takeDetachedInitialShow,
 } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/index.js';
-import { showHintOnce } from '../services/workspaceHints.js';
+import { dismissHint, isHintPending } from '../services/workspaceHints.js';
 import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
 import { isPinLevel, levelToPinMode, pinModeToLevel, showPinMenu } from '../utils/pinMenu.js';
 
@@ -188,6 +189,12 @@ export function setupWindowHandlers(
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_IS_OPEN, () => isWorkspaceWindowOpen());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_IS_HINT_PENDING, (_event, key: unknown) =>
+    isWorkspaceHintKey(key) ? isHintPending(key) : false
+  );
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DISMISS_HINT, async (_event, key: unknown) => {
+    if (isWorkspaceHintKey(key)) await dismissHint(key);
+  });
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;
@@ -245,10 +252,7 @@ export function setupWindowHandlers(
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
     async (_event, groupId: string, cursorX?: number, cursorY?: number) => {
-      const result = await createDetachedGroupWindow(groupId, cursorX, cursorY);
-      // 初めて切り離したときだけ、メインと一緒に出入りすることと 📌 を伝える
-      if (result.success) void showHintOnce('groupDetached');
-      return result;
+      return createDetachedGroupWindow(groupId, cursorX, cursorY);
     }
   );
 

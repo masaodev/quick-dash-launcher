@@ -516,10 +516,16 @@ export class WorkspaceService {
     this.uiState!.updateWorkspaceWindow(updates);
   }
 
-  /** 1 回だけ出す案内を、まだ出していなければ「出した」と覚えて true を返す */
-  public async takeHint(key: WorkspaceHintKey): Promise<boolean> {
+  /** まだ「わかった」を押していない案内なら true */
+  public async isHintPending(key: WorkspaceHintKey): Promise<boolean> {
     await this.initializeStore();
-    return this.uiState!.takeHint(key);
+    return this.uiState!.isHintPending(key);
+  }
+
+  /** 「わかった」を押した案内として覚える */
+  public async dismissHint(key: WorkspaceHintKey): Promise<void> {
+    await this.initializeStore();
+    this.uiState!.dismissHint(key);
   }
 
   /** ピン留めしていない切り離しウィンドウを、すべて表示固定にする（古い設定からの読み替え） */

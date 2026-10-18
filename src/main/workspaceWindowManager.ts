@@ -22,7 +22,6 @@ import {
 } from './utils/managedWindow.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
 import { WorkspaceService } from './services/workspace/index.js';
-import { showHintOnce } from './services/workspaceHints.js';
 import { notifyPinLevel } from './utils/pinMenu.js';
 import {
   getRendererHtmlUrl,
@@ -210,8 +209,6 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
 export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   setWorkspaceOpen(true);
   await presentWorkspaceWindow(options);
-  // 初めて開いたときだけ、📌 と × の決まりを伝える
-  void showHintOnce('workspaceOpened');
 }
 
 /**

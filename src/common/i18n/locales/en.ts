@@ -370,12 +370,6 @@ export const en: LocaleMessages = {
     },
   },
   toast: {
-    hints: {
-      workspaceOpened:
-        'The workspace is pinned, so it stays when the launcher closes. Unpin it to show and hide it with the launcher. Close it with × if you do not need it',
-      groupDetached:
-        'Detached windows show and hide with the launcher. Pin one with 📌 to keep it open',
-    },
     actions: {
       url: 'Opening URL…',
       app: 'Starting app…',
@@ -1934,6 +1928,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     detached: {
       close: 'Close',
       closeLabel: 'Close detached window',
+    },
+    hints: {
+      workspaceOpened:
+        'With 📌 on, the workspace stays when the launcher closes.\nTurn 📌 off to hide it with the launcher.',
+      groupDetached: 'This window hides with the launcher.\nPress 📌 to keep it shown.',
+      dismiss: 'Got it',
     },
     itemCard: {
       linkTarget: 'Target: {{path}}',

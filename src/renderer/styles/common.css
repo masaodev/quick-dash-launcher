@@ -155,30 +155,45 @@
   transform: scale(0.95);
 }
 
-/* 押している状態（フィルタ・設定メニューを開いている）と、ピンの「表示固定」 */
-.action-btn.active,
-.action-btn.pin-stay-visible {
+/* 押している状態（フィルタ・設定メニューを開いている） */
+.action-btn.active {
   background-color: var(--color-primary);
   color: var(--color-white);
   border-color: var(--color-primary);
 }
 
-.action-btn.active:hover,
-.action-btn.pin-stay-visible:hover {
+.action-btn.active:hover {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
 }
 
-/* ピンの「最上面に固定」 */
+/*
+ * 📌 の押し込み（絵文字の赤が埋もれないよう、背景は薄い色にして枠を太くする）
+ * 表示固定＝青、常に最前面＝黄
+ */
+.action-btn.pin-stay-visible,
 .action-btn.pin-always-on-top {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
+  box-shadow: inset 0 0 0 1px var(--pin-border-color);
+  border-color: var(--pin-border-color);
+}
+
+.action-btn.pin-stay-visible {
+  --pin-border-color: var(--color-primary);
+  background-color: var(--bg-selected);
+}
+
+.action-btn.pin-always-on-top {
+  --pin-border-color: var(--color-warning-dark);
+  background-color: var(--bg-warning-light);
+}
+
+.action-btn.pin-stay-visible:hover {
+  --pin-border-color: var(--color-primary-hover);
+  background-color: var(--bg-info-light);
 }
 
 .action-btn.pin-always-on-top:hover {
-  background-color: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
+  background-color: var(--bg-edited);
 }
 
 /* 閉じる・削除の × ボタン（枠なし。hover で薄い背景、削除は赤） */

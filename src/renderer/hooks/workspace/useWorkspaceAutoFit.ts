@@ -21,6 +21,8 @@ export function useWorkspaceAutoFit(
   minHeight?: number
 ): {
   contentRef: (node: HTMLDivElement | null) => void;
+  /** 一覧の上の要素（案内の帯など）が出たり消えたりしたときに、高さを合わせ直す */
+  refit: () => void;
 } {
   const effectiveMinHeight = minHeight ?? DEFAULT_MIN_HEIGHT;
   const resize = resizeFn ?? defaultResizeFn;
@@ -28,6 +30,7 @@ export function useWorkspaceAutoFit(
   resizeRef.current = resize;
   const lastHeightRef = useRef<number>(0);
   const observerRef = useRef<ResizeObserver | null>(null);
+  const contentNodeRef = useRef<HTMLDivElement | null>(null);
 
   const updateHeight = useCallback(
     (contentEl: HTMLElement) => {
@@ -68,6 +71,7 @@ export function useWorkspaceAutoFit(
         observerRef.current = null;
       }
 
+      contentNodeRef.current = node;
       if (!node) return;
 
       const observer = new ResizeObserver(() => updateHeight(node));
@@ -78,5 +82,9 @@ export function useWorkspaceAutoFit(
     [updateHeight]
   );
 
-  return { contentRef };
+  const refit = useCallback(() => {
+    if (contentNodeRef.current) updateHeight(contentNodeRef.current);
+  }, [updateHeight]);
+
+  return { contentRef, refit };
 }

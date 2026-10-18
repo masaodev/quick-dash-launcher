@@ -86,11 +86,15 @@ describe('WorkspaceUiStateStore', () => {
     expect(store.getWorkspaceWindow()).toEqual({ open: true, pinLevel: 0 });
   });
 
-  it('takeHint は 1 回目だけ true を返し、出した案内を覚えること', () => {
+  it('案内は dismissHint するまで出す対象で、dismissHint を覚えること', () => {
     const store = new WorkspaceUiStateStore();
-    expect(store.takeHint('workspaceOpened')).toBe(true);
-    expect(store.takeHint('workspaceOpened')).toBe(false);
-    expect(store.takeHint('groupDetached')).toBe(true);
+    expect(store.isHintPending('workspaceOpened')).toBe(true);
+    expect(store.isHintPending('workspaceOpened')).toBe(true);
+    store.dismissHint('workspaceOpened');
+    store.dismissHint('workspaceOpened');
+    expect(store.isHintPending('workspaceOpened')).toBe(false);
+    expect(store.isHintPending('groupDetached')).toBe(true);
+    store.dismissHint('groupDetached');
     expect(store.read().shownHints).toEqual(['workspaceOpened', 'groupDetached']);
   });
 

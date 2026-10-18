@@ -12,6 +12,7 @@ import WorkspaceFilterBar from './components/WorkspaceFilterBar';
 import WorkspaceGroupedList from './components/WorkspaceGroupedList';
 import WorkspaceHeader from './components/WorkspaceHeader';
 import PinButton from './components/PinButton';
+import WindowHint from './components/WindowHint';
 import WorkspaceTabBar from './components/WorkspaceTabBar';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
@@ -139,7 +140,7 @@ const WorkspaceApp: React.FC = () => {
         }
       : undefined
   );
-  const { contentRef } = useWorkspaceAutoFit(
+  const { contentRef, refit } = useWorkspaceAutoFit(
     isDetached
       ? (width, height) => window.electronAPI.workspaceAPI.resizeCallerWindow(width, height)
       : undefined,
@@ -457,6 +458,7 @@ const WorkspaceApp: React.FC = () => {
       <div
         className={`workspace-window detached-group-window ${backgroundTransparent ? 'background-transparent' : ''}`}
       >
+        <WindowHint hintKey="groupDetached" className="window-hint-detached" onToggle={refit} />
         <WorkspaceGroupedList
           contentRef={contentRef}
           data={{ groups, items }}
@@ -501,6 +503,7 @@ const WorkspaceApp: React.FC = () => {
         onPinLevelChange={setPinLevel}
         onClose={handleClose}
       />
+      <WindowHint hintKey="workspaceOpened" onToggle={refit} />
       <WorkspaceTabBar
         workspaces={workspaces}
         activeWorkspaceId={activeWorkspaceId}
