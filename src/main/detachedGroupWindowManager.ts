@@ -626,7 +626,8 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
 
 /**
  * ピン留めしていない切り離しウィンドウを再表示する（フォーカスを奪わない）
- * ピン留めしたものは出たままなので触らない（手前に出すのは bringPinnedDetachedToFront）
+ * ピン留めしたものは出たままなので触らない。ほかのアプリが前面のうちは手前に来ないことがあるので、
+ * メインウィンドウにフォーカスを移した後に bringDetachedToFront で手前に出し直す
  * @param options.placeOnMainWindowDisplay true なら、ピン留めしていないウィンドウを表示する前にメインウィンドウと同じディスプレイへ移す
  *   （子ウィンドウを開いていて隠さなかったものは動かさない）
  */
@@ -648,13 +649,14 @@ export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay
 }
 
 /**
- * ピン留めした切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す（ディスプレイの中では動かさない）。
+ * 表示中の切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す（ディスプレイの中では動かさない）。
+ * 📌 なしのものも対象（showAllDetachedGroupWindows で出しただけでは、ほかのアプリの下に残ることがある）。
  * 別の仮想デスクトップにあれば今のデスクトップへ連れてくる（すべてのデスクトップに表示しない設定のとき）。
  * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
  */
-export function bringPinnedDetachedToFront(): void {
-  for (const [groupId, win] of detachedWindows.entries()) {
-    if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) !== 0 && win.isVisible()) {
+export function bringDetachedToFront(): void {
+  for (const win of detachedWindows.values()) {
+    if (!win.isDestroyed() && win.isVisible()) {
       moveWindowToCurrentDesktop(win.getNativeWindowHandle().readBigUInt64LE());
       win.moveTop();
     }
