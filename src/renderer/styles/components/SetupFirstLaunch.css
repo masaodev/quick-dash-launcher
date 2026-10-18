@@ -22,32 +22,33 @@
   border: var(--border-light);
 }
 
-/* ステップの表示（1 ようこそ / 2 ホットキー / 3 試してみる） */
+/* ステップの表示（1 ようこそ › 2 ホットキー › 3 試してみる）。ボタンに見えないよう、枠・塗りは付けない */
 .first-launch-steps {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-sm);
+  align-items: center;
   list-style: none;
   margin: 0 0 var(--spacing-lg) 0;
   padding: 0;
   font-size: var(--font-size-sm);
   color: var(--text-muted);
+  cursor: default;
+  user-select: none;
 }
 
-.first-launch-step {
-  padding: 1px var(--spacing-md);
-  border: var(--border-light);
-  border-radius: var(--border-radius-xl);
+.first-launch-step + .first-launch-step::before {
+  content: '›';
+  margin: 0 var(--spacing-sm);
+  color: var(--text-muted);
+  font-weight: normal;
 }
 
 .first-launch-step.current {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .first-launch-step.done {
-  border-color: var(--color-success);
   color: var(--color-success);
 }
 
