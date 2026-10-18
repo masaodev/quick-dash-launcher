@@ -120,6 +120,8 @@ export interface ElectronAPI {
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
+  /** 初回設定の途中で起動ホットキーが押された */
+  onFirstLaunchHotkeyPressed: (callback: () => void) => () => void;
   onSetActiveTab: (callback: (tab: AdminTab) => void) => () => void;
   /** 管理ウィンドウの × が押されたとき。閉じてよければ hideEditWindow を呼ぶ */
   onAdminCloseRequested: (callback: () => void) => () => void;

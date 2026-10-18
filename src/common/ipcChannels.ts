@@ -208,6 +208,8 @@ export const IPC_CHANNELS = {
   EVENT_WINDOW_SHOWN: 'window-shown',
   EVENT_WINDOW_SHOWN_ITEM_SEARCH: 'window-shown-item-search',
   EVENT_WINDOW_HIDDEN: 'window-hidden',
+  /** 初回設定の途中で起動ホットキーが押された（隠さずに知らせ、「試してみる」で ✓ を出す） */
+  EVENT_FIRST_LAUNCH_HOTKEY_PRESSED: 'first-launch-hotkey-pressed',
   EVENT_DATA_CHANGED: 'data-changed',
   EVENT_SETTINGS_CHANGED: 'settings-changed',
   EVENT_WORKSPACE_OPEN_CHANGED: 'workspace-open-changed',

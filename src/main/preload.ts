@@ -97,6 +97,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<number | undefined>(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, callback),
   onWindowHidden: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOW_HIDDEN, callback),
+  onFirstLaunchHotkeyPressed: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_FIRST_LAUNCH_HOTKEY_PRESSED, callback),
   onSetActiveTab: (callback) =>
     createEventListener<AdminTab>(IPC_CHANNELS.EVENT_SET_ACTIVE_TAB, callback),
   onAdminCloseRequested: (callback) =>

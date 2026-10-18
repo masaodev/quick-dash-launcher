@@ -78,7 +78,7 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 | `WINDOW_PIN_MODE` | 起動時のピン留めモード（`normal`・`alwaysOnTop`・`stayVisible`。それ以外は無視） | `stayVisible` |
 | `SHOW_WINDOW_ON_STARTUP` | `1` で起動時にメインウィンドウを表示する | `1` |
 | `SKIP_SPLASH_WINDOW` | `1` でスプラッシュウィンドウを出さない | `1` |
-| `DISABLE_GLOBAL_HOTKEY` | `1` でグローバルホットキーを登録しない | `1` |
+| `DISABLE_GLOBAL_HOTKEY` | `1` でグローバルホットキーを登録しない（画面からホットキーを変えたときも、登録せずに設定ファイルへの保存だけ行う） | `1` |
 
 #### 実装の仕組み
 
