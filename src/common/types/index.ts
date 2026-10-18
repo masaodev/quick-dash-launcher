@@ -171,7 +171,14 @@ export type { WindowInfo, VirtualDesktopInfo, WindowState, Bounds, AdminTab } fr
 export type { AppInfo, AppDistribution } from './app';
 
 // 登録関連の型
-export type { RegisterItem, RegisterSetEntry } from './register';
+export type {
+  DirPreviewItem,
+  DirPreviewResult,
+  DirPreviewStatus,
+  ItemPathPickKind,
+  RegisterItem,
+  RegisterSetEntry,
+} from './register';
 
 // 編集用アイテムの型と関数
 export type {

@@ -125,6 +125,11 @@ const electronAPI: ElectronAPI = {
   startWindowMove: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_START_MOVE),
   registerItems: (items) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   getPathKind: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PATH_GET_KIND, filePath),
+  selectItemPath: (kind, currentPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PATH_SELECT, kind, currentPath),
+  previewDirItems: (dirPath, options) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DIR_PREVIEW_RUN, dirPath, options),
+  cancelDirPreview: () => ipcRenderer.invoke(IPC_CHANNELS.DIR_PREVIEW_CANCEL),
   getDefaultBrowser: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_GET_DEFAULT),
   getFileHandler: (extension) => ipcRenderer.invoke(IPC_CHANNELS.FILE_GET_HANDLER, extension),
   checkPathsExist: (paths) => ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),

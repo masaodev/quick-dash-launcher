@@ -1,6 +1,6 @@
-import { ipcMain } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import type { JsonDirOptions, SetItemFields } from '@common/types';
+import type { ItemPathPickKind, JsonDirOptions, SetItemFields } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -8,6 +8,7 @@ import { PathManager } from '../config/pathManager.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
 import { getDefaultBrowser, getFileHandler } from '../utils/defaultBrowser.js';
+import { selectItemPath } from '../utils/itemPathDialog.js';
 import type { LoadTrigger } from '../services/loadReportService.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { loadEditableItems, saveEditableItems } from '../services/data/editableItemsStore.js';
@@ -17,6 +18,7 @@ import {
   updateSetItemById,
 } from '../services/data/dataItemWriter.js';
 import { createDataFile, deleteDataFile } from '../services/data/dataFileOps.js';
+import { previewDirectoryItems } from '../services/data/directoryScanner.js';
 
 import { setupBookmarkHandlers } from './bookmarkHandlers.js';
 import { notifyDataChanged } from './notifications.js';
@@ -59,6 +61,30 @@ export function setupDataHandlers(configFolder: string) {
   });
 
   ipcMain.handle(IPC_CHANNELS.PATH_GET_KIND, (_event, filePath: string) => getPathKind(filePath));
+
+  ipcMain.handle(IPC_CHANNELS.PATH_SELECT, (event, kind: ItemPathPickKind, currentPath?: string) =>
+    selectItemPath(kind, currentPath, BrowserWindow.fromWebContents(event.sender))
+  );
+
+  // フォルダ取込のプレビュー。画面ごとに走査中のものを 1 つだけ持ち、新しく始めたら前のものはやめる
+  const dirPreviews = new Map<number, AbortController>();
+  ipcMain.handle(
+    IPC_CHANNELS.DIR_PREVIEW_RUN,
+    async (event, dirPath: string, options: JsonDirOptions) => {
+      const senderId = event.sender.id;
+      dirPreviews.get(senderId)?.abort();
+      const controller = new AbortController();
+      dirPreviews.set(senderId, controller);
+      try {
+        return await previewDirectoryItems(dirPath, options, controller.signal);
+      } finally {
+        if (dirPreviews.get(senderId) === controller) dirPreviews.delete(senderId);
+      }
+    }
+  );
+  ipcMain.handle(IPC_CHANNELS.DIR_PREVIEW_CANCEL, (event) => {
+    dirPreviews.get(event.sender.id)?.abort();
+  });
 
   ipcMain.handle(IPC_CHANNELS.BROWSER_GET_DEFAULT, () => getDefaultBrowser());
   ipcMain.handle(IPC_CHANNELS.FILE_GET_HANDLER, (_event, extension: string) =>

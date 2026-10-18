@@ -271,7 +271,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                     errors={errors[index]}
                     onFieldChange={(field, value) => handleItemChange(index, field, value)}
                     onUpdate={(fields) => updateItem(index, fields)}
-                    onPathBlur={() => form.handlePathBlur(index)}
+                    onPathBlur={(pickedPath) => form.handlePathBlur(index, pickedPath)}
                     onFetchIcon={() => form.handleFetchIcon(index)}
                     headerInParent={!!singleItem}
                     placement={{

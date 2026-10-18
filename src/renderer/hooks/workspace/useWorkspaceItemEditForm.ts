@@ -82,20 +82,25 @@ export function useWorkspaceItemEditForm(
     [item]
   );
 
-  const handlePathBlur = useCallback(async () => {
-    // クリップボードアイテムはpathを持たない
-    if (!item || item.itemCategory === 'clipboard') return;
-    if (!item.path?.trim()) {
-      // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
-      if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
-        setItem((prev) => (prev ? { ...prev, type: 'windowSwitch', icon: undefined } : null));
+  /** パス欄を離れたとき（または「選択」で選んだとき。pickedPath は選んだパスで、まだ item に入っていない）に種別を決め直す */
+  const handlePathBlur = useCallback(
+    async (pickedPath?: string) => {
+      // クリップボードアイテムはpathを持たない
+      if (!item || item.itemCategory === 'clipboard') return;
+      const path = pickedPath ?? item.path;
+      if (!path?.trim()) {
+        // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
+        if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
+          setItem((prev) => (prev ? { ...prev, type: 'windowSwitch', icon: undefined } : null));
+        }
+        return;
       }
-      return;
-    }
 
-    const newType = await detectItemType(item.path);
-    setItem((prev) => (prev ? { ...prev, type: newType } : null));
-  }, [item]);
+      const newType = await detectItemType(path);
+      setItem((prev) => (prev ? { ...prev, path, type: newType } : null));
+    },
+    [item]
+  );
 
   const validate = useCallback((): boolean => {
     if (!item) return false;
