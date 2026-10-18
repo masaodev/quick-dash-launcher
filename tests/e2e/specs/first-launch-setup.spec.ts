@@ -134,6 +134,21 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(settings.hotkey).toBe('Alt+Space');
       expect(settings.autoLaunch).toBe(true);
     });
+
+    await test.step('ウィンドウが初回設定用の 700x600 から設定の大きさに戻る', async () => {
+      const settings = configHelper.readSettings();
+      await expect
+        .poll(() =>
+          electronApp.evaluate(({ BrowserWindow }) => {
+            const win = BrowserWindow.getAllWindows().find(
+              (w) => w.getTitle() === 'QuickDashLauncher' && w.getParentWindow() === null
+            );
+            const bounds = win?.getBounds();
+            return bounds ? `${bounds.width}x${bounds.height}` : null;
+          })
+        )
+        .toBe(`${settings.windowWidth ?? 600}x${settings.windowHeight ?? 400}`);
+    });
   });
 
   test('ホットキーを変更して完了すると変更内容が保存される', async ({
