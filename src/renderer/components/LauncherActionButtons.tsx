@@ -53,7 +53,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       />
       <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
       <button
-        className={`action-btn ${isWorkspaceOpen ? 'active' : ''}`}
+        className={`action-btn ${isWorkspaceOpen ? 'toggle-on' : ''}`}
         onClick={onToggleWorkspace}
         title={workspaceTitle}
         aria-label={workspaceTitle}
@@ -65,7 +65,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       <LauncherSettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
-        onToggleWorkspace={onToggleWorkspace}
         onQuitApp={() => window.electronAPI.quitApp()}
       />
     </div>

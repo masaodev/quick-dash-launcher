@@ -148,6 +148,7 @@ const WorkspaceApp: React.FC = () => {
 
   useEffect(() => {
     window.electronAPI.pin.get().then(setPinLevel);
+    const cleanupPinChanged = window.electronAPI.pin.onChanged(setPinLevel);
 
     const syncBackgroundTransparent = async () => {
       const settings = await window.electronAPI.getSettings();
@@ -157,7 +158,10 @@ const WorkspaceApp: React.FC = () => {
 
     const cleanup = window.electronAPI.onSettingsChanged(syncBackgroundTransparent);
 
-    return () => cleanup?.();
+    return () => {
+      cleanup?.();
+      cleanupPinChanged();
+    };
   }, []);
 
   // 切り離しウィンドウのタイトルにグループ名を反映する（タスクバー・Alt+Tabでの識別用）

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('./settingsService.js', () => ({ SettingsService: {} }));
 vi.mock('./workspace/index.js', () => ({ WorkspaceService: {} }));
 
-import { planRemovedWindowSettings } from './removedWindowSettings';
+import { planLegacyWorkspacePosition, planRemovedWindowSettings } from './removedWindowSettings';
 
 describe('planRemovedWindowSettings', () => {
   it('既定のまま（自動表示オフ・一緒に隠すオン）なら何も読み替えない', () => {
@@ -30,5 +30,18 @@ describe('planRemovedWindowSettings', () => {
     expect(
       planRemovedWindowSettings({ autoShowWorkspace: 'true', hideDetachedWithMainWindow: 0 })
     ).toEqual({ pinUnpinnedDetached: false, openWorkspace: false });
+  });
+});
+
+describe('planLegacyWorkspacePosition', () => {
+  it('プライマリの左端・右端は、ディスプレイの左端・右端に読み替える', () => {
+    expect(planLegacyWorkspacePosition('primaryLeft')).toBe('displayLeft');
+    expect(planLegacyWorkspacePosition('primaryRight')).toBe('displayRight');
+  });
+
+  it('今の値は読み替えない', () => {
+    expect(planLegacyWorkspacePosition('displayLeft')).toBeNull();
+    expect(planLegacyWorkspacePosition('displayRight')).toBeNull();
+    expect(planLegacyWorkspacePosition('fixed')).toBeNull();
   });
 });

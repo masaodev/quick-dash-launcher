@@ -155,30 +155,57 @@
   transform: scale(0.95);
 }
 
-/* 押している状態（フィルタ・設定メニューを開いている）と、ピンの「表示固定」 */
-.action-btn.active,
-.action-btn.pin-stay-visible {
+/* 押している状態（フィルタ・設定メニューを開いている） */
+.action-btn.active {
   background-color: var(--color-primary);
   color: var(--color-white);
   border-color: var(--color-primary);
 }
 
-.action-btn.active:hover,
-.action-btn.pin-stay-visible:hover {
+.action-btn.active:hover {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
 }
 
-/* ピンの「最上面に固定」 */
+/*
+ * オン・オフを切り替えるボタン（⭐・📌）のオン
+ * 絵文字は色を変えられないので、背景は濃く塗らず、薄い青にしてへこませる
+ */
+.action-btn.toggle-on {
+  background-color: var(--bg-selected);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-pressed);
+}
+
+.action-btn.toggle-on:hover {
+  background-color: var(--bg-info-light);
+}
+
+/* 📌 の「常に最前面」: 黄色の背景と、右上の ▲ の印（表示固定と色だけで見分けさせない） */
 .action-btn.pin-always-on-top {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
+  position: relative;
+  background-color: var(--bg-warning-light);
+  border-color: var(--color-warning-dark);
 }
 
 .action-btn.pin-always-on-top:hover {
-  background-color: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
+  background-color: var(--bg-warning-light);
+  border-color: var(--color-warning-dark);
+}
+
+.action-btn.pin-always-on-top::after {
+  content: '▲';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background-color: var(--color-warning-dark);
+  color: var(--color-white);
+  font-size: 7px;
+  line-height: 13px;
+  text-align: center;
 }
 
 /* 閉じる・削除の × ボタン（枠なし。hover で薄い背景、削除は赤） */

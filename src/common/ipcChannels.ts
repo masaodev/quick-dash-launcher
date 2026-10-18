@@ -72,6 +72,7 @@ export const IPC_CHANNELS = {
   PIN_GET: 'pin:get',
   PIN_SET: 'pin:set',
   PIN_SHOW_MENU: 'pin:show-menu',
+  EVENT_PIN_CHANGED: 'pin-changed',
   WINDOW_SET_ESCAPE_HANDLED_BY_PAGE: 'window:set-escape-handled-by-page',
   QUIT_APP: 'quit-app',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
@@ -178,8 +179,6 @@ export const IPC_CHANNELS = {
   WORKSPACE_SET_CALLER_BOUNDS: 'workspace:set-caller-bounds',
   WORKSPACE_LOAD_DETACHED_STATE: 'workspace:load-detached-state',
   WORKSPACE_SAVE_DETACHED_COLLAPSED: 'workspace:save-detached-collapsed',
-  WORKSPACE_HIDE_ALL_DETACHED: 'workspace:hide-all-detached',
-  WORKSPACE_SHOW_ALL_DETACHED: 'workspace:show-all-detached',
 
   // ワークスペース - ワークスペース（タブ）管理
   WORKSPACE_LOAD_WORKSPACES: 'workspace:load-workspaces',

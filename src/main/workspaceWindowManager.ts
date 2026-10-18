@@ -22,6 +22,7 @@ import {
 } from './utils/managedWindow.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
 import { WorkspaceService } from './services/workspace/index.js';
+import { notifyPinLevel } from './utils/pinMenu.js';
 import {
   getRendererHtmlUrl,
   openChildWindow,
@@ -46,6 +47,12 @@ let workspacePinLevel: PinLevel = 1;
  * 開いていて 📌 なしなら、メインウィンドウと一緒に出て一緒に隠れる
  */
 let isWorkspaceOpen: boolean = false;
+/** 保存した状態（開いているか・ピン留め）を読んだか */
+let workspaceStateLoaded = false;
+/** 編集画面の「試しに実行」で一時的に常に最前面にしている間 true */
+let temporaryAlwaysOnTop = false;
+/** 一時的に常に最前面にする前の段階 */
+let pinLevelBeforeAlwaysOnTop: PinLevel = 0;
 let windowSnapEnabled: boolean = true;
 
 /**
@@ -69,10 +76,10 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
 
 /** 開いているか・ピン留めの段階を workspace-ui-state.json に保存する */
 function persistWorkspaceWindowState(): void {
+  // 編集画面の「試しに実行」の一時的な最前面は保存しない（その前の段階を保存する）
+  const pinLevel = temporaryAlwaysOnTop ? pinLevelBeforeAlwaysOnTop : workspacePinLevel;
   WorkspaceService.getInstance()
-    .then((ws) =>
-      ws.saveWorkspaceWindowState({ open: isWorkspaceOpen, pinLevel: workspacePinLevel })
-    )
+    .then((ws) => ws.saveWorkspaceWindowState({ open: isWorkspaceOpen, pinLevel }))
     .catch((error) => {
       windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の保存に失敗');
     });
@@ -94,13 +101,17 @@ export function isWorkspaceWindowOpen(): boolean {
 }
 
 async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
-  try {
-    const ws = await WorkspaceService.getInstance();
-    const state = await ws.loadWorkspaceWindowState();
-    workspacePinLevel = state.pinLevel;
-    isWorkspaceOpen = state.open;
-  } catch (error) {
-    windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の読み込みに失敗');
+  // 保存した状態を読むのは起動して最初に作るときだけ（作り直すときに、その後の変更を古い値で上書きしない）
+  if (!workspaceStateLoaded) {
+    workspaceStateLoaded = true;
+    try {
+      const ws = await WorkspaceService.getInstance();
+      const state = await ws.loadWorkspaceWindowState();
+      workspacePinLevel = state.pinLevel;
+      isWorkspaceOpen = state.open;
+    } catch (error) {
+      windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の読み込みに失敗');
+    }
   }
 
   const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
@@ -151,6 +162,12 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
 
   // 切り離しウィンドウはこのレンダラーから window.open で開く
   registerChildWindowOpener('workspace', workspaceWindow.webContents);
+
+  // 読み込んだ段階をボタンに知らせる（レンダラーが先に問い合わせると 0 が返ることがあるため）
+  const createdWindow = workspaceWindow;
+  createdWindow.webContents.once('did-finish-load', () =>
+    notifyPinLevel(createdWindow, workspacePinLevel)
+  );
 
   // × は「閉じる」。メインウィンドウと一緒に出てこなくなる
   hideOnClose(workspaceWindow, () => {
@@ -219,12 +236,13 @@ export function hideWorkspaceWithMain(): void {
  */
 export async function restoreWindowsOnStartup(): Promise<void> {
   try {
-    if (isWorkspaceOpen && workspacePinLevel !== 0) {
-      await presentWorkspaceWindow({ skipFocus: true });
-    }
+    // 切り離しウィンドウを先に開き直す（ワークスペースを出す処理は、まだなら 📌 なしのものまで出して開き直すため）
     if (!detachedRestored) {
       detachedRestored = true;
       await restoreDetachedWindows({ skipFocus: true, startHiddenUnlessPinned: true });
+    }
+    if (isWorkspaceOpen && workspacePinLevel !== 0) {
+      await presentWorkspaceWindow({ skipFocus: true });
     }
   } catch (error) {
     windowLogger.error({ error }, '起動時のワークスペース・切り離しウィンドウの復元に失敗しました');
@@ -307,14 +325,23 @@ export async function toggleWorkspaceWindow(): Promise<void> {
 /** ワークスペースウィンドウのピン留めの段階を変える（2＝常に最前面のときだけ最前面にする） */
 export function setWorkspacePinLevel(level: PinLevel): PinLevel {
   workspacePinLevel = level;
+  // 人が段階を変えたら、一時的な最前面は終わったものとして扱う
+  temporaryAlwaysOnTop = false;
+  applyWorkspacePinLevel();
   persistWorkspaceWindowState();
+  return level;
+}
+
+/** 段階をウィンドウに当て、ボタンに知らせる（保存はしない） */
+function applyWorkspacePinLevel(): void {
+  const level = workspacePinLevel;
+  notifyPinLevel(workspaceWindow, level);
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.setAlwaysOnTop(level === 2);
     // setAlwaysOnTop で仮想デスクトップへの固定が外れるので当て直す
     void applyVisibilityOnAllDesktops();
     windowLogger.info(`ワークスペースウィンドウのピン留め: ${level}`);
   }
-  return level;
 }
 
 /** ワークスペースウィンドウのピン留めの段階 */
@@ -322,17 +349,22 @@ export function getWorkspacePinLevel(): PinLevel {
   return workspacePinLevel;
 }
 
-/** 常に最前面に切り替える前の段階（編集画面の「試しに実行」が一時的に最前面にして戻すため） */
-let pinLevelBeforeAlwaysOnTop: PinLevel = 0;
-
-/** 常に最前面のオン・オフを切り替える（編集画面の「試しに実行」用。元の段階に戻せる） */
+/**
+ * 編集画面の「試しに実行」用に、一時的に常に最前面にする・元に戻す（保存はしない）
+ * 一時的に最前面にしている間に人が段階を変えたら、戻すときはその段階のままにする
+ */
 export function toggleWorkspaceAlwaysOnTop(): boolean {
-  if (workspacePinLevel === 2) {
-    setWorkspacePinLevel(pinLevelBeforeAlwaysOnTop);
+  if (temporaryAlwaysOnTop) {
+    temporaryAlwaysOnTop = false;
+    workspacePinLevel = pinLevelBeforeAlwaysOnTop;
+    applyWorkspacePinLevel();
     return false;
   }
+  if (workspacePinLevel === 2) return true;
   pinLevelBeforeAlwaysOnTop = workspacePinLevel;
-  setWorkspacePinLevel(2);
+  temporaryAlwaysOnTop = true;
+  workspacePinLevel = 2;
+  applyWorkspacePinLevel();
   return true;
 }
 
@@ -343,6 +375,10 @@ export function getWorkspaceAlwaysOnTop(): boolean {
 
 /**
  * ピン留めしたワークスペースを、フォーカスを奪わずに手前へ出す（ホットキーでメインウィンドウを出すとき）
+ */
+/**
+ * ピン留めしたワークスペースを、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+ * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
  */
 export function bringPinnedWorkspaceToFront(): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
@@ -424,8 +460,8 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
         }
         const clampedHeight = Math.min(bounds.height, primaryWorkArea.height);
         workspaceWindow.setBounds({
-          x: primaryWorkArea.width - bounds.width,
-          y: 0,
+          x: primaryWorkArea.x + primaryWorkArea.width - bounds.width,
+          y: primaryWorkArea.y,
           width: bounds.width,
           height: clampedHeight,
         });
