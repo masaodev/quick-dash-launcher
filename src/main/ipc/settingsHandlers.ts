@@ -119,6 +119,21 @@ const lastFailedHotkey: Record<'main' | 'itemSearch', string | null> = {
 };
 
 /**
+ * 起動ホットキーを無効化している間（E2E）は HotkeyService を作らないので、登録せずに設定だけ保存する
+ */
+async function saveHotkeyWithoutRegistering(
+  key: 'hotkey' | 'itemSearchHotkey',
+  newHotkey: string
+): Promise<boolean> {
+  const settingsService = await SettingsService.getInstance();
+  const isEmpty = !newHotkey?.trim();
+  if (isEmpty ? key === 'hotkey' : !settingsService.validateHotkey(newHotkey).isValid) return false;
+  await settingsService.set(key, isEmpty ? '' : newHotkey);
+  logger.info(`${key} saved without registering (global hotkey disabled): ${newHotkey}`);
+  return true;
+}
+
+/**
  * ホットキー設定をディスクの値に合わせて登録し直す
  *
  * 値が現在の登録と同じなら何もしない。登録に失敗した場合は設定を書き戻さず、
@@ -292,6 +307,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
+    if (EnvConfig.disableGlobalHotkey) return saveHotkeyWithoutRegistering('hotkey', newHotkey);
     const success = await HotkeyService.getInstance().changeHotkey(newHotkey);
     logger.info(`Hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`);
     return success;
@@ -300,6 +316,9 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY,
     async (_event, newHotkey: string) => {
+      if (EnvConfig.disableGlobalHotkey) {
+        return saveHotkeyWithoutRegistering('itemSearchHotkey', newHotkey);
+      }
       const success = await HotkeyService.getInstance().changeItemSearchHotkey(newHotkey);
       logger.info(
         `Item search hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`

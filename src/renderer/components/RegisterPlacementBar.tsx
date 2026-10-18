@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import React from 'react';
 import type { DataFileTab, RegisterItem } from '@common/types';
 
@@ -11,19 +12,20 @@ interface RegisterPlacementBarProps {
 }
 
 /**
- * 保存先を「タブ › ファイル」の 1 行で返す（フッターの「〜に登録」に使う）。
+ * 保存先を「「メイン」タブ」「「仕事」タブの「資料」」の形で返す（フッターの「〜に登録」に使う）。
  * ファイルが 1 つのタブはタブ名だけ
  */
 export function describePlacement(
   item: RegisterItem,
   availableTabs: DataFileTab[],
-  dataFileLabels: Record<string, string>
+  dataFileLabels: Record<string, string>,
+  t: TFunction
 ): string {
-  const tab = availableTabs.find((t) => t.files.includes(item.targetTab));
+  const tab = availableTabs.find((candidate) => candidate.files.includes(item.targetTab));
   if (!tab) return '';
-  if (tab.files.length <= 1) return tab.name;
+  if (tab.files.length <= 1) return t('register.placementTab', { tab: tab.name });
   const file = item.targetFile || tab.files[0];
-  return `${tab.name} › ${dataFileLabels[file] || file}`;
+  return t('register.placementTabFile', { tab: tab.name, file: dataFileLabels[file] || file });
 }
 
 /**

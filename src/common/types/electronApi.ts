@@ -102,7 +102,9 @@ export interface ElectronAPI {
   fetchIconsCombined: (
     urlItems: LauncherItem[],
     items: LauncherItem[],
-    forceRefresh?: boolean
+    forceRefresh?: boolean,
+    /** true なら進捗バーを出さずに取る（初回設定の後の自動取得） */
+    silent?: boolean
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
@@ -122,6 +124,8 @@ export interface ElectronAPI {
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;
+  /** 初回設定の途中で起動ホットキーが押された */
+  onFirstLaunchHotkeyPressed: (callback: () => void) => () => void;
   onSetActiveTab: (callback: (tab: AdminTab) => void) => () => void;
   /** 管理ウィンドウの × が押されたとき。閉じてよければ hideEditWindow を呼ぶ */
   onAdminCloseRequested: (callback: () => void) => () => void;

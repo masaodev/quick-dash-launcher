@@ -60,9 +60,16 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         await expect(modal.locator('h3')).toHaveText('ブラウザのブックマークを取り込む');
         await expect(modal.locator('.import-selection')).toContainText('0 件を選択中');
         await expect(footerButton).toBeDisabled();
-        // 取込先の既定は、選んでいるタブの新しいデータファイル「ブックマーク」
+        // 取込先の既定は、選んでいるタブの先頭のデータファイル
+        await expect(modal.locator('.import-dest-label')).toHaveText('取込先タブ');
+        await expect(modal.locator('.import-echo')).toHaveText(/^「.+」タブに取り込む$/);
+      });
+
+      await test.step('取込先に新しいデータファイルを選ぶと、名前の欄に「ブックマーク」が入る', async () => {
+        await modal.getByLabel('取込先のデータファイル').selectOption('');
+        await expect(modal.locator('.import-dest input')).toHaveValue('ブックマーク');
         await expect(modal.locator('.import-echo')).toHaveText(
-          /^.+ › ブックマーク（新規） に取り込む$/
+          /^「.+」タブの「ブックマーク（新規）」に取り込む$/
         );
       });
 
@@ -269,14 +276,14 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         );
       });
 
-      await test.step('保存すると新しいデータファイルを取込先にしたルールができ、編集で開き直せる', async () => {
+      await test.step('保存すると選んでいるタブの先頭のデータファイルを取込先にしたルールができ、編集で開き直せる', async () => {
         await ruleModal.locator('.import-footer button', { hasText: '保存' }).click();
         await expect(ruleModal).toHaveCount(0, { timeout: 10000 });
         const ruleCard = adminWindow.locator('.auto-import-rule-card', {
           hasText: 'ブックマーク☆',
         });
         await expect(ruleCard).toBeVisible();
-        await expect(ruleCard.locator('.rule-target')).toContainText('ブックマーク');
+        await expect(ruleCard.locator('.rule-target')).toContainText('メイン');
 
         await ruleCard.locator('button', { hasText: '編集' }).click();
         await ruleModal.waitFor({ state: 'visible', timeout: 10000 });

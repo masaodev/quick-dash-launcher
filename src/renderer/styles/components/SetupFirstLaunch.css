@@ -1,42 +1,142 @@
 /* 初回起動設定画面のスタイル */
 
+/* 初回起動のウィンドウは 700x600。収まらないときはカードごとスクロールする（見切れて先へ進めなくならないように） */
 .first-launch-setup {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--bg-app);
   padding: var(--spacing-xl);
+  box-sizing: border-box;
 }
 
 .first-launch-content {
+  margin: auto;
   background: var(--color-white);
   border-radius: var(--border-radius-xl);
-  padding: var(--spacing-3xl);
-  max-width: 600px;
+  padding: var(--spacing-2xl);
+  max-width: 640px;
   width: 100%;
+  box-sizing: border-box;
   box-shadow: var(--shadow-xl);
   border: var(--border-light);
+}
+
+/* ステップの表示（1 ようこそ › 2 ホットキー › 3 試してみる）。ボタンに見えないよう、枠・塗りは付けない */
+.first-launch-steps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  list-style: none;
+  margin: 0 0 var(--spacing-lg) 0;
+  padding: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  cursor: default;
+  user-select: none;
+}
+
+.first-launch-step + .first-launch-step::before {
+  content: '›';
+  margin: 0 var(--spacing-sm);
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+.first-launch-step.current {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.first-launch-step.done {
+  color: var(--color-success);
 }
 
 .first-launch-title {
   font-size: var(--font-size-3xl);
   font-weight: bold;
   color: var(--text-primary);
-  margin: 0 0 var(--spacing-lg) 0;
+  margin: 0 0 var(--spacing-sm) 0;
   text-align: center;
 }
 
 .first-launch-description {
   font-size: var(--font-size-base);
   color: var(--text-secondary);
-  margin: 0 0 var(--spacing-2xl) 0;
+  margin: 0 0 var(--spacing-lg) 0;
   line-height: 1.6;
   text-align: center;
 }
 
+.first-launch-lead {
+  color: var(--text-primary);
+}
+
+.first-launch-center {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+/* ステップ 1: 特徴 */
+.first-launch-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.first-launch-feature {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+}
+
+.first-launch-feature-icon {
+  font-size: var(--font-size-3xl);
+  line-height: 1.3;
+  width: 28px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.first-launch-feature-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.first-launch-feature-body {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* キーの形で見せる「Alt + Space」 */
+.first-launch-keys {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-xs) 0;
+  font-size: var(--font-size-2xl);
+}
+
+.first-launch-key {
+  font-family: inherit;
+  font-weight: bold;
+  padding: 2px var(--spacing-md);
+  border: var(--border-light);
+  border-bottom-width: 3px;
+  border-radius: var(--border-radius);
+  background: var(--color-white);
+  color: var(--text-primary);
+}
+
+.first-launch-key-plus {
+  color: var(--text-secondary);
+}
+
 .hotkey-setup-section {
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 .hotkey-label {
@@ -62,12 +162,77 @@
   line-height: 1.5;
 }
 
+/* ステップ 2: ウィンドウ検索のキー（折りたたみ） */
+.first-launch-more {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+}
+
+.first-launch-more summary {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.first-launch-more .hotkey-setup-section {
+  margin: var(--spacing-sm) 0 0 0;
+}
+
+/* ステップ 3: 試してみる */
+.first-launch-try {
+  text-align: center;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background: var(--color-primary-50);
+  border-radius: var(--border-radius);
+}
+
+.first-launch-try-waiting {
+  color: var(--text-secondary);
+}
+
+.first-launch-try-ok {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.first-launch-getting-started {
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.first-launch-getting-started-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.first-launch-getting-started p {
+  margin: 0;
+}
+
 .first-launch-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: var(--spacing-sm);
-  padding-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
   border-top: var(--border-light);
+}
+
+.first-launch-actions-split {
+  justify-content: space-between;
+}
+
+.first-launch-change-later {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
 }
 
 .validation-error {
@@ -78,8 +243,8 @@
 
 /* 自動起動設定セクション */
 .auto-launch-setup-section {
-  margin-bottom: var(--spacing-2xl);
-  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
   background-color: var(--bg-section);
   border-radius: var(--border-radius);
   border: var(--border-light);
@@ -109,7 +274,7 @@
 }
 
 .auto-launch-hint {
-  margin-top: var(--spacing-xs);
+  margin: var(--spacing-xs) 0 0 0;
   margin-left: calc(var(--spacing-sm) + 18px); /* チェックボックス幅 + gap */
   font-size: var(--font-size-sm);
   color: var(--text-muted);

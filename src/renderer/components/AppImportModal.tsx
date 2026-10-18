@@ -24,7 +24,7 @@ import ImportDestinationBand from './ImportDestinationBand';
  * 画面仕様: docs/screens/app-import-modal.md
  *
  * スタートメニューのアプリから使うものを選び、データファイルに取り込む。選び方は 1 件ずつのチェック（初期は未選択）。
- * 取込先は登録画面の「保存先」の帯と同じ形で選び、初期値は「選択中のタブに新しいデータファイルを作る」。
+ * 取込先は登録画面の「保存先タブ」の帯と同じ形で選び、初期値は「選択中のタブの先頭のデータファイル」。
  * 新しいタブ・ファイルは「取り込む」を押した時点で作る（キャンセルなら何も作らない）。
  */
 
@@ -89,7 +89,7 @@ function AppImportModal({
   // 重複処理オプション
   const [duplicateHandling, setDuplicateHandling] = useState<DuplicateHandlingOption>('skip');
 
-  // 取込先（開くたびに「選択中のタブに新しいデータファイル」に戻す）
+  // 取込先（開くたびに「選択中のタブの先頭のデータファイル」に戻す）
   const dest = useImportDestination({
     isOpen,
     dataFileTabs,

@@ -1,9 +1,10 @@
 import * as fs from 'fs';
+import * as path from 'path';
 
 import { FileUtils } from '@common/utils/fileUtils';
 import { generateId, serializeJsonDataFile } from '@common/utils/jsonParser';
-import type { JsonDataFile, JsonItem, SerializableClipboard } from '@common/types';
-import { JSON_DATA_VERSION } from '@common/types';
+import type { DataFileTab, JsonDataFile, JsonItem, SerializableClipboard } from '@common/types';
+import { DEFAULT_DATA_FILE, JSON_DATA_VERSION, PREVIEW_MAX_LENGTH } from '@common/types';
 
 import PathManager from '../config/pathManager.js';
 import { writeDataFile } from '../services/dataFileTracker.js';
@@ -37,77 +38,82 @@ function createSampleClipboardItem(): JsonItem | null {
     displayName: mainI18n.t('sampleData.greetingName'),
     dataFileRef: `clipboard-data/${id}.json`,
     savedAt,
-    preview: text,
+    // 一覧のプレビューはほかの定型文と同じ長さで切る（本文はファイルに全部ある）
+    preview:
+      text.length <= PREVIEW_MAX_LENGTH ? text : `${text.substring(0, PREVIEW_MAX_LENGTH)}...`,
     formats: ['text'],
   };
+}
+
+/** 初回起動のお試し用の 2 つ目のタブ（Web）のデータファイル */
+export const SAMPLE_WEB_DATA_FILE = 'datafiles/data2.json';
+
+function sampleItem(displayName: string, path: string): JsonItem {
+  return { id: generateId(), type: 'item', displayName, path };
+}
+
+function writeSampleDataFile(filePath: string, items: JsonItem[]): void {
+  const data: JsonDataFile = { version: JSON_DATA_VERSION, items };
+  writeDataFile(filePath, serializeJsonDataFile(data));
 }
 
 /**
  * デフォルトのデータファイルを作成（JSON形式）
  * 名前にローマ字を添える・クリップボードを、初回起動のサンプルで試せるようにする。
  * 名前と URL は作るときの表示言語で決める（日本語は読みのローマ字を添え、日本向けのサイトにする）
+ *
+ * 初回起動（splitWebTab）では、Web のアイテムを 2 つ目のデータファイル（SAMPLE_WEB_DATA_FILE）に分け、
+ * タブの使い方を試せるようにする。そのファイルが既にあるときは分けない
+ * @returns Web のアイテムを 2 つ目のデータファイルに分けたら true
  */
-export function createDefaultDataFile(): void {
+export function createDefaultDataFile(splitWebTab: boolean = false): boolean {
   const dataPath = PathManager.getDataFilePath();
-  if (!fs.existsSync(dataPath)) {
-    const items: JsonItem[] = [
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.readme.name'),
-        path: mainI18n.t('sampleData.readme.url'),
-      },
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.google.name'),
-        path: mainI18n.t('sampleData.google.url'),
-      },
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.maps.name'),
-        path: mainI18n.t('sampleData.maps.url'),
-      },
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.weather.name'),
-        path: mainI18n.t('sampleData.weather.url'),
-      },
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.desktop'),
-        path: 'shell:Desktop',
-      },
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.downloads'),
-        path: 'shell:Downloads',
-      },
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.calculator'),
-        path: 'calc.exe',
-      },
-      {
-        id: generateId(),
-        type: 'item',
-        displayName: mainI18n.t('sampleData.notepad'),
-        path: 'notepad.exe',
-      },
-    ];
-    const clipboardItem = createSampleClipboardItem();
-    if (clipboardItem) items.push(clipboardItem);
+  if (fs.existsSync(dataPath)) return false;
 
-    const defaultData: JsonDataFile = {
-      version: JSON_DATA_VERSION,
-      items,
-    };
-    const content = serializeJsonDataFile(defaultData);
-    writeDataFile(dataPath, content);
+  const mainItems: JsonItem[] = [
+    sampleItem(mainI18n.t('sampleData.readme.name'), mainI18n.t('sampleData.readme.url')),
+    sampleItem(mainI18n.t('sampleData.desktop'), 'shell:Desktop'),
+    sampleItem(mainI18n.t('sampleData.downloads'), 'shell:Downloads'),
+    sampleItem(mainI18n.t('sampleData.calculator'), 'calc.exe'),
+    sampleItem(mainI18n.t('sampleData.notepad'), 'notepad.exe'),
+  ];
+  const webItems: JsonItem[] = [
+    sampleItem(mainI18n.t('sampleData.google.name'), mainI18n.t('sampleData.google.url')),
+    sampleItem(mainI18n.t('sampleData.maps.name'), mainI18n.t('sampleData.maps.url')),
+    sampleItem(mainI18n.t('sampleData.weather.name'), mainI18n.t('sampleData.weather.url')),
+  ];
+  const clipboardItem = createSampleClipboardItem();
+  if (clipboardItem) mainItems.push(clipboardItem);
+
+  const webPath = path.join(PathManager.getConfigFolder(), SAMPLE_WEB_DATA_FILE);
+  const split = splitWebTab && !fs.existsSync(webPath);
+  if (split) {
+    writeSampleDataFile(webPath, webItems);
+    writeSampleDataFile(dataPath, mainItems);
+  } else {
+    writeSampleDataFile(dataPath, [...mainItems, ...webItems]);
   }
+  return split;
+}
+
+/**
+ * 初回起動のタブ（「メイン」と、Web のアイテムを分けたときは「Web」）。名前は表示言語で決める
+ */
+export function createFirstLaunchTabs(splitWebTab: boolean): {
+  dataFileTabs: DataFileTab[];
+  dataFileLabels: Record<string, string>;
+} {
+  const tabs: DataFileTab[] = [
+    { files: [DEFAULT_DATA_FILE], name: mainI18n.t('firstLaunch.defaultTabName') },
+  ];
+  if (splitWebTab) {
+    tabs.push({ files: [SAMPLE_WEB_DATA_FILE], name: mainI18n.t('sampleData.webTabName') });
+  }
+  const dataFileLabels = Object.fromEntries(
+    tabs.map((tab) => [
+      tab.files[0],
+      mainI18n.t('itemManager.tabStructure.defaultNames.fileForTab', { tab: tab.name }),
+    ])
+  );
+  return { dataFileTabs: tabs, dataFileLabels };
 }

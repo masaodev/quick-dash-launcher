@@ -243,7 +243,20 @@ test.describe('画面仕様書の画面イメージ', () => {
   });
 });
 
-firstLaunchTest('初回設定画面', async ({ mainWindow }) => {
-  await mainWindow.locator('.first-launch-setup').waitFor({ state: 'visible' });
-  await shot(mainWindow, 'first-launch-setup');
+firstLaunchTest.describe('初回設定', () => {
+  // ファイル全体の test.use（screenshots）が効くと初回設定にならないので、ここで戻す
+  firstLaunchTest.use({ configTemplate: 'first-launch' });
+
+  firstLaunchTest('初回設定画面', async ({ mainWindow }) => {
+    await mainWindow.locator('.first-launch-setup').waitFor({ state: 'visible' });
+    await shot(mainWindow, 'first-launch-setup');
+
+    await mainWindow.getByRole('button', { name: '次へ' }).click();
+    await mainWindow.locator('.launch-hotkey-section').waitFor({ state: 'visible' });
+    await shot(mainWindow, 'first-launch-setup-hotkey');
+
+    await mainWindow.getByRole('button', { name: '次へ' }).click();
+    await mainWindow.locator('.first-launch-try').waitFor({ state: 'visible' });
+    await shot(mainWindow, 'first-launch-setup-try');
+  });
 });

@@ -140,15 +140,19 @@ function App(): React.ReactElement {
     setIconFetchErrors(errors);
   }, []);
 
-  const { handleRefreshAll, handleFetchMissingIcons, handleFetchMissingIconsCurrentTab } =
-    useIconFetcher({
-      mainItems,
-      setMainItems,
-      showDataFileTabs,
-      activeTab,
-      dataFileTabs,
-      reloadIconFetchErrors: loadIconFetchErrors,
-    });
+  const {
+    handleRefreshAll,
+    handleFetchMissingIcons,
+    handleFetchMissingIconsSilently,
+    handleFetchMissingIconsCurrentTab,
+  } = useIconFetcher({
+    mainItems,
+    setMainItems,
+    showDataFileTabs,
+    activeTab,
+    dataFileTabs,
+    reloadIconFetchErrors: loadIconFetchErrors,
+  });
 
   const { withLoading } = useGlobalLoading();
 
@@ -617,20 +621,15 @@ function App(): React.ReactElement {
         hotkey: settings.hotkey,
         autoLaunch: settings.autoLaunch,
         itemSearchHotkey: settings.itemSearchHotkey,
-        dataFileTabs: [{ files: [DEFAULT_DATA_FILE], name: t('firstLaunch.defaultTabName') }],
-        dataFileLabels: {
-          [DEFAULT_DATA_FILE]: t('itemManager.tabStructure.defaultNames.fileForTab', {
-            tab: t('firstLaunch.defaultTabName'),
-          }),
-        },
       });
       await window.electronAPI.changeHotkey(settings.hotkey);
       if (settings.itemSearchHotkey) {
         await window.electronAPI.changeItemSearchHotkey(settings.itemSearchHotkey);
       }
       setIsFirstLaunch(false);
-      // 初回のサンプルにはアイコンがまだ無いので、「取得」を押さなくても出るように取りに行く
-      void handleFetchMissingIcons();
+      // 初回のサンプルにはアイコンがまだ無いので、「取得」を押さなくても出るように取りに行く。
+      // 頼まれた処理ではないので、進捗バーは出さない
+      void handleFetchMissingIconsSilently();
     } catch (error) {
       logError('初回設定の保存に失敗しました:', error);
       showErrorAlert(t('firstLaunch.saveFailed'));

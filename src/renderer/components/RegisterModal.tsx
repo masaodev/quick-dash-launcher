@@ -317,7 +317,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                   {singleItem && (
                     <span className="register-dest-echo">
                       {t(editingItem ? 'register.destEchoEdit' : 'register.destEcho', {
-                        dest: describePlacement(singleItem, availableTabs, dataFileLabels),
+                        dest: describePlacement(singleItem, availableTabs, dataFileLabels, t),
                       })}
                     </span>
                   )}

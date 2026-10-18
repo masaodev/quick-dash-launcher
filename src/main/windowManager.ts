@@ -486,8 +486,32 @@ export function getTray(): Tray | null {
  * @param isFirstLaunch 初回起動モードかどうか
  */
 export function setFirstLaunchMode(isFirstLaunch: boolean): void {
+  const wasFirstLaunch = isFirstLaunchMode;
   isFirstLaunchMode = isFirstLaunch;
   windowLogger.info({ isFirstLaunch }, '初回起動モードを切り替えました');
+  if (wasFirstLaunch && !isFirstLaunch) void restoreWindowSizeAfterFirstLaunch();
+}
+
+/**
+ * 初回設定を終えたら、初回設定用の大きさ（700x600）から設定の大きさに戻す（中心は保つ）
+ * 戻さないと、次に起動し直すまで初回設定の大きさのままになる
+ */
+async function restoreWindowSizeAfterFirstLaunch(): Promise<void> {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const settingsService = await SettingsService.getInstance();
+  const width = await settingsService.get('windowWidth');
+  const height = await settingsService.get('windowHeight');
+  const bounds = mainWindow.getBounds();
+  mainWindow.setBounds({
+    x: Math.round(bounds.x + (bounds.width - width) / 2),
+    y: Math.round(bounds.y + (bounds.height - height) / 2),
+    width,
+    height,
+  });
+  windowLogger.info(
+    { width, height },
+    '初回設定を終えたので、ウィンドウを設定の大きさに戻しました'
+  );
 }
 
 /**
@@ -762,7 +786,14 @@ export async function hideMainWindow(): Promise<void> {
     return;
   }
 
-  if (isFirstLaunchMode || isModalMode) {
+  if (isFirstLaunchMode) {
+    // 初回設定の「試してみる」で、押せたことを画面に出す
+    mainWindow.webContents.send(IPC_CHANNELS.EVENT_FIRST_LAUNCH_HOTKEY_PRESSED);
+    windowLogger.info('初回設定の途中なので、ホットキーで非表示にせず画面に知らせました');
+    return;
+  }
+
+  if (isModalMode) {
     windowLogger.info('現在のモードではホットキーで非表示にできません');
     return;
   }

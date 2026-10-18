@@ -18,6 +18,8 @@ interface HotkeyInputProps {
   allowEmpty?: boolean;
   /** クリアボタンを表示するかどうか（デフォルト: false） */
   showClearButton?: boolean;
+  /** クリアボタンの文言（省略時は「クリア」） */
+  clearLabel?: string;
 }
 
 export const HotkeyInput: React.FC<HotkeyInputProps> = ({
@@ -28,6 +30,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
   placeholder: placeholderProp,
   allowEmpty = false,
   showClearButton = false,
+  clearLabel,
 }) => {
   const { t } = useTranslation();
   const placeholder = placeholderProp ?? t('hotkeyInput.placeholder');
@@ -184,7 +187,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
           disabled={disabled}
           className="hotkey-clear-button"
         >
-          {t('common.clear')}
+          {clearLabel ?? t('common.clear')}
         </Button>
       )}
       {isRecording && (
