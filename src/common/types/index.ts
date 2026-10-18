@@ -60,6 +60,7 @@ export type {
   WorkspaceUiStateFile,
   DetachedWindowState,
   MonitorAnchor,
+  WorkspaceWindowState,
   MonitorAnchorEdge,
 } from './json-workspace';
 export {
@@ -119,6 +120,7 @@ export {
 export type {
   AppSettings,
   WindowPinMode,
+  PinLevel,
   WindowPositionMode,
   WorkspacePositionMode,
   DetachedPositionMode,

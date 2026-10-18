@@ -141,7 +141,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | ワークスペース | `workspaceTargetDisplayIndex` | 0 から、接続しているディスプレイの数 − 1 まで。`-1` はメインウィンドウと同じディスプレイ |
 | ワークスペース | `detachedPositionMode` | `mainDisplay`・`saved` |
 | ワークスペース | `workspacePositionX`・`workspacePositionY` | 整数（`fixed` のときの位置） |
-| ワークスペース | `workspaceBackgroundTransparent`・`autoShowWorkspace`・`workspaceVisibleOnAllDesktops`・`detachedVisibleOnAllDesktops`・`hideDetachedWithMainWindow` | `true`・`false` |
+| ワークスペース | `workspaceBackgroundTransparent`・`workspaceVisibleOnAllDesktops`・`detachedVisibleOnAllDesktops` | `true`・`false` |
 | バックアップ | `backupEnabled`・`backupIncludeClipboard` | `true`・`false` |
 | バックアップ | `backupRetention` | 3〜50 |
 

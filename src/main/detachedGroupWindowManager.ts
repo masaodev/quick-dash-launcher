@@ -2,7 +2,7 @@ import { BrowserWindow, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
-import type { Bounds, MonitorAnchor } from '@common/types';
+import type { Bounds, MonitorAnchor, PinLevel } from '@common/types';
 
 import PathManager from './config/pathManager.js';
 import { SettingsService } from './services/settingsService.js';
@@ -17,6 +17,7 @@ import {
 import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
 import { computeMonitorAnchor, placeByMonitorAnchor } from './utils/monitorAnchor.js';
 import { setBoundsAcrossDisplays } from './utils/screenPosition.js';
+import { notifyPinLevel } from './utils/pinMenu.js';
 import { getMainWindowDisplay } from './utils/referenceDisplay.js';
 import { getRendererHtmlUrl, openChildWindow } from './services/childWindowService.js';
 
@@ -25,14 +26,11 @@ import { getRendererHtmlUrl, openChildWindow } from './services/childWindowServi
  */
 const SHOW_FALLBACK_TIMEOUT_MS = 1500;
 
-/** 切り離しウィンドウのピンモード: 0=通常, 1=表示固定, 2=最上面固定 */
-export type DetachedPinMode = 0 | 1 | 2;
-
 /** groupId → BrowserWindow */
 const detachedWindows = new Map<string, BrowserWindow>();
 
 /** groupId → ピンモード */
-const detachedPinModes = new Map<string, DetachedPinMode>();
+const detachedPinModes = new Map<string, PinLevel>();
 
 /** webContents.id → groupId（IPC応答用の逆引き） */
 const webContentsIdToGroupId = new Map<number, string>();
@@ -40,17 +38,26 @@ const webContentsIdToGroupId = new Map<number, string>();
 /** 生成中の groupId（二重要求の抑止用） */
 const creatingGroupIds = new Set<string>();
 
+/**
+ * まだ初めての表示をしていない groupId。中身に合わせて大きさを決めた後（またはしばらく待った後）に 1 回だけ出す。
+ * 隠したまま作ったもの（起動時に開き直した 📌 なしのもの）は入れない。メインウィンドウと一緒に出る
+ */
+const pendingInitialShow = new Set<string>();
+
 /** groupId → 最後に動かしたときの、載っていたモニターに対する位置 */
 const detachedAnchors = new Map<string, MonitorAnchor>();
 
 /** groupId → 覚えているサイズ（小さいモニターで表示だけ縮めても、元のサイズに戻せるように持つ） */
 const detachedSizes = new Map<string, { width: number; height: number }>();
 
-/** groupId → QDL が位置を当て直した時刻。この直後の移動・サイズ変更は人の操作ではないので保存しない */
-const programmaticMoveAt = new Map<string, number>();
+/**
+ * groupId → QDL が位置を当て直した先と時刻。当て直した先のままの移動・サイズ変更は人の操作ではないので保存しない
+ * （小さいディスプレイで縮めたサイズや寄せた位置で、覚えている位置を上書きしないため）
+ */
+const programmaticPlacements = new Map<string, { bounds: Bounds; at: number }>();
 
-/** 位置を当て直した後、移動・サイズ変更のイベントを人の操作とみなさない時間（ms） */
-const PROGRAMMATIC_MOVE_GRACE_MS = 1000;
+/** 位置を当て直した直後、途中の大きさ（拡大率の違うディスプレイへ移すとき）も人の操作とみなさない時間（ms） */
+const PROGRAMMATIC_MOVE_GRACE_MS = 300;
 
 let detachedWindowSnapEnabled: boolean = true;
 
@@ -81,20 +88,18 @@ export function isDetachedGroupWindow(win: BrowserWindow): boolean {
 /**
  * 指定グループの切り離しウィンドウのピンモードを取得する
  */
-export function getDetachedPinMode(groupId: string): DetachedPinMode {
+export function getDetachedPinLevel(groupId: string): PinLevel {
   return detachedPinModes.get(groupId) ?? 0;
 }
 
 /**
- * 指定グループの切り離しウィンドウのピンモードをサイクルする
- * 0 → 1 → 2 → 0
+ * 指定グループの切り離しウィンドウのピンモードを変える
  */
-export function cycleDetachedPinMode(groupId: string): DetachedPinMode {
-  const current = detachedPinModes.get(groupId) ?? 0;
-  const next = ((current + 1) % 3) as DetachedPinMode;
+export function setDetachedPinLevel(groupId: string, next: PinLevel): PinLevel {
   detachedPinModes.set(groupId, next);
 
   const win = detachedWindows.get(groupId);
+  notifyPinLevel(win, next);
   if (win && !win.isDestroyed()) {
     win.setAlwaysOnTop(next === 2);
     // setAlwaysOnTop が仮想デスクトップ固定をリセットするため再適用
@@ -104,6 +109,15 @@ export function cycleDetachedPinMode(groupId: string): DetachedPinMode {
       .catch(() => {});
   }
   return next;
+}
+
+/**
+ * 中身に合わせて大きさを決めたときに呼ぶ。まだ初めての表示をしていなければ true を返して、表示待ちを外す
+ * （隠れているウィンドウや、隠したまま作ったウィンドウを、大きさの調整のたびに出さないため）
+ */
+export function takeDetachedInitialShow(win: BrowserWindow): boolean {
+  const groupId = webContentsIdToGroupId.get(win.webContents.id);
+  return groupId !== undefined && pendingInitialShow.delete(groupId);
 }
 
 /** フォーカスを奪わずにウィンドウを前面に表示する */
@@ -166,9 +180,23 @@ function computeAnchorOnCurrentDisplay(bounds: Bounds): MonitorAnchor {
   return computeMonitorAnchor(bounds, screen.getDisplayMatching(bounds).workArea);
 }
 
-function isProgrammaticMove(groupId: string): boolean {
-  const at = programmaticMoveAt.get(groupId);
-  return at !== undefined && Date.now() - at < PROGRAMMATIC_MOVE_GRACE_MS;
+function isSameBounds(a: Bounds, b: Bounds): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
+/** QDL が当て直したことによる移動・サイズ変更か（当て直した先のまま、または当て直した直後） */
+function isProgrammaticMove(groupId: string, current: Bounds): boolean {
+  const placement = programmaticPlacements.get(groupId);
+  if (!placement) return false;
+  if (isSameBounds(current, placement.bounds)) return true;
+  if (Date.now() - placement.at < PROGRAMMATIC_MOVE_GRACE_MS) return true;
+  // 人が動かした。以後は当て直した先と比べない
+  programmaticPlacements.delete(groupId);
+  return false;
+}
+
+function markProgrammaticPlacement(groupId: string, bounds: Bounds): void {
+  programmaticPlacements.set(groupId, { bounds, at: Date.now() });
 }
 
 /**
@@ -192,7 +220,7 @@ function placeOnMainWindowDisplay(groupId: string, win: BrowserWindow): void {
   ) {
     return;
   }
-  programmaticMoveAt.set(groupId, Date.now());
+  markProgrammaticPlacement(groupId, target);
   setBoundsAcrossDisplays(win, target);
 }
 
@@ -207,12 +235,13 @@ function buildDetachedWindowUrl(groupId: string): string {
 function createStandaloneWindow(
   groupId: string,
   options: BrowserWindowConstructorOptions,
-  pinMode: DetachedPinMode,
-  skipFocus: boolean
+  pinMode: PinLevel,
+  skipFocus: boolean,
+  startHidden: boolean
 ): { success: boolean } {
   const win = new BrowserWindow(options);
   win.loadURL(buildDetachedWindowUrl(groupId));
-  setupDetachedWindow(win, groupId, pinMode, skipFocus);
+  setupDetachedWindow(win, groupId, pinMode, skipFocus, startHidden);
   windowLogger.info(`切り離しウィンドウを直接作成しました: ${groupId}`);
   return { success: true };
 }
@@ -220,12 +249,13 @@ function createStandaloneWindow(
 /**
  * 切り離しグループウィンドウを作成する（既存ならフォーカスのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
+ * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（メインウィンドウと一緒に出る）
  */
 export async function createDetachedGroupWindow(
   groupId: string,
   cursorX?: number,
   cursorY?: number,
-  options?: { skipFocus?: boolean }
+  options?: { skipFocus?: boolean; startHiddenUnlessPinned?: boolean }
 ): Promise<{ success: boolean }> {
   const existing = detachedWindows.get(groupId);
   if (existing && !existing.isDestroyed()) {
@@ -256,7 +286,7 @@ export async function createDetachedGroupWindow(
 
   // 保存済み状態の読み込みを試行
   let savedBounds: Bounds | null = null;
-  let savedPinMode: DetachedPinMode = 0;
+  let savedPinMode: PinLevel = 0;
   let savedAnchor: MonitorAnchor | null = null;
   try {
     const workspaceService = await WorkspaceService.getInstance();
@@ -302,6 +332,7 @@ export async function createDetachedGroupWindow(
   };
 
   const skipFocus = options?.skipFocus ?? false;
+  const startHidden = (options?.startHiddenUnlessPinned ?? false) && savedPinMode === 0;
 
   if (savedAnchor) {
     detachedAnchors.set(groupId, savedAnchor);
@@ -309,8 +340,8 @@ export async function createDetachedGroupWindow(
   if (savedBounds) {
     detachedSizes.set(groupId, { width: savedBounds.width, height: savedBounds.height });
   }
-  if (placedByAnchor) {
-    programmaticMoveAt.set(groupId, Date.now());
+  if (placedByAnchor && position) {
+    markProgrammaticPlacement(groupId, { x: position.x, y: position.y, width, height });
   }
 
   // ワークスペースのレンダラーから window.open で開き、レンダラープロセスを共有する
@@ -323,12 +354,12 @@ export async function createDetachedGroupWindow(
       options: windowOptions,
     });
     if (win) {
-      setupDetachedWindow(win, groupId, savedPinMode, skipFocus);
+      setupDetachedWindow(win, groupId, savedPinMode, skipFocus, startHidden);
       windowLogger.info(`切り離しウィンドウをレンダラー共有で作成しました: ${groupId}`);
       return { success: true };
     }
     windowLogger.warn({ groupId }, 'レンダラー共有での生成に失敗したため直接生成します');
-    return createStandaloneWindow(groupId, windowOptions, savedPinMode, skipFocus);
+    return createStandaloneWindow(groupId, windowOptions, savedPinMode, skipFocus, startHidden);
   } finally {
     creatingGroupIds.delete(groupId);
   }
@@ -341,8 +372,9 @@ export async function createDetachedGroupWindow(
 function setupDetachedWindow(
   win: BrowserWindow,
   groupId: string,
-  pinMode: DetachedPinMode,
-  skipFocus: boolean
+  pinMode: PinLevel,
+  skipFocus: boolean,
+  startHidden: boolean
 ): void {
   win.setMenuBarVisibility(false);
   win.setMenu(null);
@@ -353,33 +385,54 @@ function setupDetachedWindow(
   const wcId = win.webContents.id;
   webContentsIdToGroupId.set(wcId, groupId);
 
-  const cancelFallbackShow = scheduleFallbackShow(
-    win,
-    () => (skipFocus ? showWithoutFocus(win) : win.show()),
-    SHOW_FALLBACK_TIMEOUT_MS
-  );
+  // 開き直したときの段階をボタンに知らせる（レンダラーが先に問い合わせると、まだ登録前で 0 が返るため）
+  notifyPinLevel(win, pinMode);
+
+  if (!startHidden) pendingInitialShow.add(groupId);
+  const cancelFallbackShow = startHidden
+    ? () => {}
+    : scheduleFallbackShow(
+        win,
+        () => {
+          if (!pendingInitialShow.delete(groupId)) return;
+          if (skipFocus) showWithoutFocus(win);
+          else win.show();
+        },
+        SHOW_FALLBACK_TIMEOUT_MS
+      );
 
   // bounds 保存用のデバウンスタイマー。QDL が位置を当て直したときの移動は保存しない
-  // （小さいモニターで縮めたサイズや寄せた位置で、覚えている位置を上書きしないため）
+  // 位置の基準は動かしたとき、覚えているサイズは大きさを変えたときだけ覚え直す
+  // （小さいディスプレイで表示だけ縮めたサイズを、動かしただけで覚えてしまわないため）
   let boundsTimer: ReturnType<typeof setTimeout> | null = null;
   let anchorPending = false;
-  const saveBoundsDebounced = (updateAnchor: boolean) => {
-    if (isProgrammaticMove(groupId)) return;
-    anchorPending ||= updateAnchor;
+  let sizePending = false;
+  const saveBoundsDebounced = (kind: 'moved' | 'resized') => {
+    if (win.isDestroyed() || isProgrammaticMove(groupId, win.getBounds())) return;
+    if (kind === 'moved') anchorPending = true;
+    else sizePending = true;
     if (boundsTimer) clearTimeout(boundsTimer);
     boundsTimer = setTimeout(async () => {
       if (win.isDestroyed()) return;
       const bounds = win.getBounds();
-      detachedSizes.set(groupId, { width: bounds.width, height: bounds.height });
+      if (sizePending) {
+        detachedSizes.set(groupId, { width: bounds.width, height: bounds.height });
+        sizePending = false;
+      }
       let anchor: MonitorAnchor | undefined;
       if (anchorPending) {
         anchor = computeAnchorOnCurrentDisplay(bounds);
         detachedAnchors.set(groupId, anchor);
         anchorPending = false;
       }
+      const size = detachedSizes.get(groupId) ?? bounds;
       try {
         const ws = await WorkspaceService.getInstance();
-        await ws.saveDetachedBounds(groupId, bounds, anchor);
+        await ws.saveDetachedBounds(
+          groupId,
+          { x: bounds.x, y: bounds.y, width: size.width, height: size.height },
+          anchor
+        );
       } catch (error) {
         windowLogger.warn({ error, groupId }, '切り離しウィンドウの bounds 保存に失敗');
       }
@@ -387,8 +440,8 @@ function setupDetachedWindow(
   };
 
   // 位置の基準は動かしたときだけ覚え直す（中身に合わせたサイズの自動調整では変えない）
-  win.on('moved', () => saveBoundsDebounced(true));
-  win.on('resized', () => saveBoundsDebounced(false));
+  win.on('moved', () => saveBoundsDebounced('moved'));
+  win.on('resized', () => saveBoundsDebounced('resized'));
 
   win.on('closed', () => {
     cancelFallbackShow();
@@ -439,9 +492,10 @@ function setupDetachedWindow(
 }
 
 function forgetPlacement(groupId: string): void {
+  pendingInitialShow.delete(groupId);
   detachedAnchors.delete(groupId);
   detachedSizes.delete(groupId);
-  programmaticMoveAt.delete(groupId);
+  programmaticPlacements.delete(groupId);
 }
 
 function destroyWindowIfAlive(groupId: string): void {
@@ -482,8 +536,8 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
 }
 
 /**
- * すべての切り離しウィンドウを再表示する（フォーカスを奪わない）
- * ピンモード 1以上のウィンドウは既に表示されているためmoveTopのみ
+ * ピン留めしていない切り離しウィンドウを再表示する（フォーカスを奪わない）
+ * ピン留めしたものは出たままなので触らない（手前に出すのは bringPinnedDetachedToFront）
  * @param options.placeOnMainWindowDisplay true なら、ピン留めしていないウィンドウを表示する前にメインウィンドウと同じディスプレイへ移す
  */
 export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay?: boolean }): {
@@ -497,12 +551,22 @@ export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay
           placeOnMainWindowDisplay(groupId, win);
         }
         showWithoutFocus(win);
-      } else {
-        win.moveTop();
       }
     }
   }
   return { success: true };
+}
+
+/**
+ * ピン留めした切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+ * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
+ */
+export function bringPinnedDetachedToFront(): void {
+  for (const [groupId, win] of detachedWindows.entries()) {
+    if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) !== 0 && win.isVisible()) {
+      win.moveTop();
+    }
+  }
 }
 
 /**
@@ -537,8 +601,12 @@ export async function applyDetachedVisibilityOnAllDesktops(): Promise<void> {
 /**
  * 前回開いていた切り離しウィンドウを復元する（存在するグループのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
+ * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（起動時。メインウィンドウと一緒に出る）
  */
-export async function restoreDetachedWindows(options?: { skipFocus?: boolean }): Promise<void> {
+export async function restoreDetachedWindows(options?: {
+  skipFocus?: boolean;
+  startHiddenUnlessPinned?: boolean;
+}): Promise<void> {
   try {
     const workspaceService = await WorkspaceService.getInstance();
     const openGroupIds = await workspaceService.loadOpenDetachedGroupIds();

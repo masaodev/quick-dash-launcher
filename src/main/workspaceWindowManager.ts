@@ -1,7 +1,8 @@
 import { BrowserWindow, Display, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { windowLogger } from '@common/logger';
-import type { WorkspacePositionMode } from '@common/types';
+import { IPC_CHANNELS } from '@common/ipcChannels';
+import type { PinLevel, WorkspacePositionMode } from '@common/types';
 import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 
 import { SettingsService } from './services/settingsService.js';
@@ -20,6 +21,8 @@ import {
   hideOnClose,
 } from './utils/managedWindow.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
+import { WorkspaceService } from './services/workspace/index.js';
+import { notifyPinLevel } from './utils/pinMenu.js';
 import {
   getRendererHtmlUrl,
   openChildWindow,
@@ -37,7 +40,19 @@ let workspaceWindow: BrowserWindow | null = null;
 let pendingCreate: Promise<BrowserWindow> | null = null;
 let isWorkspaceWindowVisible: boolean = false;
 let detachedRestored: boolean = false;
-let isWorkspacePinned: boolean = false;
+/** ピン留めの段階。ワークスペースは最初から表示固定（開きっぱなしで使ってもらうため） */
+let workspacePinLevel: PinLevel = 1;
+/**
+ * 開いているか。⭐・Ctrl+W・× で閉じるまで true（メインウィンドウと一緒に隠れただけなら true のまま）。
+ * 開いていて 📌 なしなら、メインウィンドウと一緒に出て一緒に隠れる
+ */
+let isWorkspaceOpen: boolean = false;
+/** 保存した状態（開いているか・ピン留め）を読んだか */
+let workspaceStateLoaded = false;
+/** 編集画面の「試しに実行」で一時的に常に最前面にしている間 true */
+let temporaryAlwaysOnTop = false;
+/** 一時的に常に最前面にする前の段階 */
+let pinLevelBeforeAlwaysOnTop: PinLevel = 0;
 let windowSnapEnabled: boolean = true;
 
 /**
@@ -59,7 +74,46 @@ export async function createWorkspaceWindow(): Promise<BrowserWindow> {
   return pendingCreate;
 }
 
+/** 開いているか・ピン留めの段階を workspace-ui-state.json に保存する */
+function persistWorkspaceWindowState(): void {
+  // 編集画面の「試しに実行」の一時的な最前面は保存しない（その前の段階を保存する）
+  const pinLevel = temporaryAlwaysOnTop ? pinLevelBeforeAlwaysOnTop : workspacePinLevel;
+  WorkspaceService.getInstance()
+    .then((ws) => ws.saveWorkspaceWindowState({ open: isWorkspaceOpen, pinLevel }))
+    .catch((error) => {
+      windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の保存に失敗');
+    });
+}
+
+function setWorkspaceOpen(open: boolean): void {
+  if (isWorkspaceOpen === open) return;
+  isWorkspaceOpen = open;
+  persistWorkspaceWindowState();
+  // メインウィンドウの ⭐ ボタンの押し込み表示を合わせる
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, open);
+  }
+}
+
+/** ワークスペースが開いているか（閉じていない） */
+export function isWorkspaceWindowOpen(): boolean {
+  return isWorkspaceOpen;
+}
+
 async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
+  // 保存した状態を読むのは起動して最初に作るときだけ（作り直すときに、その後の変更を古い値で上書きしない）
+  if (!workspaceStateLoaded) {
+    workspaceStateLoaded = true;
+    try {
+      const ws = await WorkspaceService.getInstance();
+      const state = await ws.loadWorkspaceWindowState();
+      workspacePinLevel = state.pinLevel;
+      isWorkspaceOpen = state.open;
+    } catch (error) {
+      windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の読み込みに失敗');
+    }
+  }
+
   const { height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   const windowWidth = 380;
   const windowHeight = screenHeight;
@@ -73,7 +127,7 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
   const windowOptions: BrowserWindowConstructorOptions = {
     width: windowWidth,
     height: windowHeight,
-    alwaysOnTop: false,
+    alwaysOnTop: workspacePinLevel === 2,
     frame: false,
     show: false,
     resizable: false,
@@ -109,8 +163,16 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
   // 切り離しウィンドウはこのレンダラーから window.open で開く
   registerChildWindowOpener('workspace', workspaceWindow.webContents);
 
+  // 読み込んだ段階をボタンに知らせる（レンダラーが先に問い合わせると 0 が返ることがあるため）
+  const createdWindow = workspaceWindow;
+  createdWindow.webContents.once('did-finish-load', () =>
+    notifyPinLevel(createdWindow, workspacePinLevel)
+  );
+
+  // × は「閉じる」。メインウィンドウと一緒に出てこなくなる
   hideOnClose(workspaceWindow, () => {
     isWorkspaceWindowVisible = false;
+    setWorkspaceOpen(false);
   });
 
   workspaceWindow.on('closed', () => {
@@ -141,10 +203,54 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
 }
 
 /**
- * ワークスペースウィンドウを表示する（存在しない場合は新規作成）
+ * ワークスペースウィンドウを開く（存在しない場合は新規作成）。閉じるまで「開いている」として覚える
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
  */
 export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
+  setWorkspaceOpen(true);
+  await presentWorkspaceWindow(options);
+}
+
+/**
+ * 開いているワークスペースを、メインウィンドウと一緒に出す（隠れているときだけ。閉じているものは出さない）
+ */
+export async function showWorkspaceWithMain(): Promise<void> {
+  if (!isWorkspaceOpen || isWorkspaceWindowVisible) return;
+  await presentWorkspaceWindow({ skipFocus: true });
+}
+
+/**
+ * メインウィンドウと一緒に隠す（📌 なしのときだけ。開いている状態は変えない）
+ */
+export function hideWorkspaceWithMain(): void {
+  if (workspacePinLevel !== 0) return;
+  if (workspaceWindow && !workspaceWindow.isDestroyed() && workspaceWindow.isVisible()) {
+    workspaceWindow.hide();
+  }
+}
+
+/**
+ * 起動したときに、直前の状態へ戻す（再起動しても見え方が変わらないように）
+ * - 開いていて 📌 ありのワークスペースは、すぐに出す（📌 なしなら、最初のホットキーでメインと一緒に出る）
+ * - × で閉じていない切り離しウィンドウを開き直す。📌 ありのものはすぐに出し、なしのものは隠したまま作る
+ */
+export async function restoreWindowsOnStartup(): Promise<void> {
+  try {
+    // 切り離しウィンドウを先に開き直す（ワークスペースを出す処理は、まだなら 📌 なしのものまで出して開き直すため）
+    if (!detachedRestored) {
+      detachedRestored = true;
+      await restoreDetachedWindows({ skipFocus: true, startHiddenUnlessPinned: true });
+    }
+    if (isWorkspaceOpen && workspacePinLevel !== 0) {
+      await presentWorkspaceWindow({ skipFocus: true });
+    }
+  } catch (error) {
+    windowLogger.error({ error }, '起動時のワークスペース・切り離しウィンドウの復元に失敗しました');
+  }
+}
+
+/** 位置を決めて表示する（開いているかどうかは変えない） */
+async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promise<void> {
   try {
     if (!workspaceWindow || workspaceWindow.isDestroyed()) {
       await createWorkspaceWindow();
@@ -175,8 +281,9 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
   }
 }
 
-/** ワークスペースウィンドウを非表示にする */
+/** ワークスペースウィンドウを閉じる（⭐・Ctrl+W・×）。メインウィンドウと一緒に出てこなくなる */
 export function hideWorkspaceWindow(): void {
+  setWorkspaceOpen(false);
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
     workspaceWindow.hide();
     windowLogger.info('ワークスペースウィンドウを非表示にしました');
@@ -215,25 +322,68 @@ export async function toggleWorkspaceWindow(): Promise<void> {
   }
 }
 
-/** ワークスペースウィンドウのピン留め状態を設定する */
-export function setWorkspaceAlwaysOnTop(isPinned: boolean): void {
-  isWorkspacePinned = isPinned;
+/** ワークスペースウィンドウのピン留めの段階を変える（2＝常に最前面のときだけ最前面にする） */
+export function setWorkspacePinLevel(level: PinLevel): PinLevel {
+  workspacePinLevel = level;
+  // 人が段階を変えたら、一時的な最前面は終わったものとして扱う
+  temporaryAlwaysOnTop = false;
+  applyWorkspacePinLevel();
+  persistWorkspaceWindowState();
+  return level;
+}
+
+/** 段階をウィンドウに当て、ボタンに知らせる（保存はしない） */
+function applyWorkspacePinLevel(): void {
+  const level = workspacePinLevel;
+  notifyPinLevel(workspaceWindow, level);
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
-    workspaceWindow.setAlwaysOnTop(isPinned);
-    windowLogger.info(`ワークスペースウィンドウのピン留め: ${isPinned ? 'ON' : 'OFF'}`);
+    workspaceWindow.setAlwaysOnTop(level === 2);
+    // setAlwaysOnTop で仮想デスクトップへの固定が外れるので当て直す
+    void applyVisibilityOnAllDesktops();
+    windowLogger.info(`ワークスペースウィンドウのピン留め: ${level}`);
   }
 }
 
-/** ワークスペースウィンドウのピン留め状態をトグルする */
-export function toggleWorkspaceAlwaysOnTop(): boolean {
-  const newState = !isWorkspacePinned;
-  setWorkspaceAlwaysOnTop(newState);
-  return newState;
+/** ワークスペースウィンドウのピン留めの段階 */
+export function getWorkspacePinLevel(): PinLevel {
+  return workspacePinLevel;
 }
 
-/** ワークスペースウィンドウの現在のピン留め状態を取得する */
+/**
+ * 編集画面の「試しに実行」用に、一時的に常に最前面にする・元に戻す（保存はしない）
+ * 一時的に最前面にしている間に人が段階を変えたら、戻すときはその段階のままにする
+ */
+export function toggleWorkspaceAlwaysOnTop(): boolean {
+  if (temporaryAlwaysOnTop) {
+    temporaryAlwaysOnTop = false;
+    workspacePinLevel = pinLevelBeforeAlwaysOnTop;
+    applyWorkspacePinLevel();
+    return false;
+  }
+  if (workspacePinLevel === 2) return true;
+  pinLevelBeforeAlwaysOnTop = workspacePinLevel;
+  temporaryAlwaysOnTop = true;
+  workspacePinLevel = 2;
+  applyWorkspacePinLevel();
+  return true;
+}
+
+/** 常に最前面かどうか（編集画面の「試しに実行」用） */
 export function getWorkspaceAlwaysOnTop(): boolean {
-  return isWorkspacePinned;
+  return workspacePinLevel === 2;
+}
+
+/**
+ * ピン留めしたワークスペースを、フォーカスを奪わずに手前へ出す（ホットキーでメインウィンドウを出すとき）
+ */
+/**
+ * ピン留めしたワークスペースを、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+ * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
+ */
+export function bringPinnedWorkspaceToFront(): void {
+  if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+  if (workspacePinLevel === 0 || !workspaceWindow.isVisible()) return;
+  workspaceWindow.moveTop();
 }
 
 /** 指定インデックスのディスプレイを取得（MAIN_WINDOW_DISPLAY_INDEX はメインウィンドウと同じディスプレイ、範囲外はプライマリ） */
@@ -310,8 +460,8 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
         }
         const clampedHeight = Math.min(bounds.height, primaryWorkArea.height);
         workspaceWindow.setBounds({
-          x: primaryWorkArea.width - bounds.width,
-          y: 0,
+          x: primaryWorkArea.x + primaryWorkArea.width - bounds.width,
+          y: primaryWorkArea.y,
           width: bounds.width,
           height: clampedHeight,
         });

@@ -165,13 +165,18 @@ QDL が管理する UI 状態。壊れていれば警告して空として扱う
       "pinMode": 1,
       "anchor": { "horizontal": "start", "offsetX": 10, "vertical": "center", "offsetY": -300 }
     }
-  }
+  },
+  "workspaceWindow": { "open": true, "pinLevel": 1 }
 }
 ```
 
 - `collapsedGroups`: メインのワークスペースウィンドウでの折りたたみ（true のものだけ持つ）
 - `detachedWindows`: 切り離しウィンドウの状態（ルートグループ id → 状態）
   - `anchor`: 最後に動かしたときの、載っていたディスプレイの作業領域に対する位置。`horizontal`・`vertical` は基準（`start`＝左端・上端、`center`＝中央、`end`＝右端・下端）、`offsetX`・`offsetY` は基準からの距離。設定 `detachedPositionMode` が `mainDisplay` のときに使う（[ウィンドウ制御 - 切り離しウィンドウの表示位置](../window-control.md#切り離しウィンドウの表示位置)）。この項目を足す前のファイルには無く、無ければ今の位置から求める
+  - `pinMode`: ピン留めの段階（0＝なし、1＝表示固定、2＝常に最前面。無ければ 0）
+- `workspaceWindow`: ワークスペースウィンドウの状態。無ければ `{ "open": false, "pinLevel": 1 }`（閉じていて、📌 は表示固定）
+  - `open`: 開いているか。⭐・`Ctrl+W`・× で閉じると false。メインウィンドウと一緒に隠れただけなら true のまま
+  - `pinLevel`: ピン留めの段階（0・1・2）。閉じても覚えている
 - 存在しなくなったグループの状態は、グループ削除・アーカイブ・再読み込みのたびに捨てる（`pruneMissingGroups`）
 
 ---

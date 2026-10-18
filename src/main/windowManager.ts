@@ -24,15 +24,22 @@ import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
 import {
+  bringPinnedDetachedToFront,
   hideAllDetachedGroupWindows,
   isDetachedGroupWindow,
   showAllDetachedGroupWindows,
 } from './detachedGroupWindowManager.js';
-import { getWorkspaceWindow } from './workspaceWindowManager.js';
+import {
+  bringPinnedWorkspaceToFront,
+  getWorkspaceWindow,
+  hideWorkspaceWithMain,
+  showWorkspaceWithMain,
+} from './workspaceWindowManager.js';
 import { moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
+import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -52,18 +59,18 @@ const BLUR_SETTLE_AFTER_SHOW_MS = 200;
 const BLUR_FOCUS_CHECK_DELAY_MS = 50;
 
 /**
- * hideDetachedWithMainWindow 設定が有効なら切り離しウィンドウを表示/非表示にする（即座）
+ * メインウィンドウと一緒に、ワークスペース（開いているもの）と切り離しウィンドウを出し入れする（即座）
+ * 隠すのは 📌 なしのものだけ。出すときは、📌 ありのものを手前に出す
  */
-async function toggleDetachedWindowsIfEnabled(show: boolean): Promise<void> {
-  const settingsService = await SettingsService.getInstance();
-  const hideDetached = await settingsService.get('hideDetachedWithMainWindow');
-  if (hideDetached) {
-    if (show) {
-      const positionMode = await settingsService.get('detachedPositionMode');
-      showAllDetachedGroupWindows({ placeOnMainWindowDisplay: positionMode === 'mainDisplay' });
-    } else {
-      hideAllDetachedGroupWindows();
-    }
+async function toggleCompanionWindows(show: boolean): Promise<void> {
+  if (show) {
+    await showWorkspaceWithMain();
+    const settingsService = await SettingsService.getInstance();
+    const positionMode = await settingsService.get('detachedPositionMode');
+    showAllDetachedGroupWindows({ placeOnMainWindowDisplay: positionMode === 'mainDisplay' });
+  } else {
+    hideWorkspaceWithMain();
+    hideAllDetachedGroupWindows();
   }
 }
 
@@ -90,7 +97,7 @@ function hideDetachedWindowsAfterBlur(): void {
   setTimeout(async () => {
     try {
       if (isQdlWindowFocused()) return;
-      await toggleDetachedWindowsIfEnabled(false);
+      await toggleCompanionWindows(false);
     } catch (error) {
       windowLogger.warn({ error }, 'blur時の切り離しウィンドウ連動非表示チェックに失敗');
     }
@@ -125,7 +132,7 @@ function shouldHideOnBlur(): boolean {
 }
 
 /**
- * フォーカスがQDLのウィンドウ群の外へ出ていれば、メインウィンドウと（連動設定時は）切り離しウィンドウを隠す
+ * フォーカスがQDLのウィンドウ群の外へ出ていれば、メインウィンドウと、ピン留めしていないワークスペース・切り離しウィンドウを隠す
  * ウィンドウ群の中でフォーカスが移っただけなら何もしない
  */
 async function hideWindowsIfFocusLeftQdl(): Promise<void> {
@@ -136,7 +143,7 @@ async function hideWindowsIfFocusLeftQdl(): Promise<void> {
     if (!shouldHideOnBlur()) return;
     hideMainWindowInternal();
   }
-  await toggleDetachedWindowsIfEnabled(false);
+  await toggleCompanionWindows(false);
 }
 
 /**
@@ -247,7 +254,7 @@ export async function createWindow(): Promise<BrowserWindow> {
 
       if (mainWindow && !shouldNotHide) {
         hideMainWindowInternal();
-        void toggleDetachedWindowsIfEnabled(false);
+        void toggleCompanionWindows(false);
       }
     }
   });
@@ -425,24 +432,10 @@ export function getWindowPinMode(): WindowPinMode {
  * ウィンドウピンモードを設定し、ウィンドウの動作を更新する
  * @param mode 設定するWindowPinMode
  */
-function setWindowPinMode(mode: WindowPinMode): void {
+export function setWindowPinMode(mode: WindowPinMode): void {
   windowPinMode = mode;
   updateWindowBehavior();
-}
-
-/**
- * 次のピンモードに循環的に切り替える
- * normal -> alwaysOnTop -> stayVisible -> normal
- * @returns 切り替え後のWindowPinMode
- */
-export function cycleWindowPinMode(): WindowPinMode {
-  const modes: WindowPinMode[] = ['normal', 'alwaysOnTop', 'stayVisible'];
-  const currentIndex = modes.indexOf(windowPinMode);
-  const nextIndex = (currentIndex + 1) % modes.length;
-  const nextMode = modes[nextIndex];
-
-  setWindowPinMode(nextMode);
-  return nextMode;
+  notifyPinLevel(mainWindow, pinModeToLevel(mode));
 }
 
 /**
@@ -636,31 +629,30 @@ export async function saveWindowPosition(): Promise<void> {
 }
 
 /**
- * autoShowWorkspace設定が有効な場合、フォーカスを奪わずにワークスペースを表示する
+ * ピン留めしたワークスペース・切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す
+ * メインウィンドウにフォーカスを移した後に呼ぶ（その前だとほかのアプリが前面で、Windows が並べ替えを無視することがある）。
+ * 最後にメインウィンドウを一番手前に戻す
  */
-async function autoShowWorkspaceIfEnabled(): Promise<void> {
-  const settingsService = await SettingsService.getInstance();
-  const autoShowWorkspace = await settingsService.get('autoShowWorkspace');
-
-  if (autoShowWorkspace) {
-    const { showWorkspaceWindow } = await import('./workspaceWindowManager.js');
-    await showWorkspaceWindow({ skipFocus: true });
-    windowLogger.info('ワークスペースを自動表示しました');
-  }
+function bringPinnedCompanionsToFront(): void {
+  if (!mainWindow) return;
+  bringPinnedWorkspaceToFront();
+  bringPinnedDetachedToFront();
+  mainWindow.moveTop();
 }
 
 /**
  * メインウィンドウをアクティブ化して検索欄にフォーカス（共通ヘルパー関数）
- * ワークスペース自動表示処理を含む
+ * 開いているワークスペース・切り離しウィンドウも一緒に出す
  */
 async function activateMainWindowWithFocus(): Promise<void> {
   if (!mainWindow) return;
 
-  // ワークスペース自動表示（メインウィンドウのフォーカス前に実行）
-  await autoShowWorkspaceIfEnabled();
+  // ワークスペース・切り離しウィンドウも一緒に出す（メインウィンドウのフォーカス前に実行）
+  await toggleCompanionWindows(true);
 
   // メインウィンドウに確実にフォーカスを戻す
   mainWindow.focus();
+  bringPinnedCompanionsToFront();
 
   // 検索欄にフォーカスを当てるため、window-shownイベントを送信
   mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN);
@@ -688,11 +680,8 @@ async function showMainWindowInternal(
   await setWindowPosition();
   timer?.log('position-set');
 
-  await autoShowWorkspaceIfEnabled();
-  timer?.log('workspace-auto-shown');
-
-  await toggleDetachedWindowsIfEnabled(true);
-  timer?.log('detached-windows-shown');
+  await toggleCompanionWindows(true);
+  timer?.log('companion-windows-shown');
 
   // 表示したまま別の仮想デスクトップにある（ピン留め中など）と show() では出てこない
   bringMainWindowToCurrentDesktop();
@@ -701,6 +690,8 @@ async function showMainWindowInternal(
 
   mainWindow.focus();
   timer?.log('window-focused');
+
+  bringPinnedCompanionsToFront();
 
   mainWindow.webContents.send(eventName, startTime);
 }
@@ -769,7 +760,7 @@ export async function hideMainWindow(): Promise<void> {
   }
 
   hideMainWindowInternal();
-  await toggleDetachedWindowsIfEnabled(false);
+  await toggleCompanionWindows(false);
 
   windowLogger.info('メインウィンドウを非表示にしました');
 }

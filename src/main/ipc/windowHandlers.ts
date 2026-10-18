@@ -1,10 +1,12 @@
 import { ipcMain, app, clipboard, screen, BrowserWindow } from 'electron';
+import type { WebContents } from 'electron';
 import type {
   MainChildWindowRequest,
   MainChildWindowResult,
   MainChildWindowReturn,
   ConfirmWindowRequest,
   ConfirmWindowResult,
+  PinLevel,
   WindowPinMode,
   WorkspacePositionMode,
   AdminTab,
@@ -27,6 +29,9 @@ import {
   hideWorkspaceWindow,
   getWorkspaceAlwaysOnTop,
   toggleWorkspaceAlwaysOnTop,
+  getWorkspacePinLevel,
+  isWorkspaceWindowOpen,
+  setWorkspacePinLevel,
   getWorkspaceWindow,
   setWorkspacePosition,
 } from '../workspaceWindowManager.js';
@@ -46,21 +51,85 @@ import {
   createDetachedGroupWindow,
   closeDetachedGroupWindow,
   showWithoutFocus,
-  hideAllDetachedGroupWindows,
-  showAllDetachedGroupWindows,
   getGroupIdByWebContentsId,
-  getDetachedPinMode,
-  cycleDetachedPinMode,
+  getDetachedPinLevel,
+  setDetachedPinLevel,
+  isDetachedGroupWindow,
+  takeDetachedInitialShow,
 } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/index.js';
-import { getTray, setEscapeHandledByPage } from '../windowManager.js';
+import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
+import { isPinLevel, levelToPinMode, pinModeToLevel, showPinMenu } from '../utils/pinMenu.js';
+
+/** ピン留めの対象（送ってきたウィンドウ）ごとの読み書き */
+interface PinTarget {
+  window: BrowserWindow;
+  get: () => PinLevel;
+  set: (level: PinLevel) => Promise<void>;
+}
 
 export function setupWindowHandlers(
   getWindowPinMode: () => WindowPinMode,
-  cycleWindowPinMode: () => WindowPinMode
+  setWindowPinMode: (mode: WindowPinMode) => void
 ) {
-  ipcMain.handle(IPC_CHANNELS.GET_WINDOW_PIN_MODE, () => getWindowPinMode());
-  ipcMain.handle(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE, () => cycleWindowPinMode());
+  /** 送ってきたウィンドウがメイン・ワークスペース・切り離しのどれかを調べる */
+  const resolvePinTarget = (sender: WebContents): PinTarget | null => {
+    const win = BrowserWindow.fromWebContents(sender);
+    if (!win) return null;
+    if (win === getMainWindow()) {
+      return {
+        window: win,
+        get: () => pinModeToLevel(getWindowPinMode()),
+        set: async (level) => setWindowPinMode(levelToPinMode(level)),
+      };
+    }
+    if (win === getWorkspaceWindow()) {
+      return {
+        window: win,
+        get: () => getWorkspacePinLevel(),
+        set: async (level) => {
+          setWorkspacePinLevel(level);
+        },
+      };
+    }
+    const groupId = getGroupIdByWebContentsId(sender.id);
+    if (groupId) {
+      return {
+        window: win,
+        get: () => getDetachedPinLevel(groupId),
+        set: async (level) => {
+          setDetachedPinLevel(groupId, level);
+          const ws = await WorkspaceService.getInstance();
+          await ws.saveDetachedPinMode(groupId, level);
+        },
+      };
+    }
+    return null;
+  };
+
+  ipcMain.handle(IPC_CHANNELS.PIN_GET, (event): PinLevel => {
+    return resolvePinTarget(event.sender)?.get() ?? 0;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.PIN_SET, async (event, level: unknown): Promise<PinLevel> => {
+    const target = resolvePinTarget(event.sender);
+    if (!target) return 0;
+    if (isPinLevel(level)) {
+      await target.set(level);
+    }
+    return target.get();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.PIN_SHOW_MENU, async (event): Promise<PinLevel> => {
+    const target = resolvePinTarget(event.sender);
+    if (!target) return 0;
+    const current = target.get();
+    const next = await showPinMenu(target.window, current);
+    if (next !== current) {
+      await target.set(next);
+    }
+    return target.get();
+  });
 
   ipcMain.handle(IPC_CHANNELS.QUIT_APP, () => {
     const tray = getTray();
@@ -115,6 +184,7 @@ export function setupWindowHandlers(
   });
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_IS_OPEN, () => isWorkspaceWindowOpen());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;
@@ -171,32 +241,14 @@ export function setupWindowHandlers(
   // 切り離しウィンドウ
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
-    (_event, groupId: string, cursorX?: number, cursorY?: number) =>
-      createDetachedGroupWindow(groupId, cursorX, cursorY)
+    async (_event, groupId: string, cursorX?: number, cursorY?: number) => {
+      return createDetachedGroupWindow(groupId, cursorX, cursorY);
+    }
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
     closeDetachedGroupWindow(groupId)
   );
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_CALLER_PIN_MODE, (event) => {
-    const groupId = getGroupIdByWebContentsId(event.sender.id);
-    if (!groupId) return 0;
-    return getDetachedPinMode(groupId);
-  });
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CYCLE_CALLER_PIN_MODE, async (event) => {
-    const groupId = getGroupIdByWebContentsId(event.sender.id);
-    if (!groupId) return 0;
-    const newMode = cycleDetachedPinMode(groupId);
-    // ピンモードを永続化
-    const ws = await WorkspaceService.getInstance();
-    await ws.saveDetachedPinMode(groupId, newMode);
-    return newMode;
-  });
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED, () => hideAllDetachedGroupWindows());
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED, () => showAllDetachedGroupWindows());
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW,
@@ -207,8 +259,9 @@ export function setupWindowHandlers(
       const { x, y } = win.getBounds();
       win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
 
-      // autofit完了後、フォーカスを奪わずに初回表示
-      if (!win.isVisible()) {
+      // 中身に合わせた大きさにした後、まだ初めての表示をしていなければ、フォーカスを奪わずに出す
+      // （隠れている切り離しウィンドウは、大きさを直すたびに出さない）
+      if (!win.isVisible() && (!isDetachedGroupWindow(win) || takeDetachedInitialShow(win))) {
         showWithoutFocus(win);
       }
 

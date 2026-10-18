@@ -13,6 +13,13 @@ export type WindowPinMode =
   | 'stayVisible'; // 表示固定モード: 最上面ではないが、フォーカスが外れても非表示にならない
 
 /**
+ * ピン留めの段階（メイン・ワークスペース・切り離しで共通）
+ * 0=なし、1=表示固定（隠さずに残す）、2=常に最前面（表示固定に加えて、ほかのウィンドウより前面）
+ * 📌 のクリックは 0 と 1 の切り替え（2 のときは 0 に戻す）、2 は右クリックのメニューで選ぶ
+ */
+export type PinLevel = 0 | 1 | 2;
+
+/**
  * ウィンドウの表示位置モードを表す列挙型
  */
 export type WindowPositionMode =
@@ -121,10 +128,8 @@ export interface AppSettings {
   windowPositionY: number;
   /** ワークスペースウィンドウの不透明度（0-100%、デフォルト: 100） */
   workspaceOpacity: number;
-  /** ワークスペースウィンドウの背景のみを透過（デフォルト: false） */
+  /** ワークスペースウィンドウ・切り離しウィンドウの背景だけを透明にする（デフォルト: false。オンの間は workspaceOpacity を使わない） */
   workspaceBackgroundTransparent: boolean;
-  /** メイン画面表示時にワークスペースを自動表示（デフォルト: false） */
-  autoShowWorkspace: boolean;
   /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
   /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、-1＝メインウィンドウと同じディスプレイ、デフォルト: -1） */
@@ -145,10 +150,8 @@ export interface AppSettings {
   backupIncludeClipboard: boolean;
   /** ブックマーク自動取込設定 */
   bookmarkAutoImport: BookmarkAutoImportSettings;
-  /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
-  hideDetachedWithMainWindow: boolean;
   /** 切り離しウィンドウの表示位置モード（デフォルト: 'mainDisplay'） */
   detachedPositionMode: DetachedPositionMode;
-  /** ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true） */
+  /** ディスプレイの端に近づけたら吸着する（デフォルト: true） */
   windowSnapEnabled: boolean;
 }

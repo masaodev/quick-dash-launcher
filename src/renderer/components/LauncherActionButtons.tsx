@@ -1,17 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { WindowPinMode } from '@common/types';
+import type { PinLevel } from '@common/types';
 
 import LauncherSettingsDropdown from './LauncherSettingsDropdown';
 import LauncherRefreshActionsDropdown from './LauncherRefreshActionsDropdown';
 import LauncherRegisterDropdown from './LauncherRegisterDropdown';
-
-/** ピンモード別のツールチップ（今のモード → 押した後のモード） */
-const PIN_MODE_TITLE_KEYS = {
-  normal: 'launcher.pinMode.normal',
-  alwaysOnTop: 'launcher.pinMode.alwaysOnTop',
-  stayVisible: 'launcher.pinMode.stayVisible',
-} as const satisfies Record<WindowPinMode, string>;
+import PinButton from './PinButton';
 
 interface ActionButtonsProps {
   onReload: () => void;
@@ -19,12 +13,14 @@ interface ActionButtonsProps {
   onFetchMissingIconsCurrentTab: () => void;
   onBookmarkAutoImport: () => void;
   onRefreshAll: () => void;
-  onTogglePin: () => void;
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
   onToggleWorkspace: () => void;
   onOpenRegisterModal: () => void;
-  windowPinMode: WindowPinMode;
+  pinLevel: PinLevel;
+  /** ワークスペースが開いているか（⭐ ボタンを押し込んだ見た目にする） */
+  isWorkspaceOpen: boolean;
+  onPinLevelChange: (level: PinLevel) => void;
 }
 
 const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
@@ -33,27 +29,18 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   onFetchMissingIconsCurrentTab,
   onBookmarkAutoImport,
   onRefreshAll,
-  onTogglePin,
   onOpenBasicSettings,
   onOpenItemManagement,
   onToggleWorkspace,
   onOpenRegisterModal,
-  windowPinMode,
+  pinLevel,
+  onPinLevelChange,
+  isWorkspaceOpen,
 }) => {
   const { t } = useTranslation();
-  // ピンモード別のクラス名を取得
-  // normal: デフォルトのaction-btnスタイルを使用
-  // alwaysOnTop/stayVisible: 専用の色付きスタイルを適用
-  function getPinModeClassName(mode: WindowPinMode): string {
-    switch (mode) {
-      case 'alwaysOnTop':
-        return 'action-btn pin-always-on-top';
-      case 'stayVisible':
-        return 'action-btn pin-stay-visible';
-      default:
-        return 'action-btn';
-    }
-  }
+  const workspaceTitle = t(
+    isWorkspaceOpen ? 'launcher.workspaceButton.close' : 'launcher.workspaceButton.open'
+  );
 
   return (
     <div className="action-buttons">
@@ -66,16 +53,18 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       />
       <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
       <button
-        className={getPinModeClassName(windowPinMode)}
-        onClick={onTogglePin}
-        title={t(PIN_MODE_TITLE_KEYS[windowPinMode])}
+        className={`action-btn ${isWorkspaceOpen ? 'toggle-on' : ''}`}
+        onClick={onToggleWorkspace}
+        title={workspaceTitle}
+        aria-label={workspaceTitle}
+        aria-pressed={isWorkspaceOpen}
       >
-        📌
+        ⭐
       </button>
+      <PinButton level={pinLevel} onLevelChange={onPinLevelChange} />
       <LauncherSettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
-        onToggleWorkspace={onToggleWorkspace}
         onQuitApp={() => window.electronAPI.quitApp()}
       />
     </div>

@@ -41,7 +41,7 @@
 | **初回設定画面** | 初回起動時（`hotkey`が空文字列または未設定の場合） | [first-launch-setup.md](./first-launch-setup.md) |
 | **メインウィンドウ** | 起動時に既定で表示<br>Alt+Spaceで表示/非表示（既定） | [main-window.md](./main-window.md) |
 | **管理ウィンドウ** | Ctrl+E または設定メニューから | [admin-window.md](./admin-window.md) |
-| **ワークスペースウィンドウ** | Ctrl+W<br>メインウィンドウの ⚙️ メニュー「⭐ ワークスペースの表示/非表示」<br>設定「メインウィンドウ表示時にワークスペースを自動表示」が有効なとき、メイン画面の表示時に自動表示 | [workspace-window.md](./workspace-window.md) |
+| **ワークスペースウィンドウ** | Ctrl+W<br>メインウィンドウのヘッダーの ⭐ ボタン<br>開いていて 📌 なしなら、メイン画面の表示時に一緒に出る | [workspace-window.md](./workspace-window.md) |
 | **グループの切り離しウィンドウ** | ワークスペースウィンドウのグループヘッダーをウィンドウの外へドラッグしてドロップしたとき<br>前回開いていたものはワークスペースウィンドウの初回表示時に復元 | [workspace-window.md](./workspace-window.md#519-グループを切り離す)（`src/main/detachedGroupWindowManager.ts`。構成は [システム概要](../architecture/overview.md#ウィンドウとレンダラープロセスの対応)、連動非表示は [ウィンドウ制御](../architecture/window-control.md#ウィンドウ非表示の判定)） |
 | **オーバーレイウィンドウ** | 独立トーストの表示時、ウィンドウ位置を記録した行があるセットを開いたときの進み具合の表示時（1 枚を共用） | なし（`overlay.html`・`src/main/services/overlayWindowService.ts`。説明は [トースト通知](../features/toast-notifications.md#独立トースト)） |
 

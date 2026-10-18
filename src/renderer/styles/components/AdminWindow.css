@@ -84,6 +84,117 @@
   font-weight: bold;
 }
 
+/*
+ * 設定画面「ウィンドウ」の「項目名: 入力欄 説明」の並び
+ * 取込ルールの画面（.bookmark-rule-form）と同じ形。項目のまとまりは点線で区切る
+ */
+.settings-form {
+  display: grid;
+  grid-template-columns: 9em minmax(0, 1fr);
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.settings-form-label {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+/* 右が複数行のときは、項目名を 1 行目にそろえる */
+.settings-form-label-top {
+  align-self: start;
+  padding-top: var(--spacing-xs);
+}
+
+.settings-form-divider {
+  grid-column: 1 / -1;
+  border-top: 1px dashed var(--color-gray-400);
+}
+
+.settings-form-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+  min-width: 0;
+}
+
+.settings-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+/* 「幅 [  ] px」のような、小さな見出しつきの欄 */
+.settings-form-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.settings-form-field > label,
+.settings-form-line > label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.settings-form-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.settings-form-check input {
+  margin: 0;
+}
+
+.settings-form select,
+.settings-form input[type='number'] {
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+}
+
+.settings-form select {
+  min-width: 200px;
+  max-width: 100%;
+}
+
+.settings-form input[type='number'] {
+  width: 90px;
+}
+
+.settings-form select:focus,
+.settings-form input[type='number']:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.settings-form select:disabled {
+  background-color: var(--bg-input-disabled);
+  color: var(--text-muted);
+}
+
+.settings-form .field-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.settings-form .unit {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
 .settings-section-description {
   margin: -10px 0 15px 0;
   color: var(--text-muted);
@@ -108,63 +219,6 @@
   font-weight: 500;
   color: var(--text-secondary);
   font-size: var(--font-size-base);
-}
-
-/* ウィンドウサイズ用横並びレイアウト */
-/* 見出しの列と入力欄の列に分け、見出しの長さが違っても入力欄の位置をそろえる */
-.window-size-grid {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: center;
-  gap: var(--spacing-md) var(--spacing-lg);
-}
-
-.window-size-group {
-  display: contents;
-}
-
-.window-size-group-title {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-/* 幅が足りないときは「高さ」を次の行に回す（px がセクションの外へはみ出さない） */
-.window-size-inputs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm) var(--spacing-xl);
-  align-items: center;
-}
-
-.window-size-field {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.window-size-field label {
-  font-weight: 500;
-  color: var(--text-secondary);
-  font-size: var(--font-size-base);
-  min-width: 4em;
-}
-
-.window-size-field input[type='number'] {
-  width: 100px;
-  height: var(--input-height-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  font-family: inherit;
-  font-size: var(--font-size-base);
-  box-sizing: border-box;
-}
-
-.window-size-field .unit {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  margin-left: 0;
 }
 
 .setting-item input[type='number'],
@@ -195,107 +249,6 @@
 }
 
 /* ウィンドウ表示位置選択 */
-.position-options {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.position-option {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  background-color: var(--bg-app);
-  border: 2px solid var(--color-gray-300);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.position-option:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--color-primary);
-}
-
-.position-option input[type='radio'] {
-  margin-top: 2px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.position-option input[type='radio']:checked ~ .option-content {
-  color: var(--text-primary);
-}
-
-.position-option:has(input[type='radio']:checked) {
-  background-color: var(--color-primary-50);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
-}
-
-.option-content {
-  flex: 1;
-}
-
-.option-title {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
-}
-
-.option-description {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-/* 指定ディスプレイの端に配置オプション */
-.display-edge-options {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-md);
-  background-color: var(--bg-section);
-  border-radius: var(--border-radius);
-}
-
-.display-select {
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
-  border: var(--border-light);
-  border-radius: var(--border-radius);
-  background-color: var(--bg-app);
-  color: var(--text-primary);
-  cursor: pointer;
-  min-width: 180px;
-}
-
-.display-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.edge-radio-group {
-  display: flex;
-  gap: var(--spacing-md);
-}
-
-.edge-option {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.edge-option input[type='radio'] {
-  cursor: pointer;
-}
-
 .setting-description {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
