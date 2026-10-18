@@ -225,4 +225,28 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       );
     });
   });
+
+  test.describe('初回設定の途中で終了して起動し直す', () => {
+    // ホットキーを保存する前に終了すると、次の起動も初回起動になる。データファイルは前の起動で作ってある
+    test.use({ configTemplate: 'first-launch-restart' });
+
+    test('前の起動で作ったタブ（「メイン」と「Web」）を書き直さない', async ({
+      configHelper,
+      electronApp,
+      mainWindow,
+    }) => {
+      const utils = new TestUtils(mainWindow);
+      await utils.waitForPageLoad();
+      expect(configHelper.readSettings().dataFileTabs).toEqual([
+        { files: ['datafiles/data.json'], name: 'メイン' },
+        { files: ['datafiles/data2.json'], name: 'Web' },
+      ]);
+
+      await goToHotkeyStep(mainWindow);
+      await goToTryStep(mainWindow);
+      await pressHotkeyAndStart(electronApp, mainWindow);
+      await expect(mainWindow.locator('.first-launch-title')).toHaveCount(0);
+      expect(configHelper.readSettings().dataFileTabs).toHaveLength(2);
+    });
+  });
 });
