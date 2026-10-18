@@ -120,6 +120,7 @@ const electronAPI: ElectronAPI = {
   },
   setEscapeHandledByPage: (handled) =>
     ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_ESCAPE_HANDLED_BY_PAGE, handled),
+  startWindowMove: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_START_MOVE),
   registerItems: (items) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
   getPathKind: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PATH_GET_KIND, filePath),
   getDefaultBrowser: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_GET_DEFAULT),
