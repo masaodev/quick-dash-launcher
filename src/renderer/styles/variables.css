@@ -58,6 +58,10 @@
   --bg-section: #f9f9f9;
   --bg-input-disabled: #f5f5f5;
   --bg-selected: #e7f3ff;
+  --bg-pin-on: #cfe3f8; /* 📌 の表示固定（--bg-selected より一段濃い） */
+  --border-pin-on: #003e73; /* 📌 の表示固定の枠（どの色の見出しより暗い紺） */
+  --bg-pin-top: #ffe8a1; /* 📌 の常に最前面（--bg-warning-light より一段濃い） */
+  --border-pin-top: #8a6500; /* 📌 の常に最前面の枠 */
   --bg-hover: #f0f0f0;
   --bg-edited: #fff3cd;
   --bg-readonly: #f5f5f5;
@@ -142,6 +146,7 @@
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2);
   --shadow-pressed: inset 0 2px 3px rgba(0, 0, 0, 0.28); /* 押し込んだボタンのへこみ */
+  --shadow-pressed-deep: inset 0 3px 6px rgba(0, 0, 0, 0.45); /* 📌 のオンの深いへこみ */
   --text-shadow-on-color: 0 0 3px rgba(0, 0, 0, 0.6); /* 色の上に載せる白い文字の縁取り */
 
   /* フォーカスリング */
