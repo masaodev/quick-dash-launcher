@@ -1,9 +1,14 @@
-import type { DetachedWindowState, WorkspaceUiStateFile } from '@common/types';
+import type {
+  DetachedWindowState,
+  WorkspaceUiStateFile,
+  WorkspaceWindowState,
+} from '@common/types';
 import { WORKSPACE_UI_STATE_VERSION } from '@common/types';
-import { isRecord } from '@common/types/guards';
+import { isPinLevel, isRecord } from '@common/types/guards';
 
 import { PathManager } from '../../config/pathManager.js';
 import { JsonFileStore } from '../jsonFileStore.js';
+import { isMonitorAnchor } from '../../utils/monitorAnchor.js';
 
 /**
  * ワークスペースの UI 状態（config/workspace-ui-state.json）
@@ -40,10 +45,24 @@ function coerceDetachedWindowState(raw: unknown): DetachedWindowState | null {
     collapsedStates: coerceBooleanRecord(raw.collapsedStates),
     bounds: { x: x as number, y: y as number, width: width as number, height: height as number },
   };
-  if (raw.pinMode === 0 || raw.pinMode === 1 || raw.pinMode === 2) {
+  if (isPinLevel(raw.pinMode)) {
     state.pinMode = raw.pinMode;
   }
+  if (isMonitorAnchor(raw.anchor)) {
+    state.anchor = raw.anchor;
+  }
   return state;
+}
+
+/** ワークスペースウィンドウの状態の既定値（閉じていて、📌 は表示固定） */
+export const DEFAULT_WORKSPACE_WINDOW_STATE: WorkspaceWindowState = { open: false, pinLevel: 1 };
+
+function coerceWorkspaceWindowState(raw: unknown): WorkspaceWindowState | undefined {
+  if (!isRecord(raw)) return undefined;
+  const pinLevel = isPinLevel(raw.pinLevel)
+    ? raw.pinLevel
+    : DEFAULT_WORKSPACE_WINDOW_STATE.pinLevel;
+  return { open: raw.open === true, pinLevel };
 }
 
 /** 生オブジェクトを WorkspaceUiStateFile に整える（欠けは空で補い、壊れた要素は捨てる） */
@@ -56,10 +75,12 @@ export function coerceWorkspaceUiState(raw: unknown): WorkspaceUiStateFile | nul
       if (state) detachedWindows[groupId] = state;
     }
   }
+  const workspaceWindow = coerceWorkspaceWindowState(raw.workspaceWindow);
   return {
     version: WORKSPACE_UI_STATE_VERSION,
     collapsedGroups: coerceBooleanRecord(raw.collapsedGroups),
     detachedWindows,
+    ...(workspaceWindow && { workspaceWindow }),
   };
 }
 
@@ -103,6 +124,21 @@ export class WorkspaceUiStateStore {
     this.file.write(state);
   }
 
+  // --- ワークスペースウィンドウ ---
+
+  getWorkspaceWindow(): WorkspaceWindowState {
+    return this.read().workspaceWindow ?? { ...DEFAULT_WORKSPACE_WINDOW_STATE };
+  }
+
+  updateWorkspaceWindow(updates: Partial<WorkspaceWindowState>): void {
+    const state = this.read();
+    state.workspaceWindow = {
+      ...(state.workspaceWindow ?? DEFAULT_WORKSPACE_WINDOW_STATE),
+      ...updates,
+    };
+    this.file.write(state);
+  }
+
   // --- 切り離しウィンドウ ---
 
   getDetached(rootGroupId: string): DetachedWindowState | null {
@@ -121,6 +157,20 @@ export class WorkspaceUiStateStore {
     };
     state.detachedWindows[rootGroupId] = { ...current, ...updates };
     this.file.write(state);
+  }
+
+  /** ピン留めしていない切り離しウィンドウを、すべて表示固定にする（古い設定からの読み替え） */
+  pinAllUnpinnedDetached(): number {
+    const state = this.read();
+    let count = 0;
+    for (const detached of Object.values(state.detachedWindows)) {
+      if (!detached.pinMode) {
+        detached.pinMode = 1;
+        count++;
+      }
+    }
+    if (count > 0) this.file.write(state);
+    return count;
   }
 
   removeDetached(rootGroupId: string): void {

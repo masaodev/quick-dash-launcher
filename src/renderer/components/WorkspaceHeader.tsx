@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { PinLevel, WorkspacePositionMode } from '@common/types';
+
+import { logError } from '../utils/debug';
+
+import PinButton from './PinButton';
 
 interface WorkspaceHeaderProps {
   isFilterVisible: boolean;
@@ -7,8 +12,8 @@ interface WorkspaceHeaderProps {
   onExpandAll: () => void;
   onCollapseAll: () => void;
   onAddGroup: () => void;
-  isPinned: boolean;
-  onTogglePin: () => void;
+  pinLevel: PinLevel;
+  onPinLevelChange: (level: PinLevel) => void;
   onClose: () => void;
 }
 
@@ -18,13 +23,32 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   onExpandAll,
   onCollapseAll,
   onAddGroup,
-  isPinned,
-  onTogglePin,
+  pinLevel,
+  onPinLevelChange,
   onClose,
 }) => {
   const { t } = useTranslation();
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
+  // メニューを開いたときの表示する場所（左端・右端の ✓ に使う）
+  const [positionMode, setPositionMode] = useState<WorkspacePositionMode | null>(null);
+
+  const toggleSettingsMenu = async () => {
+    if (isSettingsMenuOpen) {
+      setIsSettingsMenuOpen(false);
+      return;
+    }
+    try {
+      setPositionMode((await window.electronAPI.getSettings()).workspacePositionMode);
+    } catch (error) {
+      logError('ワークスペースの表示する場所を読めませんでした:', error);
+    }
+    setIsSettingsMenuOpen(true);
+  };
+
+  // 左端・右端に寄せるは設定「表示する場所」を変えるので、今の設定に ✓ を付ける（古い値 primaryLeft・primaryRight も含む）
+  const isLeftEdge = positionMode === 'displayLeft' || positionMode === 'primaryLeft';
+  const isRightEdge = positionMode === 'displayRight' || positionMode === 'primaryRight';
 
   // メニュー外クリックで閉じる
   useEffect(() => {
@@ -80,17 +104,15 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         >
           ➕
         </button>
-        <button
-          className={`action-btn workspace-pin-btn ${isPinned ? 'pin-always-on-top' : ''}`}
-          onClick={onTogglePin}
-          title={isPinned ? t('workspace.header.unpin') : t('workspace.header.pin')}
-        >
-          📌
-        </button>
+        <PinButton
+          level={pinLevel}
+          onLevelChange={onPinLevelChange}
+          className="workspace-pin-btn"
+        />
         <div className="workspace-settings-container" ref={settingsMenuRef}>
           <button
             className={`action-btn workspace-control-btn ${isSettingsMenuOpen ? 'active' : ''}`}
-            onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
+            onClick={toggleSettingsMenu}
             title={t('workspace.header.menu')}
           >
             ⚙️
@@ -108,6 +130,8 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
               <div className="workspace-settings-menu-divider" />
               <button
                 className="workspace-settings-menu-item"
+                role="menuitemradio"
+                aria-checked={isLeftEdge}
                 onClick={() =>
                   handleMenuAction(() =>
                     window.electronAPI.workspaceAPI.setPositionMode('displayLeft')
@@ -115,9 +139,12 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 }
               >
                 {t('workspace.header.alignLeft')}
+                {isLeftEdge && <span className="workspace-settings-menu-check">✓</span>}
               </button>
               <button
                 className="workspace-settings-menu-item"
+                role="menuitemradio"
+                aria-checked={isRightEdge}
                 onClick={() =>
                   handleMenuAction(() =>
                     window.electronAPI.workspaceAPI.setPositionMode('displayRight')
@@ -125,23 +152,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 }
               >
                 {t('workspace.header.alignRight')}
-              </button>
-              <div className="workspace-settings-menu-divider" />
-              <button
-                className="workspace-settings-menu-item"
-                onClick={() =>
-                  handleMenuAction(() => window.electronAPI.workspaceAPI.hideAllDetached())
-                }
-              >
-                {t('workspace.header.hideAllDetached')}
-              </button>
-              <button
-                className="workspace-settings-menu-item"
-                onClick={() =>
-                  handleMenuAction(() => window.electronAPI.workspaceAPI.showAllDetached())
-                }
-              >
-                {t('workspace.header.showAllDetached')}
+                {isRightEdge && <span className="workspace-settings-menu-check">✓</span>}
               </button>
             </div>
           )}

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
+  PinLevel,
   IconProgress,
   LayoutExecutionProgress,
   AppItem,
@@ -105,11 +106,18 @@ const electronAPI: ElectronAPI = {
   onDataChanged: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_DATA_CHANGED, callback),
   onSettingsChanged: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_SETTINGS_CHANGED, callback),
+  isWorkspaceOpen: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_IS_OPEN),
+  onWorkspaceOpenChanged: (callback) =>
+    createEventListener<boolean>(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, callback),
   onWorkspaceChanged: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.WORKSPACE_CHANGED, callback),
-  // 3段階ピンモードAPI
-  getWindowPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.GET_WINDOW_PIN_MODE),
-  cycleWindowPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.CYCLE_WINDOW_PIN_MODE),
+  pin: {
+    get: () => ipcRenderer.invoke(IPC_CHANNELS.PIN_GET),
+    set: (level) => ipcRenderer.invoke(IPC_CHANNELS.PIN_SET, level),
+    showMenu: () => ipcRenderer.invoke(IPC_CHANNELS.PIN_SHOW_MENU),
+    onChanged: (callback) =>
+      createEventListener<PinLevel>(IPC_CHANNELS.EVENT_PIN_CHANGED, callback),
+  },
   setEscapeHandledByPage: (handled) =>
     ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_ESCAPE_HANDLED_BY_PAGE, handled),
   registerItems: (items) => ipcRenderer.invoke(IPC_CHANNELS.REGISTER_ITEMS, items),
@@ -313,8 +321,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DETACH_GROUP, groupId, cursorX, cursorY),
     closeDetachedGroup: (groupId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, groupId),
-    hideAllDetached: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED),
-    showAllDetached: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED),
     resizeCallerWindow: (width, height) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW, width, height),
     setCallerBounds: (x, y, width, height) =>
@@ -324,8 +330,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, rootGroupId),
     saveDetachedCollapsed: (rootGroupId, states) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_COLLAPSED, rootGroupId, states),
-    getCallerPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CALLER_PIN_MODE),
-    cycleCallerPinMode: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CYCLE_CALLER_PIN_MODE),
   },
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount, isSingleLine) =>

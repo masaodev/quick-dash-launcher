@@ -29,6 +29,11 @@ export const en: LocaleMessages = {
       success: 'Success',
       info: 'Information',
     },
+    pin: {
+      off: 'Not pinned. Click to keep it visible; right-click for always on top',
+      stayVisible: 'Pinned: stays visible. Click to unpin',
+      alwaysOnTop: 'Pinned: always on top. Click to unpin',
+    },
   },
   launcher: {
     search: {
@@ -69,11 +74,6 @@ export const en: LocaleMessages = {
       searchHistory: 'Search history',
       switchTab: 'Switch tab',
     },
-    pinMode: {
-      normal: 'Normal → Always on top',
-      alwaysOnTop: 'Always on top → Stay visible',
-      stayVisible: 'Stay visible → Normal',
-    },
     refreshMenu: {
       title: 'Reload and fetch',
       reloadData: '🔃 Reload data',
@@ -96,11 +96,14 @@ export const en: LocaleMessages = {
       emptyTab: 'This tab has no items yet',
       add: '📄 Add item…',
     },
+    workspaceButton: {
+      open: 'Open the workspace (Ctrl+W)',
+      close: 'Close the workspace (Ctrl+W)',
+    },
     settingsMenu: {
       title: 'Settings',
       settings: '⚙️ Settings',
       itemManager: '✏️ Item Manager (Ctrl+E)',
-      toggleWorkspace: '⭐ Show or hide workspace (Ctrl+W)',
       quit: '🚪 Exit',
     },
     desktopTabs: {
@@ -291,6 +294,10 @@ export const en: LocaleMessages = {
     ready: 'Ready',
   },
   menu: {
+    pin: {
+      stayVisible: '📌 Stay visible (keep it open)',
+      alwaysOnTop: '⬆️ Always on top',
+    },
     copyPath: '📋 Copy path',
     copyParentPath: '📋 Copy containing folder path',
     openParentFolder: '📂 Open containing folder',
@@ -506,10 +513,12 @@ Keys you can change:
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
                windowPositionX windowPositionY windowSnapEnabled
   Manager      editModeWidth (800-2000) editModeHeight (600-1200)
-  Workspace    workspaceOpacity (0-100) workspaceBackgroundTransparent autoShowWorkspace
+  Workspace    workspaceOpacity (0-100) workspaceBackgroundTransparent
                workspacePositionMode (displayLeft / displayRight / fixed)
-               workspaceTargetDisplayIndex (from 0) workspacePositionX workspacePositionY
-               workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops hideDetachedWithMainWindow
+               workspaceTargetDisplayIndex (from 0; -1 is the display the launcher is on)
+               workspacePositionX workspacePositionY
+               workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops
+               detachedPositionMode (mainDisplay / saved)
   Backup       backupEnabled backupRetention (3-50) backupIncludeClipboard
 
 Pass true or false for on/off settings. Auto start (autoLaunch), bookmark auto import (bookmarkAutoImport),
@@ -631,6 +640,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       settingReadOnly: '{{key}} cannot be changed from the CLI (read-only; change it in the app)',
       expectedInteger: 'an integer',
       expectedRange: 'an integer from {{min}} to {{max}}',
+      expectedDisplayIndex: 'an integer from 0 to {{max}}, or -1 (the display the launcher is on)',
       hotkeyInvalid: 'The hotkey "{{hotkey}}" cannot be used: {{reason}}',
       hotkeyInUse:
         'Could not register the hotkey "{{hotkey}}" (another app or the other hotkey is using it)',
@@ -1857,14 +1867,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       expandAll: 'Expand all',
       collapseAll: 'Collapse all',
       addGroup: 'Add group',
-      pin: 'Pin (always on top)',
-      unpin: 'Unpin',
       menu: 'Settings',
       openSettings: '⚙️ Settings',
       alignLeft: '⬅️ Move to left edge',
       alignRight: '➡️ Move to right edge',
-      hideAllDetached: '🙈 Hide all detached windows',
-      showAllDetached: '👁️ Show all detached windows',
       close: 'Close',
     },
     filter: {
@@ -1917,9 +1923,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     restoredGroupName: '{{name}} (restored)',
     defaultWorkspaceName: 'Default',
     detached: {
-      pinStayVisible: 'Stay visible',
-      pinAlwaysOnTop: 'Always on top',
-      unpin: 'Unpin',
       close: 'Close',
       closeLabel: 'Close detached window',
     },
@@ -1996,54 +1999,66 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
     },
     windowSize: {
-      heading: 'Window size',
-      launcher: 'Launcher',
-      admin: 'Settings window',
-      width: 'Width:',
-      height: 'Height:',
+      heading: 'Size:',
+      width: 'Width',
+      height: 'Height',
     },
     windowPosition: {
-      heading: 'Window position',
-      center: 'Center of the screen (fixed)',
-      centerDescription: 'Always shows the window in the center of the primary monitor',
-      cursorMonitorCenter: 'Center of the screen (follows the mouse)',
+      heading: 'Launcher',
+      label: 'Where to show:',
+      cursorMonitorCenter: 'Center of the display with the mouse cursor (default)',
       cursorMonitorCenterDescription:
-        'Shows the window in the center of the monitor with the mouse pointer (for multiple monitors)',
-      cursor: 'Near the mouse pointer',
-      cursorDescription: 'Shows the window near the mouse pointer',
-      fixed: 'Fixed position (manual)',
+        'Shows it in the center of the display the mouse cursor is on',
+      cursor: 'Near the mouse cursor',
+      cursorDescription:
+        'Shows it near the mouse cursor (the search box comes close to the cursor)',
+      center: 'Center of the primary display',
+      centerDescription:
+        'Always shows it in the center of the primary display (the one set as main in Windows settings)',
+      fixed: 'Where you last moved it',
       fixedDescription: 'Remembers where you moved the window and shows it there next time',
     },
     workspace: {
       heading: 'Workspace window',
-      autoShow: 'Also show the workspace when the launcher opens',
-      autoShowDescription: "When on, opening the launcher also shows the workspace if it's hidden.",
-      hideDetached: 'Hide detached windows with the launcher',
-      hideDetachedDescription:
-        "When on, detached windows that aren't pinned are shown and hidden along with the launcher. They stay visible while focus moves between the launcher, the workspace, and detached windows, and hide when focus moves to another window.",
-      position: 'Position:',
-      displayEdge: 'Edge of a display (default)',
-      displayEdgeDescription:
-        'Places the workspace at the left or right edge of the selected display',
+      position: 'Where to show:',
+      rightEdge: 'Right edge (default)',
+      rightEdgeDescription: 'Shows it at the right edge of the display, from top to bottom',
       leftEdge: 'Left edge',
-      rightEdge: 'Right edge',
-      fixed: 'Fixed position (manual)',
+      leftEdgeDescription: 'Shows it at the left edge of the display, from top to bottom',
+      fixed: 'Where you last moved it',
       fixedDescription: 'Remembers where you moved the workspace and shows it there next time',
-      opacity: 'Opacity:',
-      opacityDescription:
-        'Sets the opacity of the workspace window (0% = fully transparent, 100% = opaque).',
-      backgroundTransparent: 'Make only the background transparent (not items or groups)',
+      displayLabel: 'Display',
+      mainWindowDisplay: 'Same display as the launcher (default)',
+      missingDisplay: 'Display {{number}} (not connected; showing on the primary display)',
+      appearance: 'Appearance:',
+      backgroundTransparent: 'Make only the background transparent',
       backgroundTransparentDescription:
-        'When on, only the background is transparent; items and groups appear as usual.',
+        'Only items and groups stay visible. Also applies to detached windows',
+      opacity: 'Opacity',
+      opacityDescription:
+        'How solid the workspace window itself is (0% = fully transparent, 100% = fully opaque). Does not apply to detached windows',
+      opacityDisabled: 'Not available while "Make only the background transparent" is on',
+      virtualDesktops: 'Virtual desktops:',
       visibleOnAllDesktops: 'Show on all virtual desktops',
-      visibleOnAllDesktopsDescription:
-        'When on, the workspace window appears on every virtual desktop.',
-      detachedVisibleOnAllDesktops: 'Also show detached windows on all virtual desktops',
-      detachedVisibleOnAllDesktopsDescription:
-        'When on, detached windows also appear on every virtual desktop.',
-      windowSnap: 'Snap windows to monitor edges',
+    },
+    detached: {
+      heading: 'Detached windows',
+      position: 'Where to show:',
+      mainDisplay: 'Same display as the launcher (default)',
+      mainDisplayDescription:
+        'Moves them to the same spot on the display the launcher is on. Pinned windows stay where they are',
+      saved: 'Where you last placed it',
+      savedDescription: 'Shows them where you last placed them',
+      virtualDesktops: 'Virtual desktops:',
+      visibleOnAllDesktops: 'Show on all virtual desktops',
+    },
+    windowOther: {
+      heading: 'Other',
+      snap: 'Snapping:',
+      windowSnap: 'Snap to display edges',
       windowSnapDescription:
-        'When on, the workspace window and detached windows snap to the edge of the monitor when you move them close to it.',
+        'Snaps the workspace window and detached windows to the edge of a display when you move them close to it',
+      adminWindowSize: 'Manager window:',
     },
     backup: {
       heading: 'Backup',

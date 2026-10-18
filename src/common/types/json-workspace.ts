@@ -11,6 +11,7 @@
 
 import type { ItemWindowSwitch, SetEntry, SetLaunchMode } from './launcher';
 import type { ClipboardFormat } from './clipboard';
+import type { PinLevel } from './settings';
 import type { JsonClipboardItem, JsonLauncherItem, JsonSetItem } from './json-data';
 
 // ============================================================
@@ -230,7 +231,24 @@ export interface DetachedWindowState {
   /** ウィンドウ位置・サイズ */
   bounds: { x: number; y: number; width: number; height: number };
   /** ピン留めモード */
-  pinMode?: 0 | 1 | 2;
+  pinMode?: PinLevel;
+  /** 最後に動かしたときの、載っていたモニターに対する位置（カーソルのモニターに出すときに使う） */
+  anchor?: MonitorAnchor;
+}
+
+/** モニターに対する位置の基準（横は左端・中央・右端、縦は上端・中央・下端） */
+export type MonitorAnchorEdge = 'start' | 'center' | 'end';
+
+/**
+ * モニターの作業領域に対するウィンドウの位置
+ * offset は基準からの距離（start＝作業領域の始端からウィンドウの始端、end＝ウィンドウの終端から作業領域の終端、
+ * center＝作業領域の中央からウィンドウの中央へ。右・下が正）
+ */
+export interface MonitorAnchor {
+  horizontal: MonitorAnchorEdge;
+  offsetX: number;
+  vertical: MonitorAnchorEdge;
+  offsetY: number;
 }
 
 /**
@@ -243,6 +261,18 @@ export interface WorkspaceUiStateFile {
   collapsedGroups: Record<string, boolean>;
   /** 切り離しウィンドウの状態（ルートグループ id → 状態） */
   detachedWindows: Record<string, DetachedWindowState>;
+  /** ワークスペースウィンドウの状態（無ければ既定値＝閉じていて、📌 は表示固定） */
+  workspaceWindow?: WorkspaceWindowState;
+}
+
+/**
+ * ワークスペースウィンドウの状態
+ */
+export interface WorkspaceWindowState {
+  /** 開いているか（⭐・Ctrl+W・× で閉じるまで true。メインウィンドウと一緒に隠れただけなら true のまま） */
+  open: boolean;
+  /** ピン留めの段階（0=なし, 1=表示固定, 2=常に最前面） */
+  pinLevel: PinLevel;
 }
 
 // ============================================================

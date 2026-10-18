@@ -13,6 +13,13 @@ export type WindowPinMode =
   | 'stayVisible'; // 表示固定モード: 最上面ではないが、フォーカスが外れても非表示にならない
 
 /**
+ * ピン留めの段階（メイン・ワークスペース・切り離しで共通）
+ * 0=なし、1=表示固定（隠さずに残す）、2=常に最前面（表示固定に加えて、ほかのウィンドウより前面）
+ * 📌 のクリックは 0 と 1 の切り替え（2 のときは 0 に戻す）、2 は右クリックのメニューで選ぶ
+ */
+export type PinLevel = 0 | 1 | 2;
+
+/**
  * ウィンドウの表示位置モードを表す列挙型
  */
 export type WindowPositionMode =
@@ -30,6 +37,16 @@ export type WorkspacePositionMode =
   | 'displayLeft' // 指定ディスプレイの左端に配置
   | 'displayRight' // 指定ディスプレイの右端に配置（デフォルト）
   | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
+
+/** workspaceTargetDisplayIndex で「メインウィンドウと同じディスプレイ」を指す値 */
+export const MAIN_WINDOW_DISPLAY_INDEX = -1;
+
+/**
+ * 切り離しウィンドウの表示位置モード
+ */
+export type DetachedPositionMode =
+  | 'saved' // 置いた場所に表示する
+  | 'mainDisplay'; // メインウィンドウと一緒に出すとき、メインウィンドウと同じディスプレイの同じ位置に表示する（既定）
 
 /**
  * ディスプレイ情報を表すインターフェース
@@ -111,13 +128,11 @@ export interface AppSettings {
   windowPositionY: number;
   /** ワークスペースウィンドウの不透明度（0-100%、デフォルト: 100） */
   workspaceOpacity: number;
-  /** ワークスペースウィンドウの背景のみを透過（デフォルト: false） */
+  /** ワークスペースウィンドウ・切り離しウィンドウの背景だけを透明にする（デフォルト: false。オンの間は workspaceOpacity を使わない） */
   workspaceBackgroundTransparent: boolean;
-  /** メイン画面表示時にワークスペースを自動表示（デフォルト: false） */
-  autoShowWorkspace: boolean;
   /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
-  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、デフォルト: 0） */
+  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、-1＝メインウィンドウと同じディスプレイ、デフォルト: -1） */
   workspaceTargetDisplayIndex: number;
   /** 固定位置のX座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
   workspacePositionX: number;
@@ -135,8 +150,8 @@ export interface AppSettings {
   backupIncludeClipboard: boolean;
   /** ブックマーク自動取込設定 */
   bookmarkAutoImport: BookmarkAutoImportSettings;
-  /** メインウィンドウ非表示時に切り離しウィンドウも連動して非表示にする（デフォルト: true） */
-  hideDetachedWithMainWindow: boolean;
-  /** ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true） */
+  /** 切り離しウィンドウの表示位置モード（デフォルト: 'mainDisplay'） */
+  detachedPositionMode: DetachedPositionMode;
+  /** ディスプレイの端に近づけたら吸着する（デフォルト: true） */
   windowSnapEnabled: boolean;
 }

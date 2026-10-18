@@ -20,6 +20,7 @@ type StoreInstance = {
   set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): void;
   store: AppSettings;
   clear(): void;
+  delete(key: string): void;
   path: string;
 };
 
@@ -53,9 +54,8 @@ export class SettingsService {
     windowPositionY: 0,
     workspaceOpacity: 100,
     workspaceBackgroundTransparent: false,
-    autoShowWorkspace: false,
     workspacePositionMode: 'displayRight',
-    workspaceTargetDisplayIndex: 0,
+    workspaceTargetDisplayIndex: -1,
     workspacePositionX: 0,
     workspacePositionY: 0,
     workspaceVisibleOnAllDesktops: true,
@@ -64,7 +64,7 @@ export class SettingsService {
     showKeyboardHints: true,
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
-    hideDetachedWithMainWindow: true,
+    detachedPositionMode: 'mainDisplay',
     windowSnapEnabled: true,
   };
 
@@ -132,6 +132,25 @@ export class SettingsService {
       await this.recordUpdatedVersion(store);
     }
     logger.info({ key, value }, 'Setting updated');
+  }
+
+  /**
+   * 設定から外した古いキーの値を読む（ファイルに残っているものだけ）。読み替えた後に deleteRemovedKeys で消す
+   */
+  public async readRemovedKeys(keys: readonly string[]): Promise<Record<string, unknown>> {
+    const store = await this.ensureStore();
+    const raw = store.store as unknown as Record<string, unknown>;
+    const found: Record<string, unknown> = {};
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(raw, key)) found[key] = raw[key];
+    }
+    return found;
+  }
+
+  /** 設定から外した古いキーを消す */
+  public async deleteRemovedKeys(keys: readonly string[]): Promise<void> {
+    const store = await this.ensureStore();
+    for (const key of keys) store.delete(key);
   }
 
   public async setMultiple(settings: Partial<AppSettings>): Promise<void> {

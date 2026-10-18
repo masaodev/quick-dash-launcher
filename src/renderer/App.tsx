@@ -9,7 +9,7 @@ import { DESKTOP_TAB } from '@common/constants';
 import type {
   LauncherItem,
   AppItem,
-  WindowPinMode,
+  PinLevel,
   SearchMode,
   WindowInfo,
   IconFetchErrorRecord,
@@ -60,7 +60,8 @@ function App(): React.ReactElement {
     };
   }, [mainItems]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [windowPinMode, setWindowPinMode] = useState<WindowPinMode>('normal');
+  const [pinLevel, setPinLevel] = useState<PinLevel>(0);
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>('normal');
   const [windowList, setWindowList] = useState<WindowInfo[]>([]);
@@ -513,10 +514,14 @@ function App(): React.ReactElement {
     });
 
     const loadPinState = async () => {
-      const pinMode = await window.electronAPI.getWindowPinMode();
-      setWindowPinMode(pinMode);
+      setPinLevel(await window.electronAPI.pin.get());
     };
     loadPinState();
+
+    const cleanupPinChanged = window.electronAPI.pin.onChanged(setPinLevel);
+    window.electronAPI.isWorkspaceOpen().then(setIsWorkspaceOpen);
+    const cleanupWorkspaceOpenChanged =
+      window.electronAPI.onWorkspaceOpenChanged(setIsWorkspaceOpen);
 
     const cleanupDataChanged = window.electronAPI.onDataChanged(async () => {
       debugLog('データ変更通知を受信、データを再読み込みします');
@@ -546,6 +551,8 @@ function App(): React.ReactElement {
       cleanupWindowShownItemSearch();
       cleanupWindowHidden();
       cleanupDataChanged();
+      cleanupWorkspaceOpenChanged();
+      cleanupPinChanged();
       cleanupChildResult();
       cleanupRegisterWorkspaceItem();
     };
@@ -555,11 +562,6 @@ function App(): React.ReactElement {
     setSearchQuery(query);
     setSelectedIndex(0);
     resetNavigation();
-  };
-
-  const handleTogglePin = async () => {
-    const newPinMode = await window.electronAPI.cycleWindowPinMode();
-    setWindowPinMode(newPinMode);
   };
 
   const handleOpenBasicSettings = async () => {
@@ -689,12 +691,13 @@ function App(): React.ReactElement {
           onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
           onBookmarkAutoImport={handleBookmarkAutoImport}
           onRefreshAll={handleRefreshAllWrapper}
-          onTogglePin={handleTogglePin}
           onOpenBasicSettings={handleOpenBasicSettings}
           onOpenItemManagement={handleOpenItemManagement}
           onToggleWorkspace={handleToggleWorkspace}
           onOpenRegisterModal={() => void openRegisterWindow()}
-          windowPinMode={windowPinMode}
+          pinLevel={pinLevel}
+          onPinLevelChange={setPinLevel}
+          isWorkspaceOpen={isWorkspaceOpen}
         />
         <div className="drag-handle">⋮⋮</div>
       </div>

@@ -15,6 +15,7 @@
   --color-danger-alt-hover: #ff5252;
 
   --color-warning: #ffc107;
+  --color-warning-dark: #d39e00;
 
   --color-info: #2196f3;
   --color-info-hover: #1976d2;
@@ -140,6 +141,7 @@
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-pressed: inset 0 2px 3px rgba(0, 0, 0, 0.28); /* 押し込んだボタンのへこみ */
   --text-shadow-on-color: 0 0 3px rgba(0, 0, 0, 0.6); /* 色の上に載せる白い文字の縁取り */
 
   /* フォーカスリング */
