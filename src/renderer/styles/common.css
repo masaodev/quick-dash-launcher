@@ -193,6 +193,31 @@
   border-color: var(--color-warning-dark);
 }
 
+/*
+ * 📌 のオンは ⭐ より強く見せる。切り離しウィンドウでは色のついた見出しに重なり、薄い青と青い枠が溶けるため。
+ * 地を一段濃く・枠を紺に・へこみを深くし、ピンを立てて（針を真下に）留めていることを形でも示す
+ */
+.action-btn.pin-btn.toggle-on,
+.action-btn.pin-btn.toggle-on:hover {
+  background-color: var(--bg-pin-on);
+  border-color: var(--border-pin-on);
+  box-shadow: var(--shadow-pressed-deep);
+}
+
+.action-btn.pin-btn.pin-always-on-top,
+.action-btn.pin-btn.pin-always-on-top:hover {
+  background-color: var(--bg-pin-top);
+  border-color: var(--border-pin-top);
+}
+
+.pin-btn-icon {
+  display: inline-block;
+}
+
+.action-btn.pin-btn.toggle-on .pin-btn-icon {
+  transform: rotate(-45deg);
+}
+
 .action-btn.pin-always-on-top::after {
   content: '▲';
   position: absolute;
