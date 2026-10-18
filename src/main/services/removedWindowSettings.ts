@@ -1,4 +1,5 @@
 import { windowLogger } from '@common/logger';
+import type { WorkspacePositionMode } from '@common/types';
 
 import { SettingsService } from './settingsService.js';
 import { WorkspaceService } from './workspace/index.js';
@@ -37,9 +38,34 @@ export function planRemovedWindowSettings(
   };
 }
 
+/**
+ * 古い表示位置の値（プライマリディスプレイの左端・右端）を、今の値に読み替える。読み替えないときは null
+ * 古い値のままだと、設定画面でディスプレイを選んでも効かない
+ */
+export function planLegacyWorkspacePosition(
+  mode: WorkspacePositionMode
+): 'displayLeft' | 'displayRight' | null {
+  if (mode === 'primaryLeft') return 'displayLeft';
+  if (mode === 'primaryRight') return 'displayRight';
+  return null;
+}
+
+/** primaryLeft・primaryRight を、プライマリディスプレイの番号付きの displayLeft・displayRight にする */
+async function migrateLegacyWorkspacePosition(settings: SettingsService): Promise<void> {
+  const next = planLegacyWorkspacePosition(await settings.get('workspacePositionMode'));
+  if (!next) return;
+  const { screen } = await import('electron');
+  const primaryId = screen.getPrimaryDisplay().id;
+  const primaryIndex = screen.getAllDisplays().findIndex((d) => d.id === primaryId);
+  await settings.set('workspaceTargetDisplayIndex', Math.max(primaryIndex, 0));
+  await settings.set('workspacePositionMode', next);
+  windowLogger.info(`古い設定を読み替え: ワークスペースの表示位置を ${next} にしました`);
+}
+
 export async function migrateRemovedWindowSettings(): Promise<void> {
   try {
     const settings = await SettingsService.getInstance();
+    await migrateLegacyWorkspacePosition(settings);
     const removed = await settings.readRemovedKeys(REMOVED_WINDOW_SETTING_KEYS);
     if (Object.keys(removed).length === 0) return;
 

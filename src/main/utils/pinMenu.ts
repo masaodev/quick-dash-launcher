@@ -1,6 +1,8 @@
 import { Menu } from 'electron';
 import type { BrowserWindow } from 'electron';
 import type { PinLevel, WindowPinMode } from '@common/types';
+import { isPinLevel } from '@common/types/guards';
+import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { mainI18n } from '../services/mainI18n.js';
 
@@ -32,9 +34,14 @@ export function levelToPinMode(level: PinLevel): WindowPinMode {
   return LEVEL_TO_WINDOW_PIN_MODE[level];
 }
 
-/** IPC で受けた値が段階として正しいか */
-export function isPinLevel(value: unknown): value is PinLevel {
-  return value === 0 || value === 1 || value === 2;
+export { isPinLevel };
+
+/**
+ * 段階が変わったことを、そのウィンドウ（の 📌 ボタン）に知らせる
+ * メインプロセス側で変えたとき（読み替え・編集画面の一時的な最前面・開いた直後）もボタンを合わせるため
+ */
+export function notifyPinLevel(win: BrowserWindow | null | undefined, level: PinLevel): void {
+  if (win && !win.isDestroyed()) win.webContents.send(IPC_CHANNELS.EVENT_PIN_CHANGED, level);
 }
 
 /** メニューで選んだ項目から、次の段階を求める */

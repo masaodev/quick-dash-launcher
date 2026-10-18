@@ -8,6 +8,7 @@ import type {
   AppItem,
   DetachedWindowState,
   WorkspaceWindowState,
+  PinLevel,
   Workspace,
   WorkspaceItem,
   WorkspaceItemUpdate,
@@ -497,7 +498,7 @@ export class WorkspaceService {
     this.uiState!.updateDetached(rootGroupId, anchor ? { bounds, anchor } : { bounds });
   }
 
-  public async saveDetachedPinMode(rootGroupId: string, pinMode: 0 | 1 | 2): Promise<void> {
+  public async saveDetachedPinMode(rootGroupId: string, pinMode: PinLevel): Promise<void> {
     await this.initializeStore();
     this.uiState!.updateDetached(rootGroupId, { pinMode });
   }

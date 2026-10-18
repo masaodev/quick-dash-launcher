@@ -30,6 +30,7 @@ import {
   getWorkspaceAlwaysOnTop,
   toggleWorkspaceAlwaysOnTop,
   getWorkspacePinLevel,
+  isWorkspaceWindowOpen,
   setWorkspacePinLevel,
   getWorkspaceWindow,
   setWorkspacePosition,
@@ -50,11 +51,9 @@ import {
   createDetachedGroupWindow,
   closeDetachedGroupWindow,
   showWithoutFocus,
-  hideAllDetachedGroupWindows,
-  showAllDetachedGroupWindows,
   getGroupIdByWebContentsId,
-  getDetachedPinMode,
-  setDetachedPinMode,
+  getDetachedPinLevel,
+  setDetachedPinLevel,
   isDetachedGroupWindow,
   takeDetachedInitialShow,
 } from '../detachedGroupWindowManager.js';
@@ -97,9 +96,9 @@ export function setupWindowHandlers(
     if (groupId) {
       return {
         window: win,
-        get: () => getDetachedPinMode(groupId),
+        get: () => getDetachedPinLevel(groupId),
         set: async (level) => {
-          setDetachedPinMode(groupId, level);
+          setDetachedPinLevel(groupId, level);
           const ws = await WorkspaceService.getInstance();
           await ws.saveDetachedPinMode(groupId, level);
         },
@@ -185,6 +184,7 @@ export function setupWindowHandlers(
   });
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_IS_OPEN, () => isWorkspaceWindowOpen());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;
@@ -241,16 +241,14 @@ export function setupWindowHandlers(
   // 切り離しウィンドウ
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
-    (_event, groupId: string, cursorX?: number, cursorY?: number) =>
-      createDetachedGroupWindow(groupId, cursorX, cursorY)
+    async (_event, groupId: string, cursorX?: number, cursorY?: number) => {
+      return createDetachedGroupWindow(groupId, cursorX, cursorY);
+    }
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
     closeDetachedGroupWindow(groupId)
   );
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED, () => hideAllDetachedGroupWindows());
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED, () => showAllDetachedGroupWindows());
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW,

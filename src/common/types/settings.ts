@@ -128,7 +128,7 @@ export interface AppSettings {
   windowPositionY: number;
   /** ワークスペースウィンドウの不透明度（0-100%、デフォルト: 100） */
   workspaceOpacity: number;
-  /** ワークスペースウィンドウの背景のみを透過（デフォルト: false） */
+  /** ワークスペースウィンドウ・切り離しウィンドウの背景だけを透明にする（デフォルト: false。オンの間は workspaceOpacity を使わない） */
   workspaceBackgroundTransparent: boolean;
   /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
@@ -152,6 +152,6 @@ export interface AppSettings {
   bookmarkAutoImport: BookmarkAutoImportSettings;
   /** 切り離しウィンドウの表示位置モード（デフォルト: 'mainDisplay'） */
   detachedPositionMode: DetachedPositionMode;
-  /** ウィンドウ吸着（モニター端へのスナップ）の有効/無効（デフォルト: true） */
+  /** ディスプレイの端に近づけたら吸着する（デフォルト: true） */
   windowSnapEnabled: boolean;
 }
