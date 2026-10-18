@@ -89,9 +89,15 @@ function setWorkspaceOpen(open: boolean): void {
   if (isWorkspaceOpen === open) return;
   isWorkspaceOpen = open;
   persistWorkspaceWindowState();
-  // メインウィンドウの ⭐ ボタンの押し込み表示を合わせる
+  broadcastWorkspaceOpen();
+}
+
+/** メインウィンドウの ⭐ ボタンの押し込み表示を、開いているかに合わせる */
+function broadcastWorkspaceOpen(): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    if (!win.isDestroyed()) win.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, open);
+    if (!win.isDestroyed()) {
+      win.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, isWorkspaceOpen);
+    }
   }
 }
 
@@ -109,6 +115,8 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
       const state = await ws.loadWorkspaceWindowState();
       workspacePinLevel = state.pinLevel;
       isWorkspaceOpen = state.open;
+      // メインウィンドウが読み込む前に問い合わせていると「閉じている」が返っているので、読んだ値を知らせ直す
+      if (isWorkspaceOpen) broadcastWorkspaceOpen();
     } catch (error) {
       windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の読み込みに失敗');
     }
@@ -260,8 +268,11 @@ async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promis
       await setWorkspacePosition();
       // 表示中でも別の仮想デスクトップにあると show() では出てこない（自動表示のとき）
       moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
-      workspaceWindow.show();
-      if (!options?.skipFocus) {
+      // Windows の show() はウィンドウをアクティブにするので、フォーカスを奪わないときは showInactive() にする
+      if (options?.skipFocus) {
+        workspaceWindow.showInactive();
+      } else {
+        workspaceWindow.show();
         workspaceWindow.focus();
       }
       await applyVisibilityOnAllDesktops();
@@ -374,15 +385,15 @@ export function getWorkspaceAlwaysOnTop(): boolean {
 }
 
 /**
- * ピン留めしたワークスペースを、フォーカスを奪わずに手前へ出す（ホットキーでメインウィンドウを出すとき）
- */
-/**
- * ピン留めしたワークスペースを、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+ * ピン留めしたワークスペースを、ほかのウィンドウの下にあっても手前に出す（ホットキーでメインウィンドウを出すとき。
+ * ディスプレイの中では動かさない）。別の仮想デスクトップにあれば今のデスクトップへ連れてくる
+ * （すべてのデスクトップに表示しない設定のとき。moveTop() だけでは出てこない）。
  * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
  */
 export function bringPinnedWorkspaceToFront(): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
   if (workspacePinLevel === 0 || !workspaceWindow.isVisible()) return;
+  moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
   workspaceWindow.moveTop();
 }
 
