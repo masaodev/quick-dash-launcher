@@ -77,6 +77,26 @@ describe('WorkspaceUiStateStore', () => {
     expect(store.listDetachedGroupIds()).toEqual([]);
   });
 
+  it('ワークスペースウィンドウの状態は、無ければ「閉じていて表示固定」で、部分更新できること', () => {
+    const store = new WorkspaceUiStateStore();
+    expect(store.getWorkspaceWindow()).toEqual({ open: false, pinLevel: 1 });
+    store.updateWorkspaceWindow({ open: true });
+    expect(store.getWorkspaceWindow()).toEqual({ open: true, pinLevel: 1 });
+    store.updateWorkspaceWindow({ pinLevel: 0 });
+    expect(store.getWorkspaceWindow()).toEqual({ open: true, pinLevel: 0 });
+  });
+
+  it('pinAllUnpinnedDetached はピン留めしていない切り離しウィンドウだけを表示固定にすること', () => {
+    const store = new WorkspaceUiStateStore();
+    store.updateDetached('none0001', {});
+    store.updateDetached('zero0001', { pinMode: 0 });
+    store.updateDetached('top00001', { pinMode: 2 });
+    expect(store.pinAllUnpinnedDetached()).toBe(2);
+    expect(store.getDetached('none0001')?.pinMode).toBe(1);
+    expect(store.getDetached('zero0001')?.pinMode).toBe(1);
+    expect(store.getDetached('top00001')?.pinMode).toBe(2);
+  });
+
   it('pruneMissingGroups は存在しないグループの状態を捨てること', () => {
     const store = new WorkspaceUiStateStore();
     store.setGroupsCollapsed(['keep0001', 'gone0001'], true);

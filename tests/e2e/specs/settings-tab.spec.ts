@@ -11,7 +11,7 @@ import { TestUtils } from '../helpers/test-utils';
  *
  * 設定画面はサイドバーメニューで以下のカテゴリに分かれています：
  * - 基本設定: 表示言語、ホットキー、システム、表示
- * - ウィンドウ: ウィンドウサイズ、ウィンドウ表示位置、ワークスペースウィンドウ
+ * - ウィンドウ: メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウ・その他の節（どれも畳まずに出す）
  * - バックアップ: バックアップ
  */
 test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
@@ -73,17 +73,18 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await windowMenu.click();
         await adminUtils.wait(200);
 
-        // ウィンドウサイズセクション
-        const windowSizeSection = adminWindow
-          .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウサイズ' }) });
-        await expect(windowSizeSection).toBeVisible();
-
-        // ウィンドウ表示位置セクション
-        const windowPositionSection = adminWindow
-          .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウ表示位置' }) });
-        await expect(windowPositionSection).toBeVisible();
+        // メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウ・その他の節
+        for (const heading of [
+          'メインウィンドウ',
+          'ワークスペースウィンドウ',
+          '切り離しウィンドウ',
+          'その他',
+        ]) {
+          const section = adminWindow
+            .locator('.settings-section')
+            .filter({ has: adminWindow.locator('h3', { hasText: heading }) });
+          await expect(section).toBeVisible();
+        }
       });
 
       await test.step('バックアップカテゴリに切り替えてセクションを確認', async () => {
@@ -255,9 +256,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     }
   });
 
-  // ==================== ウィンドウ表示位置設定テスト ====================
+  // ==================== メインウィンドウの表示する場所の設定テスト ====================
 
-  test('ウィンドウ表示位置を設定できる', async ({
+  test('メインウィンドウの表示する場所を設定できる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -274,53 +275,46 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await adminUtils.wait(200);
       });
 
-      await test.step('ウィンドウ表示位置セクションが表示される', async () => {
+      await test.step('メインウィンドウの節が表示される', async () => {
         const positionSection = adminWindow
           .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'ウィンドウ表示位置' }) });
+          .filter({ has: adminWindow.locator('h3', { hasText: 'メインウィンドウ' }) });
         await expect(positionSection).toBeVisible();
       });
 
-      await test.step('既定は画面中央（自動で切り替え）が選択されている', async () => {
-        const cursorMonitorCenterRadio = adminWindow.locator(
-          'input[name="windowPositionMode"][value="cursorMonitorCenter"]'
-        );
-        await expect(cursorMonitorCenterRadio).toBeChecked();
+      const positionSelect = adminWindow.locator('#windowPositionMode');
+
+      await test.step('既定はマウスカーソルのあるディスプレイの中央が選択されている', async () => {
+        await expect(positionSelect).toHaveValue('cursorMonitorCenter');
       });
 
-      await test.step('画面中央（固定）を選択できる', async () => {
-        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
-        const centerRadio = adminWindow.locator('input[name="windowPositionMode"][value="center"]');
-        await centerRadio.click({ force: true });
+      await test.step('プライマリディスプレイの中央を選択できる', async () => {
+        await positionSelect.selectOption('center');
         await adminUtils.wait(200);
 
-        await expect(centerRadio).toBeChecked();
+        await expect(positionSelect).toHaveValue('center');
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();
         expect(settings.windowPositionMode).toBe('center');
       });
 
-      await test.step('カーソル付近を選択できる', async () => {
-        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
-        const cursorRadio = adminWindow.locator('input[name="windowPositionMode"][value="cursor"]');
-        await cursorRadio.click({ force: true });
+      await test.step('マウスカーソルの近くを選択できる', async () => {
+        await positionSelect.selectOption('cursor');
         await adminUtils.wait(200);
 
-        await expect(cursorRadio).toBeChecked();
+        await expect(positionSelect).toHaveValue('cursor');
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();
         expect(settings.windowPositionMode).toBe('cursor');
       });
 
-      await test.step('固定位置（手動設定）を選択できる', async () => {
-        // ウィンドウ表示位置セクション内のラジオボタンを直接操作
-        const fixedRadio = adminWindow.locator('input[name="windowPositionMode"][value="fixed"]');
-        await fixedRadio.click({ force: true });
+      await test.step('最後に動かした場所を選択できる', async () => {
+        await positionSelect.selectOption('fixed');
         await adminUtils.wait(200);
 
-        await expect(fixedRadio).toBeChecked();
+        await expect(positionSelect).toHaveValue('fixed');
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();

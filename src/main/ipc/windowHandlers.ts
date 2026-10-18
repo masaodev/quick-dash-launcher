@@ -30,6 +30,7 @@ import {
   getWorkspaceAlwaysOnTop,
   toggleWorkspaceAlwaysOnTop,
   getWorkspacePinLevel,
+  isWorkspaceWindowOpen,
   setWorkspacePinLevel,
   getWorkspaceWindow,
   setWorkspacePosition,
@@ -50,11 +51,11 @@ import {
   createDetachedGroupWindow,
   closeDetachedGroupWindow,
   showWithoutFocus,
-  hideAllDetachedGroupWindows,
-  showAllDetachedGroupWindows,
   getGroupIdByWebContentsId,
-  getDetachedPinMode,
-  setDetachedPinMode,
+  getDetachedPinLevel,
+  setDetachedPinLevel,
+  isDetachedGroupWindow,
+  takeDetachedInitialShow,
 } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/index.js';
 import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
@@ -95,9 +96,9 @@ export function setupWindowHandlers(
     if (groupId) {
       return {
         window: win,
-        get: () => getDetachedPinMode(groupId),
+        get: () => getDetachedPinLevel(groupId),
         set: async (level) => {
-          setDetachedPinMode(groupId, level);
+          setDetachedPinLevel(groupId, level);
           const ws = await WorkspaceService.getInstance();
           await ws.saveDetachedPinMode(groupId, level);
         },
@@ -183,6 +184,7 @@ export function setupWindowHandlers(
   });
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_IS_OPEN, () => isWorkspaceWindowOpen());
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;
@@ -239,16 +241,14 @@ export function setupWindowHandlers(
   // 切り離しウィンドウ
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
-    (_event, groupId: string, cursorX?: number, cursorY?: number) =>
-      createDetachedGroupWindow(groupId, cursorX, cursorY)
+    async (_event, groupId: string, cursorX?: number, cursorY?: number) => {
+      return createDetachedGroupWindow(groupId, cursorX, cursorY);
+    }
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
     closeDetachedGroupWindow(groupId)
   );
-
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED, () => hideAllDetachedGroupWindows());
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED, () => showAllDetachedGroupWindows());
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW,
@@ -259,8 +259,9 @@ export function setupWindowHandlers(
       const { x, y } = win.getBounds();
       win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
 
-      // autofit完了後、フォーカスを奪わずに初回表示
-      if (!win.isVisible()) {
+      // 中身に合わせた大きさにした後、まだ初めての表示をしていなければ、フォーカスを奪わずに出す
+      // （隠れている切り離しウィンドウは、大きさを直すたびに出さない）
+      if (!win.isVisible() && (!isDetachedGroupWindow(win) || takeDetachedInitialShow(win))) {
         showWithoutFocus(win);
       }
 

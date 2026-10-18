@@ -69,7 +69,6 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   editModeHeight: { kind: 'integer', range: { min: 600, max: 1200 } },
   workspaceOpacity: { kind: 'integer', range: { min: 0, max: 100 } },
   workspaceBackgroundTransparent: BOOLEAN,
-  autoShowWorkspace: BOOLEAN,
   // primaryLeft・primaryRight は古い値なので、新しくは選ばせない
   workspacePositionMode: { kind: 'choice', values: ['displayLeft', 'displayRight', 'fixed'] },
   workspaceTargetDisplayIndex: { kind: 'displayIndex' },
@@ -77,7 +76,6 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   workspacePositionY: COORDINATE,
   workspaceVisibleOnAllDesktops: BOOLEAN,
   detachedVisibleOnAllDesktops: BOOLEAN,
-  hideDetachedWithMainWindow: BOOLEAN,
   detachedPositionMode: { kind: 'choice', values: ['saved', 'mainDisplay'] },
   backupEnabled: BOOLEAN,
   backupRetention: { kind: 'integer', range: { min: 3, max: 50 } },
@@ -194,7 +192,7 @@ async function parseValue(
       if (rule.values.includes(text)) return text;
       throw invalid(key, rule.values.join(' / '));
     case 'displayIndex': {
-      // -1 はカーソルのあるモニター（画面の「カーソルのあるモニター」と同じ）
+      // -1 はメインウィンドウと同じディスプレイ（設定画面の「メインウィンドウと同じディスプレイ」と同じ）
       if (text === String(MAIN_WINDOW_DISPLAY_INDEX)) return MAIN_WINDOW_DISPLAY_INDEX;
       const count = store.displayCount();
       const n = /^\d+$/.test(text) ? Number(text) : NaN;

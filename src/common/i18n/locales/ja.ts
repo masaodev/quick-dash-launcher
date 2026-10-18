@@ -98,11 +98,14 @@ export const ja = {
       emptyTab: 'このタブにはまだアイテムがありません',
       add: '📄 アイテムを追加…',
     },
+    workspaceButton: {
+      open: 'ワークスペースを開く（Ctrl+W）',
+      close: 'ワークスペースを閉じる（Ctrl+W）',
+    },
     settingsMenu: {
       title: '設定',
       settings: '⚙️ 設定',
       itemManager: '✏️ アイテム管理（Ctrl+E）',
-      toggleWorkspace: '⭐ ワークスペースの表示/非表示（Ctrl+W）',
       quit: '🚪 アプリを終了',
     },
     desktopTabs: {
@@ -511,11 +514,11 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
                   windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
                   windowPositionX windowPositionY windowSnapEnabled
   管理            editModeWidth（800〜2000）editModeHeight（600〜1200）
-  ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent autoShowWorkspace
+  ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent
                   workspacePositionMode（displayLeft / displayRight / fixed）
                   workspaceTargetDisplayIndex（0 始まり。-1 はメインウィンドウと同じディスプレイ）
                   workspacePositionX workspacePositionY
-                  workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops hideDetachedWithMainWindow
+                  workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops
                   detachedPositionMode（mainDisplay / saved）
   バックアップ    backupEnabled backupRetention（3〜50）backupIncludeClipboard
 
@@ -1868,8 +1871,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       openSettings: '⚙️ 設定',
       alignLeft: '⬅️ 左端に寄せる',
       alignRight: '➡️ 右端に寄せる',
-      hideAllDetached: '🙈 切り離しウィンドウをすべて非表示',
-      showAllDetached: '👁️ 切り離しウィンドウをすべて表示',
       close: '閉じる',
     },
     filter: {
@@ -2009,62 +2010,64 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
     },
     windowSize: {
-      heading: 'ウィンドウサイズ',
-      launcher: 'メインウィンドウ',
-      admin: '管理ウィンドウ',
-      width: '幅:',
-      height: '高さ:',
+      heading: '大きさ:',
+      width: '幅',
+      height: '高さ',
     },
     windowPosition: {
-      heading: 'ウィンドウ表示位置',
-      center: '画面中央（固定）',
-      centerDescription: '常にプライマリモニターの中央にウィンドウを表示します',
-      cursorMonitorCenter: '画面中央（自動で切り替え）',
-      cursorMonitorCenterDescription:
-        'マウスカーソルがあるモニターの中央にウィンドウを表示します（マルチモニター推奨）',
-      cursor: 'カーソル付近',
-      cursorDescription: 'マウスカーソルの近くにウィンドウを表示します（検索入力がしやすい位置）',
-      fixed: '固定位置（手動設定）',
-      fixedDescription: 'ウィンドウを移動した位置を記憶して、次回も同じ位置に表示します',
+      heading: 'メインウィンドウ',
+      label: '表示する場所:',
+      cursorMonitorCenter: 'マウスカーソルのあるディスプレイの中央（既定）',
+      cursorMonitorCenterDescription: 'マウスカーソルがあるディスプレイの中央に表示します',
+      cursor: 'マウスカーソルの近く',
+      cursorDescription: 'マウスカーソルの近くに表示します（検索欄がカーソルの近くに来ます）',
+      center: 'プライマリディスプレイの中央',
+      centerDescription:
+        'いつもプライマリディスプレイ（Windows の設定でメインにしたディスプレイ）の中央に表示します',
+      fixed: '最後に動かした場所',
+      fixedDescription: 'ウィンドウを動かした場所を覚えて、次も同じ場所に表示します',
     },
     workspace: {
       heading: 'ワークスペースウィンドウ',
-      autoShow: 'メインウィンドウ表示時にワークスペースを自動表示',
-      autoShowDescription:
-        '有効にすると、メインウィンドウを開いたときにワークスペースが非表示なら自動で表示します。',
-      hideDetached: 'メインウィンドウと一緒に切り離しウィンドウも隠す',
-      hideDetachedDescription:
-        '有効にすると、メインウィンドウの表示/非表示に連動して、ピン留めしていない切り離しウィンドウも表示/非表示します。フォーカスがメインウィンドウ・ワークスペース・切り離しウィンドウの間を移っている間は隠さず、それ以外のウィンドウへ移ったときに隠します。',
-      detachedPosition: '切り離しウィンドウの表示位置:',
-      detachedPositionSaved: '置いた場所',
-      detachedPositionSavedDescription: '切り離しウィンドウを、最後に置いた場所に表示します',
-      detachedPositionMainDisplay: 'メインウィンドウと同じディスプレイ（既定）',
-      detachedPositionMainDisplayDescription:
-        'メインウィンドウと一緒に表示するとき、切り離しウィンドウをメインウィンドウと同じディスプレイの同じ位置へ移します。ディスプレイの端にくっつけたウィンドウは端に、それ以外はディスプレイの中央からの距離を保ちます。ピン留めしたウィンドウは動かしません。「メインウィンドウと一緒に切り離しウィンドウも隠す」が有効なときに働きます。',
-      position: '表示位置:',
-      displayEdge: 'ディスプレイの端に配置（既定）',
-      displayEdgeDescription: '選択したディスプレイの左端または右端にワークスペースを配置します',
-      mainWindowDisplay: 'メインウィンドウと同じディスプレイ',
-      missingDisplay: 'ディスプレイ {{number}}（今は接続されていないため、プライマリに表示中）',
+      position: '表示する場所:',
+      rightEdge: '右端（既定）',
+      rightEdgeDescription: 'ディスプレイの右端に、上から下までの高さで表示します',
       leftEdge: '左端',
-      rightEdge: '右端',
-      fixed: '固定位置（手動設定）',
-      fixedDescription: 'ワークスペースを移動した位置を記憶して、次回も同じ位置に表示します',
-      opacity: '不透明度:',
-      opacityDescription:
-        'ワークスペースウィンドウの不透明度を調整します（0%=完全透明、100%=完全不透明）。',
-      backgroundTransparent: '背景のみを透過（アイテムやグループは通常表示）',
+      leftEdgeDescription: 'ディスプレイの左端に、上から下までの高さで表示します',
+      fixed: '最後に動かした場所',
+      fixedDescription: 'ワークスペースを動かした場所を覚えて、次も同じ場所に表示します',
+      displayLabel: 'ディスプレイ',
+      mainWindowDisplay: 'メインウィンドウと同じディスプレイ（既定）',
+      missingDisplay: 'ディスプレイ {{number}}（今は接続されていないため、プライマリに表示中）',
+      appearance: '見た目:',
+      backgroundTransparent: '背景だけを透明にする',
       backgroundTransparentDescription:
-        '有効にすると、背景のみが透過され、アイテムやグループは通常通り表示されます。',
+        'アイテムとグループだけが見えるようになります。切り離しウィンドウにも効きます',
+      opacity: '不透明度',
+      opacityDescription:
+        'ワークスペースウィンドウ本体の濃さです（0%=完全に透明、100%=完全に不透明）。切り離しウィンドウには効きません',
+      opacityDisabled: '「背景だけを透明にする」がオンの間は使えません',
+      virtualDesktops: '仮想デスクトップ:',
       visibleOnAllDesktops: 'すべての仮想デスクトップに表示',
-      visibleOnAllDesktopsDescription:
-        '有効にすると、ワークスペースウィンドウがすべての仮想デスクトップで表示されます（Windows 10/11の仮想デスクトップ機能）。',
-      detachedVisibleOnAllDesktops: '切り離しウィンドウもすべての仮想デスクトップに表示',
-      detachedVisibleOnAllDesktopsDescription:
-        '有効にすると、切り離しウィンドウもすべての仮想デスクトップで表示されます。',
-      windowSnap: 'ウィンドウ吸着（モニター端へのスナップ）',
+    },
+    detached: {
+      heading: '切り離しウィンドウ',
+      position: '表示する場所:',
+      mainDisplay: 'メインウィンドウと同じディスプレイ（既定）',
+      mainDisplayDescription:
+        'メインウィンドウと同じディスプレイの、同じ位置に移して表示します。📌 を押したものは動かしません',
+      saved: '最後に置いた場所',
+      savedDescription: '最後に置いた場所に表示します',
+      virtualDesktops: '仮想デスクトップ:',
+      visibleOnAllDesktops: 'すべての仮想デスクトップに表示',
+    },
+    windowOther: {
+      heading: 'その他',
+      snap: '吸着:',
+      windowSnap: 'ディスプレイの端に近づけたら吸着する',
       windowSnapDescription:
-        '有効にすると、ワークスペースウィンドウや切り離しウィンドウをモニター端に近づけたとき、自動的に吸着します。',
+        'ワークスペースウィンドウと切り離しウィンドウを、ディスプレイの端にぴったり寄せます',
+      adminWindowSize: '管理ウィンドウ:',
     },
     backup: {
       heading: 'バックアップ',

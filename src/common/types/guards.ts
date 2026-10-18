@@ -6,6 +6,12 @@
 
 import type { AppItem, LauncherItem, ClipboardItem, SetItem } from './launcher';
 import type { WindowInfo } from './window';
+import type { PinLevel } from './settings';
+
+/** ピン留めの段階（0・1・2）か */
+export function isPinLevel(value: unknown): value is PinLevel {
+  return value === 0 || value === 1 || value === 2;
+}
 
 /** 配列でないオブジェクト（JSON の読み込みで、キーを持つ値か確かめる） */
 export function isRecord(value: unknown): value is Record<string, unknown> {
