@@ -6,9 +6,10 @@ import { minimatch } from 'minimatch';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import type { DirOptionsForProcessing, JsonDirOptions } from '@common/types/json-data';
-import { DIR_OPTIONS_DEFAULTS } from '@common/types/json-data';
+import { DIR_OPTIONS_DEFAULTS, DIR_PREVIEW_TIMEOUT_MS } from '@common/types/json-data';
 import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { LauncherItem } from '@common/types';
+import type { DirPreviewItem, DirPreviewResult, DirPreviewStatus } from '@common/types';
 
 /** 表示名の前後に、入力したとおりの文字を付ける（区切りや括弧は足さない） */
 export function applyPrefixSuffix(name: string, prefix?: string, suffix?: string): string {
@@ -95,8 +96,18 @@ export function processShortcut(
   return null;
 }
 
+/** 走査を途中で打ち切るための指定（登録画面のプレビューで使う。メイン画面の読み込みでは渡さない） */
+export interface ScanLimits {
+  /** 中止・時間切れ。立ったらその場で走査をやめ、そこまでの結果を返す */
+  signal?: AbortSignal;
+  /** これだけ見つけたら走査をやめる */
+  maxItems?: number;
+}
+
 /**
  * 指定されたディレクトリを再帰的にスキャンし、指定されたオプションに基づいてファイル/フォルダを抽出する
+ *
+ * 応答の遅いネットワークのフォルダでもメインプロセスを止めないよう、ファイルシステムは非同期で読む
  */
 export async function scanDirectory(
   dirPath: string,
@@ -106,23 +117,31 @@ export async function scanDirectory(
   expandedOptions?: DirOptionsForProcessing,
   lineNumber?: number,
   expandedFromId?: string,
-  currentDepth = 0
+  limits?: ScanLimits
 ): Promise<LauncherItem[]> {
   const results: LauncherItem[] = [];
+  const shouldStop = () =>
+    !!limits?.signal?.aborted ||
+    (limits?.maxItems !== undefined && results.length >= limits.maxItems);
 
-  if (options.depth !== -1 && currentDepth > options.depth) {
-    return results;
-  }
+  const walk = async (currentDir: string, currentDepth: number): Promise<void> => {
+    if (options.depth !== -1 && currentDepth > options.depth) return;
 
-  try {
-    const items = fs.readdirSync(dirPath);
+    let items: string[];
+    try {
+      items = await fs.promises.readdir(currentDir);
+    } catch (error) {
+      dataLogger.error({ dirPath: currentDir, error }, 'ディレクトリのスキャンに失敗');
+      return;
+    }
 
     for (const item of items) {
-      const itemPath = path.join(dirPath, item);
+      if (shouldStop()) return;
+      const itemPath = path.join(currentDir, item);
 
       let stat;
       try {
-        stat = fs.statSync(itemPath);
+        stat = await fs.promises.stat(itemPath);
       } catch (error) {
         dataLogger.warn({ itemPath, error }, 'アイテムにアクセスできません');
         continue;
@@ -161,58 +180,57 @@ export async function scanDirectory(
         }
 
         if (currentDepth < options.depth || options.depth === -1) {
-          const subResults = await scanDirectory(
+          await walk(itemPath, currentDepth + 1);
+        }
+      } else if (options.types === 'file' || options.types === 'both') {
+        if (path.extname(itemPath).toLowerCase() === '.lnk') {
+          const processedShortcut = processShortcut(
             itemPath,
-            options,
             sourceFile,
+            lineNumber,
+            undefined,
+            options.prefix,
+            options.suffix,
             rootDirPath,
             expandedOptions,
-            lineNumber,
-            expandedFromId,
-            currentDepth + 1
+            expandedFromId
           );
-          results.push(...subResults);
-        }
-      } else {
-        if (options.types === 'file' || options.types === 'both') {
-          if (path.extname(itemPath).toLowerCase() === '.lnk') {
-            const processedShortcut = processShortcut(
+          if (processedShortcut) {
+            results.push(processedShortcut);
+          }
+        } else {
+          results.push(
+            processItem(
               itemPath,
+              'file',
               sourceFile,
               lineNumber,
-              undefined,
               options.prefix,
               options.suffix,
               rootDirPath,
               expandedOptions,
               expandedFromId
-            );
-            if (processedShortcut) {
-              results.push(processedShortcut);
-            }
-          } else {
-            results.push(
-              processItem(
-                itemPath,
-                'file',
-                sourceFile,
-                lineNumber,
-                options.prefix,
-                options.suffix,
-                rootDirPath,
-                expandedOptions,
-                expandedFromId
-              )
-            );
-          }
+            )
+          );
         }
       }
     }
-  } catch (error) {
-    dataLogger.error({ dirPath, error }, 'ディレクトリのスキャンに失敗');
-  }
+  };
 
-  return results;
+  await walk(dirPath, 0);
+  return limits?.maxItems !== undefined ? results.slice(0, limits.maxItems) : results;
+}
+
+/** 保存形式のオプション（省略あり）を、走査に使う形（既定を埋めたもの）にする */
+function toProcessOptions(options: JsonDirOptions | undefined): DirOptionsForProcessing {
+  return {
+    depth: options?.depth ?? DIR_OPTIONS_DEFAULTS.depth,
+    types: options?.types ?? DIR_OPTIONS_DEFAULTS.types,
+    filter: options?.filter,
+    exclude: options?.exclude,
+    prefix: options?.prefix,
+    suffix: options?.suffix,
+  };
 }
 
 /**
@@ -242,14 +260,7 @@ export async function processDirectoryItem(
   }
 
   try {
-    const processOptions: DirOptionsForProcessing = {
-      depth: options?.depth ?? DIR_OPTIONS_DEFAULTS.depth,
-      types: options?.types ?? DIR_OPTIONS_DEFAULTS.types,
-      filter: options?.filter,
-      exclude: options?.exclude,
-      prefix: options?.prefix,
-      suffix: options?.suffix,
-    };
+    const processOptions = toProcessOptions(options);
     return await scanDirectory(
       normalizedPath,
       processOptions,
@@ -262,5 +273,87 @@ export async function processDirectoryItem(
   } catch (error) {
     dataLogger.error({ dirPath: normalizedPath, error }, 'ディレクトリのスキャンに失敗');
     return [];
+  }
+}
+
+/** プレビューで探す件数の上限（これを超えたら走査をやめ、「〜件以上」と出す） */
+export const DIR_PREVIEW_MAX_ITEMS = 1000;
+
+/**
+ * 登録・編集画面のフォルダ取込のプレビュー。登録したときと同じ走査（scanDirectory）で、何が並ぶかを返す
+ *
+ * signal で中止でき、時間切れ・件数の上限で打ち切る。応答しないフォルダで readdir が返ってこなくても、
+ * 中止・時間切れの時点で結果を返す（走査そのものは裏で終わるのを待たずに捨てる）
+ */
+export async function previewDirectoryItems(
+  dirPath: string,
+  options: JsonDirOptions | undefined,
+  signal?: AbortSignal,
+  { timeoutMs = DIR_PREVIEW_TIMEOUT_MS, maxItems = DIR_PREVIEW_MAX_ITEMS } = {}
+): Promise<DirPreviewResult> {
+  const empty = (status: DirPreviewStatus): DirPreviewResult => ({
+    status,
+    items: [],
+    truncated: false,
+  });
+  if (!dirPath.trim()) return empty('notFound');
+  const normalizedPath = path.normalize(path.resolve(dirPath));
+  if (normalizedPath.includes('..')) return empty('notFound');
+
+  // 中止（画面から）と時間切れを 1 つの signal にまとめる
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  const onAbort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener('abort', onAbort);
+  const stopped = new Promise<'stopped'>((resolve) => {
+    if (controller.signal.aborted) resolve('stopped');
+    controller.signal.addEventListener('abort', () => resolve('stopped'));
+  });
+  const stoppedStatus = (): DirPreviewStatus => (timedOut ? 'timeout' : 'cancelled');
+
+  try {
+    const stat = await Promise.race([fs.promises.stat(normalizedPath).catch(() => null), stopped]);
+    if (stat === 'stopped') return empty(stoppedStatus());
+    if (!stat) return empty('notFound');
+    if (!stat.isDirectory()) return empty('notFolder');
+
+    const processOptions = toProcessOptions(options);
+    // 上限を 1 件超えて探し、まだあるかを見分ける
+    const scanned = await Promise.race([
+      scanDirectory(
+        normalizedPath,
+        processOptions,
+        '',
+        normalizedPath,
+        processOptions,
+        undefined,
+        undefined,
+        { signal: controller.signal, maxItems: maxItems + 1 }
+      ),
+      stopped,
+    ]);
+    if (scanned === 'stopped' || controller.signal.aborted) return empty(stoppedStatus());
+
+    const items = scanned.slice(0, maxItems).map((item): DirPreviewItem => {
+      const name = path.basename(item.path);
+      const baseName = item.originalPath ? path.basename(item.path, '.lnk') : name;
+      const location = path.relative(normalizedPath, path.dirname(item.path));
+      return {
+        displayName: item.displayName,
+        baseName,
+        isFolder: item.type === 'folder' && !item.originalPath,
+        location,
+        ...(item.originalPath && { shortcutTarget: item.originalPath }),
+      };
+    });
+    return { status: 'ok', items, truncated: scanned.length > maxItems };
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
   }
 }

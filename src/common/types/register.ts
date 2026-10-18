@@ -8,6 +8,33 @@ import type { ItemWindowSwitch, LauncherItem, SetEntry, SetLaunchMode } from './
 import type { JsonDirOptions } from './json-data';
 import type { ClipboardFormat } from './clipboard';
 
+/** フォルダ取込のプレビューの結果の種類 */
+export type DirPreviewStatus = 'ok' | 'notFound' | 'notFolder' | 'timeout' | 'cancelled';
+
+/** フォルダ取込のプレビューに並べる 1 件（登録したときにメイン画面に並ぶもの） */
+export interface DirPreviewItem {
+  /** 頭・後ろに付ける文字を付けた表示名 */
+  displayName: string;
+  /** 頭・後ろに付ける文字を付ける前の名前（画面で付ける文字だけを入れ替えるのに使う） */
+  baseName: string;
+  isFolder: boolean;
+  /** 選んだフォルダから見た、入っているフォルダ（直下なら空） */
+  location: string;
+  /** ショートカット（.lnk）のリンク先 */
+  shortcutTarget?: string;
+}
+
+/** フォルダ取込のプレビューの結果 */
+export interface DirPreviewResult {
+  status: DirPreviewStatus;
+  items: DirPreviewItem[];
+  /** 上限まで見つけて走査をやめた（items のほかにもまだある） */
+  truncated: boolean;
+}
+
+/** 登録・編集画面のパス欄の「選択」で選ぶもの */
+export type ItemPathPickKind = 'file' | 'folder';
+
 /** 登録・編集画面のセットの行。保存する行に、画面の中だけで使う印を足したもの */
 export interface RegisterSetEntry extends SetEntry {
   /** ワークスペースのアイテム（この表示名）を、行に書いたパスに置き換えた行（画面の中だけで使い、保存しない） */
