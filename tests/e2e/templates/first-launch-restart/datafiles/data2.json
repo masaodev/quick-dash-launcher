@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "flrs0002",
+      "type": "item",
+      "displayName": "Google",
+      "path": "https://www.google.com/"
+    }
+  ]
+}

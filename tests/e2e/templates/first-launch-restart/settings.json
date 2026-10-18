@@ -1,0 +1,12 @@
+{
+  "language": "ja",
+  "hotkey": "",
+  "dataFileTabs": [
+    { "files": ["datafiles/data.json"], "name": "メイン" },
+    { "files": ["datafiles/data2.json"], "name": "Web" }
+  ],
+  "dataFileLabels": {
+    "datafiles/data.json": "メイン用データファイル",
+    "datafiles/data2.json": "Web用データファイル"
+  }
+}

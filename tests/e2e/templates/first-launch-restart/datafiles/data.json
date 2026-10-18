@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "flrs0001",
+      "type": "item",
+      "displayName": "メモ帳",
+      "path": "notepad.exe"
+    }
+  ]
+}

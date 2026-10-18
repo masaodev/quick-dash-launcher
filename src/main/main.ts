@@ -196,10 +196,12 @@ app.whenReady().then(async () => {
   setFirstLaunchMode(isFirstLaunch);
 
   // データファイルが無ければお試し用のアイテム入りで作る。初回起動では Web のアイテムを 2 つ目のタブに分け、
-  // タブを表示言語の名前で決める（ウィンドウを作る前に決めて、最初の読み込みから 2 つのタブで出す）
-  const splitWebTab = createDefaultDataFile(isFirstLaunch);
-  if (isFirstLaunch) {
-    await settingsService.setMultiple(createFirstLaunchTabs(splitWebTab));
+  // タブを表示言語の名前で決める（ウィンドウを作る前に決めて、最初の読み込みから 2 つのタブで出す）。
+  // タブを決めるのはデータファイルを作ったときだけ（初回設定の途中で終了して起動し直したときに、
+  // 「メイン」だけのタブで上書きして「Web」タブを消さないように）
+  const defaultDataFile = createDefaultDataFile(isFirstLaunch);
+  if (isFirstLaunch && defaultDataFile.created) {
+    await settingsService.setMultiple(createFirstLaunchTabs(defaultDataFile.splitWebTab));
   }
 
   // 起動時スナップショットバックアップ（fire-and-forget: メインフローをブロックしない）

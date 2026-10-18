@@ -64,11 +64,14 @@ function writeSampleDataFile(filePath: string, items: JsonItem[]): void {
  *
  * 初回起動（splitWebTab）では、Web のアイテムを 2 つ目のデータファイル（SAMPLE_WEB_DATA_FILE）に分け、
  * タブの使い方を試せるようにする。そのファイルが既にあるときは分けない
- * @returns Web のアイテムを 2 つ目のデータファイルに分けたら true
+ * @returns created: データファイルを作ったら true（既にあれば false）、splitWebTab: Web のアイテムを 2 つ目のデータファイルに分けたら true
  */
-export function createDefaultDataFile(splitWebTab: boolean = false): boolean {
+export function createDefaultDataFile(splitWebTab: boolean = false): {
+  created: boolean;
+  splitWebTab: boolean;
+} {
   const dataPath = PathManager.getDataFilePath();
-  if (fs.existsSync(dataPath)) return false;
+  if (fs.existsSync(dataPath)) return { created: false, splitWebTab: false };
 
   const mainItems: JsonItem[] = [
     sampleItem(mainI18n.t('sampleData.readme.name'), mainI18n.t('sampleData.readme.url')),
@@ -93,7 +96,7 @@ export function createDefaultDataFile(splitWebTab: boolean = false): boolean {
   } else {
     writeSampleDataFile(dataPath, [...mainItems, ...webItems]);
   }
-  return split;
+  return { created: true, splitWebTab: split };
 }
 
 /**

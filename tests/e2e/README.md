@@ -31,7 +31,8 @@ tests/e2e/
 │   ├── empty/           # 空データテスト用
 │   ├── screenshots/     # 画面仕様書の画面イメージ撮影用（tests/screenshots/ が使う）
 │   ├── first-launch/    # 初回起動テスト用
-│   └── first-launch-fresh/  # 初回起動でデータファイルが無いとき用（settings.json だけ。お試し用のアイテムを作るのを確かめる）
+│   ├── first-launch-fresh/  # 初回起動でデータファイルが無いとき用（settings.json だけ。お試し用のアイテムを作るのを確かめる）
+│   └── first-launch-restart/  # 初回設定の途中で終了して起動し直したとき用（タブとデータファイルが前の起動で作ってある）
 └── specs/               # テスト仕様（機能別の *.spec.ts。playwright.config.ts の testDir）
 ```
 
