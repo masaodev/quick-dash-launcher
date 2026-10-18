@@ -46,6 +46,31 @@
   background-color: var(--bg-hover);
 }
 
+/* パス欄の「選択 ▾」のメニュー（変換のメニューと同じ形。項目はキーボードでも選べるよう button にする） */
+.path-picker-menu {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.path-picker-option {
+  display: block;
+  width: 100%;
+  border: none;
+  border-bottom: var(--border-light);
+  background: none;
+  font: inherit;
+  text-align: left;
+}
+
+.path-picker-option:focus-visible {
+  outline: none;
+  background-color: var(--bg-hover);
+}
+
+.path-picker-option .item-converter-option-label {
+  margin-bottom: 0;
+}
+
 .item-converter-menu-options > :last-child {
   border-bottom: none;
 }

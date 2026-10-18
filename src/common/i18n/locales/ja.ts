@@ -1524,6 +1524,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     path: 'パス',
     pathPlaceholder: 'ファイルパス、URL、またはカスタムURIを入力',
+    dirPathPlaceholder: '取り込むフォルダのパスを入力',
     itemOptions: 'オプション設定（引数・アイコン）',
     windowSwitch: {
       toggle: 'オプション設定（ウィンドウ切り替え・ウィンドウ位置）',
@@ -1721,6 +1722,19 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   iconFetch: {
     title: 'パスからアイコンを自動取得',
     button: 'アイコン取得',
+  },
+  /** 登録・編集画面のパス欄の「選択」 */
+  pathPicker: {
+    /** フォルダ取込のボタン */
+    selectFolder: 'フォルダを選択',
+    /** 単一アイテムのボタン（▾ でファイルかフォルダを選ぶ） */
+    select: '選択',
+    title: 'ファイルやフォルダを選んで、パスに入れます',
+    folderButtonTitle: '取り込むフォルダを選んで、パスに入れます',
+    file: 'ファイルを選択',
+    folder: 'フォルダを選択',
+    fileTitle: 'ファイルを選択',
+    folderTitle: 'フォルダを選択',
   },
   dataErrors: {
     jsonParseFailed: 'JSONファイルのパースに失敗しました: {{file}}',

@@ -39,6 +39,7 @@ import type {
   WindowInfo,
   VirtualDesktopInfo,
   RegisterItem,
+  ItemPathPickKind,
   IconFetchErrorRecord,
   JsonDirOptions,
   ToastOptions,
@@ -148,6 +149,8 @@ export interface ElectronAPI {
   registerItems: (items: RegisterItem[]) => Promise<void>;
   /** パスがフォルダ・ファイル・存在しないのどれかを確かめる（登録画面へのドロップ） */
   getPathKind: (filePath: string) => Promise<PathKind>;
+  /** ファイルかフォルダを選ぶダイアログを開き、選んだパスを返す（やめたら null。登録・編集画面のパス欄の「選択」） */
+  selectItemPath: (kind: ItemPathPickKind, currentPath?: string) => Promise<string | null>;
   /** 既定のブラウザの exe と表示名（取れなければ null。登録・編集画面の「変換」） */
   getDefaultBrowser: () => Promise<DefaultBrowser | null>;
   /** 拡張子（例 .md）に関連付けられたプログラムの exe と表示名（取れなければ null。登録・編集画面の「変換」） */

@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import type { ElectronApplication } from '@playwright/test';
 import { isJsonLauncherItem } from '@common/types';
 
@@ -460,6 +462,83 @@ test.describe('QuickDashLauncher - メモの折りたたみ', () => {
     await register.locator('.dir-options select').first().selectOption('2');
     await register.locator('.dir-options select').nth(1).selectOption('file');
     await expect(summary).toHaveText('2 階層・ファイルのみ');
+  });
+});
+
+/**
+ * パス欄の「選択」
+ * ネイティブのダイアログは操作できないので、メインプロセスの dialog.showOpenDialog を差し替え、
+ * 受け取った指定（フォルダかファイルか・開く場所）を控えて、決めたパスを返す
+ */
+async function stubOpenDialog(electronApp: ElectronApplication, picked: string): Promise<void> {
+  await electronApp.evaluate(({ dialog }, p) => {
+    const g = globalThis as unknown as { lastOpenDialog?: unknown };
+    dialog.showOpenDialog = (async (...args: unknown[]) => {
+      g.lastOpenDialog = args[args.length - 1];
+      return { canceled: false, filePaths: [p] };
+    }) as typeof dialog.showOpenDialog;
+  }, picked);
+}
+
+async function lastOpenDialog(
+  electronApp: ElectronApplication
+): Promise<{ properties?: string[]; defaultPath?: string }> {
+  return electronApp.evaluate(
+    () =>
+      (globalThis as unknown as { lastOpenDialog: { properties?: string[]; defaultPath?: string } })
+        .lastOpenDialog
+  );
+}
+
+test.describe('QuickDashLauncher - パス欄の選択', () => {
+  test('フォルダ取込はフォルダを選んでパスに入れ、アイコン取得・変換は出さない', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const folder = configHelper.getDataFilesDir();
+    const register = await utils.openRegisterModal(electronApp);
+    await register.locator('.register-kind select').selectOption('dir');
+
+    const pathGroup = register.locator('.path-input-group');
+    await expect(pathGroup.locator('input')).toHaveAttribute(
+      'placeholder',
+      '取り込むフォルダのパスを入力'
+    );
+    await expect(pathGroup.locator('.icon-fetch-btn')).toHaveCount(0);
+    await expect(pathGroup.locator('.item-converter-btn')).toHaveCount(0);
+
+    await stubOpenDialog(electronApp, folder);
+    await pathGroup.getByRole('button', { name: 'フォルダを選択' }).click();
+    await expect(pathGroup.locator('input')).toHaveValue(folder);
+    expect((await lastOpenDialog(electronApp)).properties).toEqual(['openDirectory']);
+
+    // 2 回目は入っているフォルダから開く
+    await pathGroup.getByRole('button', { name: 'フォルダを選択' }).click();
+    expect((await lastOpenDialog(electronApp)).defaultPath).toBe(folder);
+  });
+
+  test('単一アイテムは「選択 ▾」でファイルを選んでパスに入れる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const file = path.join(configHelper.getDataFilesDir(), 'data.json');
+    const register = await utils.openRegisterModal(electronApp);
+    const pathGroup = register.locator('.path-input-group');
+
+    await stubOpenDialog(electronApp, file);
+    await pathGroup.getByRole('button', { name: /選択/ }).click();
+    await register.getByRole('menuitem', { name: /ファイルを選択/ }).click();
+    await expect(pathGroup.locator('input')).toHaveValue(file);
+    expect((await lastOpenDialog(electronApp)).properties).toEqual(['openFile']);
+    // 単一アイテムではアイコン取得・変換も残す
+    await expect(pathGroup.locator('.icon-fetch-btn')).toBeVisible();
+    await expect(pathGroup.locator('.item-converter-btn')).toBeVisible();
   });
 });
 

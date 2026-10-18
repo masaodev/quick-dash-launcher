@@ -24,6 +24,8 @@ export const IPC_CHANNELS = {
   DELETE_DATA_FILE: 'delete-data-file',
   /** パスがフォルダ・ファイル・存在しないのどれかを確かめる（登録画面へのドロップ） */
   PATH_GET_KIND: 'path:get-kind',
+  /** ファイルかフォルダを選ぶダイアログを開く（登録・編集画面のパス欄の「選択」） */
+  PATH_SELECT: 'path:select',
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
   /** 既定のブラウザの exe と表示名（登録・編集画面の「変換」） */

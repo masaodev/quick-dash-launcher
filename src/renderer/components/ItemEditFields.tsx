@@ -13,6 +13,7 @@ import ItemWindowSwitchEditor from './ItemWindowSwitchEditor';
 import CustomIconEditor from './CustomIconEditor';
 import ItemConverterMenu from './ItemConverterMenu';
 import IconFetchButton from './IconFetchButton';
+import PathPickerButton from './PathPickerButton';
 import ClipboardItemEditor from './ClipboardItemEditor';
 import SetEntriesEditor from './SetEntriesEditor';
 
@@ -53,7 +54,8 @@ interface ItemEditFieldsProps {
   errors: ItemEditFieldErrors | undefined;
   onFieldChange: (field: keyof RegisterItem, value: ItemFieldValue) => void;
   onUpdate: (fields: Partial<RegisterItem>) => void;
-  onPathBlur: () => void;
+  /** パス欄を離れたとき。「選択」で選んだときは選んだパスを渡す */
+  onPathBlur: (pickedPath?: string) => void;
   onFetchIcon: () => void;
   /** 保存先（タブ・データファイル）の選択。省略すると出さない（ワークスペースは保存先が決まっている） */
   placement?: {
@@ -128,6 +130,12 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
     clearTimeout(flashTimerRef.current);
     flashTimerRef.current = setTimeout(() => setConvertedFlash(false), 800);
   };
+  // 選んだパスを入れ、パス欄を離れたときと同じく種別を決め直す
+  const handlePick = (pickedPath: string) => {
+    onFieldChange('path', pickedPath);
+    onPathBlur(pickedPath);
+  };
+
   // メモはあまり使わないので畳んでおく。開くかを選ぶまでは、メモが書いてあれば開く（編集でメモに気づけるように）
   const [memoOpenChoice, setMemoOpenChoice] = useState<boolean | null>(null);
   const memoOpen = memoOpenChoice ?? !!item.memo?.trim();
@@ -237,15 +245,29 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             className={(errors?.path ? 'error' : isPathReadOnly ? 'readonly' : '') + flashClass}
             onChange={(e) => onFieldChange('path', e.target.value)}
             onBlur={() => onPathBlur()}
-            placeholder={t('register.pathPlaceholder')}
-          />
-          <IconFetchButton
-            path={item.path}
-            loading={iconFetchLoading}
-            onFetch={() => onFetchIcon()}
-            itemType={item.type}
+            placeholder={
+              item.itemCategory === 'dir'
+                ? t('register.dirPathPlaceholder')
+                : t('register.pathPlaceholder')
+            }
           />
           {!isPathReadOnly && (
+            <PathPickerButton
+              mode={item.itemCategory === 'dir' ? 'folder' : 'any'}
+              currentPath={item.path}
+              onPick={handlePick}
+            />
+          )}
+          {/* フォルダ取込はアイコンを取らず変換もしない（いつも押せない）ので出さない */}
+          {item.itemCategory !== 'dir' && (
+            <IconFetchButton
+              path={item.path}
+              loading={iconFetchLoading}
+              onFetch={() => onFetchIcon()}
+              itemType={item.type}
+            />
+          )}
+          {!isPathReadOnly && item.itemCategory !== 'dir' && (
             <ItemConverterMenu path={item.path} args={item.args} onConvert={handleConvert} />
           )}
           {errors?.path && <span className="error-message">{errors.path}</span>}

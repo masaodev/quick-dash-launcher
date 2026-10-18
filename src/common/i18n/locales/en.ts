@@ -1521,6 +1521,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     path: 'Path',
     pathPlaceholder: 'Enter a file path, URL, or custom URI',
+    dirPathPlaceholder: 'Enter the path of the folder to import',
     itemOptions: 'Options (arguments, icon)',
     windowSwitch: {
       toggle: 'Options (switch to window, window position)',
@@ -1719,6 +1720,19 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   iconFetch: {
     title: 'Get the icon from the path automatically',
     button: 'Fetch icon',
+  },
+  /** 登録・編集画面のパス欄の「選択」 */
+  pathPicker: {
+    /** フォルダ取込のボタン */
+    selectFolder: 'Choose folder',
+    /** 単一アイテムのボタン（▾ でファイルかフォルダを選ぶ） */
+    select: 'Choose',
+    title: 'Choose a file or folder and put its path here',
+    folderButtonTitle: 'Choose the folder to import and put its path here',
+    file: 'Choose file',
+    folder: 'Choose folder',
+    fileTitle: 'Choose a file',
+    folderTitle: 'Choose a folder',
   },
   dataErrors: {
     jsonParseFailed: "Couldn't parse the JSON file: {{file}}",

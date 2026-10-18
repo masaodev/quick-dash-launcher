@@ -422,13 +422,15 @@
 
 /* パス入力欄横のアクションボタン（色と無効の見た目は Button の secondary） */
 .icon-fetch-btn,
-.item-converter-btn {
+.item-converter-btn,
+.path-picker-btn {
   gap: var(--spacing-xs);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.icon-fetch-emoji {
+.icon-fetch-emoji,
+.path-picker-emoji {
   font-size: var(--font-size-sm);
 }
 

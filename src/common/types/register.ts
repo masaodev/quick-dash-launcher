@@ -8,6 +8,9 @@ import type { ItemWindowSwitch, LauncherItem, SetEntry, SetLaunchMode } from './
 import type { JsonDirOptions } from './json-data';
 import type { ClipboardFormat } from './clipboard';
 
+/** 登録・編集画面のパス欄の「選択」で選ぶもの */
+export type ItemPathPickKind = 'file' | 'folder';
+
 /** 登録・編集画面のセットの行。保存する行に、画面の中だけで使う印を足したもの */
 export interface RegisterSetEntry extends SetEntry {
   /** ワークスペースのアイテム（この表示名）を、行に書いたパスに置き換えた行（画面の中だけで使い、保存しない） */

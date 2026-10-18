@@ -1,6 +1,6 @@
-import { ipcMain } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import type { JsonDirOptions, SetItemFields } from '@common/types';
+import type { ItemPathPickKind, JsonDirOptions, SetItemFields } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -8,6 +8,7 @@ import { PathManager } from '../config/pathManager.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
 import { getDefaultBrowser, getFileHandler } from '../utils/defaultBrowser.js';
+import { selectItemPath } from '../utils/itemPathDialog.js';
 import type { LoadTrigger } from '../services/loadReportService.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { loadEditableItems, saveEditableItems } from '../services/data/editableItemsStore.js';
@@ -59,6 +60,10 @@ export function setupDataHandlers(configFolder: string) {
   });
 
   ipcMain.handle(IPC_CHANNELS.PATH_GET_KIND, (_event, filePath: string) => getPathKind(filePath));
+
+  ipcMain.handle(IPC_CHANNELS.PATH_SELECT, (event, kind: ItemPathPickKind, currentPath?: string) =>
+    selectItemPath(kind, currentPath, BrowserWindow.fromWebContents(event.sender))
+  );
 
   ipcMain.handle(IPC_CHANNELS.BROWSER_GET_DEFAULT, () => getDefaultBrowser());
   ipcMain.handle(IPC_CHANNELS.FILE_GET_HANDLER, (_event, extension: string) =>
