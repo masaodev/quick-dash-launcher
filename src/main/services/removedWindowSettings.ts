@@ -63,9 +63,14 @@ async function migrateLegacyWorkspacePosition(settings: SettingsService): Promis
 }
 
 export async function migrateRemovedWindowSettings(): Promise<void> {
+  // 2 つの読み替えは別々に試す（表示位置の読み替えが失敗しても、消した設定の読み替えは進める）
+  try {
+    await migrateLegacyWorkspacePosition(await SettingsService.getInstance());
+  } catch (error) {
+    windowLogger.warn({ error }, '古いワークスペースの表示位置の読み替えに失敗しました');
+  }
   try {
     const settings = await SettingsService.getInstance();
-    await migrateLegacyWorkspacePosition(settings);
     const removed = await settings.readRemovedKeys(REMOVED_WINDOW_SETTING_KEYS);
     if (Object.keys(removed).length === 0) return;
 
@@ -79,6 +84,7 @@ export async function migrateRemovedWindowSettings(): Promise<void> {
       await ws.saveWorkspaceWindowState({ open: true, pinLevel: 1 });
       windowLogger.info('古い設定を読み替え: ワークスペースを開いた状態（表示固定）にしました');
     }
+    // 読み替えをすべて保存できたときだけ消す（失敗したら次の起動でやり直す）
     await settings.deleteRemovedKeys(REMOVED_WINDOW_SETTING_KEYS);
   } catch (error) {
     windowLogger.warn({ error }, '古いウィンドウ設定の読み替えに失敗しました');
