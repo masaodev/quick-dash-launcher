@@ -581,6 +581,14 @@ export function closeAllDetachedGroupWindows(): void {
 }
 
 /**
+ * そのグループの切り離しウィンドウが開いているか
+ */
+export function hasDetachedGroupWindow(groupId: string): boolean {
+  const win = detachedWindows.get(groupId);
+  return win !== undefined && !win.isDestroyed();
+}
+
+/**
  * webContents.id からグループIDを逆引きする
  */
 export function getGroupIdByWebContentsId(id: number): string | undefined {
