@@ -376,6 +376,10 @@ export function getWorkspaceAlwaysOnTop(): boolean {
 /**
  * ピン留めしたワークスペースを、フォーカスを奪わずに手前へ出す（ホットキーでメインウィンドウを出すとき）
  */
+/**
+ * ピン留めしたワークスペースを、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+ * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
+ */
 export function bringPinnedWorkspaceToFront(): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
   if (workspacePinLevel === 0 || !workspaceWindow.isVisible()) return;

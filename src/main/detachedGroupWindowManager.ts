@@ -536,8 +536,8 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
 }
 
 /**
- * すべての切り離しウィンドウを再表示する（フォーカスを奪わない）
- * ピンモード 1以上のウィンドウは既に表示されているためmoveTopのみ
+ * ピン留めしていない切り離しウィンドウを再表示する（フォーカスを奪わない）
+ * ピン留めしたものは出たままなので触らない（手前に出すのは bringPinnedDetachedToFront）
  * @param options.placeOnMainWindowDisplay true なら、ピン留めしていないウィンドウを表示する前にメインウィンドウと同じディスプレイへ移す
  */
 export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay?: boolean }): {
@@ -551,12 +551,22 @@ export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay
           placeOnMainWindowDisplay(groupId, win);
         }
         showWithoutFocus(win);
-      } else {
-        win.moveTop();
       }
     }
   }
   return { success: true };
+}
+
+/**
+ * ピン留めした切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+ * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
+ */
+export function bringPinnedDetachedToFront(): void {
+  for (const [groupId, win] of detachedWindows.entries()) {
+    if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) !== 0 && win.isVisible()) {
+      win.moveTop();
+    }
+  }
 }
 
 /**
