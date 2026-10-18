@@ -713,10 +713,9 @@ function App(): React.ReactElement {
           onKeyDown={handleKeyDown}
           searchMode={searchMode}
           onToggleSearchMode={handleToggleSearchMode}
-          onRefreshWindows={handleRefreshWindows}
-          onReloadData={handleReloadItems}
         />
         <LauncherActionButtons
+          searchMode={searchMode}
           onReload={handleReloadItems}
           onFetchMissingIcons={handleFetchMissingIcons}
           onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}

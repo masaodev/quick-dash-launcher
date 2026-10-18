@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { PinLevel } from '@common/types';
+import type { PinLevel, SearchMode } from '@common/types';
 
 import LauncherSettingsDropdown from './LauncherSettingsDropdown';
 import LauncherRefreshActionsDropdown from './LauncherRefreshActionsDropdown';
@@ -8,6 +8,8 @@ import LauncherRegisterDropdown from './LauncherRegisterDropdown';
 import PinButton from './PinButton';
 
 interface ActionButtonsProps {
+  /** 今の検索モード（🔄 メニューに F5 を添えるのは通常モードだけ） */
+  searchMode: SearchMode;
   onReload: () => void;
   onFetchMissingIcons: () => void;
   onFetchMissingIconsCurrentTab: () => void;
@@ -24,6 +26,7 @@ interface ActionButtonsProps {
 }
 
 const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
+  searchMode,
   onReload,
   onFetchMissingIcons,
   onFetchMissingIconsCurrentTab,
@@ -45,6 +48,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <div className="action-buttons">
       <LauncherRefreshActionsDropdown
+        showReloadKey={searchMode === 'normal'}
         onReload={onReload}
         onFetchMissingIcons={onFetchMissingIcons}
         onFetchMissingIconsCurrentTab={onFetchMissingIconsCurrentTab}

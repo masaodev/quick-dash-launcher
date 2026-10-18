@@ -14,13 +14,17 @@ interface SearchBoxProps {
   onKeyDown: (e: KeyboardEvent) => void;
   searchMode?: SearchMode;
   onToggleSearchMode?: () => void;
-  onRefreshWindows?: () => void;
-  onReloadData?: () => void;
 }
 
 const SEARCH_MODE_LABEL_KEYS = {
   normal: 'launcher.search.modeNormal',
   window: 'launcher.search.modeWindow',
+} as const satisfies Record<SearchMode, string>;
+
+// 切り替え先の名前で書く（今のモードは左のバッジで分かる）
+const SEARCH_MODE_TOGGLE_KEYS = {
+  normal: 'launcher.search.toWindowSearch',
+  window: 'launcher.search.toNormalSearch',
 } as const satisfies Record<SearchMode, string>;
 
 const SEARCH_MODE_PLACEHOLDER_KEYS = {
@@ -34,7 +38,7 @@ const SEARCH_MODE_ICONS = {
   window: '🪟',
 } as const satisfies Record<SearchMode, string>;
 
-/** 「キー:説明」の組（狭いときは組の途中で折り返さず、組ごとに次の行へ回す） */
+/** 「キー:説明」の組（狭いときも組の途中で折り返さない） */
 function KeyHint({
   keyName,
   label,
@@ -55,18 +59,7 @@ function KeyHint({
 }
 
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
-  (
-    {
-      value,
-      onChange,
-      onKeyDown,
-      searchMode = 'normal',
-      onToggleSearchMode,
-      onRefreshWindows,
-      onReloadData,
-    },
-    ref
-  ) => {
+  ({ value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode }, ref) => {
     const { t } = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -77,59 +70,46 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
       inputRef.current?.focus();
     };
 
+    // 検索欄とモードの行を並べて返す。モードの行はヘッダーの 2 段目に回り、右のボタンの下まで使う（Header.css）
     return (
-      <div className="search-box-wrapper">
-        <div className="search-box-container">
-          <span className="search-mode-icon" aria-hidden="true" data-testid="search-mode-icon">
-            {SEARCH_MODE_ICONS[searchMode]}
-          </span>
-          <input
-            ref={inputRef}
-            type="text"
-            className="search-box"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={t(SEARCH_MODE_PLACEHOLDER_KEYS[searchMode])}
-            autoFocus
-          />
-          {value && (
-            <button
-              className="close-btn close-btn-sm search-clear-button"
-              onClick={handleClear}
-              type="button"
-              aria-label={t('launcher.search.clear')}
-            >
-              ×
-            </button>
-          )}
+      <>
+        <div className="search-box-wrapper">
+          <div className="search-box-container">
+            <span className="search-mode-icon" aria-hidden="true" data-testid="search-mode-icon">
+              {SEARCH_MODE_ICONS[searchMode]}
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              className="search-box"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder={t(SEARCH_MODE_PLACEHOLDER_KEYS[searchMode])}
+              autoFocus
+            />
+            {value && (
+              <button
+                className="close-btn close-btn-sm search-clear-button"
+                onClick={handleClear}
+                type="button"
+                aria-label={t('launcher.search.clear')}
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="search-mode-indicator">
           <span className="search-mode-label">{t(SEARCH_MODE_LABEL_KEYS[searchMode])}</span>
-          <span className="search-mode-hints">
-            {searchMode === 'window' && onRefreshWindows && (
-              <KeyHint
-                keyName="F5"
-                label={t('launcher.search.refreshWindows')}
-                onClick={onRefreshWindows}
-              />
-            )}
-            {searchMode === 'normal' && onReloadData && (
-              <KeyHint
-                keyName="F5"
-                label={t('launcher.search.reloadData')}
-                onClick={onReloadData}
-              />
-            )}
-            <KeyHint
-              keyName="Shift+Tab"
-              label={t('launcher.search.toggleMode')}
-              onClick={onToggleSearchMode}
-            />
-          </span>
+          <KeyHint
+            keyName="Shift+Tab"
+            label={t(SEARCH_MODE_TOGGLE_KEYS[searchMode])}
+            onClick={onToggleSearchMode}
+          />
         </div>
-      </div>
+      </>
     );
   }
 );

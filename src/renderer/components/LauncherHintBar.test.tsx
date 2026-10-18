@@ -30,9 +30,9 @@ describe('LauncherHintBar', () => {
     const { rerender } = render(
       <LauncherHintBar searchMode="window" canSwitchDataFileTab canMoveToDesktop={false} />
     );
-    expect(hintTexts()).toEqual(['Ctrl+D', 'Ctrl+P', 'Shift+↑/↓']);
+    expect(hintTexts()).toEqual(['Ctrl+D', 'Ctrl+P', 'Shift+↑/↓', 'F5']);
     rerender(<LauncherHintBar searchMode="window" canSwitchDataFileTab canMoveToDesktop />);
-    expect(hintTexts()).toEqual(['Ctrl+D', 'Ctrl+P', 'Shift+↑/↓', 'Ctrl+←/→']);
+    expect(hintTexts()).toEqual(['Ctrl+D', 'Ctrl+P', 'Shift+↑/↓', 'F5', 'Ctrl+←/→']);
   });
   it('ウィンドウ検索で選んでいるときは、選んだものへの操作と Esc を出す', () => {
     render(
@@ -57,7 +57,7 @@ describe('LauncherHintBar', () => {
         canPinWindow={false}
       />
     );
-    expect(hintTexts()).toEqual(['Ctrl+D', 'Shift+↑/↓']);
+    expect(hintTexts()).toEqual(['Ctrl+D', 'Shift+↑/↓', 'F5']);
     rerender(
       <LauncherHintBar
         searchMode="window"
