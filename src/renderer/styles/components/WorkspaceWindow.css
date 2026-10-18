@@ -837,7 +837,7 @@ html:has(.workspace-window.background-transparent) {
    （overflow: auto だと -webkit-app-region: drag が機能しない Chromium バグの回避も兼ねる） */
 .detached-group-window .workspace-item-list {
   overflow: visible;
-  padding: 32px var(--spacing-sm) var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   -webkit-app-region: drag;
   position: relative;
 }
@@ -847,17 +847,27 @@ html:has(.workspace-window.background-transparent) {
   -webkit-app-region: no-drag;
 }
 
-/* --- 切り離しウィンドウコントロールバー --- */
+/* 切り離したグループの見出しはウィンドウを掴む場所（掴んで動かすとウィンドウが動く）。右端は 📌・× の分を空ける */
+.detached-group-window .workspace-group-header-handle {
+  padding-right: 64px;
+}
+
+/* 切り離しウィンドウでは件数を出さない */
+.detached-group-window .workspace-group-badge {
+  display: none;
+}
+
+/* --- 切り離しウィンドウコントロールバー（一番上の見出しの右端に重ねる） --- */
 
 .detached-window-controls {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 8px;
+  right: 14px;
   z-index: 10000;
   display: flex;
   gap: 4px;
   -webkit-app-region: no-drag;
-  /* ウィンドウの上端・右端から 4px の所に置くので、▲ がウィンドウの外で欠けないようにはみ出しを抑える */
+  /* 一番上の見出しの右端に重ねるので、▲ のはみ出しを抑えて見出しに収める */
   --pin-badge-offset: -3px;
 }
 

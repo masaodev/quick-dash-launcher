@@ -363,6 +363,8 @@ export async function createDetachedGroupWindow(
     minHeight: 40,
     frame: false,
     resizable: true,
+    // 掴む領域（一覧のすき間）のダブルクリックで最大化しないように
+    maximizable: false,
     transparent: true,
     alwaysOnTop: savedPinMode === 2,
     show: false,
@@ -626,6 +628,14 @@ export function closeAllDetachedGroupWindows(): void {
   }
   detachedWindows.clear();
   webContentsIdToGroupId.clear();
+}
+
+/**
+ * そのグループの切り離しウィンドウが開いているか
+ */
+export function hasDetachedGroupWindow(groupId: string): boolean {
+  const win = detachedWindows.get(groupId);
+  return win !== undefined && !win.isDestroyed();
 }
 
 /**

@@ -5,7 +5,15 @@
  * 画面: 右クリックメニュー
  * 画面仕様: docs/screens/context-menu.md
  */
-import { ipcMain, BrowserWindow, Menu, MenuItem, IpcMainInvokeEvent, WebContents } from 'electron';
+import {
+  ipcMain,
+  screen,
+  BrowserWindow,
+  Menu,
+  MenuItem,
+  IpcMainInvokeEvent,
+  WebContents,
+} from 'electron';
 import type {
   AppItem,
   Workspace,
@@ -21,6 +29,12 @@ import { isLauncherItem, isSetItem } from '@common/types/guards';
 import { mainI18n } from '../services/mainI18n.js';
 import { rerecordSetPositions } from '../services/launch/setRerecord.js';
 import { getMainWindow, showMainWindow } from '../windowManager.js';
+import {
+  closeDetachedGroupWindow,
+  createDetachedGroupWindow,
+  getGroupIdByWebContentsId,
+  hasDetachedGroupWindow,
+} from '../detachedGroupWindowManager.js';
 
 /** メニューの文言（開くたびに作るので、今の表示言語になる） */
 const t = mainI18n.t.bind(mainI18n);
@@ -378,6 +392,31 @@ function setupWorkspaceContextMenuHandler(): void {
   );
 }
 
+/**
+ * 切り離しの項目を作る。ワークスペースでは「切り離す」（切り離し済みなら「表示」）、
+ * 切り離しウィンドウでは一番上のグループだけ「ワークスペースに戻す」（× と同じ）。
+ */
+function buildDetachMenuItem(sender: WebContents, groupId: string): MenuItem | null {
+  const detachedGroupId = getGroupIdByWebContentsId(sender.id);
+  if (detachedGroupId !== undefined) {
+    if (detachedGroupId !== groupId) return null;
+    return new MenuItem({
+      label: t('menu.workspaceGroup.reattach'),
+      click: () => closeDetachedGroupWindow(groupId),
+    });
+  }
+  return new MenuItem({
+    label: hasDetachedGroupWindow(groupId)
+      ? t('menu.workspaceGroup.showDetached')
+      : t('menu.workspaceGroup.detach'),
+    click: () => {
+      // メニューを選んだ位置の近くに出す（ドラッグで切り離すときと同じ）
+      const cursor = screen.getCursorScreenPoint();
+      void createDetachedGroupWindow(groupId, cursor.x, cursor.y);
+    },
+  });
+}
+
 /** WorkspaceGroupContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceGroupContextMenuHandler(): void {
   ipcMain.handle(
@@ -427,6 +466,12 @@ function setupWorkspaceGroupContextMenuHandler(): void {
         );
         menu.popup({ window: senderWindow });
         return;
+      }
+
+      const detachItem = buildDetachMenuItem(event.sender, group.id);
+      if (detachItem) {
+        menu.append(detachItem);
+        menu.append(createSeparator());
       }
 
       if (canAddSubgroup) {
