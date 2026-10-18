@@ -99,8 +99,9 @@ export const ja = {
       noMatchWindowHint: 'Shift+Tab で通常の検索に戻ります',
       noMatchWindowNormalHint:
         '通常の検索には合うアイテムがあります。Shift+Tab で通常の検索に戻ります',
-      otherTabsHaveItems: '他のタブに合うアイテムがあります。Tab でタブを切り替えられます',
-      otherTabsHaveWindows: '他のタブに合うウィンドウがあります。Tab でタブを切り替えられます',
+      otherTabsHaveItems: '他のタブに合うアイテムがあります。',
+      otherTabsHaveWindows: '他のタブに合うウィンドウがあります。',
+      switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
       add: '📄 アイテムを追加…',
     },

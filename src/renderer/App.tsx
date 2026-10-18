@@ -447,7 +447,7 @@ function App(): React.ReactElement {
     else void windowOps.closeWindows(targets);
   };
 
-  const { handleKeyDown } = useKeyboardShortcuts({
+  const { handleKeyDown, switchToNextTab } = useKeyboardShortcuts({
     showDataFileTabs,
     activeTab,
     dataFileTabs,
@@ -782,6 +782,10 @@ function App(): React.ReactElement {
               : null
         }
         onAddItem={() => void openRegisterWindow()}
+        onSwitchTab={() => {
+          switchToNextTab();
+          searchInputRef.current?.focus();
+        }}
         selectedIndex={selectedIndex}
         onItemExecute={handleExecuteItem}
         onItemSelect={setSelectedIndex}

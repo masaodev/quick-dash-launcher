@@ -33,6 +33,8 @@ interface ItemListProps {
   emptyState?: LauncherEmptyState | null;
   /** 空のタブと、どこにも合わないときの案内の「アイテムを追加…」 */
   onAddItem?: () => void;
+  /** 他のタブにあるときの案内の「Tab:タブを切り替える」（Tab キーと同じ動き） */
+  onSwitchTab?: () => void;
   /** 右クリックの固定・固定解除（pin: true で固定） */
   onPinWindows?: (wins: WindowInfo[], pin: boolean) => Promise<void>;
   /** 右クリックの仮想デスクトップへの移動 */
@@ -104,6 +106,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   nameOfItem,
   emptyState,
   onAddItem,
+  onSwitchTab,
 }) => {
   const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
@@ -377,6 +380,15 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 </p>
                 <p className="item-list-empty-hint">
                   {t(noMatchKeys(emptyState.windowMode, emptyState.elsewhere).hint)}
+                  {/* 他のタブにあるときは、押すと Tab キーと同じく次のタブへ切り替えるリンクを添える */}
+                  {emptyState.elsewhere === 'otherTab' && onSwitchTab && (
+                    <span className="item-list-empty-key-hint">
+                      Tab:
+                      <button type="button" className="item-list-empty-link" onClick={onSwitchTab}>
+                        {t('launcher.empty.switchTab')}
+                      </button>
+                    </span>
+                  )}
                 </p>
                 {/* 通常の検索でどこにも合わないときは、そのまま登録へ進めるようにする */}
                 {!emptyState.windowMode && emptyState.elsewhere === null && onAddItem && (

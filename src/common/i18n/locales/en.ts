@@ -97,8 +97,9 @@ export const en: LocaleMessages = {
       noMatchWindowHint: 'Shift+Tab returns to normal search',
       noMatchWindowNormalHint:
         'Normal search has matching items. Shift+Tab returns to normal search',
-      otherTabsHaveItems: 'Other tabs have matching items. Press Tab to switch tabs',
-      otherTabsHaveWindows: 'Other tabs have matching windows. Press Tab to switch tabs',
+      otherTabsHaveItems: 'Other tabs have matching items.',
+      otherTabsHaveWindows: 'Other tabs have matching windows.',
+      switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
       add: '📄 Add item…',
     },

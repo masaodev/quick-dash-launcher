@@ -223,7 +223,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await utils.searchFor('Reddit');
       await expect(empty).toContainText('「Reddit」に合うアイテムはこのタブにはありません');
       await expect(empty).toContainText('他のタブに合うアイテムがあります');
-      await expect(empty.getByRole('button')).toHaveCount(0);
+      await expect(empty.getByRole('button', { name: /アイテムを追加/ })).toHaveCount(0);
       // タブは自動で切り替えない
       await expect(mainWindow.locator('.tab-button.active', { hasText: 'メイン' })).toBeVisible();
     });
@@ -233,6 +233,16 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await expect(empty).toContainText('「どこにもない検索語」に合うアイテムはありません');
       await expect(empty).toContainText('Shift+Tab でウィンドウ検索に切り替えます');
       await expect(empty.getByRole('button', { name: /アイテムを追加/ })).toBeVisible();
+      await expect(empty.getByRole('button', { name: 'タブを切り替える' })).toHaveCount(0);
+    });
+
+    await test.step('「タブを切り替える」を押すと、合うアイテムのあるタブへ切り替わる', async () => {
+      await utils.searchFor('Reddit');
+      await empty.getByRole('button', { name: 'タブを切り替える' }).click();
+      await expect(mainWindow.locator('.tab-button.active', { hasText: 'サブ1' })).toBeVisible();
+      await expect(mainWindow.locator('.item', { hasText: 'Reddit' })).toBeVisible();
+      // 続けて打てるように検索欄へフォーカスを戻す
+      await expect(mainWindow.locator('input[type="text"]').first()).toBeFocused();
     });
   });
 

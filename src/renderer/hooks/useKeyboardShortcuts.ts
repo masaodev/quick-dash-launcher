@@ -45,6 +45,8 @@ export interface UseKeyboardShortcutsParams {
 
 export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
   handleKeyDown: (e: React.KeyboardEvent) => Promise<void>;
+  /** 次のタブへ切り替える（Tab キーと同じ動き） */
+  switchToNextTab: () => void;
 } {
   const { t } = useTranslation();
   const {
@@ -114,6 +116,47 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     return currentIndex;
   }
 
+  /** Tab で切り替えられるタブがあるか */
+  function canSwitchTab(): boolean {
+    return searchMode === 'window' ? desktopCount > 1 : showDataFileTabs && dataFileTabs.length > 1;
+  }
+
+  /**
+   * 次のタブへ切り替える（Tab キーと、一覧が空のときの案内のリンク）。
+   * 検索中は合うものがあるタブまで飛ばす
+   */
+  function switchToNextTab(): void {
+    if (!canSwitchTab()) return;
+
+    if (searchMode === 'normal') {
+      const currentTabIndex = dataFileTabs.findIndex((tab) => tab.files.includes(activeTab));
+
+      const newTabIndex = findNextIndex(dataFileTabs.length, currentTabIndex, (i) => {
+        if (!searchQuery) return true;
+        const tabItems = mainItems.filter(
+          (item) => !isWindowInfo(item) && dataFileTabs[i].files.includes(item.sourceFile || '')
+        );
+        return filterItems(tabItems, searchQuery).length > 0;
+      });
+      setActiveTab(dataFileTabs[newTabIndex].files[0]);
+      setSelectedIndex(0);
+      return;
+    }
+
+    const tabIds = buildDesktopTabIds();
+    const currentIndex = tabIds.indexOf(activeDesktopTab);
+
+    const filteredWindows = searchQuery
+      ? (filterItems(windowList, searchQuery, 'window') as WindowInfo[])
+      : null;
+    const nextIndex = findNextIndex(tabIds.length, currentIndex, (i) => {
+      if (!filteredWindows) return true;
+      return filterWindowsByDesktopTab(filteredWindows, tabIds[i]).length > 0;
+    });
+    setActiveDesktopTab(tabIds[nextIndex]);
+    setSelectedIndex(0);
+  }
+
   async function handleKeyDown(e: React.KeyboardEvent): Promise<void> {
     // 2 つ以上を閉じる前の確認の帯: Enter で閉じる、Esc でやめる。ほかのキーは通常どおり
     const pendingClose = windowSelection.pendingClose;
@@ -170,42 +213,11 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       return;
     }
 
-    // Tab: タブ切り替え（通常モード時）
-    if (e.key === 'Tab' && searchMode === 'normal' && showDataFileTabs && dataFileTabs.length > 1) {
+    // Tab: タブ切り替え（通常モードはデータファイルのタブ、ウィンドウ検索はデスクトップのタブ）
+    if (e.key === 'Tab' && canSwitchTab()) {
       e.preventDefault();
       e.stopPropagation();
-
-      const currentTabIndex = dataFileTabs.findIndex((tab) => tab.files.includes(activeTab));
-
-      const newTabIndex = findNextIndex(dataFileTabs.length, currentTabIndex, (i) => {
-        if (!searchQuery) return true;
-        const tabItems = mainItems.filter(
-          (item) => !isWindowInfo(item) && dataFileTabs[i].files.includes(item.sourceFile || '')
-        );
-        return filterItems(tabItems, searchQuery).length > 0;
-      });
-      setActiveTab(dataFileTabs[newTabIndex].files[0]);
-      setSelectedIndex(0);
-      return;
-    }
-
-    // Tab: デスクトップタブ切り替え（ウィンドウモード時）
-    if (e.key === 'Tab' && searchMode === 'window' && desktopCount > 1) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const tabIds = buildDesktopTabIds();
-      const currentIndex = tabIds.indexOf(activeDesktopTab);
-
-      const filteredWindows = searchQuery
-        ? (filterItems(windowList, searchQuery, 'window') as WindowInfo[])
-        : null;
-      const nextIndex = findNextIndex(tabIds.length, currentIndex, (i) => {
-        if (!filteredWindows) return true;
-        return filterWindowsByDesktopTab(filteredWindows, tabIds[i]).length > 0;
-      });
-      setActiveDesktopTab(tabIds[nextIndex]);
-      setSelectedIndex(0);
+      switchToNextTab();
       return;
     }
 
@@ -371,5 +383,5 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     }
   }
 
-  return { handleKeyDown };
+  return { handleKeyDown, switchToNextTab };
 }
