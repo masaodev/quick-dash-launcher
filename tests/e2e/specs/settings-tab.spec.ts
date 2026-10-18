@@ -310,7 +310,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         expect(settings.windowPositionMode).toBe('cursor');
       });
 
-      await test.step('最後に動かした場所を選択できる', async () => {
+      await test.step('最後に置いた場所を選択できる', async () => {
         await positionSelect.selectOption('fixed');
         await adminUtils.wait(200);
 

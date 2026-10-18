@@ -211,6 +211,12 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | `hideDetachedWithMainWindow: false` | 開いている切り離しウィンドウのうち、ピン留めしていないものを表示固定にする |
 | それ以外 | 読み替えない（消すだけ） |
 
+v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版は読まずに捨て、新しい版へ上げ直しても戻らない）。前の版に戻すことには対応しない。
+
+- ワークスペースが開いているか・📌 の段階（`workspace-ui-state.json` の `workspaceWindow`。上げ直すと既定の「閉じていて表示固定」になる）
+- 切り離しウィンドウの位置の基準（`workspace-ui-state.json` の `anchor`。上げ直すと今の位置から求め直す）
+- 読み替えで消した `autoShowWorkspace`・`hideDetachedWithMainWindow`（前の版では既定値で動く）
+
 同じ起動時の処理で、`workspacePositionMode` の古い値 `primaryLeft`・`primaryRight` も `displayLeft`・`displayRight` に読み替え、`workspaceTargetDisplayIndex` をプライマリディスプレイの番号にする（古い値のままだと、設定画面でディスプレイを選んでも効かないため。`planLegacyWorkspacePosition()`）。
 
 ### 3.9. 旧グループの開き方（削除した設定）

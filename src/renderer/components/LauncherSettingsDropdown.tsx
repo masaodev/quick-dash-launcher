@@ -40,7 +40,7 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
       <button
-        className="action-btn"
+        className={`action-btn ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         title={t('launcher.settingsMenu.title')}
       >
