@@ -69,45 +69,16 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       expect(main.workspaces[0].id).not.toBe('default');
     });
 
-    await test.step('参照（workspaceId / groupId / parentGroupId / archivedGroupId）が解決できる', async () => {
-      const wsId = main.workspaces[0].id;
-      const groupIds = new Set(main.groups.map((g) => g.id));
-      expect(main.groups.every((g) => g.workspaceId === wsId)).toBe(true);
-      expect(main.items.every((i) => i.workspaceId === wsId)).toBe(true);
-      expect(main.items.every((i) => i.groupId === undefined || groupIds.has(i.groupId))).toBe(
-        true
-      );
-      const sub = main.groups.find((g) => g.displayName === 'サブ')!;
-      expect(sub.parentGroupId).toBe(main.groups.find((g) => g.displayName === '開発')!.id);
-      const archiveGroupIds = new Set(archive.groups.map((g) => g.id));
-      expect(archive.items.every((i) => archiveGroupIds.has(i.archivedGroupId))).toBe(true);
-    });
-
-    await test.step('アイテムがデータファイルと同じ語彙になり、廃止フィールドが消える', async () => {
+    // 変換の細部（参照の付け替え・語彙・色・UI 状態の中身）は単体（workspaceMigration.test.ts・
+    // WorkspaceFileStore.test.ts）が確かめている。ここでは起動時に続けて走る変換（2.0 →
+    // セット → パスの無い単一アイテム）を通った結果の種別と、廃止フィールドが残らないことを見る
+    await test.step('各アイテムが今の種別になり、廃止フィールドが消える', async () => {
       const byName = (name: string) => main.items.find((i) => i.displayName === name)!;
       expect(byName('GitHub')).toMatchObject({ type: 'item', path: 'https://github.com/' });
-      // 旧ウィンドウ操作は、2.0 へ移した後にパスの無い単一アイテムになる
-      expect(byName('Chrome を左へ')).toMatchObject({
-        type: 'item',
-        path: '',
-        window: { processName: 'chrome.exe', title: '*Google Chrome' },
-        placement: { x: 0, y: 0, width: 1280, height: 1400 },
-      });
-      expect(byName('クリップ')).toMatchObject({
-        type: 'clipboard',
-        dataFileRef: 'clipboard-data/abc.json',
-        formats: ['text'],
-      });
-      // 2.0 へ移した後、旧ウィンドウ配置はセットに変換される（座標の無いエントリは位置を持たない）
-      expect(byName('配置')).toMatchObject({
-        type: 'set',
-        launchMode: 'parallel',
-        // 旧ウィンドウ配置のタイトルは行の名前（label）として引き継ぐ
-        entries: [{ label: 'a', window: { title: '*a*' } }],
-      });
+      expect(byName('Chrome を左へ')).toMatchObject({ type: 'item', path: '' });
+      expect(byName('クリップ')).toMatchObject({ type: 'clipboard' });
+      expect(byName('配置')).toMatchObject({ type: 'set' });
 
-      // 旧形式のアイテム直下の label は消える（セットの行の label は別物）
-      expect(main.items.every((i) => !('label' in i))).toBe(true);
       const raw = JSON.stringify(main);
       for (const legacy of [
         'originalName',
@@ -122,22 +93,10 @@ test.describe('QuickDashLauncher - ワークスペースファイルの 2.0 移�
       }
     });
 
-    await test.step('色がトークンになる', async () => {
-      expect(main.groups.find((g) => g.displayName === '開発')!.color).toBe('primary');
-      expect(main.groups.find((g) => g.displayName === 'サブ')!.color).toBe('teal');
-      expect(archive.groups[0].color).toBe('orange');
-    });
-
     await test.step('折りたたみと切り離し状態が workspace-ui-state.json に移り、detached が消える', async () => {
       const dev = main.groups.find((g) => g.displayName === '開発')!;
-      const sub = main.groups.find((g) => g.displayName === 'サブ')!;
       expect(uiState.collapsedGroups).toEqual({ [dev.id]: true });
-      // 起動時に切り離しウィンドウを開き直すので、位置の基準（anchor）も足される
-      expect(uiState.detachedWindows[dev.id]).toMatchObject({
-        collapsedStates: { [dev.id]: false, [sub.id]: true },
-        bounds: { x: 10, y: 20, width: 300, height: 400 },
-        pinMode: 1,
-      });
+      expect(uiState.detachedWindows[dev.id]).toBeDefined();
       expect(fs.existsSync(path.join(configDir, 'workspace-detached.json'))).toBe(false);
     });
 
