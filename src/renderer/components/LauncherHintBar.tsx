@@ -2,8 +2,9 @@
  * メインウィンドウ下部の操作ヒント
  *
  * 検索モードごとに、画面上のボタン・表示からは気づきにくいキー操作だけを 1 行で出す
- * （Enter・↑↓・Esc のような自明なキー、検索ボックス下にある Shift+Tab・F5、
- * ⚙️ メニューに添えてある Ctrl+E、⭐ ボタンのツールチップに添えてある Ctrl+W は出さない）。
+ * （Enter・↑↓・Esc のような自明なキー、検索ボックス下にある Shift+Tab、
+ * ⚙️ メニューに添えてある Ctrl+E、⭐ ボタンのツールチップに添えてある Ctrl+W、
+ * 🔄 メニューに添えてある通常モードの F5 は出さない）。
  * 幅が足りないときは折り返さず、右側を「…」で省略するので、大事なキーほど左に、
  * 条件つきで出るキーは末尾に置く。
  * 設定「操作のヒントを表示」（showKeyboardHints）がオフなら出さない（呼び出し側で判定）
@@ -64,6 +65,7 @@ const LauncherHintBar: React.FC<LauncherHintBarProps> = ({
               ? [{ keys: 'Ctrl+P', label: t('launcher.hints.showOnAllDesktops') }]
               : []),
             { keys: 'Shift+↑/↓', label: t('launcher.hints.selectMultiple') },
+            { keys: 'F5', label: t('launcher.hints.refreshWindows') },
             ...(canMoveToDesktop ? [moveToDesktopHint] : []),
           ]
         : [

@@ -1,11 +1,12 @@
-/* ヘッダー関連のスタイル */
+/* ヘッダー関連のスタイル。1 段目＝検索欄・ボタン・ドラッグハンドル、2 段目＝検索モードの行（横幅いっぱい） */
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   padding: var(--spacing-sm);
   background-color: var(--mode-tint);
   border-bottom: var(--border-light);
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs) var(--spacing-sm);
   -webkit-app-region: drag;
 }
 
@@ -29,9 +30,6 @@
 .search-box-wrapper {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
 }
 
 .search-box-container {
@@ -92,12 +90,14 @@
   background-color: var(--mode-accent-solid);
 }
 
+/* 検索モードの行。ヘッダーの 2 段目に回して右のボタンの下まで使い、狭くても 1 行に収める */
 .search-mode-indicator {
+  order: 1;
+  flex-basis: 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-size-xs);
   color: var(--text-muted);
   padding-left: var(--spacing-sm);
@@ -120,17 +120,6 @@
 .app.search-mode-window .search-mode-label {
   background-color: var(--mode-accent-solid);
   color: var(--color-white);
-}
-
-/* 「キー:説明」の組を右寄せで並べ、幅が足りないときは組ごとに折り返す（モード名の下に回ることもある） */
-.search-mode-hints {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 2px 1em;
-  min-width: 0;
-  margin-left: auto;
-  line-height: 1.3;
 }
 
 .search-mode-hint {
