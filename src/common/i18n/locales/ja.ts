@@ -1723,6 +1723,34 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     title: 'パスからアイコンを自動取得',
     button: 'アイコン取得',
   },
+  /** 登録・編集画面のフォルダ取込の「取り込まれるもの」（プレビュー） */
+  dirPreview: {
+    title: '取り込まれるもの',
+    run: 'プレビュー',
+    runTitle: 'フォルダを読んで、取り込まれるものを確かめます',
+    cancel: '中止',
+    scanning: '数えています…',
+    count_one: '{{count}} 件を取り込みます',
+    count_other: '{{count}} 件を取り込みます',
+    countTruncated_one: '{{count}} 件以上を取り込みます',
+    countTruncated_other: '{{count}} 件以上を取り込みます',
+    more_one: 'ほか {{count}} 件',
+    more_other: 'ほか {{count}} 件',
+    moreTruncated_one: 'ほか {{count}} 件以上',
+    moreTruncated_other: 'ほか {{count}} 件以上',
+    idle: '「🔍 プレビュー」を押すと、取り込まれるものを確かめられます',
+    idleHint: 'フォルダを読むのは押したときだけです',
+    noPath: 'フォルダを選んでから「🔍 プレビュー」を押してください',
+    stale: '条件を変えました。「🔍 プレビュー」を押すと今の条件で数え直します',
+    empty: '取り込めるものがありません',
+    emptyFilter: 'ファイル名の条件 {{filter}} に合うものがありません',
+    emptyHint: '条件を見直して、もう一度「🔍 プレビュー」を押してください',
+    notFound:
+      'フォルダが見つかりません（ネットワークのフォルダなら、つながっているか確かめてください）',
+    notFolder: 'パスがフォルダではありません',
+    timeout: '{{seconds}} 秒たっても読み終わらなかったので、やめました',
+    cancelled: 'プレビューをやめました',
+  },
   /** 登録・編集画面のパス欄の「選択」 */
   pathPicker: {
     /** フォルダ取込のボタン */

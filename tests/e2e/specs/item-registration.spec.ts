@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 
 import type { ElectronApplication } from '@playwright/test';
@@ -539,6 +540,67 @@ test.describe('QuickDashLauncher - パス欄の選択', () => {
     // 単一アイテムではアイコン取得・変換も残す
     await expect(pathGroup.locator('.icon-fetch-btn')).toBeVisible();
     await expect(pathGroup.locator('.item-converter-btn')).toBeVisible();
+  });
+});
+
+/**
+ * フォルダ取込のプレビュー
+ * - フォルダを読むのは「🔍 プレビュー」を押したときだけ
+ * - 頭・後ろに付ける文字はその場で反映し、階層などを変えたら数え直しを促す
+ */
+test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => {
+  test('押したときだけ走査し、条件を変えたら数え直しを促す', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const folder = path.join(configHelper.getConfigDir(), 'e2e-preview');
+    fs.mkdirSync(path.join(folder, 'sub'), { recursive: true });
+    fs.writeFileSync(path.join(folder, 'a.txt'), '');
+    fs.writeFileSync(path.join(folder, 'b.txt'), '');
+    fs.writeFileSync(path.join(folder, 'sub', 'c.txt'), '');
+
+    const register = await utils.openRegisterModal(electronApp);
+    await register.locator('.register-kind select').selectOption('dir');
+    const preview = register.getByTestId('dir-preview');
+    const runButton = preview.getByRole('button', { name: /プレビュー/ });
+
+    await test.step('パスが空なら押せず、入れても押すまでは読まない', async () => {
+      await expect(runButton).toBeDisabled();
+      await register.locator('.path-input-group input').fill(folder);
+      await expect(preview).toContainText('「🔍 プレビュー」を押すと');
+      await expect(preview.locator('.dir-preview-item')).toHaveCount(0);
+    });
+
+    await test.step('押すと、直下のファイルとフォルダが並ぶ', async () => {
+      await runButton.click();
+      await expect(preview.locator('.dir-preview-status')).toHaveText('3 件を取り込みます');
+      await expect(preview.locator('.dir-preview-name')).toHaveText(['a.txt', 'b.txt', 'sub']);
+    });
+
+    await test.step('頭に付ける文字は押さなくても反映する', async () => {
+      await register.locator('.options-toggle', { hasText: 'フォルダ取込のオプション' }).click();
+      await register.locator('.dir-options input').nth(2).fill('【E2E】');
+      await expect(preview.locator('.dir-preview-name').first()).toHaveText('【E2E】a.txt');
+      await expect(preview.locator('.dir-preview-stale')).toHaveCount(0);
+    });
+
+    await test.step('階層を変えると数え直しを促し、押すと今の条件で並ぶ', async () => {
+      await register.locator('.dir-options select').first().selectOption('1');
+      await expect(preview.locator('.dir-preview-stale')).toBeVisible();
+      await runButton.click();
+      await expect(preview.locator('.dir-preview-stale')).toHaveCount(0);
+      await expect(preview.locator('.dir-preview-status')).toHaveText('4 件を取り込みます');
+      await expect(preview.locator('.dir-preview-where').last()).toHaveText('sub');
+    });
+
+    await test.step('条件に合うものが無いときは理由を出す', async () => {
+      await register.locator('.dir-options input').first().fill('*.zip');
+      await runButton.click();
+      await expect(preview).toContainText('ファイル名の条件 *.zip に合うものがありません');
+    });
   });
 });
 
