@@ -36,7 +36,9 @@ async function pasteText(
  * - URL は URL アイテム、Windows のパスは起動アイテムになる
  */
 test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () => {
-  test('ただのテキストはクリップボードアイテムとして全文が保存される', async ({
+  // 文字列の振り分けの細部は単体（pasteClassifier.test.ts）が確かめている。
+  // ここでは貼るとその種類のアイテムとして保存され、カードが出る配線を確かめる
+  test('貼ったものの種類で、クリップボード・URL・起動アイテムに振り分けて保存する', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -45,34 +47,14 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
-
     const text = '会議メモ\n二行目も残る';
-    await pasteText(electronApp, workspaceWindow, text);
 
-    const card = workspaceWindow.locator('.workspace-item-card', { hasText: '会議メモ' });
-    await expect(card).toBeVisible({ timeout: 10000 });
-
-    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
-    const added = items.find((item) => item.displayName === '会議メモ');
-    expect(added).toBeDefined();
-    expect(added?.type).toBe('clipboard');
-    if (added?.type !== 'clipboard') return;
-
-    expect(added.formats).toContain('text');
-    const dataFile = path.join(configHelper.getConfigDir(), added.dataFileRef);
-    expect(fs.existsSync(dataFile)).toBe(true);
-    const saved = JSON.parse(fs.readFileSync(dataFile, 'utf-8')) as { text?: string };
-    expect(saved.text).toBe(text);
-  });
-
-  test('URL は URL アイテム、Windows のパスは起動アイテムになる', async ({
-    electronApp,
-    mainWindow,
-  }) => {
-    const utils = new TestUtils(mainWindow);
-    await utils.waitForPageLoad();
-    const workspaceWindow = await getWorkspaceWindow(electronApp);
-    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await test.step('ただのテキスト', async () => {
+      await pasteText(electronApp, workspaceWindow, text);
+      await expect(
+        workspaceWindow.locator('.workspace-item-card', { hasText: '会議メモ' })
+      ).toBeVisible({ timeout: 10000 });
+    });
 
     await test.step('URL', async () => {
       await pasteText(electronApp, workspaceWindow, 'https://example.com/');
@@ -88,7 +70,7 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
       ).toBeVisible({ timeout: 15000 });
     });
 
-    await test.step('「パスのコピー」の引用符付き・実在しないパスも起動アイテムになる', async () => {
+    await test.step('「パスのコピー」の引用符付き・実在しないパス', async () => {
       await pasteText(electronApp, workspaceWindow, '"C:\\存在しない\\フォルダ"');
       await expect(
         workspaceWindow.locator('.workspace-item-card', { hasText: 'フォルダ' })
@@ -98,23 +80,36 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
     const byName = (name: string) => items.find((item) => item.displayName === name);
 
-    const url = byName('https://example.com/');
-    expect(url?.type).toBe('item');
-    if (url?.type === 'item') expect(url.launcherType).toBe('url');
+    await test.step('テキストはクリップボードアイテムとして全文が保存される', async () => {
+      const added = byName('会議メモ');
+      expect(added?.type).toBe('clipboard');
+      if (added?.type !== 'clipboard') return;
+      expect(added.formats).toContain('text');
+      const dataFile = path.join(configHelper.getConfigDir(), added.dataFileRef);
+      expect(fs.existsSync(dataFile)).toBe(true);
+      const saved = JSON.parse(fs.readFileSync(dataFile, 'utf-8')) as { text?: string };
+      expect(saved.text).toBe(text);
+    });
 
-    const notepad = byName('notepad.exe');
-    expect(notepad?.type).toBe('item');
-    if (notepad?.type === 'item') expect(notepad.launcherType).toBe('app');
+    await test.step('URL は URL アイテム、パスは起動アイテムになる', async () => {
+      const url = byName('https://example.com/');
+      expect(url?.type).toBe('item');
+      if (url?.type === 'item') expect(url.launcherType).toBe('url');
 
-    const missing = byName('フォルダ');
-    expect(missing?.type).toBe('item');
-    if (missing?.type === 'item') {
-      expect(missing.path).toBe('C:\\存在しない\\フォルダ');
-      expect(missing.launcherType).toBe('folder');
-    }
+      const notepad = byName('notepad.exe');
+      expect(notepad?.type).toBe('item');
+      if (notepad?.type === 'item') expect(notepad.launcherType).toBe('app');
 
-    // ただの文字列がフォルダになっていないこと（以前の不具合の再発防止）
-    expect(items.some((item) => item.type === 'item' && item.path === 'https')).toBe(false);
+      const missing = byName('フォルダ');
+      expect(missing?.type).toBe('item');
+      if (missing?.type === 'item') {
+        expect(missing.path).toBe('C:\\存在しない\\フォルダ');
+        expect(missing.launcherType).toBe('folder');
+      }
+
+      // ただの文字列がフォルダになっていないこと（以前の不具合の再発防止）
+      expect(items.some((item) => item.type === 'item' && item.path === 'https')).toBe(false);
+    });
   });
 
   test('クリップボードアイテムの編集画面にはパス欄を出さず、名前を変えても中身の参照は保つ', async ({

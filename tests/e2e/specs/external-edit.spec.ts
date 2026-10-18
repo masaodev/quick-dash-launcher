@@ -98,7 +98,9 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
     });
   });
 
-  test('外部で書いた単一アイテムの windowConfig は、F5 で新しいキーに変換して書き戻す', async ({
+  // 変換の細部は単体（itemWindowConversion.test.ts）が確かめている。
+  // ここでは data.json を読み直すと書き戻され、変換前のスナップショットが 1 回だけ残る配線を確かめる
+  test('外部で書いた windowConfig・廃止したウィンドウ操作は、F5 で新しい形に変換して書き戻す', async ({
     mainWindow,
     configHelper,
   }) => {
@@ -110,44 +112,84 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
       await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
     });
 
-    await test.step('QDL の外で windowConfig を持つアイテムを書き足す', async () => {
+    await test.step('QDL の外で、windowConfig を持つアイテムとウィンドウ操作（と、それを指すセット）を書き足す', async () => {
       const data = JSON.parse(configHelper.readDataFileRaw('data.json'));
-      data.items.push({
-        id: 'winCfg01',
-        type: 'item',
-        displayName: '旧ウィンドウ設定メモ',
-        path: 'notepad.exe',
-        windowConfig: {
-          title: 'メモ.txt - メモ帳',
+      data.items.push(
+        {
+          id: 'winCfg01',
+          type: 'item',
+          displayName: '旧ウィンドウ設定メモ',
+          path: 'notepad.exe',
+          windowConfig: {
+            title: 'メモ.txt - メモ帳',
+            processName: 'notepad.exe',
+            x: 10,
+            y: 20,
+            width: 800,
+            height: 600,
+          },
+        },
+        {
+          id: 'winOld01',
+          type: 'window',
+          displayName: 'E2E旧ウィンドウ操作',
+          windowTitle: '*',
           processName: 'notepad.exe',
           x: 10,
           y: 20,
           width: 800,
           height: 600,
+          memo: '変換しても残るメモ',
         },
-      });
+        {
+          id: 'setOld01',
+          type: 'set',
+          displayName: 'E2E旧ウィンドウ操作のセット',
+          entries: [{ itemId: 'winOld01' }],
+        }
+      );
       configHelper.writeDataFileRaw('data.json', JSON.stringify(data, null, 2));
     });
 
-    await test.step('F5 で読み直すと新しいキーに書き換わり、変換前のスナップショットが残る', async () => {
+    await test.step('F5 で読み直すと画面に出て、data.json は新しい形に書き換わる', async () => {
       await utils.reloadWithF5();
       const row = mainWindow.locator('.item', { hasText: '旧ウィンドウ設定メモ' });
       await expect(row).toBeVisible({ timeout: 10000 });
       await expect(row.locator('.window-title-badge')).toBeVisible();
+      await expect(
+        mainWindow.locator('.item', { hasText: 'E2E旧ウィンドウ操作' }).first()
+      ).toBeVisible();
 
       await expect
         .poll(() => configHelper.dataFileContains('data.json', 'windowConfig'), { timeout: 10000 })
         .toBe(false);
-      const item = configHelper.getItemByDisplayName('data.json', '旧ウィンドウ設定メモ');
-      expect(item).toMatchObject({
+      expect(configHelper.getItemByDisplayName('data.json', '旧ウィンドウ設定メモ')).toMatchObject({
         window: { processName: 'notepad.exe', title: 'メモ.txt - メモ帳' },
         placement: { x: 10, y: 20, width: 800, height: 600 },
-        activateWindow: true,
       });
-      const backupDir = path.join(configDir, 'backup');
+      // ウィンドウ操作は同じ id のパスの無い単一アイテムになり、セットの行はそのまま指す
+      expect(configHelper.getItemByDisplayName('data.json', 'E2E旧ウィンドウ操作')).toMatchObject({
+        id: 'winOld01',
+        type: 'item',
+        path: '',
+        memo: '変換しても残るメモ',
+      });
       expect(
-        fs.readdirSync(backupDir).filter((name) => name.endsWith('_pre-window-migration'))
-      ).toHaveLength(1);
+        configHelper.getItemByDisplayName('data.json', 'E2E旧ウィンドウ操作のセット')
+      ).toMatchObject({ entries: [{ itemId: 'winOld01' }] });
+    });
+
+    await test.step('変換前のスナップショットが 1 つだけ残る', async () => {
+      const backupDir = path.join(configDir, 'backup');
+      const snapshots = fs
+        .readdirSync(backupDir)
+        .filter((name) => name.endsWith('_pre-window-migration'));
+      expect(snapshots).toHaveLength(1);
+      const before = fs.readFileSync(
+        path.join(backupDir, snapshots[0], 'datafiles', 'data.json'),
+        'utf8'
+      );
+      expect(before).toContain('"type": "window"');
     });
   });
 
