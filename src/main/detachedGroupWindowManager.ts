@@ -14,7 +14,11 @@ import {
   attachCommonKeyHandlers,
   isAppQuitting,
 } from './utils/managedWindow.js';
-import { pinWindow, unPinWindow } from './utils/virtualDesktop/index.js';
+import {
+  moveWindowToCurrentDesktop,
+  pinWindow,
+  unPinWindow,
+} from './utils/virtualDesktop/index.js';
 import { computeMonitorAnchor, placeByMonitorAnchor } from './utils/monitorAnchor.js';
 import { setBoundsAcrossDisplays } from './utils/screenPosition.js';
 import { notifyPinLevel } from './utils/pinMenu.js';
@@ -476,7 +480,7 @@ function setupDetachedWindow(
     }, 300);
   };
 
-  // 位置の基準は動かしたときだけ覚え直す（中身に合わせたサイズの自動調整では変えない）
+  // 位置の基準は動かしたとき（と中身に合わせて高さを変えたとき。rememberDetachedBoundsFromRenderer）だけ覚え直す
   win.on('moved', () => saveBoundsDebounced('moved'));
   win.on('resized', () => saveBoundsDebounced('resized'));
   boundsSavers.set(groupId, saveBoundsDebounced);
@@ -507,6 +511,9 @@ function setupDetachedWindow(
   // 仮想デスクトップ固定の適用（ウィンドウ表示後に実行する必要がある）。
   // 隠すと固定が外れる（メインと一緒に隠して出し直すと 1 つのデスクトップにしか出なくなった）ので、表示のたびに当て直す
   win.on('show', () => {
+    // 初めての表示を別の経路（メインと一緒に出すなど）で済ませたら、表示待ちを外す
+    // （残っていると、隠れている間に中身の高さが変わったとき、このウィンドウだけが出てしまう）
+    pendingInitialShow.delete(groupId);
     SettingsService.getInstance()
       .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
       .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
@@ -597,12 +604,14 @@ export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay
 }
 
 /**
- * ピン留めした切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
+ * ピン留めした切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す（ディスプレイの中では動かさない）。
+ * 別の仮想デスクトップにあれば今のデスクトップへ連れてくる（すべてのデスクトップに表示しない設定のとき）。
  * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
  */
 export function bringPinnedDetachedToFront(): void {
   for (const [groupId, win] of detachedWindows.entries()) {
     if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) !== 0 && win.isVisible()) {
+      moveWindowToCurrentDesktop(win.getNativeWindowHandle().readBigUInt64LE());
       win.moveTop();
     }
   }

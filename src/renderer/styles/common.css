@@ -196,15 +196,15 @@
 .action-btn.pin-always-on-top::after {
   content: '▲';
   position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 13px;
-  height: 13px;
+  top: var(--pin-badge-offset);
+  right: var(--pin-badge-offset);
+  width: var(--pin-badge-size);
+  height: var(--pin-badge-size);
   border-radius: 50%;
   background-color: var(--color-warning-dark);
   color: var(--color-white);
-  font-size: 7px;
-  line-height: 13px;
+  font-size: var(--pin-badge-font-size);
+  line-height: var(--pin-badge-size);
   text-align: center;
 }
 
