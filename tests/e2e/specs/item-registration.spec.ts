@@ -576,7 +576,7 @@ test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => 
 
     await test.step('押すと、直下のファイルとフォルダが並ぶ', async () => {
       await runButton.click();
-      await expect(preview.locator('.dir-preview-status')).toHaveText('3 件が並びます');
+      await expect(preview.locator('.dir-preview-status')).toHaveText('3 件を取り込みます');
       await expect(preview.locator('.dir-preview-name')).toHaveText(['a.txt', 'b.txt', 'sub']);
     });
 
@@ -592,7 +592,7 @@ test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => 
       await expect(preview.locator('.dir-preview-stale')).toBeVisible();
       await runButton.click();
       await expect(preview.locator('.dir-preview-stale')).toHaveCount(0);
-      await expect(preview.locator('.dir-preview-status')).toHaveText('4 件が並びます');
+      await expect(preview.locator('.dir-preview-status')).toHaveText('4 件を取り込みます');
       await expect(preview.locator('.dir-preview-where').last()).toHaveText('sub');
     });
 

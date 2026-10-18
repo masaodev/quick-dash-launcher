@@ -156,7 +156,7 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await dirOptions.locator(`input[placeholder="${filterPlaceholder}"]`).fill(dir.filter);
     await dirOptions.locator(`input[placeholder="${excludePlaceholder}"]`).fill(dir.exclude);
     await dirOptions.locator(`input[placeholder="${prefixPlaceholder}"]`).fill(dir.prefix);
-    // 登録したときの並び（プレビュー）を出してから撮る
+    // 取り込まれるもの（プレビュー）を出してから撮る
     const preview = register.getByTestId('dir-preview');
     await preview.locator('.dir-preview-btn').click();
     await preview.locator('.dir-preview-item').first().waitFor({ state: 'visible' });
