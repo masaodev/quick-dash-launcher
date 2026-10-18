@@ -6,6 +6,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isPathlessItem } from '@common/utils/itemWindowConversion';
 
 import { debugLog } from '../utils/debug';
+import { describeDirOptionsShort } from '../utils/editableItemOperations';
 
 import DirOptionsEditor from './DirOptionsEditor';
 import ItemWindowSwitchEditor from './ItemWindowSwitchEditor';
@@ -127,6 +128,13 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
     clearTimeout(flashTimerRef.current);
     flashTimerRef.current = setTimeout(() => setConvertedFlash(false), 800);
   };
+  // メモはあまり使わないので畳んでおく。開くかを選ぶまでは、メモが書いてあれば開く（編集でメモに気づけるように）
+  const [memoOpenChoice, setMemoOpenChoice] = useState<boolean | null>(null);
+  const memoOpen = memoOpenChoice ?? !!item.memo?.trim();
+  const memoFirstLine = item.memo?.trim().split(/\r?\n/)[0] ?? '';
+  const dirOptionsSummary =
+    item.itemCategory === 'dir' && item.dirOptions ? describeDirOptionsShort(item.dirOptions) : '';
+
   const flashClass = convertedFlash ? ' item-converted-flash' : '';
   const selectedTab = placement?.availableTabs.find((tab) => tab.files.includes(item.targetTab));
   const hasPath = item.itemCategory !== 'set' && item.itemCategory !== 'clipboard';
@@ -262,9 +270,22 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
 
       {(item.itemCategory === 'item' || item.itemCategory === 'dir') && (
         <div className="options-section">
-          <button type="button" className="options-toggle" onClick={onToggleOptions}>
+          <button
+            type="button"
+            className="options-toggle"
+            aria-expanded={optionsOpen}
+            onClick={onToggleOptions}
+          >
             <span className={`toggle-icon${optionsOpen ? ' open' : ''}`}>▶</span>
-            {item.itemCategory === 'item' ? t('register.itemOptions') : t('register.dirOptions')}
+            <span>
+              {item.itemCategory === 'item' ? t('register.itemOptions') : t('register.dirOptions')}
+            </span>
+            {/* たたんでいても、今効いているフォルダ取込の設定が分かるように見出しの横に出す */}
+            {dirOptionsSummary && (
+              <span className="options-toggle-summary" data-testid="dir-options-summary">
+                {dirOptionsSummary}
+              </span>
+            )}
           </button>
 
           {optionsOpen && (
@@ -319,15 +340,32 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
 
       {(item.itemCategory === 'clipboard' || item.itemCategory === 'set') && customIconEditor}
 
-      <div className="form-group">
-        <label>{t('register.note')}</label>
-        <textarea
-          value={item.memo || ''}
-          onChange={(e) => onFieldChange('memo', e.target.value)}
-          placeholder={t('register.notePlaceholder')}
-          rows={3}
-          className="memo-textarea"
-        />
+      <div className="options-section memo-section">
+        <button
+          type="button"
+          className="options-toggle"
+          aria-expanded={memoOpen}
+          onClick={() => setMemoOpenChoice(!memoOpen)}
+        >
+          <span className={`toggle-icon${memoOpen ? ' open' : ''}`}>▶</span>
+          <span>{t('register.note')}</span>
+          {!memoOpen && memoFirstLine && (
+            <span className="options-toggle-summary memo-summary">{memoFirstLine}</span>
+          )}
+        </button>
+
+        {memoOpen && (
+          <div className="options-content">
+            <textarea
+              value={item.memo || ''}
+              onChange={(e) => onFieldChange('memo', e.target.value)}
+              placeholder={t('register.notePlaceholder')}
+              aria-label={t('register.note')}
+              rows={3}
+              className="memo-textarea"
+            />
+          </div>
+        )}
       </div>
 
       {showSeparator && <hr />}

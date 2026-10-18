@@ -193,27 +193,24 @@
   flex: 1;
 }
 
-/* メモ欄は縦並びレイアウト（ラベル上・テキストエリア下） */
-.register-item .form-group:has(.memo-textarea) {
-  flex-direction: column;
-  align-items: stretch;
-  /* 上のオプションの枠に付かないよう、区切りの余白をとる */
-  margin-top: var(--spacing-md);
-}
-
-.register-item .form-group:has(.memo-textarea) label {
-  min-width: auto;
-  padding-top: 0;
-  margin-bottom: var(--spacing-xs);
-}
-
-/* textarea行はラベルを上揃え（メモ以外） */
-.register-item .form-group:has(textarea:not(.memo-textarea)) {
+/* textarea行はラベルを上揃え */
+.register-item .form-group:has(textarea) {
   align-items: flex-start;
 }
 
-.register-item .form-group:has(textarea:not(.memo-textarea)) label {
+.register-item .form-group:has(textarea) label {
   padding-top: var(--spacing-xs);
+}
+
+/* メモ（折りたたみ）。上のオプションの枠に付かないよう、区切りの余白をとる */
+.options-section.memo-section {
+  margin-top: var(--spacing-md);
+}
+
+.memo-section .memo-textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /*
@@ -338,11 +335,15 @@
   background-color: var(--color-gray-200);
 }
 
-/* たたんでいても見出しの横に出す要約（単一アイテムのウィンドウ位置） */
+/* たたんでいても見出しの横に出す要約（ウィンドウ位置・フォルダ取込の設定・メモの 1 行目）。
+   文字の大きさと色はウィンドウ位置の .set-row-place と同じ */
 .options-toggle-summary {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: normal;
+  color: var(--text-muted);
 }
 
 .toggle-icon {

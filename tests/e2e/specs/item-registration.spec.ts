@@ -400,6 +400,70 @@ test.describe('QuickDashLauncher - 単一アイテムのウィンドウ切り替
 });
 
 /**
+ * メモの折りたたみ
+ * - 新しく登録するときは閉じている
+ * - メモのあるアイテムを編集で開くと開いていて、閉じると見出しの横に 1 行目が出る
+ */
+test.describe('QuickDashLauncher - メモの折りたたみ', () => {
+  test('メモが空なら閉じ、書いてあれば開いて出す', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const memoToggle = () => utils.registerPage.locator('.memo-section .options-toggle');
+    const memoArea = () => utils.registerPage.locator('.memo-section textarea');
+
+    await test.step('新しく登録するときは閉じていて、開いて書いて登録できる', async () => {
+      await utils.openRegisterModal(electronApp);
+      await expect(memoToggle()).toHaveAttribute('aria-expanded', 'false');
+      await expect(memoArea()).toHaveCount(0);
+      await utils.fillRegisterForm({ name: 'メモつきサイト', path: 'https://memo.example.com' });
+      await memoToggle().click();
+      await memoArea().fill('経理の月次で使う\n2 行目');
+      await utils.clickRegisterButton();
+      await expect
+        .poll(() => configHelper.getItemByDisplayName('data.json', 'メモつきサイト')?.memo)
+        .toBe('経理の月次で使う\n2 行目');
+    });
+
+    await test.step('編集で開くと開いていて、閉じると 1 行目が見出しの横に出る', async () => {
+      const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+      const saved = await mainWindow.evaluate(async () => {
+        const items = await window.electronAPI.loadDataFiles('internal');
+        return items.find((i) => 'path' in i && i.displayName === 'メモつきサイト');
+      });
+      expect(saved).toBeDefined();
+      await menuHelper.simulateLauncherMenu('edit', saved as unknown as Record<string, unknown>);
+      await utils.waitForRegisterWindow(electronApp);
+      await expect(memoToggle()).toHaveAttribute('aria-expanded', 'true');
+      await expect(memoArea()).toHaveValue('経理の月次で使う\n2 行目');
+      await memoToggle().click();
+      await expect(memoArea()).toHaveCount(0);
+      await expect(memoToggle().locator('.memo-summary')).toHaveText('経理の月次で使う');
+    });
+  });
+
+  test('フォルダ取込のオプションは、閉じていても見出しの横に設定の要約が出る', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const register = await utils.openRegisterModal(electronApp);
+    await register.locator('.register-kind select').selectOption('dir');
+    const summary = register.getByTestId('dir-options-summary');
+    await expect(summary).toHaveText('このフォルダのみ');
+
+    await register.locator('.options-toggle', { hasText: 'フォルダ取込のオプション' }).click();
+    await register.locator('.dir-options select').first().selectOption('2');
+    await register.locator('.dir-options select').nth(1).selectOption('file');
+    await expect(summary).toHaveText('2 階層・ファイルのみ');
+  });
+});
+
+/**
  * パスの無い単一アイテム
  * - 対象ウィンドウ（exe 名）だけを入れれば、パスが空でも登録できる（JSON は type: item・path: ""）
  * - もう一度編集を開くと、ウィンドウ切り替えの折りたたみが開いた状態で出て、パスの下に補足が出る
