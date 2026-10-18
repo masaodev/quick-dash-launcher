@@ -1,6 +1,7 @@
 import { useState, useCallback, Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppSettings } from '@common/types';
+import { clampSettingNumbers } from '@common/settingRanges';
 
 import { logError } from '../utils/debug';
 import {
@@ -82,9 +83,12 @@ export function useSettingsManager({
     [setEditedSettings]
   );
 
+  // 範囲の外の値は、保存する前に範囲の端へ寄せる（CLI と同じ範囲。欄の表示も合わせる）
   const handleNumberInputBlur = useCallback(async (): Promise<void> => {
-    await saveSettings(editedSettings, t('settings.saved'));
-  }, [editedSettings, saveSettings, t]);
+    const clamped = clampSettingNumbers(editedSettings);
+    if (clamped !== editedSettings) setEditedSettings(clamped);
+    await saveSettings(clamped, t('settings.saved'));
+  }, [editedSettings, setEditedSettings, saveSettings, t]);
 
   const handleHotkeyValidation = useCallback((isValid: boolean, reason?: string): void => {
     setHotkeyValidation({ isValid, reason });

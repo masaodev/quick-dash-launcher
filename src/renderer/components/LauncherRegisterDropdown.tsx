@@ -29,7 +29,7 @@ const LauncherRegisterDropdown: React.FC<RegisterDropdownProps> = ({ onOpenRegis
   return (
     <div className="settings-dropdown" ref={dropdown.ref}>
       <button
-        className="action-btn"
+        className={`action-btn ${dropdown.isOpen ? 'active' : ''}`}
         onClick={dropdown.toggle}
         title={t('launcher.registerMenu.title')}
         data-testid="register-menu-button"

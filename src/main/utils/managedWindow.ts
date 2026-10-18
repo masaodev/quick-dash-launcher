@@ -27,6 +27,13 @@ export function isAppQuitting(): boolean {
 }
 
 /**
+ * 編集・確認などの子ウィンドウを開いているか（隠したり動かしたりすると、子ウィンドウだけが画面に残る）
+ */
+export function hasVisibleChildWindow(win: BrowserWindow): boolean {
+  return win.getChildWindows().some((child) => !child.isDestroyed() && child.isVisible());
+}
+
+/**
  * 閉じる操作でウィンドウを破棄せず隠す（アプリ終了時だけ実際に閉じる）
  *
  * @param onHidden 隠したあとに呼ぶ処理（表示状態フラグの更新など）

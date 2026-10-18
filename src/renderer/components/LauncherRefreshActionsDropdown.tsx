@@ -44,7 +44,7 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
       <button
-        className="action-btn"
+        className={`action-btn ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         title={t('launcher.refreshMenu.title')}
       >

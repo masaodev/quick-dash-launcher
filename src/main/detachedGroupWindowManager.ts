@@ -12,6 +12,7 @@ import { scheduleFallbackShow } from './utils/modalChildWindows.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
+  hasVisibleChildWindow,
   isAppQuitting,
 } from './utils/managedWindow.js';
 import {
@@ -48,6 +49,9 @@ const creatingGroupIds = new Set<string>();
  */
 const pendingInitialShow = new Set<string>();
 
+/** 編集画面の「試しに実行」で一時的に常に最前面にしている groupId（📌 の段階は変えず、保存もしない） */
+const temporaryAlwaysOnTopGroupIds = new Set<string>();
+
 /** groupId → 最後に動かしたときの、載っていたモニターに対する位置 */
 const detachedAnchors = new Map<string, MonitorAnchor>();
 
@@ -76,7 +80,8 @@ const PROGRAMMATIC_MOVE_GRACE_MS = 300;
 let detachedWindowSnapEnabled: boolean = true;
 
 function applyVirtualDesktopPinToWindow(win: BrowserWindow, enabled: boolean): void {
-  if (win.isDestroyed()) return;
+  // 隠れているウィンドウには当てられない（失敗する）。表示のたびに当て直すので、そのときに任せる
+  if (win.isDestroyed() || !win.isVisible()) return;
   const hwnd = win.getNativeWindowHandle().readBigUInt64LE();
   const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
   const action = enabled ? 'pin' : 'unpin';
@@ -111,6 +116,8 @@ export function getDetachedPinLevel(groupId: string): PinLevel {
  */
 export function setDetachedPinLevel(groupId: string, next: PinLevel): PinLevel {
   detachedPinModes.set(groupId, next);
+  // 人が段階を変えたら、一時的な最前面は終わったものとして扱う
+  temporaryAlwaysOnTopGroupIds.delete(groupId);
 
   const win = detachedWindows.get(groupId);
   notifyPinLevel(win, next);
@@ -494,6 +501,7 @@ function setupDetachedWindow(
     webContentsIdToGroupId.delete(wcId);
     detachedWindows.delete(groupId);
     detachedPinModes.delete(groupId);
+    temporaryAlwaysOnTopGroupIds.delete(groupId);
     forgetPlacement(groupId);
     // 明示的に閉じた場合はエントリごと削除（アプリ終了時は次回復元のため残す）
     if (!isAppQuitting()) {
@@ -556,10 +564,39 @@ function destroyWindowIfAlive(groupId: string): void {
     }
     detachedWindows.delete(groupId);
     detachedPinModes.delete(groupId);
+    temporaryAlwaysOnTopGroupIds.delete(groupId);
     forgetPlacement(groupId);
     win.destroy();
     windowLogger.info(`切り離しウィンドウを破棄しました: ${groupId}`);
   }
+}
+
+/** 常に最前面かどうか（編集画面の「試しに実行」用） */
+export function getDetachedAlwaysOnTop(groupId: string): boolean {
+  return temporaryAlwaysOnTopGroupIds.has(groupId) || getDetachedPinLevel(groupId) === 2;
+}
+
+/**
+ * 編集画面の「試しに実行」用に、一時的に常に最前面にする・元に戻す（📌 の段階は変えず、保存もしない）
+ * 一時的に最前面にしている間に人が段階を変えたら、戻すときはその段階のままにする
+ * @returns 常に最前面になったら true
+ */
+export function toggleDetachedAlwaysOnTop(groupId: string): boolean {
+  const win = detachedWindows.get(groupId);
+  if (!win || win.isDestroyed()) return false;
+  if (temporaryAlwaysOnTopGroupIds.delete(groupId)) {
+    const onTop = getDetachedPinLevel(groupId) === 2;
+    win.setAlwaysOnTop(onTop);
+  } else if (getDetachedPinLevel(groupId) !== 2) {
+    temporaryAlwaysOnTopGroupIds.add(groupId);
+    win.setAlwaysOnTop(true);
+  }
+  // setAlwaysOnTop が仮想デスクトップ固定をリセットするため再適用
+  SettingsService.getInstance()
+    .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
+    .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
+    .catch(() => {});
+  return getDetachedAlwaysOnTop(groupId);
 }
 
 /**
@@ -572,11 +609,15 @@ export function closeDetachedGroupWindow(groupId: string): { success: boolean } 
 
 /**
  * すべての切り離しウィンドウを非表示にする（hide）
- * ピンモード 1以上（表示固定/最上面固定）のウィンドウはスキップする
+ * ピンモード 1以上（表示固定/最上面固定）のウィンドウと、編集・確認の子ウィンドウを開いているものはスキップする
  */
 export function hideAllDetachedGroupWindows(): { success: boolean } {
   for (const [groupId, win] of detachedWindows.entries()) {
-    if (!win.isDestroyed() && (detachedPinModes.get(groupId) ?? 0) === 0) {
+    if (
+      !win.isDestroyed() &&
+      (detachedPinModes.get(groupId) ?? 0) === 0 &&
+      !hasVisibleChildWindow(win)
+    ) {
       win.hide();
     }
   }
@@ -587,6 +628,7 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
  * ピン留めしていない切り離しウィンドウを再表示する（フォーカスを奪わない）
  * ピン留めしたものは出たままなので触らない（手前に出すのは bringPinnedDetachedToFront）
  * @param options.placeOnMainWindowDisplay true なら、ピン留めしていないウィンドウを表示する前にメインウィンドウと同じディスプレイへ移す
+ *   （子ウィンドウを開いていて隠さなかったものは動かさない）
  */
 export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay?: boolean }): {
   success: boolean;
@@ -595,7 +637,7 @@ export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay
     if (!win.isDestroyed()) {
       const pinMode = detachedPinModes.get(groupId) ?? 0;
       if (pinMode === 0) {
-        if (options?.placeOnMainWindowDisplay) {
+        if (options?.placeOnMainWindowDisplay && !hasVisibleChildWindow(win)) {
           placeOnMainWindowDisplay(groupId, win);
         }
         showWithoutFocus(win);

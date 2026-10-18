@@ -1,6 +1,7 @@
 import type { AppSettings } from '@common/types';
 import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 import { LANGUAGE_SETTINGS } from '@common/i18n/languages';
+import { SETTING_NUMBER_RANGES } from '@common/settingRanges';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -56,8 +57,8 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   showKeyboardHints: BOOLEAN,
   showDataFileTabs: BOOLEAN,
   defaultFileTab: { kind: 'dataFile' },
-  windowWidth: { kind: 'integer', range: { min: 400, max: 2000 } },
-  windowHeight: { kind: 'integer', range: { min: 300, max: 1200 } },
+  windowWidth: { kind: 'integer', range: SETTING_NUMBER_RANGES.windowWidth },
+  windowHeight: { kind: 'integer', range: SETTING_NUMBER_RANGES.windowHeight },
   windowPositionMode: {
     kind: 'choice',
     values: ['center', 'cursor', 'cursorMonitorCenter', 'fixed'],
@@ -65,9 +66,9 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   windowPositionX: COORDINATE,
   windowPositionY: COORDINATE,
   windowSnapEnabled: BOOLEAN,
-  editModeWidth: { kind: 'integer', range: { min: 800, max: 2000 } },
-  editModeHeight: { kind: 'integer', range: { min: 600, max: 1200 } },
-  workspaceOpacity: { kind: 'integer', range: { min: 0, max: 100 } },
+  editModeWidth: { kind: 'integer', range: SETTING_NUMBER_RANGES.editModeWidth },
+  editModeHeight: { kind: 'integer', range: SETTING_NUMBER_RANGES.editModeHeight },
+  workspaceOpacity: { kind: 'integer', range: SETTING_NUMBER_RANGES.workspaceOpacity },
   workspaceBackgroundTransparent: BOOLEAN,
   // primaryLeft・primaryRight は古い値なので、新しくは選ばせない
   workspacePositionMode: { kind: 'choice', values: ['displayLeft', 'displayRight', 'fixed'] },
@@ -78,7 +79,7 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   detachedVisibleOnAllDesktops: BOOLEAN,
   detachedPositionMode: { kind: 'choice', values: ['saved', 'mainDisplay'] },
   backupEnabled: BOOLEAN,
-  backupRetention: { kind: 'integer', range: { min: 3, max: 50 } },
+  backupRetention: { kind: 'integer', range: SETTING_NUMBER_RANGES.backupRetention },
   backupIncludeClipboard: BOOLEAN,
 };
 

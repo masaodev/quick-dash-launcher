@@ -2025,8 +2025,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       center: 'Center of the primary display',
       centerDescription:
         'Always shows it in the center of the primary display (the one set as main in Windows settings)',
-      fixed: 'Where you last moved it',
-      fixedDescription: 'Remembers where you moved the window and shows it there next time',
+      fixed: 'Where you last placed it',
+      fixedDescription: 'Remembers where you placed the window and shows it there next time',
     },
     workspace: {
       heading: 'Workspace window',
@@ -2035,8 +2035,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       rightEdgeDescription: 'Shows it at the right edge of the display, from top to bottom',
       leftEdge: 'Left edge',
       leftEdgeDescription: 'Shows it at the left edge of the display, from top to bottom',
-      fixed: 'Where you last moved it',
-      fixedDescription: 'Remembers where you moved the workspace and shows it there next time',
+      fixed: 'Where you last placed it',
+      fixedDescription: 'Remembers where you placed the workspace and shows it there next time',
+      displayDisabled:
+        'While "Where you last placed it" is selected, it shows on the display where you placed it, so the display cannot be chosen',
       displayLabel: 'Display',
       mainWindowDisplay: 'Same display as the launcher (default)',
       missingDisplay: 'Display {{number}} (not connected; showing on the primary display)',

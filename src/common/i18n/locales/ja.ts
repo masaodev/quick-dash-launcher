@@ -2034,8 +2034,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       center: 'プライマリディスプレイの中央',
       centerDescription:
         'いつもプライマリディスプレイ（Windows の設定でメインにしたディスプレイ）の中央に表示します',
-      fixed: '最後に動かした場所',
-      fixedDescription: 'ウィンドウを動かした場所を覚えて、次も同じ場所に表示します',
+      fixed: '最後に置いた場所',
+      fixedDescription: 'ウィンドウを置いた場所を覚えて、次も同じ場所に表示します',
     },
     workspace: {
       heading: 'ワークスペースウィンドウ',
@@ -2044,8 +2044,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       rightEdgeDescription: 'ディスプレイの右端に、上から下までの高さで表示します',
       leftEdge: '左端',
       leftEdgeDescription: 'ディスプレイの左端に、上から下までの高さで表示します',
-      fixed: '最後に動かした場所',
-      fixedDescription: 'ワークスペースを動かした場所を覚えて、次も同じ場所に表示します',
+      fixed: '最後に置いた場所',
+      fixedDescription: 'ワークスペースを置いた場所を覚えて、次も同じ場所に表示します',
+      displayDisabled:
+        '「最後に置いた場所」の間は、置いた場所のディスプレイに出るので、ディスプレイは選べません',
       displayLabel: 'ディスプレイ',
       mainWindowDisplay: 'メインウィンドウと同じディスプレイ（既定）',
       missingDisplay: 'ディスプレイ {{number}}（今は接続されていないため、プライマリに表示中）',

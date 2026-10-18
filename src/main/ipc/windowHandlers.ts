@@ -54,6 +54,8 @@ import {
   getGroupIdByWebContentsId,
   getDetachedPinLevel,
   setDetachedPinLevel,
+  getDetachedAlwaysOnTop,
+  toggleDetachedAlwaysOnTop,
   isDetachedGroupWindow,
   takeDetachedInitialShow,
   rememberDetachedBoundsFromRenderer,
@@ -68,6 +70,14 @@ interface PinTarget {
   window: BrowserWindow;
   get: () => PinLevel;
   set: (level: PinLevel) => Promise<void>;
+}
+
+/**
+ * 編集画面（子ウィンドウ）を開いた元が切り離しウィンドウなら、その groupId を返す（ワークスペース本体なら undefined）
+ */
+function getEditorOpenerGroupId(sender: WebContents): string | undefined {
+  const opener = BrowserWindow.fromWebContents(sender)?.getParentWindow();
+  return opener ? getGroupIdByWebContentsId(opener.webContents.id) : undefined;
 }
 
 export function setupWindowHandlers(
@@ -197,8 +207,15 @@ export function setupWindowHandlers(
     return true;
   });
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP, () => getWorkspaceAlwaysOnTop());
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP, () => toggleWorkspaceAlwaysOnTop());
+  // 編集画面の「試しに実行」は、編集画面を開いた元（ワークスペース本体または切り離しウィンドウ）を最前面にする
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP, (event) => {
+    const groupId = getEditorOpenerGroupId(event.sender);
+    return groupId ? getDetachedAlwaysOnTop(groupId) : getWorkspaceAlwaysOnTop();
+  });
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP, (event) => {
+    const groupId = getEditorOpenerGroupId(event.sender);
+    return groupId ? toggleDetachedAlwaysOnTop(groupId) : toggleWorkspaceAlwaysOnTop();
+  });
 
   // 編集は送信元（ワークスペース本体または切り離しウィンドウ）を親にした子ウィンドウで開く
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, (event, itemId: string) =>
