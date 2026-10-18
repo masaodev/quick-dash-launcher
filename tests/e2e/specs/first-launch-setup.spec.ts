@@ -134,6 +134,21 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(settings.hotkey).toBe('Alt+Space');
       expect(settings.autoLaunch).toBe(true);
     });
+
+    await test.step('ウィンドウが初回設定用の 700x600 から設定の大きさに戻る', async () => {
+      const settings = configHelper.readSettings();
+      await expect
+        .poll(() =>
+          electronApp.evaluate(({ BrowserWindow }) => {
+            const win = BrowserWindow.getAllWindows().find(
+              (w) => w.getTitle() === 'QuickDashLauncher' && w.getParentWindow() === null
+            );
+            const bounds = win?.getBounds();
+            return bounds ? `${bounds.width}x${bounds.height}` : null;
+          })
+        )
+        .toBe(`${settings.windowWidth ?? 600}x${settings.windowHeight ?? 400}`);
+    });
   });
 
   test('ホットキーを変更して完了すると変更内容が保存される', async ({
@@ -181,5 +196,33 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
     const settings = configHelper.readSettings();
     expect(settings.autoLaunch).toBe(false);
+  });
+
+  test.describe('データファイルが無い状態から始める', () => {
+    // ひな形 first-launch にはデータファイルがあるので、お試し用のアイテムは作られない。無いひな形で確かめる
+    test.use({ configTemplate: 'first-launch-fresh' });
+
+    test('お試し用のアイテムが「メイン」と「Web」の 2 つのタブに分かれて入る', async ({
+      configHelper,
+      electronApp,
+      mainWindow,
+    }) => {
+      const utils = new TestUtils(mainWindow);
+      await utils.waitForPageLoad();
+      await goToHotkeyStep(mainWindow);
+      await goToTryStep(mainWindow);
+      await pressHotkeyAndStart(electronApp, mainWindow);
+      await expect(mainWindow.locator('.first-launch-title')).toHaveCount(0);
+
+      expect(configHelper.readSettings().dataFileTabs).toEqual([
+        { files: ['datafiles/data.json'], name: 'メイン' },
+        { files: ['datafiles/data2.json'], name: 'Web' },
+      ]);
+      expect(configHelper.fileExists('data2.json')).toBe(true);
+      // 使い方は名前の頭の 📖 で、メインのタブの先頭に来る
+      await expect(mainWindow.locator('.item-name').first()).toContainText(
+        'QuickDashLauncher の使い方'
+      );
+    });
   });
 });

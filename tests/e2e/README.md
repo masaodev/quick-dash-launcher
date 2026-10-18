@@ -30,7 +30,8 @@ tests/e2e/
 │   ├── custom-hotkey/   # カスタムホットキーテスト用
 │   ├── empty/           # 空データテスト用
 │   ├── screenshots/     # 画面仕様書の画面イメージ撮影用（tests/screenshots/ が使う）
-│   └── first-launch/    # 初回起動テスト用
+│   ├── first-launch/    # 初回起動テスト用
+│   └── first-launch-fresh/  # 初回起動でデータファイルが無いとき用（settings.json だけ。お試し用のアイテムを作るのを確かめる）
 └── specs/               # テスト仕様（機能別の *.spec.ts。playwright.config.ts の testDir）
 ```
 

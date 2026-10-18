@@ -1238,6 +1238,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   importCommon: {
     source: '取込元',
     destination: '取込先',
+    destinationTab: '取込先タブ',
     duplicateHandling: '重複時の処理',
     skip: 'スキップ（重複アイテムはインポートしない）',
     overwrite: '上書き（既存アイテムを新しい情報で更新）',
@@ -1250,9 +1251,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     newFile: '＋ 新しいデータファイル',
     tabName: 'タブ名',
     fileName: 'ファイル名',
-    newTabName: '{{name}}（新しいタブ）',
+    newTabName: '「{{name}}」タブ（新規）',
     newFileName: '{{name}}（新規）',
-    destinationEcho: '{{target}} に取り込む',
+    destinationEcho: '{{target}}に取り込む',
   },
   bookmarkRule: {
     loadFailed: 'ブックマークの読み込みに失敗しました',
@@ -1537,9 +1538,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         sub: 'あとは Ctrl+V で貼り付けるだけです',
       },
     },
-    destination: '保存先',
-    destEcho: '{{dest}} に登録',
-    destEchoEdit: '{{dest}} に保存',
+    destination: '保存先タブ',
+    placementTab: '「{{tab}}」タブ',
+    placementTabFile: '「{{tab}}」タブの「{{file}}」',
+    destEcho: '{{dest}}に登録',
+    destEchoEdit: '{{dest}}に保存',
     displayName: '表示名',
     placeholders: {
       set: 'セットの名前を入力',
@@ -1847,8 +1850,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     closeRequestFailed: '閉じる要求を送れませんでした（管理者として実行中のアプリなど）',
   },
   sampleData: {
+    /** 初回起動で Web のアイテムを分けて入れる 2 つ目のタブの名前 */
+    webTabName: 'Web',
     readme: {
-      name: '使い方（README）',
+      name: '📖 QuickDashLauncher の使い方（README）',
       url: 'https://github.com/masaodev/quick-dash-launcher#readme',
     },
     google: { name: 'Google 検索（google）', url: 'https://www.google.com/' },
@@ -1859,7 +1864,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     calculator: '電卓（dentaku）',
     notepad: 'メモ帳（memo）',
     greetingName: '定型文: あいさつ（aisatsu）',
-    greetingText: 'いつもお世話になっております。',
+    greetingText:
+      '〇〇様\n\nいつもお世話になっております。\n△△の□□です。\n\n（ここに本文）\n\nお手数をおかけしますが、よろしくお願いいたします。',
   },
   parseReasons: {
     versionFilled: 'version が無いか文字列でないため "{{version}}" を補いました',

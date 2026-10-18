@@ -100,7 +100,9 @@ export interface ElectronAPI {
   fetchIconsCombined: (
     urlItems: LauncherItem[],
     items: LauncherItem[],
-    forceRefresh?: boolean
+    forceRefresh?: boolean,
+    /** true なら進捗バーを出さずに取る（初回設定の後の自動取得） */
+    silent?: boolean
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;

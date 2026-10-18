@@ -134,8 +134,8 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | --- | --- | --- | --- |
 | **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面では基本設定の「表示」にある「複数タブを表示」 |
 | **defaultFileTab** | string | "datafiles/data.json" | メイン画面を開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
-| **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定。初回設定を終えたときに、表示言語の名前（英語なら `Main`）で書き直す |
-| **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名）。初回設定を終えたときに、表示言語の名前で書き直す |
+| **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定。初回起動では、ウィンドウを作る前に表示言語の名前（英語なら `Main`）で書き直す。お試し用の Web のアイテムを `datafiles/data2.json` に分けたときは、2 つ目のタブ「Web」も足す |
+| **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名）。初回起動では、タブと同じときに表示言語の名前（「〈タブ名〉用データファイル」）で書き直す |
 
 #### 3.6.1. DataFileTab 構造
 
