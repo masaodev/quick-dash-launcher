@@ -5,10 +5,15 @@ import { resolveGroupColorCss } from '@common/groupColors';
 
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
+/** 見出しを掴んでからウィンドウの移動を始めるまでに動かす距離（クリックと区別する） */
+const WINDOW_MOVE_THRESHOLD_PX = 4;
+
 interface WorkspaceGroupHeaderProps {
   group: WorkspaceGroupView;
   itemCount: number;
   isEditing: boolean;
+  /** 切り離しウィンドウの一番上の見出し。掴んで動かすとウィンドウが動く（並べ替えのドラッグはしない） */
+  isWindowHandle?: boolean;
   depth: number;
   /** 現在ドラッグ中の要素情報（null=ドラッグなし） */
   draggedElement: { id: string; kind: 'item' | 'group' } | null;
@@ -28,6 +33,7 @@ function WorkspaceGroupHeader({
   group,
   itemCount,
   isEditing,
+  isWindowHandle = false,
   depth,
   draggedElement,
   canNest,
@@ -136,14 +142,42 @@ function WorkspaceGroupHeader({
     // ゾーンなし: イベントを伝播させ、親コンテナの handleGroupDrop で処理
   }
 
+  // 切り離しウィンドウの一番上の見出し: 押したまま少し動かしたら、ウィンドウの移動を Windows に任せる。
+  // 動かさずに離せば普通のクリック（開閉）になる
+  const movePressRef = useRef<{ x: number; y: number } | null>(null);
+
+  function handlePointerDown(e: React.PointerEvent): void {
+    if (!isWindowHandle || isEditing || e.button !== 0) return;
+    movePressRef.current = { x: e.screenX, y: e.screenY };
+    // 素早く動かして最初の移動で見出しの外に出ても、続きを受け取れるようにする
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handlePointerMove(e: React.PointerEvent): void {
+    const start = movePressRef.current;
+    if (!start) return;
+    if (Math.hypot(e.screenX - start.x, e.screenY - start.y) < WINDOW_MOVE_THRESHOLD_PX) return;
+    movePressRef.current = null;
+    window.electronAPI.startWindowMove();
+  }
+
+  function handlePointerEnd(): void {
+    movePressRef.current = null;
+  }
+
   const depthClass = depth > 0 ? ` workspace-group-depth-${depth}` : '';
+  const handleClass = isWindowHandle ? ' workspace-group-header-handle' : '';
 
   return (
     <div
-      className={`workspace-group-header${depthClass}`}
+      className={`workspace-group-header${depthClass}${handleClass}`}
       data-drop-zone={dropZone || undefined}
       onClick={() => onToggle(group.id)}
-      draggable={!isEditing}
+      draggable={!isEditing && !isWindowHandle}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}

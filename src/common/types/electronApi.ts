@@ -143,6 +143,8 @@ export interface ElectronAPI {
   };
   /** true のあいだ、メインウィンドウの Esc を隠す処理に回さずページで受ける（複数選択の解除・確認の取り消し） */
   setEscapeHandledByPage: (handled: boolean) => void;
+  /** 呼び出したウィンドウの移動を始める（マウスのボタンを押している間に呼ぶ。切り離しウィンドウの見出しを掴んだとき） */
+  startWindowMove: () => void;
   registerItems: (items: RegisterItem[]) => Promise<void>;
   /** パスがフォルダ・ファイル・存在しないのどれかを確かめる（登録画面へのドロップ） */
   getPathKind: (filePath: string) => Promise<PathKind>;

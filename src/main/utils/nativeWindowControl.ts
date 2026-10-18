@@ -58,6 +58,7 @@ const ShowWindow = user32.func('ShowWindow', 'bool', ['void*', 'int']);
 const SendMessageW = user32.func('SendMessageW', 'intptr', ['void*', 'uint32', 'intptr', 'intptr']);
 const PostMessageW = user32.func('PostMessageW', 'bool', ['void*', 'uint32', 'intptr', 'intptr']);
 const IsWindow = user32.func('IsWindow', 'bool', ['void*']);
+const ReleaseCapture = user32.func('ReleaseCapture', 'bool', []);
 const GetClassLongPtrW = user32.func('GetClassLongPtrW', 'intptr', ['void*', 'int']);
 const GetWindowLongW = user32.func('GetWindowLongW', 'long', ['void*', 'int']);
 const GetWindow = user32.func('GetWindow', 'void*', ['void*', 'uint32']);
@@ -927,6 +928,21 @@ export function closeWindow(hwnd: number | bigint): boolean {
   const handle = toHwndNumber(hwnd);
   if (PostMessageW(handle, WM_CLOSE, 0, 0) || !IsWindow(handle)) return true;
   throw new Error(mainI18n.t('windowErrors.closeRequestFailed'));
+}
+
+const WM_SYSCOMMAND = 0x0112;
+/** SC_MOVE に HTCAPTION（2）を足した値。タイトルバーを掴んで動かしたときと同じ移動になる */
+const SC_DRAGMOVE = 0xf012;
+
+/**
+ * ウィンドウの移動を始める（マウスのボタンを押している間、ウィンドウがカーソルについて動く）。
+ * Windows が動かすので、画面端への吸着（WM_EXITSIZEMOVE）や moved イベントもタイトルバーを掴んだときと同じに働く。
+ * ページがマウスを掴んでいると移動が始まらないので、先に放す
+ * @param hwnd QDL 自身のウィンドウのハンドル
+ */
+export function startWindowMove(hwnd: number | bigint): void {
+  ReleaseCapture();
+  PostMessageW(toHwndNumber(hwnd), WM_SYSCOMMAND, SC_DRAGMOVE, 0);
 }
 
 /** 閉じたか、トレイに隠れた（一覧に出ない）か */

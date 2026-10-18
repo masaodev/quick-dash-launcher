@@ -74,6 +74,7 @@ export const IPC_CHANNELS = {
   PIN_SHOW_MENU: 'pin:show-menu',
   EVENT_PIN_CHANGED: 'pin-changed',
   WINDOW_SET_ESCAPE_HANDLED_BY_PAGE: 'window:set-escape-handled-by-page',
+  WINDOW_START_MOVE: 'window:start-move',
   QUIT_APP: 'quit-app',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
   TOGGLE_EDIT_WINDOW: 'toggle-edit-window',

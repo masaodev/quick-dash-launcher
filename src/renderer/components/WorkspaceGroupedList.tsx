@@ -104,6 +104,8 @@ interface WorkspaceGroupedListProps {
     showUncategorized?: boolean;
     /** アーカイブタブの表示中（グループの右クリックは復元・完全削除だけ） */
     isArchiveMode?: boolean;
+    /** 切り離しウィンドウで表示しているグループ（その見出しを掴むとウィンドウが動く） */
+    detachedRootGroupId?: string;
   };
 }
 
@@ -144,6 +146,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     itemVisibility,
     isArchiveMode,
     showUncategorized = true,
+    detachedRootGroupId,
   } = ui;
 
   const [draggedElement, setDraggedElement] = React.useState<{
@@ -712,6 +715,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           group={node.group}
           itemCount={groupItems.length}
           isEditing={editingGroupId === node.group.id}
+          isWindowHandle={node.group.id === detachedRootGroupId}
           depth={node.depth}
           draggedElement={draggedElement}
           canNest={

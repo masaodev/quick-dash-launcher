@@ -466,6 +466,7 @@ const WorkspaceApp: React.FC = () => {
             activeWorkspaceId,
             visibleGroupIds: detachedVisibleGroupIds,
             showUncategorized: false,
+            detachedRootGroupId: detachedGroupId,
           }}
         />
         <div className="detached-window-controls">
