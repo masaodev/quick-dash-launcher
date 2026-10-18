@@ -1721,6 +1721,33 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     title: 'Get the icon from the path automatically',
     button: 'Fetch icon',
   },
+  /** 登録・編集画面のフォルダ取込の「登録したときの並び」（プレビュー） */
+  dirPreview: {
+    title: 'What gets listed',
+    run: 'Preview',
+    runTitle: 'Read the folder and see what will be listed when you add it',
+    cancel: 'Stop',
+    scanning: 'Counting…',
+    count_one: '{{count}} item will be listed',
+    count_other: '{{count}} items will be listed',
+    countTruncated_one: '{{count}}+ item will be listed',
+    countTruncated_other: '{{count}}+ items will be listed',
+    more_one: '{{count}} more',
+    more_other: '{{count}} more',
+    moreTruncated_one: '{{count}}+ more',
+    moreTruncated_other: '{{count}}+ more',
+    idle: 'Press "🔍 Preview" to see what will be listed when you add it',
+    idleHint: 'The folder is read only when you press it',
+    noPath: 'Choose a folder, then press "🔍 Preview"',
+    stale: 'The settings changed. Press "🔍 Preview" to count again with the current settings',
+    empty: 'Nothing to import',
+    emptyFilter: 'Nothing matches the file name filter {{filter}}',
+    emptyHint: 'Check the settings and press "🔍 Preview" again',
+    notFound: 'Folder not found (for a network folder, check that you are connected)',
+    notFolder: 'The path is not a folder',
+    timeout: 'Stopped because reading took more than {{seconds}} seconds',
+    cancelled: 'Preview stopped',
+  },
   /** 登録・編集画面のパス欄の「選択」 */
   pathPicker: {
     /** フォルダ取込のボタン */

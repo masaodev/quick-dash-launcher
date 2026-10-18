@@ -9,6 +9,7 @@ import { debugLog } from '../utils/debug';
 import { describeDirOptionsShort } from '../utils/editableItemOperations';
 
 import DirOptionsEditor from './DirOptionsEditor';
+import DirPreviewPanel from './DirPreviewPanel';
 import ItemWindowSwitchEditor from './ItemWindowSwitchEditor';
 import CustomIconEditor from './CustomIconEditor';
 import ItemConverterMenu from './ItemConverterMenu';
@@ -337,6 +338,10 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {item.itemCategory === 'dir' && (
+        <DirPreviewPanel path={item.path} dirOptions={item.dirOptions} />
       )}
 
       {item.itemCategory === 'item' && (

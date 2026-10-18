@@ -140,7 +140,8 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
 
     // 登録画面（フォルダ取込）: 案件の設計書フォルダを、Excel だけ・旧版を除いて取り込むところ
     const { dir, item } = CONTENT.shots;
-    const pathInput = `input[placeholder="${MESSAGES.register.pathPlaceholder}"]`;
+    // 種別でプレースホルダーが変わるので、パス欄は置き場で探す
+    const pathInput = '.path-input-group input';
     const register = await utils.openRegisterModal(app);
     const selects = register.locator('.register-modal select');
     await selects.nth(0).selectOption({ label: dir.tab });
@@ -155,6 +156,10 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await dirOptions.locator(`input[placeholder="${filterPlaceholder}"]`).fill(dir.filter);
     await dirOptions.locator(`input[placeholder="${excludePlaceholder}"]`).fill(dir.exclude);
     await dirOptions.locator(`input[placeholder="${prefixPlaceholder}"]`).fill(dir.prefix);
+    // 登録したときの並び（プレビュー）を出してから撮る
+    const preview = register.getByTestId('dir-preview');
+    await preview.locator('.dir-preview-btn').click();
+    await preview.locator('.dir-preview-item').first().waitFor({ state: 'visible' });
     await shot(register, path.join(ALT_DIR, 'register-dir-full.png'));
     await resizeWindow(app, register, 760);
     await shot(register, imagePath('readme-register-dir'));

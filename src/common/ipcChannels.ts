@@ -26,6 +26,10 @@ export const IPC_CHANNELS = {
   PATH_GET_KIND: 'path:get-kind',
   /** ファイルかフォルダを選ぶダイアログを開く（登録・編集画面のパス欄の「選択」） */
   PATH_SELECT: 'path:select',
+  /** フォルダ取込で何が並ぶかを走査する（登録・編集画面のプレビュー） */
+  DIR_PREVIEW_RUN: 'dir-preview:run',
+  /** 走査中のプレビューをやめる */
+  DIR_PREVIEW_CANCEL: 'dir-preview:cancel',
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
   /** 既定のブラウザの exe と表示名（登録・編集画面の「変換」） */
