@@ -115,7 +115,7 @@ test.describe('QuickDashLauncher - 拡張子の無いファイル', () => {
     });
 
     await test.step('完全リフレッシュでディスクを確かめ、ファイルになる', async () => {
-      await mainWindow.locator('button[title="更新・取得"]').click();
+      await mainWindow.locator('button[title^="更新・取得"]').click();
       await mainWindow.locator('.dropdown-item', { hasText: '完全リフレッシュ' }).click();
       await expect(itemIcon(mainWindow, 'ライセンス')).toHaveText(FILE_ICON);
       expect(readMemo(configHelper.getConfigDir())).toEqual([licensePath]);
