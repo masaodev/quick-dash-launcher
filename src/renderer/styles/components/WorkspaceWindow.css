@@ -867,7 +867,7 @@ html:has(.workspace-window.background-transparent) {
   display: flex;
   gap: 4px;
   -webkit-app-region: no-drag;
-  /* ウィンドウの上端・右端から 4px の所に置くので、▲ がウィンドウの外で欠けないようにはみ出しを抑える */
+  /* 一番上の見出しの右端に重ねるので、▲ のはみ出しを抑えて見出しに収める */
   --pin-badge-offset: -3px;
 }
 
