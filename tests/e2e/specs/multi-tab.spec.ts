@@ -9,14 +9,12 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== タブ表示・切り替えテスト ====================
 
-  test('タブ機能を有効化するとタブバーが表示される', async ({ mainWindow }, _testInfo) => {
+  test('タブバーにメイン・サブタブが表示され、クリックで切り替わる', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('初期状態を確認', async () => {
-      await utils.waitForPageLoad();
-    });
+    await utils.waitForPageLoad();
 
-    await test.step('タブバーとタブボタンの表示確認', async () => {
+    await test.step('タブ機能を有効化するとタブバーが表示される', async () => {
       // タブバーが表示されることを確認
       const tabBar = mainWindow.locator('.tab-bar');
       await expect(tabBar).toBeVisible();
@@ -26,45 +24,26 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const tabCount = await tabs.count();
       expect(tabCount).toBeGreaterThan(0);
     });
-  });
 
-  test('メインタブとサブタブが表示される', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
+    await test.step('メインタブとサブタブが表示される', async () => {
+      // メインタブが存在することを確認
+      const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
+      await expect(mainTab).toBeVisible();
 
-    await utils.waitForPageLoad();
-
-    // メインタブが存在することを確認
-    const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
-    await expect(mainTab).toBeVisible();
-
-    // サブ1タブが存在することを確認（data2.json）
-    const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-    await expect(subTab1).toBeVisible();
-  });
-
-  test('デフォルトではメインタブがアクティブになっている', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
-
-    await utils.waitForPageLoad();
-
-    // メインタブがアクティブであることを確認
-    const mainTab = mainWindow.locator('.tab-button.active', { hasText: 'メイン' });
-    await expect(mainTab).toBeVisible();
-  });
-
-  test('サブタブをクリックすると切り替わる', async ({ mainWindow }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('タブ機能を有効化してリロード', async () => {
-      await utils.waitForPageLoad();
+      // サブ1タブが存在することを確認（data2.json）
+      const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
+      await expect(subTab1).toBeVisible();
     });
 
-    await test.step('サブ1タブをクリック', async () => {
+    await test.step('デフォルトではメインタブがアクティブになっている', async () => {
+      const mainTab = mainWindow.locator('.tab-button.active', { hasText: 'メイン' });
+      await expect(mainTab).toBeVisible();
+    });
+
+    await test.step('サブタブをクリックすると切り替わる', async () => {
       const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
       await subTab1.click();
-    });
 
-    await test.step('サブ1タブがアクティブになったことを確認', async () => {
       const activeTab = mainWindow.locator('.tab-button.active', { hasText: 'サブ1' });
       await expect(activeTab).toBeVisible();
     });
@@ -72,21 +51,36 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== サブタブのアイテム表示テスト ====================
 
-  test('サブタブに切り替えるとdata2.jsonのアイテムが表示される', async ({
+  test('メインタブとサブタブを切り替えると、それぞれのアイテムが表示される', async ({
     mainWindow,
-  }, _testInfo) => {
+  }) => {
     const utils = new TestUtils(mainWindow);
+    const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
+    const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
 
-    await test.step('タブ機能を有効化してリロード', async () => {
-      await utils.waitForPageLoad();
-    });
+    await utils.waitForPageLoad();
 
-    await test.step('サブ1タブをクリック', async () => {
-      const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
+    await test.step('サブタブに切り替えるとメインタブのアイテムは表示されない', async () => {
+      // メインタブのアイテムが表示されていることを確認
+      const githubBefore = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubBefore).toBeVisible();
+
       await subTab1.click();
+
+      // メインタブのアイテムが表示されなくなることを確認
+      const githubAfter = mainWindow.locator('.item', { hasText: 'GitHub' });
+      await expect(githubAfter).not.toBeVisible();
+
+      // data2.jsonのアイテムが表示されることを確認
+      const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
+      await expect(redditItem).toBeVisible();
     });
 
-    await test.step('data2.jsonのアイテムが表示されることを確認', async () => {
+    await test.step('サブタブに切り替えるとdata2.jsonのアイテムが表示される', async () => {
+      // メインタブに戻してから切り替える
+      await mainTab.click();
+      await subTab1.click();
+
       const knownItems = ['Stack Overflow', 'Reddit', 'YouTube'];
 
       for (const itemName of knownItems) {
@@ -94,71 +88,51 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
         await expect(item).toBeVisible({ timeout: 10000 });
       }
     });
-  });
 
-  test('サブタブに切り替えるとメインタブのアイテムは表示されない', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
+    await test.step('サブタブのアイテムを選択できる', async () => {
+      // メインタブに戻してから切り替える
+      await mainTab.click();
+      await subTab1.click();
 
-    await utils.waitForPageLoad();
+      // 最初のアイテムが選択されていることを確認
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+    });
 
-    // メインタブのアイテムが表示されていることを確認
-    const githubBefore = mainWindow.locator('.item', { hasText: 'GitHub' });
-    await expect(githubBefore).toBeVisible();
+    await test.step('メインタブに戻るとdata.jsonのアイテムが表示される', async () => {
+      await subTab1.click();
+      await mainTab.click();
 
-    // サブ1タブをクリック
-    const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-    await subTab1.click();
+      // data.jsonのアイテムが表示されることを確認
+      const knownItems = ['GitHub', 'Google', 'Wikipedia'];
 
-    // メインタブのアイテムが表示されなくなることを確認
-    const githubAfter = mainWindow.locator('.item', { hasText: 'GitHub' });
-    await expect(githubAfter).not.toBeVisible();
+      for (const itemName of knownItems) {
+        const item = mainWindow.locator('.item', { hasText: itemName });
+        await expect(item).toBeVisible();
+      }
 
-    // data2.jsonのアイテムが表示されることを確認
-    const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
-    await expect(redditItem).toBeVisible();
-  });
+      // data2.jsonのアイテムは表示されないことを確認
+      const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
+      await expect(redditItem).not.toBeVisible();
+    });
 
-  test('メインタブに戻るとdata.jsonのアイテムが表示される', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
+    await test.step('各タブのデータは独立している', async () => {
+      // 前の step でメインタブに戻っている
+      const mainItems = mainWindow.locator('.item');
+      const mainItemCount = await mainItems.count();
 
-    await utils.waitForPageLoad();
+      await subTab1.click();
 
-    // サブ1タブに切り替え
-    const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-    await subTab1.click();
+      // サブタブのアイテム数を確認
+      const subItems = mainWindow.locator('.item');
+      const subItemCount = await subItems.count();
 
-    // メインタブに戻る
-    const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
-    await mainTab.click();
-
-    // data.jsonのアイテムが表示されることを確認
-    const knownItems = ['GitHub', 'Google', 'Wikipedia'];
-
-    for (const itemName of knownItems) {
-      const item = mainWindow.locator('.item', { hasText: itemName });
-      await expect(item).toBeVisible();
-    }
-
-    // data2.jsonのアイテムは表示されないことを確認
-    const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
-    await expect(redditItem).not.toBeVisible();
+      // アイテム数が異なることを確認（独立したデータ）
+      expect(mainItemCount).not.toBe(subItemCount);
+    });
   });
 
   // ==================== サブタブのアイテム選択・実行テスト ====================
-
-  test('サブタブのアイテムを選択できる', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
-
-    await utils.waitForPageLoad();
-
-    // サブ1タブに切り替え
-    const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-    await subTab1.click();
-
-    // 最初のアイテムが選択されていることを確認
-    const selectedItem = mainWindow.locator('.item.selected');
-    await expect(selectedItem).toBeVisible();
-  });
 
   test('サブタブのアイテムをキーボードで選択できる', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
@@ -232,27 +206,6 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== タブ間のデータ独立性テスト ====================
 
-  test('各タブのデータは独立している', async ({ mainWindow }) => {
-    const utils = new TestUtils(mainWindow);
-
-    await utils.waitForPageLoad();
-
-    // メインタブのアイテム数を確認
-    const mainItems = mainWindow.locator('.item');
-    const mainItemCount = await mainItems.count();
-
-    // サブ1タブに切り替え
-    const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-    await subTab1.click();
-
-    // サブタブのアイテム数を確認
-    const subItems = mainWindow.locator('.item');
-    const subItemCount = await subItems.count();
-
-    // アイテム数が異なることを確認（独立したデータ）
-    expect(mainItemCount).not.toBe(subItemCount);
-  });
-
   test('タブを切り替えても検索状態はリセットされる', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
 
@@ -280,278 +233,124 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     expect(searchValueAfter).toBeDefined();
   });
 
-  // ==================== アイテムのタブ変更テスト ====================
-
-  // 注: ネイティブコンテキストメニュー経由の編集を使用するためスキップ
-  test.skip('アイテムの編集で保存先タブを変更すると別のタブに移動する', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('メインタブにアイテムが存在することを確認', async () => {
-      // ページの読み込み完了を待機
-      await utils.waitForPageLoad();
-
-      // メインタブがアクティブであることを確認
-      const mainTab = mainWindow.locator('.tab-button.active', { hasText: 'メイン' });
-      await expect(mainTab).toBeVisible();
-
-      // GitHubアイテムが表示されていることを確認
-      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
-      await expect(githubItem).toBeVisible();
-    });
-
-    await test.step('GitHubアイテムを右クリックして編集モーダルを開く', async () => {
-      await utils.editItemByRightClick('GitHub');
-
-      const isModalVisible = await utils.isRegisterModalVisible();
-      expect(isModalVisible).toBe(true);
-    });
-
-    await test.step('保存先をサブ1タブに変更して更新', async () => {
-      // 保存先セレクトボックスを直接操作してdata2.jsonを選択
-      const tabSelect = mainWindow.locator('.register-modal select').last();
-      await tabSelect.selectOption({ value: 'data2.json' });
-
-      // 更新ボタンをクリック
-      await utils.clickRegisterButton();
-    });
-
-    await test.step('メインタブからGitHubアイテムが消えたことを確認', async () => {
-      // メインタブがアクティブであることを確認
-      const mainTab = mainWindow.locator('.tab-button.active', { hasText: 'メイン' });
-      await expect(mainTab).toBeVisible();
-
-      // GitHubアイテムが表示されなくなったことを確認
-      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
-      await expect(githubItem).not.toBeVisible({ timeout: 3000 });
-    });
-
-    await test.step('サブ1タブに切り替えてGitHubアイテムが存在することを確認', async () => {
-      // サブ1タブをクリック
-      const subTab1 = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-      await subTab1.click();
-
-      // サブ1タブがアクティブになったことを確認
-      const activeTab = mainWindow.locator('.tab-button.active', { hasText: 'サブ1' });
-      await expect(activeTab).toBeVisible();
-
-      // GitHubアイテムがサブ1タブに表示されることを確認
-      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
-      await expect(githubItem).toBeVisible({ timeout: 5000 });
-    });
-
-    await test.step('data.jsonとdata2.jsonの内容を確認', async () => {
-      // data.jsonにGitHubが含まれていないことを確認
-      const dataContent = configHelper.readDataFile('data.json');
-      const hasGitHubInData = dataContent.items.some(
-        (item) => item.type !== 'dir' && item.displayName === 'GitHub'
-      );
-      expect(hasGitHubInData).toBe(false);
-
-      // data2.jsonにGitHubが含まれていることを確認
-      const data2Content = configHelper.readDataFile('data2.json');
-      const hasGitHubInData2 = data2Content.items.some(
-        (item) => item.type !== 'dir' && item.displayName === 'GitHub'
-      );
-      expect(hasGitHubInData2).toBe(true);
-    });
-  });
-
   // ==================== タブ表示時のアイテム数表示テスト ====================
 
-  test('タブ表示ON時、各タブにアイテム数が表示される', async ({ mainWindow }, _testInfo) => {
+  test('タブ表示ON時、各タブのアイテム数が表示され、検索・切り替えに追従する', async ({
+    mainWindow,
+  }) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('マルチタブ機能を有効化', async () => {
-      await utils.waitForPageLoad();
+    await utils.waitForPageLoad();
 
+    await test.step('タブ表示ON時、各タブにアイテム数が表示される', async () => {
       // タブバーが表示されることを確認
       const tabBar = mainWindow.locator('.tab-bar');
       await expect(tabBar).toBeVisible();
-    });
 
-    await test.step('メインタブにアイテム数が表示される', async () => {
+      // メインタブ内のアイテム数表示を確認
       const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
       await expect(mainTab).toBeVisible();
-
-      // タブ内のアイテム数表示を確認
       const mainTabCount = mainTab.locator('.tab-count');
       await expect(mainTabCount).toBeVisible();
+      expect(await mainTabCount.textContent()).toMatch(/\(\d+\)/);
 
-      const countText = await mainTabCount.textContent();
-      expect(countText).toMatch(/\(\d+\)/);
-    });
-
-    await test.step('サブ1タブにアイテム数が表示される', async () => {
+      // サブ1タブ内のアイテム数表示を確認
       const subTab = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
       await expect(subTab).toBeVisible();
-
-      // タブ内のアイテム数表示を確認
       const subTabCount = subTab.locator('.tab-count');
       await expect(subTabCount).toBeVisible();
-
-      const countText = await subTabCount.textContent();
-      expect(countText).toMatch(/\(\d+\)/);
-    });
-  });
-
-  test('タブ表示ON時、検索によって全タブのアイテム数が動的に更新される', async ({
-    mainWindow,
-  }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('マルチタブ機能を有効化', async () => {
-      await utils.waitForPageLoad();
+      expect(await subTabCount.textContent()).toMatch(/\(\d+\)/);
     });
 
-    let mainTabInitialCount: string;
-    let subTabInitialCount: string;
+    await test.step('タブ表示ON時、検索によって全タブのアイテム数が動的に更新される', async () => {
+      const mainTabCount = mainWindow
+        .locator('.tab-button', { hasText: 'メイン' })
+        .locator('.tab-count');
+      const subTabCount = mainWindow
+        .locator('.tab-button', { hasText: 'サブ1' })
+        .locator('.tab-count');
 
-    await test.step('各タブの初期アイテム数を取得', async () => {
-      const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
-      const mainTabCount = mainTab.locator('.tab-count');
-      mainTabInitialCount = (await mainTabCount.textContent()) || '';
-
-      const subTab = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-      const subTabCount = subTab.locator('.tab-count');
-      subTabInitialCount = (await subTabCount.textContent()) || '';
-
+      // 各タブの初期アイテム数を取得
+      const mainTabInitialCount = (await mainTabCount.textContent()) || '';
+      const subTabInitialCount = (await subTabCount.textContent()) || '';
       expect(mainTabInitialCount).toMatch(/\(\d+\)/);
       expect(subTabInitialCount).toMatch(/\(\d+\)/);
-    });
 
-    await test.step('検索を実行して各タブのアイテム数が更新されることを確認', async () => {
+      // 検索を実行して各タブのアイテム数が更新されることを確認
+      // （各タブのアイテム数が初期値と異なる、または同じ場合もある）
       await utils.searchFor('GitHub');
+      expect((await mainTabCount.textContent()) || '').toMatch(/\(\d+\)/);
+      expect((await subTabCount.textContent()) || '').toMatch(/\(\d+\)/);
 
-      const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
-      const mainTabCount = mainTab.locator('.tab-count');
-      const mainTabFiltered = (await mainTabCount.textContent()) || '';
-
-      const subTab = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-      const subTabCount = subTab.locator('.tab-count');
-      const subTabFiltered = (await subTabCount.textContent()) || '';
-
-      // 各タブのアイテム数が初期値と異なる（または同じ場合もある）ことを確認
-      expect(mainTabFiltered).toMatch(/\(\d+\)/);
-      expect(subTabFiltered).toMatch(/\(\d+\)/);
-    });
-
-    await test.step('検索をクリアして各タブのアイテム数が元に戻ることを確認', async () => {
+      // 検索をクリアして各タブのアイテム数が初期値に戻ることを確認
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
+      expect((await mainTabCount.textContent()) || '').toBe(mainTabInitialCount);
+      expect((await subTabCount.textContent()) || '').toBe(subTabInitialCount);
+    });
 
+    await test.step('タブ切り替え時、各タブのアイテム数は維持される', async () => {
       const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
-      const mainTabCount = mainTab.locator('.tab-count');
-      const mainTabRestored = (await mainTabCount.textContent()) || '';
-
       const subTab = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
-      const subTabCount = subTab.locator('.tab-count');
-      const subTabRestored = (await subTabCount.textContent()) || '';
 
-      // アイテム数が初期値に戻ることを確認
-      expect(mainTabRestored).toBe(mainTabInitialCount);
-      expect(subTabRestored).toBe(subTabInitialCount);
-    });
-  });
-
-  test('タブ切り替え時、各タブのアイテム数は維持される', async ({ mainWindow }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('マルチタブ機能を有効化', async () => {
-      await utils.waitForPageLoad();
-    });
-
-    let mainTabCount: string;
-    let subTabCount: string;
-
-    await test.step('メインタブのアイテム数を取得', async () => {
-      const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
-      const count = mainTab.locator('.tab-count');
-      mainTabCount = (await count.textContent()) || '';
+      // メインタブのアイテム数を取得
+      const mainTabCount = (await mainTab.locator('.tab-count').textContent()) || '';
       expect(mainTabCount).toMatch(/\(\d+\)/);
-    });
 
-    await test.step('サブ1タブに切り替え', async () => {
-      const subTab = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
+      // サブ1タブに切り替え
       await subTab.click();
-
-      const count = subTab.locator('.tab-count');
-      subTabCount = (await count.textContent()) || '';
+      const subTabCount = (await subTab.locator('.tab-count').textContent()) || '';
       expect(subTabCount).toMatch(/\(\d+\)/);
-    });
 
-    await test.step('メインタブに戻り、アイテム数が変わっていないことを確認', async () => {
-      const mainTab = mainWindow.locator('.tab-button', { hasText: 'メイン' });
+      // メインタブに戻り、アイテム数が変わっていないことを確認
       await mainTab.click();
-
-      const count = mainTab.locator('.tab-count');
-      const currentCount = (await count.textContent()) || '';
-
-      // アイテム数が変わっていないことを確認
+      const currentCount = (await mainTab.locator('.tab-count').textContent()) || '';
       expect(currentCount).toBe(mainTabCount);
     });
   });
 
   // ==================== 複数ファイル統合タブテスト ====================
 
-  test('1つのタブに複数のデータファイルを紐づけた場合、タブが1つだけ表示される', async ({
+  test('統合タブに複数ファイルのアイテムがまとめて表示・検索され、タブ切り替えで消える', async ({
     mainWindow,
     configHelper,
-  }, _testInfo) => {
+  }) => {
     // 複数ファイル統合タブのテンプレートをロード
     configHelper.loadTemplate('with-multi-file-tabs');
     await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
+    const unifiedTab = mainWindow.locator('.tab-button', { hasText: '統合タブ' });
 
-    await test.step('ページロードと初期確認', async () => {
-      await utils.waitForPageLoad();
-    });
+    await utils.waitForPageLoad();
 
-    await test.step('タブが2つのみ表示されることを確認', async () => {
+    await test.step('1つのタブに複数のデータファイルを紐づけた場合、タブが1つだけ表示される', async () => {
+      // タブが2つのみ表示されることを確認
       const tabs = mainWindow.locator('.tab-button');
       const tabCount = await tabs.count();
       expect(tabCount).toBe(2);
-    });
 
-    await test.step('統合タブとサブ1タブが表示されることを確認', async () => {
-      const unifiedTab = mainWindow.locator('.tab-button', { hasText: '統合タブ' });
+      // 統合タブとサブ1タブが表示されることを確認
       await expect(unifiedTab).toBeVisible();
 
       const subTab = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
       await expect(subTab).toBeVisible();
     });
-  });
 
-  test('統合タブには複数ファイルのアイテムが全て表示される', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    configHelper.loadTemplate('with-multi-file-tabs');
-    await mainWindow.reload();
-
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページロードと統合タブの確認', async () => {
-      await utils.waitForPageLoad();
-
+    await test.step('統合タブには複数ファイルのアイテムが全て表示される', async () => {
       // 統合タブがアクティブであることを確認
-      const unifiedTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
-      await expect(unifiedTab).toBeVisible();
-    });
+      const activeTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
+      await expect(activeTab).toBeVisible();
 
-    await test.step('data.jsonのアイテムが表示されることを確認', async () => {
+      // data.jsonのアイテムが表示されることを確認
       const knownDataItems = ['GitHub', 'Google', 'Wikipedia'];
 
       for (const itemName of knownDataItems) {
         const item = mainWindow.locator('.item', { hasText: itemName });
         await expect(item).toBeVisible({ timeout: 5000 });
       }
-    });
 
-    await test.step('data3.jsonのアイテムも表示されることを確認', async () => {
+      // data3.jsonのアイテムも表示されることを確認
       const knownData3Items = ['Qiita', 'Zenn', 'note'];
 
       for (const itemName of knownData3Items) {
@@ -559,23 +358,8 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
         await expect(item).toBeVisible({ timeout: 5000 });
       }
     });
-  });
 
-  test('統合タブのアイテム数は複数ファイルの合計が表示される', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    configHelper.loadTemplate('with-multi-file-tabs');
-    await mainWindow.reload();
-
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('ページロードと統合タブの確認', async () => {
-      await utils.waitForPageLoad();
-    });
-
-    await test.step('統合タブのアイテム数を確認', async () => {
-      const unifiedTab = mainWindow.locator('.tab-button', { hasText: '統合タブ' });
+    await test.step('統合タブのアイテム数は複数ファイルの合計が表示される', async () => {
       const tabCount = unifiedTab.locator('.tab-count');
       const countText = (await tabCount.textContent()) || '';
 
@@ -590,20 +374,8 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const displayedCount = parseInt(countText.match(/\((\d+)\)/)?.[1] || '0');
       expect(displayedCount).toBe(actualCount);
     });
-  });
 
-  test('統合タブから別のタブに切り替えると、統合タブのアイテムは表示されない', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    configHelper.loadTemplate('with-multi-file-tabs');
-    await mainWindow.reload();
-
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('統合タブの初期状態を確認', async () => {
-      await utils.waitForPageLoad();
-
+    await test.step('統合タブから別のタブに切り替えると、統合タブのアイテムは表示されない', async () => {
       // data.jsonのアイテムが表示されていることを確認
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).toBeVisible();
@@ -611,65 +383,44 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // data3.jsonのアイテムも表示されていることを確認
       const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).toBeVisible();
-    });
 
-    await test.step('サブ1タブに切り替え', async () => {
+      // サブ1タブに切り替え
       const subTab = mainWindow.locator('.tab-button', { hasText: 'サブ1' });
       await subTab.click();
-    });
 
-    await test.step('統合タブのアイテムが表示されないことを確認', async () => {
-      // data.jsonのアイテムが表示されないことを確認
-      const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
+      // data.json・data3.jsonのアイテムが表示されないことを確認
       await expect(githubItem).not.toBeVisible();
-
-      // data3.jsonのアイテムも表示されないことを確認
-      const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).not.toBeVisible();
 
       // data2.jsonのアイテムが表示されることを確認
       const redditItem = mainWindow.locator('.item', { hasText: 'Reddit' });
       await expect(redditItem).toBeVisible();
     });
-  });
 
-  test('統合タブで検索すると複数ファイルのアイテムが検索対象になる', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    configHelper.loadTemplate('with-multi-file-tabs');
-    await mainWindow.reload();
-
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('統合タブで検索前の状態を確認', async () => {
-      await utils.waitForPageLoad();
+    await test.step('統合タブで検索すると複数ファイルのアイテムが検索対象になる', async () => {
+      // 前の step でサブ1タブへ切り替えたので、統合タブへ戻す
+      await unifiedTab.click();
 
       // 統合タブがアクティブであることを確認
-      const unifiedTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
-      await expect(unifiedTab).toBeVisible();
+      const activeTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
+      await expect(activeTab).toBeVisible();
+      await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
 
       // 検索前の全アイテム数を取得
       const allItems = mainWindow.locator('.item');
       const initialCount = await allItems.count();
       expect(initialCount).toBeGreaterThan(0);
-    });
 
-    await test.step('data.jsonのアイテムで検索', async () => {
+      // data.jsonのアイテムで検索
       await utils.searchFor('GitHub');
-
-      // GitHubアイテムが表示されることを確認（data.jsonのアイテム）
       const githubItem = mainWindow.locator('.item', { hasText: 'GitHub' });
       await expect(githubItem).toBeVisible();
-    });
 
-    await test.step('検索をクリアしてdata3.jsonのアイテムで検索', async () => {
+      // 検索をクリアしてdata3.jsonのアイテムで検索
       const searchBox = mainWindow.locator('input[type="text"]').first();
       await searchBox.clear();
 
       await utils.searchFor('Qiita');
-
-      // Qiitaアイテムが表示されることを確認（data3.jsonのアイテム）
       const qiitaItem = mainWindow.locator('.item', { hasText: 'Qiita' });
       await expect(qiitaItem).toBeVisible();
     });
@@ -677,136 +428,19 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
   // ==================== 統合タブのキーボード操作テスト ====================
 
-  test('統合タブで矢印キーによる選択が正しく循環する', async ({
+  test('統合タブで矢印キーにより選択が移動し、Enterキーで開ける', async ({
     mainWindow,
     configHelper,
-  }, _testInfo) => {
+  }) => {
     configHelper.loadTemplate('with-multi-file-tabs');
     await mainWindow.reload();
 
     const utils = new TestUtils(mainWindow);
 
-    await test.step('統合タブがアクティブであることを確認', async () => {
-      await utils.waitForPageLoad();
+    await utils.waitForPageLoad();
 
-      const unifiedTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
-      await expect(unifiedTab).toBeVisible();
-    });
-
-    let firstItemText: string | null;
-    let lastItemText: string | null;
-
-    await test.step('最初のアイテムが選択されていることを確認', async () => {
-      const firstItem = mainWindow.locator('.item.selected').first();
-      await expect(firstItem).toBeVisible();
-      firstItemText = await firstItem.textContent();
-    });
-
-    await test.step('↑キーを押して最後のアイテムに移動することを確認', async () => {
-      await utils.sendShortcut('ArrowUp');
-
-      const selectedItem = mainWindow.locator('.item.selected');
-      await expect(selectedItem).toBeVisible();
-      lastItemText = await selectedItem.textContent();
-
-      // 最初のアイテムとは異なることを確認（循環して最後のアイテムに移動）
-      expect(lastItemText).not.toBe(firstItemText);
-    });
-
-    await test.step('↓キーを押して最初のアイテムに戻ることを確認', async () => {
-      await utils.sendShortcut('ArrowDown');
-
-      const selectedItem = mainWindow.locator('.item.selected');
-      await expect(selectedItem).toBeVisible();
-      const currentItemText = await selectedItem.textContent();
-
-      // 最初のアイテムに戻ることを確認
-      expect(currentItemText).toBe(firstItemText);
-    });
-  });
-
-  test('統合タブで矢印キーで選択したアイテムをEnterキーで開ける', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    configHelper.loadTemplate('with-multi-file-tabs');
-    await mainWindow.reload();
-
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('統合タブがアクティブであることを確認', async () => {
-      await utils.waitForPageLoad();
-
-      const unifiedTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
-      await expect(unifiedTab).toBeVisible();
-    });
-
-    let _selectedItemText: string | null;
-
-    await test.step('↓キーで2番目のアイテムに移動', async () => {
-      await utils.sendShortcut('ArrowDown');
-
-      const selectedItem = mainWindow.locator('.item.selected');
-      await expect(selectedItem).toBeVisible();
-      _selectedItemText = await selectedItem.textContent();
-    });
-
-    await test.step('Enterキーを押してアイテムを開く（エラーが発生しないことを確認）', async () => {
-      // Enterキーを押す（実際にアプリやURLが開くが、テストでは開けないのでエラーにならないことのみ確認）
-      await utils.sendShortcut('Enter');
-
-      // エラーダイアログが表示されていないことを確認
-      const alertDialog = mainWindow.locator('.alert-dialog');
-      await expect(alertDialog).not.toBeVisible();
-    });
-  });
-
-  test('統合タブで複数回矢印キーを押して選択を移動し、Enterキーで開ける', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    configHelper.loadTemplate('with-multi-file-tabs');
-    await mainWindow.reload();
-
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('統合タブがアクティブであることを確認', async () => {
-      await utils.waitForPageLoad();
-
-      const unifiedTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
-      await expect(unifiedTab).toBeVisible();
-    });
-
-    await test.step('↓キーを5回押して5番目のアイテムに移動', async () => {
-      for (let i = 0; i < 5; i++) {
-        await utils.sendShortcut('ArrowDown');
-      }
-
-      const selectedItem = mainWindow.locator('.item.selected');
-      await expect(selectedItem).toBeVisible();
-    });
-
-    await test.step('Enterキーを押してアイテムを開く', async () => {
-      await utils.sendShortcut('Enter');
-
-      // エラーダイアログが表示されていないことを確認
-      const alertDialog = mainWindow.locator('.alert-dialog');
-      await expect(alertDialog).not.toBeVisible();
-    });
-  });
-
-  test('統合タブでdata.jsonとdata3.jsonのアイテムをまたいで矢印キーで移動できる', async ({
-    mainWindow,
-    configHelper,
-  }, _testInfo) => {
-    configHelper.loadTemplate('with-multi-file-tabs');
-    await mainWindow.reload();
-
-    const utils = new TestUtils(mainWindow);
-
-    await test.step('統合タブの全アイテム数を確認', async () => {
-      await utils.waitForPageLoad();
-
+    // 巡回の step は最初のアイテムが選択された状態から始める必要があるので、先頭に置く
+    await test.step('統合タブでdata.jsonとdata3.jsonのアイテムをまたいで矢印キーで移動できる', async () => {
       // 統合タブがアクティブであることを確認
       const unifiedTab = mainWindow.locator('.tab-button.active', { hasText: '統合タブ' });
       await expect(unifiedTab).toBeVisible();
@@ -815,9 +449,8 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       const allItems = mainWindow.locator('.item');
       const itemCount = await allItems.count();
       expect(itemCount).toBe(11);
-    });
 
-    await test.step('↓キーを11回押して全アイテムを巡回', async () => {
+      // ↓キーを11回押して全アイテムを巡回
       const visitedItems: string[] = [];
 
       const selectedItem = mainWindow.locator('.item.selected');
@@ -835,16 +468,65 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       // 11個の異なるアイテムを訪問したことを確認
       const uniqueItems = new Set(visitedItems);
       expect(uniqueItems.size, `選択の順: ${visitedItems.join(' → ')}`).toBe(11);
-    });
 
-    await test.step('最初のアイテムに戻っていることを確認', async () => {
-      const selectedItem = mainWindow.locator('.item.selected');
+      // 最初のアイテムに戻っていることを確認
       const firstItem = mainWindow.locator('.item').first();
       const selectedText = await selectedItem.textContent();
       const firstText = await firstItem.textContent();
-
-      // 選択されているアイテムが最初のアイテムであることを確認
       expect(selectedText).toBe(firstText);
+    });
+
+    await test.step('統合タブで矢印キーによる選択が正しく循環する', async () => {
+      const firstItem = mainWindow.locator('.item.selected').first();
+      await expect(firstItem).toBeVisible();
+      const firstItemText = await firstItem.textContent();
+
+      // ↑キーを押すと、循環して最後のアイテムに移動する
+      await utils.sendShortcut('ArrowUp');
+
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+      const lastItemText = await selectedItem.textContent();
+      expect(lastItemText).not.toBe(firstItemText);
+
+      // ↓キーを押すと最初のアイテムに戻る
+      await utils.sendShortcut('ArrowDown');
+
+      await expect(selectedItem).toBeVisible();
+      const currentItemText = await selectedItem.textContent();
+      expect(currentItemText).toBe(firstItemText);
+    });
+
+    await test.step('統合タブで矢印キーで選択したアイテムをEnterキーで開ける', async () => {
+      // ↓キーで次のアイテムに移動
+      await utils.sendShortcut('ArrowDown');
+
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+
+      // Enterキーを押す（実際にアプリやURLが開くが、テストでは開けないのでエラーにならないことのみ確認）
+      await utils.sendShortcut('Enter');
+
+      // エラーダイアログが表示されていないことを確認
+      const alertDialog = mainWindow.locator('.alert-dialog');
+      await expect(alertDialog).not.toBeVisible();
+    });
+
+    await test.step('統合タブで複数回矢印キーを押して選択を移動し、Enterキーで開ける', async () => {
+      // ↓キーを5回押して選択を移動
+      for (let i = 0; i < 5; i++) {
+        await utils.sendShortcut('ArrowDown');
+      }
+
+      const selectedItem = mainWindow.locator('.item.selected');
+      await expect(selectedItem).toBeVisible();
+
+      // Enterキーを押してアイテムを開く
+      await utils.sendShortcut('Enter');
+
+      // エラーダイアログが表示されていないことを確認
+      const alertDialog = mainWindow.locator('.alert-dialog');
+      await expect(alertDialog).not.toBeVisible();
     });
   });
 });

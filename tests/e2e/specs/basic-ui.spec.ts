@@ -113,13 +113,16 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
     });
   });
 
-  // ==================== 検索機能テスト ====================
+  // ==================== 検索とアイテム数表示（タブ表示OFF時） ====================
 
-  test('検索ボックスでアイテムを絞り込み、クリアで全件表示できる', async ({
+  test('検索で絞り込み・AND 検索ができ、検索ボックス下のアイテム数も追従する', async ({
     mainWindow,
   }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
+    const searchBox = mainWindow.locator('input[type="text"]').first();
+    const itemCount = mainWindow.locator('.item-count-display');
     let initialCount: number;
+    let initialCountText: string;
 
     await test.step('ページ読み込みと検索ボックスの確認', async () => {
       await utils.waitForPageLoad();
@@ -129,8 +132,18 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       expect(hasSearchBox).toBe(true);
 
       // 検索ボックスにフォーカスがあることを確認
-      const searchBox = mainWindow.locator('input[type="text"]').first();
       await expect(searchBox).toBeFocused();
+    });
+
+    await test.step('タブ表示OFFで、検索情報バーとアイテム数が表示される', async () => {
+      // デフォルトテンプレート（base）を使用（showDataFileTabs: false）
+      await expect(mainWindow.locator('.file-tab-bar')).not.toBeVisible();
+      await expect(mainWindow.locator('.search-info-bar')).toBeVisible();
+      await expect(itemCount).toBeVisible();
+
+      // アイテム数が「〇〇 件」形式で表示されることを確認
+      initialCountText = (await itemCount.textContent()) || '';
+      expect(initialCountText).toMatch(/\d+ 件/);
     });
 
     await test.step('検索前の全アイテム数を取得', async () => {
@@ -139,7 +152,7 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       expect(initialCount).toBeGreaterThan(0);
     });
 
-    await test.step('"GitHub"で検索して絞り込みを確認', async () => {
+    await test.step('"GitHub"で検索して絞り込みを確認し、アイテム数も減る', async () => {
       await utils.searchFor('GitHub');
 
       // 検索後のアイテム数を取得
@@ -153,110 +166,39 @@ test.describe('QuickDashLauncher - 基本UI機能テスト', () => {
       // GitHubを含むアイテムが表示されていることを確認
       // isVisible() は待たずに 1 回だけ見るので、描画が遅れると落ちる。表示されるまで待つ
       await expect(mainWindow.locator('text=GitHub').first()).toBeVisible();
+
+      // アイテム数の表示が初期値より少なくなっていることを確認
+      const filteredCountText = (await itemCount.textContent()) || '';
+      const initialNum = parseInt(initialCountText.match(/\d+/)?.[0] || '0');
+      const filteredNum = parseInt(filteredCountText.match(/\d+/)?.[0] || '0');
+      expect(filteredNum).toBeLessThan(initialNum);
+      expect(filteredNum).toBeGreaterThan(0);
     });
 
-    await test.step('検索ボックスをクリアして全アイテムが表示される', async () => {
-      const searchBox = mainWindow.locator('input[type="text"]').first();
+    await test.step('検索ボックスをクリアすると全アイテムとアイテム数が元に戻る', async () => {
       await searchBox.clear();
 
       // 全アイテムが再び表示されることを確認
       const allItems = mainWindow.locator('.item, [class*="item"]');
       const restoredCount = await allItems.count();
       expect(restoredCount).toBe(initialCount);
-    });
-  });
 
-  test('複数キーワードでAND検索ができる', async ({ mainWindow }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-    let initialCount: number;
-
-    await test.step('ページの読み込み完了を待機', async () => {
-      await utils.waitForPageLoad();
+      // アイテム数が初期値に戻ることを確認
+      expect((await itemCount.textContent()) || '').toBe(initialCountText);
     });
 
-    await test.step('検索前の全アイテム数を取得', async () => {
-      const allItems = mainWindow.locator('.item, [class*="item"]');
-      initialCount = await allItems.count();
-    });
-
-    await test.step('複数キーワードで検索', async () => {
+    await test.step('複数キーワードでAND検索ができる', async () => {
       // スペース区切りで複数キーワードを入力
       await utils.searchFor('Git Hub');
-    });
 
-    await test.step('検索結果を確認', async () => {
       // 結果が絞り込まれることを確認
       const filteredItems = mainWindow.locator('.item, [class*="item"]:visible');
       const filteredCount = await filteredItems.count();
-
       expect(filteredCount).toBeGreaterThan(0);
       expect(filteredCount).toBeLessThanOrEqual(initialCount);
 
       // GitHubアイテムが表示されていることを確認
-      const githubElement = mainWindow.locator('.item', { hasText: 'GitHub' });
-      await expect(githubElement).toBeVisible();
-    });
-  });
-
-  // ==================== アイテム数表示テスト（タブ表示OFF時） ====================
-
-  test('検索ボックス下にアイテム数が表示され、検索で動的に更新される', async ({
-    mainWindow,
-  }, _testInfo) => {
-    const utils = new TestUtils(mainWindow);
-    let initialCount: string;
-
-    await test.step('ページ読み込みとタブ表示OFF確認', async () => {
-      // デフォルトテンプレート（base）を使用（showDataFileTabs: false）
-      await utils.waitForPageLoad();
-
-      // タブバーが表示されていないことを確認
-      const tabBar = mainWindow.locator('.file-tab-bar');
-      await expect(tabBar).not.toBeVisible();
-    });
-
-    await test.step('検索情報バーとアイテム数が表示される', async () => {
-      // 検索情報バーが表示されることを確認
-      const infoBar = mainWindow.locator('.search-info-bar');
-      await expect(infoBar).toBeVisible();
-
-      // アイテム数表示が存在することを確認
-      const itemCount = mainWindow.locator('.item-count-display');
-      await expect(itemCount).toBeVisible();
-
-      // アイテム数が「〇〇 件」形式で表示されることを確認
-      const countText = await itemCount.textContent();
-      expect(countText).toMatch(/\d+ 件/);
-    });
-
-    await test.step('初期アイテム数を取得', async () => {
-      const itemCount = mainWindow.locator('.item-count-display');
-      initialCount = (await itemCount.textContent()) || '';
-      expect(initialCount).toMatch(/\d+ 件/);
-    });
-
-    await test.step('検索を実行してアイテム数が減少することを確認', async () => {
-      await utils.searchFor('GitHub');
-
-      const itemCount = mainWindow.locator('.item-count-display');
-      const filteredCount = (await itemCount.textContent()) || '';
-
-      // アイテム数が初期値より少なくなっていることを確認
-      const initialNum = parseInt(initialCount.match(/\d+/)?.[0] || '0');
-      const filteredNum = parseInt(filteredCount.match(/\d+/)?.[0] || '0');
-      expect(filteredNum).toBeLessThan(initialNum);
-      expect(filteredNum).toBeGreaterThan(0);
-    });
-
-    await test.step('検索をクリアしてアイテム数が元に戻ることを確認', async () => {
-      const searchBox = mainWindow.locator('input[type="text"]').first();
-      await searchBox.clear();
-
-      const itemCount = mainWindow.locator('.item-count-display');
-      const restoredCount = (await itemCount.textContent()) || '';
-
-      // アイテム数が初期値に戻ることを確認
-      expect(restoredCount).toBe(initialCount);
+      await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
     });
   });
 });

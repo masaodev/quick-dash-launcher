@@ -66,6 +66,7 @@ npx playwright test -g "新規アイテムを登録できる"                   
 - **フィクスチャ・ヘルパー・テンプレートの構成**: [tests/e2e/README.md](../../tests/e2e/README.md)
 - **実行**: `npm run test:e2e`（ビルド込み）
 - **GitHub Actions**: `.github/workflows/e2e.yml` が GitHub の Windows ランナー（windows-2022）で全件を流す。main へのマージ（docs・Markdown・`.claude/` だけの変更は除く）と手動起動（Actions の「E2E」→ Run workflow、または `gh workflow run e2e.yml --ref <ブランチ>`。`spec` に spec のパスを入れるとそれだけ流す）。PR の CI（`ci.yml`）には含めない。ランナーは英語版の Windows で、画面は 1024×768、マウスのカーソルは画面の中央にある。表示言語はテンプレートの `settings.json` で決め、マウスの位置に結果が左右されないように書く。失敗したテストの画像とトレースは、実行の Artifacts（`e2e-test-results`）に 7 日残る
+- **流し直し**: 落ちたテストは CI で 2 回、手元で 1 回まで流し直す（`playwright.config.ts` の `retries`）。流し直して通ったものは flaky として結果に出る
 - **流し分け**: 全件は CI で流し、手元では原則流さない（手元の PC は普段使いの PC で、操作が入ると落ちることがあるため）
   - 作業中に直した所を確かめる・画面の見た目を目で確かめる → 手元で関係する spec だけ（`npx playwright test tests/e2e/specs/<名前>.spec.ts`）か、開発用インスタンスで開く
   - 画面や動きに関わる PR → マージ前にそのブランチで CI の全件を手動で流し、通ってからマージする（迷ったら流す）
