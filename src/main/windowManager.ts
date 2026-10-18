@@ -75,6 +75,15 @@ async function toggleCompanionWindows(show: boolean): Promise<void> {
 }
 
 /**
+ * 起動時の復元が終わったときに呼ぶ。復元より先にホットキーでメインウィンドウを出していたら、
+ * 後から隠したまま作った 📌 なしのウィンドウもメインと一緒に出す（次のホットキーまで隠れたままにしない）
+ */
+export async function syncCompanionWindowsWithMain(): Promise<void> {
+  if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
+  await toggleCompanionWindows(true);
+}
+
+/**
  * QDLのウィンドウ群（メイン・ワークスペース・切り離しウィンドウと、それらの子ウィンドウ）に
  * フォーカスがあるかどうかを返す。管理ウィンドウ（設定画面）は含めない
  */
@@ -444,8 +453,8 @@ export function setWindowPinMode(mode: WindowPinMode): void {
 function updateWindowBehavior(): void {
   if (!mainWindow) return;
 
-  // alwaysOnTopモードのみ最前面に固定、他は通常表示
-  mainWindow.setAlwaysOnTop(windowPinMode === 'alwaysOnTop');
+  // alwaysOnTopモードのみ最前面に固定、他は通常表示。モーダルモード中は子ウィンドウを閉じるまで最前面のまま
+  mainWindow.setAlwaysOnTop(isModalMode || windowPinMode === 'alwaysOnTop');
 }
 
 /**

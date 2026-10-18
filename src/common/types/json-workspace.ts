@@ -232,7 +232,7 @@ export interface DetachedWindowState {
   bounds: { x: number; y: number; width: number; height: number };
   /** ピン留めモード */
   pinMode?: PinLevel;
-  /** 最後に動かしたときの、載っていたモニターに対する位置（カーソルのモニターに出すときに使う） */
+  /** 最後に動かしたときの、載っていたモニターに対する位置（メインウィンドウと同じディスプレイに出すときに使う） */
   anchor?: MonitorAnchor;
 }
 

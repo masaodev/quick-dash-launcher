@@ -56,6 +56,7 @@ import {
   setDetachedPinLevel,
   isDetachedGroupWindow,
   takeDetachedInitialShow,
+  rememberDetachedBoundsFromRenderer,
 } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/index.js';
 import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
@@ -264,6 +265,7 @@ export function setupWindowHandlers(
 
       const { x, y } = win.getBounds();
       win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
+      rememberDetachedBoundsFromRenderer(win, { kind: 'autoFit' });
 
       // 中身に合わせた大きさにした後、まだ初めての表示をしていなければ、フォーカスを奪わずに出す
       // （隠れている切り離しウィンドウは、大きさを直すたびに出さない）
@@ -281,11 +283,18 @@ export function setupWindowHandlers(
       const win = BrowserWindow.fromWebContents(event.sender);
       if (!win || win.isDestroyed()) return false;
 
+      const before = win.getBounds();
       win.setBounds({
         x: Math.round(x),
         y: Math.round(y),
         width: Math.round(width),
         height: Math.round(height),
+      });
+      // 端のドラッグ（切り離しウィンドウだけが使う）。枠がないので resized が来ず、ここで覚える
+      const after = win.getBounds();
+      rememberDetachedBoundsFromRenderer(win, {
+        kind: 'userResize',
+        moved: after.x !== before.x || after.y !== before.y,
       });
       return true;
     }

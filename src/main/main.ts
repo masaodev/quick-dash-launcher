@@ -21,6 +21,7 @@ import {
   setFirstLaunchMode,
   registerGlobalShortcut,
   showMainWindow,
+  syncCompanionWindowsWithMain,
 } from './windowManager';
 import { getCliPipeName } from './services/cli/cliProtocol.js';
 import { runCliCommand } from './services/cli/cliCommands.js';
@@ -227,8 +228,9 @@ app.whenReady().then(async () => {
   // メインウィンドウ・トレイ・ワークスペースを並列作成（互いに独立）
   await Promise.all([createWindow(), createTray(), createWorkspaceWindow()]);
 
-  // 再起動しても直前と同じ見え方に戻す（📌 ありのワークスペース・切り離しウィンドウを出す）
-  void restoreWindowsOnStartup();
+  // 再起動しても直前と同じ見え方に戻す（📌 ありのワークスペース・切り離しウィンドウを出す）。
+  // 待たずにホットキーを登録するので、復元の途中でメインウィンドウが出ていたら、終わった後に合わせる
+  void restoreWindowsOnStartup().then(syncCompanionWindowsWithMain);
 
   // ホットキー登録（スプラッシュから分離、スキップ環境でも確実に実行）
   if (!EnvConfig.disableGlobalHotkey) {
