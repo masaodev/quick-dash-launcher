@@ -4,7 +4,7 @@ import type {
   WorkspaceWindowState,
 } from '@common/types';
 import { WORKSPACE_UI_STATE_VERSION } from '@common/types';
-import { isRecord } from '@common/types/guards';
+import { isPinLevel, isRecord } from '@common/types/guards';
 
 import { PathManager } from '../../config/pathManager.js';
 import { JsonFileStore } from '../jsonFileStore.js';
@@ -45,7 +45,7 @@ function coerceDetachedWindowState(raw: unknown): DetachedWindowState | null {
     collapsedStates: coerceBooleanRecord(raw.collapsedStates),
     bounds: { x: x as number, y: y as number, width: width as number, height: height as number },
   };
-  if (raw.pinMode === 0 || raw.pinMode === 1 || raw.pinMode === 2) {
+  if (isPinLevel(raw.pinMode)) {
     state.pinMode = raw.pinMode;
   }
   if (isMonitorAnchor(raw.anchor)) {
@@ -59,10 +59,9 @@ export const DEFAULT_WORKSPACE_WINDOW_STATE: WorkspaceWindowState = { open: fals
 
 function coerceWorkspaceWindowState(raw: unknown): WorkspaceWindowState | undefined {
   if (!isRecord(raw)) return undefined;
-  const pinLevel =
-    raw.pinLevel === 0 || raw.pinLevel === 1 || raw.pinLevel === 2
-      ? raw.pinLevel
-      : DEFAULT_WORKSPACE_WINDOW_STATE.pinLevel;
+  const pinLevel = isPinLevel(raw.pinLevel)
+    ? raw.pinLevel
+    : DEFAULT_WORKSPACE_WINDOW_STATE.pinLevel;
   return { open: raw.open === true, pinLevel };
 }
 

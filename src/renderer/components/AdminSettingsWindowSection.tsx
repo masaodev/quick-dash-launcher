@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { AppSettings, DisplayInfo } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
@@ -8,7 +7,7 @@ import { logError } from '../utils/debug';
 import AdminSettingsWindowMain from './AdminSettingsWindowMain';
 import AdminSettingsWindowWorkspace from './AdminSettingsWindowWorkspace';
 import AdminSettingsWindowDetached from './AdminSettingsWindowDetached';
-import AdminSettingsWindowDetails from './AdminSettingsWindowDetails';
+import AdminSettingsWindowOther from './AdminSettingsWindowOther';
 
 interface AdminSettingsWindowSectionProps {
   editedSettings: AppSettings;
@@ -19,8 +18,8 @@ interface AdminSettingsWindowSectionProps {
 }
 
 /**
- * 設定画面「ウィンドウ」: メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウの表示する場所と、
- * 畳んだ「詳しい設定」（大きさ・見た目・仮想デスクトップ・吸着）
+ * 設定画面「ウィンドウ」: ウィンドウごとの節（メイン・ワークスペース・切り離し）と、2 つ以上に効く「その他」
+ * どの節も「項目名: 入力欄 説明」の並びで、取込ルールの画面と同じ形
  * 隠れるか残るかは設定ではなく、各ウィンドウの 📌 で決める
  */
 const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
@@ -30,7 +29,6 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
   handleNumberInputChange,
   handleNumberInputBlur,
 }) => {
-  const { t } = useTranslation();
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
 
   // ディスプレイ一覧を取得（ワークスペースの配置先の選択肢）
@@ -46,18 +44,14 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
   }, []);
 
   const common = { editedSettings, isLoading, handleSettingChange };
+  const numberInput = { handleNumberInputChange, handleNumberInputBlur };
 
   return (
     <>
-      <AdminSettingsWindowMain {...common} />
+      <AdminSettingsWindowMain {...common} {...numberInput} />
       <AdminSettingsWindowWorkspace {...common} displays={displays} />
       <AdminSettingsWindowDetached {...common} />
-      <p className="settings-note">{t('settings.windowNote')}</p>
-      <AdminSettingsWindowDetails
-        {...common}
-        handleNumberInputChange={handleNumberInputChange}
-        handleNumberInputBlur={handleNumberInputBlur}
-      />
+      <AdminSettingsWindowOther {...common} {...numberInput} />
     </>
   );
 };

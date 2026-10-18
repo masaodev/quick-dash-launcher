@@ -518,6 +518,7 @@ function App(): React.ReactElement {
     };
     loadPinState();
 
+    const cleanupPinChanged = window.electronAPI.pin.onChanged(setPinLevel);
     window.electronAPI.isWorkspaceOpen().then(setIsWorkspaceOpen);
     const cleanupWorkspaceOpenChanged =
       window.electronAPI.onWorkspaceOpenChanged(setIsWorkspaceOpen);
@@ -551,6 +552,7 @@ function App(): React.ReactElement {
       cleanupWindowHidden();
       cleanupDataChanged();
       cleanupWorkspaceOpenChanged();
+      cleanupPinChanged();
       cleanupChildResult();
       cleanupRegisterWorkspaceItem();
     };

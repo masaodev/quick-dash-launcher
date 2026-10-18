@@ -4,14 +4,12 @@ import { useTranslation } from 'react-i18next';
 interface SettingsDropdownProps {
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
-  onToggleWorkspace: () => void;
   onQuitApp: () => void;
 }
 
 const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onOpenBasicSettings,
   onOpenItemManagement,
-  onToggleWorkspace,
   onQuitApp,
 }) => {
   const { t } = useTranslation();
@@ -63,9 +61,6 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
             data-testid="settings-menu-item-manager"
           >
             {t('launcher.settingsMenu.itemManager')}
-          </button>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onToggleWorkspace)}>
-            {t('launcher.settingsMenu.toggleWorkspace')}
           </button>
           <div className="dropdown-divider"></div>
           <button className="dropdown-item" onClick={() => handleMenuItemClick(onQuitApp)}>

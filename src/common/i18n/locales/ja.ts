@@ -106,7 +106,6 @@ export const ja = {
       title: '設定',
       settings: '⚙️ 設定',
       itemManager: '✏️ アイテム管理（Ctrl+E）',
-      toggleWorkspace: '⭐ ワークスペースの表示/非表示（Ctrl+W）',
       quit: '🚪 アプリを終了',
     },
     desktopTabs: {
@@ -1872,8 +1871,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       openSettings: '⚙️ 設定',
       alignLeft: '⬅️ 左端に寄せる',
       alignRight: '➡️ 右端に寄せる',
-      hideAllDetached: '🙈 切り離しウィンドウをすべて非表示',
-      showAllDetached: '👁️ 切り離しウィンドウをすべて表示',
       close: '閉じる',
     },
     filter: {
@@ -2013,11 +2010,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
     },
     windowSize: {
-      heading: '大きさ',
-      launcher: 'メインウィンドウ',
-      admin: '管理ウィンドウ',
-      width: '幅:',
-      height: '高さ:',
+      heading: '大きさ:',
+      width: '幅',
+      height: '高さ',
     },
     windowPosition: {
       heading: 'メインウィンドウ',
@@ -2032,53 +2027,47 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       fixed: '最後に動かした場所',
       fixedDescription: 'ウィンドウを動かした場所を覚えて、次も同じ場所に表示します',
     },
-    windowNote:
-      'メインウィンドウと一緒に隠れるか残るかは、各ウィンドウの 📌 で決めます。📌 を押したものは隠れずに残り、ホットキーで手前に出ます。× で閉じたものは出てきません。',
     workspace: {
       heading: 'ワークスペースウィンドウ',
       position: '表示する場所:',
+      rightEdge: '右端（既定）',
+      rightEdgeDescription: 'ディスプレイの右端に、上から下までの高さで表示します',
+      leftEdge: '左端',
+      leftEdgeDescription: 'ディスプレイの左端に、上から下までの高さで表示します',
+      fixed: '最後に動かした場所',
+      fixedDescription: 'ワークスペースを動かした場所を覚えて、次も同じ場所に表示します',
       displayLabel: 'ディスプレイ',
       mainWindowDisplay: 'メインウィンドウと同じディスプレイ（既定）',
       missingDisplay: 'ディスプレイ {{number}}（今は接続されていないため、プライマリに表示中）',
-      edgeLabel: '端',
-      leftEdge: '左端',
-      rightEdge: '右端（既定）',
-      fixedActive:
-        '「詳しい設定」で「ワークスペースを、最後に動かした場所に出す」をオンにしているため、この設定は使われません',
+      appearance: '見た目:',
+      backgroundTransparent: '背景だけを透明にする',
+      backgroundTransparentDescription:
+        'アイテムとグループだけが見えるようになります。切り離しウィンドウにも効きます',
+      opacity: '不透明度',
+      opacityDescription:
+        'ワークスペースウィンドウ本体の濃さです（0%=完全に透明、100%=完全に不透明）。切り離しウィンドウには効きません',
+      opacityDisabled: '「背景だけを透明にする」がオンの間は使えません',
+      virtualDesktops: '仮想デスクトップ:',
+      visibleOnAllDesktops: 'すべての仮想デスクトップに表示',
     },
     detached: {
       heading: '切り離しウィンドウ',
       position: '表示する場所:',
       mainDisplay: 'メインウィンドウと同じディスプレイ（既定）',
       mainDisplayDescription:
-        'メインウィンドウと一緒に出すとき、メインウィンドウと同じディスプレイの同じ位置へ移します。ディスプレイの端にくっつけたものは端に、それ以外はディスプレイの中央からの距離を保ちます。ピン留めしたものは動かしません。',
+        'メインウィンドウと同じディスプレイの、同じ位置に移して表示します。📌 を押したものは動かしません',
       saved: '最後に置いた場所',
-      savedDescription: '切り離しウィンドウを、最後に置いた場所に表示します',
+      savedDescription: '最後に置いた場所に表示します',
+      virtualDesktops: '仮想デスクトップ:',
+      visibleOnAllDesktops: 'すべての仮想デスクトップに表示',
     },
-    windowDetails: {
-      summary: '詳しい設定',
-      workspacePlacement: 'ワークスペースの表示する場所',
-      workspaceFixed: 'ワークスペースを、最後に動かした場所に出す',
-      workspaceFixedDescription:
-        'オンにすると、ディスプレイの端ではなく、ワークスペースを動かした場所を覚えて、次も同じ場所に表示します。',
-      appearance: '見た目',
-      opacity: 'ワークスペースの不透明度:',
-      opacityDescription:
-        'ワークスペースウィンドウ本体の濃さです（0%=完全に透明、100%=完全に不透明）。切り離しウィンドウには効きません。',
-      opacityDisabled: '「背景だけを透明にする」がオンの間は使えません。',
-      backgroundTransparent: '背景だけを透明にする',
-      backgroundTransparentDescription:
-        'オンにすると、背景だけが透明になり、アイテムやグループはそのまま表示されます。切り離しウィンドウにも効きます。',
-      virtualDesktops: '仮想デスクトップ',
-      workspaceVisibleOnAllDesktops: 'ワークスペースをすべての仮想デスクトップに表示',
-      workspaceVisibleOnAllDesktopsDescription:
-        'オンにすると、ワークスペースウィンドウがどの仮想デスクトップにも表示されます（Windows 10/11 の仮想デスクトップ機能）。',
-      detachedVisibleOnAllDesktops: '切り離しウィンドウをすべての仮想デスクトップに表示',
-      detachedVisibleOnAllDesktopsDescription:
-        'オンにすると、切り離しウィンドウもどの仮想デスクトップにも表示されます。',
+    windowOther: {
+      heading: 'その他',
+      snap: '吸着:',
       windowSnap: 'ディスプレイの端に近づけたら吸着する',
       windowSnapDescription:
-        'ワークスペースウィンドウや切り離しウィンドウをディスプレイの端に近づけたとき、端にぴったり寄せます。',
+        'ワークスペースウィンドウと切り離しウィンドウを、ディスプレイの端にぴったり寄せます',
+      adminWindowSize: '管理ウィンドウ:',
     },
     backup: {
       heading: 'バックアップ',

@@ -102,6 +102,14 @@ html:has(.workspace-window.background-transparent) {
   transition: var(--transition-fast);
 }
 
+/* 左端・右端に寄せるの、今の設定の印 */
+.workspace-settings-menu-check {
+  float: right;
+  margin-left: var(--spacing-md);
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
 .workspace-settings-menu-item:hover {
   background-color: var(--bg-hover);
 }

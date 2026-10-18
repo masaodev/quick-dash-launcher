@@ -104,7 +104,6 @@ export const en: LocaleMessages = {
       title: 'Settings',
       settings: '⚙️ Settings',
       itemManager: '✏️ Item Manager (Ctrl+E)',
-      toggleWorkspace: '⭐ Show or hide workspace (Ctrl+W)',
       quit: '🚪 Exit',
     },
     desktopTabs: {
@@ -1872,8 +1871,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       openSettings: '⚙️ Settings',
       alignLeft: '⬅️ Move to left edge',
       alignRight: '➡️ Move to right edge',
-      hideAllDetached: '🙈 Hide all detached windows',
-      showAllDetached: '👁️ Show all detached windows',
       close: 'Close',
     },
     filter: {
@@ -2002,11 +1999,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
     },
     windowSize: {
-      heading: 'Size',
-      launcher: 'Launcher',
-      admin: 'Manager',
-      width: 'Width:',
-      height: 'Height:',
+      heading: 'Size:',
+      width: 'Width',
+      height: 'Height',
     },
     windowPosition: {
       heading: 'Launcher',
@@ -2023,53 +2018,47 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       fixed: 'Where you last moved it',
       fixedDescription: 'Remembers where you moved the window and shows it there next time',
     },
-    windowNote:
-      'Whether a window hides with the launcher or stays is set with its 📌. Pinned windows stay and come to the front when you press the hotkey. Windows you close with × stay closed.',
     workspace: {
       heading: 'Workspace window',
       position: 'Where to show:',
+      rightEdge: 'Right edge (default)',
+      rightEdgeDescription: 'Shows it at the right edge of the display, from top to bottom',
+      leftEdge: 'Left edge',
+      leftEdgeDescription: 'Shows it at the left edge of the display, from top to bottom',
+      fixed: 'Where you last moved it',
+      fixedDescription: 'Remembers where you moved the workspace and shows it there next time',
       displayLabel: 'Display',
       mainWindowDisplay: 'Same display as the launcher (default)',
       missingDisplay: 'Display {{number}} (not connected; showing on the primary display)',
-      edgeLabel: 'Edge',
-      leftEdge: 'Left',
-      rightEdge: 'Right (default)',
-      fixedActive:
-        'Not used because "Show the workspace where you last moved it" is on in Advanced settings',
+      appearance: 'Appearance:',
+      backgroundTransparent: 'Make only the background transparent',
+      backgroundTransparentDescription:
+        'Only items and groups stay visible. Also applies to detached windows',
+      opacity: 'Opacity',
+      opacityDescription:
+        'How solid the workspace window itself is (0% = fully transparent, 100% = fully opaque). Does not apply to detached windows',
+      opacityDisabled: 'Not available while "Make only the background transparent" is on',
+      virtualDesktops: 'Virtual desktops:',
+      visibleOnAllDesktops: 'Show on all virtual desktops',
     },
     detached: {
       heading: 'Detached windows',
       position: 'Where to show:',
       mainDisplay: 'Same display as the launcher (default)',
       mainDisplayDescription:
-        'When shown with the launcher, moves each detached window to the same spot on the display the launcher is on. Windows touching an edge of the display stay at that edge; others keep their distance from the center of the display. Pinned windows stay where they are.',
+        'Moves them to the same spot on the display the launcher is on. Pinned windows stay where they are',
       saved: 'Where you last placed it',
-      savedDescription: 'Shows each detached window where you last placed it',
+      savedDescription: 'Shows them where you last placed them',
+      virtualDesktops: 'Virtual desktops:',
+      visibleOnAllDesktops: 'Show on all virtual desktops',
     },
-    windowDetails: {
-      summary: 'Advanced settings',
-      workspacePlacement: 'Where to show the workspace',
-      workspaceFixed: 'Show the workspace where you last moved it',
-      workspaceFixedDescription:
-        'When on, the workspace is shown where you last moved it instead of at the edge of a display.',
-      appearance: 'Appearance',
-      opacity: 'Workspace opacity:',
-      opacityDescription:
-        'How solid the workspace window itself is (0% = fully transparent, 100% = fully opaque). Does not apply to detached windows.',
-      opacityDisabled: 'Not available while "Make only the background transparent" is on.',
-      backgroundTransparent: 'Make only the background transparent',
-      backgroundTransparentDescription:
-        'When on, only the background is transparent and items and groups are shown as usual. Also applies to detached windows.',
-      virtualDesktops: 'Virtual desktops',
-      workspaceVisibleOnAllDesktops: 'Show the workspace on all virtual desktops',
-      workspaceVisibleOnAllDesktopsDescription:
-        'When on, the workspace window appears on every virtual desktop (the Windows 10/11 virtual desktop feature).',
-      detachedVisibleOnAllDesktops: 'Show detached windows on all virtual desktops',
-      detachedVisibleOnAllDesktopsDescription:
-        'When on, detached windows also appear on every virtual desktop.',
+    windowOther: {
+      heading: 'Other',
+      snap: 'Snapping:',
       windowSnap: 'Snap to display edges',
       windowSnapDescription:
-        'Snaps the workspace window and detached windows to the edge of a display when you move them close to it.',
+        'Snaps the workspace window and detached windows to the edge of a display when you move them close to it',
+      adminWindowSize: 'Manager window:',
     },
     backup: {
       heading: 'Backup',

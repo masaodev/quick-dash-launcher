@@ -24,6 +24,7 @@ import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
 import {
+  bringPinnedDetachedToFront,
   hideAllDetachedGroupWindows,
   isDetachedGroupWindow,
   showAllDetachedGroupWindows,
@@ -38,6 +39,7 @@ import { moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
+import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -66,8 +68,6 @@ async function toggleCompanionWindows(show: boolean): Promise<void> {
     const settingsService = await SettingsService.getInstance();
     const positionMode = await settingsService.get('detachedPositionMode');
     showAllDetachedGroupWindows({ placeOnMainWindowDisplay: positionMode === 'mainDisplay' });
-    // ピン留めしたワークスペースは、ほかのウィンドウの下にあっても手前に出す（その場で出すだけで、動かさない）
-    bringPinnedWorkspaceToFront();
   } else {
     hideWorkspaceWithMain();
     hideAllDetachedGroupWindows();
@@ -435,6 +435,7 @@ export function getWindowPinMode(): WindowPinMode {
 export function setWindowPinMode(mode: WindowPinMode): void {
   windowPinMode = mode;
   updateWindowBehavior();
+  notifyPinLevel(mainWindow, pinModeToLevel(mode));
 }
 
 /**
@@ -628,6 +629,18 @@ export async function saveWindowPosition(): Promise<void> {
 }
 
 /**
+ * ピン留めしたワークスペース・切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す
+ * メインウィンドウにフォーカスを移した後に呼ぶ（その前だとほかのアプリが前面で、Windows が並べ替えを無視することがある）。
+ * 最後にメインウィンドウを一番手前に戻す
+ */
+function bringPinnedCompanionsToFront(): void {
+  if (!mainWindow) return;
+  bringPinnedWorkspaceToFront();
+  bringPinnedDetachedToFront();
+  mainWindow.moveTop();
+}
+
+/**
  * メインウィンドウをアクティブ化して検索欄にフォーカス（共通ヘルパー関数）
  * 開いているワークスペース・切り離しウィンドウも一緒に出す
  */
@@ -639,6 +652,7 @@ async function activateMainWindowWithFocus(): Promise<void> {
 
   // メインウィンドウに確実にフォーカスを戻す
   mainWindow.focus();
+  bringPinnedCompanionsToFront();
 
   // 検索欄にフォーカスを当てるため、window-shownイベントを送信
   mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN);
@@ -676,6 +690,8 @@ async function showMainWindowInternal(
 
   mainWindow.focus();
   timer?.log('window-focused');
+
+  bringPinnedCompanionsToFront();
 
   mainWindow.webContents.send(eventName, startTime);
 }
