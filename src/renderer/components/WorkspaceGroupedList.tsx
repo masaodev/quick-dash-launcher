@@ -312,9 +312,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     return () => cleanups.forEach((cleanup) => cleanup());
   }, [latest]);
 
-  /** グループヘッダーの dragEnd でウィンドウ外ドロップを検出 */
+  /** グループヘッダーの dragEnd でウィンドウ外ドロップを検出（サブグループは切り離さない） */
   const handleGroupDragEndForDetach = (e: React.DragEvent, groupId: string) => {
-    if (!onDetachGroup) return;
+    if (!onDetachGroup || groupsMap.get(groupId)?.parentGroupId) return;
     // dropEffect === 'none' はどのドロップターゲットにも受け入れられなかったことを示す
     if (e.dataTransfer.dropEffect === 'none') {
       onDetachGroup(groupId, e.screenX, e.screenY);
