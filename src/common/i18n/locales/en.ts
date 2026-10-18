@@ -1929,12 +1929,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       close: 'Close',
       closeLabel: 'Close detached window',
     },
-    hints: {
-      workspaceOpened:
-        'With 📌 on, the workspace stays when the launcher closes.\nTurn 📌 off to hide it with the launcher.',
-      groupDetached: 'This window hides with the launcher.\nPress 📌 to keep it shown.',
-      dismiss: 'Got it',
-    },
     itemCard: {
       linkTarget: 'Target: {{path}}',
       args: 'Arguments: {{args}}',

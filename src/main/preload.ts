@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
   PinLevel,
-  WorkspaceHintKey,
   IconProgress,
   LayoutExecutionProgress,
   AppItem,
@@ -112,12 +111,6 @@ const electronAPI: ElectronAPI = {
     createEventListener<boolean>(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, callback),
   onWorkspaceChanged: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.WORKSPACE_CHANGED, callback),
-  hint: {
-    isPending: (key) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_IS_HINT_PENDING, key),
-    dismiss: (key) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DISMISS_HINT, key),
-    onDismissed: (callback) =>
-      createEventListener<WorkspaceHintKey>(IPC_CHANNELS.EVENT_HINT_DISMISSED, callback),
-  },
   pin: {
     get: () => ipcRenderer.invoke(IPC_CHANNELS.PIN_GET),
     set: (level) => ipcRenderer.invoke(IPC_CHANNELS.PIN_SET, level),

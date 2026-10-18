@@ -53,13 +53,13 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       />
       <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
       <button
-        className={`action-btn ${isWorkspaceOpen ? 'active' : ''}`}
+        className={`action-btn toggle-btn ${isWorkspaceOpen ? 'toggle-on' : ''}`}
         onClick={onToggleWorkspace}
         title={workspaceTitle}
         aria-label={workspaceTitle}
         aria-pressed={isWorkspaceOpen}
       >
-        ⭐
+        <span className="action-btn-glyph">⭐</span>
       </button>
       <PinButton level={pinLevel} onLevelChange={onPinLevelChange} />
       <LauncherSettingsDropdown

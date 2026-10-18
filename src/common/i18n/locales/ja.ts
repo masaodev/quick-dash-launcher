@@ -1929,12 +1929,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       close: '閉じる',
       closeLabel: '切り離しウィンドウを閉じる',
     },
-    hints: {
-      workspaceOpened:
-        '📌 が押してあると、メインウィンドウを閉じても残ります。\n📌 を外すと、メインウィンドウと一緒に隠れます。',
-      groupDetached: 'メインウィンドウと一緒に隠れます。\n残したいときは 📌 を押してください。',
-      dismiss: 'わかった',
-    },
     itemCard: {
       linkTarget: 'リンク先: {{path}}',
       args: '引数: {{args}}',

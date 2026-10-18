@@ -839,11 +839,6 @@ html:has(.workspace-window.background-transparent) {
   -webkit-app-region: no-drag;
 }
 
-/* 案内の帯がある間は、帯がコントロールバーの下に来るので一覧の上の余白を詰める */
-.detached-group-window .window-hint-detached + .workspace-item-list {
-  padding-top: var(--spacing-sm);
-}
-
 /* --- 切り離しウィンドウコントロールバー --- */
 
 .detached-window-controls {
@@ -861,54 +856,5 @@ html:has(.workspace-window.background-transparent) {
   width: 24px;
   height: 24px;
   font-size: 12px;
-  -webkit-app-region: no-drag;
-}
-
-/* ==================== 1 回だけ出す案内の帯 ==================== */
-
-.window-hint {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--spacing-xs) var(--spacing-sm);
-  margin: var(--spacing-xs) var(--spacing-sm) 0;
-  padding: var(--spacing-sm);
-  background-color: var(--bg-info-light);
-  border: 1px solid var(--color-info-light);
-  border-radius: var(--border-radius);
-}
-
-.window-hint-message {
-  flex: 1 1 12em;
-  margin: 0;
-  font-size: var(--font-size-sm);
-  line-height: 1.5;
-  /* 文ごとに改行し、狭い幅では文節で折り返す */
-  white-space: pre-line;
-  word-break: auto-phrase;
-}
-
-.window-hint-dismiss {
-  margin-left: auto;
-  padding: var(--spacing-xxs) var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  background-color: var(--color-white);
-  border: var(--border-normal);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.window-hint-dismiss:hover {
-  background-color: var(--bg-hover);
-}
-
-/* 切り離しウィンドウでは右上の 📌・× の下に出し、帯をつかんでも動かせるようにする */
-.window-hint-detached {
-  margin-top: 32px;
-  -webkit-app-region: drag;
-}
-
-.window-hint-detached .window-hint-dismiss {
   -webkit-app-region: no-drag;
 }

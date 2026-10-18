@@ -168,32 +168,53 @@
 }
 
 /*
- * 📌 の押し込み（絵文字の赤が埋もれないよう、背景は薄い色にして枠を太くする）
- * 表示固定＝青、常に最前面＝黄
+ * オン・オフを切り替えるボタン（⭐・📌）
+ * 絵文字は色を変えられないので、オフはアイコンを灰色で薄くし、オンは色つきにしてへこませる
  */
-.action-btn.pin-stay-visible,
-.action-btn.pin-always-on-top {
-  box-shadow: inset 0 0 0 1px var(--pin-border-color);
-  border-color: var(--pin-border-color);
+.action-btn.toggle-btn:not(.toggle-on) > .action-btn-glyph {
+  filter: grayscale(1);
+  opacity: 0.45;
 }
 
-.action-btn.pin-stay-visible {
-  --pin-border-color: var(--color-primary);
+.action-btn.toggle-btn:not(.toggle-on):hover > .action-btn-glyph {
+  opacity: 0.7;
+}
+
+.action-btn.toggle-on {
   background-color: var(--bg-selected);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-pressed);
 }
 
-.action-btn.pin-always-on-top {
-  --pin-border-color: var(--color-warning-dark);
-  background-color: var(--bg-warning-light);
-}
-
-.action-btn.pin-stay-visible:hover {
-  --pin-border-color: var(--color-primary-hover);
+.action-btn.toggle-on:hover {
   background-color: var(--bg-info-light);
 }
 
+/* 📌 の「常に最前面」: 黄色の背景と、右上の ▲ の印（表示固定と色だけで見分けさせない） */
+.action-btn.pin-always-on-top {
+  position: relative;
+  background-color: var(--bg-warning-light);
+  border-color: var(--color-warning-dark);
+}
+
 .action-btn.pin-always-on-top:hover {
-  background-color: var(--bg-edited);
+  background-color: var(--bg-warning-light);
+  border-color: var(--color-warning-dark);
+}
+
+.action-btn.pin-always-on-top::after {
+  content: '▲';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background-color: var(--color-warning-dark);
+  color: var(--color-white);
+  font-size: 7px;
+  line-height: 13px;
+  text-align: center;
 }
 
 /* 閉じる・削除の × ボタン（枠なし。hover で薄い背景、削除は赤） */

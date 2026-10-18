@@ -263,12 +263,7 @@ export interface WorkspaceUiStateFile {
   detachedWindows: Record<string, DetachedWindowState>;
   /** ワークスペースウィンドウの状態（無ければ既定値＝閉じていて、📌 は表示固定） */
   workspaceWindow?: WorkspaceWindowState;
-  /** 1 回だけ出す案内のうち、もう出したもの */
-  shownHints?: WorkspaceHintKey[];
 }
-
-/** 1 回だけ出す案内（初めてワークスペースを開いたとき・初めてグループを切り離したとき） */
-export type WorkspaceHintKey = 'workspaceOpened' | 'groupDetached';
 
 /**
  * ワークスペースウィンドウの状態

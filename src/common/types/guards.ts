@@ -7,16 +7,10 @@
 import type { AppItem, LauncherItem, ClipboardItem, SetItem } from './launcher';
 import type { WindowInfo } from './window';
 import type { PinLevel } from './settings';
-import type { WorkspaceHintKey } from './json-workspace';
 
 /** ピン留めの段階（0・1・2）か */
 export function isPinLevel(value: unknown): value is PinLevel {
   return value === 0 || value === 1 || value === 2;
-}
-
-/** 1 回だけ出す案内のキーか */
-export function isWorkspaceHintKey(value: unknown): value is WorkspaceHintKey {
-  return value === 'workspaceOpened' || value === 'groupDetached';
 }
 
 /** 配列でないオブジェクト（JSON の読み込みで、キーを持つ値か確かめる） */

@@ -8,7 +8,6 @@ import type {
   AppItem,
   DetachedWindowState,
   WorkspaceWindowState,
-  WorkspaceHintKey,
   PinLevel,
   Workspace,
   WorkspaceItem,
@@ -514,18 +513,6 @@ export class WorkspaceService {
   public async saveWorkspaceWindowState(updates: Partial<WorkspaceWindowState>): Promise<void> {
     await this.initializeStore();
     this.uiState!.updateWorkspaceWindow(updates);
-  }
-
-  /** まだ「わかった」を押していない案内なら true */
-  public async isHintPending(key: WorkspaceHintKey): Promise<boolean> {
-    await this.initializeStore();
-    return this.uiState!.isHintPending(key);
-  }
-
-  /** 「わかった」を押した案内として覚える */
-  public async dismissHint(key: WorkspaceHintKey): Promise<void> {
-    await this.initializeStore();
-    this.uiState!.dismissHint(key);
   }
 
   /** ピン留めしていない切り離しウィンドウを、すべて表示固定にする（古い設定からの読み替え） */

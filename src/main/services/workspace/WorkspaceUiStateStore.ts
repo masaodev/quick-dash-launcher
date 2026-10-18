@@ -1,11 +1,10 @@
 import type {
   DetachedWindowState,
-  WorkspaceHintKey,
   WorkspaceUiStateFile,
   WorkspaceWindowState,
 } from '@common/types';
 import { WORKSPACE_UI_STATE_VERSION } from '@common/types';
-import { isPinLevel, isRecord, isWorkspaceHintKey } from '@common/types/guards';
+import { isPinLevel, isRecord } from '@common/types/guards';
 
 import { PathManager } from '../../config/pathManager.js';
 import { JsonFileStore } from '../jsonFileStore.js';
@@ -77,13 +76,11 @@ export function coerceWorkspaceUiState(raw: unknown): WorkspaceUiStateFile | nul
     }
   }
   const workspaceWindow = coerceWorkspaceWindowState(raw.workspaceWindow);
-  const shownHints = Array.isArray(raw.shownHints) ? raw.shownHints.filter(isWorkspaceHintKey) : [];
   return {
     version: WORKSPACE_UI_STATE_VERSION,
     collapsedGroups: coerceBooleanRecord(raw.collapsedGroups),
     detachedWindows,
     ...(workspaceWindow && { workspaceWindow }),
-    ...(shownHints.length > 0 && { shownHints }),
   };
 }
 
@@ -139,22 +136,6 @@ export class WorkspaceUiStateStore {
       ...(state.workspaceWindow ?? DEFAULT_WORKSPACE_WINDOW_STATE),
       ...updates,
     };
-    this.file.write(state);
-  }
-
-  // --- 1 回だけ出す案内 ---
-
-  /** まだ「わかった」を押していない案内なら true */
-  isHintPending(key: WorkspaceHintKey): boolean {
-    return !(this.read().shownHints ?? []).includes(key);
-  }
-
-  /** 「わかった」を押した案内として覚える（もう覚えていれば何もしない） */
-  dismissHint(key: WorkspaceHintKey): void {
-    const state = this.read();
-    const shown = state.shownHints ?? [];
-    if (shown.includes(key)) return;
-    state.shownHints = [...shown, key];
     this.file.write(state);
   }
 
