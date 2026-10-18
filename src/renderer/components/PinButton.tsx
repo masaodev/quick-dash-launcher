@@ -11,7 +11,7 @@ const PIN_TITLE_KEYS = {
   2: 'common.pin.alwaysOnTop',
 } as const satisfies Record<PinLevel, string>;
 
-/** 段階ごとの見た目（なし＝灰色のアイコン、表示固定＝押し込み、常に最前面＝押し込み＋黄色と ▲） */
+/** 段階ごとの見た目（なし＝通常のボタン、表示固定＝押し込み、常に最前面＝押し込み＋黄色と ▲） */
 const PIN_CLASS_NAMES: Record<PinLevel, string> = {
   0: '',
   1: 'toggle-on',
@@ -52,9 +52,7 @@ const PinButton: React.FC<PinButtonProps> = ({ level, onLevelChange, className }
   };
 
   const title = t(PIN_TITLE_KEYS[level]);
-  const classes = ['action-btn', 'toggle-btn', className, PIN_CLASS_NAMES[level]]
-    .filter(Boolean)
-    .join(' ');
+  const classes = ['action-btn', className, PIN_CLASS_NAMES[level]].filter(Boolean).join(' ');
 
   return (
     <button
@@ -65,7 +63,7 @@ const PinButton: React.FC<PinButtonProps> = ({ level, onLevelChange, className }
       aria-label={title}
       aria-pressed={level !== 0}
     >
-      <span className="action-btn-glyph">📌</span>
+      📌
     </button>
   );
 };

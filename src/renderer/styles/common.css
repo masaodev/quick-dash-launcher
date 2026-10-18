@@ -168,18 +168,9 @@
 }
 
 /*
- * オン・オフを切り替えるボタン（⭐・📌）
- * 絵文字は色を変えられないので、オフはアイコンを灰色で薄くし、オンは色つきにしてへこませる
+ * オン・オフを切り替えるボタン（⭐・📌）のオン
+ * 絵文字は色を変えられないので、背景は濃く塗らず、薄い青にしてへこませる
  */
-.action-btn.toggle-btn:not(.toggle-on) > .action-btn-glyph {
-  filter: grayscale(1);
-  opacity: 0.45;
-}
-
-.action-btn.toggle-btn:not(.toggle-on):hover > .action-btn-glyph {
-  opacity: 0.7;
-}
-
 .action-btn.toggle-on {
   background-color: var(--bg-selected);
   border-color: var(--color-primary);

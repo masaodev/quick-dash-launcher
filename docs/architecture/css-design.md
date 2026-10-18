@@ -61,7 +61,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | `.btn-primary` / `.btn-secondary` / `.btn-danger` / `.btn-danger-solid` | `Button.css` | 種類別の色（Buttonコンポーネントの `variant`。使い分けは [ui-components.md](ui-components.md#buttonコンポーネント)）。無効の見た目は `.btn:disabled` で全種類共通 |
 | `.btn-sm` / `.btn-lg` | `Button.css` | サイズ（`md` はクラスなし） |
 | `.btn-full-width` | `Button.css` | 幅いっぱいに広げる |
-| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウとワークスペースのヘッダー：登録・設定・更新・ピン留めなど）。押している状態は `.active`（青）。オン・オフを切り替えるボタン（⭐・📌）は `.toggle-btn` を付け、アイコンを `.action-btn-glyph` で包む。オフはアイコンを灰色で薄く、オンは `.toggle-on`（薄い青の背景とへこみ）。📌 の常に最前面は `.pin-always-on-top`（薄い黄の背景と右上の ▲）。絵文字は色を変えられないので、背景を濃く塗らない |
+| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウとワークスペースのヘッダー：登録・設定・更新・ピン留めなど）。押している状態は `.active`（青）。オン・オフを切り替えるボタン（⭐・📌）のオンは `.toggle-on`（薄い青の背景とへこみ。オフは通常のボタン）。📌 の常に最前面は `.pin-always-on-top`（薄い黄の背景と右上の ▲）。絵文字は色を変えられないので、背景を濃く塗らない |
 | `.close-btn` | `common.css` | 閉じる・削除の ×（下の「閉じる・削除ボタンクラス」） |
 
 ### その他の共通クラス
