@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppSettings, BackupStatus } from '@common/types';
+import { SETTING_NUMBER_RANGES } from '@common/settingRanges';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 import { logError } from '../utils/debug';
@@ -63,8 +64,8 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
             <input
               id="backupRetention"
               type="number"
-              min="3"
-              max="50"
+              min={SETTING_NUMBER_RANGES.backupRetention.min}
+              max={SETTING_NUMBER_RANGES.backupRetention.max}
               value={editedSettings.backupRetention}
               onChange={(e) => handleNumberInputChange('backupRetention', e.target.value)}
               onBlur={handleNumberInputBlur}
