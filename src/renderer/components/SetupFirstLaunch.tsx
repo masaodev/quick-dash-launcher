@@ -273,7 +273,8 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
                 variant="primary"
                 type="button"
                 onClick={handleComplete}
-                disabled={isLoading || !isValid}
+                // キーで呼び出せたことを確かめてから使いはじめる（出ないときは「戻る」で選び直す）
+                disabled={isLoading || !isValid || !hotkeyPressed}
               >
                 {t('firstLaunch.complete')}
               </Button>

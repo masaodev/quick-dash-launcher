@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { ElectronApplication, Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/first-launch-app';
 import { TestUtils } from '../helpers/test-utils';
@@ -15,6 +15,25 @@ async function goToHotkeyStep(mainWindow: Page): Promise<void> {
 async function goToTryStep(mainWindow: Page): Promise<void> {
   await mainWindow.getByRole('button', { name: '次へ' }).click();
   await expect(mainWindow.locator('.first-launch-title')).toHaveText('準備ができました');
+}
+
+/**
+ * 試してみるで起動ホットキーを押したことにする（E2E では本物のホットキーを登録しないので、メインプロセスの知らせを直接送る）
+ */
+async function simulateHotkeyPressed(electronApp: ElectronApplication): Promise<void> {
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('first-launch-hotkey-pressed'));
+  });
+}
+
+/** ホットキーを押したことにして「使いはじめる」を押す */
+async function pressHotkeyAndStart(
+  electronApp: ElectronApplication,
+  mainWindow: Page
+): Promise<void> {
+  await simulateHotkeyPressed(electronApp);
+  await expect(mainWindow.locator('.first-launch-try-ok')).toBeVisible();
+  await mainWindow.getByRole('button', { name: '使いはじめる' }).click();
 }
 
 test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
@@ -56,6 +75,14 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       await expect(mainWindow.locator('.auto-launch-hint')).toBeVisible();
     });
 
+    await test.step('ホットキーを押すまで「使いはじめる」は押せず、押すと ✓ が出て押せる', async () => {
+      const start = mainWindow.getByRole('button', { name: '使いはじめる' });
+      await expect(start).toBeDisabled();
+      await simulateHotkeyPressed(electronApp);
+      await expect(mainWindow.locator('.first-launch-try-ok')).toBeVisible();
+      await expect(start).toBeEnabled();
+    });
+
     await test.step('自動起動のチェックボックスをクリックして状態を変更できる', async () => {
       await mainWindow.click('.auto-launch-checkbox');
       expect(await mainWindow.isChecked('.auto-launch-checkbox')).toBe(false);
@@ -83,6 +110,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
   test('デフォルト設定で完了するとsettings.jsonに正しく保存される', async ({
     configHelper,
+    electronApp,
     mainWindow,
   }) => {
     const utils = new TestUtils(mainWindow);
@@ -96,7 +124,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     await test.step('既定のまま進めて「使いはじめる」を押す', async () => {
       await goToHotkeyStep(mainWindow);
       await goToTryStep(mainWindow);
-      await mainWindow.getByRole('button', { name: '使いはじめる' }).click();
+      await pressHotkeyAndStart(electronApp, mainWindow);
       await expect(mainWindow.locator('.first-launch-title')).toHaveCount(0);
     });
 
@@ -110,6 +138,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
   test('ホットキーを変更して完了すると変更内容が保存される', async ({
     configHelper,
+    electronApp,
     mainWindow,
   }) => {
     const utils = new TestUtils(mainWindow);
@@ -127,7 +156,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     ]);
 
     await goToTryStep(mainWindow);
-    await mainWindow.getByRole('button', { name: '使いはじめる' }).click();
+    await pressHotkeyAndStart(electronApp, mainWindow);
     await expect(mainWindow.locator('.first-launch-title')).toHaveCount(0);
 
     const settings = configHelper.readSettings();
@@ -136,6 +165,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
 
   test('自動起動をオフにして完了すると設定ファイルにfalseが保存される', async ({
     configHelper,
+    electronApp,
     mainWindow,
   }) => {
     const utils = new TestUtils(mainWindow);
@@ -146,7 +176,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     await mainWindow.click('.auto-launch-checkbox');
     expect(await mainWindow.isChecked('.auto-launch-checkbox')).toBe(false);
 
-    await mainWindow.getByRole('button', { name: '使いはじめる' }).click();
+    await pressHotkeyAndStart(electronApp, mainWindow);
     await expect(mainWindow.locator('.first-launch-title')).toHaveCount(0);
 
     const settings = configHelper.readSettings();

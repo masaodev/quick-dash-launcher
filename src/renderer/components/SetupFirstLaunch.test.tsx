@@ -68,12 +68,23 @@ describe('SetupFirstLaunch', () => {
     expect(screen.getByText('✓ 呼び出せました')).toBeTruthy();
   });
 
+  it('ホットキーを押すまで「使いはじめる」は押せない', async () => {
+    render(<SetupFirstLaunch onComplete={vi.fn()} />);
+    await goToTryStep();
+    const start = screen.getByRole('button', { name: '使いはじめる' }) as HTMLButtonElement;
+    expect(start.disabled).toBe(true);
+
+    act(() => firePressed?.());
+    expect(start.disabled).toBe(false);
+  });
+
   it('自動起動は既定でオンのまま「使いはじめる」で渡す', async () => {
     const onComplete = vi.fn();
     render(<SetupFirstLaunch onComplete={onComplete} />);
     await goToTryStep();
     expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true);
 
+    act(() => firePressed?.());
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
     await waitFor(() =>
       expect(onComplete).toHaveBeenCalledWith({
