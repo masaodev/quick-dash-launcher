@@ -78,8 +78,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FOR_ITEM, filePath, itemType),
   loadCachedIcons: (items) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_CACHED_ICONS, items),
   // 統合進捗付きアイコン取得API
-  fetchIconsCombined: (urlItems, items, forceRefresh = false) =>
-    ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items, forceRefresh),
+  fetchIconsCombined: (urlItems, items, forceRefresh = false, silent = false) =>
+    ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items, forceRefresh, silent),
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items) => ipcRenderer.invoke(IPC_CHANNELS.ENSURE_ICONS, items),
   // アイコン取得エラー記録をクリア

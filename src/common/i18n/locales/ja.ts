@@ -1848,7 +1848,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   },
   sampleData: {
     readme: {
-      name: '使い方（README）',
+      name: '📖 QuickDashLauncher の使い方（README）',
       url: 'https://github.com/masaodev/quick-dash-launcher#readme',
     },
     google: { name: 'Google 検索（google）', url: 'https://www.google.com/' },
@@ -1859,7 +1859,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     calculator: '電卓（dentaku）',
     notepad: 'メモ帳（memo）',
     greetingName: '定型文: あいさつ（aisatsu）',
-    greetingText: 'いつもお世話になっております。',
+    greetingText:
+      '〇〇様\n\nいつもお世話になっております。\n△△の□□です。\n\n（ここに本文）\n\nお手数をおかけしますが、よろしくお願いいたします。',
   },
   parseReasons: {
     versionFilled: 'version が無いか文字列でないため "{{version}}" を補いました',

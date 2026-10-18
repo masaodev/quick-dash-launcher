@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { FileUtils } from '@common/utils/fileUtils';
 import { generateId, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { JsonDataFile, JsonItem, SerializableClipboard } from '@common/types';
-import { JSON_DATA_VERSION } from '@common/types';
+import { JSON_DATA_VERSION, PREVIEW_MAX_LENGTH } from '@common/types';
 
 import PathManager from '../config/pathManager.js';
 import { writeDataFile } from '../services/dataFileTracker.js';
@@ -37,7 +37,9 @@ function createSampleClipboardItem(): JsonItem | null {
     displayName: mainI18n.t('sampleData.greetingName'),
     dataFileRef: `clipboard-data/${id}.json`,
     savedAt,
-    preview: text,
+    // 一覧のプレビューはほかの定型文と同じ長さで切る（本文はファイルに全部ある）
+    preview:
+      text.length <= PREVIEW_MAX_LENGTH ? text : `${text.substring(0, PREVIEW_MAX_LENGTH)}...`,
     formats: ['text'],
   };
 }

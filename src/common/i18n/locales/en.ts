@@ -1847,7 +1847,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   },
   sampleData: {
     readme: {
-      name: 'How to use (README)',
+      name: '📖 How to use QuickDashLauncher (README)',
       url: 'https://github.com/masaodev/quick-dash-launcher#readme',
     },
     google: { name: 'Google Search', url: 'https://www.google.com/' },
@@ -1858,7 +1858,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     calculator: 'Calculator',
     notepad: 'Notepad',
     greetingName: 'Snippet: thanks',
-    greetingText: 'Thank you for your message.',
+    greetingText:
+      'Hi [Name],\n\nThank you for your email.\n\n[Your message]\n\nBest regards,\n[Your name]',
   },
   parseReasons: {
     versionFilled: 'version was missing or not a string, so "{{version}}" was added',

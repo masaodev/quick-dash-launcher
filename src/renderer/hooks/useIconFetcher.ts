@@ -21,6 +21,8 @@ type UseIconFetcherOptions = {
 type UseIconFetcherResult = {
   handleRefreshAll: (loadItems: () => Promise<AppItem[]>) => Promise<void>;
   handleFetchMissingIcons: () => Promise<void>;
+  /** 進捗バーを出さずに全タブの未取得アイコンを取る（初回設定の後の自動取得。頼まれていない処理なので見せない） */
+  handleFetchMissingIconsSilently: () => Promise<void>;
   handleFetchMissingIconsCurrentTab: () => Promise<void>;
 };
 
@@ -85,7 +87,8 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
   async function fetchAndApplyIcons(
     items: AppItem[],
     requireNoIcon: boolean,
-    forceRefetch: boolean
+    forceRefetch: boolean,
+    silent: boolean = false
   ): Promise<IconResults | null> {
     const urlItems = extractItems(items, 'url', requireNoIcon);
     const iconItems = extractItems(items, 'icon', requireNoIcon);
@@ -94,7 +97,7 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
       return null;
     }
 
-    return window.electronAPI.fetchIconsCombined(urlItems, iconItems, forceRefetch);
+    return window.electronAPI.fetchIconsCombined(urlItems, iconItems, forceRefetch, silent);
   }
 
   async function handleRefreshAll(loadItems: () => Promise<AppItem[]>): Promise<void> {
@@ -110,10 +113,14 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
     debugInfo('すべての更新が完了');
   }
 
-  async function fetchMissingIconsFor(items: AppItem[], label: string): Promise<void> {
+  async function fetchMissingIconsFor(
+    items: AppItem[],
+    label: string,
+    silent: boolean = false
+  ): Promise<void> {
     debugInfo(`未取得アイコンの取得を開始（${label}）`);
 
-    const results = await fetchAndApplyIcons(items, true, false);
+    const results = await fetchAndApplyIcons(items, true, false, silent);
 
     if (!results) {
       debugInfo(`取得対象のアイテムがありません（${label}）`);
@@ -130,6 +137,10 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
     return fetchMissingIconsFor(mainItems, 'all tabs');
   }
 
+  function handleFetchMissingIconsSilently(): Promise<void> {
+    return fetchMissingIconsFor(mainItems, 'all tabs, silent', true);
+  }
+
   function handleFetchMissingIconsCurrentTab(): Promise<void> {
     return fetchMissingIconsFor(getCurrentTabItems(), 'current tab');
   }
@@ -137,6 +148,7 @@ export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherRe
   return {
     handleRefreshAll,
     handleFetchMissingIcons,
+    handleFetchMissingIconsSilently,
     handleFetchMissingIconsCurrentTab,
   };
 }

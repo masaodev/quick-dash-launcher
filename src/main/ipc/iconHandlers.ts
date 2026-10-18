@@ -46,11 +46,16 @@ export function setupIconHandlers(
     loadCachedIcons(items, folders)
   );
 
-  // 統合進捗API（進捗はメインウィンドウの進捗バーに表示する）
+  // 統合進捗API（進捗はメインウィンドウの進捗バーに表示する。silent なら進捗を送らない）
   ipcMain.handle(
     IPC_CHANNELS.FETCH_ICONS_COMBINED,
-    (_event, urlItems: IconItem[], items: IconItem[], forceRefresh: boolean = false) =>
-      fetchIconsCombined(urlItems, items, folders, forceRefresh, getMainWindow())
+    (
+      _event,
+      urlItems: IconItem[],
+      items: IconItem[],
+      forceRefresh: boolean = false,
+      silent: boolean = false
+    ) => fetchIconsCombined(urlItems, items, folders, forceRefresh, silent ? null : getMainWindow())
   );
 
   // キャッシュ欠損の補完API（進捗通知なし）
