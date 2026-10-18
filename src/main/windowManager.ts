@@ -24,13 +24,13 @@ import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { DEFAULT_WEB_PREFERENCES } from './utils/managedWindow.js';
 import {
-  bringPinnedDetachedToFront,
+  bringDetachedToFront,
   hideAllDetachedGroupWindows,
   isDetachedGroupWindow,
   showAllDetachedGroupWindows,
 } from './detachedGroupWindowManager.js';
 import {
-  bringPinnedWorkspaceToFront,
+  bringWorkspaceToFront,
   getWorkspaceWindow,
   hideWorkspaceWithMain,
   showWorkspaceWithMain,
@@ -632,14 +632,14 @@ export async function saveWindowPosition(): Promise<void> {
 }
 
 /**
- * ピン留めしたワークスペース・切り離しウィンドウを、ほかのウィンドウの下にあっても手前に出す
+ * 表示中のワークスペース・切り離しウィンドウ（📌 の有無を問わない）を、ほかのウィンドウの下にあっても手前に出す
  * メインウィンドウにフォーカスを移した後に呼ぶ（その前だとほかのアプリが前面で、Windows が並べ替えを無視することがある）。
  * 最後にメインウィンドウを一番手前に戻す
  */
-function bringPinnedCompanionsToFront(): void {
+function bringCompanionsToFront(): void {
   if (!mainWindow) return;
-  bringPinnedWorkspaceToFront();
-  bringPinnedDetachedToFront();
+  bringWorkspaceToFront();
+  bringDetachedToFront();
   mainWindow.moveTop();
 }
 
@@ -655,7 +655,7 @@ async function activateMainWindowWithFocus(): Promise<void> {
 
   // メインウィンドウに確実にフォーカスを戻す
   mainWindow.focus();
-  bringPinnedCompanionsToFront();
+  bringCompanionsToFront();
 
   // 検索欄にフォーカスを当てるため、window-shownイベントを送信
   mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN);
@@ -699,7 +699,7 @@ async function showMainWindowInternal(
   mainWindow.focus();
   timer?.log('window-focused');
 
-  bringPinnedCompanionsToFront();
+  bringCompanionsToFront();
 
   mainWindow.webContents.send(eventName, startTime);
 }

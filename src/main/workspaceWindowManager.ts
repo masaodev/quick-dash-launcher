@@ -392,14 +392,15 @@ export function getWorkspaceAlwaysOnTop(): boolean {
 }
 
 /**
- * ピン留めしたワークスペースを、ほかのウィンドウの下にあっても手前に出す（ホットキーでメインウィンドウを出すとき。
- * ディスプレイの中では動かさない）。別の仮想デスクトップにあれば今のデスクトップへ連れてくる
+ * 表示中のワークスペースを、ほかのウィンドウの下にあっても手前に出す（ホットキーでメインウィンドウを出すとき。
+ * ディスプレイの中では動かさない）。📌 なしのものも対象（メインと一緒に showInactive() で出しただけでは、
+ * ほかのアプリの下に残ることがある）。別の仮想デスクトップにあれば今のデスクトップへ連れてくる
  * （すべてのデスクトップに表示しない設定のとき。moveTop() だけでは出てこない）。
  * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
  */
-export function bringPinnedWorkspaceToFront(): void {
+export function bringWorkspaceToFront(): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
-  if (workspacePinLevel === 0 || !workspaceWindow.isVisible()) return;
+  if (!workspaceWindow.isVisible()) return;
   moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
   workspaceWindow.moveTop();
 }
