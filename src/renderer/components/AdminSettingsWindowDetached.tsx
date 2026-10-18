@@ -13,39 +13,52 @@ interface AdminSettingsWindowDetachedProps {
   handleSettingChange: HandleSettingChange;
 }
 
-/** 設定画面「ウィンドウ」の切り離しウィンドウの節: 表示する場所 */
+/** 設定画面「ウィンドウ」の切り離しウィンドウの節: 表示する場所・仮想デスクトップ */
 const AdminSettingsWindowDetached: React.FC<AdminSettingsWindowDetachedProps> = ({
   editedSettings,
   isLoading,
   handleSettingChange,
 }) => {
   const { t } = useTranslation();
+  const mode = editedSettings.detachedPositionMode;
 
   return (
     <div className="settings-section">
       <h3>{t('settings.detached.heading')}</h3>
-      <div className="setting-item">
-        <label>{t('settings.detached.position')}</label>
-        <div className="position-options">
-          {DETACHED_POSITION_OPTIONS.map((value) => (
-            <label key={value} className="position-option">
-              <input
-                type="radio"
-                name="detachedPositionMode"
-                value={value}
-                checked={editedSettings.detachedPositionMode === value}
-                onChange={() => handleSettingChange('detachedPositionMode', value)}
-                disabled={isLoading}
-              />
-              <div className="option-content">
-                <div className="option-title">{t(`settings.detached.${value}`)}</div>
-                <div className="option-description">
-                  {t(`settings.detached.${value}Description`)}
-                </div>
-              </div>
-            </label>
-          ))}
+      <div className="settings-form">
+        <label className="settings-form-label" htmlFor="detachedPositionMode">
+          {t('settings.detached.position')}
+        </label>
+        <div className="settings-form-line">
+          <select
+            id="detachedPositionMode"
+            value={mode}
+            onChange={(e) =>
+              handleSettingChange('detachedPositionMode', e.target.value as DetachedPositionMode)
+            }
+            disabled={isLoading}
+          >
+            {DETACHED_POSITION_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {t(`settings.detached.${value}`)}
+              </option>
+            ))}
+          </select>
         </div>
+        <span />
+        <span className="field-description">{t(`settings.detached.${mode}Description`)}</span>
+
+        <div className="settings-form-divider" />
+        <span className="settings-form-label">{t('settings.detached.virtualDesktops')}</span>
+        <label className="settings-form-check">
+          <input
+            type="checkbox"
+            checked={editedSettings.detachedVisibleOnAllDesktops}
+            onChange={(e) => handleSettingChange('detachedVisibleOnAllDesktops', e.target.checked)}
+            disabled={isLoading}
+          />
+          {t('settings.detached.visibleOnAllDesktops')}
+        </label>
       </div>
     </div>
   );

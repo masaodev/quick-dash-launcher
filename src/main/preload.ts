@@ -321,8 +321,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DETACH_GROUP, groupId, cursorX, cursorY),
     closeDetachedGroup: (groupId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, groupId),
-    hideAllDetached: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_HIDE_ALL_DETACHED),
-    showAllDetached: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SHOW_ALL_DETACHED),
     resizeCallerWindow: (width, height) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW, width, height),
     setCallerBounds: (x, y, width, height) =>

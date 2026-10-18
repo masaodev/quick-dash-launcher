@@ -11,7 +11,7 @@ import { TestUtils } from '../helpers/test-utils';
  *
  * 設定画面はサイドバーメニューで以下のカテゴリに分かれています：
  * - 基本設定: 表示言語、ホットキー、システム、表示
- * - ウィンドウ: メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウの表示する場所、詳しい設定（大きさなど）
+ * - ウィンドウ: メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウ・その他の節（どれも畳まずに出す）
  * - バックアップ: バックアップ
  */
 test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
@@ -73,23 +73,18 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await windowMenu.click();
         await adminUtils.wait(200);
 
-        // メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウの節
+        // メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウ・その他の節
         for (const heading of [
           'メインウィンドウ',
           'ワークスペースウィンドウ',
           '切り離しウィンドウ',
+          'その他',
         ]) {
           const section = adminWindow
             .locator('.settings-section')
             .filter({ has: adminWindow.locator('h3', { hasText: heading }) });
           await expect(section).toBeVisible();
         }
-
-        // 大きさなどは「詳しい設定」に畳んである。開くと見える
-        const details = adminWindow.locator('details.settings-details');
-        await expect(details).not.toHaveAttribute('open');
-        await details.locator('summary', { hasText: '詳しい設定' }).click();
-        await expect(details.locator('h4', { hasText: '大きさ' })).toBeVisible();
       });
 
       await test.step('バックアップカテゴリに切り替えてセクションを確認', async () => {
@@ -142,9 +137,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const windowMenu = adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' });
         await windowMenu.click();
         await adminUtils.wait(200);
-
-        // 大きさは「詳しい設定」に畳んであるので開く
-        await adminWindow.locator('details.settings-details > summary').click();
 
         // 通常時の幅
         const widthInput = adminWindow.locator('#windowWidth');
@@ -290,20 +282,17 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(positionSection).toBeVisible();
       });
 
+      const positionSelect = adminWindow.locator('#windowPositionMode');
+
       await test.step('既定はマウスカーソルのあるディスプレイの中央が選択されている', async () => {
-        const cursorMonitorCenterRadio = adminWindow.locator(
-          'input[name="windowPositionMode"][value="cursorMonitorCenter"]'
-        );
-        await expect(cursorMonitorCenterRadio).toBeChecked();
+        await expect(positionSelect).toHaveValue('cursorMonitorCenter');
       });
 
       await test.step('プライマリディスプレイの中央を選択できる', async () => {
-        // メインウィンドウの節のラジオボタンを直接操作
-        const centerRadio = adminWindow.locator('input[name="windowPositionMode"][value="center"]');
-        await centerRadio.click({ force: true });
+        await positionSelect.selectOption('center');
         await adminUtils.wait(200);
 
-        await expect(centerRadio).toBeChecked();
+        await expect(positionSelect).toHaveValue('center');
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();
@@ -311,12 +300,10 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       });
 
       await test.step('マウスカーソルの近くを選択できる', async () => {
-        // メインウィンドウの節のラジオボタンを直接操作
-        const cursorRadio = adminWindow.locator('input[name="windowPositionMode"][value="cursor"]');
-        await cursorRadio.click({ force: true });
+        await positionSelect.selectOption('cursor');
         await adminUtils.wait(200);
 
-        await expect(cursorRadio).toBeChecked();
+        await expect(positionSelect).toHaveValue('cursor');
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();
@@ -324,12 +311,10 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       });
 
       await test.step('最後に動かした場所を選択できる', async () => {
-        // メインウィンドウの節のラジオボタンを直接操作
-        const fixedRadio = adminWindow.locator('input[name="windowPositionMode"][value="fixed"]');
-        await fixedRadio.click({ force: true });
+        await positionSelect.selectOption('fixed');
         await adminUtils.wait(200);
 
-        await expect(fixedRadio).toBeChecked();
+        await expect(positionSelect).toHaveValue('fixed');
 
         // settings.jsonに保存されたことを確認
         const settings = configHelper.readSettings();

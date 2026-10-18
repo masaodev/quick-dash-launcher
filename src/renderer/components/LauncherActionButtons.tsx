@@ -65,7 +65,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       <LauncherSettingsDropdown
         onOpenBasicSettings={onOpenBasicSettings}
         onOpenItemManagement={onOpenItemManagement}
-        onToggleWorkspace={onToggleWorkspace}
         onQuitApp={() => window.electronAPI.quitApp()}
       />
     </div>

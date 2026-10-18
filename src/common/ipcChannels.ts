@@ -179,8 +179,6 @@ export const IPC_CHANNELS = {
   WORKSPACE_SET_CALLER_BOUNDS: 'workspace:set-caller-bounds',
   WORKSPACE_LOAD_DETACHED_STATE: 'workspace:load-detached-state',
   WORKSPACE_SAVE_DETACHED_COLLAPSED: 'workspace:save-detached-collapsed',
-  WORKSPACE_HIDE_ALL_DETACHED: 'workspace:hide-all-detached',
-  WORKSPACE_SHOW_ALL_DETACHED: 'workspace:show-all-detached',
 
   // ワークスペース - ワークスペース（タブ）管理
   WORKSPACE_LOAD_WORKSPACES: 'workspace:load-workspaces',
