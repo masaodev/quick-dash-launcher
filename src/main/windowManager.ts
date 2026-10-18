@@ -296,11 +296,9 @@ export async function createTray(): Promise<void> {
     });
   }
 
+  // ホットキーと同じ表示処理を通す（ワークスペース・切り離しウィンドウも一緒に出す）
   tray.on('double-click', () => {
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    void showMainWindow();
   });
 }
 
@@ -335,7 +333,7 @@ async function updateTrayMenu(): Promise<void> {
     {
       label: t('tray.showAtCenter'),
       click: () => {
-        showWindowAtCenter();
+        void showWindowAtCenter();
       },
     },
     {
@@ -608,14 +606,10 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
 
 /**
  * ウィンドウを画面中央に表示する（タスクトレイメニュー用）
- * 設定に関係なく強制的に画面中央に表示する
+ * 設定に関係なく強制的に画面中央に表示する。ほかはホットキーと同じ（ワークスペース・切り離しウィンドウも一緒に出す）
  */
-export function showWindowAtCenter(): void {
-  if (!mainWindow) return;
-
-  mainWindow.center();
-  mainWindow.show();
-  mainWindow.focus();
+export async function showWindowAtCenter(): Promise<void> {
+  await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN, { placeAtCenter: true });
   windowLogger.info('ウィンドウを画面中央に表示しました（タスクトレイメニュー）');
 }
 
@@ -671,22 +665,27 @@ async function activateMainWindowWithFocus(): Promise<void> {
 /**
  * メインウィンドウを表示する共通処理
  * @param eventName 送信するイベント名
- * @param startTime パフォーマンス計測用の開始時刻
- * @param enableTimer パフォーマンスタイマーを有効にするか
+ * @param options.startTime パフォーマンス計測用の開始時刻
+ * @param options.enableTimer パフォーマンスタイマーを有効にするか
+ * @param options.placeAtCenter 設定に関係なく画面中央に置くか（タスクトレイの「中央に表示」）
  */
 async function showMainWindowInternal(
   eventName: IpcChannelName,
-  startTime?: number,
-  enableTimer: boolean = false
+  options: { startTime?: number; enableTimer?: boolean; placeAtCenter?: boolean } = {}
 ): Promise<void> {
   if (!mainWindow) return;
+  const { startTime, enableTimer = false, placeAtCenter = false } = options;
 
   const timer = enableTimer
     ? new PerformanceTimer(startTime, (msg) => windowLogger.info(msg))
     : null;
   timer?.log(`hotkey-pressed: 0.00ms (start: ${startTime})`);
 
-  await setWindowPosition();
+  if (placeAtCenter) {
+    mainWindow.center();
+  } else {
+    await setWindowPosition();
+  }
   timer?.log('position-set');
 
   await toggleCompanionWindows(true);
@@ -710,7 +709,7 @@ async function showMainWindowInternal(
  * 設定されたモードに応じてウィンドウ位置を設定してから表示する
  */
 export async function showMainWindow(startTime?: number): Promise<void> {
-  await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN, startTime, true);
+  await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN, { startTime, enableTimer: true });
   windowLogger.info('メインウィンドウを表示しました');
 }
 
@@ -719,7 +718,7 @@ export async function showMainWindow(startTime?: number): Promise<void> {
  * 設定されたモードに応じてウィンドウ位置を設定してから表示する
  */
 export async function showMainWindowWithItemSearch(startTime?: number): Promise<void> {
-  await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, startTime);
+  await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, { startTime });
   windowLogger.info('メインウィンドウをアイテム検索モードで表示しました');
 }
 

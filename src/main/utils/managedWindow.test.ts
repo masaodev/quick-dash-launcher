@@ -38,6 +38,20 @@ describe('managedWindow', () => {
     env.isDevelopment = true;
   });
 
+  it('見えている子ウィンドウがあるときだけ hasVisibleChildWindow が true になること', async () => {
+    const { hasVisibleChildWindow } = await import('./managedWindow');
+    const child = (visible: boolean, destroyed = false) => ({
+      isVisible: () => visible,
+      isDestroyed: () => destroyed,
+    });
+    const parent = (children: unknown[]) =>
+      ({ getChildWindows: () => children }) as unknown as BrowserWindow;
+
+    expect(hasVisibleChildWindow(parent([]))).toBe(false);
+    expect(hasVisibleChildWindow(parent([child(false), child(true, true)]))).toBe(false);
+    expect(hasVisibleChildWindow(parent([child(false), child(true)]))).toBe(true);
+  });
+
   it('終了処理前の close は閉じずに隠し、終了処理中は閉じさせること', async () => {
     const { hideOnClose, markAppQuitting, isAppQuitting } = await import('./managedWindow');
     const win = createFakeWindow();

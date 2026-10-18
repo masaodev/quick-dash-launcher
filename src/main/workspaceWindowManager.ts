@@ -18,6 +18,7 @@ import { getMainWindowDisplay } from './utils/referenceDisplay.js';
 import {
   DEFAULT_WEB_PREFERENCES,
   attachCommonKeyHandlers,
+  hasVisibleChildWindow,
   hideOnClose,
 } from './utils/managedWindow.js';
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
@@ -228,11 +229,17 @@ export async function showWorkspaceWithMain(): Promise<void> {
 }
 
 /**
- * メインウィンドウと一緒に隠す（📌 なしのときだけ。開いている状態は変えない）
+ * メインウィンドウと一緒に隠す（📌 なしのときだけ。開いている状態は変えない）。
+ * 編集・確認の子ウィンドウを開いている間は隠さない（メインのモーダル中と同じ考え方）
  */
 export function hideWorkspaceWithMain(): void {
   if (workspacePinLevel !== 0) return;
-  if (workspaceWindow && !workspaceWindow.isDestroyed() && workspaceWindow.isVisible()) {
+  if (
+    workspaceWindow &&
+    !workspaceWindow.isDestroyed() &&
+    workspaceWindow.isVisible() &&
+    !hasVisibleChildWindow(workspaceWindow)
+  ) {
     workspaceWindow.hide();
   }
 }
@@ -520,7 +527,8 @@ export function setWindowSnapEnabled(enabled: boolean): void {
  * ワークスペースウィンドウの全仮想デスクトップ表示設定を適用
  */
 export async function applyVisibilityOnAllDesktops(): Promise<void> {
-  if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+  // 隠れているウィンドウには当てられない（失敗する）。表示するときに当て直すので、そのときに任せる
+  if (!workspaceWindow || workspaceWindow.isDestroyed() || !workspaceWindow.isVisible()) return;
 
   const settingsService = await SettingsService.getInstance();
   const enabled = await settingsService.get('workspaceVisibleOnAllDesktops');
