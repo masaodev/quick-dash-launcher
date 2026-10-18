@@ -857,6 +857,8 @@ html:has(.workspace-window.background-transparent) {
   display: flex;
   gap: 4px;
   -webkit-app-region: no-drag;
+  /* ウィンドウの上端・右端から 4px の所に置くので、▲ がウィンドウの外で欠けないようにはみ出しを抑える */
+  --pin-badge-offset: -3px;
 }
 
 .detached-window-controls .workspace-pin-btn,

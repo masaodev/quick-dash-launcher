@@ -201,12 +201,6 @@
   font-size: var(--font-size-sm);
 }
 
-.setting-row {
-  display: flex;
-  gap: var(--spacing-xl);
-  align-items: flex-start;
-}
-
 .setting-item {
   display: flex;
   flex-direction: column;
