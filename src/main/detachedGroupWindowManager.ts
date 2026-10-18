@@ -713,19 +713,20 @@ export async function restoreDetachedWindows(options?: {
     if (openGroupIds.length === 0) return;
 
     const groups = await workspaceService.loadGroups();
-    const existingGroupIds = new Set(groups.map((g) => g.id));
+    // サブグループは切り離さない（以前に切り離したもの・後でサブグループにしたものは、開くと空になる）
+    const topLevelGroupIds = new Set(groups.filter((g) => !g.parentGroupId).map((g) => g.id));
 
     for (const groupId of openGroupIds) {
-      if (existingGroupIds.has(groupId)) {
+      if (topLevelGroupIds.has(groupId)) {
         await createDetachedGroupWindow(groupId, undefined, undefined, options);
       } else {
-        // 存在しないグループのエントリを削除
+        // 存在しないグループ・サブグループのエントリを削除
         await workspaceService.removeDetachedWindowState(groupId);
       }
     }
 
     windowLogger.info(
-      `切り離しウィンドウを復元しました: ${openGroupIds.length}件中${openGroupIds.filter((id) => existingGroupIds.has(id)).length}件`
+      `切り離しウィンドウを復元しました: ${openGroupIds.length}件中${openGroupIds.filter((id) => topLevelGroupIds.has(id)).length}件`
     );
   } catch (error) {
     windowLogger.error({ error }, '切り離しウィンドウの復元に失敗しました');

@@ -393,10 +393,12 @@ function setupWorkspaceContextMenuHandler(): void {
 }
 
 /**
- * 切り離しの項目を作る。ワークスペースでは「切り離す」（切り離し済みなら「表示」）、
+ * 切り離しの項目を作る。ワークスペースでは一番上のグループだけ「切り離す」（切り離し済みなら「表示」）、
  * 切り離しウィンドウでは一番上のグループだけ「ワークスペースに戻す」（× と同じ）。
+ * サブグループは切り離さない（切り離しウィンドウは一番上のグループから描くので、空になる）
  */
-function buildDetachMenuItem(sender: WebContents, groupId: string): MenuItem | null {
+function buildDetachMenuItem(sender: WebContents, group: WorkspaceGroup): MenuItem | null {
+  const groupId = group.id;
   const detachedGroupId = getGroupIdByWebContentsId(sender.id);
   if (detachedGroupId !== undefined) {
     if (detachedGroupId !== groupId) return null;
@@ -405,6 +407,7 @@ function buildDetachMenuItem(sender: WebContents, groupId: string): MenuItem | n
       click: () => closeDetachedGroupWindow(groupId),
     });
   }
+  if (group.parentGroupId) return null;
   return new MenuItem({
     label: hasDetachedGroupWindow(groupId)
       ? t('menu.workspaceGroup.showDetached')
@@ -468,7 +471,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
         return;
       }
 
-      const detachItem = buildDetachMenuItem(event.sender, group.id);
+      const detachItem = buildDetachMenuItem(event.sender, group);
       if (detachItem) {
         menu.append(detachItem);
         menu.append(createSeparator());
