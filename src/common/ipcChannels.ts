@@ -219,6 +219,8 @@ export const IPC_CHANNELS = {
   EVENT_DATA_CHANGED: 'data-changed',
   EVENT_SETTINGS_CHANGED: 'settings-changed',
   EVENT_WORKSPACE_OPEN_CHANGED: 'workspace-open-changed',
+  /** ワークスペースを出し直した（高さを中身に合わせ直す。出すときに高さを作業領域いっぱいに戻すため） */
+  EVENT_WORKSPACE_REFIT_HEIGHT: 'workspace-refit-height',
   EVENT_SET_ACTIVE_TAB: 'set-active-tab',
   /** 管理ウィンドウの × が押された。未保存の確認はレンダラーが行い、閉じるなら HIDE_EDIT_WINDOW を呼ぶ */
   EVENT_ADMIN_CLOSE_REQUESTED: 'admin-close-requested',

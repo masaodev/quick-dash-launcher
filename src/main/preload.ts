@@ -111,6 +111,8 @@ const electronAPI: ElectronAPI = {
   isWorkspaceOpen: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_IS_OPEN),
   onWorkspaceOpenChanged: (callback) =>
     createEventListener<boolean>(IPC_CHANNELS.EVENT_WORKSPACE_OPEN_CHANGED, callback),
+  onWorkspaceRefitHeight: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_WORKSPACE_REFIT_HEIGHT, callback),
   onWorkspaceChanged: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.WORKSPACE_CHANGED, callback),
   pin: {

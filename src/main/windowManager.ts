@@ -718,6 +718,8 @@ async function showMainWindowInternal(
 
   // 表示したまま別の仮想デスクトップにある（ピン留め中など）と show() では出てこない
   bringMainWindowToCurrentDesktop();
+  // 📌 で残していて Win+D で最小化されたときは、isVisible() が false なのでこちらに来る。元の大きさに戻してから出す（A3-132）
+  if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   timer?.log('window-shown');
 

@@ -333,6 +333,12 @@ export async function toggleWorkspaceWindow(): Promise<void> {
     windowLogger.info('ワークスペースウィンドウを今の仮想デスクトップへ移しました');
     return;
   }
+  // Win+D で最小化されているときは、表示中の扱いのまま（hide イベントが来ない）なので、閉じずに戻す（A3-132）
+  if (isWorkspaceWindowVisible && workspaceWindow?.isMinimized()) {
+    workspaceWindow.restore();
+    workspaceWindow.focus();
+    return;
+  }
   if (isWorkspaceWindowVisible) {
     hideWorkspaceWindow();
   } else {
@@ -400,6 +406,9 @@ export function getWorkspaceAlwaysOnTop(): boolean {
  */
 export function bringWorkspaceToFront(): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+  // Win+D（デスクトップの表示）で最小化されていると、isVisible() は false になり、moveTop() だけでも戻らない（A3-132）。
+  // 閉じたワークスペースは最小化のまま隠れていることがあるので、開いているときだけ戻す
+  if (isWorkspaceOpen && workspaceWindow.isMinimized()) workspaceWindow.showInactive();
   if (!workspaceWindow.isVisible()) return;
   moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
   workspaceWindow.moveTop();
@@ -457,6 +466,9 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
         width,
         height: workArea.height,
       });
+      // 高さを中身に合わせ直させる。レンダラーは中身の高さが変わらないと合わせ直さないので、
+      // そのままだと作業領域いっぱいの高さで下に余白が残る（A3-131）
+      workspaceWindow.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_REFIT_HEIGHT);
       const side = isLeft ? '左' : '右';
       const target =
         targetIndex === MAIN_WINDOW_DISPLAY_INDEX
