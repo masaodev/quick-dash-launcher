@@ -682,8 +682,9 @@ async function activateMainWindowWithFocus(): Promise<void> {
   bringCompanionsToFront();
 
   // 検索欄にフォーカスを当てるため、window-shownイベントを送信
-  mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN);
+  // （時刻も渡し、表示したときと同じく描画が止まっていないかをレンダラーに記録させる。A3-130）
   windowLogger.info('メインウィンドウをアクティブにしました');
+  mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN, Date.now());
 }
 
 /**

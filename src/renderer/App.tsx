@@ -510,8 +510,7 @@ function App(): React.ReactElement {
         window.electronAPI.logPerformanceTiming(label, Date.now() - startTime);
       };
       logTiming(`renderer-received${suffix}`);
-      // 表示したのに描画が止まっている（ページが隠れている扱いのまま）ときを記録する（A3-130）
-      if (document.visibilityState === 'hidden') logTiming(`page-hidden-on-show${suffix}`);
+      // 表示したのに描画が止まっているときを記録する（A3-130）。そのときページが隠れている扱いかも残す
       let frameArrived = false;
       setTimeout(() => {
         if (!frameArrived)

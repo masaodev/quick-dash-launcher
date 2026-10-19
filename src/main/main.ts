@@ -104,12 +104,6 @@ if (EnvConfig.isDevelopment) {
   app.commandLine.appendSwitch('--remote-debugging-port', debugPort);
 }
 
-// Chromium がウィンドウをほかのウィンドウに隠れていると判断して描画を止める機能を切る。
-// ホットキーで出した直後にこの判断がずれると、打った文字が画面に出ず、クリックするまで描き直されない（A3-130）
-if (process.platform === 'win32') {
-  app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
-}
-
 app.whenReady().then(async () => {
   // 画面がページ側から別の URL へ移らないようにする（ウィンドウを作る前に付ける）
   installNavigationGuard();
