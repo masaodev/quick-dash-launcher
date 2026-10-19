@@ -677,7 +677,8 @@ async function activateMainWindowWithFocus(): Promise<void> {
   // ワークスペース・切り離しウィンドウも一緒に出す（メインウィンドウのフォーカス前に実行）
   await toggleCompanionWindows(true);
 
-  // メインウィンドウに確実にフォーカスを戻す
+  // メインウィンドウに確実にフォーカスを戻す（Win+D で最小化されていれば戻す。A3-132）
+  if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.focus();
   bringCompanionsToFront();
 

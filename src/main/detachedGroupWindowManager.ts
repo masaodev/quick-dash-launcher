@@ -657,6 +657,8 @@ export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay
 export function bringDetachedToFront(): void {
   for (const win of detachedWindows.values()) {
     if (!win.isDestroyed() && win.isVisible()) {
+      // Win+D（デスクトップの表示）で最小化されていると、moveTop() だけでは戻らない（A3-132）
+      if (win.isMinimized()) win.showInactive();
       moveWindowToCurrentDesktop(win.getNativeWindowHandle().readBigUInt64LE());
       win.moveTop();
     }

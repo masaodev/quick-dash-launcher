@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 type ResizeFn = (width: number, height: number) => void;
 
@@ -15,6 +15,7 @@ function defaultResizeFn(width: number, height: number): void {
  * コンテンツ高さの変化に応じてウィンドウ高さをsetSizeで更新する。
  *
  * callback refパターンを使用し、要素のアタッチ/デタッチに正しく対応する。
+ * ワークスペースを出し直したときは、中身の高さが変わっていなくても合わせ直す（出すときに高さが作業領域いっぱいに戻るため）
  */
 export function useWorkspaceAutoFit(
   resizeFn?: ResizeFn,
@@ -28,6 +29,7 @@ export function useWorkspaceAutoFit(
   resizeRef.current = resize;
   const lastHeightRef = useRef<number>(0);
   const observerRef = useRef<ResizeObserver | null>(null);
+  const nodeRef = useRef<HTMLDivElement | null>(null);
 
   const updateHeight = useCallback(
     (contentEl: HTMLElement) => {
@@ -68,6 +70,7 @@ export function useWorkspaceAutoFit(
         observerRef.current = null;
       }
 
+      nodeRef.current = node;
       if (!node) return;
 
       const observer = new ResizeObserver(() => updateHeight(node));
@@ -75,6 +78,16 @@ export function useWorkspaceAutoFit(
       observerRef.current = observer;
       updateHeight(node);
     },
+    [updateHeight]
+  );
+
+  useEffect(
+    () =>
+      window.electronAPI.onWorkspaceRefitHeight(() => {
+        if (!nodeRef.current) return;
+        lastHeightRef.current = 0;
+        updateHeight(nodeRef.current);
+      }),
     [updateHeight]
   );
 
