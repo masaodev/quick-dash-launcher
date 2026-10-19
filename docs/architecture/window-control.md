@@ -70,6 +70,8 @@
     - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
   - **別の仮想デスクトップにあるとき**: 表示したまま別の仮想デスクトップへ移った（ピン留め中など）メインウィンドウは、ホットキー（「ウィンドウ検索のホットキー」も）を押すと隠さずに今のデスクトップへ移して前に出す。表示するときも、別のデスクトップにあれば今のデスクトップへ移してから出す（`moveWindowToCurrentDesktop()`）。先に `focus()` すると Windows がメインウィンドウのあるデスクトップへ切り替えてしまうため、移すのが先
   - **実装場所**: `src/main/services/hotkeyService.ts`（ホットキーの登録と押したときの表示・非表示の切り替え。`handleHotkeyPressed()`）、`src/main/windowManager.ts`（`registerGlobalShortcut()` で表示・非表示の処理を渡す。`showMainWindow()`・`hideMainWindow()`）
+  - **表示直後の描画**: Windows では、Chromium がウィンドウをほかのウィンドウに隠れていると判断して描画を止める機能（`CalculateNativeWinOcclusion`）を起動時に切っている（`src/main/main.ts`）。表示した直後にこの判断がずれると、打った文字が画面に出ず、クリックするまで描き直されなかったため
+  - **表示の時間の記録**: 表示するたびにレンダラーが `[Performance]` の行をログに出す（`renderer-received`・`before-animation-frame`・`window-show-complete`）。表示したときにページが隠れている扱いなら `page-hidden-on-show`、1 秒たっても描画が来なければ `animation-frame-stalled-<visible|hidden>` も出す（`src/renderer/App.tsx`）
 - **フォーカスアウト**: `normal`モードの場合、フォーカスを失うと自動的に非表示
 - **モーダルモード時のフォーカス制御**: メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間はフォーカスアウトでもウィンドウが非表示にならない（下記「メイン画面の子ウィンドウ」）
 - **Escapeキー**: 以下の場合を**除き**、Escapeキーで非表示可能
