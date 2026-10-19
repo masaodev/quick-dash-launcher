@@ -406,9 +406,10 @@ export function getWorkspaceAlwaysOnTop(): boolean {
  */
 export function bringWorkspaceToFront(): void {
   if (!workspaceWindow || workspaceWindow.isDestroyed()) return;
+  // Win+D（デスクトップの表示）で最小化されていると、isVisible() は false になり、moveTop() だけでも戻らない（A3-132）。
+  // 閉じたワークスペースは最小化のまま隠れていることがあるので、開いているときだけ戻す
+  if (isWorkspaceOpen && workspaceWindow.isMinimized()) workspaceWindow.showInactive();
   if (!workspaceWindow.isVisible()) return;
-  // Win+D（デスクトップの表示）で最小化されていると、moveTop() だけでは戻らない（A3-132）
-  if (workspaceWindow.isMinimized()) workspaceWindow.showInactive();
   moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
   workspaceWindow.moveTop();
 }
