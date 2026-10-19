@@ -97,7 +97,7 @@
     "@microsoft/dynwinrt": "0.1.0-preview.23",
     "@tanstack/react-virtual": "^3.14.13",
     "clipboard-files": "^3.0.0",
-    "electron-store": "^11.0.2",
+    "electron-store": "^12.0.0",
     "extract-file-icon": "^0.3.2",
     "i18next": "^26.4.4",
     "koffi": "^3.3.2",
