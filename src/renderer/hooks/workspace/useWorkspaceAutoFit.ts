@@ -15,11 +15,13 @@ function defaultResizeFn(width: number, height: number): void {
  * コンテンツ高さの変化に応じてウィンドウ高さをsetSizeで更新する。
  *
  * callback refパターンを使用し、要素のアタッチ/デタッチに正しく対応する。
- * ワークスペースを出し直したときは、中身の高さが変わっていなくても合わせ直す（出すときに高さが作業領域いっぱいに戻るため）
+ * refitOnRequest が true なら、メインプロセスが高さを作業領域いっぱいに戻したとき（EVENT_WORKSPACE_REFIT_HEIGHT）に、
+ * 中身の高さが変わっていなくても合わせ直す（ワークスペース本体だけ。切り離しウィンドウには届かない）
  */
 export function useWorkspaceAutoFit(
   resizeFn?: ResizeFn,
-  minHeight?: number
+  minHeight?: number,
+  refitOnRequest = false
 ): {
   contentRef: (node: HTMLDivElement | null) => void;
 } {
@@ -81,15 +83,14 @@ export function useWorkspaceAutoFit(
     [updateHeight]
   );
 
-  useEffect(
-    () =>
-      window.electronAPI.onWorkspaceRefitHeight(() => {
-        if (!nodeRef.current) return;
-        lastHeightRef.current = 0;
-        updateHeight(nodeRef.current);
-      }),
-    [updateHeight]
-  );
+  useEffect(() => {
+    if (!refitOnRequest) return;
+    return window.electronAPI.onWorkspaceRefitHeight(() => {
+      if (!nodeRef.current) return;
+      lastHeightRef.current = 0;
+      updateHeight(nodeRef.current);
+    });
+  }, [refitOnRequest, updateHeight]);
 
   return { contentRef };
 }

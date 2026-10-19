@@ -272,9 +272,7 @@ async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promis
     }
 
     if (workspaceWindow) {
-      const heightBefore = workspaceWindow.getBounds().height;
       await setWorkspacePosition();
-      const heightChanged = workspaceWindow.getBounds().height !== heightBefore;
       // 表示中でも別の仮想デスクトップにあると show() では出てこない（自動表示のとき）
       moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
       // Windows の show() はウィンドウをアクティブにするので、フォーカスを奪わないときは showInactive() にする
@@ -285,10 +283,6 @@ async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promis
         workspaceWindow.focus();
       }
       await applyVisibilityOnAllDesktops();
-      // 左端・右端に置くときは setWorkspacePosition() が高さを作業領域いっぱいに戻すので、中身に合わせ直させる
-      // （レンダラーは中身の高さが変わらないと合わせ直さないため、そのままだと下に余白が残る。A3-131）
-      if (heightChanged)
-        workspaceWindow.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_REFIT_HEIGHT);
       windowLogger.info('ワークスペースウィンドウを表示しました');
 
       if (!detachedRestored) {
@@ -337,6 +331,12 @@ export async function toggleWorkspaceWindow(): Promise<void> {
     workspaceWindow.show();
     workspaceWindow.focus();
     windowLogger.info('ワークスペースウィンドウを今の仮想デスクトップへ移しました');
+    return;
+  }
+  // Win+D で最小化されているときは、表示中の扱いのまま（hide イベントが来ない）なので、閉じずに戻す（A3-132）
+  if (isWorkspaceWindowVisible && workspaceWindow?.isMinimized()) {
+    workspaceWindow.restore();
+    workspaceWindow.focus();
     return;
   }
   if (isWorkspaceWindowVisible) {
@@ -466,6 +466,9 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
         width,
         height: workArea.height,
       });
+      // 高さを中身に合わせ直させる。レンダラーは中身の高さが変わらないと合わせ直さないので、
+      // そのままだと作業領域いっぱいの高さで下に余白が残る（A3-131）
+      workspaceWindow.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_REFIT_HEIGHT);
       const side = isLeft ? '左' : '右';
       const target =
         targetIndex === MAIN_WINDOW_DISPLAY_INDEX

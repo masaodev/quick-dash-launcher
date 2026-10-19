@@ -677,8 +677,7 @@ async function activateMainWindowWithFocus(): Promise<void> {
   // ワークスペース・切り離しウィンドウも一緒に出す（メインウィンドウのフォーカス前に実行）
   await toggleCompanionWindows(true);
 
-  // メインウィンドウに確実にフォーカスを戻す（Win+D で最小化されていれば戻す。A3-132）
-  if (mainWindow.isMinimized()) mainWindow.restore();
+  // メインウィンドウに確実にフォーカスを戻す
   mainWindow.focus();
   bringCompanionsToFront();
 
@@ -719,6 +718,8 @@ async function showMainWindowInternal(
 
   // 表示したまま別の仮想デスクトップにある（ピン留め中など）と show() では出てこない
   bringMainWindowToCurrentDesktop();
+  // 📌 で残していて Win+D で最小化されたときは、isVisible() が false なのでこちらに来る。元の大きさに戻してから出す（A3-132）
+  if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   timer?.log('window-shown');
 
