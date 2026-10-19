@@ -510,7 +510,14 @@ function App(): React.ReactElement {
         window.electronAPI.logPerformanceTiming(label, Date.now() - startTime);
       };
       logTiming(`renderer-received${suffix}`);
+      // 表示したのに描画が止まっているときを記録する（A3-130）。そのときページが隠れている扱いかも残す
+      let frameArrived = false;
+      setTimeout(() => {
+        if (!frameArrived)
+          logTiming(`animation-frame-stalled-${document.visibilityState}${suffix}`);
+      }, 1000);
       requestAnimationFrame(() => {
+        frameArrived = true;
         logTiming(`before-animation-frame${suffix}`);
         requestAnimationFrame(() => {
           logTiming(`window-show-complete${suffix}`);

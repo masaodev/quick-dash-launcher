@@ -655,8 +655,12 @@ export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay
  * QDL が前面になってから呼ぶ（ほかのアプリが前面の間は、Windows が並べ替えを無視することがある）
  */
 export function bringDetachedToFront(): void {
-  for (const win of detachedWindows.values()) {
-    if (!win.isDestroyed() && win.isVisible()) {
+  for (const [groupId, win] of detachedWindows.entries()) {
+    if (win.isDestroyed()) continue;
+    // Win+D（デスクトップの表示）で最小化されていると、isVisible() は false になり、moveTop() だけでも戻らない（A3-132）。
+    // 📌 なしのものはメインと一緒に showInactive() で出し直す（出さない設定なら隠れたまま）ので、📌 ありだけ戻す
+    if ((detachedPinModes.get(groupId) ?? 0) !== 0 && win.isMinimized()) win.showInactive();
+    if (win.isVisible()) {
       moveWindowToCurrentDesktop(win.getNativeWindowHandle().readBigUInt64LE());
       win.moveTop();
     }
