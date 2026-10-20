@@ -1279,3 +1279,91 @@
 .admin-popover .dropdown-menu {
   position: static;
 }
+
+/* 取込元列（手動か、自動取込ルールの名前） */
+.raw-items-table .source-column {
+  width: 110px;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  padding: 1px 6px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raw-items-table .source-column .source-manual {
+  color: var(--text-muted);
+}
+
+/* リンク列（「リンク切れを確認」の結果） */
+.raw-items-table .link-column {
+  width: 110px;
+  font-size: var(--font-size-sm);
+  padding: 1px 6px !important;
+  white-space: nowrap;
+}
+
+.raw-items-table .link-column .link-exists {
+  color: var(--color-success);
+}
+
+.raw-items-table .link-column .link-unknown {
+  color: var(--text-muted);
+}
+
+/* 見出しの ▾（列の絞り込みと並べ替え） */
+.raw-items-table th .column-filter-button {
+  margin-left: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.raw-items-table th .column-filter-button:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--color-gray-300);
+}
+
+.raw-items-table th .column-filter-button.is-active {
+  color: var(--color-white);
+  background-color: var(--color-primary);
+}
+
+.admin-popover .column-filter-menu {
+  min-width: 240px;
+}
+
+.admin-popover .column-filter-text {
+  padding: var(--spacing-xs) var(--spacing-lg);
+}
+
+.admin-popover .column-filter-input {
+  width: 100%;
+  height: var(--input-height-sm);
+  padding: 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+}
+
+.admin-popover .column-filter-note {
+  white-space: normal;
+  max-width: 260px;
+}
+
+/* チップが 2 つ以上のときの「すべて外す」 */
+.edit-mode-filter-chips .filter-chips-clear-all {
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}

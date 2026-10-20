@@ -246,7 +246,7 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **showKeyboardHints** | boolean | true | メインウィンドウの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
-| **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`updatedAt`。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`・`pathAndArgs`）の `widths` は使わない。画面の見出しの右クリックと見出しの右端のドラッグで変わり、設定画面にはない |
+| **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`updatedAt`。`link` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`・`pathAndArgs`）の `widths` は使わない。画面の見出しの右クリックと見出しの右端のドラッグで変わり、設定画面にはない |
 
 ---
 

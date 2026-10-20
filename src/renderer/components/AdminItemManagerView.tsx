@@ -8,6 +8,7 @@ import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useAdminItemImports } from '../hooks/useAdminItemImports';
+import { useAdminItemColumns } from '../hooks/useAdminItemColumns';
 import { useAdminItemListView } from '../hooks/useAdminItemListView';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
@@ -210,11 +211,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const {
     sortState,
     handleSortChange,
-    autoImportFilter,
-    setAutoImportFilter,
-    missingOnly,
-    toggleMissingOnly,
+    setSort,
+    filters,
+    setColumnFilter,
     pathCheck,
+    linkStatusOf,
     missingIds,
     filteredItems,
     orderedItems,
@@ -222,8 +223,19 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     isFiltered,
   } = listView;
 
+  const columns = useAdminItemColumns();
+
+  const filterOptions = useMemo(
+    () => ({ rules: currentFileRules, linkChecked: pathCheck.hasChecked }),
+    [currentFileRules, pathCheck.hasChecked]
+  );
+
   const handleCheckMissingPaths = async () => {
     const summary = await pathCheck.runCheck(currentFileWorkingItems);
+    // 結果はリンクの列に出すので、隠していたら出す（既定では隠している）
+    if (summary.checked > 0 && !columns.visibleColumns.some((c) => c.def.id === 'link')) {
+      columns.setColumnVisible('link', true);
+    }
     if (summary.checked === 0) {
       showInfo(t('itemManager.missingCheck.nothingToCheck'));
       return;
@@ -498,13 +510,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onOpenAutoImportSettings={onOpenAutoImportSettings}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
-        autoImportFilter={autoImportFilter}
-        onAutoImportFilterChange={setAutoImportFilter}
-        rules={currentFileRules}
+        filters={filters}
+        onClearColumnFilter={(column) => setColumnFilter(column, undefined)}
+        onClearAllFilters={listView.clearFilters}
         ruleNames={autoImportRuleMap}
-        missingOnly={missingOnly}
-        missingOnlyAvailable={pathCheck.hasChecked}
-        onToggleMissingOnly={toggleMissingOnly}
         onCheckMissingPaths={() => void handleCheckMissingPaths()}
         checkingMissingPaths={pathCheck.checking}
         onDedupe={handleDedupe}
@@ -532,6 +541,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           isFiltered={isFiltered}
           sortState={sortState}
           onSortChange={handleSortChange}
+          onSort={setSort}
+          columns={columns}
+          filters={filters}
+          onFilterChange={setColumnFilter}
+          filterOptions={filterOptions}
+          linkStatusOf={linkStatusOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}
           onItemEdit={editing.recordEdit}

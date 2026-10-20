@@ -139,4 +139,80 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
       await adminWindow.close();
     }
   });
+
+  test('見出しの ▾ で種類・名前・メモを絞り込み、条件はチップで外せる。取込元の列に「手動」と出る', async ({
+    electronApp,
+    mainWindow,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    const rows = adminWindow.locator('.raw-item-row');
+    const filterMenu = adminWindow.getByTestId('admin-column-filter');
+    const chips = adminWindow.getByTestId('item-filter-chips');
+
+    try {
+      await expect(rows.first()).toBeVisible();
+      const total = await rows.count();
+
+      await test.step('取込元の列に「手動」と出る', async () => {
+        await expect(
+          adminWindow.locator('.raw-item-row', { hasText: 'GitHub' }).locator('.source-column')
+        ).toHaveText('手動');
+      });
+
+      await test.step('種類の ▾ で URL だけにする', async () => {
+        await adminWindow.locator('th.type-column .column-filter-button').click();
+        await filterMenu.getByRole('menuitemcheckbox', { name: /単一アイテム（URL）/ }).click();
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, '種類の絞り込み');
+        await adminWindow.keyboard.press('Escape');
+        await expect(filterMenu).toHaveCount(0);
+        await expect(rows).toHaveCount(3); // GitHub・Google・Wikipedia
+        await expect(chips).toContainText('種類: 単一アイテム（URL）');
+      });
+
+      await test.step('名前の ▾ で「goo」を含むものに絞る（種類と AND）', async () => {
+        await adminWindow.locator('th.name-column .column-filter-button').click();
+        await filterMenu.getByPlaceholder('含む文字').fill('goo');
+        await adminWindow.keyboard.press('Escape');
+        await expect(rows).toHaveCount(1);
+        await expect(rows.first()).toContainText('Google');
+        await expect(adminWindow.locator('th.name-column .column-filter-button')).toHaveClass(
+          /is-active/
+        );
+      });
+
+      await test.step('「すべて外す」で全件に戻る', async () => {
+        await chips.getByRole('button', { name: 'すべて外す' }).click();
+        await expect(chips).toHaveCount(0);
+        await expect(rows).toHaveCount(total);
+      });
+
+      await test.step('メモの ▾ の「空でない」で、メモのある行だけにする', async () => {
+        const github = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
+        await github.locator('.memo-column .memo-cell').click();
+        await github.locator('.memo-column textarea').fill('メモあり');
+        await github.locator('.memo-column textarea').press('Control+Enter');
+
+        await adminWindow.locator('th.memo-column .column-filter-button').click();
+        await filterMenu.getByRole('menuitemradio', { name: '空でない' }).click();
+        await adminWindow.keyboard.press('Escape');
+        await expect(rows).toHaveCount(1);
+        await expect(chips).toContainText('メモ: 空でない');
+        await chips.getByRole('button', { name: '「メモ: 空でない」の絞り込みを外す' }).click();
+        await expect(rows).toHaveCount(total);
+      });
+
+      await test.step('▾ の「降順に並べる」で名前の降順になる', async () => {
+        await adminWindow.locator('th.name-column .column-filter-button').click();
+        await filterMenu.getByRole('menuitemradio', { name: '▼ 降順に並べる' }).click();
+        await adminWindow.keyboard.press('Escape');
+        await expect(adminWindow.locator('th.name-column')).toHaveAttribute(
+          'aria-sort',
+          'descending'
+        );
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
 });

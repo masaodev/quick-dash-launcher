@@ -2,12 +2,17 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { EditableJsonItem } from '@common/types/editableItem';
 
 import {
+  activeFilterColumns,
+  matchesColumnFilters,
+  type ColumnFilters,
+  type FilterableColumnId,
+} from '../utils/adminItemFilters';
+import {
   applyDisplayOrder,
   filterEditableItems,
   getItemKey,
   sortItemIds,
   toggleSort,
-  type AutoImportFilter,
   type SortColumn,
   type SortState,
 } from '../utils/editableItemOperations';
@@ -29,7 +34,7 @@ interface UseAdminItemListViewOptions {
 /**
  * アイテム管理の一覧に「どの行を・どの順で出すか」を決める
  *
- * 絞り込み（取込元・リンク切れのみ・検索）、並べ替え、リンク切れの確認結果を持ち、
+ * 見出しの ▾ の絞り込み（列ごと）・検索、並べ替え、リンク切れの確認結果を持ち、
  * 表示する行・選択中の見えている行を返す
  */
 export function useAdminItemListView({
@@ -46,39 +51,45 @@ export function useAdminItemListView({
     direction: 'asc',
   });
 
-  const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
+  const [filters, setFilters] = useState<ColumnFilters>({});
 
   // リンク切れ（パスが実在しない）。ネットワークパスは応答に時間がかかることがあるので、
   // 自動では確認せず、「整理 ▼」の「リンク切れを確認」を押したときだけ確認する
-  const [missingOnly, setMissingOnly] = useState(false);
   const pathCheck = useAdminPathExistence(baseVersion);
+  const linkStatusOf = useCallback(
+    (item: EditableJsonItem) => {
+      const itemPath = checkablePathOf(item);
+      return itemPath ? pathCheck.results.get(itemPath) : undefined;
+    },
+    [pathCheck.results]
+  );
   const missingIds = useMemo(() => {
     const ids = new Set<string>();
     for (const item of workingItems) {
-      const itemPath = checkablePathOf(item);
-      if (itemPath && pathCheck.results.get(itemPath) === 'missing') ids.add(getItemKey(item));
+      if (linkStatusOf(item) === 'missing') ids.add(getItemKey(item));
     }
     return ids;
-  }, [workingItems, pathCheck.results]);
+  }, [workingItems, linkStatusOf]);
 
-  // 読み込み・保存で結果が捨てられたら絞り込みも解く
+  // 読み込み・保存で確認の結果が捨てられたら、リンクの絞り込みも解く
   useEffect(() => {
-    if (!pathCheck.hasChecked) setMissingOnly(false);
+    if (!pathCheck.hasChecked) setFilters(({ link: _link, ...rest }) => rest);
   }, [pathCheck.hasChecked]);
 
-  // ファイル変更時にフィルタをリセット
+  // 取込元のルールはデータファイルごとなので、ファイルを変えたら取込元の絞り込みを解く
   useEffect(() => {
-    setAutoImportFilter('all');
+    setFilters(({ source: _source, ...rest }) => rest);
   }, [selectedDataFile]);
 
   const filteredItems = useMemo(() => {
-    const filtered = filterEditableItems(workingItems, {
+    const searched = filterEditableItems(workingItems, {
       sourceFile: selectedDataFile,
-      autoImportFilter,
       searchQuery,
     });
-    return missingOnly ? filtered.filter((item) => missingIds.has(getItemKey(item))) : filtered;
-  }, [workingItems, selectedDataFile, autoImportFilter, searchQuery, missingOnly, missingIds]);
+    if (activeFilterColumns(filters).length === 0) return searched;
+    const context = { linkStatusOf, now: Date.now() };
+    return searched.filter((item) => matchesColumnFilters(item, filters, context));
+  }, [workingItems, selectedDataFile, searchQuery, filters, linkStatusOf]);
 
   // 表示順は「読み込み・保存時」と「見出しクリック時」にだけ作り直し、編集中は固定する。
   // こうしないと、名前を入力した瞬間に行が並び順の位置へ飛んでしまう
@@ -95,35 +106,47 @@ export function useAdminItemListView({
   );
 
   const handleSortChange = (column: SortColumn) => setSortState((prev) => toggleSort(prev, column));
+  /** 見出しの ▾ から向きを決めて並べる */
+  const setSort = useCallback(
+    (column: SortColumn, direction: SortState['direction']) => setSortState({ column, direction }),
+    []
+  );
 
   const visibleSelectedItems = useMemo(
     () => filteredItems.filter((item) => selectedItems.has(getItemKey(item))),
     [filteredItems, selectedItems]
   );
 
-  // 表示されなくなったアイテム（検索・フィルタ・ファイル切替）の選択を外す
+  // 表示されなくなったアイテム（検索・絞り込み・ファイル切替）の選択を外す
   useEffect(() => {
     retainVisibleSelection(filteredItems);
   }, [filteredItems, retainVisibleSelection]);
 
-  /** 検索以外の絞り込み（取込元・リンク切れのみ）を外す。検索欄は呼び出し側が持つ */
-  const clearFilters = useCallback(() => {
-    setAutoImportFilter('all');
-    setMissingOnly(false);
-  }, []);
+  /** 1 つの列の絞り込みを変える（undefined で外す） */
+  const setColumnFilter = useCallback(
+    <K extends FilterableColumnId>(column: K, value: ColumnFilters[K] | undefined) =>
+      setFilters((prev) => {
+        const next = { ...prev };
+        if (value === undefined) delete next[column];
+        else next[column] = value;
+        return next;
+      }),
+    []
+  );
 
-  const toggleMissingOnly = useCallback(() => setMissingOnly((prev) => !prev), []);
+  /** 見出しの ▾ の絞り込みをすべて外す。検索欄は呼び出し側が持つ */
+  const clearFilters = useCallback(() => setFilters({}), []);
 
-  const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all' || missingOnly;
+  const isFiltered = searchQuery.trim().length > 0 || activeFilterColumns(filters).length > 0;
 
   return {
     sortState,
     handleSortChange,
-    autoImportFilter,
-    setAutoImportFilter,
-    missingOnly,
-    toggleMissingOnly,
+    setSort,
+    filters,
+    setColumnFilter,
     pathCheck,
+    linkStatusOf,
     missingIds,
     filteredItems,
     orderedItems,

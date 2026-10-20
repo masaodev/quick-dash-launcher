@@ -1020,12 +1020,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addFolder: '🗂️ Add folder import',
       addFolderTitle:
         'Adds an item that lists the files in a folder each time the launcher opens (folder import)',
-      filter: 'Filter',
-      filterActive: 'Filter ({{count}})',
-      filterTitle: 'Filters the list by source or broken links',
-      filterSource: 'Source',
-      filterShow: 'Show',
-      missingOnlyChip: 'Broken links only',
       removeFilter: 'Remove the "{{name}}" filter',
       deleteSelected: 'Delete',
       deleteSelectedTitle: 'Deletes the checked items',
@@ -1053,12 +1047,42 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       checkingMissing: 'Checking…',
       checkMissingTitle:
         'Checks whether the local paths in this data file exist (URLs, shell:, and command names are skipped; runs only when you select it)',
-      missingOnly: 'Show broken links only',
-      missingOnlyTitle: "Shows only items whose paths weren't found",
-      missingOnlyUnavailable: 'Run "Check for broken links" in "Clean up" first',
       dedupe: 'Remove duplicates',
       dedupeDesc: 'Keeps one of each item with the same type, name, and path',
       dedupeTitle: 'Deletes items with the same type, name, and path, keeping the first one',
+    },
+    columnFilter: {
+      open: 'Filter and sort {{column}}',
+      title: 'Filter',
+      sortAsc: '▲ Sort ascending',
+      sortDesc: '▼ Sort descending',
+      clear: 'Clear this filter',
+      clearAll: 'Clear all',
+      chip: '{{column}}: {{value}}',
+      containsPlaceholder: 'Contains',
+      containsValue: 'contains "{{text}}"',
+      nonEmpty: 'Not empty',
+      empty: 'Empty',
+      rules: 'Auto-import rules',
+      linkNotChecked: 'Run "Check for broken links" in "Clean up ▼" first',
+      types: {
+        itemUrl: 'Single item (URL)',
+        itemOther: 'Single item (not a URL)',
+        dir: 'Folder import',
+        set: 'Set',
+        clipboard: 'Clipboard',
+      },
+      link: {
+        missing: '⚠ Not found',
+        exists: '✓ Found',
+        unknown: "? Couldn't check",
+      },
+      updatedAt: {
+        within7: 'Last 7 days',
+        within30: 'Last 30 days',
+        olderThan365: 'Over a year ago',
+        none: 'No date',
+      },
     },
     columnMenu: {
       title: 'Columns',
@@ -1074,6 +1098,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       pathAndArgsTitle: 'Select a path to edit it. Edit arguments in ✏️ Edit details.',
       updatedAt: 'Updated',
       memo: 'Note',
+      source: 'Source',
+      link: 'Link',
       icon: 'Icon',
       columnMenuHint:
         'Right-click to choose columns. Drag the right edge of a header to resize it.',
@@ -1082,6 +1108,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'This data file has no items. Add one with "+ Add item", or use the ▼ next to it to import browser bookmarks or installed apps.',
     },
     row: {
+      sourceManual: 'Manual',
+      sourceAutoTitle: 'Imported by the auto-import rule "{{rule}}"',
+      linkExistsTitle: 'The path was found',
+      linkUnknownTitle:
+        "No response in time (for example, a network path). This isn't counted as a broken link.",
       memoTitle:
         '{{memo}}\n\nSelect to edit (Enter for a new line, Ctrl+Enter to finish, Esc to cancel)',
       memoEmptyTitle:
@@ -1128,7 +1159,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       someMissing_one: '{{count}} broken link ({{checked}} checked{{unknownNote}})',
       someMissing_other: '{{count}} broken links ({{checked}} checked{{unknownNote}})',
       statusTitle:
-        'To see only these, select Filter > Show broken links only. Paths that do not respond (such as network paths) are not counted as broken.',
+        'To see only these, use ▾ on the Link column. Paths that do not respond (such as network paths) are not counted as broken.',
     },
     movedTo: 'Moved "{{name}}" to {{file}} (save to keep this change)',
     saved: 'Changes saved',
@@ -1423,12 +1454,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     deleteItemsToo: 'Also delete the imported items',
   },
   autoImportFilter: {
-    all: 'All',
     autoImportOnly: 'Auto-imported only',
     manualOnly: 'Added manually only',
-    label: 'Source: {{filter}}',
     unknownRule: 'Unknown rule',
-    title: 'Filter by auto-import',
   },
   appImport: {
     registeredApp: '(registered app)',

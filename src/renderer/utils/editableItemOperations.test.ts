@@ -285,21 +285,12 @@ describe('editableItemOperations', () => {
       [launcher('Google', 'https://google.com', { autoImportRuleId: 'rule2' })],
       [launcher('GitHub', 'https://github.com'), OTHER]
     );
-    const filter = (autoImportFilter: string, searchQuery: string) =>
-      names(filterEditableItems(items, { sourceFile: FILE, autoImportFilter, searchQuery }));
+    const filter = (searchQuery: string) =>
+      names(filterEditableItems(items, { sourceFile: FILE, searchQuery }));
 
     it('対象ファイルと検索語（空白区切りの AND）で絞り込むこと', () => {
-      expect(filter('all', '')).toEqual(['GitHub', 'GitLab', 'Google']);
-      expect(filter('all', 'git hub')).toEqual(['GitHub']);
-    });
-
-    it('取込元フィルタと検索語を併用できること', () => {
-      expect(filter('auto-import-only', '')).toEqual(['GitHub', 'Google']);
-      expect(filter('auto-import-only', 'google')).toEqual(['Google']);
-      expect(filter('manual-only', '')).toEqual(['GitLab']);
-      expect(filter('manual-only', 'google')).toEqual([]);
-      expect(filter('rule1', '')).toEqual(['GitHub']);
-      expect(filter('rule1', 'google')).toEqual([]);
+      expect(filter('')).toEqual(['GitHub', 'GitLab', 'Google']);
+      expect(filter('git hub')).toEqual(['GitHub']);
     });
   });
 
@@ -367,7 +358,6 @@ describe('editableItemOperations', () => {
       names(
         filterEditableItems(items, {
           sourceFile: FILE,
-          autoImportFilter: 'all',
           searchQuery: '重要',
         })
       )
@@ -384,7 +374,7 @@ describe('editableItemOperations', () => {
     };
     const items = rows([chrome], [set]);
     const search = (searchQuery: string) =>
-      names(filterEditableItems(items, { sourceFile: FILE, autoImportFilter: 'all', searchQuery }));
+      names(filterEditableItems(items, { sourceFile: FILE, searchQuery }));
     expect(search('chrome')).toEqual(['Chrome', '朝']);
     expect(search('memo.txt')).toEqual(['朝']);
     expect(search('itemid')).toEqual([]);

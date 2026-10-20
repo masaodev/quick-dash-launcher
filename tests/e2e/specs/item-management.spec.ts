@@ -797,7 +797,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== リンク切れ確認テスト ====================
 
-  test('「整理 ▼」の「リンク切れを確認」で印が付き、「絞り込み ▼」の「リンク切れだけ表示」で絞り込める', async ({
+  test('「整理 ▼」の「リンク切れを確認」でリンクの列に印が付き、リンクの列の ▾ で絞り込める', async ({
     electronApp,
     mainWindow,
   }, _testInfo) => {
@@ -807,13 +807,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       adminWindow.locator('.organize-dropdown .dropdown-trigger-btn').click();
     const organizeItem = (text: string) =>
       adminWindow.locator('.organize-dropdown .dropdown-item', { hasText: text });
-    const filterButton = adminWindow.locator('.filter-dropdown .dropdown-trigger-btn');
-    const missingOnlyItem = adminWindow.locator('.filter-dropdown .dropdown-item', {
-      hasText: 'リンク切れだけ表示',
-    });
 
     try {
-      await test.step('確認するまでは印も件数も出ず、「リンク切れだけ表示」は選べない', async () => {
+      await test.step('確認するまでは印も件数もリンクの列も出ない', async () => {
         await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
         const firstRow = adminWindow.locator('.raw-item-row').first();
         await firstRow.locator('.name-column .edit-input').fill('壊れたリンク');
@@ -825,32 +821,37 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
         await expect(adminWindow.locator('.raw-item-row.missing-path')).toHaveCount(0);
         await expect(adminWindow.locator('.edit-mode-status .missing-count')).toHaveCount(0);
-        await filterButton.click();
-        await expect(missingOnlyItem).toBeDisabled();
-        // メニューを閉じる（トグル）
-        await filterButton.click();
-        await expect(missingOnlyItem).toHaveCount(0);
+        await expect(adminWindow.locator('th.link-column')).toHaveCount(0);
       });
 
-      await test.step('「リンク切れを確認」で存在しないパスに印が付く（URL・shell:・コマンド名は対象外）', async () => {
+      await test.step('「リンク切れを確認」でリンクの列が出て、存在しないパスに印が付く（URL・shell:・コマンド名は対象外）', async () => {
         await openOrganize();
         await organizeItem('リンク切れを確認').click();
         const firstRow = adminWindow.locator('.raw-item-row').first();
-        await expect(firstRow.locator('.missing-path-label')).toBeVisible({ timeout: 15000 });
+        await expect(firstRow.locator('.link-column .missing-path-label')).toBeVisible({
+          timeout: 15000,
+        });
+        await expect(adminWindow.locator('th.link-column')).toBeVisible();
         await expect(adminWindow.locator('.raw-item-row.missing-path')).toHaveCount(1);
         await expect(adminWindow.locator('.edit-mode-status .missing-count')).toContainText('1 件');
       });
 
-      await test.step('「リンク切れだけ表示」で絞り込み、条件の ✕ で全件に戻る', async () => {
-        await filterButton.click();
-        await missingOnlyItem.click();
+      await test.step('リンクの列の ▾ で「見つからない」に絞り込み、条件の ✕ で全件に戻る', async () => {
+        await adminWindow.locator('th.link-column .column-filter-button').click();
+        const menu = adminWindow.getByTestId('admin-column-filter');
+        await menu.getByRole('menuitemradio', { name: '⚠ 見つからない' }).click();
         await expect(adminWindow.locator('.raw-item-row')).toHaveCount(1);
         await expect(adminWindow.locator('.raw-item-row').first()).toContainText('壊れたリンク');
-        await expect(filterButton).toContainText('絞り込み（1）');
+        await expect(adminWindow.locator('th.link-column .column-filter-button')).toHaveClass(
+          /is-active/
+        );
+        await adminWindow.keyboard.press('Escape');
 
         const chips = adminWindow.getByTestId('item-filter-chips');
-        await expect(chips).toContainText('リンク切れだけ');
-        await chips.getByRole('button', { name: '「リンク切れだけ」の絞り込みを外す' }).click();
+        await expect(chips).toContainText('リンク: ⚠ 見つからない');
+        await chips
+          .getByRole('button', { name: '「リンク: ⚠ 見つからない」の絞り込みを外す' })
+          .click();
         await expect(chips).toHaveCount(0);
         await expect
           .poll(async () => adminWindow.locator('.raw-item-row').count())

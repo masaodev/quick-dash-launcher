@@ -1,5 +1,6 @@
 import type { AdminItemColumnsSetting } from '@common/types';
 
+import type { FilterableColumnId } from './adminItemFilters';
 import type { SortColumn } from './editableItemOperations';
 
 /**
@@ -7,7 +8,8 @@ import type { SortColumn } from './editableItemOperations';
  *
  * 並び順はこの配列の順。見出し・行・列のメニューはここを見て描く。見出しの文言は itemManager.table.<id>
  */
-export type AdminItemColumnId = 'type' | 'icon' | 'name' | 'pathAndArgs' | 'memo' | 'updatedAt';
+export type AdminItemColumnId =
+  'type' | 'icon' | 'name' | 'pathAndArgs' | 'memo' | 'source' | 'link' | 'updatedAt';
 
 export interface AdminItemColumnDef {
   id: AdminItemColumnId;
@@ -15,6 +17,8 @@ export interface AdminItemColumnDef {
   className: string;
   /** 見出しのクリックで並べ替える項目。並べ替えない列は undefined */
   sortColumn?: SortColumn;
+  /** 見出しの ▾ で絞り込む列か（列の id が絞り込みの項目になる） */
+  filterable?: boolean;
   /** 列のメニューで隠せるか */
   hideable: boolean;
   /** 設定が無いときに出すか */
@@ -28,6 +32,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     id: 'type',
     className: 'type-column',
     sortColumn: 'type',
+    filterable: true,
     hideable: true,
     defaultVisible: true,
     minWidth: 80,
@@ -42,6 +47,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     id: 'name',
     className: 'name-column',
     sortColumn: 'displayName',
+    filterable: true,
     hideable: false,
     defaultVisible: true,
     minWidth: 100,
@@ -51,6 +57,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     id: 'pathAndArgs',
     className: 'content-column',
     sortColumn: 'pathAndArgs',
+    filterable: true,
     hideable: false,
     defaultVisible: true,
   },
@@ -58,14 +65,35 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     id: 'memo',
     className: 'memo-column',
     sortColumn: 'memo',
+    filterable: true,
     hideable: true,
     defaultVisible: true,
     minWidth: 80,
+  },
+  // 手動登録か、どの自動取込ルールで入ったか
+  {
+    id: 'source',
+    className: 'source-column',
+    sortColumn: 'source',
+    filterable: true,
+    hideable: true,
+    defaultVisible: true,
+    minWidth: 70,
+  },
+  // 「リンク切れを確認」の結果。確認するまでは空なので既定では隠し、確認したときに出す
+  {
+    id: 'link',
+    className: 'link-column',
+    filterable: true,
+    hideable: true,
+    defaultVisible: false,
+    minWidth: 60,
   },
   {
     id: 'updatedAt',
     className: 'updated-at-column',
     sortColumn: 'updatedAt',
+    filterable: true,
     hideable: true,
     defaultVisible: true,
     minWidth: 80,
@@ -94,6 +122,11 @@ export function normalizeColumnsSetting(value: unknown): AdminItemColumnsSetting
     }
   }
   return { visible, widths };
+}
+
+/** 見出しの ▾ を出す列の id を、絞り込みの項目として返す */
+export function filterColumnOf(column: AdminItemColumnDef): FilterableColumnId | null {
+  return column.filterable ? (column.id as FilterableColumnId) : null;
 }
 
 export function isColumnVisible(

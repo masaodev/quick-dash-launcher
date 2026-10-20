@@ -31,9 +31,6 @@ import {
   normalizeAppPath,
 } from '@common/utils/appDuplicateDetector';
 
-/** 自動取込フィルタ: 全て / 自動取込のみ / 手動登録のみ / 特定ルール ID */
-export type AutoImportFilter = 'all' | 'auto-import-only' | 'manual-only' | string;
-
 /** EditableJsonItem の一意キー（選択状態・変更差分の管理に使う）＝ item.id */
 export function getItemKey(item: EditableJsonItem): string {
   return item.item.id;
@@ -372,10 +369,10 @@ export function buildItemsForSave(
   );
 }
 
-/** 自動取込フィルタと検索語（空白区切りの AND）で、指定データファイルのアイテムを絞り込む */
+/** 検索語（空白区切りの AND）で、指定データファイルのアイテムを絞り込む（列ごとの絞り込みは adminItemFilters） */
 export function filterEditableItems(
   items: EditableJsonItem[],
-  criteria: { sourceFile: string; autoImportFilter: AutoImportFilter; searchQuery: string }
+  criteria: { sourceFile: string; searchQuery: string }
 ): EditableJsonItem[] {
   const keywords = criteria.searchQuery
     .toLowerCase()
@@ -400,18 +397,6 @@ export function filterEditableItems(
 
   return items.filter((item) => {
     if (item.meta.sourceFile !== criteria.sourceFile) return false;
-
-    if (criteria.autoImportFilter !== 'all') {
-      const ruleId = isJsonLauncherItem(item.item) ? item.item.autoImportRuleId : undefined;
-      if (criteria.autoImportFilter === 'auto-import-only') {
-        if (!ruleId) return false;
-      } else if (criteria.autoImportFilter === 'manual-only') {
-        if (ruleId) return false;
-      } else if (ruleId !== criteria.autoImportFilter) {
-        // 特定ルールIDでフィルタ
-        return false;
-      }
-    }
 
     // メモも検索対象にする（displayText にはメモが入らない）
     const base = item.item.type === 'set' ? item.item.displayName : item.displayText;
@@ -605,7 +590,7 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
   }
 }
 
-export type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'memo' | 'updatedAt';
+export type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'memo' | 'source' | 'updatedAt';
 export interface SortState {
   /** null はソートなし（ファイル順） */
   column: SortColumn | null;
@@ -634,6 +619,8 @@ export function sortItemIds(items: EditableJsonItem[], sort: SortState): string[
     if (column === 'displayName')
       return 'displayName' in item.item ? item.item.displayName || '' : '';
     if (column === 'memo') return item.item.memo ?? '';
+    if (column === 'source')
+      return isJsonLauncherItem(item.item) ? (item.item.autoImportRuleId ?? '') : '';
     return describePathAndArgs(item.item);
   };
   const sorted = [...items].sort((a, b) => {
