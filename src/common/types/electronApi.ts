@@ -337,7 +337,8 @@ export interface ElectronAPI {
     /** 確認ウィンドウが結果を預ける（この後 window.close する） */
     returnConfirmResult: (requestId: string, result: ConfirmWindowResult) => Promise<void>;
     // サイズ変更関連
-    setSize: (width: number, height: number) => Promise<boolean>;
+    /** 高さだけを変える（幅はメインプロセスの今の値のまま） */
+    setHeight: (height: number) => Promise<boolean>;
     setPositionAndSize: (x: number, y: number, width: number, height: number) => Promise<boolean>;
     // 位置モード設定
     setPositionMode: (mode: WorkspacePositionMode) => Promise<boolean>;

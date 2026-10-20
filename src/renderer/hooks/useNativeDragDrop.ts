@@ -1,6 +1,8 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 
+import { hasDroppableData } from '../utils/fileDropUtils';
+
 type NativeFileDropHandler = (e: React.DragEvent) => Promise<void>;
 
 /**
@@ -17,17 +19,8 @@ export function useNativeDragDrop(onNativeFileDrop: NativeFileDropHandler): void
   callbackRef.current = onNativeFileDrop;
 
   useEffect(() => {
-    function hasNativeContent(dataTransfer: DataTransfer | null): boolean {
-      if (!dataTransfer?.types) return false;
-      return (
-        dataTransfer.types.includes('Files') ||
-        dataTransfer.types.includes('text/uri-list') ||
-        dataTransfer.types.includes('text/plain')
-      );
-    }
-
     function handleDragOverOrLeave(e: DragEvent): void {
-      if (hasNativeContent(e.dataTransfer)) {
+      if (hasDroppableData(e.dataTransfer)) {
         e.preventDefault();
         e.stopPropagation();
       }

@@ -72,18 +72,21 @@ export interface WindowActivationResult {
 type PartialBounds = Partial<Bounds>;
 
 /**
+ * ログに添えるアイテムの情報（アイテム名と、文字列にしたウィンドウ設定）
+ */
+type WindowLogContext = { name: string; windowConfig: string };
+
+/**
  * アクティブモニター中央座標を計算する
  *
  * @param hwnd ウィンドウハンドル
- * @param itemName アイテム名（ログ出力用）
- * @param windowConfig ウィンドウ設定（ログ出力用）
+ * @param logCtx ログに添える情報
  * @param logger ロガーインスタンス
  * @returns 計算された中央座標、または計算失敗時はundefined
  */
 function calculateActiveMonitorCenter(
   hwnd: bigint | number,
-  itemName: string,
-  windowConfig: WindowConfig,
+  logCtx: WindowLogContext,
   logger: Logger
 ): { x: number; y: number } | undefined {
   const cursorPoint = screen.getCursorScreenPoint();
@@ -91,7 +94,7 @@ function calculateActiveMonitorCenter(
 
   if (!currentBounds) {
     logger.warn(
-      { name: itemName, windowConfig: JSON.stringify(windowConfig) },
+      logCtx,
       'ウィンドウサイズの取得に失敗したため、アクティブモニター中央への移動をスキップします'
     );
     return undefined;
@@ -116,8 +119,7 @@ function calculateActiveMonitorCenter(
 
   logger.info(
     {
-      name: itemName,
-      windowConfig: JSON.stringify(windowConfig),
+      ...logCtx,
       calculatedPosition: { x, y },
       cursorPoint,
       displayBounds,
@@ -152,19 +154,16 @@ function areBoundsWithinTolerance(
  *
  * @param hwnd ウィンドウハンドル
  * @param targetBounds 目標の位置・サイズ
- * @param itemName アイテム名（ログ出力用）
- * @param windowConfig ウィンドウ設定（ログ出力用）
+ * @param logCtx ログに添える情報
  * @param logger ロガーインスタンス
  * @returns 設定が成功したかどうか
  */
 async function setBoundsWithRetry(
   hwnd: bigint | number,
   targetBounds: PartialBounds,
-  itemName: string,
-  windowConfig: WindowConfig,
+  logCtx: WindowLogContext,
   logger: Logger
 ): Promise<{ applied: boolean; positionApplied: boolean }> {
-  const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
   const { MAX_RETRIES, RETRY_DELAY_MS } = WINDOW_BOUNDS_CONFIG;
   /**
    * 最後に確かめた位置（x・y）が当たっていたか（読み直せなかったら当たっていないとみなす）。
@@ -217,16 +216,14 @@ async function setBoundsWithRetry(
  *
  * @param hwnd ウィンドウハンドル
  * @param targetDesktopNumber 目標デスクトップ番号
- * @param itemName アイテム名（ログ出力用）
- * @param windowConfig ウィンドウ設定（ログ出力用）
+ * @param logCtx ログに添える情報
  * @param logger ロガーインスタンス
  * @returns 移動が完了したかどうか
  */
 async function waitForDesktopMove(
   hwnd: bigint | number,
   targetDesktopNumber: number,
-  itemName: string,
-  windowConfig: WindowConfig,
+  logCtx: WindowLogContext,
   logger: Logger
 ): Promise<boolean> {
   const maxAttempts =
@@ -237,8 +234,7 @@ async function waitForDesktopMove(
     if (isWindowOnDesktopNumber(hwnd, targetDesktopNumber)) {
       logger.info(
         {
-          name: itemName,
-          windowConfig: JSON.stringify(windowConfig),
+          ...logCtx,
           desktopNumber: targetDesktopNumber,
           waitTimeMs: attempt * WINDOW_BOUNDS_CONFIG.DESKTOP_MOVE_CHECK_INTERVAL_MS,
         },
@@ -253,8 +249,7 @@ async function waitForDesktopMove(
 
   logger.warn(
     {
-      name: itemName,
-      windowConfig: JSON.stringify(windowConfig),
+      ...logCtx,
       desktopNumber: targetDesktopNumber,
       maxWaitMs: WINDOW_BOUNDS_CONFIG.DESKTOP_MOVE_MAX_WAIT_MS,
     },
@@ -321,7 +316,7 @@ export async function applyWindowConfig(
   logger: Logger,
   options: ApplyWindowOptions = {}
 ): Promise<WindowActivationResult> {
-  const logCtx = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
+  const logCtx: WindowLogContext = { name: itemName, windowConfig: JSON.stringify(windowConfig) };
   /** 位置を当てたときの結果（当てなければ undefined） */
   let positionApplied: boolean | undefined;
   const positionResult = () =>
@@ -366,7 +361,7 @@ export async function applyWindowConfig(
     // アクティブモニター中央への移動が指定されている場合、座標を計算
     if (needsActiveMonitorCenter) {
       try {
-        const centerPosition = calculateActiveMonitorCenter(hwnd, itemName, windowConfig, logger);
+        const centerPosition = calculateActiveMonitorCenter(hwnd, logCtx, logger);
         if (centerPosition) {
           targetBounds.x = centerPosition.x;
           targetBounds.y = centerPosition.y;
@@ -379,7 +374,7 @@ export async function applyWindowConfig(
       }
     }
 
-    positionApplied = (await setBoundsWithRetry(hwnd, targetBounds, itemName, windowConfig, logger))
+    positionApplied = (await setBoundsWithRetry(hwnd, targetBounds, logCtx, logger))
       .positionApplied;
   }
 
@@ -398,10 +393,9 @@ export async function applyWindowConfig(
       logger.info(desktopLogCtx, '仮想デスクトップに移動しました');
 
       if (needsBoundsChange) {
-        await waitForDesktopMove(hwnd, targetDesktopNumber, itemName, windowConfig, logger);
-        positionApplied = (
-          await setBoundsWithRetry(hwnd, baseBounds, itemName, windowConfig, logger)
-        ).positionApplied;
+        await waitForDesktopMove(hwnd, targetDesktopNumber, logCtx, logger);
+        positionApplied = (await setBoundsWithRetry(hwnd, baseBounds, logCtx, logger))
+          .positionApplied;
       }
     } else {
       logger.warn(desktopLogCtx, '仮想デスクトップへの移動に失敗しました');

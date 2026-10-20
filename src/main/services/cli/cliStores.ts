@@ -42,7 +42,7 @@ const cliLogger = createChildLogger('cli');
  * メイン画面のアイテムの読み書きを、本体の既存の処理につなぐ
  * （登録画面・編集画面と同じ書き込み経路。トラッカー・破損ファイルの扱いもそのまま）
  */
-export function createLauncherStore(configFolder: string): LauncherStore {
+function createLauncherStore(configFolder: string): LauncherStore {
   return {
     async load() {
       const result = await loadEditableItems(configFolder);
@@ -71,7 +71,7 @@ export function createLauncherStore(configFolder: string): LauncherStore {
 /**
  * タブ構成の読み書きを、アイテム管理画面と同じ処理につなぐ（データファイルの作成・削除、設定の保存と通知）
  */
-export function createTabStore(configFolder: string): TabStore {
+function createTabStore(configFolder: string): TabStore {
   return {
     async load() {
       const settings = await SettingsService.getInstance();
@@ -110,7 +110,7 @@ export function createTabStore(configFolder: string): TabStore {
 /**
  * 設定の読み書きを、設定画面と同じ処理につなぐ（保存と副作用の適用・通知、ホットキーの登録）
  */
-export function createSettingsStore(): SettingsStore {
+function createSettingsStore(): SettingsStore {
   return {
     load: async () => (await SettingsService.getInstance()).getAll(),
     displayCount: () => screen.getAllDisplays().length,

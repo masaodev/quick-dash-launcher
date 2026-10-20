@@ -121,12 +121,14 @@ const WorkspaceApp: React.FC = () => {
   // 表示用データ: アーカイブモード時はアーカイブデータを使用
   // workspaceId を空にして、全ワークスペースをコンテキストメニューの移動先候補にする
   // （メイン側は「自分の workspaceId 以外」を候補にするため）
-  const displayGroups = isArchiveMode
-    ? archivedGroups.map((g) => ({ ...g, workspaceId: '' }))
-    : filteredGroups;
-  const displayItems = isArchiveMode
-    ? archivedItems.map((i) => ({ ...i, workspaceId: '' }))
-    : filteredItems;
+  const displayGroups = useMemo(
+    () => (isArchiveMode ? archivedGroups.map((g) => ({ ...g, workspaceId: '' })) : filteredGroups),
+    [isArchiveMode, archivedGroups, filteredGroups]
+  );
+  const displayItems = useMemo(
+    () => (isArchiveMode ? archivedItems.map((i) => ({ ...i, workspaceId: '' })) : filteredItems),
+    [isArchiveMode, archivedItems, filteredItems]
+  );
 
   const filterResult = useWorkspaceFilter(displayGroups, displayItems, filterText, filterScope);
   const isDetached = detachedGroupId !== null;
@@ -143,8 +145,7 @@ const WorkspaceApp: React.FC = () => {
     isDetached
       ? (width, height) => window.electronAPI.workspaceAPI.resizeCallerWindow(width, height)
       : undefined,
-    isDetached ? 0 : undefined,
-    !isDetached
+    isDetached ? 0 : undefined
   );
 
   useEffect(() => {

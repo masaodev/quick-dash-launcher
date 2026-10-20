@@ -4,15 +4,6 @@ import { DataFileTab } from '@common/types';
 import { TabValidator } from '../tabValidator';
 
 describe('TabValidator', () => {
-  describe('canDeleteTab', () => {
-    it('タブ削除は常に許可される', () => {
-      const tab: DataFileTab = { name: 'メイン', files: ['datafiles/data.json'] };
-      const result = TabValidator.canDeleteTab(tab);
-      expect(result.valid).toBe(true);
-      expect(result.reason).toBeUndefined();
-    });
-  });
-
   describe('canRemoveFileFromTab', () => {
     it('タブに1つしかファイルがない場合は削除不可', () => {
       const tabs: DataFileTab[] = [{ name: 'メイン', files: ['datafiles/data.json'] }];

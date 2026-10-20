@@ -40,7 +40,6 @@ function resolveActiveTab(files: string[], preferredTab: string): string {
  */
 export function useDataFileTabs() {
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
-  const [dataFiles, setDataFiles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>(DEFAULT_DATA_FILE);
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
@@ -90,7 +89,6 @@ export function useDataFileTabs() {
     setDataFileLabels(settings.dataFileLabels || {});
 
     const files = extractUniqueFiles(settings.dataFileTabs || []);
-    setDataFiles(files);
 
     await ensureDataFilesExist(files);
 
@@ -148,10 +146,6 @@ export function useDataFileTabs() {
     };
   }, []);
 
-  const handleTabClick = useCallback((fileName: string): void => {
-    setActiveTab(fileName);
-  }, []);
-
   const getTabFilteredItems = useCallback(
     (mainItems: AppItem[]): AppItem[] => {
       const activeTabConfig = showDataFileTabs
@@ -171,12 +165,10 @@ export function useDataFileTabs() {
 
   return {
     showDataFileTabs,
-    dataFiles,
     activeTab,
     dataFileTabs,
     dataFileLabels,
     setActiveTab,
-    handleTabClick,
     getTabFilteredItems,
   };
 }

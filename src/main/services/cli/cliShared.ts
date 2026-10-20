@@ -4,7 +4,7 @@ import * as path from 'path';
 import { validateJsonItem } from '@common/utils/jsonParser';
 import { validateEditableItem } from '@common/types/editableItem';
 import type { ClipboardFormat, JsonItem } from '@common/types';
-import { PREVIEW_MAX_LENGTH } from '@common/types/clipboard';
+import { truncateClipboardPreview } from '@common/types/clipboard';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -266,8 +266,7 @@ export function readTextOption(
 export function previewClipboardText(text: string): Omit<ClipboardTextFields, 'dataFileRef'> {
   return {
     savedAt: Date.now(),
-    preview:
-      text.length <= PREVIEW_MAX_LENGTH ? text : `${text.substring(0, PREVIEW_MAX_LENGTH)}...`,
+    preview: truncateClipboardPreview(text),
     formats: ['text'],
   };
 }

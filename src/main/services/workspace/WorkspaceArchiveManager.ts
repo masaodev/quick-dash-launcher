@@ -146,8 +146,13 @@ export class WorkspaceArchiveManager {
       }
 
       // サブグループも検索（parentGroupIdで紐付いているもの）
-      const archivedSubgroups = this.findArchivedDescendantGroups(groupId, archivedGroups);
-      const allArchivedGroupIds = new Set([groupId, ...archivedSubgroups.map((g) => g.id)]);
+      const allArchivedGroupIds = new Set([
+        groupId,
+        ...getDescendantGroupIds(groupId, archivedGroups),
+      ]);
+      const archivedSubgroups = archivedGroups.filter(
+        (g) => g.id !== groupId && allArchivedGroupIds.has(g.id)
+      );
 
       // 全対象グループのアイテムを検索
       const allArchivedItems = archivedItems.filter((item) =>
@@ -257,20 +262,6 @@ export class WorkspaceArchiveManager {
   }
 
   /**
-   * アーカイブ内の子孫サブグループを再帰的に検索
-   */
-  private findArchivedDescendantGroups(
-    groupId: string,
-    archivedGroups: ArchivedWorkspaceGroup[]
-  ): ArchivedWorkspaceGroup[] {
-    const children = archivedGroups.filter((g) => g.parentGroupId === groupId);
-    return children.flatMap((child) => [
-      child,
-      ...this.findArchivedDescendantGroups(child.id, archivedGroups),
-    ]);
-  }
-
-  /**
    * アーカイブされたグループとそのアイテムを完全削除
    * @param groupId 削除するグループのID
    */
@@ -286,9 +277,7 @@ export class WorkspaceArchiveManager {
       }
 
       // アーカイブから削除（子孫サブグループとそのアイテムも）
-      const descendantIds = this.findArchivedDescendantGroups(groupId, archivedGroups).map(
-        (g) => g.id
-      );
+      const descendantIds = getDescendantGroupIds(groupId, archivedGroups);
       const deleteIds = new Set([groupId, ...descendantIds]);
       this.store.updateArchive((archive) => {
         archive.groups = archive.groups.filter((g) => !deleteIds.has(g.id));

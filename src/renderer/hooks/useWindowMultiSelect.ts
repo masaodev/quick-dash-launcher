@@ -31,6 +31,11 @@ export interface WindowMultiSelect {
   /** 2 つ以上を閉じる前の確認（一覧の下の帯）。出ていないときは null */
   pendingClose: WindowInfo[] | null;
   setPendingClose: (wins: WindowInfo[] | null) => void;
+  /** 閉じる。2 つ以上は確認の帯を出してから（Enter で閉じる・Esc でやめる）、1 つならすぐ close で閉じる */
+  requestClose: (
+    targets: WindowInfo[],
+    close: (wins: WindowInfo[]) => Promise<unknown>
+  ) => Promise<void>;
 }
 
 /**
@@ -137,6 +142,14 @@ export function useWindowMultiSelect({
     return cursorWindow ? [cursorWindow] : [];
   }
 
+  async function requestClose(
+    targets: WindowInfo[],
+    close: (wins: WindowInfo[]) => Promise<unknown>
+  ): Promise<void> {
+    if (targets.length >= 2) setPendingClose(targets);
+    else await close(targets);
+  }
+
   return {
     markedWindows,
     isMarked: (hwnd) => marked.has(hwnd),
@@ -149,5 +162,6 @@ export function useWindowMultiSelect({
     targetsFor,
     pendingClose,
     setPendingClose,
+    requestClose,
   };
 }

@@ -10,7 +10,7 @@ import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
-import { executeSet, notifySetFailures } from '../services/launch/setExecutor.js';
+import { executeSet, indexItemsById, notifySetFailures } from '../services/launch/setExecutor.js';
 import { openSingleItem } from '../services/launch/itemOpener.js';
 import { mainI18n } from '../services/mainI18n.js';
 
@@ -83,10 +83,7 @@ export function setupItemHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_SET, async (_event, item: SetItem, allItems: AppItem[]) => {
     hideMainWindowOnExecute();
-    const byId = new Map<string, AppItem>();
-    for (const appItem of allItems) {
-      if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
-    }
+    const byId = indexItemsById(allItems);
     const result = await executeSet(item, (itemId) => byId.get(itemId));
     await notifySetFailures(item, result);
   });

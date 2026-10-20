@@ -12,6 +12,7 @@ import type {
   PinLevel,
   SearchMode,
   WindowInfo,
+  VirtualDesktopInfo,
   IconFetchErrorRecord,
 } from '@common/types';
 import { isWindowInfo, isClipboardItem, isSetItem, isLauncherItem } from '@common/types/guards';
@@ -33,7 +34,7 @@ import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { findNoMatchElsewhere } from './utils/noMatchElsewhere';
 import { debugLog, logError } from './utils/debug';
 import { indexById, setEntryNames } from './utils/setEditing';
-import { loadCustomIcons } from './utils/customIcons';
+import { loadItemIcons } from './utils/customIcons';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
@@ -47,6 +48,12 @@ import { useWindowOperations } from './hooks/useWindowOperations';
 import { useWindowMultiSelect } from './hooks/useWindowMultiSelect';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
+import { useAlertDialog } from './hooks/useDialogManager';
+
+/** ウィンドウ検索の既定のデスクトップのタブ: 今のデスクトップ（分からなければ「すべて」） */
+function defaultDesktopTab(info: Pick<VirtualDesktopInfo, 'supported' | 'currentDesktop'>): number {
+  return info.supported && info.currentDesktop > 0 ? info.currentDesktop : DESKTOP_TAB.ALL;
+}
 
 function App(): React.ReactElement {
   const { t } = useTranslation();
@@ -76,18 +83,10 @@ function App(): React.ReactElement {
   const [activeDesktopTab, setActiveDesktopTab] = useState<number>(0); // 0 = すべて
 
   // AlertDialog状態管理
-  const [alertDialog, setAlertDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    type?: 'info' | 'error' | 'warning' | 'success';
-  }>({
-    isOpen: false,
-    message: '',
-    type: 'info',
-  });
+  const { alertDialog, showAlert, closeAlert } = useAlertDialog();
 
   const showErrorAlert = (message: string) => {
-    setAlertDialog({ isOpen: true, message, type: 'error' });
+    showAlert(message, 'error');
   };
 
   // アイコン取得エラー記録
@@ -122,7 +121,6 @@ function App(): React.ReactElement {
     dataFileTabs,
     dataFileLabels,
     setActiveTab,
-    handleTabClick,
     getTabFilteredItems,
   } = useDataFileTabs();
   activeTabRef.current = activeTab;
@@ -183,7 +181,7 @@ function App(): React.ReactElement {
             (tab > 0 && tab > info.desktopCount) ||
             (tab === DESKTOP_TAB.PINNED && !windows.some((w) => w.isPinned === true));
           if (!gone) return tab;
-          return info.supported && info.currentDesktop > 0 ? info.currentDesktop : DESKTOP_TAB.ALL;
+          return defaultDesktopTab(info);
         });
         if (resetSelection) setSelectedIndex(0);
       });
@@ -208,15 +206,11 @@ function App(): React.ReactElement {
     const launcherItems = items.filter(
       (item) => !isWindowInfo(item) && !isSetItem(item)
     ) as LauncherItem[];
-    const [iconCache, customIcons] = await Promise.all([
-      window.electronAPI.loadCachedIcons(launcherItems),
+    const [iconCache, customIcons] = await loadItemIcons(
+      launcherItems,
       // path を持たないクリップボード・セットは、カスタムアイコンをファイル名で読む
-      loadCustomIcons(
-        items.map((item) =>
-          isClipboardItem(item) || isSetItem(item) ? item.customIcon : undefined
-        )
-      ),
-    ]);
+      items.map((item) => (isClipboardItem(item) || isSetItem(item) ? item.customIcon : undefined))
+    );
 
     // Apply cached icons to items
     const itemsWithIcons = items.map((item) => {
@@ -246,23 +240,22 @@ function App(): React.ReactElement {
     await withLoading(t('launcher.loading.data'), loadItems);
   };
 
+  /** ウィンドウ検索モードに入る。全仮想デスクトップのウィンドウとデスクトップ情報を取り、今のデスクトップのタブを選ぶ */
+  const enterWindowMode = useCallback(async (): Promise<void> => {
+    setSearchMode('window');
+    const [windows, info] = await Promise.all([
+      window.electronAPI.getAllWindowsAllDesktops(),
+      window.electronAPI.getVirtualDesktopInfo(),
+    ]);
+    setWindowList(windows);
+    setDesktopInfo(info);
+    setActiveDesktopTab(defaultDesktopTab(info));
+  }, []);
+
   const handleToggleSearchMode = async () => {
     if (searchMode === 'normal') {
       // 通常モード → ウィンドウ検索モード
-      setSearchMode('window');
-      // 全仮想デスクトップのウィンドウと仮想デスクトップ情報を取得
-      const [windows, info] = await Promise.all([
-        window.electronAPI.getAllWindowsAllDesktops(),
-        window.electronAPI.getVirtualDesktopInfo(),
-      ]);
-      setWindowList(windows);
-      setDesktopInfo(info);
-      // 現在のデスクトップをデフォルトタブとして設定
-      if (info.supported && info.currentDesktop > 0) {
-        setActiveDesktopTab(info.currentDesktop);
-      } else {
-        setActiveDesktopTab(0);
-      }
+      await enterWindowMode();
     } else {
       // ウィンドウ検索モード → 通常モード
       setSearchMode('normal');
@@ -447,9 +440,7 @@ function App(): React.ReactElement {
 
   /** 右クリック（2 つ以上を選んでいるとき）の「閉じる」。キーの Ctrl+D と同じく確認の帯を出す */
   const handleMenuCloseMarked = () => {
-    const targets = windowSelection.markedWindows;
-    if (targets.length >= 2) windowSelection.setPendingClose(targets);
-    else void windowOps.closeWindows(targets);
+    void windowSelection.requestClose(windowSelection.markedWindows, windowOps.closeWindows);
   };
 
   const { handleKeyDown, switchToNextTab } = useKeyboardShortcuts({
@@ -511,13 +502,12 @@ function App(): React.ReactElement {
       };
       logTiming(`renderer-received${suffix}`);
       // 表示したのに描画が止まっているときを記録する（A3-130）。そのときページが隠れている扱いかも残す
-      let frameArrived = false;
-      setTimeout(() => {
-        if (!frameArrived)
-          logTiming(`animation-frame-stalled-${document.visibilityState}${suffix}`);
-      }, 1000);
+      const stallTimer = setTimeout(
+        () => logTiming(`animation-frame-stalled-${document.visibilityState}${suffix}`),
+        1000
+      );
       requestAnimationFrame(() => {
-        frameArrived = true;
+        clearTimeout(stallTimer);
         logTiming(`before-animation-frame${suffix}`);
         requestAnimationFrame(() => {
           logTiming(`window-show-complete${suffix}`);
@@ -535,14 +525,7 @@ function App(): React.ReactElement {
     const cleanupWindowShownItemSearch = window.electronAPI.onWindowShownItemSearch(
       async (startTime) => {
         logShowTimings(startTime, '-window-search');
-        setSearchMode('window');
-        const [windows, info] = await Promise.all([
-          window.electronAPI.getAllWindowsAllDesktops(),
-          window.electronAPI.getVirtualDesktopInfo(),
-        ]);
-        setWindowList(windows);
-        setDesktopInfo(info);
-        setActiveDesktopTab(info.supported && info.currentDesktop > 0 ? info.currentDesktop : 0);
+        await enterWindowMode();
         setSearchQuery('');
         setSelectedIndex(0);
         searchInputRef.current?.focus();
@@ -672,7 +655,7 @@ function App(): React.ReactElement {
   };
 
   const handleTabClickWrapper = (fileName: string) => {
-    handleTabClick(fileName);
+    setActiveTab(fileName);
     setSelectedIndex(0);
   };
 
@@ -867,7 +850,7 @@ function App(): React.ReactElement {
 
       <AlertDialog
         isOpen={alertDialog.isOpen}
-        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        onClose={closeAlert}
         message={alertDialog.message}
         type={alertDialog.type}
       />

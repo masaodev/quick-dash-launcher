@@ -202,6 +202,14 @@ async function reapplyHotkey(
 }
 
 /**
+ * 起動ホットキーとウィンドウ検索ホットキーを settings.json の値に合わせて登録し直す
+ */
+async function reapplyHotkeys(settingsService: SettingsService): Promise<void> {
+  await reapplyHotkey('main', settingsService);
+  await reapplyHotkey('itemSearch', settingsService);
+}
+
+/**
  * settings.json をディスクから読み直し、副作用のある設定を適用し直す
  *
  * 設定値そのものは electron-store が毎回ディスクを読むので常に最新だが、
@@ -213,8 +221,7 @@ export async function reapplySettingsFromDisk(): Promise<void> {
 
   await applySettingsEffects(EFFECT_KEYS, settingsService);
   try {
-    await reapplyHotkey('main', settingsService);
-    await reapplyHotkey('itemSearch', settingsService);
+    await reapplyHotkeys(settingsService);
   } finally {
     // ホットキーを登録し直せなくても、他の設定（言語など）の変更は各ウィンドウに伝える
     notifySettingsChanged();
@@ -292,8 +299,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
         await applySettingsEffects(EFFECT_KEYS, settingsService);
       }
 
-      await reapplyHotkey('main', settingsService);
-      await reapplyHotkey('itemSearch', settingsService);
+      await reapplyHotkeys(settingsService);
       notifySettingsChanged();
       return settingsService.getAll();
     }

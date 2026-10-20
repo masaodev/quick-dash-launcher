@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { SET_KIND_ICONS, type SetCatalogItem } from '../utils/setEditing';
+import { toggleInSet } from '../utils/setUtils';
 import '../styles/components/WindowSelectorModal.css';
 import '../styles/components/SetEditor.css';
 
@@ -104,10 +105,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
   const toggle = (key: string) => {
     setSelected((prev) => {
       if (single) return prev.has(key) ? new Set() : new Set([key]);
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
+      return toggleInSet(prev, key);
     });
   };
 

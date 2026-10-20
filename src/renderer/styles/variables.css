@@ -70,6 +70,7 @@
   --bg-success-light: #e8f5e9;
   --bg-info-light: #e3f2fd;
   --bg-table-container: #fafafa;
+  --color-overlay: rgba(0, 0, 0, 0.5); /* モーダルの後ろを暗くする幕 */
   /* アイテム管理のデータファイルの札の列 */
   --bg-file-bar: #e0f2ef;
   --color-file: var(--group-color-teal);

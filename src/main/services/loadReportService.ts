@@ -9,7 +9,7 @@ import { mainI18n } from './mainI18n.js';
  * まとめる。メモリにだけ持ち、CLI の `reload`・`check` が返す。問題があるときは人向けにトーストも出す。
  */
 
-export type LoadReportFileStatus = 'ok' | 'corrupted' | 'unreadable';
+type LoadReportFileStatus = 'ok' | 'corrupted' | 'unreadable';
 
 export interface LoadReportFile {
   /** 設定フォルダからの相対パス（例: 'datafiles/data.json'） */

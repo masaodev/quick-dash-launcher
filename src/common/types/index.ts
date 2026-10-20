@@ -112,6 +112,7 @@ export type {
 export {
   MAX_IMAGE_SIZE_BYTES,
   PREVIEW_MAX_LENGTH,
+  truncateClipboardPreview,
   THUMBNAIL_MAX_WIDTH,
   THUMBNAIL_MAX_HEIGHT,
 } from './clipboard';

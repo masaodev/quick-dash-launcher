@@ -319,7 +319,7 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_RETURN_CONFIRM_RESULT, requestId, result),
     // 透過度関連
     // サイズ変更関連
-    setSize: (width, height) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_SIZE, width, height),
+    setHeight: (height) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_HEIGHT, height),
     setPositionAndSize: (x, y, width, height) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_SET_POSITION_AND_SIZE, x, y, width, height),
     // 位置モード設定（displayLeft/displayRight/fixed等）

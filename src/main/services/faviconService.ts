@@ -3,6 +3,7 @@ import * as fs from 'fs';
 
 import { net, nativeImage, type NativeImage } from 'electron';
 import { faviconLogger } from '@common/logger';
+import { FileUtils } from '@common/utils/fileUtils';
 
 import {
   isIco,
@@ -47,7 +48,7 @@ export class FaviconService {
       const hasCache = fs.existsSync(faviconPath);
       if (hasCache && !forceRefresh) {
         const cachedFavicon = fs.readFileSync(faviconPath);
-        return `data:image/png;base64,${cachedFavicon.toString('base64')}`;
+        return FileUtils.bufferToBase64DataUrl(cachedFavicon, 'image/png');
       }
 
       // 複数の方法でファビコンを取得
@@ -58,7 +59,7 @@ export class FaviconService {
         const optimized = this.resizeFavicon(faviconData);
         // キャッシュに保存
         fs.writeFileSync(faviconPath, optimized);
-        return `data:image/png;base64,${optimized.toString('base64')}`;
+        return FileUtils.bufferToBase64DataUrl(optimized, 'image/png');
       }
 
       if (hasCache) {
@@ -87,7 +88,7 @@ export class FaviconService {
     if (optimized.length < cached.length) {
       fs.writeFileSync(faviconPath, optimized);
     }
-    return `data:image/png;base64,${optimized.toString('base64')}`;
+    return FileUtils.bufferToBase64DataUrl(optimized, 'image/png');
   }
 
   /**

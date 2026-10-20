@@ -8,6 +8,7 @@
  */
 
 import { applyConversionPrefix, findMatchingRule } from './urlConversionRules';
+import { EXECUTABLE_EXTENSIONS } from './utils/itemTypeDetector';
 import type { ConversionOption, ConversionRule } from './urlConversionRules';
 
 /** 既定のブラウザ（https を開くプログラム） */
@@ -102,10 +103,12 @@ const FILE_URL = /^file:\/\//i;
 const BROWSER_URL = /^(https?|file):\/\//i;
 /** ドライブ文字か UNC で始まるローカルのパス */
 const LOCAL_PATH = /^([a-z]:[\\/]|\\\\[^\\])/i;
-/** ファイルの関連付けを調べない拡張子（実行ファイル・ショートカット） */
-const EXECUTABLE_EXTENSIONS = new Set(['.exe', '.bat', '.cmd', '.com', '.lnk']);
 
-/** 変換の候補を出せるローカルのファイルなら拡張子（小文字。例 .md）を返す */
+/**
+ * 変換の候補を出せるローカルのファイルなら拡張子（小文字。例 .md）を返す
+ *
+ * 実行ファイル・ショートカット（EXECUTABLE_EXTENSIONS）はファイルの関連付けを調べないので除く
+ */
 function getConvertibleFileExtension(path: string): string | undefined {
   const trimmed = (path ?? '').trim();
   if (!LOCAL_PATH.test(trimmed)) return undefined;

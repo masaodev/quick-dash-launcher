@@ -2,7 +2,7 @@ import { globalShortcut, BrowserWindow } from 'electron';
 import logger from '@common/logger';
 
 import { EnvConfig } from '../config/envConfig.js';
-import { moveWindowToCurrentDesktop } from '../utils/virtualDesktop/index.js';
+import { getHwnd, moveWindowToCurrentDesktop } from '../utils/virtualDesktop/index.js';
 
 import { SettingsService } from './settingsService.js';
 
@@ -251,7 +251,7 @@ export class HotkeyService {
       if (mainWindow.isVisible()) {
         // 表示したまま別の仮想デスクトップにある（ピン留め中など）ときは、隠さずに今のデスクトップへ呼び寄せる。
         // 先に focus() すると、Windows がメインウィンドウのあるデスクトップへ切り替えてしまう
-        if (moveWindowToCurrentDesktop(mainWindow.getNativeWindowHandle().readBigUInt64LE())) {
+        if (moveWindowToCurrentDesktop(getHwnd(mainWindow))) {
           void this.showWindowCallback(Date.now());
           return;
         }

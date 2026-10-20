@@ -11,7 +11,7 @@ import type {
 import { isIconFetchTarget } from '@common/constants';
 
 import { logError } from '../../utils/debug';
-import { loadCustomIcons } from '../../utils/customIcons';
+import { loadItemIcons } from '../../utils/customIcons';
 import { useGlobalLoading } from '../useGlobalLoading';
 
 type IconCacheItem = {
@@ -52,12 +52,10 @@ async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise
   );
   if (itemsNeedingIcons.length === 0 && !customIconFileNames.some(Boolean)) return items;
 
-  const [iconCache, customIcons] = await Promise.all([
-    itemsNeedingIcons.length > 0
-      ? window.electronAPI.loadCachedIcons(itemsNeedingIcons.map(toIconCacheItem))
-      : Promise.resolve<Record<string, string>>({}),
-    loadCustomIcons(customIconFileNames),
-  ]);
+  const [iconCache, customIcons] = await loadItemIcons(
+    itemsNeedingIcons.map(toIconCacheItem),
+    customIconFileNames
+  );
 
   return items.map((item) => {
     if (isLauncherItem(item)) {

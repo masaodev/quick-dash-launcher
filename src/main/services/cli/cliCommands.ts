@@ -66,7 +66,7 @@ function json(value: unknown): CliResponse {
   return cliResponse(CLI_EXIT.ok, JSON.stringify(value, null, 2) + '\n');
 }
 
-export function errorResponse(error: CliError): CliResponse {
+function errorResponse(error: CliError): CliResponse {
   const body = {
     error: {
       code: error.code,

@@ -56,12 +56,7 @@ const ColorPickerModal: React.FC<{
   return (
     <div className="modal-overlay-base" onClick={onClose} style={{ zIndex: 10000 }}>
       <div onClick={(e) => e.stopPropagation()}>
-        <ColorPicker
-          currentColor={currentColor}
-          onSelectColor={onSelectColor}
-          onClose={onClose}
-          disableEventListeners={true}
-        />
+        <ColorPicker currentColor={currentColor} onSelectColor={onSelectColor} />
       </div>
     </div>
   );
@@ -680,6 +675,26 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     return map;
   }, [groupTree]);
 
+  /** アイテムの行（groupId は親のグループ。未分類なら省く） */
+  const renderItemCard = (item: WorkspaceItem, groupId?: string): React.ReactNode => (
+    <WorkspaceItemCard
+      nameOfItem={nameOfWorkspaceItem}
+      key={item.id}
+      item={item}
+      isEditing={editingItemId === item.id}
+      draggedElement={draggedElement}
+      onLaunch={onLaunch}
+      onRemove={onRemoveItem}
+      onUpdateDisplayName={onUpdateDisplayName}
+      onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
+      onDragStart={handleMixedDragStart(item.id, 'item')}
+      onDragEnd={handleMixedDragEnd}
+      onDragOver={handleMixedDragOver}
+      onDrop={(e, zone) => handleMixedDrop(item.id, 'item', groupId, zone)(e)}
+      onContextMenu={handleContextMenu(item)}
+    />
+  );
+
   /** 再帰的にグループツリーノードをレンダリング（混在表示対応） */
   const renderGroupNode = (node: GroupTreeNode<WorkspaceGroupView>): React.ReactNode => {
     if (visibleGroupIds && !visibleGroupIds.has(node.group.id)) {
@@ -743,28 +758,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
                 if (visibleGroupIds && !visibleGroupIds.has(child.group.id)) return null;
                 return renderGroupNode(childNode);
               }
-              return (
-                <WorkspaceItemCard
-                  nameOfItem={nameOfWorkspaceItem}
-                  key={child.item.id}
-                  item={child.item}
-                  isEditing={editingItemId === child.item.id}
-                  draggedElement={draggedElement}
-                  onLaunch={onLaunch}
-                  onRemove={onRemoveItem}
-                  onUpdateDisplayName={onUpdateDisplayName}
-                  onStartEdit={() =>
-                    setEditingItemId(editingItemId === child.item.id ? null : child.item.id)
-                  }
-                  onDragStart={handleMixedDragStart(child.item.id, 'item')}
-                  onDragEnd={handleMixedDragEnd}
-                  onDragOver={handleMixedDragOver}
-                  onDrop={(e, zone) =>
-                    handleMixedDrop(child.item.id, 'item', node.group.id, zone)(e)
-                  }
-                  onContextMenu={handleContextMenu(child.item)}
-                />
-              );
+              return renderItemCard(child.item, node.group.id);
             })}
           </div>
         )}
@@ -810,24 +804,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
             </div>
             {!uncategorizedCollapsed && (
               <div className="workspace-group-items">
-                {filteredUncategorizedItems.map((item) => (
-                  <WorkspaceItemCard
-                    nameOfItem={nameOfWorkspaceItem}
-                    key={item.id}
-                    item={item}
-                    isEditing={editingItemId === item.id}
-                    draggedElement={draggedElement}
-                    onLaunch={onLaunch}
-                    onRemove={onRemoveItem}
-                    onUpdateDisplayName={onUpdateDisplayName}
-                    onStartEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                    onDragStart={handleMixedDragStart(item.id, 'item')}
-                    onDragEnd={handleMixedDragEnd}
-                    onDragOver={handleMixedDragOver}
-                    onDrop={(e, zone) => handleMixedDrop(item.id, 'item', undefined, zone)(e)}
-                    onContextMenu={handleContextMenu(item)}
-                  />
-                ))}
+                {filteredUncategorizedItems.map((item) => renderItemCard(item))}
               </div>
             )}
           </div>

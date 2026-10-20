@@ -2,8 +2,14 @@ import type { LauncherItem } from '../types';
 
 import { PathUtils } from './pathUtils';
 
-/** 実行可能ファイルの拡張子 */
-const EXECUTABLE_EXTENSIONS = new Set(['.exe', '.bat', '.cmd', '.com', '.lnk']);
+/** 実行可能ファイル（ショートカットを含む）の拡張子 */
+export const EXECUTABLE_EXTENSIONS: ReadonlySet<string> = new Set([
+  '.exe',
+  '.bat',
+  '.cmd',
+  '.com',
+  '.lnk',
+]);
 
 /** 標準的なURLスキーマ */
 const STANDARD_URL_SCHEMES = new Set(['http', 'https', 'ftp']);

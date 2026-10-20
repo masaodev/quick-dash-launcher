@@ -1,11 +1,11 @@
 import { execFile } from 'child_process';
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 
 import { app } from 'electron';
 import { createChildLogger } from '@common/logger';
+import { FileUtils } from '@common/utils/fileUtils';
 
 import { EnvConfig } from '../../config/envConfig.js';
 
@@ -73,12 +73,6 @@ export interface CliInstallResult {
   pathChanged: boolean;
 }
 
-function sameFile(a: string, b: string): boolean {
-  if (!fs.existsSync(b)) return false;
-  const hash = (p: string) => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-  return fs.statSync(a).size === fs.statSync(b).size && hash(a) === hash(b);
-}
-
 export async function installCli(
   target: CliInstallTarget,
   options: { checkPath: boolean }
@@ -89,7 +83,7 @@ export async function installCli(
   }
 
   let copied = false;
-  if (!sameFile(target.sourceExe, installedExe)) {
+  if (!FileUtils.areFilesEqual(target.sourceExe, installedExe)) {
     fs.mkdirSync(target.installDir, { recursive: true });
     fs.copyFileSync(target.sourceExe, installedExe);
     copied = true;
@@ -131,7 +125,7 @@ export async function uninstallCli(
  * （[Environment]::SetEnvironmentVariable の User 指定は WM_SETTINGCHANGE を送るので、
  * 使い捨ての変数を作って消すことでそれを起こす）。
  */
-export const powerShellUserPathStore: UserPathStore = {
+const powerShellUserPathStore: UserPathStore = {
   async read() {
     const script =
       '[Console]::OutputEncoding = [Text.Encoding]::UTF8;' +

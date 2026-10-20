@@ -21,6 +21,7 @@ import {
   type SetCatalogItem,
 } from '../utils/setEditing';
 import { logError } from '../utils/debug';
+import { toggleInSet } from '../utils/setUtils';
 import '../styles/components/WindowSelectorModal.css';
 import '../styles/components/SetEditor.css';
 
@@ -184,12 +185,7 @@ const SetAddWindowsModal: React.FC<SetAddWindowsModalProps> = ({
     (windows ?? []).filter((w) => onTab(w, id) && matchesQuery(w, q)).length;
 
   const toggle = (key: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setSelected((prev) => toggleInSet(prev, key));
   };
   const selectShown = () => {
     setSelected((prev) => {

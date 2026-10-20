@@ -11,8 +11,6 @@ export type AppLanguage = 'ja' | 'en';
 /** 設定で選べる値（auto は OS の表示言語に合わせる） */
 export type LanguageSetting = 'auto' | AppLanguage;
 
-export const APP_LANGUAGES: readonly AppLanguage[] = ['ja', 'en'];
-
 export const LANGUAGE_SETTINGS: readonly LanguageSetting[] = ['auto', 'ja', 'en'];
 
 /** 設定の既定値 */

@@ -60,7 +60,13 @@ async function loadJsonDataFile(
   seenPaths: Set<string>,
   tabIndex: number,
   knownIds: Set<string>
-): Promise<{ items: AppItem[]; report: LoadReportFile; previousContent: string | null }> {
+): Promise<{
+  items: AppItem[];
+  report: LoadReportFile;
+  previousContent: string | null;
+  /** 読み終えた時点のファイルの内容（書き戻したらその内容。読めなければ null） */
+  content: string | null;
+}> {
   const items: AppItem[] = [];
   const report: LoadReportFile = {
     file: fileName,
@@ -76,7 +82,7 @@ async function loadJsonDataFile(
     dataLogger.warn({ filePath }, 'JSONファイルが読み込めませんでした');
     report.status = 'unreadable';
     report.error = mainI18n.t('dataErrors.fileUnreadable');
-    return { items, report, previousContent: null };
+    return { items, report, previousContent: null, content: null };
   }
 
   // 前回読んだ／書いた内容と違えば外部（人・AI）で編集されている。
@@ -98,15 +104,18 @@ async function loadJsonDataFile(
     markDataFileCorrupted(fileName);
     report.status = 'corrupted';
     report.error = error instanceof Error ? error.message : String(error);
-    return { items, report, previousContent };
+    return { items, report, previousContent, content };
   }
 
   report.issues = parsed.issues;
   logParseIssues(fileName, parsed.issues);
 
   // 採番・補正があれば 1 回だけ書き戻す（次回以降は同じ id で読める）
+  let currentContent = content;
   if (parsed.modified) {
-    report.rewritten = writeDataFile(filePath, serializeJsonDataFile(parsed.data));
+    const serialized = serializeJsonDataFile(parsed.data);
+    report.rewritten = writeDataFile(filePath, serialized);
+    if (report.rewritten) currentContent = serialized;
   }
 
   for (const item of parsed.data.items) {
@@ -145,7 +154,7 @@ async function loadJsonDataFile(
     }
   }
 
-  return { items, report, previousContent };
+  return { items, report, previousContent, content: currentContent };
 }
 
 /**
@@ -200,7 +209,7 @@ export interface DataFilesLoadResult {
  * 読むたびに外部変更の検知用の「前回の内容」を更新するので、結果の externallyChanged を
  * 捨てる呼び出し方をしない（捨てると以後の読み込みで外部変更として検知されない）。
  */
-export async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesLoadResult> {
+async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesLoadResult> {
   const items: AppItem[] = [];
 
   // タブ設定を読み込んで、データファイル → tabIndex のマップを作成
@@ -238,6 +247,8 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
   const knownIds = new Set<string>();
   const fileReports: LoadReportFile[] = [];
   const externallyChanged: Array<{ relativePath: string; content: string }> = [];
+  // 旧形式の変換で読み直さないよう、読み込んだ内容を残しておく
+  const loadedFiles: Array<{ filePath: string; content: string | null }> = [];
 
   for (const fileName of allFiles) {
     const tabIndex = fileToTabMap.get(fileName) ?? -1;
@@ -253,13 +264,14 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
     const result = await loadJsonDataFile(filePath, fileName, seenPaths, tabIndex, knownIds);
     items.push(...result.items);
     fileReports.push(result.report);
+    loadedFiles.push({ filePath, content: result.content });
     if (result.previousContent !== null) {
       externallyChanged.push({ relativePath: fileName, content: result.previousContent });
     }
   }
 
   // 旧形式（グループ・ウィンドウ配置、単一アイテムの windowConfig）を変換したら、変換後の内容で読み直す（2 回目は変換するものが無い）
-  if (await migrateLegacyItemsInDataFiles(configFolder, allFiles, items)) {
+  if (await migrateLegacyItemsInDataFiles(loadedFiles, items)) {
     const again = await loadDataFilesWithReport(configFolder);
     // 1 回目で見つけた外部変更・採番などは 2 回目では消えている（前回の内容を覚え直した）ので、足して返す
     const changedFiles = new Set(externallyChanged.map((f) => f.relativePath));
@@ -311,18 +323,16 @@ export async function loadDataFilesWithReport(configFolder: string): Promise<Dat
  * 戻せない変換なので、書き換える前に全設定ファイルのスナップショットを 1 回だけ残す（セットへの変換が要れば
  * _pre-set-migration、windowConfig・ウィンドウ操作だけなら _pre-window-migration）。スナップショットを作れなければ変換しない
  *
+ * @param loadedFiles - 読み込んだデータファイルのパスと、読み終えた時点の内容（読めなければ null）
  * @returns 書き換えたファイルがあれば true
  */
 async function migrateLegacyItemsInDataFiles(
-  configFolder: string,
-  fileNames: readonly string[],
+  loadedFiles: readonly { filePath: string; content: string | null }[],
   loadedItems: readonly AppItem[]
 ): Promise<boolean> {
   const targets: { filePath: string; raw: Record<string, unknown> & { items: unknown[] } }[] = [];
   let unreadable = false;
-  for (const fileName of fileNames) {
-    const filePath = path.join(configFolder, fileName);
-    const content = FileUtils.safeReadTextFile(filePath);
+  for (const { filePath, content } of loadedFiles) {
     if (content === null) {
       // 有るのに読めない（ロック・権限）ファイルも、壊れたファイルと同じく変換を待たせる
       if (FileUtils.exists(filePath)) unreadable = true;

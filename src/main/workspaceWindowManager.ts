@@ -8,9 +8,9 @@ import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 import { SettingsService } from './services/settingsService.js';
 import PathManager from './config/pathManager.js';
 import {
+  applyAllDesktopsPin,
+  getHwnd,
   moveWindowToCurrentDesktop,
-  pinWindow,
-  unPinWindow,
 } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
 import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
@@ -274,7 +274,7 @@ async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promis
     if (workspaceWindow) {
       await setWorkspacePosition();
       // 表示中でも別の仮想デスクトップにあると show() では出てこない（自動表示のとき）
-      moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
+      moveWindowToCurrentDesktop(getHwnd(workspaceWindow));
       // Windows の show() はウィンドウをアクティブにするので、フォーカスを奪わないときは showInactive() にする
       if (options?.skipFocus) {
         workspaceWindow.showInactive();
@@ -326,7 +326,7 @@ export async function toggleWorkspaceWindow(): Promise<void> {
     isWorkspaceWindowVisible &&
     workspaceWindow &&
     !workspaceWindow.isDestroyed() &&
-    moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE())
+    moveWindowToCurrentDesktop(getHwnd(workspaceWindow))
   ) {
     workspaceWindow.show();
     workspaceWindow.focus();
@@ -410,7 +410,7 @@ export function bringWorkspaceToFront(): void {
   // 閉じたワークスペースは最小化のまま隠れていることがあるので、開いているときだけ戻す
   if (isWorkspaceOpen && workspaceWindow.isMinimized()) workspaceWindow.showInactive();
   if (!workspaceWindow.isVisible()) return;
-  moveWindowToCurrentDesktop(workspaceWindow.getNativeWindowHandle().readBigUInt64LE());
+  moveWindowToCurrentDesktop(getHwnd(workspaceWindow));
   workspaceWindow.moveTop();
 }
 
@@ -545,12 +545,5 @@ export async function applyVisibilityOnAllDesktops(): Promise<void> {
 
   const settingsService = await SettingsService.getInstance();
   const enabled = await settingsService.get('workspaceVisibleOnAllDesktops');
-  const hwnd = workspaceWindow.getNativeWindowHandle().readBigUInt64LE();
-  const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
-  const action = enabled ? 'pin' : 'unpin';
-  if (success) {
-    windowLogger.info(`ワークスペースの仮想デスクトップ固定: ${action}`);
-  } else {
-    windowLogger.warn(`ワークスペースの仮想デスクトップ固定に失敗: ${action}`);
-  }
+  applyAllDesktopsPin(workspaceWindow, enabled, 'ワークスペース');
 }

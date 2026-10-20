@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { useDropdown } from '../hooks/useDropdown';
 
 interface SettingsDropdownProps {
   onOpenBasicSettings: () => void;
@@ -13,35 +15,18 @@ const LauncherSettingsDropdown: React.FC<SettingsDropdownProps> = ({
   onQuitApp,
 }) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  const { isOpen, ref: dropdownRef, toggle, close } = useDropdown();
 
   const handleMenuItemClick = (action: () => void) => {
     action();
-    setIsOpen(false);
+    close();
   };
 
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
       <button
         className={`action-btn ${isOpen ? 'active' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggle}
         title={t('launcher.settingsMenu.title')}
       >
         ⚙️

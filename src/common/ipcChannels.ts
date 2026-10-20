@@ -154,7 +154,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_IS_OPEN: 'workspace:is-open',
   WORKSPACE_GET_ALWAYS_ON_TOP: 'workspace:get-always-on-top',
   WORKSPACE_TOGGLE_ALWAYS_ON_TOP: 'workspace:toggle-always-on-top',
-  WORKSPACE_SET_SIZE: 'workspace:set-size',
+  WORKSPACE_SET_HEIGHT: 'workspace:set-height',
   WORKSPACE_SET_POSITION_AND_SIZE: 'workspace:set-position-and-size',
   WORKSPACE_SET_POSITION_MODE: 'workspace:set-position-mode',
   WORKSPACE_OPEN_CONFIRM: 'workspace:open-confirm',

@@ -64,6 +64,7 @@ import { WorkspaceService } from '../services/workspace/index.js';
 import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
 import { isPinLevel, levelToPinMode, pinModeToLevel, showPinMenu } from '../utils/pinMenu.js';
 import { startWindowMove } from '../utils/nativeWindowControl.js';
+import { getHwnd } from '../utils/virtualDesktop/index.js';
 
 /** ピン留めの対象（送ってきたウィンドウ）ごとの読み書き */
 interface PinTarget {
@@ -184,7 +185,7 @@ export function setupWindowHandlers(
   ipcMain.on(IPC_CHANNELS.WINDOW_START_MOVE, (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win || win.isDestroyed()) return;
-    startWindowMove(win.getNativeWindowHandle().readBigUInt64LE());
+    startWindowMove(getHwnd(win));
   });
   ipcMain.on(
     IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT,
@@ -235,15 +236,15 @@ export function setupWindowHandlers(
       setWorkspaceConfirmResult(requestId, result)
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_SIZE, (_event, _width: number, height: number) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_HEIGHT, (_event, height: number) => {
     const workspace = getWorkspaceWindow();
     if (!workspace || workspace.isDestroyed()) return false;
 
-    // 幅はメインプロセスの今の値を使う。高さを中身に合わせるだけの呼び出しで、置き直した直後
-    // （幅を作業領域に収めた直後）にレンダラーの古い幅で戻さないため（A3-131）
-    const { x, y, width: currentWidth } = workspace.getBounds();
-    workspace.setBounds({ x, y, width: currentWidth, height: Math.round(height) });
-    windowLogger.info(`Workspace size set to ${currentWidth}x${height}`);
+    // 幅はメインプロセスの今の値のまま。置き直した直後（幅を作業領域に収めた直後）に
+    // レンダラーの古い幅で戻さないため（A3-131）
+    const roundedHeight = Math.round(height);
+    workspace.setBounds({ height: roundedHeight });
+    windowLogger.info(`Workspace height set to ${roundedHeight}`);
     return true;
   });
 

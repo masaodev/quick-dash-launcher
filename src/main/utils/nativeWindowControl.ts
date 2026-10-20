@@ -240,7 +240,7 @@ const WM_CLOSE = 0x0010;
  * @param hwnd ウィンドウハンドル
  * @returns アイコンハンドル（HICON）。取得できない場合は0
  */
-export function getWindowIcon(hwnd: unknown): bigint {
+function getWindowIcon(hwnd: unknown): bigint {
   try {
     const toBigInt = (val: unknown): bigint =>
       typeof val === 'bigint' ? val : BigInt(val as number);
@@ -272,7 +272,7 @@ export function getWindowIcon(hwnd: unknown): bigint {
  * @param hIcon アイコンハンドル
  * @returns base64エンコードされたPNG画像。失敗時はundefined
  */
-export function convertIconToBase64(hIcon: bigint | number): string | undefined {
+function convertIconToBase64(hIcon: bigint | number): string | undefined {
   let gdiplusToken: bigint[] = [0n];
   let bitmap: unknown[] = [null];
   let tempFilePath: string | undefined;
@@ -353,7 +353,7 @@ export function convertIconToBase64(hIcon: bigint | number): string | undefined 
  * @param processId プロセスID
  * @returns 実行ファイルのフルパス。取得できない場合はundefined
  */
-export function getExecutablePathFromProcessId(processId: number): string | undefined {
+function getExecutablePathFromProcessId(processId: number): string | undefined {
   let hProcess = null;
 
   try {
@@ -429,7 +429,7 @@ function isSelfElevated(): boolean {
  *
  * QDL 自身が管理者権限なら常に false。調べられないプロセスも false（知らせない）
  */
-export function isProcessAboveSelf(processId: number): boolean {
+function isProcessAboveSelf(processId: number): boolean {
   if (isSelfElevated()) return false;
   let hProcess = null;
   try {
@@ -484,6 +484,31 @@ function getWindowState(hwnd: unknown): 'normal' | 'minimized' | 'maximized' {
 function extractProcessName(executablePath: string | undefined): string | undefined {
   if (!executablePath) return undefined;
   return path.basename(executablePath) || undefined;
+}
+
+/**
+ * ウィンドウのタイトルを読み取る
+ * @param hwnd ウィンドウハンドル
+ * @returns タイトル（無い場合は空文字）
+ */
+function readWindowTitle(hwnd: unknown): string {
+  const length = GetWindowTextLengthW(hwnd);
+  if (length === 0) return '';
+
+  const buffer = Buffer.alloc((length + 1) * 2); // Unicode文字列用
+  const titleLength = GetWindowTextW(hwnd, buffer, length + 1);
+  return buffer.toString('utf16le').substring(0, titleLength);
+}
+
+/**
+ * ウィンドウを持つプロセスの実行ファイル名を取得
+ * @param hwnd ウィンドウハンドル
+ * @returns 実行ファイル名（取得できない場合はundefined）
+ */
+function getWindowProcessName(hwnd: unknown): string | undefined {
+  const processIdArr = [0];
+  GetWindowThreadProcessId(hwnd, processIdArr);
+  return extractProcessName(getExecutablePathFromProcessId(processIdArr[0]));
 }
 
 /**
@@ -553,13 +578,7 @@ export function getAllWindows(options?: { includeAllVirtualDesktops?: boolean })
     try {
       if (!IsWindowVisible(hwnd)) return true;
 
-      const length = GetWindowTextLengthW(hwnd);
-      if (length === 0) return true;
-
-      const buffer = Buffer.alloc((length + 1) * 2); // Unicode文字列用
-      const titleLength = GetWindowTextW(hwnd, buffer, length + 1);
-      const title = buffer.toString('utf16le').substring(0, titleLength);
-
+      const title = readWindowTitle(hwnd);
       if (!title || title.trim() === '') return true;
       if (!isAltTabWindow(hwnd, includeAllVirtualDesktops)) return true;
 
@@ -648,13 +667,7 @@ export function findWindowHwndByTitle(
 
       if (!IsWindowVisible(hwnd)) return true;
 
-      const length = GetWindowTextLengthW(hwnd);
-      if (length === 0) return true;
-
-      const buffer = Buffer.alloc((length + 1) * 2);
-      const titleLength = GetWindowTextW(hwnd, buffer, length + 1);
-      const title = buffer.toString('utf16le').substring(0, titleLength);
-
+      const title = readWindowTitle(hwnd);
       if (!title || title.trim() === '') return true;
       if (!isAltTabWindow(hwnd, true)) return true;
       if (excludeHwnds?.has(koffi.address(hwnd))) return true;
@@ -665,10 +678,7 @@ export function findWindowHwndByTitle(
       // プロセス名フィルタ（指定時のみプロセス情報を取得）
       let processName: string | undefined;
       if (hasProcessFilter) {
-        const processIdArr = [0];
-        GetWindowThreadProcessId(hwnd, processIdArr);
-        const executablePath = getExecutablePathFromProcessId(processIdArr[0]);
-        processName = extractProcessName(executablePath);
+        processName = getWindowProcessName(hwnd);
 
         if (!processName || !processName.toLowerCase().includes(normalizedProcessFilter)) {
           return true;
@@ -690,10 +700,7 @@ export function findWindowHwndByTitle(
 
       if (hasExcludedClassName) {
         if (!processName) {
-          const processIdArr = [0];
-          GetWindowThreadProcessId(hwnd, processIdArr);
-          const executablePath = getExecutablePathFromProcessId(processIdArr[0]);
-          processName = extractProcessName(executablePath);
+          processName = getWindowProcessName(hwnd);
         }
         const matchesExclusionRule = EXCLUDED_WINDOWS.some(
           (excluded) => excluded.processName === processName && excluded.className === className

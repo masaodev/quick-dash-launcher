@@ -182,7 +182,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 120, 212, 0.1);
+  background-color: var(--color-primary-50);
   border: 3px dashed var(--color-primary);
   display: flex;
   align-items: center;

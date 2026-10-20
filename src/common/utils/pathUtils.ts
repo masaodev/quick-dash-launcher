@@ -23,6 +23,16 @@ export class PathUtils {
     return index > 0 ? trimmed.substring(0, index) : '';
   }
 
+  /**
+   * パスの最後の要素（ファイル名・フォルダ名）を取得
+   *
+   * 末尾の区切り文字は無視する。取れなければ元のパスを返す
+   */
+  static getLastSegment(p: string): string {
+    const parts = p.replace(/[\\/]+$/, '').split(/[\\/]/);
+    return parts[parts.length - 1] || p;
+  }
+
   /** パスがショートカットファイル（.lnk）かどうかを判定 */
   static isShortcutFile(filePath?: string): boolean {
     return filePath?.toLowerCase().endsWith('.lnk') ?? false;

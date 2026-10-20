@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 
 import { ipcMain, shell } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -9,6 +10,8 @@ import type { ScannedAppItem, AppScanResult, AppTargetType } from '@common/types
 import { generateId } from '@common/utils/jsonParser';
 
 import { mainI18n } from '../services/mainI18n.js';
+
+const execFileAsync = promisify(execFile);
 
 /** 実行可能ファイルの拡張子（app種別として分類） */
 const APP_EXTENSIONS = new Set([
@@ -41,19 +44,23 @@ function isUninstaller(targetPath: string, displayName: string): boolean {
   return false;
 }
 
-function collectLnkFiles(dirPath: string): string[] {
+/** フォルダを非同期で辿る（同期の fs だと、大きなスタートメニューの間メインプロセスが止まる） */
+async function collectLnkFiles(dirPath: string): Promise<string[]> {
   const results: string[] = [];
 
   try {
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+    const subdirResults = await Promise.all(
+      entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => collectLnkFiles(path.join(dirPath, entry.name)))
+    );
     for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        results.push(...collectLnkFiles(fullPath));
-      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.lnk')) {
-        results.push(fullPath);
+      if (entry.isFile() && entry.name.toLowerCase().endsWith('.lnk')) {
+        results.push(path.join(dirPath, entry.name));
       }
     }
+    for (const subdirResult of subdirResults) results.push(...subdirResult);
   } catch (error) {
     dataLogger.warn({ dirPath, error }, 'スタートメニューディレクトリのスキャンに失敗');
   }
@@ -73,10 +80,15 @@ function isFilePathAppId(appId: string): boolean {
   return /^[A-Za-z]:[/\\]/.test(appId) || appId.startsWith('{') || appId.startsWith('\\\\');
 }
 
-function scanStartApps(): ScannedAppItem[] {
+async function scanStartApps(): Promise<ScannedAppItem[]> {
   try {
-    const output = execSync(
-      'powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-StartApps | ConvertTo-Json -Compress"',
+    const { stdout: output } = await execFileAsync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-Command',
+        '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-StartApps | ConvertTo-Json -Compress',
+      ],
       { encoding: 'utf8', timeout: 15000 }
     );
 
@@ -119,8 +131,11 @@ function scanStartApps(): ScannedAppItem[] {
   }
 }
 
-function scanInstalledApps(): AppScanResult {
+async function scanInstalledApps(): Promise<AppScanResult> {
   const startTime = performance.now();
+
+  // 登録アプリのスキャン（PowerShell）は待ち時間が長いため、ショートカットのスキャンと並行させる
+  const startAppsPromise = scanStartApps();
 
   const programDataPath = process.env.PROGRAMDATA || 'C:\\ProgramData';
   const appDataPath =
@@ -131,9 +146,16 @@ function scanInstalledApps(): AppScanResult {
     path.join(appDataPath, 'Microsoft', 'Windows', 'Start Menu', 'Programs'),
   ];
 
-  const allLnkFiles = startMenuPaths
-    .filter((menuPath) => fs.existsSync(menuPath))
-    .flatMap((menuPath) => collectLnkFiles(menuPath));
+  const existingMenuPaths = (
+    await Promise.all(
+      startMenuPaths.map(async (menuPath) =>
+        (await fs.promises.stat(menuPath).catch(() => null))?.isDirectory() ? menuPath : null
+      )
+    )
+  ).filter((menuPath): menuPath is string => menuPath !== null);
+  const allLnkFiles = (
+    await Promise.all(existingMenuPaths.map((menuPath) => collectLnkFiles(menuPath)))
+  ).flat();
 
   const apps: ScannedAppItem[] = [];
 
@@ -168,7 +190,7 @@ function scanInstalledApps(): AppScanResult {
   }
 
   // 登録アプリをスキャンしてマージ
-  const startApps = scanStartApps();
+  const startApps = await startAppsPromise;
   apps.push(...startApps);
 
   // 表示名でソート

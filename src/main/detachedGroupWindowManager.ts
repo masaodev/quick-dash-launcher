@@ -16,12 +16,12 @@ import {
   isAppQuitting,
 } from './utils/managedWindow.js';
 import {
+  applyAllDesktopsPin,
+  getHwnd,
   moveWindowToCurrentDesktop,
-  pinWindow,
-  unPinWindow,
 } from './utils/virtualDesktop/index.js';
 import { computeMonitorAnchor, placeByMonitorAnchor } from './utils/monitorAnchor.js';
-import { setBoundsAcrossDisplays } from './utils/screenPosition.js';
+import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
 import { notifyPinLevel } from './utils/pinMenu.js';
 import { getMainWindowDisplay } from './utils/referenceDisplay.js';
 import { getRendererHtmlUrl, openChildWindow } from './services/childWindowService.js';
@@ -81,15 +81,16 @@ let detachedWindowSnapEnabled: boolean = true;
 
 function applyVirtualDesktopPinToWindow(win: BrowserWindow, enabled: boolean): void {
   // 隠れているウィンドウには当てられない（失敗する）。表示のたびに当て直すので、そのときに任せる
-  if (win.isDestroyed() || !win.isVisible()) return;
-  const hwnd = win.getNativeWindowHandle().readBigUInt64LE();
-  const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
-  const action = enabled ? 'pin' : 'unpin';
-  if (success) {
-    windowLogger.info(`切り離しウィンドウの仮想デスクトップ固定: ${action}`);
-  } else {
-    windowLogger.warn(`切り離しウィンドウの仮想デスクトップ固定に失敗: ${action}`);
-  }
+  // eslint-disable-next-line no-restricted-syntax -- ログに出す名前（画面には出さない）
+  applyAllDesktopsPin(win, enabled, '切り離しウィンドウ');
+}
+
+/** 設定に従って仮想デスクトップ固定を当て直す（表示のたび・setAlwaysOnTop の後。読めなければ固定なしのまま） */
+function reapplyVirtualDesktopPin(win: BrowserWindow): void {
+  SettingsService.getInstance()
+    .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
+    .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
+    .catch(() => {});
 }
 
 /** 切り離しウィンドウのスナップ有効/無効キャッシュを更新する */
@@ -124,10 +125,7 @@ export function setDetachedPinLevel(groupId: string, next: PinLevel): PinLevel {
   if (win && !win.isDestroyed()) {
     win.setAlwaysOnTop(next === 2);
     // setAlwaysOnTop が仮想デスクトップ固定をリセットするため再適用
-    SettingsService.getInstance()
-      .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
-      .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
-      .catch(() => {});
+    reapplyVirtualDesktopPin(win);
   }
   return next;
 }
@@ -176,13 +174,7 @@ export function showWithoutFocus(win: BrowserWindow): void {
  * 保存された bounds が画面内に収まるか検証する
  */
 function isBoundsOnScreen(bounds: Bounds): boolean {
-  const displays = screen.getAllDisplays();
-  const cx = bounds.x + bounds.width / 2;
-  const cy = bounds.y + bounds.height / 2;
-  return displays.some((display) => {
-    const { x, y, width, height } = display.workArea;
-    return cx >= x && cx < x + width && cy >= y && cy < y + height;
-  });
+  return isPositionOnScreen(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
 }
 
 /**
@@ -258,14 +250,7 @@ function placeOnMainWindowDisplay(groupId: string, win: BrowserWindow): void {
   }
   const size = detachedSizes.get(groupId) ?? { width: current.width, height: current.height };
   const target = placeByMonitorAnchor(anchor, size, getReferenceWorkArea());
-  if (
-    target.x === current.x &&
-    target.y === current.y &&
-    target.width === current.width &&
-    target.height === current.height
-  ) {
-    return;
-  }
+  if (isSameBounds(target, current)) return;
   markProgrammaticPlacement(groupId, target);
   setBoundsAcrossDisplays(win, target);
 }
@@ -498,11 +483,7 @@ function setupDetachedWindow(
     cancelFallbackShow();
     if (boundsTimer) clearTimeout(boundsTimer);
     boundsSavers.delete(groupId);
-    webContentsIdToGroupId.delete(wcId);
-    detachedWindows.delete(groupId);
-    detachedPinModes.delete(groupId);
-    temporaryAlwaysOnTopGroupIds.delete(groupId);
-    forgetPlacement(groupId);
+    forgetWindow(groupId, wcId);
     // 明示的に閉じた場合はエントリごと削除（アプリ終了時は次回復元のため残す）
     if (!isAppQuitting()) {
       WorkspaceService.getInstance()
@@ -524,12 +505,7 @@ function setupDetachedWindow(
     // 初めての表示を別の経路（メインと一緒に出すなど）で済ませたら、表示待ちを外す
     // （残っていると、隠れている間に中身の高さが変わったとき、このウィンドウだけが出てしまう）
     pendingInitialShow.delete(groupId);
-    SettingsService.getInstance()
-      .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
-      .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
-      .catch(() => {
-        // デフォルトは固定なし
-      });
+    reapplyVirtualDesktopPin(win);
   });
 
   // エントリの存在を確保（復元対象として認識されるように初期 bounds を保存）。
@@ -554,18 +530,20 @@ function forgetPlacement(groupId: string): void {
   programmaticPlacements.delete(groupId);
 }
 
+/** グループごとに持っている情報を消す（閉じたとき・破棄するとき） */
+function forgetWindow(groupId: string, wcId: number | undefined): void {
+  if (wcId !== undefined) webContentsIdToGroupId.delete(wcId);
+  detachedWindows.delete(groupId);
+  detachedPinModes.delete(groupId);
+  temporaryAlwaysOnTopGroupIds.delete(groupId);
+  forgetPlacement(groupId);
+}
+
 function destroyWindowIfAlive(groupId: string): void {
   const win = detachedWindows.get(groupId);
   if (win && !win.isDestroyed()) {
     // closed イベントに頼らず明示的にマップから削除
-    const wcId = win.webContents?.id;
-    if (wcId !== undefined) {
-      webContentsIdToGroupId.delete(wcId);
-    }
-    detachedWindows.delete(groupId);
-    detachedPinModes.delete(groupId);
-    temporaryAlwaysOnTopGroupIds.delete(groupId);
-    forgetPlacement(groupId);
+    forgetWindow(groupId, win.webContents?.id);
     win.destroy();
     windowLogger.info(`切り離しウィンドウを破棄しました: ${groupId}`);
   }
@@ -592,10 +570,7 @@ export function toggleDetachedAlwaysOnTop(groupId: string): boolean {
     win.setAlwaysOnTop(true);
   }
   // setAlwaysOnTop が仮想デスクトップ固定をリセットするため再適用
-  SettingsService.getInstance()
-    .then((ss) => ss.get('detachedVisibleOnAllDesktops'))
-    .then((enabled) => applyVirtualDesktopPinToWindow(win, enabled))
-    .catch(() => {});
+  reapplyVirtualDesktopPin(win);
   return getDetachedAlwaysOnTop(groupId);
 }
 
@@ -659,9 +634,9 @@ export function bringDetachedToFront(): void {
     if (win.isDestroyed()) continue;
     // Win+D（デスクトップの表示）で最小化されていると、isVisible() は false になり、moveTop() だけでも戻らない（A3-132）。
     // 📌 なしのものはメインと一緒に showInactive() で出し直す（出さない設定なら隠れたまま）ので、📌 ありだけ戻す
-    if ((detachedPinModes.get(groupId) ?? 0) !== 0 && win.isMinimized()) win.showInactive();
+    if (getDetachedPinLevel(groupId) !== 0 && win.isMinimized()) win.showInactive();
     if (win.isVisible()) {
-      moveWindowToCurrentDesktop(win.getNativeWindowHandle().readBigUInt64LE());
+      moveWindowToCurrentDesktop(getHwnd(win));
       win.moveTop();
     }
   }

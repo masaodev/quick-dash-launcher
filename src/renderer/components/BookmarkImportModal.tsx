@@ -26,6 +26,7 @@ import {
 } from '../hooks/useImportDestination';
 import { logError } from '../utils/debug';
 import { bookmarkFolderLabel } from '../utils/bookmarkFolderLabel';
+import { toggleInSet } from '../utils/setUtils';
 
 import { Button } from './ui';
 import DuplicateHandlingSection from './DuplicateHandlingSection';
@@ -306,13 +307,7 @@ function BookmarkImportModal({
     });
   };
   const toggleOne = (index: number) => toggleIndexes([index], !selected.has(index));
-  const toggleFolderOpen = (path: string) =>
-    setOpenFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
+  const toggleFolderOpen = (path: string) => setOpenFolders((prev) => toggleInSet(prev, path));
 
   const handleSourceChange = (value: SourceValue) => {
     setSource(value);

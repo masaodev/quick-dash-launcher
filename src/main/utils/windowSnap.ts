@@ -15,7 +15,7 @@ interface SnappedPosition {
  * 全ディスプレイのworkAreaに対して吸着位置を計算する
  * いずれかの辺が閾値以内であれば吸着後の座標を返す
  */
-export function calculateSnappedPosition(
+function calculateSnappedPosition(
   newBounds: Bounds,
   threshold: number = DEFAULT_SNAP_THRESHOLD
 ): SnappedPosition {

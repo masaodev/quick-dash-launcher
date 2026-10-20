@@ -33,6 +33,7 @@ import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { mainI18n } from '../services/mainI18n.js';
 import {
   executeSet,
+  indexItemsById,
   isSetRunning,
   notifySetFailures,
   resolveSetEntry,
@@ -313,10 +314,7 @@ export function setupWorkspaceHandlers(): void {
         const workspaceItems = await workspaceService.loadItems();
         const configFolder = PathManager.getConfigFolder();
         const allItems = await reloadConfigFiles(configFolder, 'internal');
-        const byId = new Map<string, AppItem>();
-        for (const appItem of allItems) {
-          if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
-        }
+        const byId = indexItemsById(allItems);
         for (const wsItem of workspaceItems) {
           const converted = workspaceItemToLaunchable(wsItem);
           if (converted) byId.set(wsItem.id, converted);
@@ -401,22 +399,18 @@ export function setupWorkspaceHandlers(): void {
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, (_event, id: string) =>
-    withWorkspaceService(
+    withWorkspaceChange(
       async (service) => {
-        // 削除前に所属グループの切り離しウィンドウを閉じる
+        // 削除前に所属グループの切り離しウィンドウを閉じる（サブグループも所属に含まれるので、子孫は辿らない）
         const groups = await service.loadGroups();
-        const wsGroups = groups.filter((g) => g.workspaceId === id);
-        for (const group of wsGroups) {
-          await closeDetachedWindowsForGroup(group.id);
+        for (const group of groups) {
+          if (group.workspaceId === id) closeDetachedGroupWindow(group.id);
         }
         await service.deleteWorkspace(id);
-        logger.info({ id }, 'Deleted workspace');
-        notifyWorkspaceChanged();
-        return { success: true };
       },
+      'Deleted workspace',
       'Failed to delete workspace',
-      undefined,
-      true
+      { id }
     )
   );
 
@@ -471,17 +465,15 @@ export function setupWorkspaceHandlers(): void {
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string, deleteItems: boolean) =>
-    withWorkspaceService(
+    withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(id);
         await service.deleteGroup(id, deleteItems);
-        logger.info({ id, deleteItems }, 'Deleted workspace group');
-        notifyWorkspaceChanged();
-        return { success: true };
       },
+      'Deleted workspace group',
       'Failed to delete workspace group',
-      { id },
-      true
+      { id, deleteItems },
+      { id }
     )
   );
 
@@ -574,17 +566,15 @@ export function setupWorkspaceHandlers(): void {
   // ==================== アーカイブ管理ハンドラー ====================
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, (_event, groupId: string) =>
-    withWorkspaceService(
+    withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(groupId);
         await service.archiveGroup(groupId);
-        logger.info({ groupId }, 'Archived workspace group');
-        notifyWorkspaceChanged();
-        return { success: true };
       },
+      'Archived workspace group',
       'Failed to archive workspace group',
       { groupId },
-      true
+      { groupId }
     )
   );
 

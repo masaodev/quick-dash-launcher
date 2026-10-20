@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { useDropdown } from '../hooks/useDropdown';
 
 interface RefreshActionsDropdownProps {
   /** ツールチップと「データを再読み込み」に F5 を添える（F5 で再読み込みする通常モードだけ。ウィンドウ検索モードの F5 はウィンドウの取り直し） */
@@ -20,35 +22,18 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
   onRefreshAll,
 }) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  const { isOpen, ref: dropdownRef, toggle, close } = useDropdown();
 
   const handleMenuItemClick = (action: () => void) => {
     action();
-    setIsOpen(false);
+    close();
   };
 
   return (
     <div className="settings-dropdown" ref={dropdownRef}>
       <button
         className={`action-btn ${isOpen ? 'active' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggle}
         title={t(
           showReloadKey ? 'launcher.refreshMenu.titleWithReloadKey' : 'launcher.refreshMenu.title'
         )}
