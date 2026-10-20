@@ -148,6 +148,25 @@ describe('planCsvImport', () => {
     ]);
   });
 
+  it("= + - @ で始まる値は Excel が数式と読まないよう ' を付けて書き、取り込むときに外す", () => {
+    const args = toEditableItem(
+      {
+        id: 'ar000001',
+        type: 'item',
+        displayName: '=名前',
+        path: 'chrome.exe',
+        args: '--incognito',
+      } as JsonItem,
+      MAIN
+    );
+    const csv = itemsToCsv([args], FILES);
+    expect(parseCsv(csv)[1].slice(3, 6)).toEqual(["'=名前", 'chrome.exe', "'--incognito"]);
+    expect(planCsvImport(csv, [args], FILES, MAIN)).toMatchObject({
+      updates: [],
+      unchangedCount: 1,
+    });
+  });
+
   it('セルの中の改行が CRLF でも、メモは LF にそろえる', () => {
     const plan = planCsvImport(
       stringifyCsv([

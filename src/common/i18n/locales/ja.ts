@@ -1936,6 +1936,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     iconFailed: 'アイコン抽出に失敗しました',
   },
   itemCsv: {
+    replanned:
+      '確認の画面を出したあとに一覧が変わったので、今の一覧で取り込みの内容を作り直しました。もう一度確かめてください',
     previewTitle: 'CSV の取り込み',
     summary:
       '変更 {{updates}} 件・追加 {{additions}} 件・変化なし {{unchanged}} 件・エラー {{errors}} 件',

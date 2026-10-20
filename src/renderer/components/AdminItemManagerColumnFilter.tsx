@@ -60,6 +60,8 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
+      // 見出しの ▾ の押下は、▾ のクリックの側で開閉・切り替えをする
+      if ((e.target as Element | null)?.closest?.('.column-filter-button')) return;
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
     const handleKeyDown = (e: KeyboardEvent) => {

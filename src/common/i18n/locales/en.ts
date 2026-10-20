@@ -1934,6 +1934,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     iconFailed: "Couldn't extract the icon",
   },
   itemCsv: {
+    replanned:
+      'The list changed after the preview opened, so the import was recalculated. Please review it again.',
     previewTitle: 'Import CSV',
     summary: '{{updates}} changed, {{additions}} added, {{unchanged}} unchanged, {{errors}} errors',
     updatesHeading: 'Changed ({{count}})',

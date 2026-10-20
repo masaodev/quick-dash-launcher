@@ -14,6 +14,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { PathManager } from '../config/pathManager.js';
 import { mainI18n } from '../services/mainI18n.js';
+import { decodeCsvText } from '../utils/csvText.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
@@ -147,7 +148,7 @@ export function setupDataHandlers(configFolder: string) {
       : await dialog.showOpenDialog(options);
     const filePath = result.canceled ? undefined : result.filePaths[0];
     if (!filePath) return null;
-    return { filePath, text: await fs.promises.readFile(filePath, 'utf8') };
+    return { filePath, text: decodeCsvText(await fs.promises.readFile(filePath)) };
   });
 
   // EditableJsonItem API

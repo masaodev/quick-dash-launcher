@@ -34,6 +34,8 @@ interface UseAdminItemListViewOptions {
   usageOf: (item: EditableJsonItem) => LaunchUsageRecord | undefined;
   /** 起動の記録を読み込めたか（読めたら、記録で並べている順を作り直す） */
   usageLoaded: boolean;
+  /** 自動取込ルールの id → 名前（取込元で並べるとき） */
+  ruleNames: Map<string, string>;
 }
 
 /**
@@ -51,6 +53,7 @@ export function useAdminItemListView({
   retainVisibleSelection,
   usageOf,
   usageLoaded,
+  ruleNames,
 }: UseAdminItemListViewOptions) {
   // 並べ替え。初期値はメイン画面と同じ表示名の昇順
   const [sortState, setSortState] = useState<SortState>({
@@ -108,8 +111,13 @@ export function useAdminItemListView({
   workingItemsRef.current = workingItems;
   const usageOfRef = useRef(usageOf);
   usageOfRef.current = usageOf;
+  const ruleNamesRef = useRef(ruleNames);
+  ruleNamesRef.current = ruleNames;
   const displayOrder = useMemo(
-    () => sortItemIds(workingItemsRef.current, sortState, usageOfRef.current),
+    () =>
+      sortItemIds(workingItemsRef.current, sortState, usageOfRef.current, (ruleId) =>
+        ruleNamesRef.current.get(ruleId)
+      ),
     // baseVersion・usageLoaded は作り直しの契機として使う（値そのものは使わない）。
     // 記録は focus のたびに読み直すが、そのたびに行が動かないよう、最初に読めたときだけ作り直す
     [sortState, baseVersion, usageLoaded]

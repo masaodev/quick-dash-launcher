@@ -213,6 +213,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     retainVisibleSelection: editing.retainVisibleSelection,
     usageOf: launchUsage.usageOf,
     usageLoaded: launchUsage.loaded,
+    ruleNames: autoImportRuleMap,
   });
   const {
     sortState,
@@ -421,9 +422,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   });
 
   // CSV: 書き出しはすべてのタブ（未保存の変更も含めて今の一覧のまま）、取り込みは確かめてから未保存の変更にする
-  const [csvImport, setCsvImport] = useState<{ fileName: string; plan: CsvImportPlan } | null>(
-    null
-  );
+  const [csvImport, setCsvImport] = useState<{
+    fileName: string;
+    text: string;
+    plan: CsvImportPlan;
+    /** 計画を作ったときの一覧（確定までに変わったら作り直す） */
+    planned: EditableJsonItem[];
+  } | null>(null);
   /** タブの順のデータファイル（どのタブにも入っていないファイルは最後） */
   const orderedDataFiles = useMemo(() => {
     const files = [...new Set(dataFileTabs.flatMap((tab) => tab.files))];
@@ -456,7 +461,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       const file = await window.electronAPI.readItemsCsv();
       if (!file) return;
       const plan = planCsvImport(file.text, workingItems, orderedDataFiles, selectedDataFile);
-      setCsvImport({ fileName: file.filePath, plan });
+      setCsvImport({ fileName: file.filePath, text: file.text, plan, planned: workingItems });
     } catch (error) {
       showWarning(
         t('itemCsv.readFailed', { error: error instanceof Error ? error.message : String(error) })
@@ -466,6 +471,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const confirmCsvImport = () => {
     if (!csvImport) return;
+    if (csvImport.planned !== workingItems) {
+      const plan = planCsvImport(csvImport.text, workingItems, orderedDataFiles, selectedDataFile);
+      setCsvImport({ ...csvImport, plan, planned: workingItems });
+      showWarning(t('itemCsv.replanned'));
+      return;
+    }
     const { plan } = csvImport;
     setCsvImport(null);
     // 取り込んだ行が絞り込みで隠れないように、検索と絞り込みを外す

@@ -47,7 +47,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export function typeFilterKeyOf(item: EditableJsonItem): TypeFilterKey {
   const jsonItem = item.item;
   if (jsonItem.type !== 'item') return jsonItem.type;
-  const launcherType = item.meta.launcherType ?? detectItemTypeSync(jsonItem.path || '');
+  const launcherType = detectItemTypeSync(jsonItem.path || '');
   return launcherType === 'url' || launcherType === 'customUri' ? 'itemUrl' : 'itemOther';
 }
 

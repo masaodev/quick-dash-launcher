@@ -622,7 +622,9 @@ export function sortItemIds(
   items: EditableJsonItem[],
   sort: SortState,
   /** 最終起動・起動回数で並べるときの起動の記録 */
-  usageOf?: (item: EditableJsonItem) => { lastLaunchedAt: number; count: number } | undefined
+  usageOf?: (item: EditableJsonItem) => { lastLaunchedAt: number; count: number } | undefined,
+  /** 取込元で並べるときの、自動取込ルールの id → 名前（無ければ id で比べる） */
+  ruleNameOf?: (ruleId: string) => string | undefined
 ): string[] {
   if (!sort.column) return items.map((item) => item.item.id);
   const column = sort.column;
@@ -632,8 +634,11 @@ export function sortItemIds(
     if (column === 'displayName')
       return 'displayName' in item.item ? item.item.displayName || '' : '';
     if (column === 'memo') return item.item.memo ?? '';
-    if (column === 'source')
-      return isJsonLauncherItem(item.item) ? (item.item.autoImportRuleId ?? '') : '';
+    if (column === 'source') {
+      const ruleId = isJsonLauncherItem(item.item) ? item.item.autoImportRuleId : undefined;
+      // 手動（ルールなし）を先に、ルールは画面に出ている名前で並べる
+      return ruleId ? `1${ruleNameOf?.(ruleId) ?? ruleId}` : '0';
+    }
     return describePathAndArgs(item.item);
   };
   const sorted = [...items].sort((a, b) => {
