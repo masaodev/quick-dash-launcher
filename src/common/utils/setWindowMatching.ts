@@ -71,16 +71,29 @@ function normalizePath(path: string): string {
   return path.replace(/\//g, '\\').toLowerCase();
 }
 
-/** 見つけ方にウィンドウが当てはまるか（プロセス名は部分一致、タイトルはワイルドカード） */
-export function matchesWindow(match: SetWindowMatch, window: MatchableWindow): boolean {
+/**
+ * 見つけ方にウィンドウが当てはまるかを判定する関数を作る（プロセス名は部分一致、タイトルはワイルドカード）
+ *
+ * 同じ見つけ方で多くのウィンドウを調べるときに、タイトルの照合（正規表現）を 1 回だけ作るために使う
+ */
+export function createWindowMatcher(match: SetWindowMatch): (window: MatchableWindow) => boolean {
   const processName = match.processName?.trim();
-  if (processName && !lower(window.processName).includes(processName.toLowerCase())) {
-    return false;
-  }
+  const lowerProcessName = processName?.toLowerCase();
   const title = match.title?.trim() ? match.title : ANY_WINDOW_TITLE;
   // 見つけ方が空（プロセス名もタイトルも無い）なら、どのウィンドウとも結び付けない
-  if (!processName && title === ANY_WINDOW_TITLE) return false;
-  return createTitleMatcher(title)(window.title);
+  if (!processName && title === ANY_WINDOW_TITLE) return () => false;
+  const matchesTitle = createTitleMatcher(title);
+  return (window) => {
+    if (lowerProcessName && !lower(window.processName).includes(lowerProcessName)) {
+      return false;
+    }
+    return matchesTitle(window.title);
+  };
+}
+
+/** 見つけ方にウィンドウが当てはまるか（プロセス名は部分一致、タイトルはワイルドカード） */
+export function matchesWindow(match: SetWindowMatch, window: MatchableWindow): boolean {
+  return createWindowMatcher(match)(window);
 }
 
 /** 開くものからウィンドウを推測できるか */
@@ -108,10 +121,15 @@ function matchesTarget(target: MatchableEntry['target'], window: MatchableWindow
   }
 }
 
+/** 行がこのウィンドウと結び付くかを判定する関数を作る（見つけ方のタイトルの照合を 1 回だけ作る） */
+function createEntryMatcher(entry: MatchableEntry): (window: MatchableWindow) => boolean {
+  if (entry.window) return createWindowMatcher(entry.window);
+  return (window) => matchesTarget(entry.target, window);
+}
+
 /** 行がこのウィンドウと結び付くか */
 export function entryMatchesWindow(entry: MatchableEntry, window: MatchableWindow): boolean {
-  if (entry.window) return matchesWindow(entry.window, window);
-  return matchesTarget(entry.target, window);
+  return createEntryMatcher(entry)(window);
 }
 
 /**
@@ -171,10 +189,11 @@ export function autoLinkWindows(
       unlinkedEntries.push({ index: entry.index, reason: 'url' });
       continue;
     }
+    const matches = createEntryMatcher(entry);
     const found = findPreferringDesktop(
       candidates,
       entry.desktopNumber,
-      (w) => !used.has(w) && entryMatchesWindow(entry, w)
+      (w) => !used.has(w) && matches(w)
     );
     if (found) {
       used.add(found);
@@ -263,10 +282,11 @@ export function rerecordSetPlacements(
   let notFound = 0;
   const result = entries.map((entry) => {
     if (!entry.placement || !entry.window) return entry;
+    const matches = createWindowMatcher(entry.window);
     const found = findPreferringDesktop(
       candidates,
       entry.placement.virtualDesktopNumber,
-      (w) => !used.has(w) && matchesWindow(entry.window!, w)
+      (w) => !used.has(w) && matches(w)
     );
     if (!found) {
       notFound++;

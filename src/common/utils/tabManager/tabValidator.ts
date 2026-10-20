@@ -15,10 +15,6 @@ export interface ValidationResult {
  * すべて純粋関数として実装（副作用なし）
  */
 export const TabValidator = {
-  canDeleteTab(_tab: DataFileTab): ValidationResult {
-    return { valid: true };
-  },
-
   /**
    * ファイルをタブから削除できるかチェック
    */

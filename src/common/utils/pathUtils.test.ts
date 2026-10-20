@@ -56,3 +56,21 @@ describe('PathUtils.getParentPath', () => {
     expect(PathUtils.getParentPath('memo.txt')).toBe('');
   });
 });
+
+describe('PathUtils.getLastSegment', () => {
+  it('パスの最後の要素を返す', () => {
+    expect(PathUtils.getLastSegment('C:\\Program Files\\app.exe')).toBe('app.exe');
+    expect(PathUtils.getLastSegment('C:/work/memo.txt')).toBe('memo.txt');
+    expect(PathUtils.getLastSegment('notepad.exe')).toBe('notepad.exe');
+  });
+
+  it('末尾の区切り文字は無視する', () => {
+    expect(PathUtils.getLastSegment('C:\\work\\j-gate3.0\\')).toBe('j-gate3.0');
+    expect(PathUtils.getLastSegment('C:/work//')).toBe('work');
+  });
+
+  it('最後の要素が取れなければ元のパスを返す', () => {
+    expect(PathUtils.getLastSegment('\\')).toBe('\\');
+    expect(PathUtils.getLastSegment('')).toBe('');
+  });
+});

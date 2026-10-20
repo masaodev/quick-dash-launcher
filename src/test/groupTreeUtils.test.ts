@@ -3,11 +3,9 @@ import type { WorkspaceGroup } from '@common/types';
 import {
   getGroupDepth,
   canCreateSubgroup,
-  getChildGroups,
   getDescendantGroupIds,
   getAncestorGroupIds,
   buildGroupTree,
-  flattenGroupTree,
   MAX_GROUP_DEPTH,
 } from '@common/utils/groupTreeUtils';
 
@@ -62,22 +60,6 @@ describe('groupTreeUtils', () => {
     });
   });
 
-  describe('getChildGroups', () => {
-    it('トップレベルの子を取得', () => {
-      const children = getChildGroups('top', allGroups);
-      expect(children.map((c) => c.id)).toEqual(['sub', 'sub2']);
-    });
-
-    it('トップレベルグループ（親なし）を取得', () => {
-      const topLevelGroups = getChildGroups(undefined, allGroups);
-      expect(topLevelGroups.map((c) => c.id)).toEqual(['top', 'top2']);
-    });
-
-    it('子がないグループは空配列', () => {
-      expect(getChildGroups('subsub', allGroups)).toEqual([]);
-    });
-  });
-
   describe('getDescendantGroupIds', () => {
     it('全子孫IDを取得', () => {
       const ids = getDescendantGroupIds('top', allGroups);
@@ -114,16 +96,6 @@ describe('groupTreeUtils', () => {
 
     it('空配列からは空ツリー', () => {
       expect(buildGroupTree([])).toEqual([]);
-    });
-  });
-
-  describe('flattenGroupTree', () => {
-    it('ツリーを深さ優先で平坦化', () => {
-      const tree = buildGroupTree(allGroups);
-      const flat = flattenGroupTree(tree);
-      const ids = flat.map((n) => n.group.id);
-      // top -> sub -> subsub -> sub2 -> top2
-      expect(ids).toEqual(['top', 'sub', 'subsub', 'sub2', 'top2']);
     });
   });
 

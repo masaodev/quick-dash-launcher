@@ -55,7 +55,7 @@ function coerceDetachedWindowState(raw: unknown): DetachedWindowState | null {
 }
 
 /** ワークスペースウィンドウの状態の既定値（閉じていて、📌 は表示固定） */
-export const DEFAULT_WORKSPACE_WINDOW_STATE: WorkspaceWindowState = { open: false, pinLevel: 1 };
+const DEFAULT_WORKSPACE_WINDOW_STATE: WorkspaceWindowState = { open: false, pinLevel: 1 };
 
 function coerceWorkspaceWindowState(raw: unknown): WorkspaceWindowState | undefined {
   if (!isRecord(raw)) return undefined;

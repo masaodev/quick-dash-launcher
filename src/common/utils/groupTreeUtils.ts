@@ -1,6 +1,6 @@
 /**
  * ワークスペースグループのツリー構造を扱うユーティリティ
- * フラット配列 ↔ ツリー構造の変換、深さ計算、バリデーション等
+ * フラット配列 → ツリー構造の変換、深さ計算、バリデーション等
  */
 import type { WorkspaceGroup, WorkspaceItem, MixedChild } from '../types/workspace';
 
@@ -49,19 +49,6 @@ export function getGroupDepth(groupId: string, groups: WorkspaceGroup[]): number
 export function canCreateSubgroup(parentGroupId: string, groups: WorkspaceGroup[]): boolean {
   const parentDepth = getGroupDepth(parentGroupId, groups);
   return parentDepth < MAX_GROUP_DEPTH;
-}
-
-/**
- * 指定グループの直接の子グループを取得する
- * @param parentGroupId 親グループのID
- * @param groups 全グループ配列
- * @returns 子グループの配列（order順にソート済み）
- */
-export function getChildGroups(
-  parentGroupId: string | undefined,
-  groups: WorkspaceGroup[]
-): WorkspaceGroup[] {
-  return groups.filter((g) => g.parentGroupId === parentGroupId).sort((a, b) => a.order - b.order);
 }
 
 /**
@@ -138,17 +125,6 @@ export function buildGroupTree<G extends WorkspaceGroup>(groups: G[]): GroupTree
   }
 
   return buildChildren(undefined, 0);
-}
-
-/**
- * ツリーを平坦化して全ノードの配列にする（深さ優先）
- * @param nodes ツリーノード配列
- * @returns 平坦化されたノード配列
- */
-export function flattenGroupTree<G extends WorkspaceGroup>(
-  nodes: GroupTreeNode<G>[]
-): GroupTreeNode<G>[] {
-  return nodes.flatMap((node) => [node, ...flattenGroupTree(node.children)]);
 }
 
 /** MixedChildのorder値を取得する */

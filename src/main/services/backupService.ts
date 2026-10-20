@@ -60,9 +60,8 @@ export class BackupService {
 
     // 1日1回チェック: 直近の通常スナップショットが今日作成済みならスキップ
     // （_pre-restore / _pre-external は部分的・臨時なので数えない）
-    const snapshots = (await this.listSnapshots()).filter((s) =>
-      this.isRegularSnapshot(s.timestamp)
-    );
+    const allSnapshots = await this.listSnapshotEntries();
+    const snapshots = allSnapshots.filter((s) => this.isRegularSnapshot(s.timestamp));
     if (snapshots.length > 0) {
       if (toLocalDateKey(new Date()) === toLocalDateKey(snapshots[0].createdAt)) {
         logger.info('スナップショットをスキップ: 本日すでに作成済み');
@@ -70,8 +69,8 @@ export class BackupService {
       }
     }
 
-    // 変更検知（トリガーファイルのみで判定）
-    if (!(await this.hasChanges())) {
+    // 変更検知（トリガーファイルのみで判定。比較相手は種類を問わず直近のスナップショット）
+    if (!(await this.hasChanges(allSnapshots[0]?.timestamp))) {
       logger.info('スナップショットをスキップ: 変更なし');
       return false;
     }
@@ -97,27 +96,35 @@ export class BackupService {
    */
   public async listSnapshots(): Promise<SnapshotInfo[]> {
     const backupFolder = PathManager.getBackupFolder();
+    return (await this.listSnapshotEntries()).map((entry) => ({
+      ...entry,
+      ...this.getFolderStats(path.join(backupFolder, entry.timestamp)),
+    }));
+  }
+
+  /**
+   * スナップショットのフォルダ名と作成日時の一覧を新しい順に取得する（サイズは数えない）
+   *
+   * 内部の判定・間引きはサイズを使わないので、フォルダを再帰的に stat する listSnapshots() を通さない
+   */
+  private async listSnapshotEntries(): Promise<Array<{ timestamp: string; createdAt: Date }>> {
+    const backupFolder = PathManager.getBackupFolder();
     if (!FileUtils.exists(backupFolder)) return [];
 
     try {
       const entries = fs.readdirSync(backupFolder, { withFileTypes: true });
-      const snapshots: SnapshotInfo[] = [];
+      const snapshots: Array<{ timestamp: string; createdAt: Date }> = [];
       const createdOrder = new Map<string, number>();
 
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
         if (!this.isTimestampFolder(entry.name)) continue;
 
-        const folderPath = path.join(backupFolder, entry.name);
-        const { totalSize, fileCount } = this.getFolderStats(folderPath);
-
         snapshots.push({
           timestamp: entry.name,
           createdAt: this.parseTimestamp(entry.name),
-          totalSize,
-          fileCount,
         });
-        createdOrder.set(entry.name, this.getFolderBirthtime(folderPath));
+        createdOrder.set(entry.name, this.getFolderBirthtime(path.join(backupFolder, entry.name)));
       }
 
       // 新しい順にソート。名前は秒単位なので、同じ秒のものはフォルダの作成時刻、
@@ -221,12 +228,12 @@ export class BackupService {
    * data*.json と settings.json の変更のみをチェックする。
    * workspace.json / workspace-archive.json / clipboard-data/ はスナップショットに含めるが、
    * 変更検知のトリガーには使わない。
+   *
+   * @param latestTimestamp - 直近スナップショットのフォルダ名（無ければ undefined）
    */
-  private async hasChanges(): Promise<boolean> {
-    const snapshots = await this.listSnapshots();
-    if (snapshots.length === 0) return true; // バックアップがなければ変更ありとみなす
+  private async hasChanges(latestTimestamp: string | undefined): Promise<boolean> {
+    if (latestTimestamp === undefined) return true; // バックアップがなければ変更ありとみなす
 
-    const latestTimestamp = snapshots[0].timestamp;
     const backupFolder = PathManager.getBackupFolder();
     const snapshotFolder = path.join(backupFolder, latestTimestamp);
 
@@ -260,7 +267,7 @@ export class BackupService {
     if (!this.settingsService) return;
 
     const backupRetention = await this.settingsService.get('backupRetention');
-    const all = await this.listSnapshots();
+    const all = await this.listSnapshotEntries();
     // 変換前のスナップショットは新しい 2 つ（データファイル用とワークスペース用）を残す
     const keptSetMigrations = new Set(
       [PRE_SET_MIGRATION_SUFFIX, PRE_WINDOW_MIGRATION_SUFFIX].flatMap((suffix) =>
@@ -421,7 +428,7 @@ export class BackupService {
    * 日次スナップショットを押し出してしまうため、別枠で管理する。
    */
   private async cleanupPreExternalSnapshots(): Promise<void> {
-    const snapshots = await this.listSnapshots();
+    const snapshots = await this.listSnapshotEntries();
     const preExternal = snapshots.filter((s) => s.timestamp.endsWith(PRE_EXTERNAL_SUFFIX));
     const toDelete = preExternal.slice(PRE_EXTERNAL_SNAPSHOT_LIMIT);
 

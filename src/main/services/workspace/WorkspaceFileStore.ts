@@ -336,6 +336,9 @@ export class WorkspaceFileStore {
         const migrated = await this.migrateLegacy(mainRaw, archiveRaw);
         mainContent = migrated.mainContent;
         archiveContent = migrated.archiveContent;
+        // 以降の旧アイテムの変換は変換後の内容で判定する
+        mainRaw = JSON.parse(mainContent);
+        archiveRaw = JSON.parse(archiveContent);
         for (const report of [mainReport, archiveReport]) {
           report.rewritten = true;
           report.issues.push({
@@ -369,7 +372,7 @@ export class WorkspaceFileStore {
       archiveContent !== null
     ) {
       try {
-        const migrated = await this.migrateLegacyItems(mainContent, archiveContent);
+        const migrated = await this.migrateLegacyItems(mainRaw, archiveRaw);
         if (migrated) {
           if (migrated.mainContent !== null) {
             mainContent = migrated.mainContent;
@@ -553,14 +556,14 @@ export class WorkspaceFileStore {
    * スナップショットは 1 回だけ作る（セットへの変換があれば _pre-set-migration、windowConfig・ウィンドウ操作だけなら
    * _pre-window-migration）。変換するものが無ければ何もしない（読み込みのたびにスナップショットが増えるのを防ぐ）
    *
+   * @param main - main をパースした値
+   * @param archive - archive をパースした値
    * @returns 書き換えた内容（変えていないファイルは null）。変換しなければ undefined
    */
   private async migrateLegacyItems(
-    mainContent: string,
-    archiveContent: string
+    main: unknown,
+    archive: unknown
   ): Promise<{ mainContent: string | null; archiveContent: string | null } | undefined> {
-    const main = JSON.parse(mainContent) as unknown;
-    const archive = JSON.parse(archiveContent) as unknown;
     const mainItems = isRecord(main) && Array.isArray(main.items) ? main.items : undefined;
     const archiveItems =
       isRecord(archive) && Array.isArray(archive.items) ? archive.items : undefined;

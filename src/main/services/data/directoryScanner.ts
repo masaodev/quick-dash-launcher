@@ -109,7 +109,7 @@ export interface ScanLimits {
  *
  * 応答の遅いネットワークのフォルダでもメインプロセスを止めないよう、ファイルシステムは非同期で読む
  */
-export async function scanDirectory(
+async function scanDirectory(
   dirPath: string,
   options: DirOptionsForProcessing,
   sourceFile: string,
@@ -277,7 +277,7 @@ export async function processDirectoryItem(
 }
 
 /** プレビューで探す件数の上限（これを超えたら走査をやめ、「〜件以上」と出す） */
-export const DIR_PREVIEW_MAX_ITEMS = 1000;
+const DIR_PREVIEW_MAX_ITEMS = 1000;
 
 /**
  * 登録・編集画面のフォルダ取込のプレビュー。登録したときと同じ走査（scanDirectory）で、何が並ぶかを返す

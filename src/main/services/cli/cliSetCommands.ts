@@ -1,4 +1,5 @@
 import type { DataFileTab, JsonItem, JsonSetItem, SetEntry } from '@common/types';
+import { PathUtils } from '@common/utils/pathUtils';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -28,11 +29,6 @@ function nameOf(item: JsonItem): string {
   return 'displayName' in item && item.displayName ? item.displayName : item.id;
 }
 
-function lastSegment(p: string): string {
-  const parts = p.replace(/[\\/]+$/, '').split(/[\\/]/);
-  return parts[parts.length - 1] || p;
-}
-
 function tabOf(file: string, tabs: DataFileTab[]): string | null {
   return tabs.find((t) => t.files.includes(file))?.name ?? null;
 }
@@ -42,7 +38,7 @@ function entryName(entry: SetEntry, byId: Map<string, JsonItem>): string {
   const item = entry.itemId ? byId.get(entry.itemId) : undefined;
   if (item) return nameOf(item);
   if (entry.label) return entry.label;
-  if (entry.open) return lastSegment(entry.open.path);
+  if (entry.open) return PathUtils.getLastSegment(entry.open.path);
   return entry.window?.title ?? entry.window?.processName ?? entry.itemId ?? '';
 }
 
