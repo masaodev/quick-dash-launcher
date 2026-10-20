@@ -32,6 +32,10 @@ export const IPC_CHANNELS = {
   DIR_PREVIEW_CANCEL: 'dir-preview:cancel',
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
+  /** アイテム管理の CSV を保存先を選んで書く */
+  ITEMS_CSV_EXPORT: 'items-csv:export',
+  /** アイテム管理に取り込む CSV を選んで読む */
+  ITEMS_CSV_READ: 'items-csv:read',
   /** 既定のブラウザの exe と表示名（登録・編集画面の「変換」） */
   BROWSER_GET_DEFAULT: 'browser:get-default',
   /** 拡張子に関連付けられたプログラムの exe と表示名（登録・編集画面の「変換」） */

@@ -6,6 +6,7 @@ import {
   getEditablePath,
   hasDisplayName,
   isPathEditable,
+  withEditedMemo,
   withEditedPath,
 } from '../utils/adminItemDisplay';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
@@ -14,14 +15,6 @@ import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 export interface EditingCell {
   itemId: string;
   column: 'name' | 'path' | 'memo';
-}
-
-/** メモの入力値をアイテムに入れる（空ならメモの項目ごと消す） */
-export function withEditedMemo<T extends { memo?: string }>(item: T, value: string): T {
-  const memo = value.replace(/\s+$/, '');
-  if (memo) return { ...item, memo };
-  const { memo: _removed, ...rest } = item;
-  return rest as T;
 }
 
 /**

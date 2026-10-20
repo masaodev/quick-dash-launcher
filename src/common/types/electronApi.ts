@@ -171,6 +171,13 @@ export interface ElectronAPI {
    * 応答しないパスは時間切れで unknown にする
    */
   checkPathsExist: (paths: string[]) => Promise<Record<string, PathExistenceStatus>>;
+  /**
+   * アイテム管理の CSV を、保存先を選んでもらって書く（BOM 付きの UTF-8）。
+   * 書いたファイルのパスを返す。選ぶのをやめたら null
+   */
+  exportItemsCsv: (text: string, defaultName: string) => Promise<string | null>;
+  /** アイテム管理に取り込む CSV を選んでもらって読む。選ぶのをやめたら null */
+  readItemsCsv: () => Promise<{ filePath: string; text: string } | null>;
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
   getAllWindows: () => Promise<WindowInfo[]>;

@@ -1015,6 +1015,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       unknownType: '（不明な型）',
     },
     toolbar: {
+      importCsv: '📄 CSV から取り込む',
+      importCsvTitle:
+        '書き出した CSV を直して取り込みます（id で照合し、取り込む前に変更を確かめられます）',
       addItem: '＋ アイテムを追加',
       addItemTitle:
         '単一アイテムを先頭に追加します。種類は「種類」列で、引数やメモは ✏️ 詳細編集で変えられます',
@@ -1038,6 +1041,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       save: '変更を保存',
     },
     header: {
+      exportCsv: '📤 CSV に書き出す',
+      exportCsvDesc: 'すべてのタブのアイテムを 1 つの CSV に（Excel で開けます）',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
       autoImportSettings: '⚙️ ブックマーク自動取込の設定…',
@@ -1920,6 +1925,33 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     faviconFailed: 'ファビコン取得に失敗しました',
     iconNotFound: 'アイコンが見つかりませんでした',
     iconFailed: 'アイコン抽出に失敗しました',
+  },
+  itemCsv: {
+    previewTitle: 'CSV の取り込み',
+    summary:
+      '変更 {{updates}} 件・追加 {{additions}} 件・変化なし {{unchanged}} 件・エラー {{errors}} 件',
+    updatesHeading: '変更（{{count}} 件）',
+    additionsHeading: '追加（{{count}} 件）',
+    errorsHeading: '取り込まない行（{{count}} 件）',
+    errorLine: '{{line}} 行目: {{message}}',
+    errors: {
+      noIdColumn: '見出しの行に id の列がありません（書き出した CSV の見出しを残してください）',
+      notFound: 'id「{{value}}」のアイテムが見つかりません',
+      duplicateId: 'id「{{value}}」が CSV の中で重なっています（最初の行だけ取り込みます）',
+      nameRequired: '名前が空です',
+      pathRequired: 'パスが空です',
+      typeNotAddable: '種類「{{value}}」は CSV から追加できません（追加できるのは item・dir）',
+      unknownDataFile: 'データファイル「{{value}}」がありません',
+    },
+    note: '取り込むと未保存の変更になります。「変更を保存」で確定し、「変更を破棄」で戻せます。CSV に無いアイテムは消しません',
+    confirm: '取り込む',
+    exported: '{{count}} 件を書き出しました: {{path}}',
+    exportedUnsaved: '{{count}} 件を書き出しました（未保存の変更を含みます）: {{path}}',
+    imported: 'CSV を取り込みました（変更 {{updates}} 件・追加 {{additions}} 件。保存で確定）',
+    readFailed: 'CSV を読めませんでした: {{error}}',
+    exportFailed: 'CSV を書き出せませんでした: {{error}}',
+    exportTitle: 'アイテムを CSV に書き出す',
+    importTitle: '取り込む CSV を選ぶ',
   },
   bookmarkErrors: {
     pathNotAllowed: '許可されていないファイルパスです',

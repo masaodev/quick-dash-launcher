@@ -1012,6 +1012,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unknownType: '(unknown type)',
     },
     toolbar: {
+      importCsv: '📄 Import from CSV',
+      importCsvTitle: 'Import an edited CSV (matched by id; review the changes before importing)',
       addItem: '+ Add item',
       addItemTitle:
         'Adds a single item at the top. Change its type in the Type column, and its arguments and note in ✏️ Edit details.',
@@ -1035,6 +1037,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       save: 'Save changes',
     },
     header: {
+      exportCsv: '📤 Export to CSV',
+      exportCsvDesc: 'All tabs in one CSV file (opens in Excel)',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
       autoImportSettings: '⚙️ Bookmark auto-import settings…',
@@ -1919,6 +1923,33 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     faviconFailed: "Couldn't get the favicon",
     iconNotFound: "The icon wasn't found",
     iconFailed: "Couldn't extract the icon",
+  },
+  itemCsv: {
+    previewTitle: 'Import CSV',
+    summary: '{{updates}} changed, {{additions}} added, {{unchanged}} unchanged, {{errors}} errors',
+    updatesHeading: 'Changed ({{count}})',
+    additionsHeading: 'Added ({{count}})',
+    errorsHeading: 'Rows not imported ({{count}})',
+    errorLine: 'Line {{line}}: {{message}}',
+    errors: {
+      noIdColumn: 'The header row has no id column (keep the header from the exported CSV)',
+      notFound: 'No item has the id "{{value}}"',
+      duplicateId: 'The id "{{value}}" appears more than once (only the first row is imported)',
+      nameRequired: 'The name is empty',
+      pathRequired: 'The path is empty',
+      typeNotAddable: 'Items of type "{{value}}" can\'t be added from CSV (only item and dir)',
+      unknownDataFile: 'There is no data file "{{value}}"',
+    },
+    note: "Imported rows become unsaved changes. Select Save changes to keep them, or Discard to undo. Items that aren't in the CSV aren't deleted.",
+    confirm: 'Import',
+    exported: 'Exported {{count}} items: {{path}}',
+    exportedUnsaved: 'Exported {{count}} items (including unsaved changes): {{path}}',
+    imported:
+      'Imported the CSV ({{updates}} changed, {{additions}} added). Save to keep the changes.',
+    readFailed: "Couldn't read the CSV: {{error}}",
+    exportFailed: "Couldn't export the CSV: {{error}}",
+    exportTitle: 'Export items to CSV',
+    importTitle: 'Choose a CSV to import',
   },
   bookmarkErrors: {
     pathNotAllowed: "This file path isn't allowed",

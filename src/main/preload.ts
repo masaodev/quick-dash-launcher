@@ -135,6 +135,9 @@ const electronAPI: ElectronAPI = {
   getDefaultBrowser: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_GET_DEFAULT),
   getFileHandler: (extension) => ipcRenderer.invoke(IPC_CHANNELS.FILE_GET_HANDLER, extension),
   checkPathsExist: (paths) => ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),
+  exportItemsCsv: (text, defaultName) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ITEMS_CSV_EXPORT, text, defaultName),
+  readItemsCsv: () => ipcRenderer.invoke(IPC_CHANNELS.ITEMS_CSV_READ),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
   getAllWindows: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS),

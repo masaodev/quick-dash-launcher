@@ -63,6 +63,18 @@ export function getEditablePath(jsonItem: JsonItem): string {
   return '';
 }
 
+/**
+ * メモの入力値をアイテムに入れる（改行は LF にそろえ、末尾の空白・改行は除き、空ならメモの項目ごと消す）
+ *
+ * CSV から取り込んだメモはセルの中の改行が CRLF のことがあるので、ここでそろえる
+ */
+export function withEditedMemo<T extends { memo?: string }>(item: T, value: string): T {
+  const memo = value.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
+  if (memo) return { ...item, memo };
+  const { memo: _removed, ...rest } = item;
+  return rest as T;
+}
+
 /** パスを差し替えた JsonItem（編集できない種類はそのまま返す） */
 export function withEditedPath(jsonItem: JsonItem, path: string): JsonItem {
   if (jsonItem.type === 'item' && isJsonLauncherItem(jsonItem)) {

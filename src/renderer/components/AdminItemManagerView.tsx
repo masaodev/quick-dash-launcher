@@ -13,12 +13,14 @@ import { useAdminItemListView } from '../hooks/useAdminItemListView';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
+import { itemsToCsv, planCsvImport, type CsvImportPlan } from '../utils/itemCsv';
 
 import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerTabBar from './AdminItemManagerTabBar';
 import AdminItemManagerToolbar from './AdminItemManagerToolbar';
 import BookmarkImportModal from './BookmarkImportModal';
 import AppImportModal from './AppImportModal';
+import AdminItemCsvImportModal from './AdminItemCsvImportModal';
 import ConfirmDialog from './ConfirmDialog';
 
 interface EditModeViewProps {
@@ -410,6 +412,63 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     onClearPendingImportModal,
   });
 
+  // CSV: 書き出しはすべてのタブ（未保存の変更も含めて今の一覧のまま）、取り込みは確かめてから未保存の変更にする
+  const [csvImport, setCsvImport] = useState<{ fileName: string; plan: CsvImportPlan } | null>(
+    null
+  );
+  /** タブの順のデータファイル（どのタブにも入っていないファイルは最後） */
+  const orderedDataFiles = useMemo(() => {
+    const files = [...new Set(dataFileTabs.flatMap((tab) => tab.files))];
+    for (const item of workingItems) {
+      if (!files.includes(item.meta.sourceFile)) files.push(item.meta.sourceFile);
+    }
+    return files;
+  }, [dataFileTabs, workingItems]);
+
+  const handleExportCsv = async () => {
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    try {
+      const savedPath = await window.electronAPI.exportItemsCsv(
+        itemsToCsv(workingItems, orderedDataFiles),
+        `quick-dash-items-${stamp}.csv`
+      );
+      if (!savedPath) return;
+      const key = hasUnsavedChanges ? 'itemCsv.exportedUnsaved' : 'itemCsv.exported';
+      showSuccess(t(key, { count: workingItems.length, path: savedPath }), { duration: 5000 });
+    } catch (error) {
+      showWarning(
+        t('itemCsv.exportFailed', { error: error instanceof Error ? error.message : String(error) })
+      );
+    }
+  };
+
+  const handleImportCsv = async () => {
+    try {
+      const file = await window.electronAPI.readItemsCsv();
+      if (!file) return;
+      const plan = planCsvImport(file.text, workingItems, orderedDataFiles, selectedDataFile);
+      setCsvImport({ fileName: file.filePath, plan });
+    } catch (error) {
+      showWarning(
+        t('itemCsv.readFailed', { error: error instanceof Error ? error.message : String(error) })
+      );
+    }
+  };
+
+  const confirmCsvImport = () => {
+    if (!csvImport) return;
+    const { plan } = csvImport;
+    setCsvImport(null);
+    // 取り込んだ行が絞り込みで隠れないように、検索と絞り込みを外す
+    if (searchQuery) onSearchChange('');
+    listView.clearFilters();
+    editing.applyCsvImport(plan);
+    showInfo(
+      t('itemCsv.imported', { updates: plan.updates.length, additions: plan.additions.length })
+    );
+  };
+
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
   const handleRequestDelete = useCallback(
     (items: EditableJsonItem[]) => {
@@ -507,6 +566,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onAddFolder={handleAddFolder}
         onOpenBookmarkImport={imports.openBookmarkModal}
         onOpenAppImport={imports.openAppImportModal}
+        onImportCsv={() => void handleImportCsv()}
+        onExportCsv={() => void handleExportCsv()}
         onOpenAutoImportSettings={onOpenAutoImportSettings}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
@@ -615,6 +676,16 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         dataFileLabels={dataFileLabels}
         initialTabIndex={selectedTabIndex}
       />
+
+      {csvImport && (
+        <AdminItemCsvImportModal
+          fileName={csvImport.fileName}
+          plan={csvImport.plan}
+          getFileLabel={getFileLabel}
+          onConfirm={confirmCsvImport}
+          onCancel={() => setCsvImport(null)}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}

@@ -1,10 +1,19 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import * as fs from 'fs';
+
+import {
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  type OpenDialogOptions,
+  type SaveDialogOptions,
+} from 'electron';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import type { ItemPathPickKind, JsonDirOptions, SetItemFields } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { PathManager } from '../config/pathManager.js';
+import { mainI18n } from '../services/mainI18n.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
 import { getDefaultBrowser, getFileHandler } from '../utils/defaultBrowser.js';
@@ -96,6 +105,43 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle(IPC_CHANNELS.CHECK_PATHS_EXIST, (_event, paths: string[]) =>
     checkPathsExist(paths)
   );
+
+  // アイテム管理の CSV。Excel でダブルクリックして開いても日本語が化けないよう BOM 付きで書く
+  ipcMain.handle(
+    IPC_CHANNELS.ITEMS_CSV_EXPORT,
+    async (event, text: string, defaultName: string): Promise<string | null> => {
+      const parent = BrowserWindow.fromWebContents(event.sender);
+      const options: SaveDialogOptions = {
+        title: mainI18n.t('itemCsv.exportTitle'),
+        defaultPath: defaultName,
+        filters: [{ name: 'CSV', extensions: ['csv'] }],
+      };
+      const result = parent
+        ? await dialog.showSaveDialog(parent, options)
+        : await dialog.showSaveDialog(options);
+      if (result.canceled || !result.filePath) return null;
+      await fs.promises.writeFile(result.filePath, '\uFEFF' + text, 'utf8');
+      return result.filePath;
+    }
+  );
+
+  ipcMain.handle(IPC_CHANNELS.ITEMS_CSV_READ, async (event) => {
+    const parent = BrowserWindow.fromWebContents(event.sender);
+    const options: OpenDialogOptions = {
+      title: mainI18n.t('itemCsv.importTitle'),
+      filters: [
+        { name: 'CSV', extensions: ['csv'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+      properties: ['openFile'],
+    };
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    const filePath = result.canceled ? undefined : result.filePaths[0];
+    if (!filePath) return null;
+    return { filePath, text: await fs.promises.readFile(filePath, 'utf8') };
+  });
 
   // EditableJsonItem API
   ipcMain.handle(IPC_CHANNELS.LOAD_EDITABLE_ITEMS, () => loadEditableItems(configFolder));

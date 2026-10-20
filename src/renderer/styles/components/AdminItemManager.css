@@ -1367,3 +1367,68 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* CSV の取り込みの確認 */
+.csv-import-modal {
+  width: min(720px, 90vw);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  box-sizing: border-box;
+}
+
+.csv-import-modal h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.csv-import-modal .csv-import-file {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.csv-import-modal .csv-import-summary {
+  font-weight: 600;
+}
+
+.csv-import-modal .csv-import-sections {
+  overflow-y: auto;
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.csv-import-modal .csv-import-sections h3 {
+  margin: var(--spacing-sm) 0 var(--spacing-xs);
+  font-size: var(--font-size-base);
+}
+
+.csv-import-modal .csv-import-sections ul {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+}
+
+.csv-import-modal .csv-import-change {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.csv-import-modal .csv-import-dest {
+  margin-left: var(--spacing-sm);
+  color: var(--text-muted);
+}
+
+.csv-import-modal .csv-import-errors {
+  color: var(--text-warning);
+}
+
+.csv-import-modal .csv-import-note {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
