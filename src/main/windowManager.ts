@@ -128,16 +128,18 @@ function hideMainWindowInternal(): void {
 }
 
 /**
+ * 自動では隠さない状態か（ピン留め中・初回起動モード・モーダルモード）
+ * フォーカス喪失・Escape・アイテム実行で隠すかどうかに使う
+ */
+function isAutoHideSuppressed(): boolean {
+  return windowPinMode !== 'normal' || isFirstLaunchMode || isModalMode;
+}
+
+/**
  * フォーカス喪失時にメインウィンドウを非表示にしてよい状態か
  */
 function shouldHideOnBlur(): boolean {
-  return (
-    !!mainWindow &&
-    !mainWindow.webContents.isDevToolsOpened() &&
-    windowPinMode === 'normal' &&
-    !isFirstLaunchMode &&
-    !isModalMode
-  );
+  return !!mainWindow && !mainWindow.webContents.isDevToolsOpened() && !isAutoHideSuppressed();
 }
 
 /**
@@ -251,17 +253,8 @@ export async function createWindow(): Promise<BrowserWindow> {
       // ページで取り消すものがある（複数選択・確認の帯）あいだは、ページに渡して隠さない
       if (escapeHandledByPage) return;
       event.preventDefault();
-      // 以下の場合はEscapeキーで閉じない
-      // - 初回起動モード
-      // - モーダルモード
-      // - ピン留めモードがalwaysOnTopまたはstayVisible
-      const shouldNotHide =
-        isFirstLaunchMode ||
-        isModalMode ||
-        windowPinMode === 'alwaysOnTop' ||
-        windowPinMode === 'stayVisible';
-
-      if (mainWindow && !shouldNotHide) {
+      // ピン留め中・初回起動モード・モーダルモードではEscapeキーで閉じない
+      if (mainWindow && !isAutoHideSuppressed()) {
         hideMainWindowInternal();
         void toggleCompanionWindows(false);
       }
@@ -307,9 +300,7 @@ async function updateTrayMenu(): Promise<void> {
   if (!tray || tray.isDestroyed()) return;
   const t = mainI18n.t.bind(mainI18n);
 
-  // package.jsonからバージョンを取得
-  const packageJson = await import('../../package.json');
-  const version = packageJson.version || '0.0.0';
+  const version = app.getVersion();
 
   // 設定サービスからホットキーを取得
   const settingsService = await SettingsService.getInstance();
@@ -466,14 +457,7 @@ function updateWindowBehavior(): void {
 export async function setModalMode(isModal: boolean): Promise<void> {
   isModalMode = isModal;
   if (!mainWindow || mainWindow.isDestroyed()) return;
-
-  if (isModal) {
-    // モーダル表示中は最前面に固定
-    mainWindow.setAlwaysOnTop(true);
-  } else {
-    // 元のピンモードに応じて最前面設定を復元
-    mainWindow.setAlwaysOnTop(windowPinMode === 'alwaysOnTop');
-  }
+  updateWindowBehavior();
 }
 
 export function getTray(): Tray | null {
@@ -758,9 +742,7 @@ export async function showMainWindowWithItemSearch(startTime?: number): Promise<
 export function hideMainWindowOnExecute(): void {
   if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
 
-  if (windowPinMode !== 'normal' || isFirstLaunchMode || isModalMode) {
-    return;
-  }
+  if (isAutoHideSuppressed()) return;
 
   hideMainWindowInternal();
   hideDetachedWindowsAfterBlur();
