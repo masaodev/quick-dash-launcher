@@ -117,6 +117,15 @@ export function isSetRunning(id: string | undefined): boolean {
 /** id からアイテムを探す */
 export type SetItemResolver = (itemId: string) => AppItem | undefined;
 
+/** id を持つアイテムを id で引けるようにする（id の無いアイテムは除く） */
+export function indexItemsById(items: readonly AppItem[]): Map<string, AppItem> {
+  const byId = new Map<string, AppItem>();
+  for (const appItem of items) {
+    if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
+  }
+  return byId;
+}
+
 /** 実行の差し替え口（テスト用） */
 export interface SetExecutorDeps {
   launch: (item: LaunchableItem, logger: Logger) => Promise<LaunchResult>;

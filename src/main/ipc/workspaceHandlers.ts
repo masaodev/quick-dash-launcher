@@ -6,6 +6,7 @@ import type {
   AppItem,
   WorkspaceItem,
   WorkspaceItemUpdate,
+  WorkspaceGroup,
   WorkspaceGroupUpdate,
   MixedOrderEntry,
 } from '@common/types';
@@ -33,6 +34,7 @@ import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
 import { mainI18n } from '../services/mainI18n.js';
 import {
   executeSet,
+  indexItemsById,
   isSetRunning,
   notifySetFailures,
   resolveSetEntry,
@@ -54,10 +56,16 @@ function withOwnClipboardData(item: AppItem): AppItem {
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
+ * @param groups 読み込み済みのグループ（複数のグループを続けて閉じるとき、読み直さないため）
  */
-export async function closeDetachedWindowsForGroup(groupId: string): Promise<void> {
-  const workspaceService = await WorkspaceService.getInstance();
-  const groups = await workspaceService.loadGroups();
+export async function closeDetachedWindowsForGroup(
+  groupId: string,
+  groups?: WorkspaceGroup[]
+): Promise<void> {
+  if (!groups) {
+    const workspaceService = await WorkspaceService.getInstance();
+    groups = await workspaceService.loadGroups();
+  }
   const descendantIds = getDescendantGroupIds(groupId, groups);
   for (const id of [groupId, ...descendantIds]) {
     closeDetachedGroupWindow(id);
@@ -313,10 +321,7 @@ export function setupWorkspaceHandlers(): void {
         const workspaceItems = await workspaceService.loadItems();
         const configFolder = PathManager.getConfigFolder();
         const allItems = await reloadConfigFiles(configFolder, 'internal');
-        const byId = new Map<string, AppItem>();
-        for (const appItem of allItems) {
-          if ('id' in appItem && appItem.id) byId.set(appItem.id, appItem);
-        }
+        const byId = indexItemsById(allItems);
         for (const wsItem of workspaceItems) {
           const converted = workspaceItemToLaunchable(wsItem);
           if (converted) byId.set(wsItem.id, converted);
@@ -401,22 +406,19 @@ export function setupWorkspaceHandlers(): void {
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, (_event, id: string) =>
-    withWorkspaceService(
+    withWorkspaceChange(
       async (service) => {
         // 削除前に所属グループの切り離しウィンドウを閉じる
         const groups = await service.loadGroups();
         const wsGroups = groups.filter((g) => g.workspaceId === id);
         for (const group of wsGroups) {
-          await closeDetachedWindowsForGroup(group.id);
+          await closeDetachedWindowsForGroup(group.id, groups);
         }
         await service.deleteWorkspace(id);
-        logger.info({ id }, 'Deleted workspace');
-        notifyWorkspaceChanged();
-        return { success: true };
       },
+      'Deleted workspace',
       'Failed to delete workspace',
-      undefined,
-      true
+      { id }
     )
   );
 
@@ -471,17 +473,15 @@ export function setupWorkspaceHandlers(): void {
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string, deleteItems: boolean) =>
-    withWorkspaceService(
+    withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(id);
         await service.deleteGroup(id, deleteItems);
-        logger.info({ id, deleteItems }, 'Deleted workspace group');
-        notifyWorkspaceChanged();
-        return { success: true };
       },
+      'Deleted workspace group',
       'Failed to delete workspace group',
-      { id },
-      true
+      { id, deleteItems },
+      { id }
     )
   );
 
@@ -574,17 +574,15 @@ export function setupWorkspaceHandlers(): void {
   // ==================== アーカイブ管理ハンドラー ====================
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, (_event, groupId: string) =>
-    withWorkspaceService(
+    withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(groupId);
         await service.archiveGroup(groupId);
-        logger.info({ groupId }, 'Archived workspace group');
-        notifyWorkspaceChanged();
-        return { success: true };
       },
+      'Archived workspace group',
       'Failed to archive workspace group',
       { groupId },
-      true
+      { groupId }
     )
   );
 

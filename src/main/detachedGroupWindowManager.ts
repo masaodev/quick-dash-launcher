@@ -16,9 +16,9 @@ import {
   isAppQuitting,
 } from './utils/managedWindow.js';
 import {
+  applyAllDesktopsPin,
+  getHwnd,
   moveWindowToCurrentDesktop,
-  pinWindow,
-  unPinWindow,
 } from './utils/virtualDesktop/index.js';
 import { computeMonitorAnchor, placeByMonitorAnchor } from './utils/monitorAnchor.js';
 import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
@@ -81,15 +81,8 @@ let detachedWindowSnapEnabled: boolean = true;
 
 function applyVirtualDesktopPinToWindow(win: BrowserWindow, enabled: boolean): void {
   // 隠れているウィンドウには当てられない（失敗する）。表示のたびに当て直すので、そのときに任せる
-  if (win.isDestroyed() || !win.isVisible()) return;
-  const hwnd = win.getNativeWindowHandle().readBigUInt64LE();
-  const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
-  const action = enabled ? 'pin' : 'unpin';
-  if (success) {
-    windowLogger.info(`切り離しウィンドウの仮想デスクトップ固定: ${action}`);
-  } else {
-    windowLogger.warn(`切り離しウィンドウの仮想デスクトップ固定に失敗: ${action}`);
-  }
+  // eslint-disable-next-line no-restricted-syntax -- ログに出す名前（画面には出さない）
+  applyAllDesktopsPin(win, enabled, '切り離しウィンドウ');
 }
 
 /** 設定に従って仮想デスクトップ固定を当て直す（表示のたび・setAlwaysOnTop の後。読めなければ固定なしのまま） */
@@ -643,7 +636,7 @@ export function bringDetachedToFront(): void {
     // 📌 なしのものはメインと一緒に showInactive() で出し直す（出さない設定なら隠れたまま）ので、📌 ありだけ戻す
     if (getDetachedPinLevel(groupId) !== 0 && win.isMinimized()) win.showInactive();
     if (win.isVisible()) {
-      moveWindowToCurrentDesktop(win.getNativeWindowHandle().readBigUInt64LE());
+      moveWindowToCurrentDesktop(getHwnd(win));
       win.moveTop();
     }
   }

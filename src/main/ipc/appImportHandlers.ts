@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 
 import { ipcMain, shell } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
@@ -9,6 +10,8 @@ import type { ScannedAppItem, AppScanResult, AppTargetType } from '@common/types
 import { generateId } from '@common/utils/jsonParser';
 
 import { mainI18n } from '../services/mainI18n.js';
+
+const execFileAsync = promisify(execFile);
 
 /** 実行可能ファイルの拡張子（app種別として分類） */
 const APP_EXTENSIONS = new Set([
@@ -73,10 +76,15 @@ function isFilePathAppId(appId: string): boolean {
   return /^[A-Za-z]:[/\\]/.test(appId) || appId.startsWith('{') || appId.startsWith('\\\\');
 }
 
-function scanStartApps(): ScannedAppItem[] {
+async function scanStartApps(): Promise<ScannedAppItem[]> {
   try {
-    const output = execSync(
-      'powershell.exe -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-StartApps | ConvertTo-Json -Compress"',
+    const { stdout: output } = await execFileAsync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-Command',
+        '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-StartApps | ConvertTo-Json -Compress',
+      ],
       { encoding: 'utf8', timeout: 15000 }
     );
 
@@ -119,8 +127,11 @@ function scanStartApps(): ScannedAppItem[] {
   }
 }
 
-function scanInstalledApps(): AppScanResult {
+async function scanInstalledApps(): Promise<AppScanResult> {
   const startTime = performance.now();
+
+  // 登録アプリのスキャン（PowerShell）は待ち時間が長いため、ショートカットのスキャンと並行させる
+  const startAppsPromise = scanStartApps();
 
   const programDataPath = process.env.PROGRAMDATA || 'C:\\ProgramData';
   const appDataPath =
@@ -168,7 +179,7 @@ function scanInstalledApps(): AppScanResult {
   }
 
   // 登録アプリをスキャンしてマージ
-  const startApps = scanStartApps();
+  const startApps = await startAppsPromise;
   apps.push(...startApps);
 
   // 表示名でソート

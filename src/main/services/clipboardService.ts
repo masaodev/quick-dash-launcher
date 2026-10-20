@@ -24,7 +24,7 @@ import type {
 } from '@common/types/clipboard';
 import {
   MAX_IMAGE_SIZE_BYTES,
-  PREVIEW_MAX_LENGTH,
+  truncateClipboardPreview,
   THUMBNAIL_MAX_WIDTH,
   THUMBNAIL_MAX_HEIGHT,
 } from '@common/types/clipboard';
@@ -129,7 +129,7 @@ export class ClipboardService {
     const { text, html, rtf, image } = await this.readClipboardContents();
     if (text) {
       formats.push('text');
-      preview = this.truncatePreview(text);
+      preview = truncateClipboardPreview(text);
       estimatedSize += Buffer.byteLength(text, 'utf8');
     }
 
@@ -173,7 +173,7 @@ export class ClipboardService {
                 count: filePaths.length,
                 first: filePaths[0],
               });
-        preview = this.truncatePreview(filePreview);
+        preview = truncateClipboardPreview(filePreview);
       }
       estimatedSize += this.calculatePathsSize(filePaths);
     }
@@ -214,7 +214,7 @@ export class ClipboardService {
       formats.push('text');
       clipboardData.text = text;
       clipboardData.dataSize += Buffer.byteLength(text, 'utf8');
-      preview = this.truncatePreview(text);
+      preview = truncateClipboardPreview(text);
     }
 
     if (html.trim()) {
@@ -272,7 +272,7 @@ export class ClipboardService {
                 count: filePaths.length,
                 first: filePaths[0],
               });
-        preview = this.truncatePreview(filePreview);
+        preview = truncateClipboardPreview(filePreview);
       }
     }
 
@@ -438,7 +438,7 @@ export class ClipboardService {
       return {
         success: true,
         dataFileRef,
-        preview: this.truncatePreview(text),
+        preview: truncateClipboardPreview(text),
         formats: clipboardData.formats,
         dataSize: clipboardData.dataSize,
         savedAt: clipboardData.savedAt,
@@ -623,13 +623,6 @@ export class ClipboardService {
     return match ? match[1] : null;
   }
 
-  private truncatePreview(text: string): string {
-    if (text.length <= PREVIEW_MAX_LENGTH) {
-      return text;
-    }
-    return text.substring(0, PREVIEW_MAX_LENGTH) + '...';
-  }
-
   private calculatePathsSize(paths: string[]): number {
     return paths.reduce((sum, p) => sum + Buffer.byteLength(p, 'utf8'), 0);
   }
@@ -640,14 +633,14 @@ export class ClipboardService {
 
   private generatePreviewText(data: SerializableClipboard): string {
     if (data.text) {
-      return this.truncatePreview(data.text);
+      return truncateClipboardPreview(data.text);
     }
     if (data.imageBase64) {
       return mainI18n.t('clipboardService.imageData');
     }
     if (data.html) {
       const textContent = data.html.replace(/<[^>]*>/g, '').trim();
-      return this.truncatePreview(textContent);
+      return truncateClipboardPreview(textContent);
     }
     return '';
   }

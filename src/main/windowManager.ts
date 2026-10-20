@@ -35,7 +35,7 @@ import {
   hideWorkspaceWithMain,
   showWorkspaceWithMain,
 } from './workspaceWindowManager.js';
-import { moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
+import { getHwnd, moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
@@ -754,7 +754,7 @@ export function hideMainWindowOnExecute(): void {
  */
 function bringMainWindowToCurrentDesktop(): boolean {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
-  const moved = moveWindowToCurrentDesktop(mainWindow.getNativeWindowHandle().readBigUInt64LE());
+  const moved = moveWindowToCurrentDesktop(getHwnd(mainWindow));
   if (moved) windowLogger.info('メインウィンドウを今の仮想デスクトップへ移しました');
   return moved;
 }

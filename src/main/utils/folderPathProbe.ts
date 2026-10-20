@@ -5,6 +5,7 @@ import { detectItemTypeSync, type PathKind } from '@common/utils/itemTypeDetecto
 
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 
+import { runWithConcurrency } from './concurrency.js';
 import {
   getKnownExtensionlessFiles,
   isKnownExtensionlessFile,
@@ -126,16 +127,6 @@ function needsLoadProbe(itemPath: string, detected: LauncherItem['type']): boole
   return sessionMode === 'rebuild' && isExtensionlessCandidate(itemPath, detected);
 }
 
-async function runLimited<T>(values: T[], worker: (value: T) => Promise<void>): Promise<void> {
-  let index = 0;
-  const workers = Array.from({ length: Math.min(CONCURRENCY, values.length) }, async () => {
-    while (index < values.length) {
-      await worker(values[index++]);
-    }
-  });
-  await Promise.all(workers);
-}
-
 /**
  * 読み込み（データファイル＋ワークスペース）の前に呼ぶ
  *
@@ -151,9 +142,10 @@ export async function beginLoadProbeSession(
   clearFolderProbeCache();
   if (mode === 'recheck') {
     const targets = getKnownExtensionlessFiles().filter(isDrivePath);
-    await runLimited(targets, async (p) => {
-      record(p, await probe(p, options));
-    });
+    await runWithConcurrency(
+      targets.map((p) => async () => record(p, await probe(p, options))),
+      CONCURRENCY
+    );
   }
 }
 
@@ -181,9 +173,10 @@ export async function prefetchFolderProbes(
   const targets = [...new Set(paths)].filter(
     (p) => !probeCache.has(p) && needsLoadProbe(p, detectItemTypeSync(p))
   );
-  await runLimited(targets, async (p) => {
-    record(p, await probe(p, options));
-  });
+  await runWithConcurrency(
+    targets.map((p) => async () => record(p, await probe(p, options))),
+    CONCURRENCY
+  );
 }
 
 /**

@@ -4,7 +4,7 @@ import * as path from 'path';
 import { FileUtils } from '@common/utils/fileUtils';
 import { generateId, serializeJsonDataFile } from '@common/utils/jsonParser';
 import type { DataFileTab, JsonDataFile, JsonItem, SerializableClipboard } from '@common/types';
-import { DEFAULT_DATA_FILE, JSON_DATA_VERSION, PREVIEW_MAX_LENGTH } from '@common/types';
+import { DEFAULT_DATA_FILE, JSON_DATA_VERSION, truncateClipboardPreview } from '@common/types';
 
 import PathManager from '../config/pathManager.js';
 import { writeDataFile } from '../services/dataFileTracker.js';
@@ -39,14 +39,13 @@ function createSampleClipboardItem(): JsonItem | null {
     dataFileRef: `clipboard-data/${id}.json`,
     savedAt,
     // 一覧のプレビューはほかの定型文と同じ長さで切る（本文はファイルに全部ある）
-    preview:
-      text.length <= PREVIEW_MAX_LENGTH ? text : `${text.substring(0, PREVIEW_MAX_LENGTH)}...`,
+    preview: truncateClipboardPreview(text),
     formats: ['text'],
   };
 }
 
 /** 初回起動のお試し用の 2 つ目のタブ（Web）のデータファイル */
-export const SAMPLE_WEB_DATA_FILE = 'datafiles/data2.json';
+const SAMPLE_WEB_DATA_FILE = 'datafiles/data2.json';
 
 function sampleItem(displayName: string, path: string): JsonItem {
   return { id: generateId(), type: 'item', displayName, path };

@@ -126,6 +126,11 @@ export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 /** プレビューテキストの最大長 */
 export const PREVIEW_MAX_LENGTH = 100;
 
+/** プレビュー用に、長いテキストを PREVIEW_MAX_LENGTH 文字で切って「...」を付ける */
+export function truncateClipboardPreview(text: string): string {
+  return text.length <= PREVIEW_MAX_LENGTH ? text : `${text.substring(0, PREVIEW_MAX_LENGTH)}...`;
+}
+
 /** サムネイル画像の最大幅 */
 export const THUMBNAIL_MAX_WIDTH = 200;
 

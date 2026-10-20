@@ -2,6 +2,7 @@ import * as fs from 'fs';
 
 import type { PathExistenceStatus } from '@common/types/editableItem';
 
+import { runWithConcurrency } from '../../utils/concurrency.js';
 import { expandEnvironmentVariables } from '../icon/iconFileCache.js';
 
 export interface CheckPathsOptions {
@@ -47,14 +48,10 @@ export async function checkPathsExist(
     }
   };
 
-  let index = 0;
-  const workers = Array.from({ length: Math.min(concurrency, unique.length) }, async () => {
-    while (index < unique.length) {
-      const current = unique[index++];
-      await checkOne(current);
-    }
-  });
-  await Promise.all(workers);
+  await runWithConcurrency(
+    unique.map((p) => () => checkOne(p)),
+    concurrency
+  );
 
   return result;
 }

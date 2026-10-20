@@ -64,6 +64,7 @@ import { WorkspaceService } from '../services/workspace/index.js';
 import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager.js';
 import { isPinLevel, levelToPinMode, pinModeToLevel, showPinMenu } from '../utils/pinMenu.js';
 import { startWindowMove } from '../utils/nativeWindowControl.js';
+import { getHwnd } from '../utils/virtualDesktop/index.js';
 
 /** ピン留めの対象（送ってきたウィンドウ）ごとの読み書き */
 interface PinTarget {
@@ -184,7 +185,7 @@ export function setupWindowHandlers(
   ipcMain.on(IPC_CHANNELS.WINDOW_START_MOVE, (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win || win.isDestroyed()) return;
-    startWindowMove(win.getNativeWindowHandle().readBigUInt64LE());
+    startWindowMove(getHwnd(win));
   });
   ipcMain.on(
     IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT,

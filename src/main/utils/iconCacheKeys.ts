@@ -87,7 +87,7 @@ export function resolveShortcutPath(item: IconTargetItem): string {
 }
 
 /** 拡張子アイコンのキャッシュパスを組み立てる */
-export function getExtensionIconPath(extensionsFolder: string, ext: string): string {
+function getExtensionIconPath(extensionsFolder: string, ext: string): string {
   return path.join(extensionsFolder, `ext_${ext.replace('.', '')}_icon.png`);
 }
 
