@@ -89,7 +89,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
   {
     id: 'source',
     className: 'source-column',
-    defaultWidth: 90,
+    defaultWidth: 100,
     sortColumn: 'source',
     filterable: true,
     hideable: true,
@@ -188,7 +188,7 @@ export function columnWidthOf(
 /** 選択・操作の列の幅（px。CSS と同じ） */
 const FIXED_COLUMNS_WIDTH = 40 + 70;
 /** パスと引数の列に残す最低の幅（px）。足りなければ一覧を横にスクロールする */
-export const PATH_COLUMN_MIN_WIDTH = 220;
+export const PATH_COLUMN_MIN_WIDTH = 180;
 
 /** 一覧の表の最小幅（列が多くてもパスと引数の列が潰れないように） */
 export function tableMinWidthOf(widths: Array<number | null>): number {
