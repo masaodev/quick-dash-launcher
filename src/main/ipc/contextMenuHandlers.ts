@@ -487,6 +487,14 @@ function setupWorkspaceGroupContextMenuHandler(): void {
           group.id
         )
       );
+      addItemSubmenu.append(
+        createMenuItem(
+          t('menu.workspaceGroup.addNew'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_NEW,
+          group.id
+        )
+      );
       menu.append(
         new MenuItem({ label: t('menu.workspaceGroup.addItem'), submenu: addItemSubmenu })
       );

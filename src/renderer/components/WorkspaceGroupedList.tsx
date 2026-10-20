@@ -300,6 +300,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           logError('Failed to open item picker:', error);
         });
       }),
+      window.electronAPI.onWorkspaceGroupMenuAddNew((groupId) => {
+        window.electronAPI.workspaceAPI.openNewItemEditor(groupId).catch((error) => {
+          logError('Failed to open new item editor:', error);
+        });
+      }),
       window.electronAPI.onWorkspaceGroupMenuMoveToWorkspace(async (groupId, targetWorkspaceId) => {
         try {
           await window.electronAPI.workspaceAPI.moveGroupToWorkspace(groupId, targetWorkspaceId);

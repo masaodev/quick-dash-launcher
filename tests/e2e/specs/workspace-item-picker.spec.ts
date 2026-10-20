@@ -81,8 +81,8 @@ test.describe('QuickDashLauncher - ワークスペースのグループにメイ
       await expect(picker.locator('.set-modal-header h3')).toHaveText(
         'グループ「追加先のグループ」に追加するアイテム'
       );
-      await expect(picker.locator('.set-picker-dest')).toContainText('追加先');
-      await expect(picker.locator('.set-picker-dest')).toContainText('追加先のグループ');
+      await expect(picker.locator('.workspace-dest')).toContainText('追加先');
+      await expect(picker.locator('.workspace-dest')).toContainText('追加先のグループ');
       await expect(picker).toHaveTitle('グループ「追加先のグループ」に追加するアイテム');
     });
 

@@ -846,12 +846,8 @@
   box-shadow: none;
 }
 
-.set-picker-page .set-picker-dest {
+.set-picker-page .workspace-dest {
   margin-bottom: var(--spacing-sm);
-}
-
-.set-picker-dest-name {
-  font-weight: var(--font-weight-semibold);
 }
 
 .set-picker-missing {

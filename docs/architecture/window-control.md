@@ -367,6 +367,8 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 - 位置・サイズは編集ウィンドウと同じ（開き元と同じディスプレイの作業領域の中央に 850x800 を切り詰め）。**開き元のウィンドウのサイズ・位置は変えない**。同じグループの画面が開いていれば前面に出す。閉じると破棄
 - 追加は `workspace:add-item`（groupId・workspaceId つき）で 1 件ずつ行い、変更通知でワークスペース側が読み直す。追加し終えたら `window.close()` する
 
+「✏️ 新しく入力して追加…」は、アイテム編集ウィンドウを新規の形で開く（`openWorkspaceNewItemEditor`、中身は `WorkspaceNewItemPage.tsx`。フォームは `WorkspaceItemEditModal` に `create` を渡したもの）。イベント `workspace-group-menu-add-new`（groupId）→ IPC `workspace:open-new-item-editor`（groupId）で、`window.name` は `workspace-new-item:<groupId>`（フォールバック時は URL クエリ `newItemGroupId`）。編集ウィンドウと同じ表で `new:<groupId>` をキーに持つ。追加は `workspace:create-item`（入力した中身・groupId・workspaceId）で行う
+
 ## ウィンドウ位置・サイズ制御
 
 ### 概要

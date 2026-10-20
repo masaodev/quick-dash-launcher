@@ -367,6 +367,7 @@ export const en: LocaleMessages = {
       addSubgroup: '➕ Add subgroup',
       addItem: '➕ Add item',
       addFromMain: '🔍 Choose from launcher items…',
+      addNew: '✏️ Enter a new item…',
       rename: '✏️ Rename group',
       changeColor: '🎨 Change color',
       archive: '🗄️ Archive group',
@@ -2028,6 +2029,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     confirmNotFound: 'Nothing to confirm.',
     edit: {
       title: 'Edit workspace item',
+      newTitle: 'Add an item to the workspace',
+      add: 'Add',
+      addFailed: "Couldn't add the item to the workspace",
       notFound: "The item wasn't found",
       pageNotFound: "The item to edit wasn't found. It may have been deleted.",
       updateFailed: "Couldn't update the workspace item",
