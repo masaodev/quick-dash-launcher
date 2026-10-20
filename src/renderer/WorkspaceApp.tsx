@@ -143,8 +143,7 @@ const WorkspaceApp: React.FC = () => {
     isDetached
       ? (width, height) => window.electronAPI.workspaceAPI.resizeCallerWindow(width, height)
       : undefined,
-    isDetached ? 0 : undefined,
-    !isDetached
+    isDetached ? 0 : undefined
   );
 
   useEffect(() => {

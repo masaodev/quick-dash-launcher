@@ -4,24 +4,23 @@ type ResizeFn = (width: number, height: number) => void;
 
 const DEFAULT_MIN_HEIGHT = 150;
 
-function defaultResizeFn(width: number, height: number): void {
-  window.electronAPI.workspaceAPI.setSize(width, height);
+function defaultResizeFn(_width: number, height: number): void {
+  window.electronAPI.workspaceAPI.setHeight(height);
 }
 
 /**
  * ワークスペースウィンドウの高さをコンテンツに合わせて自動調整するフック
  *
  * contentRef（WorkspaceGroupedList内部ラッパー）をResizeObserverで監視し、
- * コンテンツ高さの変化に応じてウィンドウ高さをsetSizeで更新する。
+ * コンテンツ高さの変化に応じてウィンドウ高さを更新する。
  *
  * callback refパターンを使用し、要素のアタッチ/デタッチに正しく対応する。
- * refitOnRequest が true なら、メインプロセスが高さを作業領域いっぱいに戻したとき（EVENT_WORKSPACE_REFIT_HEIGHT）に、
- * 中身の高さが変わっていなくても合わせ直す（ワークスペース本体だけ。切り離しウィンドウには届かない）
+ * メインプロセスが高さを作業領域いっぱいに戻したとき（EVENT_WORKSPACE_REFIT_HEIGHT）は、
+ * 中身の高さが変わっていなくても合わせ直す（ワークスペース本体だけに届く。切り離しウィンドウには届かない）
  */
 export function useWorkspaceAutoFit(
   resizeFn?: ResizeFn,
-  minHeight?: number,
-  refitOnRequest = false
+  minHeight?: number
 ): {
   contentRef: (node: HTMLDivElement | null) => void;
 } {
@@ -83,14 +82,15 @@ export function useWorkspaceAutoFit(
     [updateHeight]
   );
 
-  useEffect(() => {
-    if (!refitOnRequest) return;
-    return window.electronAPI.onWorkspaceRefitHeight(() => {
-      if (!nodeRef.current) return;
-      lastHeightRef.current = 0;
-      updateHeight(nodeRef.current);
-    });
-  }, [refitOnRequest, updateHeight]);
+  useEffect(
+    () =>
+      window.electronAPI.onWorkspaceRefitHeight(() => {
+        if (!nodeRef.current) return;
+        lastHeightRef.current = 0;
+        updateHeight(nodeRef.current);
+      }),
+    [updateHeight]
+  );
 
   return { contentRef };
 }

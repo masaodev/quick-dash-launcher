@@ -659,7 +659,7 @@ export function bringDetachedToFront(): void {
     if (win.isDestroyed()) continue;
     // Win+D（デスクトップの表示）で最小化されていると、isVisible() は false になり、moveTop() だけでも戻らない（A3-132）。
     // 📌 なしのものはメインと一緒に showInactive() で出し直す（出さない設定なら隠れたまま）ので、📌 ありだけ戻す
-    if ((detachedPinModes.get(groupId) ?? 0) !== 0 && win.isMinimized()) win.showInactive();
+    if (getDetachedPinLevel(groupId) !== 0 && win.isMinimized()) win.showInactive();
     if (win.isVisible()) {
       moveWindowToCurrentDesktop(win.getNativeWindowHandle().readBigUInt64LE());
       win.moveTop();

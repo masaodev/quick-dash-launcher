@@ -235,15 +235,14 @@ export function setupWindowHandlers(
       setWorkspaceConfirmResult(requestId, result)
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_SIZE, (_event, _width: number, height: number) => {
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_HEIGHT, (_event, height: number) => {
     const workspace = getWorkspaceWindow();
     if (!workspace || workspace.isDestroyed()) return false;
 
-    // 幅はメインプロセスの今の値を使う。高さを中身に合わせるだけの呼び出しで、置き直した直後
-    // （幅を作業領域に収めた直後）にレンダラーの古い幅で戻さないため（A3-131）
-    const { x, y, width: currentWidth } = workspace.getBounds();
-    workspace.setBounds({ x, y, width: currentWidth, height: Math.round(height) });
-    windowLogger.info(`Workspace size set to ${currentWidth}x${height}`);
+    // 幅はメインプロセスの今の値のまま。置き直した直後（幅を作業領域に収めた直後）に
+    // レンダラーの古い幅で戻さないため（A3-131）
+    workspace.setBounds({ height: Math.round(height) });
+    windowLogger.info(`Workspace height set to ${height}`);
     return true;
   });
 

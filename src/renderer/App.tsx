@@ -511,13 +511,12 @@ function App(): React.ReactElement {
       };
       logTiming(`renderer-received${suffix}`);
       // 表示したのに描画が止まっているときを記録する（A3-130）。そのときページが隠れている扱いかも残す
-      let frameArrived = false;
-      setTimeout(() => {
-        if (!frameArrived)
-          logTiming(`animation-frame-stalled-${document.visibilityState}${suffix}`);
-      }, 1000);
+      const stallTimer = setTimeout(
+        () => logTiming(`animation-frame-stalled-${document.visibilityState}${suffix}`),
+        1000
+      );
       requestAnimationFrame(() => {
-        frameArrived = true;
+        clearTimeout(stallTimer);
         logTiming(`before-animation-frame${suffix}`);
         requestAnimationFrame(() => {
           logTiming(`window-show-complete${suffix}`);
