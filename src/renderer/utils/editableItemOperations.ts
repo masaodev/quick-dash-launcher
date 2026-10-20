@@ -590,7 +590,15 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
   }
 }
 
-export type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'memo' | 'source' | 'updatedAt';
+export type SortColumn =
+  | 'type'
+  | 'displayName'
+  | 'pathAndArgs'
+  | 'memo'
+  | 'source'
+  | 'lastLaunched'
+  | 'launchCount'
+  | 'updatedAt';
 export interface SortState {
   /** null はソートなし（ファイル順） */
   column: SortColumn | null;
@@ -610,7 +618,12 @@ export function toggleSort(prev: SortState, column: SortColumn): SortState {
  * 編集中に行が動かないよう、呼び出し側はこの結果を「読み込み時・見出しクリック時」にだけ作り直し、
  * 表示は applyDisplayOrder で固定した順に並べる。
  */
-export function sortItemIds(items: EditableJsonItem[], sort: SortState): string[] {
+export function sortItemIds(
+  items: EditableJsonItem[],
+  sort: SortState,
+  /** 最終起動・起動回数で並べるときの起動の記録 */
+  usageOf?: (item: EditableJsonItem) => { lastLaunchedAt: number; count: number } | undefined
+): string[] {
   if (!sort.column) return items.map((item) => item.item.id);
   const column = sort.column;
   const collator = new Intl.Collator('ja');
@@ -629,6 +642,16 @@ export function sortItemIds(items: EditableJsonItem[], sort: SortState): string[
       const aEmpty = !a.item.memo;
       const bEmpty = !b.item.memo;
       if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
+    }
+    // 起動の記録が無い行は昇順でも降順でも最後に置く（メモと同じ）
+    if (column === 'lastLaunched' || column === 'launchCount') {
+      const ua = usageOf?.(a);
+      const ub = usageOf?.(b);
+      if (!ua !== !ub) return ua ? -1 : 1;
+      if (!ua || !ub) return 0;
+      const diff =
+        column === 'lastLaunched' ? ua.lastLaunchedAt - ub.lastLaunchedAt : ua.count - ub.count;
+      return sort.direction === 'asc' ? diff : -diff;
     }
     const comparison =
       column === 'updatedAt'

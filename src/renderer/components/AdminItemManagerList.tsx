@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { JsonItem } from '@common/types';
 import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
+import type { LaunchUsageRecord } from '@common/types/launchUsage';
 
 import { useAdminCellEditing } from '../hooks/useAdminCellEditing';
 import { useAdminContextMenu } from '../hooks/useAdminContextMenu';
@@ -12,6 +13,7 @@ import {
   ADMIN_ITEM_COLUMNS,
   FIXED_COLUMN_COUNT,
   filterColumnOf,
+  tableMinWidthOf,
   type AdminItemColumnId,
 } from '../utils/adminItemColumns';
 import {
@@ -54,6 +56,8 @@ interface AdminItemManagerListProps {
   filterOptions: ColumnFilterOptions;
   /** 「リンク切れを確認」の結果（確認していない・対象外のパスは undefined） */
   linkStatusOf: (item: EditableJsonItem) => PathExistenceStatus | undefined;
+  /** 起動の記録（記録が無ければ undefined） */
+  usageOf: (item: EditableJsonItem) => LaunchUsageRecord | undefined;
   /** 追加直後に名前セルを編集状態にするアイテムの id */
   autoEditItemId: string | null;
   onAutoEditHandled: () => void;
@@ -88,6 +92,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   onFilterChange,
   filterOptions,
   linkStatusOf,
+  usageOf,
   autoEditItemId,
   onAutoEditHandled,
   onItemEdit,
@@ -185,7 +190,10 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
 
   return (
     <div className="editable-raw-item-list" ref={listRef}>
-      <table className="raw-items-table">
+      <table
+        className="raw-items-table"
+        style={{ minWidth: tableMinWidthOf(columns.visibleColumns.map((c) => c.width)) }}
+      >
         <AdminItemManagerTableHead
           sortState={sortState}
           onSortChange={onSortChange}
@@ -216,6 +224,8 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 isChanged={changedIds.has(itemKey)}
                 pathMissing={missingIds.has(itemKey)}
                 linkStatus={linkStatusOf(item)}
+                lastLaunchedAt={usageOf(item)?.lastLaunchedAt}
+                launchCount={usageOf(item)?.count}
                 iconData={getAdminItemIcon(itemIcons, jsonItem)}
                 autoImportRuleName={
                   jsonItem.type === 'item' && jsonItem.autoImportRuleId

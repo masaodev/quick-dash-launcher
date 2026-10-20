@@ -9,7 +9,16 @@ import type { SortColumn } from './editableItemOperations';
  * 並び順はこの配列の順。見出し・行・列のメニューはここを見て描く。見出しの文言は itemManager.table.<id>
  */
 export type AdminItemColumnId =
-  'type' | 'icon' | 'name' | 'pathAndArgs' | 'memo' | 'source' | 'link' | 'updatedAt';
+  | 'type'
+  | 'icon'
+  | 'name'
+  | 'pathAndArgs'
+  | 'memo'
+  | 'source'
+  | 'link'
+  | 'lastLaunched'
+  | 'launchCount'
+  | 'updatedAt';
 
 export interface AdminItemColumnDef {
   id: AdminItemColumnId;
@@ -25,12 +34,15 @@ export interface AdminItemColumnDef {
   defaultVisible: boolean;
   /** ドラッグで幅を変えられるときの最小幅（px）。変えられない列は undefined */
   minWidth?: number;
+  /** 既定の幅（px）。残りの幅を使う列（パスと引数）は undefined */
+  defaultWidth?: number;
 }
 
 export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
   {
     id: 'type',
     className: 'type-column',
+    defaultWidth: 140,
     sortColumn: 'type',
     filterable: true,
     hideable: true,
@@ -40,12 +52,14 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
   {
     id: 'icon',
     className: 'icon-column',
+    defaultWidth: 32,
     hideable: true,
     defaultVisible: true,
   },
   {
     id: 'name',
     className: 'name-column',
+    defaultWidth: 180,
     sortColumn: 'displayName',
     filterable: true,
     hideable: false,
@@ -64,6 +78,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
   {
     id: 'memo',
     className: 'memo-column',
+    defaultWidth: 150,
     sortColumn: 'memo',
     filterable: true,
     hideable: true,
@@ -74,6 +89,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
   {
     id: 'source',
     className: 'source-column',
+    defaultWidth: 90,
     sortColumn: 'source',
     filterable: true,
     hideable: true,
@@ -84,14 +100,36 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
   {
     id: 'link',
     className: 'link-column',
+    defaultWidth: 110,
     filterable: true,
     hideable: true,
     defaultVisible: false,
     minWidth: 60,
   },
+  // 起動の記録（item-usage.json）。回数は既定では隠す
+  {
+    id: 'lastLaunched',
+    className: 'last-launched-column',
+    defaultWidth: 120,
+    sortColumn: 'lastLaunched',
+    filterable: true,
+    hideable: true,
+    defaultVisible: true,
+    minWidth: 80,
+  },
+  {
+    id: 'launchCount',
+    className: 'launch-count-column',
+    defaultWidth: 80,
+    sortColumn: 'launchCount',
+    hideable: true,
+    defaultVisible: false,
+    minWidth: 50,
+  },
   {
     id: 'updatedAt',
     className: 'updated-at-column',
+    defaultWidth: 120,
     sortColumn: 'updatedAt',
     filterable: true,
     hideable: true,
@@ -137,12 +175,26 @@ export function isColumnVisible(
   return setting.visible[column.id] ?? column.defaultVisible;
 }
 
-/** 列の幅（px）。ドラッグで変えていなければ null（CSS の既定の幅） */
+/** 列の幅（px）。ドラッグで変えた幅、無ければ既定の幅。残りの幅を使う列は null */
 export function columnWidthOf(
   column: AdminItemColumnDef,
   setting: AdminItemColumnsSetting
 ): number | null {
-  if (column.minWidth === undefined) return null;
-  const width = setting.widths[column.id];
-  return width === undefined ? null : Math.max(column.minWidth, width);
+  if (column.defaultWidth === undefined) return null;
+  const width = column.minWidth === undefined ? undefined : setting.widths[column.id];
+  return width === undefined ? column.defaultWidth : Math.max(column.minWidth ?? 0, width);
+}
+
+/** 選択・操作の列の幅（px。CSS と同じ） */
+const FIXED_COLUMNS_WIDTH = 40 + 70;
+/** パスと引数の列に残す最低の幅（px）。足りなければ一覧を横にスクロールする */
+export const PATH_COLUMN_MIN_WIDTH = 220;
+
+/** 一覧の表の最小幅（列が多くてもパスと引数の列が潰れないように） */
+export function tableMinWidthOf(widths: Array<number | null>): number {
+  return (
+    FIXED_COLUMNS_WIDTH +
+    PATH_COLUMN_MIN_WIDTH +
+    widths.reduce<number>((sum, w) => sum + (w ?? 0), 0)
+  );
 }

@@ -1081,6 +1081,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         exists: '✓ Found',
         unknown: "? Couldn't check",
       },
+      usageSince: 'Recorded since {{date}} (earlier launches are not included)',
+      lastLaunched: {
+        within7: 'Opened in the last 7 days',
+        within30: 'Opened in the last 30 days',
+        notWithin90: 'Not opened for 90+ days (including never)',
+        never: 'No record',
+      },
       updatedAt: {
         within7: 'Last 7 days',
         within30: 'Last 30 days',
@@ -1104,6 +1111,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       memo: 'Note',
       source: 'Source',
       link: 'Link',
+      lastLaunched: 'Last opened',
+      launchCount: 'Times opened',
       icon: 'Icon',
       columnMenuHint:
         'Right-click to choose columns. Drag the right edge of a header to resize it.',
@@ -2143,6 +2152,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       autoLaunchEnabledByWindows:
         'Startup is turned on in Windows settings. To stop it, select this check box and clear it again, or turn it off in Windows Settings > Apps > Startup.',
       cli: 'Enable QuickDashLauncher CLI',
+      recordLaunchUsage: 'Keep a launch history',
+      recordLaunchUsageDescription:
+        'Records when and how often you open each item, shown in the Last opened and Times opened columns in Item Manager (saved only in item-usage.json in the settings folder on this PC).',
       cliDescription:
         'Lets terminals and AI tools work with items and workspaces through the qdl command (adds qdl to PATH; use it from a new terminal window).',
     },

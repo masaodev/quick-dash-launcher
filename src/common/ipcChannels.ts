@@ -32,6 +32,8 @@ export const IPC_CHANNELS = {
   DIR_PREVIEW_CANCEL: 'dir-preview:cancel',
   /** パスが実在するかをまとめて確認する（アイテム管理のリンク切れ表示） */
   CHECK_PATHS_EXIST: 'check-paths-exist',
+  /** アイテムを起動した記録（アイテム管理の最終起動・起動回数） */
+  GET_LAUNCH_USAGE: 'launch-usage:get',
   /** アイテム管理の CSV を保存先を選んで書く */
   ITEMS_CSV_EXPORT: 'items-csv:export',
   /** アイテム管理に取り込む CSV を選んで読む */

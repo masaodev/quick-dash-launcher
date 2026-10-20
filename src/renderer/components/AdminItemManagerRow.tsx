@@ -35,6 +35,9 @@ export interface AdminItemManagerRowProps {
   pathMissing: boolean;
   /** 「リンク切れを確認」の結果（確認していない・対象外なら undefined） */
   linkStatus?: PathExistenceStatus;
+  /** 最後に起動した日時と回数（記録が無ければ undefined） */
+  lastLaunchedAt?: number;
+  launchCount?: number;
   /** この行で編集中のセル。編集中でなければ null */
   editingColumn: 'name' | 'path' | 'memo' | null;
   /** 編集中の入力値（この行が編集中のときだけ意味を持つ） */
@@ -81,6 +84,8 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   autoImportRuleName,
   pathMissing,
   linkStatus,
+  lastLaunchedAt,
+  launchCount,
   editingColumn,
   editingValue,
   measureRef,
@@ -420,6 +425,18 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
             return (
               <td key={column} className="link-column">
                 {renderLinkCell()}
+              </td>
+            );
+          case 'lastLaunched':
+            return (
+              <td key={column} className="last-launched-column">
+                {lastLaunchedAt ? formatUpdatedAt(lastLaunchedAt) : '-'}
+              </td>
+            );
+          case 'launchCount':
+            return (
+              <td key={column} className="launch-count-column">
+                {launchCount ?? '-'}
               </td>
             );
           case 'updatedAt':

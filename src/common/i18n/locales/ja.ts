@@ -1085,6 +1085,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         exists: '✓ ある',
         unknown: '? 確認できない',
       },
+      usageSince: '記録は {{date}} から（それより前の起動は入っていません）',
+      lastLaunched: {
+        within7: '7 日以内に起動',
+        within30: '30 日以内に起動',
+        notWithin90: '90 日以上起動していない（記録なしを含む）',
+        never: '記録なし',
+      },
       updatedAt: {
         within7: '7 日以内',
         within30: '30 日以内',
@@ -1108,6 +1115,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memo: 'メモ',
       source: '取込元',
       link: 'リンク',
+      lastLaunched: '最終起動',
+      launchCount: '起動回数',
       icon: 'アイコン',
       columnMenuHint:
         '右クリックで列の表示を変えられます。見出しの右端をドラッグすると幅を変えられます',
@@ -2153,6 +2162,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       autoLaunchEnabledByWindows:
         'Windows の設定で自動起動が有効になっています。止めるときは、チェックを付けてから外すか、Windows の［設定］→［アプリ］→［スタートアップ］でオフにしてください。',
       cli: 'QuickDashLauncher CLI を使えるようにする',
+      recordLaunchUsage: '起動の記録を残す',
+      recordLaunchUsageDescription:
+        'アイテムを起動した日時と回数を記録し、アイテム管理の「最終起動」「起動回数」の列に出します（この PC の設定フォルダの item-usage.json にだけ書きます）。',
       cliDescription:
         'ターミナルや AI から qdl コマンドで、アイテムやワークスペースを操作できるようにします（qdl を PATH に追加します。新しく開いたターミナルから使えます）。',
     },

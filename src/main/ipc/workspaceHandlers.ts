@@ -39,6 +39,7 @@ import {
   resolveSetEntry,
 } from '../services/launch/setExecutor.js';
 import { notifyLaunchFailure, openSingleItem } from '../services/launch/itemOpener.js';
+import { LaunchUsageService } from '../services/launchUsageService.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 
@@ -345,6 +346,8 @@ export function setupWorkspaceHandlers(): void {
       if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
         return { success: false };
       }
+      // ワークスペースのアイテムはメインのコピーで id が違うので、パスと引数でメインのアイテムに寄せる
+      await LaunchUsageService.getInstance()?.recordByPath(item.path, item.args);
 
       logger.info(
         { id: item.id, name: item.displayName, path: item.path },

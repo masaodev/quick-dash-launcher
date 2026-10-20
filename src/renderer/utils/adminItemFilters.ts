@@ -18,6 +18,10 @@ export type SourceFilter = 'manual-only' | 'auto-import-only' | (string & {});
 /** リンク（「リンク切れを確認」の結果） */
 export type LinkFilter = 'missing' | 'exists' | 'unknown';
 
+/** 最終起動（「90 日以上起動していない」は記録の無い行も含める） */
+export const LAST_LAUNCHED_FILTERS = ['within7', 'within30', 'notWithin90', 'never'] as const;
+export type LastLaunchedFilter = (typeof LAST_LAUNCHED_FILTERS)[number];
+
 /** 更新日 */
 export const UPDATED_AT_FILTERS = ['within7', 'within30', 'olderThan365', 'none'] as const;
 export type UpdatedAtFilter = (typeof UPDATED_AT_FILTERS)[number];
@@ -32,6 +36,7 @@ export interface ColumnFilters {
   memo?: TextFilter;
   source?: SourceFilter;
   link?: LinkFilter;
+  lastLaunched?: LastLaunchedFilter;
   updatedAt?: UpdatedAtFilter;
 }
 
@@ -75,9 +80,23 @@ function matchesUpdatedAt(updatedAt: number | undefined, filter: UpdatedAtFilter
   return age >= 365 * DAY_MS;
 }
 
+function matchesLastLaunched(
+  lastLaunchedAt: number | undefined,
+  filter: LastLaunchedFilter,
+  now: number
+) {
+  if (filter === 'never') return lastLaunchedAt === undefined;
+  if (filter === 'notWithin90')
+    return lastLaunchedAt === undefined || now - lastLaunchedAt >= 90 * DAY_MS;
+  if (lastLaunchedAt === undefined) return false;
+  return now - lastLaunchedAt <= (filter === 'within7' ? 7 : 30) * DAY_MS;
+}
+
 export interface FilterContext {
   /** リンクの確認結果（確認していない・対象外のパスは undefined） */
   linkStatusOf: (item: EditableJsonItem) => PathExistenceStatus | undefined;
+  /** 起動の記録（記録が無ければ undefined） */
+  lastLaunchedAtOf: (item: EditableJsonItem) => number | undefined;
   now: number;
 }
 
@@ -94,6 +113,12 @@ export function matchesColumnFilters(
   if (!matchesText(item.item.memo ?? '', filters.memo)) return false;
   if (!matchesSource(item, filters.source)) return false;
   if (filters.link && context.linkStatusOf(item) !== filters.link) return false;
+  if (
+    filters.lastLaunched &&
+    !matchesLastLaunched(context.lastLaunchedAtOf(item), filters.lastLaunched, context.now)
+  ) {
+    return false;
+  }
   if (filters.updatedAt && !matchesUpdatedAt(item.item.updatedAt, filters.updatedAt, context.now)) {
     return false;
   }
@@ -123,6 +148,7 @@ export function activeFilterColumns(filters: ColumnFilters): FilterableColumnId[
     'memo',
     'source',
     'link',
+    'lastLaunched',
     'updatedAt',
   ];
   return order.filter((column) => isActiveFilter(column, filters[column]));

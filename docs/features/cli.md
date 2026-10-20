@@ -129,6 +129,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | --- | --- | --- |
 | 表示 | `language` | `auto`・`ja`・`en` |
 | 表示 | `showKeyboardHints`・`showDataFileTabs` | `true`・`false` |
+| システム | `recordLaunchUsage` | `true`・`false`（起動の記録を残す） |
 | 表示 | `defaultFileTab` | 起動したときに開くタブの、データファイル（`data2.json` など）。どれかのタブに入っているものだけ |
 | ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
 | メイン | `windowWidth`・`windowHeight` | 400〜2000・300〜1200 |

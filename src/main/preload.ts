@@ -138,6 +138,7 @@ const electronAPI: ElectronAPI = {
   exportItemsCsv: (text, defaultName) =>
     ipcRenderer.invoke(IPC_CHANNELS.ITEMS_CSV_EXPORT, text, defaultName),
   readItemsCsv: () => ipcRenderer.invoke(IPC_CHANNELS.ITEMS_CSV_READ),
+  getLaunchUsage: () => ipcRenderer.invoke(IPC_CHANNELS.GET_LAUNCH_USAGE),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
   getAllWindows: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS),

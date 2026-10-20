@@ -14,6 +14,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { PathManager } from '../config/pathManager.js';
 import { mainI18n } from '../services/mainI18n.js';
+import { LaunchUsageService } from '../services/launchUsageService.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
 import { getDefaultBrowser, getFileHandler } from '../utils/defaultBrowser.js';
@@ -123,6 +124,12 @@ export function setupDataHandlers(configFolder: string) {
       await fs.promises.writeFile(result.filePath, '\uFEFF' + text, 'utf8');
       return result.filePath;
     }
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.GET_LAUNCH_USAGE,
+    () =>
+      LaunchUsageService.getInstance()?.getSnapshot() ?? { since: Date.now(), byId: {}, byPath: {} }
   );
 
   ipcMain.handle(IPC_CHANNELS.ITEMS_CSV_READ, async (event) => {

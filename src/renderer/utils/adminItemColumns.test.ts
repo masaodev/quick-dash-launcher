@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ADMIN_ITEM_COLUMNS,
+  PATH_COLUMN_MIN_WIDTH,
+  tableMinWidthOf,
   columnWidthOf,
   isColumnVisible,
   normalizeColumnsSetting,
@@ -37,15 +39,20 @@ describe('isColumnVisible', () => {
 });
 
 describe('columnWidthOf', () => {
-  it('変えていなければ null、最小幅より狭い値は最小幅にする', () => {
-    expect(columnWidthOf(column('name'), { visible: {}, widths: {} })).toBeNull();
+  it('変えていなければ既定の幅、最小幅より狭い値は最小幅にする', () => {
+    expect(columnWidthOf(column('name'), { visible: {}, widths: {} })).toBe(180);
     expect(columnWidthOf(column('name'), { visible: {}, widths: { name: 40 } })).toBe(100);
     expect(columnWidthOf(column('name'), { visible: {}, widths: { name: 240 } })).toBe(240);
   });
 
-  it('幅を変えられない列は保存された幅を使わない', () => {
+  it('幅を変えられない列は保存された幅を使わない。残りの幅を使う列は null', () => {
+    expect(columnWidthOf(column('icon'), { visible: {}, widths: { icon: 300 } })).toBe(32);
     expect(
       columnWidthOf(column('pathAndArgs'), { visible: {}, widths: { pathAndArgs: 300 } })
     ).toBeNull();
+  });
+
+  it('表の最小幅は、選択・操作の列とパスの最低幅に、ほかの列の幅を足したもの', () => {
+    expect(tableMinWidthOf([100, null, 50])).toBe(40 + 70 + PATH_COLUMN_MIN_WIDTH + 150);
   });
 });

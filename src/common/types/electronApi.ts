@@ -9,6 +9,7 @@ import type { ProgressEventType } from '../ipcChannels';
 import type { ScreenArea } from '../utils/placementLabel';
 
 import type { SetItemFields } from './launcher';
+import type { LaunchUsageSnapshot } from './launchUsage';
 import type {
   EditableJsonItem,
   LoadEditableItemsResult,
@@ -178,6 +179,8 @@ export interface ElectronAPI {
   exportItemsCsv: (text: string, defaultName: string) => Promise<string | null>;
   /** アイテム管理に取り込む CSV を選んでもらって読む。選ぶのをやめたら null */
   readItemsCsv: () => Promise<{ filePath: string; text: string } | null>;
+  /** アイテムを起動した記録（item-usage.json） */
+  getLaunchUsage: () => Promise<LaunchUsageSnapshot>;
   getPathForFile: (file: File) => string;
   quitApp: () => Promise<void>;
   getAllWindows: () => Promise<WindowInfo[]>;

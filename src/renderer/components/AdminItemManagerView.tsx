@@ -10,6 +10,7 @@ import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useAdminItemImports } from '../hooks/useAdminItemImports';
 import { useAdminItemColumns } from '../hooks/useAdminItemColumns';
 import { useAdminItemListView } from '../hooks/useAdminItemListView';
+import { useLaunchUsage } from '../hooks/useLaunchUsage';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
@@ -202,6 +203,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [workingItems, selectedDataFile]
   );
 
+  const launchUsage = useLaunchUsage();
   const listView = useAdminItemListView({
     workingItems,
     baseVersion,
@@ -209,6 +211,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     searchQuery,
     selectedItems,
     retainVisibleSelection: editing.retainVisibleSelection,
+    usageOf: launchUsage.usageOf,
   });
   const {
     sortState,
@@ -228,8 +231,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const columns = useAdminItemColumns();
 
   const filterOptions = useMemo(
-    () => ({ rules: currentFileRules, linkChecked: pathCheck.hasChecked }),
-    [currentFileRules, pathCheck.hasChecked]
+    () => ({
+      rules: currentFileRules,
+      linkChecked: pathCheck.hasChecked,
+      usageSince: launchUsage.since,
+    }),
+    [currentFileRules, pathCheck.hasChecked, launchUsage.since]
   );
 
   const handleCheckMissingPaths = async () => {
@@ -608,6 +615,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           onFilterChange={setColumnFilter}
           filterOptions={filterOptions}
           linkStatusOf={linkStatusOf}
+          usageOf={launchUsage.usageOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}
           onItemEdit={editing.recordEdit}

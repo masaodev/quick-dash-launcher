@@ -13,6 +13,7 @@ import { hideMainWindowOnExecute } from '../windowManager.js';
 import { executeSet, indexItemsById, notifySetFailures } from '../services/launch/setExecutor.js';
 import { openSingleItem } from '../services/launch/itemOpener.js';
 import { mainI18n } from '../services/mainI18n.js';
+import { LaunchUsageService } from '../services/launchUsageService.js';
 
 async function openItem(item: LauncherItem): Promise<void> {
   itemLogger.info(
@@ -27,7 +28,12 @@ async function openItem(item: LauncherItem): Promise<void> {
     'アイテムを起動中'
   );
 
-  await openSingleItem(item);
+  if (await openSingleItem(item)) {
+    // フォルダ取込で展開したアイテムは id がその場で振られるので、パスで記録する
+    const usage = LaunchUsageService.getInstance();
+    if (item.id && !item.isDirExpanded) await usage?.recordById(item.id);
+    else await usage?.recordByPath(item.path, item.args);
+  }
 }
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
@@ -86,6 +92,7 @@ export function setupItemHandlers(): void {
     const byId = indexItemsById(allItems);
     const result = await executeSet(item, (itemId) => byId.get(itemId));
     await notifySetFailures(item, result);
+    await LaunchUsageService.getInstance()?.recordById(item.id);
   });
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {
