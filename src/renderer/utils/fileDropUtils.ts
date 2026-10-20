@@ -4,6 +4,16 @@ import { logError } from './debug';
 
 type DropEvent = DragEvent | React.DragEvent;
 
+/**
+ * 落とせば登録できるもの（ファイル・URL・テキスト）を持つドラッグか
+ *
+ * ワークスペースのグループのように、どれも持たないドラッグでは「ドロップして登録」を出さない（落としても何も起きないため）
+ */
+export function hasDroppableData(dataTransfer: DataTransfer | null | undefined): boolean {
+  const types = dataTransfer?.types ?? [];
+  return types.includes('Files') || types.includes('text/uri-list') || types.includes('text/plain');
+}
+
 function isHttpUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
 }

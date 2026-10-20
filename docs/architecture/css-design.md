@@ -29,7 +29,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 
 | カテゴリ | 命名の型 |
 | --- | --- |
-| 色 | `--color-{primary\|success\|danger\|warning\|info\|secondary}`、派生は `-hover` / `-dark` / `-light` / `-alt` など |
+| 色 | `--color-{primary\|success\|danger\|warning\|info\|secondary}`、派生は `-hover` / `-dark` / `-light` / `-alt` など。モーダルの後ろを暗くする幕は `--color-overlay` |
 | グレースケール | `--color-white`、`--color-gray-{50〜900}`（数字が大きいほど濃い） |
 | 背景 | `--bg-{用途}`（例 `--bg-app`、`--bg-selected`、`--bg-hover`、`--bg-danger-light`） |
 | 文字色 | `--text-{用途}`（例 `--text-primary`、`--text-muted`、`--text-error`） |
@@ -71,7 +71,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | タブバー | `.tab-bar`、`.tab-button`、`.tab-count`、`.tab-name-input` | タブ切り替えとアイテム数表示、タブ名の編集 |
 | フォーム | `.input-base`、`.select-base`、`.form-group`、`.validation-error` | 入力欄・セレクト・ラベル付きの行・エラー表示 |
 | レイアウト | `.flex-center`、`.flex-between`、`.flex-start`、`.flex-end`、`.flex-col`、`.flex-wrap`、`.flex-1`、`.gap-{xs〜xl}` | フレックスボックスの配置と間隔 |
-| テーブル | `.table-base` | 一覧表（行の `selected`/`readonly`/`edited` 状態つき） |
+| テーブル | `.table-base`、`.virtual-spacer-row` | 一覧表（行の `selected`/`readonly`/`edited` 状態つき）。仮想スクロールの表の高さを埋める行（`VirtualSpacerRow`） |
 | モーダル | `.modal-overlay-base`、`.modal-content-base`、`.modal-header-base`、`.modal-footer-base` | モーダルの骨格 |
 | ユーティリティ | `.loading-overlay`、`.text-*`、`.font-*`、`.mb-*`、`.cursor-*`、`.overflow-*`、`.no-drag`/`.drag` | 単一目的の小さな指定 |
 | 不透明度スライダー | `.opacity-control`、`.opacity-slider`、`.opacity-value` | 設定画面のワークスペース不透明度 |

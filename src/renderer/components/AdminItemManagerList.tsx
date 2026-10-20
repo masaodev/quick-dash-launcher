@@ -12,6 +12,7 @@ import { getItemKey, type SortColumn, type SortState } from '../utils/editableIt
 
 import AdminItemManagerRow from './AdminItemManagerRow';
 import AdminItemManagerTableHead from './AdminItemManagerTableHead';
+import VirtualSpacerRow from './VirtualSpacerRow';
 
 /** 一覧のテーブルの列数（スペーサー行の colSpan に使う） */
 const COLUMN_COUNT = 7;
@@ -137,14 +138,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
           onNameResizeMouseDown={nameColumn.handleMouseDown}
         />
         <tbody>
-          {paddingTop > 0 && (
-            <tr aria-hidden="true">
-              <td
-                colSpan={COLUMN_COUNT}
-                style={{ height: paddingTop, padding: 0, border: 'none' }}
-              />
-            </tr>
-          )}
+          <VirtualSpacerRow height={paddingTop} colSpan={COLUMN_COUNT} />
           {virtualRows.map((virtualRow) => {
             const item = editableItems[virtualRow.index];
             const itemKey = getItemKey(item);
@@ -183,14 +177,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
               />
             );
           })}
-          {paddingBottom > 0 && (
-            <tr aria-hidden="true">
-              <td
-                colSpan={COLUMN_COUNT}
-                style={{ height: paddingBottom, padding: 0, border: 'none' }}
-              />
-            </tr>
-          )}
+          <VirtualSpacerRow height={paddingBottom} colSpan={COLUMN_COUNT} />
         </tbody>
       </table>
 

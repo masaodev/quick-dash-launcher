@@ -17,23 +17,13 @@ export interface ConfirmDialogState {
   danger?: boolean;
 }
 
-export function useDialogManager() {
-  // トーストフック
-  const { showSuccess, showError, showInfo, showWarning, showToast, dismissAll } = useToast();
-
+/** AlertDialog の表示状態（メッセージ・種類）を持つ */
+export function useAlertDialog() {
   const [alertDialog, setAlertDialog] = useState<AlertDialogState>({
     isOpen: false,
     message: '',
     type: 'info',
   });
-
-  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
-    isOpen: false,
-    message: '',
-    danger: false,
-  });
-
-  const confirmResolveRef = useRef<((value: boolean) => void) | null>(null);
 
   const showAlert = useCallback((message: string, type: AlertDialogState['type'] = 'info') => {
     setAlertDialog({
@@ -46,6 +36,23 @@ export function useDialogManager() {
   const closeAlert = useCallback(() => {
     setAlertDialog((prev) => ({ ...prev, isOpen: false }));
   }, []);
+
+  return { alertDialog, showAlert, closeAlert };
+}
+
+export function useDialogManager() {
+  // トーストフック
+  const { showSuccess, showError, showInfo, showWarning, showToast, dismissAll } = useToast();
+
+  const { alertDialog, showAlert, closeAlert } = useAlertDialog();
+
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    isOpen: false,
+    message: '',
+    danger: false,
+  });
+
+  const confirmResolveRef = useRef<((value: boolean) => void) | null>(null);
 
   const showConfirm = useCallback(
     (

@@ -1,3 +1,5 @@
+import type { LauncherItem } from '@common/types';
+
 import { logError } from './debug';
 
 /**
@@ -27,4 +29,23 @@ export async function loadCustomIcons(
   );
 
   return icons;
+}
+
+/**
+ * 一覧に出すアイコンをまとめて読む（path を持つアイテムはキャッシュから、クリップボード・セットはカスタムアイコンのファイル名で）
+ *
+ * path を持つアイテムが無ければ loadCachedIcons は呼ばない。
+ *
+ * @returns [path → データ URL, カスタムアイコンのファイル名 → データ URL]
+ */
+export async function loadItemIcons(
+  launchers: LauncherItem[],
+  customIconNames: ReadonlyArray<string | undefined>
+): Promise<[Record<string, string>, Record<string, string>]> {
+  return Promise.all([
+    launchers.length > 0
+      ? window.electronAPI.loadCachedIcons(launchers)
+      : Promise.resolve<Record<string, string>>({}),
+    loadCustomIcons(customIconNames),
+  ]);
 }

@@ -440,6 +440,13 @@
   background-color: var(--bg-edited);
 }
 
+/* 仮想スクロールの表で、描画していない行の高さを埋める行（VirtualSpacerRow）。
+   各表の td の padding・枠線より優先させる */
+.virtual-spacer-row .virtual-spacer-cell {
+  padding: 0;
+  border: none;
+}
+
 /* =========================
    モーダル共通スタイル
    ========================= */
@@ -449,7 +456,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

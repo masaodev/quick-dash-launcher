@@ -275,12 +275,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       e.stopPropagation();
 
       // 2 つ以上は確認の帯を出してから閉じる（Enter で閉じる・Esc でやめる）
-      const targets = windowTargets();
-      if (targets.length >= 2) {
-        windowSelection.setPendingClose(targets);
-      } else {
-        await windowOps.closeWindows(targets);
-      }
+      await windowSelection.requestClose(windowTargets(), windowOps.closeWindows);
       return;
     }
 

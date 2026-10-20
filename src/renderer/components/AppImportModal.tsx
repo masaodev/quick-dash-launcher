@@ -6,6 +6,7 @@ import type { ScannedAppItem, DuplicateHandlingOption, DataFileTab } from '@comm
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
 
+import { useAlertDialog } from '../hooks/useDialogManager';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
   NEW_FILE,
@@ -13,11 +14,13 @@ import {
   type ImportDestination,
 } from '../hooks/useImportDestination';
 import { logError } from '../utils/debug';
+import { toggleInSet } from '../utils/setUtils';
 
 import AlertDialog from './AlertDialog';
 import { Button } from './ui';
 import DuplicateHandlingSection from './DuplicateHandlingSection';
 import ImportDestinationBand from './ImportDestinationBand';
+import VirtualSpacerRow from './VirtualSpacerRow';
 
 /**
  * 画面: アプリ取込画面
@@ -100,15 +103,7 @@ function AppImportModal({
   const [importing, setImporting] = useState(false);
 
   // AlertDialog状態管理
-  const [alertDialog, setAlertDialog] = useState<{
-    isOpen: boolean;
-    message: string;
-    type?: 'info' | 'error' | 'warning' | 'success';
-  }>({
-    isOpen: false,
-    message: '',
-    type: 'info',
-  });
+  const { alertDialog, showAlert, closeAlert } = useAlertDialog();
 
   // 各フィルタで除外される件数
   const filterCounts = useMemo(() => {
@@ -239,11 +234,7 @@ function AppImportModal({
         setApps(result.apps);
 
         if (result.apps.length === 0) {
-          setAlertDialog({
-            isOpen: true,
-            message: t('appImport.notFound'),
-            type: 'info',
-          });
+          showAlert(t('appImport.notFound'), 'info');
         }
 
         // バックグラウンドでアイコンを取得
@@ -251,11 +242,7 @@ function AppImportModal({
       } catch (error) {
         if (controller.signal.aborted) return;
         logError('Error scanning installed apps:', error);
-        setAlertDialog({
-          isOpen: true,
-          message: t('appImport.scanFailed'),
-          type: 'error',
-        });
+        showAlert(t('appImport.scanFailed'), 'error');
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -318,15 +305,7 @@ function AppImportModal({
   };
 
   const handleToggleApp = (id: string) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
+    setSelectedIds((prev) => toggleInSet(prev, id));
   };
 
   // モーダルを閉じる
@@ -502,11 +481,7 @@ function AppImportModal({
                 </tr>
               </thead>
               <tbody>
-                {paddingTop > 0 && (
-                  <tr aria-hidden="true">
-                    <td colSpan={4} style={{ height: paddingTop, padding: 0, border: 'none' }} />
-                  </tr>
-                )}
+                <VirtualSpacerRow height={paddingTop} colSpan={4} />
                 {virtualRows.map((virtualRow) => {
                   const app = visibleApps[virtualRow.index];
                   const icon = iconsRef.current.get(app.shortcutPath);
@@ -565,11 +540,7 @@ function AppImportModal({
                     </tr>
                   );
                 })}
-                {paddingBottom > 0 && (
-                  <tr aria-hidden="true">
-                    <td colSpan={4} style={{ height: paddingBottom, padding: 0, border: 'none' }} />
-                  </tr>
-                )}
+                <VirtualSpacerRow height={paddingBottom} colSpan={4} />
               </tbody>
             </table>
             {!loading && apps.length > 0 && visibleApps.length === 0 && (
@@ -609,7 +580,7 @@ function AppImportModal({
 
       <AlertDialog
         isOpen={alertDialog.isOpen}
-        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        onClose={closeAlert}
         message={alertDialog.message}
         type={alertDialog.type}
       />

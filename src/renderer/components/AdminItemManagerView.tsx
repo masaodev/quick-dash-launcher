@@ -636,13 +636,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   }, [dataFileTabs.length, selectedTabIndex]);
 
-  // 初回マウント時のみ最初のタブを選択
-  useEffect(() => {
-    if (dataFileTabs.length > 0) {
-      setSelectedTabIndex(0);
-    }
-  }, []);
-
   // メインウィンドウからのインポートモーダル表示リクエストを処理
   useEffect(() => {
     if (!pendingImportModal) return;

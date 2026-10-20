@@ -12,14 +12,9 @@ import AdminTabContainer from './components/AdminTabContainer';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import { useAdminItemEditing, type AdminItemEditing } from './hooks/useAdminItemEditing';
+import { useAlertDialog } from './hooks/useDialogManager';
 import type { SettingsCategory } from './utils/settingsResetKeys';
 import { debugInfo, logError } from './utils/debug';
-
-type AlertDialogState = {
-  isOpen: boolean;
-  message: string;
-  type: 'info' | 'error' | 'warning' | 'success';
-};
 
 const AdminApp: React.FC = () => {
   const { t } = useTranslation();
@@ -39,11 +34,7 @@ const AdminApp: React.FC = () => {
   const [pendingImportModal, setPendingImportModal] = useState<'bookmark' | 'app' | null>(null);
   // 設定タブで開いているカテゴリ。アイテム管理（手動取込）から「ブックマーク自動取込」を直接開けるよう、ここで持つ
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('basic');
-  const [alertDialog, setAlertDialog] = useState<AlertDialogState>({
-    isOpen: false,
-    message: '',
-    type: 'info',
-  });
+  const { alertDialog, showAlert, closeAlert } = useAlertDialog();
   // × が押されたときの未保存確認
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   // イベント購読は初回だけ登録するので、最新の編集状態は ref 経由で読む
@@ -128,11 +119,7 @@ const AdminApp: React.FC = () => {
   async function handleEditableItemsSave(newEditableItems: EditableJsonItem[]): Promise<boolean> {
     if (!fileHashes) {
       // 読み込みに失敗した状態で全件を書くと、読めなかったファイルを空で上書きしてしまう
-      setAlertDialog({
-        isOpen: true,
-        message: t('admin.saveBlockedByLoadError'),
-        type: 'error',
-      });
+      showAlert(t('admin.saveBlockedByLoadError'), 'error');
       return false;
     }
 
@@ -148,19 +135,11 @@ const AdminApp: React.FC = () => {
       if (message.includes(EXTERNAL_CHANGE_CONFLICT_MARKER)) {
         // 読み込み後に外部（または他の画面）で変更されている。上書きせず最新を読み直す。
         // 未保存の編集は useAdminItemEditing が新しい内容の上に載せ直す
-        setAlertDialog({
-          isOpen: true,
-          message: t('admin.externalChangeConflict'),
-          type: 'warning',
-        });
+        showAlert(t('admin.externalChangeConflict'), 'warning');
         await loadData(false);
         return false;
       }
-      setAlertDialog({
-        isOpen: true,
-        message: t('admin.itemSaveFailed', { error: message }),
-        type: 'error',
-      });
+      showAlert(t('admin.itemSaveFailed', { error: message }), 'error');
       return false;
     }
   }
@@ -178,11 +157,7 @@ const AdminApp: React.FC = () => {
         const success = await window.electronAPI.changeHotkey(newSettings.hotkey);
         if (!success) {
           logError('Failed to register new hotkey:', newSettings.hotkey);
-          setAlertDialog({
-            isOpen: true,
-            message: t('admin.hotkeyRegisterFailed', { hotkey: newSettings.hotkey }),
-            type: 'error',
-          });
+          showAlert(t('admin.hotkeyRegisterFailed', { hotkey: newSettings.hotkey }), 'error');
           return;
         }
         debugInfo(`Hotkey changed successfully to: ${newSettings.hotkey}`);
@@ -192,11 +167,7 @@ const AdminApp: React.FC = () => {
       debugInfo('Settings saved successfully');
     } catch (error) {
       logError('Failed to save settings:', error);
-      setAlertDialog({
-        isOpen: true,
-        message: t('admin.settingsSaveFailed'),
-        type: 'error',
-      });
+      showAlert(t('admin.settingsSaveFailed'), 'error');
     }
   }
 
@@ -250,7 +221,7 @@ const AdminApp: React.FC = () => {
 
       <AlertDialog
         isOpen={alertDialog.isOpen}
-        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+        onClose={closeAlert}
         message={alertDialog.message}
         type={alertDialog.type}
       />

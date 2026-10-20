@@ -4,7 +4,7 @@ import { isJsonLauncherItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 
-import { loadCustomIcons } from '../utils/customIcons';
+import { loadItemIcons } from '../utils/customIcons';
 
 /** path を持たない種別（クリップボード・セット）のカスタムアイコンを Map に入れるときのキー */
 function customIconKey(fileName: string): string {
@@ -84,12 +84,7 @@ export function useAdminItemIcons(items: EditableJsonItem[]): Map<string, string
       customIconFileNames.forEach((name) => fetchedCustomIconsRef.current.add(name));
 
       // loadCachedIcons() でアイコンを一括取得（メイン画面と同じ API）
-      const [iconCache, customIcons] = await Promise.all([
-        launcherItems.length > 0
-          ? window.electronAPI.loadCachedIcons(launcherItems)
-          : Promise.resolve<Record<string, string>>({}),
-        loadCustomIcons(customIconFileNames),
-      ]);
+      const [iconCache, customIcons] = await loadItemIcons(launcherItems, customIconFileNames);
 
       setItemIcons((prev) => {
         const next = new Map(prev);
