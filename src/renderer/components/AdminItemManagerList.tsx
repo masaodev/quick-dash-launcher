@@ -184,6 +184,9 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 onCommitPath={editing.commitPathEdit}
                 onNameKeyDown={editing.handleNameKeyDown}
                 onPathKeyDown={editing.handlePathKeyDown}
+                onStartMemoEdit={editing.startMemoEdit}
+                onCommitMemo={editing.commitMemoEdit}
+                onMemoKeyDown={editing.handleMemoKeyDown}
               />
             );
           })}

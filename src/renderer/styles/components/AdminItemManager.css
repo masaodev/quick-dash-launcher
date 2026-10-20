@@ -806,6 +806,45 @@
   word-break: break-all;
 }
 
+/* メモ列（1 行目だけを出し、編集は下に広がる入力欄で行う） */
+.raw-items-table .memo-column {
+  width: 200px;
+  position: relative;
+  padding: 1px 2px !important;
+}
+
+.raw-items-table .memo-column .memo-cell {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 20px;
+}
+
+.raw-items-table .memo-column .memo-more {
+  margin-left: var(--spacing-xs);
+  color: var(--text-muted);
+}
+
+.raw-items-table .memo-column .memo-edit-textarea {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: max(100%, 320px);
+  height: 120px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-color: var(--color-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
 /* 更新日列 */
 .raw-items-table .updated-at-column {
   width: 140px;

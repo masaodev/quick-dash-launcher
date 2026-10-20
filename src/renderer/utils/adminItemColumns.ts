@@ -7,7 +7,7 @@ import type { SortColumn } from './editableItemOperations';
  *
  * 並び順はこの配列の順。見出し・行・列のメニューはここを見て描く。見出しの文言は itemManager.table.<id>
  */
-export type AdminItemColumnId = 'type' | 'icon' | 'name' | 'pathAndArgs' | 'updatedAt';
+export type AdminItemColumnId = 'type' | 'icon' | 'name' | 'pathAndArgs' | 'memo' | 'updatedAt';
 
 export interface AdminItemColumnDef {
   id: AdminItemColumnId;
@@ -53,6 +53,14 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     sortColumn: 'pathAndArgs',
     hideable: false,
     defaultVisible: true,
+  },
+  {
+    id: 'memo',
+    className: 'memo-column',
+    sortColumn: 'memo',
+    hideable: true,
+    defaultVisible: true,
+    minWidth: 80,
   },
   {
     id: 'updatedAt',

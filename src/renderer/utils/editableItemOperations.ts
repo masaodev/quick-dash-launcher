@@ -605,7 +605,7 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
   }
 }
 
-export type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'updatedAt';
+export type SortColumn = 'type' | 'displayName' | 'pathAndArgs' | 'memo' | 'updatedAt';
 export interface SortState {
   /** null はソートなし（ファイル順） */
   column: SortColumn | null;
@@ -633,9 +633,16 @@ export function sortItemIds(items: EditableJsonItem[], sort: SortState): string[
     if (column === 'type') return item.item.type;
     if (column === 'displayName')
       return 'displayName' in item.item ? item.item.displayName || '' : '';
+    if (column === 'memo') return item.item.memo ?? '';
     return describePathAndArgs(item.item);
   };
   const sorted = [...items].sort((a, b) => {
+    // メモの無い行は昇順でも降順でも最後に置く（メモのある行を見比べたいときに埋もれないように）
+    if (column === 'memo') {
+      const aEmpty = !a.item.memo;
+      const bEmpty = !b.item.memo;
+      if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
+    }
     const comparison =
       column === 'updatedAt'
         ? (a.item.updatedAt || 0) - (b.item.updatedAt || 0)

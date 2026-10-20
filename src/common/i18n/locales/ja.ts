@@ -1076,6 +1076,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       pathAndArgs: 'パスと引数',
       pathAndArgsTitle: 'パスはクリックして編集できます。引数は ✏️ 詳細編集から',
       updatedAt: '更新日',
+      memo: 'メモ',
       icon: 'アイコン',
       columnMenuHint:
         '右クリックで列の表示を変えられます。見出しの右端をドラッグすると幅を変えられます',
@@ -1084,6 +1085,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         'このデータファイルにアイテムがありません。「＋ アイテムを追加」で追加できます。横の ▼ から、ブラウザのブックマークやインストール済みアプリも取り込めます',
     },
     row: {
+      memoTitle: '{{memo}}\n\nクリックして編集（Enter で改行、Ctrl+Enter で確定、Esc で取り消し）',
+      memoEmptyTitle: 'クリックしてメモを書く（Enter で改行、Ctrl+Enter で確定、Esc で取り消し）',
+      memoMoreLines: '2 行目以降あり',
+      memoPlaceholder: 'メモ',
       typeSelectTitle:
         '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',

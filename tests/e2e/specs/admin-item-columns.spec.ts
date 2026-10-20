@@ -86,4 +86,57 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
       await adminWindow.close();
     }
   });
+
+  test('メモ列で複数行のメモを書いて保存でき、1 行目だけが表に出る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    try {
+      const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
+
+      await test.step('メモのセルをクリックし、Enter で改行して Ctrl+Enter で確定する', async () => {
+        await githubRow.locator('.memo-column .memo-cell').click();
+        const textarea = githubRow.locator('.memo-column textarea');
+        await expect(textarea).toBeFocused();
+        await textarea.pressSequentially('仕事用のアカウント');
+        await textarea.press('Enter');
+        await textarea.pressSequentially('2 段階認証あり');
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, 'メモを入力中');
+        await textarea.press('Control+Enter');
+        await expect(textarea).toHaveCount(0);
+
+        const cell = githubRow.locator('.memo-column .memo-cell');
+        await expect(cell).toContainText('仕事用のアカウント');
+        await expect(cell).not.toContainText('2 段階認証あり');
+        await expect(cell.locator('.memo-more')).toBeVisible();
+        await expect(githubRow).toHaveClass(/changed/);
+      });
+
+      await test.step('保存するとデータファイルに複数行のまま書かれる', async () => {
+        await adminWindow.locator('button:has-text("変更を保存")').click();
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
+        await expect
+          .poll(() => configHelper.getItemByDisplayName('data.json', 'GitHub')?.memo)
+          .toBe('仕事用のアカウント\n2 段階認証あり');
+      });
+
+      await test.step('メモを空にして保存すると、メモの項目が消える', async () => {
+        await githubRow.locator('.memo-column .memo-cell').click();
+        const textarea = githubRow.locator('.memo-column textarea');
+        await textarea.fill('');
+        await textarea.press('Control+Enter');
+        await adminWindow.locator('button:has-text("変更を保存")').click();
+        await adminWindow.locator('[data-testid="confirm-dialog-confirm-button"]').click();
+        await expect
+          .poll(() => 'memo' in (configHelper.getItemByDisplayName('data.json', 'GitHub') ?? {}))
+          .toBe(false);
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
 });
