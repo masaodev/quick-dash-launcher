@@ -206,7 +206,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る（`MainChildWindowReturn` は、「更新」なら `{ kind: 'register', items }`、「削除」なら `{ kind: 'delete' }`。削除は管理画面で未保存の削除になる）
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う
-- 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）
+- 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）、グループに追加するアイテムを選ぶウィンドウは `workspace:open-item-picker`（`src/main/workspaceItemPickerWindowManager.ts`）。どちらも要求を預けず、`window.name` の ID（itemId・groupId）だけで中身を決める
 - 詳細は [ウィンドウ制御](window-control.md) を参照
 
 ## 外部で開く

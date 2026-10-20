@@ -825,3 +825,38 @@
 .set-placement-inherited {
   color: var(--text-muted);
 }
+
+/* ===== 独立したウィンドウとして描く（ワークスペースのグループに追加するアイテムを選ぶ） ===== */
+
+.set-picker-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background-color: var(--bg-body);
+  overflow: hidden;
+}
+
+/* モーダルの幅・高さの上限を外し、ウィンドウいっぱいに広げる */
+.set-picker-page .modal-content.set-picker-page-content {
+  max-width: none;
+  width: 100%;
+  max-height: none;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.set-picker-page .set-picker-dest {
+  margin-bottom: var(--spacing-sm);
+}
+
+.set-picker-dest-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.set-picker-missing {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+}

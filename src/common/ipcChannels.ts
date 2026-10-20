@@ -161,6 +161,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_GET_CONFIRM_REQUEST: 'workspace:get-confirm-request',
   WORKSPACE_RETURN_CONFIRM_RESULT: 'workspace:return-confirm-result',
   WORKSPACE_OPEN_ITEM_EDITOR: 'workspace:open-item-editor',
+  WORKSPACE_OPEN_ITEM_PICKER: 'workspace:open-item-picker',
 
   // ワークスペース - グループ管理
   WORKSPACE_LOAD_GROUPS: 'workspace:load-groups',
@@ -277,6 +278,7 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_GROUP_MENU_ARCHIVE: 'workspace-group-menu-archive',
   EVENT_WORKSPACE_GROUP_MENU_DELETE: 'workspace-group-menu-delete',
   EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP: 'workspace-group-menu-add-subgroup',
+  EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN: 'workspace-group-menu-add-from-main',
   EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE: 'workspace-group-menu-move-to-workspace',
 
   // コンテキストメニュー - Workspace Tab

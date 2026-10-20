@@ -356,6 +356,17 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 以前はワークスペースの中に `ConfirmDialog` を描き、収まらないときは `workspace:set-modal-mode` でウィンドウを 600x400 まで広げていた（閉じると戻す）。切り離しウィンドウでは確認ダイアログが描かれず、削除・アーカイブを選んでも何も起きなかった。
 
+### アイテムを選ぶウィンドウ（グループに追加するアイテム）
+
+ワークスペースのグループの右クリック「🔍 メインウィンドウのアイテムから選ぶ…」は、独立した子ウィンドウで開きます。作りはアイテム編集ウィンドウと同じです。
+
+**実装場所**: `src/main/workspaceItemPickerWindowManager.ts`（`openWorkspaceItemPicker`）、`src/renderer/components/WorkspaceItemPickerPage.tsx`（中身。`SetItemPickerModal` をページとして描く）
+
+- 右クリックの項目はイベント `workspace-group-menu-add-from-main`（groupId）でレンダラーに知らせ、レンダラーが IPC `workspace:open-item-picker`（groupId）を呼ぶ。送信元（ワークスペース本体または切り離しウィンドウ）を親にしたモーダルな子ウィンドウを開く
+- ワークスペースのレンダラーから `window.open` で開く。`window.name` は `workspace-picker:<groupId>` で、フォールバック時は URL クエリ `pickGroupId`
+- 位置・サイズは編集ウィンドウと同じ（開き元と同じディスプレイの作業領域の中央に 850x800 を切り詰め）。**開き元のウィンドウのサイズ・位置は変えない**。同じグループの画面が開いていれば前面に出す。閉じると破棄
+- 追加は `workspace:add-item`（groupId・workspaceId つき）で 1 件ずつ行い、変更通知でワークスペース側が読み直す。追加し終えたら `window.close()` する
+
 ## ウィンドウ位置・サイズ制御
 
 ### 概要

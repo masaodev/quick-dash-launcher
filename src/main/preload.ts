@@ -312,6 +312,8 @@ const electronAPI: ElectronAPI = {
     getAlwaysOnTop: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP),
     toggleAlwaysOnTop: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP),
     openItemEditor: (itemId) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, itemId),
+    openItemPicker: (groupId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_PICKER, groupId),
     openConfirm: (request) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_CONFIRM, request),
     getConfirmRequest: (requestId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CONFIRM_REQUEST, requestId),
@@ -484,6 +486,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DELETE, callback),
   onWorkspaceGroupMenuAddSubgroup: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP, callback),
+  onWorkspaceGroupMenuAddFromMain: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN, callback),
   onWorkspaceGroupMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,

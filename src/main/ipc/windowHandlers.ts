@@ -36,6 +36,7 @@ import {
   setWorkspacePosition,
 } from '../workspaceWindowManager.js';
 import { openWorkspaceItemEditor } from '../workspaceItemEditorWindowManager.js';
+import { openWorkspaceItemPicker } from '../workspaceItemPickerWindowManager.js';
 import {
   getWorkspaceConfirmRequest,
   openWorkspaceConfirm,
@@ -221,6 +222,11 @@ export function setupWindowHandlers(
   // 編集は送信元（ワークスペース本体または切り離しウィンドウ）を親にした子ウィンドウで開く
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, (event, itemId: string) =>
     openWorkspaceItemEditor(event.sender, itemId)
+  );
+
+  // グループに追加するアイテムを選ぶウィンドウも、送信元を親にした子ウィンドウで開く
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_PICKER, (event, groupId: string) =>
+    openWorkspaceItemPicker(event.sender, groupId)
   );
 
   // 確認（グループの削除・アーカイブ）も送信元を親にした子ウィンドウで開く。閉じるまで待つ
