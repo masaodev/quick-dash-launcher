@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { app } from 'electron';
 import { DEFAULT_DATA_FILE, DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from '@common/types';
 import type { AppSettings } from '@common/types';
 import { validateHotkey } from '@common/utils/hotkeyValidator';
@@ -94,7 +95,7 @@ export class SettingsService {
     }) as StoreInstance;
 
     if (isNewFile) {
-      await this.setCreatedWithVersion();
+      this.setCreatedWithVersion();
     }
 
     logger.info(`SettingsService initialized successfully at ${configFolder}`);
@@ -129,7 +130,7 @@ export class SettingsService {
     const store = await this.ensureStore();
     store.set(key, value);
     if (!SettingsService.isMetadataKey(key)) {
-      await this.recordUpdatedVersion(store);
+      this.recordUpdatedVersion(store);
     }
     logger.info({ key, value }, 'Setting updated');
   }
@@ -166,7 +167,7 @@ export class SettingsService {
     }
 
     if (hasNonMetadataKey) {
-      await this.recordUpdatedVersion(store);
+      this.recordUpdatedVersion(store);
     }
 
     logger.info({ settings }, 'Multiple settings updated');
@@ -227,26 +228,16 @@ export class SettingsService {
     return { isValid: false, reason: mainI18n.t(`hotkey.invalid.${result.reason}`) };
   }
 
-  private async getAppVersion(): Promise<string> {
-    try {
-      const packageJson = await import('../../../package.json');
-      return packageJson.version || '0.0.0';
-    } catch (error) {
-      logger.error({ error }, 'Failed to get app version');
-      return '0.0.0';
-    }
-  }
-
-  private async setCreatedWithVersion(): Promise<void> {
+  private setCreatedWithVersion(): void {
     if (!this.store) return;
-    const version = await this.getAppVersion();
+    const version = app.getVersion();
     this.store.set('createdWithVersion', version);
     this.store.set('updatedWithVersion', version);
     logger.info({ version }, 'Settings file created with version');
   }
 
-  private async recordUpdatedVersion(store: StoreInstance): Promise<void> {
-    const version = await this.getAppVersion();
+  private recordUpdatedVersion(store: StoreInstance): void {
+    const version = app.getVersion();
     if (store.get('updatedWithVersion') !== version) {
       store.set('updatedWithVersion', version);
       logger.info({ version }, 'Settings file updated with version');

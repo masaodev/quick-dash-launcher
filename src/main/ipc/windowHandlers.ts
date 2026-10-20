@@ -242,8 +242,9 @@ export function setupWindowHandlers(
 
     // 幅はメインプロセスの今の値のまま。置き直した直後（幅を作業領域に収めた直後）に
     // レンダラーの古い幅で戻さないため（A3-131）
-    workspace.setBounds({ height: Math.round(height) });
-    windowLogger.info(`Workspace height set to ${height}`);
+    const roundedHeight = Math.round(height);
+    workspace.setBounds({ height: roundedHeight });
+    windowLogger.info(`Workspace height set to ${roundedHeight}`);
     return true;
   });
 

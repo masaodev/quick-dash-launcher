@@ -146,11 +146,13 @@ export class WorkspaceArchiveManager {
       }
 
       // サブグループも検索（parentGroupIdで紐付いているもの）
-      const archivedGroupMap = new Map(archivedGroups.map((g) => [g.id, g]));
-      const archivedSubgroups = getDescendantGroupIds(groupId, archivedGroups).map((id) =>
-        archivedGroupMap.get(id)!
+      const allArchivedGroupIds = new Set([
+        groupId,
+        ...getDescendantGroupIds(groupId, archivedGroups),
+      ]);
+      const archivedSubgroups = archivedGroups.filter(
+        (g) => g.id !== groupId && allArchivedGroupIds.has(g.id)
       );
-      const allArchivedGroupIds = new Set([groupId, ...archivedSubgroups.map((g) => g.id)]);
 
       // 全対象グループのアイテムを検索
       const allArchivedItems = archivedItems.filter((item) =>

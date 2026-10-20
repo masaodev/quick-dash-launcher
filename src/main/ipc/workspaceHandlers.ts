@@ -6,7 +6,6 @@ import type {
   AppItem,
   WorkspaceItem,
   WorkspaceItemUpdate,
-  WorkspaceGroup,
   WorkspaceGroupUpdate,
   MixedOrderEntry,
 } from '@common/types';
@@ -56,16 +55,10 @@ function withOwnClipboardData(item: AppItem): AppItem {
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
- * @param groups 読み込み済みのグループ（複数のグループを続けて閉じるとき、読み直さないため）
  */
-export async function closeDetachedWindowsForGroup(
-  groupId: string,
-  groups?: WorkspaceGroup[]
-): Promise<void> {
-  if (!groups) {
-    const workspaceService = await WorkspaceService.getInstance();
-    groups = await workspaceService.loadGroups();
-  }
+export async function closeDetachedWindowsForGroup(groupId: string): Promise<void> {
+  const workspaceService = await WorkspaceService.getInstance();
+  const groups = await workspaceService.loadGroups();
   const descendantIds = getDescendantGroupIds(groupId, groups);
   for (const id of [groupId, ...descendantIds]) {
     closeDetachedGroupWindow(id);
@@ -408,11 +401,10 @@ export function setupWorkspaceHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, (_event, id: string) =>
     withWorkspaceChange(
       async (service) => {
-        // 削除前に所属グループの切り離しウィンドウを閉じる
+        // 削除前に所属グループの切り離しウィンドウを閉じる（サブグループも所属に含まれるので、子孫は辿らない）
         const groups = await service.loadGroups();
-        const wsGroups = groups.filter((g) => g.workspaceId === id);
-        for (const group of wsGroups) {
-          await closeDetachedWindowsForGroup(group.id, groups);
+        for (const group of groups) {
+          if (group.workspaceId === id) closeDetachedGroupWindow(group.id);
         }
         await service.deleteWorkspace(id);
       },

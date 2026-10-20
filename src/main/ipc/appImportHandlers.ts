@@ -44,19 +44,23 @@ function isUninstaller(targetPath: string, displayName: string): boolean {
   return false;
 }
 
-function collectLnkFiles(dirPath: string): string[] {
+/** フォルダを非同期で辿る（同期の fs だと、大きなスタートメニューの間メインプロセスが止まる） */
+async function collectLnkFiles(dirPath: string): Promise<string[]> {
   const results: string[] = [];
 
   try {
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+    const subdirResults = await Promise.all(
+      entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => collectLnkFiles(path.join(dirPath, entry.name)))
+    );
     for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        results.push(...collectLnkFiles(fullPath));
-      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.lnk')) {
-        results.push(fullPath);
+      if (entry.isFile() && entry.name.toLowerCase().endsWith('.lnk')) {
+        results.push(path.join(dirPath, entry.name));
       }
     }
+    for (const subdirResult of subdirResults) results.push(...subdirResult);
   } catch (error) {
     dataLogger.warn({ dirPath, error }, 'スタートメニューディレクトリのスキャンに失敗');
   }
@@ -142,9 +146,16 @@ async function scanInstalledApps(): Promise<AppScanResult> {
     path.join(appDataPath, 'Microsoft', 'Windows', 'Start Menu', 'Programs'),
   ];
 
-  const allLnkFiles = startMenuPaths
-    .filter((menuPath) => fs.existsSync(menuPath))
-    .flatMap((menuPath) => collectLnkFiles(menuPath));
+  const existingMenuPaths = (
+    await Promise.all(
+      startMenuPaths.map(async (menuPath) =>
+        (await fs.promises.stat(menuPath).catch(() => null))?.isDirectory() ? menuPath : null
+      )
+    )
+  ).filter((menuPath): menuPath is string => menuPath !== null);
+  const allLnkFiles = (
+    await Promise.all(existingMenuPaths.map((menuPath) => collectLnkFiles(menuPath)))
+  ).flat();
 
   const apps: ScannedAppItem[] = [];
 

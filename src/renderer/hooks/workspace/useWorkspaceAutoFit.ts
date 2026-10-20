@@ -16,7 +16,8 @@ function defaultResizeFn(_width: number, height: number): void {
  *
  * callback refパターンを使用し、要素のアタッチ/デタッチに正しく対応する。
  * メインプロセスが高さを作業領域いっぱいに戻したとき（EVENT_WORKSPACE_REFIT_HEIGHT）は、
- * 中身の高さが変わっていなくても合わせ直す（ワークスペース本体だけに届く。切り離しウィンドウには届かない）
+ * 中身の高さが変わっていなくても合わせ直す。購読するのはワークスペース本体（resizeFn を渡さない側）だけで、
+ * 切り離しウィンドウは通知の届く先によらず合わせ直さない
  */
 export function useWorkspaceAutoFit(
   resizeFn?: ResizeFn,
@@ -82,15 +83,15 @@ export function useWorkspaceAutoFit(
     [updateHeight]
   );
 
-  useEffect(
-    () =>
-      window.electronAPI.onWorkspaceRefitHeight(() => {
-        if (!nodeRef.current) return;
-        lastHeightRef.current = 0;
-        updateHeight(nodeRef.current);
-      }),
-    [updateHeight]
-  );
+  const refitOnRequest = resizeFn === undefined;
+  useEffect(() => {
+    if (!refitOnRequest) return;
+    return window.electronAPI.onWorkspaceRefitHeight(() => {
+      if (!nodeRef.current) return;
+      lastHeightRef.current = 0;
+      updateHeight(nodeRef.current);
+    });
+  }, [refitOnRequest, updateHeight]);
 
   return { contentRef };
 }

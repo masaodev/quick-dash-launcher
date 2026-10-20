@@ -1,14 +1,13 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import { ipcMain, shell } from 'electron';
+import { app, ipcMain, shell } from 'electron';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { getAppDistribution } from '../utils/appDistribution';
 
 const DEFAULT_APP_INFO = {
-  version: '0.0.0',
   name: 'quick-dash-launcher',
   description: '',
   author: '',
@@ -46,13 +45,15 @@ export function setupConfigHandlers(configFolder: string): void {
   ipcMain.handle(IPC_CHANNELS.OPEN_CONFIG_FOLDER, () => shell.openPath(configFolder));
 
   ipcMain.handle(IPC_CHANNELS.GET_APP_INFO, async () => {
+    // バージョンはトレイ・設定ファイルの記録と同じく app.getVersion() から取る
+    const version = app.getVersion();
     const packageJsonPath = path.join(__dirname, '../../package.json');
     const content = await fs.readFile(packageJsonPath, 'utf-8').catch(() => null);
-    if (!content) return { ...DEFAULT_APP_INFO, distribution: getAppDistribution() };
+    if (!content) return { ...DEFAULT_APP_INFO, version, distribution: getAppDistribution() };
 
     const pkg = JSON.parse(content);
     return {
-      version: pkg.version,
+      version,
       name: pkg.name,
       description: pkg.description,
       author: pkg.author,
