@@ -73,7 +73,11 @@ test.describe('QuickDashLauncher - ワークスペースのグループに新し
       await expect(editor.locator('.workspace-dest')).toContainText('新規の追加先');
       const kind = editor.locator('.register-kind select');
       await expect(kind).toBeEnabled();
-      await expect(kind.locator('option')).toHaveText(['📄 単一アイテム', '📦 セット', '📋 クリップボード']);
+      await expect(kind.locator('option')).toHaveText([
+        '📄 単一アイテム',
+        '📦 セット',
+        '📋 クリップボード',
+      ]);
       await expect(
         editor.locator('.modal-actions button', { hasText: 'ワークスペースから削除' })
       ).toHaveCount(0);
