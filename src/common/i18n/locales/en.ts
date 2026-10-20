@@ -1060,6 +1060,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       dedupeDesc: 'Keeps one of each item with the same type, name, and path',
       dedupeTitle: 'Deletes items with the same type, name, and path, keeping the first one',
     },
+    columnMenu: {
+      title: 'Columns',
+      reset: 'Reset columns and widths',
+    },
     table: {
       sortHint:
         "Sorting is applied only when you select a header or when data loads (rows don't move while you edit)",
@@ -1069,6 +1073,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       pathAndArgs: 'Path and arguments',
       pathAndArgsTitle: 'Select a path to edit it. Edit arguments in ✏️ Edit details.',
       updatedAt: 'Updated',
+      icon: 'Icon',
+      columnMenuHint:
+        'Right-click to choose columns. Drag the right edge of a header to resize it.',
       emptyFiltered: 'No items match',
       empty:
         'This data file has no items. Add one with "+ Add item", or use the ▼ next to it to import browser bookmarks or installed apps.',

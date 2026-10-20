@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { JsonItem } from '@common/types';
@@ -7,15 +7,14 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 import { useAdminCellEditing } from '../hooks/useAdminCellEditing';
 import { useAdminContextMenu } from '../hooks/useAdminContextMenu';
 import { getAdminItemIcon, useAdminItemIcons } from '../hooks/useAdminItemIcons';
-import { useColumnResize } from '../hooks/useColumnResize';
+import { useAdminItemColumns } from '../hooks/useAdminItemColumns';
+import { FIXED_COLUMN_COUNT } from '../utils/adminItemColumns';
 import { getItemKey, type SortColumn, type SortState } from '../utils/editableItemOperations';
 
+import AdminItemManagerColumnMenu from './AdminItemManagerColumnMenu';
 import AdminItemManagerRow from './AdminItemManagerRow';
 import AdminItemManagerTableHead from './AdminItemManagerTableHead';
 import VirtualSpacerRow from './VirtualSpacerRow';
-
-/** 一覧のテーブルの列数（スペーサー行の colSpan に使う） */
-const COLUMN_COUNT = 7;
 
 interface AdminItemManagerListProps {
   /** 表示順に並べ済みのアイテム（並べ替えは呼び出し側が行う） */
@@ -71,7 +70,17 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   const { t } = useTranslation();
   const editing = useAdminCellEditing(onItemEdit);
   const itemIcons = useAdminItemIcons(editableItems);
-  const nameColumn = useColumnResize(100);
+  const columns = useAdminItemColumns();
+  const columnIdsKey = columns.visibleColumns.map((c) => c.def.id).join(',');
+  // 行の memo を効かせるため、出す列が変わったときだけ配列を作り直す
+  const columnIds = useMemo(() => columns.visibleColumns.map((c) => c.def.id), [columnIdsKey]);
+  const columnCount = FIXED_COLUMN_COUNT + columnIds.length;
+  const [columnMenuAt, setColumnMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const closeColumnMenu = useCallback(() => setColumnMenuAt(null), []);
+  const handleHeaderContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setColumnMenuAt({ x: e.clientX, y: e.clientY });
+  }, []);
   const { openContextMenu } = useAdminContextMenu({
     onDuplicateItems,
     onEditClick,
@@ -133,12 +142,12 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
           allSelected={allSelected}
           someSelected={someSelected}
           onSelectAll={onSelectAll}
-          nameColumnWidth={nameColumn.width}
-          nameHeaderRef={nameColumn.headerRef}
-          onNameResizeMouseDown={nameColumn.handleMouseDown}
+          columns={columns.visibleColumns}
+          onResizeStart={columns.startResize}
+          onHeaderContextMenu={handleHeaderContextMenu}
         />
         <tbody>
-          <VirtualSpacerRow height={paddingTop} colSpan={COLUMN_COUNT} />
+          <VirtualSpacerRow height={paddingTop} colSpan={columnCount} />
           {virtualRows.map((virtualRow) => {
             const item = editableItems[virtualRow.index];
             const itemKey = getItemKey(item);
@@ -149,6 +158,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
               <AdminItemManagerRow
                 key={itemKey}
                 item={item}
+                columns={columnIds}
                 index={virtualRow.index}
                 isSelected={selectedItems.has(itemKey)}
                 isChanged={changedIds.has(itemKey)}
@@ -177,9 +187,19 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
               />
             );
           })}
-          <VirtualSpacerRow height={paddingBottom} colSpan={COLUMN_COUNT} />
+          <VirtualSpacerRow height={paddingBottom} colSpan={columnCount} />
         </tbody>
       </table>
+
+      {columnMenuAt && (
+        <AdminItemManagerColumnMenu
+          position={columnMenuAt}
+          setting={columns.setting}
+          onToggle={columns.setColumnVisible}
+          onReset={columns.resetColumns}
+          onClose={closeColumnMenu}
+        />
+      )}
 
       {editableItems.length === 0 && (
         <div className="no-items">

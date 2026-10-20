@@ -14,12 +14,15 @@ import {
   hasDisplayName,
   isPathEditable,
 } from '../utils/adminItemDisplay';
+import type { AdminItemColumnId } from '../utils/adminItemColumns';
 import { describePathAndArgs, getItemKey } from '../utils/editableItemOperations';
 import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 import { activateOnEnterOrSpace } from '../utils/keyboardActivation';
 
 export interface AdminItemManagerRowProps {
   item: EditableJsonItem;
+  /** 出す列（見出しと同じ順。選択と操作の列は常に出す） */
+  columns: readonly AdminItemColumnId[];
   index: number;
   isSelected: boolean;
   /** 未保存の変更があるか（行の左端に印） */
@@ -65,6 +68,7 @@ const TYPE_OPTIONS: ReadonlyArray<{ type: JsonItem['type']; opensDetail: boolean
  */
 const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   item,
+  columns,
   index,
   isSelected,
   isChanged,
@@ -277,11 +281,40 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
           </button>
         </div>
       </td>
-      <td className="type-column">{renderTypeCell()}</td>
-      <td className="icon-column">{renderIconCell()}</td>
-      <td className="name-column">{renderNameCell()}</td>
-      <td className="content-column">{renderPathCell()}</td>
-      <td className="updated-at-column">{formatUpdatedAt(jsonItem.updatedAt)}</td>
+      {columns.map((column) => {
+        switch (column) {
+          case 'type':
+            return (
+              <td key={column} className="type-column">
+                {renderTypeCell()}
+              </td>
+            );
+          case 'icon':
+            return (
+              <td key={column} className="icon-column">
+                {renderIconCell()}
+              </td>
+            );
+          case 'name':
+            return (
+              <td key={column} className="name-column">
+                {renderNameCell()}
+              </td>
+            );
+          case 'pathAndArgs':
+            return (
+              <td key={column} className="content-column">
+                {renderPathCell()}
+              </td>
+            );
+          case 'updatedAt':
+            return (
+              <td key={column} className="updated-at-column">
+                {formatUpdatedAt(jsonItem.updatedAt)}
+              </td>
+            );
+        }
+      })}
     </tr>
   );
 };
