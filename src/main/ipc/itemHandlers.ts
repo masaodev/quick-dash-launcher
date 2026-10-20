@@ -29,10 +29,11 @@ async function openItem(item: LauncherItem): Promise<void> {
   );
 
   if (await openSingleItem(item)) {
-    // フォルダ取込で展開したアイテムは id がその場で振られるので、パスで記録する
+    // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ（フォルダ取込の行）に数える
     const usage = LaunchUsageService.getInstance();
-    if (item.id && !item.isDirExpanded) await usage?.recordById(item.id);
-    else await usage?.recordByPath(item.path, item.args);
+    if (item.isDirExpanded) await usage?.recordByPath(item.expandedFrom);
+    else if (item.id) await usage?.recordById(item.id);
+    else await usage?.recordByPath(item.path);
   }
 }
 
@@ -92,7 +93,9 @@ export function setupItemHandlers(): void {
     const byId = indexItemsById(allItems);
     const result = await executeSet(item, (itemId) => byId.get(itemId));
     await notifySetFailures(item, result);
-    await LaunchUsageService.getInstance()?.recordById(item.id);
+    if (!result.skipped && !result.cancelled && result.successCount > 0) {
+      await LaunchUsageService.getInstance()?.recordById(item.id);
+    }
   });
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {

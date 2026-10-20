@@ -53,6 +53,6 @@ describe('columnWidthOf', () => {
   });
 
   it('表の最小幅は、選択・操作の列とパスの最低幅に、ほかの列の幅を足したもの', () => {
-    expect(tableMinWidthOf([100, null, 50])).toBe(40 + 70 + PATH_COLUMN_MIN_WIDTH + 150);
+    expect(tableMinWidthOf([100, null, 50])).toBe(40 + 64 + PATH_COLUMN_MIN_WIDTH + 150);
   });
 });

@@ -32,11 +32,11 @@ describe('LaunchUsageService', () => {
     const service = LaunchUsageService.initialize(dir);
     await service.recordById('abc12345');
     await service.recordById('abc12345');
-    await service.recordByPath('C:\\Tools\\App.exe', ' -x ');
+    await service.recordByPath('C:\\Tools\\App\\');
 
     const snapshot = service.getSnapshot();
     expect(snapshot.byId.abc12345.count).toBe(2);
-    expect(snapshot.byPath[launchUsagePathKey('c:\\tools\\app.exe', '-x')].count).toBe(1);
+    expect(snapshot.byPath[launchUsagePathKey('c:\\tools\\app')].count).toBe(1);
 
     service.flush();
     const saved = JSON.parse(fs.readFileSync(path.join(dir, 'item-usage.json'), 'utf8'));
@@ -57,11 +57,33 @@ describe('LaunchUsageService', () => {
     expect(service.getSnapshot().byId).toEqual({});
   });
 
-  it('壊れたファイルは捨てて記録を始め直す', async () => {
+  it('壊れたファイルは脇へ移して記録を始め直す。数でない記録は捨てる', async () => {
     fs.writeFileSync(path.join(dir, 'item-usage.json'), '{ broken', 'utf8');
     const service = LaunchUsageService.initialize(dir);
     await service.recordById('abc12345');
     expect(service.getSnapshot().byId.abc12345.count).toBe(1);
+    expect(fs.readdirSync(dir).some((name) => name.startsWith('item-usage.json.broken-'))).toBe(
+      true
+    );
+
+    fs.writeFileSync(
+      path.join(dir, 'item-usage.json'),
+      JSON.stringify({
+        since: 1,
+        byId: { bad: { count: '5' }, ok: { lastLaunchedAt: 2, count: 3 } },
+      }),
+      'utf8'
+    );
+    expect(LaunchUsageService.initialize(dir).getSnapshot().byId).toEqual({
+      ok: { lastLaunchedAt: 2, count: 3 },
+    });
+  });
+
+  it('読んだだけ（記録していない）ならファイルを書かない', () => {
+    const service = LaunchUsageService.initialize(dir);
+    service.getSnapshot();
+    service.flush();
+    expect(fs.existsSync(path.join(dir, 'item-usage.json'))).toBe(false);
   });
 });
 

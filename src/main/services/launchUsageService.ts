@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { itemLogger } from '@common/logger';
+import { FileUtils } from '@common/utils/fileUtils';
 import {
   launchUsagePathKey,
   type LaunchUsageRecord,
@@ -12,6 +13,26 @@ import { SettingsService } from './settingsService.js';
 
 interface LaunchUsageFile extends LaunchUsageSnapshot {
   version: 1;
+}
+
+/** 数の項目がそろった記録だけを残す（手で書き換えた・一部が壊れたファイルに備える） */
+function validRecords(value: unknown): Record<string, LaunchUsageRecord> {
+  const records: Record<string, LaunchUsageRecord> = {};
+  if (!value || typeof value !== 'object') return records;
+  for (const [key, record] of Object.entries(value as Record<string, unknown>)) {
+    const r = record as Partial<LaunchUsageRecord> | null;
+    if (
+      r &&
+      typeof r.lastLaunchedAt === 'number' &&
+      Number.isFinite(r.lastLaunchedAt) &&
+      typeof r.count === 'number' &&
+      Number.isInteger(r.count) &&
+      r.count > 0
+    ) {
+      records[key] = { lastLaunchedAt: r.lastLaunchedAt, count: r.count };
+    }
+  }
+  return records;
 }
 
 /** 書き込みをまとめる間隔（続けて起動したときに毎回書かない） */
@@ -29,6 +50,8 @@ export class LaunchUsageService {
   private static instance: LaunchUsageService | null = null;
   private data: LaunchUsageFile | null = null;
   private writeTimer: ReturnType<typeof setTimeout> | null = null;
+  /** 書いていない記録があるか（読んだだけのときは書かない） */
+  private dirty = false;
 
   private constructor(private readonly filePath: string) {}
 
@@ -50,11 +73,20 @@ export class LaunchUsageService {
       this.data = {
         version: 1,
         since: typeof raw.since === 'number' ? raw.since : Date.now(),
-        byId: raw.byId && typeof raw.byId === 'object' ? raw.byId : {},
-        byPath: raw.byPath && typeof raw.byPath === 'object' ? raw.byPath : {},
+        byId: validRecords(raw.byId),
+        byPath: validRecords(raw.byPath),
       };
-    } catch {
-      // 初めて（ファイルが無い）か、壊れていたら記録を始め直す
+    } catch (error) {
+      // 初めて（ファイルが無い）なら記録を始める。壊れていたら、消さずに脇へ移してから始め直す
+      if (fs.existsSync(this.filePath)) {
+        const aside = `${this.filePath}.broken-${Date.now()}`;
+        try {
+          fs.renameSync(this.filePath, aside);
+          itemLogger.warn({ error, aside }, '起動の記録が読めなかったので、脇へ移して始め直します');
+        } catch {
+          // 移せなくても始め直す（次の書き込みで上書きする）
+        }
+      }
       this.data = { version: 1, since: Date.now(), byId: {}, byPath: {} };
     }
     return this.data;
@@ -70,15 +102,16 @@ export class LaunchUsageService {
 
   /** 書き込み待ちを今すぐ書く（終了時にも呼ぶ） */
   flush(): void {
-    if (!this.data) return;
     if (this.writeTimer) {
       clearTimeout(this.writeTimer);
       this.writeTimer = null;
     }
-    try {
-      fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2), 'utf8');
-    } catch (error) {
-      itemLogger.warn({ error }, '起動の記録を書けませんでした');
+    if (!this.data || !this.dirty) return;
+    // 書いている途中で落ちても壊れないよう、一時ファイルに書いてから置き換える
+    if (FileUtils.safeWriteTextFile(this.filePath, JSON.stringify(this.data, null, 2))) {
+      this.dirty = false;
+    } else {
+      itemLogger.warn('起動の記録を書けませんでした');
     }
   }
 
@@ -101,13 +134,18 @@ export class LaunchUsageService {
   async recordById(id: string | undefined): Promise<void> {
     if (!id || !(await this.isEnabled())) return;
     this.bump(this.load().byId, id, Date.now());
+    this.dirty = true;
     this.scheduleWrite();
   }
 
-  /** ワークスペースから開いたアイテム・フォルダ取込で展開したアイテム（id がデータファイルと違う） */
-  async recordByPath(itemPath: string | undefined, args?: string): Promise<void> {
+  /**
+   * ワークスペースから開いたアイテム（id がデータファイルと違う）と、フォルダ取込で展開したアイテム
+   * （呼び出し側が展開元のフォルダのパスを渡す）
+   */
+  async recordByPath(itemPath: string | undefined): Promise<void> {
     if (!itemPath || !(await this.isEnabled())) return;
-    this.bump(this.load().byPath, launchUsagePathKey(itemPath, args), Date.now());
+    this.bump(this.load().byPath, launchUsagePathKey(itemPath), Date.now());
+    this.dirty = true;
     this.scheduleWrite();
   }
 

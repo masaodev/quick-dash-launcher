@@ -346,8 +346,8 @@ export function setupWorkspaceHandlers(): void {
       if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
         return { success: false };
       }
-      // ワークスペースのアイテムはメインのコピーで id が違うので、パスと引数でメインのアイテムに寄せる
-      await LaunchUsageService.getInstance()?.recordByPath(item.path, item.args);
+      // ワークスペースのアイテムはメインのコピーで id が違うので、パスでメインのアイテムに寄せる
+      await LaunchUsageService.getInstance()?.recordByPath(item.path);
 
       logger.info(
         { id: item.id, name: item.displayName, path: item.path },

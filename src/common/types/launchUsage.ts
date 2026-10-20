@@ -14,13 +14,21 @@ export interface LaunchUsageSnapshot {
   since: number;
   /** データファイルのアイテムの id → 記録（メイン画面・セットから開いたとき） */
   byId: Record<string, LaunchUsageRecord>;
-  /** パスと引数 → 記録（ワークスペース・フォルダ取込の展開から開いたとき。キーは launchUsagePathKey） */
+  /** パス → 記録（ワークスペースから開いたとき・フォルダ取込で展開したアイテムを開いたとき（展開元のフォルダのパス）。キーは launchUsagePathKey） */
   byPath: Record<string, LaunchUsageRecord>;
 }
 
-/** パスと引数の記録のキー（大文字小文字と前後の空白は区別しない） */
-export function launchUsagePathKey(itemPath: string, args?: string): string {
-  return `${itemPath.trim().toLowerCase()}\u0000${(args ?? '').trim()}`;
+/**
+ * パスの記録のキー（大文字小文字・前後の空白・末尾の区切り文字は区別しない）
+ *
+ * 引数は含めない。ワークスペースのアイテムはメインのコピーで、ショートカット（.lnk）の引数が付いたり、
+ * フォルダの末尾に \ が付いたりして、メインのアイテムと引数・表記がずれることがあるため
+ */
+export function launchUsagePathKey(itemPath: string): string {
+  return itemPath
+    .trim()
+    .replace(/[\\/]+$/, '')
+    .toLowerCase();
 }
 
 /** id とパスの記録を足す（最後の日時は新しいほう、回数は合計）。どちらも無ければ undefined */

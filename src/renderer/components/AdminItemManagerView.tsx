@@ -212,6 +212,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     selectedItems,
     retainVisibleSelection: editing.retainVisibleSelection,
     usageOf: launchUsage.usageOf,
+    usageLoaded: launchUsage.loaded,
   });
   const {
     sortState,

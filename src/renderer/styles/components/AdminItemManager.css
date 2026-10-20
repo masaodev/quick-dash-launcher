@@ -1435,7 +1435,6 @@
 
 /* 最終起動・起動回数の列 */
 .raw-items-table .last-launched-column {
-  width: 140px;
   font-size: var(--font-size-sm);
   white-space: nowrap;
 }
@@ -1446,7 +1445,6 @@
 }
 
 .raw-items-table .launch-count-column {
-  width: 80px;
   font-size: var(--font-size-sm);
   text-align: right;
   white-space: nowrap;

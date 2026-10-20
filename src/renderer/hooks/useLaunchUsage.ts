@@ -35,21 +35,22 @@ export function useLaunchUsage() {
     };
   }, []);
 
-  /** そのアイテムの記録（id の記録と、同じパス・引数の記録を足したもの）。無ければ undefined */
+  /** そのアイテムの記録（id の記録と、同じパスの記録を足したもの）。無ければ undefined */
   const usageOf = useCallback(
     (item: EditableJsonItem): LaunchUsageRecord | undefined => {
       if (!snapshot) return undefined;
       const json = item.item;
+      // フォルダ取込の行は、展開したアイテムを開いた記録（展開元のフォルダのパスで数えている）
       const byPath =
-        json.type === 'item' && json.path
-          ? snapshot.byPath[launchUsagePathKey(json.path, json.args)]
+        (json.type === 'item' || json.type === 'dir') && json.path
+          ? snapshot.byPath[launchUsagePathKey(json.path)]
           : undefined;
       return mergeLaunchUsage(snapshot.byId[json.id], byPath);
     },
     [snapshot]
   );
 
-  return { since: snapshot?.since ?? null, usageOf };
+  return { since: snapshot?.since ?? null, loaded: snapshot !== null, usageOf };
 }
 
 export type LaunchUsage = ReturnType<typeof useLaunchUsage>;
