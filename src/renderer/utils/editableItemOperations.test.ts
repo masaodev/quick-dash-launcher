@@ -341,6 +341,17 @@ describe('editableItemOperations', () => {
     );
   });
 
+  it('sortItemIds はメモで並べ、メモの無い行は昇順でも降順でも最後に置くこと', () => {
+    const items = rows(
+      [launcher('a', 'C:\\a')],
+      [launcher('b', 'C:\\b', { memo: 'いろは' })],
+      [launcher('c', 'C:\\c', { memo: 'あいう' })]
+    );
+    const [noMemo, iroha, aiu] = items.map((i) => i.item.id);
+    expect(sortItemIds(items, { column: 'memo', direction: 'asc' })).toEqual([aiu, iroha, noMemo]);
+    expect(sortItemIds(items, { column: 'memo', direction: 'desc' })).toEqual([iroha, aiu, noMemo]);
+  });
+
   it('toggleSort は asc → desc → 解除 と回ること', () => {
     const s1 = toggleSort({ column: null, direction: 'asc' }, 'type');
     expect(s1).toEqual({ column: 'type', direction: 'asc' });

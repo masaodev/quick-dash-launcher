@@ -1073,6 +1073,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       pathAndArgs: 'Path and arguments',
       pathAndArgsTitle: 'Select a path to edit it. Edit arguments in ✏️ Edit details.',
       updatedAt: 'Updated',
+      memo: 'Note',
       icon: 'Icon',
       columnMenuHint:
         'Right-click to choose columns. Drag the right edge of a header to resize it.',
@@ -1081,6 +1082,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'This data file has no items. Add one with "+ Add item", or use the ▼ next to it to import browser bookmarks or installed apps.',
     },
     row: {
+      memoTitle:
+        '{{memo}}\n\nSelect to edit (Enter for a new line, Ctrl+Enter to finish, Esc to cancel)',
+      memoEmptyTitle:
+        'Select to write a note (Enter for a new line, Ctrl+Enter to finish, Esc to cancel)',
+      memoMoreLines: 'More lines',
+      memoPlaceholder: 'Note',
       typeSelectTitle:
         'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows) and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
