@@ -151,7 +151,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
 
       // 保存済みの内容ではなく、編集中の内容で試す
       await window.electronAPI.workspaceAPI.launchItem(
-        editingItem ? toTrialWorkspaceItem(editingItem, item) : toTrialNewWorkspaceItem(item)
+        editingItem ? toTrialWorkspaceItem(editingItem, item) : toTrialNewWorkspaceItem(item),
+        { trial: true }
       );
     } catch (error) {
       logError('アイテムの実行に失敗しました:', error);

@@ -67,6 +67,8 @@ export class SettingsService {
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     detachedPositionMode: 'mainDisplay',
     windowSnapEnabled: true,
+    recordLaunchUsage: true,
+    adminItemColumns: { visible: {}, widths: {} },
   };
 
   private constructor() {}

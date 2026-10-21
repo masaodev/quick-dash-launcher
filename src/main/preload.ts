@@ -68,7 +68,7 @@ const electronAPI: ElectronAPI = {
   deleteDataFile: (fileName) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_DATA_FILE, fileName),
   // trigger: 'full' は完全リフレッシュ、'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
   loadDataFiles: (trigger) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
-  openItem: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item),
+  openItem: (item, options) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item, options),
   openParentFolder: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
   executeSet: (item, allItems) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_SET, item, allItems),
   openConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
@@ -135,6 +135,10 @@ const electronAPI: ElectronAPI = {
   getDefaultBrowser: () => ipcRenderer.invoke(IPC_CHANNELS.BROWSER_GET_DEFAULT),
   getFileHandler: (extension) => ipcRenderer.invoke(IPC_CHANNELS.FILE_GET_HANDLER, extension),
   checkPathsExist: (paths) => ipcRenderer.invoke(IPC_CHANNELS.CHECK_PATHS_EXIST, paths),
+  exportItemsCsv: (text, defaultName) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ITEMS_CSV_EXPORT, text, defaultName),
+  readItemsCsv: () => ipcRenderer.invoke(IPC_CHANNELS.ITEMS_CSV_READ),
+  getLaunchUsage: () => ipcRenderer.invoke(IPC_CHANNELS.GET_LAUNCH_USAGE),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
   getAllWindows: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS),
@@ -266,7 +270,8 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME, id, displayName),
     updateItem: (id, updates) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_ITEM, id, updates),
-    launchItem: (item) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, item),
+    launchItem: (item, options) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, item, options),
     // グループ管理
     loadGroups: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
     createGroup: (name, color, parentGroupId, workspaceId) =>

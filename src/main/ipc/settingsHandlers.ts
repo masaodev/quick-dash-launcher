@@ -22,6 +22,7 @@ import {
 import { EnvConfig } from '../config/envConfig.js';
 import { LONG_TOAST_DURATION_MS, showToastWindow } from '../services/overlayWindowService.js';
 import { applyLanguageSetting, mainI18n } from '../services/i18nService.js';
+import { LaunchUsageService } from '../services/launchUsageService.js';
 
 export function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -51,6 +52,7 @@ const EFFECT_KEYS: ReadonlyArray<keyof AppSettings> = [
   'workspaceVisibleOnAllDesktops',
   'detachedVisibleOnAllDesktops',
   'windowSnapEnabled',
+  'recordLaunchUsage',
 ];
 
 async function applySettingsEffects(
@@ -106,6 +108,12 @@ async function applySettingsEffects(
     const enabled = await settingsService.get('windowSnapEnabled');
     setWindowSnapEnabled(enabled);
     setDetachedWindowSnapEnabled(enabled);
+  }
+
+  if (changedKeys.includes('recordLaunchUsage')) {
+    LaunchUsageService.getInstance()?.setRecording(
+      (await settingsService.get('recordLaunchUsage')) !== false
+    );
   }
 }
 

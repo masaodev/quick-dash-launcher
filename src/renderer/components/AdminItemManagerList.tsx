@@ -1,21 +1,37 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { JsonItem } from '@common/types';
-import type { EditableJsonItem } from '@common/types/editableItem';
+import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
+import type { LaunchUsageRecord } from '@common/types/launchUsage';
 
 import { useAdminCellEditing } from '../hooks/useAdminCellEditing';
 import { useAdminContextMenu } from '../hooks/useAdminContextMenu';
 import { getAdminItemIcon, useAdminItemIcons } from '../hooks/useAdminItemIcons';
-import { useColumnResize } from '../hooks/useColumnResize';
+import type { AdminItemColumns } from '../hooks/useAdminItemColumns';
+import {
+  ACTIONS_COLUMN_WIDTH,
+  ADMIN_ITEM_COLUMNS,
+  CHECKBOX_COLUMN_WIDTH,
+  FIXED_COLUMN_COUNT,
+  filterColumnOf,
+  tableMinWidthOf,
+  type AdminItemColumnId,
+} from '../utils/adminItemColumns';
+import {
+  activeFilterColumns,
+  type ColumnFilters,
+  type FilterableColumnId,
+} from '../utils/adminItemFilters';
 import { getItemKey, type SortColumn, type SortState } from '../utils/editableItemOperations';
 
+import AdminItemManagerColumnFilter, {
+  type ColumnFilterOptions,
+} from './AdminItemManagerColumnFilter';
+import AdminItemManagerColumnMenu from './AdminItemManagerColumnMenu';
 import AdminItemManagerRow from './AdminItemManagerRow';
 import AdminItemManagerTableHead from './AdminItemManagerTableHead';
 import VirtualSpacerRow from './VirtualSpacerRow';
-
-/** 一覧のテーブルの列数（スペーサー行の colSpan に使う） */
-const COLUMN_COUNT = 7;
 
 interface AdminItemManagerListProps {
   /** 表示順に並べ済みのアイテム（並べ替えは呼び出し側が行う） */
@@ -29,6 +45,21 @@ interface AdminItemManagerListProps {
   isFiltered: boolean;
   sortState: SortState;
   onSortChange: (column: SortColumn) => void;
+  /** 見出しの ▾ から向きを決めて並べる */
+  onSort: (column: SortColumn, direction: SortState['direction']) => void;
+  /** 列の表示と幅（見出しの右クリック・ドラッグ） */
+  columns: AdminItemColumns;
+  /** 見出しの ▾ の絞り込み */
+  filters: ColumnFilters;
+  onFilterChange: <K extends FilterableColumnId>(
+    column: K,
+    value: ColumnFilters[K] | undefined
+  ) => void;
+  filterOptions: ColumnFilterOptions;
+  /** 「リンク切れを確認」の結果（確認していない・対象外のパスは undefined） */
+  linkStatusOf: (item: EditableJsonItem) => PathExistenceStatus | undefined;
+  /** 起動の記録（記録が無ければ undefined） */
+  usageOf: (item: EditableJsonItem) => LaunchUsageRecord | undefined;
   /** 追加直後に名前セルを編集状態にするアイテムの id */
   autoEditItemId: string | null;
   onAutoEditHandled: () => void;
@@ -57,6 +88,13 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   isFiltered,
   sortState,
   onSortChange,
+  onSort,
+  columns,
+  filters,
+  onFilterChange,
+  filterOptions,
+  linkStatusOf,
+  usageOf,
   autoEditItemId,
   onAutoEditHandled,
   onItemEdit,
@@ -71,7 +109,36 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   const { t } = useTranslation();
   const editing = useAdminCellEditing(onItemEdit);
   const itemIcons = useAdminItemIcons(editableItems);
-  const nameColumn = useColumnResize(100);
+  const columnIdsKey = columns.visibleColumns.map((c) => c.def.id).join(',');
+  // 行の memo を効かせるため、出す列が変わったときだけ配列を作り直す
+  const columnIds = useMemo(() => columns.visibleColumns.map((c) => c.def.id), [columnIdsKey]);
+  const columnCount = FIXED_COLUMN_COUNT + columnIds.length;
+  const [columnMenuAt, setColumnMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const closeColumnMenu = useCallback(() => setColumnMenuAt(null), []);
+  const handleHeaderContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setColumnMenuAt({ x: e.clientX, y: e.clientY });
+  }, []);
+  const [openFilter, setOpenFilter] = useState<{
+    column: FilterableColumnId;
+    x: number;
+    y: number;
+  } | null>(null);
+  const closeFilter = useCallback(() => setOpenFilter(null), []);
+  const handleOpenFilter = useCallback((id: AdminItemColumnId, rect: DOMRect) => {
+    const def = ADMIN_ITEM_COLUMNS.find((c) => c.id === id);
+    const column = def ? filterColumnOf(def) : null;
+    if (!column) return;
+    // 画面からはみ出す分は、メニューの側で測って内側へずらす（usePopoverPosition）
+    setOpenFilter((prev) =>
+      prev?.column === column ? null : { column, x: rect.left, y: rect.bottom }
+    );
+  }, []);
+  const filteredColumns = useMemo(() => new Set<string>(activeFilterColumns(filters)), [filters]);
+  const openFilterDef = openFilter
+    ? ADMIN_ITEM_COLUMNS.find((c) => c.id === openFilter.column)
+    : undefined;
+
   const { openContextMenu } = useAdminContextMenu({
     onDuplicateItems,
     onEditClick,
@@ -126,19 +193,30 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
 
   return (
     <div className="editable-raw-item-list" ref={listRef}>
-      <table className="raw-items-table">
+      <table
+        className="raw-items-table"
+        style={
+          {
+            minWidth: tableMinWidthOf(columns.visibleColumns.map((c) => c.width)),
+            '--checkbox-column-width': `${CHECKBOX_COLUMN_WIDTH}px`,
+            '--actions-column-width': `${ACTIONS_COLUMN_WIDTH}px`,
+          } as React.CSSProperties
+        }
+      >
         <AdminItemManagerTableHead
           sortState={sortState}
           onSortChange={onSortChange}
           allSelected={allSelected}
           someSelected={someSelected}
           onSelectAll={onSelectAll}
-          nameColumnWidth={nameColumn.width}
-          nameHeaderRef={nameColumn.headerRef}
-          onNameResizeMouseDown={nameColumn.handleMouseDown}
+          columns={columns.visibleColumns}
+          onResizeStart={columns.startResize}
+          onHeaderContextMenu={handleHeaderContextMenu}
+          filteredColumns={filteredColumns}
+          onOpenFilter={handleOpenFilter}
         />
         <tbody>
-          <VirtualSpacerRow height={paddingTop} colSpan={COLUMN_COUNT} />
+          <VirtualSpacerRow height={paddingTop} colSpan={columnCount} />
           {virtualRows.map((virtualRow) => {
             const item = editableItems[virtualRow.index];
             const itemKey = getItemKey(item);
@@ -149,10 +227,14 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
               <AdminItemManagerRow
                 key={itemKey}
                 item={item}
+                columns={columnIds}
                 index={virtualRow.index}
                 isSelected={selectedItems.has(itemKey)}
                 isChanged={changedIds.has(itemKey)}
                 pathMissing={missingIds.has(itemKey)}
+                linkStatus={linkStatusOf(item)}
+                lastLaunchedAt={usageOf(item)?.lastLaunchedAt}
+                launchCount={usageOf(item)?.count}
                 iconData={getAdminItemIcon(itemIcons, jsonItem)}
                 autoImportRuleName={
                   jsonItem.type === 'item' && jsonItem.autoImportRuleId
@@ -174,12 +256,39 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 onCommitPath={editing.commitPathEdit}
                 onNameKeyDown={editing.handleNameKeyDown}
                 onPathKeyDown={editing.handlePathKeyDown}
+                onStartMemoEdit={editing.startMemoEdit}
+                onCommitMemo={editing.commitMemoEdit}
+                onMemoKeyDown={editing.handleMemoKeyDown}
               />
             );
           })}
-          <VirtualSpacerRow height={paddingBottom} colSpan={COLUMN_COUNT} />
+          <VirtualSpacerRow height={paddingBottom} colSpan={columnCount} />
         </tbody>
       </table>
+
+      {openFilter && (
+        <AdminItemManagerColumnFilter
+          column={openFilter.column}
+          position={{ x: openFilter.x, y: openFilter.y }}
+          filters={filters}
+          onChange={onFilterChange}
+          sortColumn={openFilterDef?.sortColumn}
+          sortState={sortState}
+          onSort={onSort}
+          options={filterOptions}
+          onClose={closeFilter}
+        />
+      )}
+
+      {columnMenuAt && (
+        <AdminItemManagerColumnMenu
+          position={columnMenuAt}
+          setting={columns.setting}
+          onToggle={columns.setColumnVisible}
+          onReset={columns.resetColumns}
+          onClose={closeColumnMenu}
+        />
+      )}
 
       {editableItems.length === 0 && (
         <div className="no-items">

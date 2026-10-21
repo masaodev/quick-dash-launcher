@@ -121,6 +121,46 @@ describe('useAdminCellEditing', () => {
     expect(result.current.editingCell).toBeNull();
   });
 
+  it('メモは Enter では確定せず、Ctrl+Enter で確定すること。末尾の空白は除くこと', () => {
+    const onItemEdit = vi.fn();
+    const item = launcher('a1', 'GitHub', 'https://github.com');
+    const { result } = renderHook(() => useAdminCellEditing(onItemEdit));
+
+    act(() => result.current.startMemoEdit(item));
+    expect(result.current.editingCell).toEqual({ itemId: 'a1', column: 'memo' });
+    act(() => result.current.setEditingValue('1 行目\n2 行目\n\n'));
+    act(() => result.current.handleMemoKeyDown(key('Enter'), item));
+    expect(onItemEdit).not.toHaveBeenCalled();
+    expect(result.current.editingCell).not.toBeNull();
+
+    const ctrlEnter = { ...key('Enter'), ctrlKey: true } as unknown as ReactKeyboardEvent;
+    act(() => result.current.handleMemoKeyDown(ctrlEnter, item));
+    expect(onItemEdit).toHaveBeenCalledTimes(1);
+    expect(onItemEdit.mock.calls[0][0].item.memo).toBe('1 行目\n2 行目');
+    expect(result.current.editingCell).toBeNull();
+  });
+
+  it('メモを空にして確定するとメモの項目を消し、Escape では変えないこと', () => {
+    const onItemEdit = vi.fn();
+    const item = toEditableItem(
+      { id: 'a1', type: 'item', displayName: 'G', path: 'C:\\g', memo: 'old' } as JsonItem,
+      FILE
+    );
+    const { result } = renderHook(() => useAdminCellEditing(onItemEdit));
+
+    act(() => result.current.startMemoEdit(item));
+    act(() => result.current.setEditingValue('changed'));
+    act(() => result.current.handleMemoKeyDown(key('Escape'), item));
+    expect(onItemEdit).not.toHaveBeenCalled();
+
+    act(() => result.current.startMemoEdit(item));
+    expect(result.current.editingValue).toBe('old');
+    act(() => result.current.setEditingValue('  '));
+    act(() => result.current.commitMemoEdit(item));
+    expect(onItemEdit).toHaveBeenCalledTimes(1);
+    expect('memo' in onItemEdit.mock.calls[0][0].item).toBe(false);
+  });
+
   it('ハンドラの参照が再レンダーで変わらないこと（行の memo を効かせるため）', () => {
     const { result, rerender } = renderHook(() => useAdminCellEditing(vi.fn()));
     const before = { ...result.current };

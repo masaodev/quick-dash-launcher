@@ -14,6 +14,7 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { isClipboardItem } from '@common/types/guards';
+import type { LaunchOptions } from '@common/types/launchUsage';
 
 import { ClipboardService } from '../services/clipboardService.js';
 import { launchItem } from '../utils/itemLauncher.js';
@@ -39,6 +40,7 @@ import {
   resolveSetEntry,
 } from '../services/launch/setExecutor.js';
 import { notifyLaunchFailure, openSingleItem } from '../services/launch/itemOpener.js';
+import { LaunchUsageService } from '../services/launchUsageService.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 
@@ -298,93 +300,103 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースアイテムを起動
    */
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, async (_event, item: WorkspaceItem) => {
-    try {
-      // クリップボードタイプの場合
-      if (item.type === 'clipboard') {
-        if (!item.dataFileRef) {
-          logger.warn({ id: item.id, name: item.displayName }, 'Clipboard data ref not found');
-          throw new Error(mainI18n.t('launcher.messages.clipboardDataMissing'));
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM,
+    async (_event, item: WorkspaceItem, options?: LaunchOptions) => {
+      try {
+        // クリップボードタイプの場合
+        if (item.type === 'clipboard') {
+          if (!item.dataFileRef) {
+            logger.warn({ id: item.id, name: item.displayName }, 'Clipboard data ref not found');
+            throw new Error(mainI18n.t('launcher.messages.clipboardDataMissing'));
+          }
+
+          // 成功のトーストは画面側が結果を見て出す（書き戻す前に出すと、終わっていないように見える）
+          const restored = await launchItem(
+            {
+              type: 'clipboard',
+              path: '',
+              displayName: item.displayName,
+              clipboardDataRef: item.dataFileRef,
+            },
+            logger
+          );
+          if (!restored.success) {
+            await notifyLaunchFailure(item.displayName, restored);
+            return { success: false };
+          }
+
+          logger.info(
+            { id: item.id, name: item.displayName },
+            'Restored clipboard from workspace item'
+          );
+          return { success: true };
         }
 
-        // 成功のトーストは画面側が結果を見て出す（書き戻す前に出すと、終わっていないように見える）
-        const restored = await launchItem(
-          {
-            type: 'clipboard',
-            path: '',
-            displayName: item.displayName,
-            clipboardDataRef: item.dataFileRef,
-          },
-          logger
-        );
-        if (!restored.success) {
-          await notifyLaunchFailure(item.displayName, restored);
+        // セット: 行はワークスペースのアイテムを先に、データファイルのアイテムを後に探す
+        if (item.type === 'set') {
+          const workspaceService = await WorkspaceService.getInstance();
+          const workspaceItems = await workspaceService.loadItems();
+          const configFolder = PathManager.getConfigFolder();
+          const allItems = await reloadConfigFiles(configFolder, 'internal');
+          const byId = indexItemsById(allItems);
+          for (const wsItem of workspaceItems) {
+            const converted = workspaceItemToLaunchable(wsItem);
+            if (converted) byId.set(wsItem.id, converted);
+          }
+          const resolve = (itemId: string) => byId.get(itemId);
+          // 行の名前はデータファイルのアイテムからも引くので、ワークスペースの画面ではなくここで知らせる
+          // （実行中に押し直したときは何もしないので知らせない）
+          if (!isSetRunning(item.id))
+            await showToastWindow({
+              displayName: item.displayName,
+              itemType: 'set',
+              itemCount: item.entries.length,
+              itemNames: item.entries
+                .map((entry) => resolveSetEntry(entry, resolve).name)
+                .filter((name) => name !== '')
+                .slice(0, 3),
+            });
+          const result = await executeSet(item, resolve);
+          await notifySetFailures(item, result);
+          logger.info(
+            { id: item.id, name: item.displayName, ...result, entries: undefined },
+            'Executed set from workspace item'
+          );
+          return {
+            success: true,
+            successCount: result.successCount,
+            errorCount: result.errorCount,
+          };
+        }
+
+        // 単一アイテムはメイン画面と同じ処理で開く（起動種別は path から判定済み）
+        if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
           return { success: false };
         }
+        // ワークスペースのアイテムはメインのコピーで id が違うので、パスでメインのアイテムに寄せる
+        //（編集画面で試しに開いたときは数えない）
+        if (!options?.trial) await LaunchUsageService.getInstance()?.recordByPath(item.path);
 
         logger.info(
-          { id: item.id, name: item.displayName },
-          'Restored clipboard from workspace item'
+          { id: item.id, name: item.displayName, path: item.path },
+          'Launched workspace item'
         );
         return { success: true };
-      }
-
-      // セット: 行はワークスペースのアイテムを先に、データファイルのアイテムを後に探す
-      if (item.type === 'set') {
-        const workspaceService = await WorkspaceService.getInstance();
-        const workspaceItems = await workspaceService.loadItems();
-        const configFolder = PathManager.getConfigFolder();
-        const allItems = await reloadConfigFiles(configFolder, 'internal');
-        const byId = indexItemsById(allItems);
-        for (const wsItem of workspaceItems) {
-          const converted = workspaceItemToLaunchable(wsItem);
-          if (converted) byId.set(wsItem.id, converted);
-        }
-        const resolve = (itemId: string) => byId.get(itemId);
-        // 行の名前はデータファイルのアイテムからも引くので、ワークスペースの画面ではなくここで知らせる
-        // （実行中に押し直したときは何もしないので知らせない）
-        if (!isSetRunning(item.id))
-          await showToastWindow({
-            displayName: item.displayName,
-            itemType: 'set',
-            itemCount: item.entries.length,
-            itemNames: item.entries
-              .map((entry) => resolveSetEntry(entry, resolve).name)
-              .filter((name) => name !== '')
-              .slice(0, 3),
-          });
-        const result = await executeSet(item, resolve);
-        await notifySetFailures(item, result);
-        logger.info(
-          { id: item.id, name: item.displayName, ...result, entries: undefined },
-          'Executed set from workspace item'
+      } catch (error) {
+        logger.error(
+          { error, id: item.id, type: item.type, name: item.displayName },
+          'Failed to launch workspace item'
         );
-        return { success: true, successCount: result.successCount, errorCount: result.errorCount };
+        // 画面側はログに残すだけなので、ここで知らせる
+        await notifyLaunchFailure(item.displayName, {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
       }
-
-      // 単一アイテムはメイン画面と同じ処理で開く（起動種別は path から判定済み）
-      if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
-        return { success: false };
-      }
-
-      logger.info(
-        { id: item.id, name: item.displayName, path: item.path },
-        'Launched workspace item'
-      );
-      return { success: true };
-    } catch (error) {
-      logger.error(
-        { error, id: item.id, type: item.type, name: item.displayName },
-        'Failed to launch workspace item'
-      );
-      // 画面側はログに残すだけなので、ここで知らせる
-      await notifyLaunchFailure(item.displayName, {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
     }
-  });
+  );
 
   // ==================== ワークスペース（タブ）管理ハンドラー ====================
 

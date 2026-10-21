@@ -6,20 +6,21 @@ import {
   getEditablePath,
   hasDisplayName,
   isPathEditable,
+  withEditedMemo,
   withEditedPath,
 } from '../utils/adminItemDisplay';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
-/** 編集中のセル。名前列とパス列のどちらか */
+/** 編集中のセル。名前列・パス列・メモ列のどれか */
 export interface EditingCell {
   itemId: string;
-  column: 'name' | 'path';
+  column: 'name' | 'path' | 'memo';
 }
 
 /**
- * アイテム管理の一覧のセル編集（名前・パス）
+ * アイテム管理の一覧のセル編集（名前・パス・メモ）
  *
- * - 編集中のセルは 1 つだけ。確定は Enter / Tab / フォーカス移動
+ * - 編集中のセルは 1 つだけ。確定は Enter / Tab / フォーカス移動（メモは複数行なので Enter は改行、Ctrl+Enter で確定）
  * - 名前セルで Enter / Tab を押すと、同じ行のパスセルの編集へ進む（追加直後の入力の流れ）
  * - Enter で次のセルへ移った直後に前の入力欄の blur が遅れて届いても、別のセルの値で
  *   上書きしないよう、確定処理は「今もそのセルを編集中か」を ref で確かめる
@@ -81,6 +82,21 @@ export function useAdminCellEditing(onItemEdit: (item: EditableJsonItem) => void
     stop();
   }, []);
 
+  const startMemoEdit = useCallback((item: EditableJsonItem) => {
+    setEditingCell({ itemId: getItemKey(item), column: 'memo' });
+    setEditingValue(item.item.memo ?? '');
+  }, []);
+
+  /** メモセルの入力を確定する（末尾の空白・改行は除き、空ならメモを消す） */
+  const commitMemoEdit = useCallback((item: EditableJsonItem) => {
+    if (!isEditing(item, 'memo')) return;
+    const updated = withEditedMemo(item.item, editingValueRef.current);
+    if ((updated.memo ?? '') !== (item.item.memo ?? '')) {
+      onItemEditRef.current({ ...item, item: updated });
+    }
+    stop();
+  }, []);
+
   const cancelEdit = useCallback(() => stop(), []);
 
   const handleNameKeyDown = useCallback(
@@ -111,6 +127,19 @@ export function useAdminCellEditing(onItemEdit: (item: EditableJsonItem) => void
     [commitPathEdit]
   );
 
+  const handleMemoKeyDown = useCallback(
+    (e: ReactKeyboardEvent, item: EditableJsonItem) => {
+      if (e.key === 'Enter' && e.ctrlKey && !e.nativeEvent.isComposing) {
+        e.preventDefault();
+        commitMemoEdit(item);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        stop();
+      }
+    },
+    [commitMemoEdit]
+  );
+
   /** 追加直後のアイテムの名前セルを、空の値で編集状態にする */
   const beginNameEditFor = useCallback((itemId: string) => {
     setEditingCell({ itemId, column: 'name' });
@@ -125,9 +154,12 @@ export function useAdminCellEditing(onItemEdit: (item: EditableJsonItem) => void
     startPathEdit,
     commitNameEdit,
     commitPathEdit,
+    startMemoEdit,
+    commitMemoEdit,
     cancelEdit,
     handleNameKeyDown,
     handlePathKeyDown,
+    handleMemoKeyDown,
     beginNameEditFor,
   };
 }

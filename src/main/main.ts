@@ -53,6 +53,7 @@ import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.
 import { applyLanguageSetting, registerLanguageHandler } from './services/i18nService.js';
 import { installNavigationGuard } from './utils/navigationGuard.js';
 import { startFileLogging } from './services/fileLogging.js';
+import { LaunchUsageService } from './services/launchUsageService.js';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -276,6 +277,7 @@ app.on('before-quit', () => {
 });
 
 app.on('will-quit', () => {
+  LaunchUsageService.getInstance()?.flush();
   cliServer?.close();
   globalShortcut.unregisterAll();
   cancelAllChildWindowCreations();

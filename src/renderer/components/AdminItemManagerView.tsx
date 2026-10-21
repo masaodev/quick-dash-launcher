@@ -1,47 +1,27 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
-import {
-  DEFAULT_DATA_FILE,
-  SimpleBookmarkItem,
-  ScannedAppItem,
-  DataFileTab,
-  DuplicateHandlingOption,
-  type JsonItem,
-  type RegisterItem,
-} from '@common/types';
+import { DEFAULT_DATA_FILE, DataFileTab, type JsonItem, type RegisterItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import type {
-  BookmarkAutoImportResult,
-  BookmarkAutoImportRule,
-} from '@common/types/bookmarkAutoImport';
-import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
-import { checkDuplicates } from '@common/utils/duplicateDetector';
 
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
-import { useAdminPathExistence, checkablePathOf } from '../hooks/useAdminPathExistence';
+import { useAdminItemImports } from '../hooks/useAdminItemImports';
+import { useAdminItemColumns } from '../hooks/useAdminItemColumns';
+import { useAdminItemListView } from '../hooks/useAdminItemListView';
+import { useLaunchUsage } from '../hooks/useLaunchUsage';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
-import {
-  applyDisplayOrder,
-  changeItemType,
-  filterEditableItems,
-  getItemKey,
-  isInlineItemType,
-  sortItemIds,
-  toggleSort,
-  type AutoImportFilter,
-  type SortColumn,
-  type SortState,
-} from '../utils/editableItemOperations';
+import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
+import { itemsToCsv, planCsvImport, type CsvImportPlan } from '../utils/itemCsv';
 
 import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerTabBar from './AdminItemManagerTabBar';
 import AdminItemManagerToolbar from './AdminItemManagerToolbar';
 import BookmarkImportModal from './BookmarkImportModal';
-import AppImportModal, { type AppImportDestination } from './AppImportModal';
+import AppImportModal from './AppImportModal';
+import AdminItemCsvImportModal from './AdminItemCsvImportModal';
 import ConfirmDialog from './ConfirmDialog';
 
 interface EditModeViewProps {
@@ -118,18 +98,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     baseVersion,
   } = editing;
 
-  const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
-  const [isAppImportModalOpen, setIsAppImportModalOpen] = useState(false);
-
   // タブとファイル選択用の状態
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [selectedDataFile, setSelectedDataFile] = useState<string>(DEFAULT_DATA_FILE);
-
-  // 並べ替え。初期値はメイン画面と同じ表示名の昇順
-  const [sortState, setSortState] = useState<SortState>({
-    column: 'displayName',
-    direction: 'asc',
-  });
 
   // 追加直後に名前セルを編集状態にするアイテム
   const [autoEditItemId, setAutoEditItemId] = useState<string | null>(null);
@@ -204,8 +175,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [autoImportSettings.rules, selectedDataFile]
   );
 
-  const [autoImportFilter, setAutoImportFilter] = useState<AutoImportFilter>('all');
-
   // タブ・データファイルの構成の変更（その場で確定する）
   const countItems = useCallback(
     (fileName: string) => {
@@ -234,26 +203,52 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [workingItems, selectedDataFile]
   );
 
-  // リンク切れ（パスが実在しない）。ネットワークパスは応答に時間がかかることがあるので、
-  // 自動では確認せず、「整理 ▼」の「リンク切れを確認」を押したときだけ確認する
-  const [missingOnly, setMissingOnly] = useState(false);
-  const pathCheck = useAdminPathExistence(baseVersion);
-  const missingIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const item of workingItems) {
-      const itemPath = checkablePathOf(item);
-      if (itemPath && pathCheck.results.get(itemPath) === 'missing') ids.add(getItemKey(item));
-    }
-    return ids;
-  }, [workingItems, pathCheck.results]);
+  const launchUsage = useLaunchUsage();
+  const listView = useAdminItemListView({
+    workingItems,
+    baseVersion,
+    selectedDataFile,
+    searchQuery,
+    selectedItems,
+    retainVisibleSelection: editing.retainVisibleSelection,
+    usageOf: launchUsage.usageOf,
+    usageLoaded: launchUsage.loaded,
+    ruleNames: autoImportRuleMap,
+  });
+  const {
+    sortState,
+    handleSortChange,
+    setSort,
+    filters,
+    setColumnFilter,
+    pathCheck,
+    linkStatusOf,
+    missingIds,
+    filteredItems,
+    orderedItems,
+    visibleSelectedItems,
+    isFiltered,
+  } = listView;
+  // 絞り込む前の件数（絞り込み中の「合計: 8 / 15 件」に使う）
+  const fileItemCount = currentFileWorkingItems.length;
 
-  // 読み込み・保存で結果が捨てられたら絞り込みも解く
-  useEffect(() => {
-    if (!pathCheck.hasChecked) setMissingOnly(false);
-  }, [pathCheck.hasChecked]);
+  const columns = useAdminItemColumns();
+
+  const filterOptions = useMemo(
+    () => ({
+      rules: currentFileRules,
+      linkChecked: pathCheck.hasChecked,
+      usageSince: launchUsage.since,
+    }),
+    [currentFileRules, pathCheck.hasChecked, launchUsage.since]
+  );
 
   const handleCheckMissingPaths = async () => {
     const summary = await pathCheck.runCheck(currentFileWorkingItems);
+    // 結果はリンクの列に出すので、隠していたら出す（既定では隠している）
+    if (summary.checked > 0 && !columns.visibleColumns.some((c) => c.def.id === 'link')) {
+      columns.setColumnVisible('link', true);
+    }
     if (summary.checked === 0) {
       showInfo(t('itemManager.missingCheck.nothingToCheck'));
       return;
@@ -342,8 +337,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const addBlank = (type: 'item' | 'dir') => {
     // 追加した行が検索・フィルタで隠れないように、絞り込みを外してから追加する
     if (searchQuery) onSearchChange('');
-    setAutoImportFilter('all');
-    setMissingOnly(false);
+    listView.clearFilters();
     const id = editing.addBlankItem(selectedDataFile, type);
     setAutoEditItemId(id);
   };
@@ -413,125 +407,87 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     );
   };
 
-  /**
-   * 取込画面の取込先を、実在のデータファイルにする。新しいタブ・ファイルならここで作る。
-   * 作れなかったら null（理由は警告のトーストで出す。取込画面は開いたまま）
-   */
-  const resolveImportTarget = async (
-    destination: AppImportDestination
-  ): Promise<{ tabIndex: number; fileName: string; fileLabel: string } | null> => {
-    if (destination.kind === 'existing') {
-      return {
-        tabIndex: dataFileTabs.findIndex((tab) => tab.files.includes(destination.fileName)),
-        fileName: destination.fileName,
-        fileLabel: getFileLabel(destination.fileName),
-      };
+  const imports = useAdminItemImports({
+    editing,
+    dataFileTabs,
+    getFileLabel,
+    createImportFile: tabStructure.createImportFile,
+    onShowTarget: (target) => {
+      if (target.tabIndex >= 0) setSelectedTabIndex(target.tabIndex);
+      setSelectedDataFile(target.fileName);
+    },
+    addAutoImportRule,
+    executeAutoImportRule,
+    toast: { showSuccess, showInfo, showWarning },
+    pendingImportModal,
+    onClearPendingImportModal,
+  });
+
+  // CSV: 書き出しはすべてのタブ（未保存の変更も含めて今の一覧のまま）、取り込みは確かめてから未保存の変更にする
+  const [csvImport, setCsvImport] = useState<{
+    fileName: string;
+    text: string;
+    plan: CsvImportPlan;
+    /** 計画を作ったときの一覧（確定までに変わったら作り直す） */
+    planned: EditableJsonItem[];
+  } | null>(null);
+  /** タブの順のデータファイル（どのタブにも入っていないファイルは最後） */
+  const orderedDataFiles = useMemo(() => {
+    const files = [...new Set(dataFileTabs.flatMap((tab) => tab.files))];
+    for (const item of workingItems) {
+      if (!files.includes(item.meta.sourceFile)) files.push(item.meta.sourceFile);
     }
-    return tabStructure.createImportFile(destination);
-  };
+    return files;
+  }, [dataFileTabs, workingItems]);
 
-  /** 取り込んだ先のタブ・ファイルを開く */
-  const showImportTarget = (target: { tabIndex: number; fileName: string }) => {
-    if (target.tabIndex >= 0) setSelectedTabIndex(target.tabIndex);
-    setSelectedDataFile(target.fileName);
-  };
-
-  /** ブックマーク取込画面「N 件を取り込む」: 未保存の変更として追加（印は付かない） */
-  const handleBookmarkImport = async (
-    bookmarks: SimpleBookmarkItem[],
-    duplicateHandling: DuplicateHandlingOption,
-    destination: AppImportDestination
-  ): Promise<boolean> => {
-    const target = await resolveImportTarget(destination);
-    if (!target) return false;
-    // スキップのときは取込先に登録済みの分は入らない
-    const fileItems = workingItems.filter((item) => item.meta.sourceFile === target.fileName);
-    const addedCount =
-      duplicateHandling === 'skip'
-        ? checkDuplicates(bookmarks, fileItems).newCount
-        : bookmarks.length;
-    editing.importBookmarks(bookmarks, duplicateHandling, target.fileName);
-    showImportTarget(target);
-    showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
-    return true;
-  };
-
-  /**
-   * ブックマーク取込画面「同期を始めて取り込む」: 設定にルールを足してすぐ実行する（自動取込と同じ置き換え方式）。
-   * 取込先が新しいタブ・ファイルなら先に作り、そのファイルをルールの取込先にする
-   */
-  const handleBookmarkSaveAsRule = async (
-    draft: BookmarkAutoImportRule,
-    destination: AppImportDestination
-  ): Promise<boolean> => {
-    const target = await resolveImportTarget(destination);
-    if (!target) return false;
-    const rule = { ...draft, targetFile: target.fileName };
+  const handleExportCsv = async () => {
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
     try {
-      await addAutoImportRule(rule);
-    } catch (error) {
-      // 取込先は作ったので、そのタブ・ファイルを開いてから知らせる（画面は開いたまま）
-      showImportTarget(target);
-      showWarning(
-        t('itemManager.ruleSaveFailed', {
-          error: error instanceof Error ? error.message : String(error),
-        })
+      const savedPath = await window.electronAPI.exportItemsCsv(
+        itemsToCsv(workingItems, orderedDataFiles),
+        `quick-dash-items-${stamp}.csv`
       );
-      return false;
-    }
-    showImportTarget(target);
-    let result: BookmarkAutoImportResult;
-    try {
-      result = await executeAutoImportRule(rule);
+      if (!savedPath) return;
+      const key = hasUnsavedChanges ? 'itemCsv.exportedUnsaved' : 'itemCsv.exported';
+      showSuccess(t(key, { count: workingItems.length, path: savedPath }), { duration: 5000 });
     } catch (error) {
-      // 実行の IPC が例外で失敗したときも、success: false と同じく知らせる
-      result = {
-        success: false,
-        importedCount: 0,
-        deletedCount: 0,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        executedAt: Date.now(),
-      };
-    }
-    if (result.success) {
-      const message = t('itemManager.ruleSavedAndRun', {
-        name: rule.name,
-        count: result.importedCount,
-      });
-      if (result.manualDuplicateCount) {
-        showWarning(
-          t('itemManager.ruleManualDuplicates', { message, count: result.manualDuplicateCount })
-        );
-      } else {
-        showSuccess(message);
-      }
-    } else {
       showWarning(
-        t('itemManager.ruleRunFailed', { name: rule.name, error: result.errorMessage ?? '' })
+        t('itemCsv.exportFailed', { error: error instanceof Error ? error.message : String(error) })
       );
     }
-    return true;
   };
 
-  /**
-   * アプリ取込画面「取り込む」: 新しいタブ・ファイルが取込先ならここで作ってから、未保存の変更として追加する。
-   * 取り込んだ先のタブ・ファイルを開く。ファイルを作れなかったら false（取込画面は開いたまま）
-   */
-  const handleAppImport = async (
-    apps: ScannedAppItem[],
-    duplicateHandling: DuplicateHandlingOption,
-    destination: AppImportDestination
-  ): Promise<boolean> => {
-    const target = await resolveImportTarget(destination);
-    if (!target) return false;
-    // スキップのときは取込先に登録済みの分は入らない
-    const fileItems = workingItems.filter((item) => item.meta.sourceFile === target.fileName);
-    const addedCount =
-      duplicateHandling === 'skip' ? checkAppDuplicates(apps, fileItems).newCount : apps.length;
-    editing.importApps(apps, duplicateHandling, target.fileName);
-    showImportTarget(target);
-    showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
-    return true;
+  const handleImportCsv = async () => {
+    try {
+      const file = await window.electronAPI.readItemsCsv();
+      if (!file) return;
+      const plan = planCsvImport(file.text, workingItems, orderedDataFiles, selectedDataFile);
+      setCsvImport({ fileName: file.filePath, text: file.text, plan, planned: workingItems });
+    } catch (error) {
+      showWarning(
+        t('itemCsv.readFailed', { error: error instanceof Error ? error.message : String(error) })
+      );
+    }
+  };
+
+  const confirmCsvImport = () => {
+    if (!csvImport) return;
+    if (csvImport.planned !== workingItems) {
+      const plan = planCsvImport(csvImport.text, workingItems, orderedDataFiles, selectedDataFile);
+      setCsvImport({ ...csvImport, plan, planned: workingItems });
+      showWarning(t('itemCsv.replanned'));
+      return;
+    }
+    const { plan } = csvImport;
+    setCsvImport(null);
+    // 取り込んだ行が絞り込みで隠れないように、検索と絞り込みを外す
+    if (searchQuery) onSearchChange('');
+    listView.clearFilters();
+    editing.applyCsvImport(plan);
+    showInfo(
+      t('itemCsv.imported', { updates: plan.updates.length, additions: plan.additions.length })
+    );
   };
 
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
@@ -559,36 +515,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     },
     // openConfirmDialog は毎レンダー作られるが setState しか呼ばないので依存に含めない
     [editing.deleteItems, t]
-  );
-
-  const filteredItems = useMemo(() => {
-    const filtered = filterEditableItems(workingItems, {
-      sourceFile: selectedDataFile,
-      autoImportFilter,
-      searchQuery,
-    });
-    return missingOnly ? filtered.filter((item) => missingIds.has(getItemKey(item))) : filtered;
-  }, [workingItems, selectedDataFile, autoImportFilter, searchQuery, missingOnly, missingIds]);
-
-  // 表示順は「読み込み・保存時」と「見出しクリック時」にだけ作り直し、編集中は固定する。
-  // こうしないと、名前を入力した瞬間に行が並び順の位置へ飛んでしまう
-  const workingItemsRef = useRef(workingItems);
-  workingItemsRef.current = workingItems;
-  const displayOrder = useMemo(
-    () => sortItemIds(workingItemsRef.current, sortState),
-    // baseVersion は作り直しの契機として使う（値そのものは使わない）
-    [sortState, baseVersion]
-  );
-  const orderedItems = useMemo(
-    () => applyDisplayOrder(filteredItems, displayOrder),
-    [filteredItems, displayOrder]
-  );
-
-  const handleSortChange = (column: SortColumn) => setSortState((prev) => toggleSort(prev, column));
-
-  const visibleSelectedItems = useMemo(
-    () => filteredItems.filter((item) => selectedItems.has(getItemKey(item))),
-    [filteredItems, selectedItems]
   );
 
   const handleDeleteSelected = () => handleRequestDelete(visibleSelectedItems);
@@ -624,37 +550,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   }, [selectedTabIndex, dataFileTabs, selectedDataFile]);
 
-  // ファイル変更時にフィルタをリセット
-  useEffect(() => {
-    setAutoImportFilter('all');
-  }, [selectedDataFile]);
-
   // タブを消したなどで選択中のタブが無くなったら、最後のタブを選ぶ
   useEffect(() => {
     if (dataFileTabs.length > 0 && selectedTabIndex >= dataFileTabs.length) {
       setSelectedTabIndex(dataFileTabs.length - 1);
     }
   }, [dataFileTabs.length, selectedTabIndex]);
-
-  // メインウィンドウからのインポートモーダル表示リクエストを処理
-  useEffect(() => {
-    if (!pendingImportModal) return;
-
-    switch (pendingImportModal) {
-      case 'bookmark':
-        setIsBookmarkModalOpen(true);
-        break;
-      case 'app':
-        setIsAppImportModalOpen(true);
-        break;
-    }
-    onClearPendingImportModal();
-  }, [pendingImportModal]);
-
-  // 表示されなくなったアイテム（検索・フィルタ・ファイル切替）の選択を外す
-  useEffect(() => {
-    editing.retainVisibleSelection(filteredItems);
-  }, [filteredItems, editing.retainVisibleSelection]);
 
   // 外部の変更を取り込んだときの結果を知らせる
   useEffect(() => {
@@ -670,8 +571,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     editing.clearRebaseNotice();
   }, [rebaseNotice]);
 
-  const isFiltered = searchQuery.trim().length > 0 || autoImportFilter !== 'all' || missingOnly;
-
   return (
     <div className="edit-mode-view" onKeyDown={handleKeyDown} tabIndex={0}>
       <AdminItemManagerTabBar
@@ -686,18 +585,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       <AdminItemManagerToolbar
         onAddItem={handleAddItem}
         onAddFolder={handleAddFolder}
-        onOpenBookmarkImport={() => setIsBookmarkModalOpen(true)}
-        onOpenAppImport={() => setIsAppImportModalOpen(true)}
+        onOpenBookmarkImport={imports.openBookmarkModal}
+        onOpenAppImport={imports.openAppImportModal}
+        onImportCsv={() => void handleImportCsv()}
+        onExportCsv={() => void handleExportCsv()}
         onOpenAutoImportSettings={onOpenAutoImportSettings}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
-        autoImportFilter={autoImportFilter}
-        onAutoImportFilterChange={setAutoImportFilter}
-        rules={currentFileRules}
+        filters={filters}
+        onClearColumnFilter={(column) => setColumnFilter(column, undefined)}
+        onClearAllFilters={listView.clearFilters}
         ruleNames={autoImportRuleMap}
-        missingOnly={missingOnly}
-        missingOnlyAvailable={pathCheck.hasChecked}
-        onToggleMissingOnly={() => setMissingOnly((prev) => !prev)}
         onCheckMissingPaths={() => void handleCheckMissingPaths()}
         checkingMissingPaths={pathCheck.checking}
         onDedupe={handleDedupe}
@@ -725,6 +623,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           isFiltered={isFiltered}
           sortState={sortState}
           onSortChange={handleSortChange}
+          onSort={setSort}
+          columns={columns}
+          filters={filters}
+          onFilterChange={setColumnFilter}
+          filterOptions={filterOptions}
+          linkStatusOf={linkStatusOf}
+          usageOf={launchUsage.usageOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}
           onItemEdit={editing.recordEdit}
@@ -745,7 +650,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             : ''}
         </span>
         <span className="total-count">
-          {t('itemManager.status.total', { count: filteredItems.length })}
+          {isFiltered && filteredItems.length !== fileItemCount
+            ? t('itemManager.status.totalFiltered', {
+                count: filteredItems.length,
+                total: fileItemCount,
+              })
+            : t('itemManager.status.total', { count: filteredItems.length })}
         </span>
         {invalidCount > 0 && (
           <span className="invalid-count">
@@ -770,29 +680,39 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         )}
       </div>
 
-      {isBookmarkModalOpen && (
+      {imports.isBookmarkModalOpen && (
         <BookmarkImportModal
           existingItems={workingItems}
           dataFileTabs={dataFileTabs}
           dataFileLabels={dataFileLabels}
           initialTabIndex={selectedTabIndex}
-          onImport={handleBookmarkImport}
-          onSaveAsRule={handleBookmarkSaveAsRule}
-          onCancel={() => setIsBookmarkModalOpen(false)}
+          onImport={imports.handleBookmarkImport}
+          onSaveAsRule={imports.handleBookmarkSaveAsRule}
+          onCancel={imports.closeBookmarkModal}
           onOpenAutoImportSettings={onOpenAutoImportSettings}
           autoImportRuleCount={autoImportSettings.rules.length}
         />
       )}
 
       <AppImportModal
-        isOpen={isAppImportModalOpen}
-        onClose={() => setIsAppImportModalOpen(false)}
-        onImport={handleAppImport}
+        isOpen={imports.isAppImportModalOpen}
+        onClose={imports.closeAppImportModal}
+        onImport={imports.handleAppImport}
         existingItems={workingItems}
         dataFileTabs={dataFileTabs}
         dataFileLabels={dataFileLabels}
         initialTabIndex={selectedTabIndex}
       />
+
+      {csvImport && (
+        <AdminItemCsvImportModal
+          fileName={csvImport.fileName}
+          plan={csvImport.plan}
+          getFileLabel={getFileLabel}
+          onConfirm={confirmCsvImport}
+          onCancel={() => setCsvImport(null)}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
