@@ -252,6 +252,8 @@ const electronAPI: ElectronAPI = {
     loadItems: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS),
     addItem: (item, groupId, workspaceId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_ITEM, item, groupId, workspaceId),
+    createItem: (body, groupId, workspaceId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CREATE_ITEM, body, groupId, workspaceId),
     addItemsFromPaths: (filePaths, groupId, workspaceId) =>
       ipcRenderer.invoke(
         IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
@@ -314,6 +316,8 @@ const electronAPI: ElectronAPI = {
     openItemEditor: (itemId) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, itemId),
     openItemPicker: (groupId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_PICKER, groupId),
+    openNewItemEditor: (groupId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_NEW_ITEM_EDITOR, groupId),
     openConfirm: (request) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_CONFIRM, request),
     getConfirmRequest: (requestId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_GET_CONFIRM_REQUEST, requestId),
@@ -488,6 +492,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_SUBGROUP, callback),
   onWorkspaceGroupMenuAddFromMain: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN, callback),
+  onWorkspaceGroupMenuAddNew: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_NEW, callback),
   onWorkspaceGroupMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,

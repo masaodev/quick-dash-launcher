@@ -187,6 +187,27 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
+  // 編集フォームで新しく入力したもの（グループの右クリック「新しく入力して追加」）。クリップボードの中身は
+  // 入力したときに作った実データのファイルをそのまま持たせる（ほかのアイテムと共有しないので複製しない）
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_CREATE_ITEM,
+    (_event, body: WorkspaceItemUpdate, groupId?: string, workspaceId?: string) =>
+      withWorkspaceService(
+        async (service) => {
+          const created = await service.createItem(body, groupId, workspaceId);
+          logger.info(
+            { id: created.id, name: created.displayName, groupId, workspaceId },
+            'Created workspace item'
+          );
+          notifyWorkspaceChanged();
+          return created;
+        },
+        'Failed to create workspace item',
+        undefined,
+        true
+      )
+  );
+
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
     (_event, filePaths: string[], groupId?: string, workspaceId?: string) =>

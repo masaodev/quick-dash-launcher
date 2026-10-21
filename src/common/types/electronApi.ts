@@ -275,6 +275,12 @@ export interface ElectronAPI {
     // アイテム管理
     loadItems: () => Promise<WorkspaceItem[]>;
     addItem: (item: AppItem, groupId?: string, workspaceId?: string) => Promise<WorkspaceItem>;
+    /** 中身（編集フォームで新しく入力したもの）からアイテムを作る */
+    createItem: (
+      body: WorkspaceItemUpdate,
+      groupId?: string,
+      workspaceId?: string
+    ) => Promise<WorkspaceItem>;
     addItemsFromPaths: (
       filePaths: string[],
       groupId?: string,
@@ -329,6 +335,8 @@ export interface ElectronAPI {
     openItemEditor: (itemId: string) => Promise<void>;
     /** グループに追加するアイテムを選ぶウィンドウを開く */
     openItemPicker: (groupId: string) => Promise<void>;
+    /** グループに新しいアイテムを入力して追加するウィンドウを開く */
+    openNewItemEditor: (groupId: string) => Promise<void>;
     /**
      * 確認を独立した子ウィンドウで開く（開き元のウィンドウは動かさない）
      * 確認されたら結果、キャンセル・閉じたときは null で解決する
@@ -467,6 +475,7 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuDelete: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddFromMain: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuAddNew: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuMoveToWorkspace: (
     callback: (groupId: string, targetWorkspaceId: string) => void
   ) => () => void;

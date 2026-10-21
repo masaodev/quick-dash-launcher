@@ -59,6 +59,21 @@ describe('WorkspaceItemManager', () => {
     });
   });
 
+  it('createItem は入力した中身からアイテムを作り、指定したグループの末尾に足すこと', () => {
+    const first = manager.addItem({ displayName: '先', path: 'notepad.exe', type: 'app' });
+    const created = manager.createItem(
+      { type: 'set', displayName: '朝のセット', entries: [{ itemId: first.id }] },
+      'g1'
+    );
+    expect(created).toMatchObject({
+      type: 'set',
+      displayName: '朝のセット',
+      groupId: 'g1',
+      order: first.order + 1,
+    });
+    expect(readItems().map((item) => item.displayName)).toEqual(['先', '朝のセット']);
+  });
+
   it('updateItem は path が変わらない編集でショートカットのリンク先（originalPath）を保つこと', () => {
     const added = manager.addItem({
       displayName: 'Docs',

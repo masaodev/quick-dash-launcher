@@ -368,6 +368,7 @@ export const ja = {
       addSubgroup: '➕ サブグループを追加',
       addItem: '➕ アイテムを追加',
       addFromMain: '🔍 メインウィンドウのアイテムから選ぶ…',
+      addNew: '✏️ 新しく入力して追加…',
       rename: '✏️ グループ名を変更',
       changeColor: '🎨 色を変更',
       archive: '🗄️ グループをアーカイブ',
@@ -2028,6 +2029,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     confirmNotFound: '確認する内容が見つかりません。',
     edit: {
       title: 'ワークスペースアイテムの編集',
+      newTitle: 'ワークスペースにアイテムを追加',
+      add: '追加',
+      addFailed: 'ワークスペースへの追加に失敗しました',
       notFound: 'アイテムが見つかりません',
       pageNotFound: '編集するアイテムが見つかりません（削除された可能性があります）。',
       updateFailed: 'ワークスペースアイテムの更新に失敗しました',

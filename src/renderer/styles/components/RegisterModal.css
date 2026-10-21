@@ -56,6 +56,11 @@
   color: var(--text-disabled);
 }
 
+/* ワークスペースのグループに追加するときの追加先（選ぶものは無く、名前を並べるだけ） */
+.workspace-dest-name {
+  font-weight: var(--font-weight-semibold);
+}
+
 .register-dest select {
   width: 200px;
   height: var(--input-height-sm);

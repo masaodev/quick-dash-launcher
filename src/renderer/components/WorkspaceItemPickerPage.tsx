@@ -4,27 +4,24 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type {
-  AppItem,
-  ClipboardItem,
-  LauncherItem,
-  SetItem,
-  WorkspaceGroupView,
-  WorkspaceItem,
-} from '@common/types';
+import type { AppItem, ClipboardItem, LauncherItem, SetItem, WorkspaceItem } from '@common/types';
 import { isClipboardItem, isLauncherItem, isSetItem } from '@common/types/guards';
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
 
 import SetItemPickerModal from './SetItemPickerModal';
+import WorkspaceDestinationBand, {
+  expandDestinationGroup,
+  loadWorkspaceDestination,
+  type WorkspaceDestination,
+} from './WorkspaceDestinationBand';
 import { Button } from './ui';
 
 interface WorkspaceItemPickerPageProps {
   groupId: string;
 }
 
-/** 選ぶ画面の 1 行と、追加するときに渡すメインのアイテム */
 /** 選べるアイテム（メインウィンドウのアイテム。ウィンドウ検索の結果は来ない） */
 type PickableItem = LauncherItem | ClipboardItem | SetItem;
 
@@ -32,16 +29,10 @@ function isPickable(item: AppItem): item is PickableItem {
   return isLauncherItem(item) || isSetItem(item) || isClipboardItem(item);
 }
 
+/** 選ぶ画面の 1 行と、追加するときに渡すメインのアイテム */
 interface PickerEntry {
   row: SetCatalogItem;
   item: PickableItem;
-}
-
-/** 追加先の表示（ワークスペース名 › 親グループ › グループ） */
-interface Destination {
-  group: WorkspaceGroupView;
-  workspaceName?: string;
-  path: string[];
 }
 
 /**
@@ -77,7 +68,7 @@ function rowKind(item: PickableItem): string {
  */
 const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ groupId }) => {
   const { t } = useTranslation();
-  const [destination, setDestination] = useState<Destination | null>(null);
+  const [destination, setDestination] = useState<WorkspaceDestination | null>(null);
   const [entries, setEntries] = useState<PickerEntry[]>([]);
   const [addedKeys, setAddedKeys] = useState<ReadonlySet<string>>(new Set());
   const [notFound, setNotFound] = useState(false);
@@ -87,29 +78,19 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
     let cancelled = false;
     (async () => {
       try {
-        const api = window.electronAPI.workspaceAPI;
-        const [groups, workspaces, workspaceItems, allItems, settings] = await Promise.all([
-          api.loadGroups(),
-          api.loadWorkspaces(),
-          api.loadItems(),
+        const [found, workspaceItems, allItems, settings] = await Promise.all([
+          loadWorkspaceDestination(groupId),
+          window.electronAPI.workspaceAPI.loadItems(),
           window.electronAPI.loadDataFiles('internal'),
           window.electronAPI.getSettings(),
         ]);
-        const group = groups.find((g) => g.id === groupId);
         if (cancelled) return;
-        if (!group) {
+        if (!found) {
           setNotFound(true);
           return;
         }
-        const parent = group.parentGroupId
-          ? groups.find((g) => g.id === group.parentGroupId)
-          : undefined;
-        setDestination({
-          group,
-          workspaceName: workspaces.find((ws) => ws.id === group.workspaceId)?.displayName,
-          path: [...(parent ? [parent.displayName] : []), group.displayName],
-        });
-        document.title = t('workspace.picker.title', { group: group.displayName });
+        setDestination(found);
+        document.title = t('workspace.picker.title', { group: found.group.displayName });
 
         const launchers = allItems.filter((item): item is LauncherItem => isLauncherItem(item));
         const icons: Record<string, string> = await window.electronAPI
@@ -174,10 +155,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
       const { group } = destination;
       setBusy(true);
       try {
-        // 折りたたんでいたら開き、入ったアイテムが見えるようにする
-        if (group.collapsed) {
-          await window.electronAPI.workspaceAPI.setGroupsCollapsed([group.id], false);
-        }
+        await expandDestinationGroup(destination);
         for (const item of items) {
           await window.electronAPI.workspaceAPI.addItem(item, group.id, group.workspaceId);
         }
@@ -216,24 +194,6 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
     return <div className="set-picker-page" />;
   }
 
-  const banner = (
-    <div className="register-dest set-picker-dest">
-      <span className="register-dest-label">{t('workspace.picker.destination')}</span>
-      {[...(destination.workspaceName ? [destination.workspaceName] : []), ...destination.path].map(
-        (name, index) => (
-          <React.Fragment key={index}>
-            {index > 0 && (
-              <span className="register-dest-sep" aria-hidden>
-                ›
-              </span>
-            )}
-            <span className="set-picker-dest-name">{name}</span>
-          </React.Fragment>
-        )
-      )}
-    </div>
-  );
-
   return (
     <SetItemPickerModal
       asPage
@@ -241,7 +201,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
       catalog={catalog}
       addedKeys={addedKeys}
       title={t('workspace.picker.title', { group: destination.group.displayName })}
-      banner={banner}
+      banner={<WorkspaceDestinationBand destination={destination} />}
       busy={busy}
       onClose={close}
       onAdd={(rows) => void add(rows)}
