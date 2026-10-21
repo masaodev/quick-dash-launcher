@@ -228,6 +228,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     orderedItems,
     visibleSelectedItems,
     isFiltered,
+    fileItemCount,
   } = listView;
 
   const columns = useAdminItemColumns();
@@ -648,7 +649,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             : ''}
         </span>
         <span className="total-count">
-          {t('itemManager.status.total', { count: filteredItems.length })}
+          {isFiltered && filteredItems.length !== fileItemCount
+            ? t('itemManager.status.totalFiltered', {
+                count: filteredItems.length,
+                total: fileItemCount,
+              })
+            : t('itemManager.status.total', { count: filteredItems.length })}
         </span>
         {invalidCount > 0 && (
           <span className="invalid-count">

@@ -1134,6 +1134,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memoEmptyTitle: 'クリックしてメモを書く（Enter で改行、Ctrl+Enter で確定、Esc で取り消し）',
       memoMoreLines: '2 行目以降あり',
       memoPlaceholder: 'メモ',
+      memoEditHint: 'Enter で改行・Ctrl+Enter で確定・Esc で取り消し',
       typeSelectTitle:
         '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
@@ -1158,6 +1159,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       selected_other: '{{count}} 件を選択中',
       total_one: '合計: {{count}} 件',
       total_other: '合計: {{count}} 件',
+      totalFiltered: '合計: {{count}} / {{total}} 件（絞り込み中）',
       invalid_one: '入力不備: {{count}} 件',
       invalid_other: '入力不備: {{count}} 件',
       missing_one: 'リンク切れ: {{count}} 件',

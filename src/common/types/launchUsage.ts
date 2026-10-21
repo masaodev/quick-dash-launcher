@@ -14,8 +14,14 @@ export interface LaunchUsageSnapshot {
   since: number;
   /** データファイルのアイテムの id → 記録（メイン画面・セットから開いたとき） */
   byId: Record<string, LaunchUsageRecord>;
-  /** パス → 記録（ワークスペースから開いたとき・フォルダ取込で展開したアイテムを開いたとき（展開元のフォルダのパス）。キーは launchUsagePathKey） */
+  /** パス → 記録（ワークスペースから開いたとき。キーは launchUsagePathKey） */
   byPath: Record<string, LaunchUsageRecord>;
+  /**
+   * フォルダ取込のフォルダのパス → 記録（展開したアイテムを開いたとき。キーは launchUsagePathKey）
+   *
+   * byPath と分けるのは、同じフォルダを指す単一アイテムに、中のファイルを開いた回数を足さないため
+   */
+  byDir: Record<string, LaunchUsageRecord>;
 }
 
 /**

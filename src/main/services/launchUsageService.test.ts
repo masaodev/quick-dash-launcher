@@ -38,6 +38,11 @@ describe('LaunchUsageService', () => {
     expect(snapshot.byId.abc12345.count).toBe(2);
     expect(snapshot.byPath[launchUsagePathKey('c:\\tools\\app')].count).toBe(1);
 
+    // フォルダ取込の展開は別に数える（同じフォルダを指す単一アイテムに足さない）
+    await service.recordByDir('C:\\Tools\\App');
+    expect(service.getSnapshot().byDir[launchUsagePathKey('C:\\Tools\\App')].count).toBe(1);
+    expect(snapshot.byPath[launchUsagePathKey('c:\\tools\\app')].count).toBe(1);
+
     service.flush();
     const saved = JSON.parse(fs.readFileSync(path.join(dir, 'item-usage.json'), 'utf8'));
     expect(saved.version).toBe(1);

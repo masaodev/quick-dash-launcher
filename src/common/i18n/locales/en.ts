@@ -1132,6 +1132,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'Select to write a note (Enter for a new line, Ctrl+Enter to finish, Esc to cancel)',
       memoMoreLines: 'More lines',
       memoPlaceholder: 'Note',
+      memoEditHint: 'Enter: new line · Ctrl+Enter: save · Esc: cancel',
       typeSelectTitle:
         'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows) and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
@@ -1156,6 +1157,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       selected_other: '{{count}} selected',
       total_one: 'Total: {{count}} item',
       total_other: 'Total: {{count}} items',
+      totalFiltered: 'Total: {{count}} of {{total}} items (filtered)',
       invalid_one: 'Problems: {{count}}',
       invalid_other: 'Problems: {{count}}',
       missing_one: 'Broken links: {{count}}',

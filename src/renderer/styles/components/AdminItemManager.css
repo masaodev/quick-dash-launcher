@@ -827,12 +827,30 @@
   color: var(--text-muted);
 }
 
-.raw-items-table .memo-column .memo-edit-textarea {
+/* メモの編集（セルの上に重ねる。下にキー操作の案内） */
+.raw-items-table .memo-column .memo-edit-overlay {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 50;
   width: max(100%, 320px);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.raw-items-table .memo-column .memo-edit-hint {
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raw-items-table .memo-column .memo-edit-textarea {
+  display: block;
+  width: 100%;
   height: 120px;
   padding: var(--spacing-xs) var(--spacing-sm);
   font-family: inherit;
@@ -840,7 +858,6 @@
   border: var(--border-normal);
   border-color: var(--color-primary);
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
   resize: vertical;
   box-sizing: border-box;
 }
@@ -1276,8 +1293,10 @@
   z-index: var(--z-dropdown);
 }
 
+/* 位置は usePopoverPosition が画面の内側に収める。高さも画面いっぱいまで使い、それを超えたらスクロール */
 .admin-popover .dropdown-menu {
   position: static;
+  max-height: calc(100vh - 2 * var(--spacing-sm));
 }
 
 /* 取込元列（手動か、自動取込ルールの名前） */
@@ -1437,6 +1456,13 @@
 .raw-items-table .last-launched-column {
   font-size: var(--font-size-sm);
   white-space: nowrap;
+}
+
+/* 日時のセルは幅に収まらなければ … で切る（見出しは ▾ を隠さないよう切らない） */
+.raw-items-table td.last-launched-column,
+.raw-items-table td.updated-at-column {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .raw-items-table td.last-launched-column,

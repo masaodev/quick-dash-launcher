@@ -628,7 +628,8 @@ export function sortItemIds(
 ): string[] {
   if (!sort.column) return items.map((item) => item.item.id);
   const column = sort.column;
-  const collator = new Intl.Collator('ja');
+  // 数字は数として比べる（「アイテム 2」を「アイテム 10」より前に）
+  const collator = new Intl.Collator('ja', { numeric: true });
   const textOf = (item: EditableJsonItem): string => {
     if (column === 'type') return item.item.type;
     if (column === 'displayName')

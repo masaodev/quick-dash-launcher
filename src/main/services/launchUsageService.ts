@@ -43,7 +43,7 @@ const WRITE_DELAY_MS = 1000;
  *
  * データファイルには書かない（起動のたびにデータファイルを書き換えると、ファイル監視で一覧を読み直し、
  * 同期・Git 管理している人の差分も増えるため）。
- * メイン画面・セットからの起動は id で、ワークスペースからの起動は id がメインと違うのでパスと引数で記録する。
+ * メイン画面・セットからの起動は id で、ワークスペースからの起動は id がメインと違うのでパス（引数は含めない）で記録する。
  * アイテム管理は id とパスの両方の記録を足して見せる
  */
 export class LaunchUsageService {
@@ -75,6 +75,7 @@ export class LaunchUsageService {
         since: typeof raw.since === 'number' ? raw.since : Date.now(),
         byId: validRecords(raw.byId),
         byPath: validRecords(raw.byPath),
+        byDir: validRecords(raw.byDir),
       };
     } catch (error) {
       // 初めて（ファイルが無い）なら記録を始める。壊れていたら、消さずに脇へ移してから始め直す
@@ -87,7 +88,7 @@ export class LaunchUsageService {
           // 移せなくても始め直す（次の書き込みで上書きする）
         }
       }
-      this.data = { version: 1, since: Date.now(), byId: {}, byPath: {} };
+      this.data = { version: 1, since: Date.now(), byId: {}, byPath: {}, byDir: {} };
     }
     return this.data;
   }
@@ -138,10 +139,7 @@ export class LaunchUsageService {
     this.scheduleWrite();
   }
 
-  /**
-   * ワークスペースから開いたアイテム（id がデータファイルと違う）と、フォルダ取込で展開したアイテム
-   * （呼び出し側が展開元のフォルダのパスを渡す）
-   */
+  /** ワークスペースから開いたアイテム（id がデータファイルと違う） */
   async recordByPath(itemPath: string | undefined): Promise<void> {
     if (!itemPath || !(await this.isEnabled())) return;
     this.bump(this.load().byPath, launchUsagePathKey(itemPath), Date.now());
@@ -149,8 +147,16 @@ export class LaunchUsageService {
     this.scheduleWrite();
   }
 
+  /** フォルダ取込で展開したアイテム（呼び出し側が展開元のフォルダのパスを渡す） */
+  async recordByDir(dirPath: string | undefined): Promise<void> {
+    if (!dirPath || !(await this.isEnabled())) return;
+    this.bump(this.load().byDir, launchUsagePathKey(dirPath), Date.now());
+    this.dirty = true;
+    this.scheduleWrite();
+  }
+
   getSnapshot(): LaunchUsageSnapshot {
-    const { since, byId, byPath } = this.load();
-    return { since, byId, byPath };
+    const { since, byId, byPath, byDir } = this.load();
+    return { since, byId, byPath, byDir };
   }
 }

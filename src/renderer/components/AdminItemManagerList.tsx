@@ -127,9 +127,10 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
     const def = ADMIN_ITEM_COLUMNS.find((c) => c.id === id);
     const column = def ? filterColumnOf(def) : null;
     if (!column) return;
-    // 右端の列でも画面からはみ出さないよう、左の位置を抑える
-    const x = Math.max(0, Math.min(rect.left, window.innerWidth - 260));
-    setOpenFilter((prev) => (prev?.column === column ? null : { column, x, y: rect.bottom }));
+    // 画面からはみ出す分は、メニューの側で測って内側へずらす（usePopoverPosition）
+    setOpenFilter((prev) =>
+      prev?.column === column ? null : { column, x: rect.left, y: rect.bottom }
+    );
   }, []);
   const filteredColumns = useMemo(() => new Set<string>(activeFilterColumns(filters)), [filters]);
   const openFilterDef = openFilter

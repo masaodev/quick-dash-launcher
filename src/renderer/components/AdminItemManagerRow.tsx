@@ -308,20 +308,26 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   const renderMemoCell = () => {
     if (editingColumn === 'memo') {
       return (
-        <textarea
-          value={editingValue}
-          onChange={(e) => onEditingValueChange(e.target.value)}
-          onBlur={() => onCommitMemo(item)}
-          onKeyDown={(e) => onMemoKeyDown(e, item)}
-          onFocus={(e) => {
-            // 続きを書けるように、カーソルを末尾に置く
-            const end = e.currentTarget.value.length;
-            e.currentTarget.setSelectionRange(end, end);
-          }}
-          className="memo-edit-textarea"
-          placeholder={t('itemManager.row.memoPlaceholder')}
-          autoFocus
-        />
+        <div className="memo-edit-overlay">
+          <textarea
+            value={editingValue}
+            onChange={(e) => onEditingValueChange(e.target.value)}
+            onBlur={() => onCommitMemo(item)}
+            onKeyDown={(e) => onMemoKeyDown(e, item)}
+            onFocus={(e) => {
+              // 続きを書けるように、カーソルを末尾に置く
+              const end = e.currentTarget.value.length;
+              e.currentTarget.setSelectionRange(end, end);
+            }}
+            className="memo-edit-textarea"
+            placeholder={t('itemManager.row.memoPlaceholder')}
+            autoFocus
+          />
+          {/* 押すと textarea のフォーカスが外れて確定してしまうので、押下を止める */}
+          <div className="memo-edit-hint" onMouseDown={(e) => e.preventDefault()}>
+            {t('itemManager.row.memoEditHint')}
+          </div>
+        </div>
       );
     }
 
@@ -429,7 +435,11 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
             );
           case 'lastLaunched':
             return (
-              <td key={column} className="last-launched-column">
+              <td
+                key={column}
+                className="last-launched-column"
+                title={lastLaunchedAt ? formatUpdatedAt(lastLaunchedAt) : undefined}
+              >
                 {lastLaunchedAt ? formatUpdatedAt(lastLaunchedAt) : '-'}
               </td>
             );
@@ -441,7 +451,11 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
             );
           case 'updatedAt':
             return (
-              <td key={column} className="updated-at-column">
+              <td
+                key={column}
+                className="updated-at-column"
+                title={jsonItem.updatedAt ? formatUpdatedAt(jsonItem.updatedAt) : undefined}
+              >
                 {formatUpdatedAt(jsonItem.updatedAt)}
               </td>
             );

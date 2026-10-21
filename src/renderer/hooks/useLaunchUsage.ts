@@ -41,8 +41,11 @@ export function useLaunchUsage() {
       if (!snapshot) return undefined;
       const json = item.item;
       // フォルダ取込の行は、展開したアイテムを開いた記録（展開元のフォルダのパスで数えている）
+      if (json.type === 'dir') {
+        return json.path ? snapshot.byDir[launchUsagePathKey(json.path)] : undefined;
+      }
       const byPath =
-        (json.type === 'item' || json.type === 'dir') && json.path
+        json.type === 'item' && json.path
           ? snapshot.byPath[launchUsagePathKey(json.path)]
           : undefined;
       return mergeLaunchUsage(snapshot.byId[json.id], byPath);

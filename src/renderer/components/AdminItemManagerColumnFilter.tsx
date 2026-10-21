@@ -13,6 +13,7 @@ import {
   type TypeFilterKey,
 } from '../utils/adminItemFilters';
 import type { SortColumn, SortState } from '../utils/editableItemOperations';
+import { usePopoverPosition } from '../hooks/usePopoverPosition';
 
 const LINK_FILTERS: readonly LinkFilter[] = ['missing', 'exists', 'unknown'];
 
@@ -57,6 +58,7 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
 }) => {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
+  const popoverStyle = usePopoverPosition(ref, position);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -268,12 +270,7 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
   };
 
   return (
-    <div
-      ref={ref}
-      className="admin-popover"
-      data-testid="admin-column-filter"
-      style={{ left: position.x, top: position.y }}
-    >
+    <div ref={ref} className="admin-popover" data-testid="admin-column-filter" style={popoverStyle}>
       <div className="dropdown-menu column-filter-menu" role="menu">
         {sortColumn && (
           <>

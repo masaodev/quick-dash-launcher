@@ -31,7 +31,7 @@ async function openItem(item: LauncherItem): Promise<void> {
   if (await openSingleItem(item)) {
     // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ（フォルダ取込の行）に数える
     const usage = LaunchUsageService.getInstance();
-    if (item.isDirExpanded) await usage?.recordByPath(item.expandedFrom);
+    if (item.isDirExpanded) await usage?.recordByDir(item.expandedFrom);
     else if (item.id) await usage?.recordById(item.id);
     else await usage?.recordByPath(item.path);
   }

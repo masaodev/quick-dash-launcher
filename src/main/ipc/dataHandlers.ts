@@ -130,7 +130,12 @@ export function setupDataHandlers(configFolder: string) {
   ipcMain.handle(
     IPC_CHANNELS.GET_LAUNCH_USAGE,
     () =>
-      LaunchUsageService.getInstance()?.getSnapshot() ?? { since: Date.now(), byId: {}, byPath: {} }
+      LaunchUsageService.getInstance()?.getSnapshot() ?? {
+        since: Date.now(),
+        byId: {},
+        byPath: {},
+        byDir: {},
+      }
   );
 
   ipcMain.handle(IPC_CHANNELS.ITEMS_CSV_READ, async (event) => {
