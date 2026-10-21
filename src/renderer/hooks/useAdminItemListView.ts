@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { EditableJsonItem } from '@common/types/editableItem';
+import type { LaunchUsageRecord } from '@common/types/launchUsage';
 
 import {
   activeFilterColumns,
@@ -29,6 +30,12 @@ interface UseAdminItemListViewOptions {
   selectedItems: Set<string>;
   /** 見えている行だけを選択に残す */
   retainVisibleSelection: (visibleItems: EditableJsonItem[]) => void;
+  /** 起動の記録（最終起動・起動回数の並べ替えと絞り込み） */
+  usageOf: (item: EditableJsonItem) => LaunchUsageRecord | undefined;
+  /** 起動の記録を読み込めたか（読めたら、記録で並べている順を作り直す） */
+  usageLoaded: boolean;
+  /** 自動取込ルールの id → 名前（取込元で並べるとき） */
+  ruleNames: Map<string, string>;
 }
 
 /**
@@ -44,6 +51,9 @@ export function useAdminItemListView({
   searchQuery,
   selectedItems,
   retainVisibleSelection,
+  usageOf,
+  usageLoaded,
+  ruleNames,
 }: UseAdminItemListViewOptions) {
   // 並べ替え。初期値はメイン画面と同じ表示名の昇順
   const [sortState, setSortState] = useState<SortState>({
@@ -87,18 +97,30 @@ export function useAdminItemListView({
       searchQuery,
     });
     if (activeFilterColumns(filters).length === 0) return searched;
-    const context = { linkStatusOf, now: Date.now() };
+    const context = {
+      linkStatusOf,
+      lastLaunchedAtOf: (item: EditableJsonItem) => usageOf(item)?.lastLaunchedAt,
+      now: Date.now(),
+    };
     return searched.filter((item) => matchesColumnFilters(item, filters, context));
-  }, [workingItems, selectedDataFile, searchQuery, filters, linkStatusOf]);
+  }, [workingItems, selectedDataFile, searchQuery, filters, linkStatusOf, usageOf]);
 
   // 表示順は「読み込み・保存時」と「見出しクリック時」にだけ作り直し、編集中は固定する。
   // こうしないと、名前を入力した瞬間に行が並び順の位置へ飛んでしまう
   const workingItemsRef = useRef(workingItems);
   workingItemsRef.current = workingItems;
+  const usageOfRef = useRef(usageOf);
+  usageOfRef.current = usageOf;
+  const ruleNamesRef = useRef(ruleNames);
+  ruleNamesRef.current = ruleNames;
   const displayOrder = useMemo(
-    () => sortItemIds(workingItemsRef.current, sortState),
-    // baseVersion は作り直しの契機として使う（値そのものは使わない）
-    [sortState, baseVersion]
+    () =>
+      sortItemIds(workingItemsRef.current, sortState, usageOfRef.current, (ruleId) =>
+        ruleNamesRef.current.get(ruleId)
+      ),
+    // baseVersion・usageLoaded は作り直しの契機として使う（値そのものは使わない）。
+    // 記録は focus のたびに読み直すが、そのたびに行が動かないよう、最初に読めたときだけ作り直す
+    [sortState, baseVersion, usageLoaded]
   );
   const orderedItems = useMemo(
     () => applyDisplayOrder(filteredItems, displayOrder),

@@ -343,6 +343,20 @@ describe('editableItemOperations', () => {
     expect(sortItemIds(items, { column: 'memo', direction: 'desc' })).toEqual([iroha, aiu, noMemo]);
   });
 
+  it('sortItemIds は名前の中の数字を数として比べること（2 が 10 より前）', () => {
+    const items = rows(
+      [launcher('アイテム 10', 'C:\\a')],
+      [launcher('アイテム 2', 'C:\\b')],
+      [launcher('アイテム 1', 'C:\\c')]
+    );
+    const [ten, two, one] = items.map((i) => i.item.id);
+    expect(sortItemIds(items, { column: 'displayName', direction: 'asc' })).toEqual([
+      one,
+      two,
+      ten,
+    ]);
+  });
+
   it('toggleSort は asc → desc → 解除 と回ること', () => {
     const s1 = toggleSort({ column: null, direction: 'asc' }, 'type');
     expect(s1).toEqual({ column: 'type', direction: 'asc' });

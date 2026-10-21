@@ -158,6 +158,20 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           </label>
           <div className="setting-description">{t('settings.system.cliDescription')}</div>
         </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.recordLaunchUsage}
+              onChange={(e) => handleSettingChange('recordLaunchUsage', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.system.recordLaunchUsage')}
+          </label>
+          <div className="setting-description">
+            {t('settings.system.recordLaunchUsageDescription')}
+          </div>
+        </div>
       </div>
 
       <div className="settings-section">

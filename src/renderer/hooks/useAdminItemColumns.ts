@@ -34,6 +34,8 @@ export function useAdminItemColumns() {
   const [setting, setSetting] = useState<AdminItemColumnsSetting>(EMPTY_COLUMNS_SETTING);
   const settingRef = useRef(setting);
   settingRef.current = setting;
+  /** 利用者が列を変えたか（変えたあとに届いた読み込みの結果は使わない） */
+  const changedRef = useRef(false);
   /** ドラッグ中の列と幅（離すまで保存しない） */
   const [dragging, setDragging] = useState<{ id: AdminItemColumnId; width: number } | null>(null);
   const dragRef = useRef<{ id: AdminItemColumnId; startX: number; startWidth: number } | null>(
@@ -45,7 +47,9 @@ export function useAdminItemColumns() {
     window.electronAPI
       .getSettings()
       .then((settings) => {
-        if (!cancelled) setSetting(normalizeColumnsSetting(settings.adminItemColumns));
+        if (!cancelled && !changedRef.current) {
+          setSetting(normalizeColumnsSetting(settings.adminItemColumns));
+        }
       })
       .catch((error) => logError('列の設定を読めませんでした:', error));
     return () => {
@@ -54,6 +58,8 @@ export function useAdminItemColumns() {
   }, []);
 
   const save = useCallback((next: AdminItemColumnsSetting) => {
+    changedRef.current = true;
+    settingRef.current = next;
     setSetting(next);
     window.electronAPI
       .setMultipleSettings({ adminItemColumns: next })

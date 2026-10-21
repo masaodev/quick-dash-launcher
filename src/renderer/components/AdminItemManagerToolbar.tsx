@@ -18,6 +18,8 @@ interface AdminItemManagerToolbarProps {
   onAddFolder: () => void;
   onOpenBookmarkImport: () => void;
   onOpenAppImport: () => void;
+  /** 追加「▼」: CSV から取り込む */
+  onImportCsv: () => void;
   /** 追加「▼」: 設定「ブックマーク自動取込」を開く */
   onOpenAutoImportSettings?: () => void;
 
@@ -36,6 +38,8 @@ interface AdminItemManagerToolbarProps {
   checkingMissingPaths: boolean;
   /** 整理: 重複を削除 */
   onDedupe: () => void;
+  /** 整理: すべてのタブのアイテムを CSV に書き出す */
+  onExportCsv: () => void;
 
   /** 表示中のうち選択しているアイテムの数。1 件以上なら選択中の操作に切り替える */
   selectedCount: number;
@@ -102,6 +106,7 @@ const AddSplitButton: React.FC<AdminItemManagerToolbarProps> = ({
   onAddFolder,
   onOpenBookmarkImport,
   onOpenAppImport,
+  onImportCsv,
   onOpenAutoImportSettings,
 }) => {
   const { t } = useTranslation();
@@ -144,6 +149,13 @@ const AddSplitButton: React.FC<AdminItemManagerToolbarProps> = ({
           </button>
           <button className="dropdown-item" onClick={choose(onOpenAppImport)}>
             {t('itemManager.header.addApps')}
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={choose(onImportCsv)}
+            title={t('itemManager.toolbar.importCsvTitle')}
+          >
+            {t('itemManager.toolbar.importCsv')}
           </button>
           {onOpenAutoImportSettings && (
             <>
@@ -195,6 +207,7 @@ const OrganizeDropdown: React.FC<AdminItemManagerToolbarProps> = ({
   onCheckMissingPaths,
   checkingMissingPaths,
   onDedupe,
+  onExportCsv,
 }) => {
   const { t } = useTranslation();
   const dropdown = useDropdown();
@@ -236,6 +249,17 @@ const OrganizeDropdown: React.FC<AdminItemManagerToolbarProps> = ({
           >
             {t('itemManager.header.dedupe')}
             <small className="dropdown-item-desc">{t('itemManager.header.dedupeDesc')}</small>
+          </button>
+          <div className="dropdown-separator" />
+          <button
+            className="dropdown-item"
+            onClick={() => {
+              dropdown.close();
+              onExportCsv();
+            }}
+          >
+            {t('itemManager.header.exportCsv')}
+            <small className="dropdown-item-desc">{t('itemManager.header.exportCsvDesc')}</small>
           </button>
         </div>
       )}

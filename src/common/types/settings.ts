@@ -164,6 +164,8 @@ export interface AppSettings {
   detachedPositionMode: DetachedPositionMode;
   /** ディスプレイの端に近づけたら吸着する（デフォルト: true） */
   windowSnapEnabled: boolean;
+  /** アイテムを起動した記録（最終起動・起動回数）を残す（デフォルト: true。手元の item-usage.json にだけ書く） */
+  recordLaunchUsage: boolean;
   /** アイテム管理の一覧の列の表示と幅（デフォルト: すべて既定） */
   adminItemColumns: AdminItemColumnsSetting;
 }

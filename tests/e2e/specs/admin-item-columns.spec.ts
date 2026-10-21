@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -210,6 +213,84 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
           'aria-sort',
           'descending'
         );
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  test('メイン画面で起動すると、最終起動の列に日時が出て、起動回数を数え、記録の無い行に絞り込める', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+
+    await test.step('ブラウザを開かないよう差し替えて、GitHub を 2 回起動する', async () => {
+      await electronApp.evaluate(({ shell }) => {
+        shell.openExternal = async () => {};
+      });
+      for (let i = 0; i < 2; i++) {
+        await electronApp.evaluate(({ BrowserWindow }) => {
+          const main = BrowserWindow.getAllWindows().find(
+            (w) => w.getTitle() === 'QuickDashLauncher'
+          );
+          main?.show();
+        });
+        await utils.searchFor('GitHub');
+        await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
+        await mainWindow.keyboard.press('Enter');
+        await expect
+          .poll(() => {
+            try {
+              const usage = JSON.parse(
+                fs.readFileSync(path.join(configHelper.getConfigDir(), 'item-usage.json'), 'utf8')
+              );
+              return Object.values(usage.byId as Record<string, { count: number }>)[0]?.count ?? 0;
+            } catch {
+              return 0;
+            }
+          })
+          .toBe(i + 1);
+      }
+    });
+
+    // 起動するとメイン画面は隠れるので、管理ウィンドウを開く前に出し直す
+    await electronApp.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows()
+        .find((w) => w.getTitle() === 'QuickDashLauncher')
+        ?.show();
+    });
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    try {
+      await test.step('最終起動の列に日時が出て、起動回数の列を出すと 2 回', async () => {
+        const github = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
+        await expect(github.locator('td.last-launched-column')).not.toHaveText('-');
+        await expect(
+          adminWindow
+            .locator('.raw-item-row', { hasText: 'Google' })
+            .locator('td.last-launched-column')
+        ).toHaveText('-');
+
+        await adminWindow.locator('th.name-column').click({ button: 'right' });
+        await adminWindow
+          .getByTestId('admin-column-menu')
+          .getByRole('menuitemcheckbox', { name: /起動回数/ })
+          .click();
+        await adminWindow.keyboard.press('Escape');
+        await expect(github.locator('td.launch-count-column')).toHaveText('2');
+      });
+
+      await test.step('最終起動の ▾ の「記録なし」で、起動していない行だけになる', async () => {
+        const total = await adminWindow.locator('.raw-item-row').count();
+        await adminWindow.locator('th.last-launched-column .column-filter-button').click();
+        const menu = adminWindow.getByTestId('admin-column-filter');
+        await expect(menu).toContainText('記録は');
+        await menu.getByRole('menuitemradio', { name: '記録なし', exact: true }).click();
+        await adminWindow.keyboard.press('Escape');
+        await expect(adminWindow.locator('.raw-item-row')).toHaveCount(total - 1);
+        await expect(adminWindow.locator('.raw-item-row', { hasText: 'GitHub' })).toHaveCount(0);
       });
     } finally {
       await adminWindow.close();
