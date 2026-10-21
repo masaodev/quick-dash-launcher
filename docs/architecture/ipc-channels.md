@@ -165,7 +165,19 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
 - `load-data-files` の再読み込みでワークスペースの内容が変わっていた場合にも送られる
-- `workspace:add-item` は、クリップボードアイテムなら保存データ（`clipboard-data/<id>.json`）を `ClipboardService.duplicateClipboardData` で複製し、複製を指すアイテムとして足す（メインウィンドウと 1 つのファイルを共有しない。複製できなければ元の参照のまま）。逆向き（ワークスペースのアイテムをメインウィンドウに登録）は、登録画面が保存するときに `clipboard:duplicate-data` で複製する
+- `workspace:add-item`（`item, groupId?, workspaceId?, options?: { copy?: boolean }`）は、参照できるメインウィンドウのアイテム（id を持ち、今のデータファイルにあるもの）なら参照アイテムを足す。`options.copy` のときと、参照できないもの（フォルダ取込で展開したアイテム・ウィンドウ検索の結果など）はコピーを足す。展開したアイテムを参照で足そうとしてコピーにしたときは、トーストで知らせる（`src/main/services/workspace/workspaceRefOperations.ts` の `addAppItemToWorkspace`）。コピーのクリップボードアイテムは、保存データ（`clipboard-data/<id>.json`）を `ClipboardService.duplicateClipboardData` で複製し、複製を指すアイテムとして足す（メインウィンドウと 1 つのファイルを共有しない。複製できなければ元の参照のまま）。逆向き（ワークスペースのアイテムをメインウィンドウに登録）は、登録画面が保存するときに `clipboard:duplicate-data` で複製する
+- データファイルを読み直したあと、ワークスペースに参照アイテムがあれば、ワークスペースの内容が変わっていなくても送る（参照の中身はメインウィンドウのアイテムのものなので）
+
+### 参照アイテム
+
+ワークスペースの参照アイテム（[ワークスペースファイル形式 2.6](file-formats/workspace-format.md#26-参照アイテムtype-ref)）は、メインプロセスが解決してからレンダラー・CLI に渡す（`src/main/services/workspace/workspaceRefResolver.ts`）。
+
+- `workspace:load-items`・`workspace:load-archived-items` は、参照をメインウィンドウのアイテムの中身で埋め、`ref` を付けて返す。まだデータファイルを読んでいなければ先に読む
+- `workspace:launch-item` は、参照ならメインウィンドウのアイテムの今の中身で開き直す（画面が持つ中身は古いことがあるため）。元のアイテムが見つからない参照は開かず、トーストで理由を知らせて `{ success: false }` を返す。起動の記録はメインウィンドウのアイテムの id で残す
+- 変更系（成功すると `workspace-changed`）: `workspace:convert-to-copy`（参照 → コピー）、`workspace:link-to-main`（コピー → 参照・指し直し。コピーのメモは、メインウィンドウのアイテムにメモが無ければデータファイルへ移す）、`workspace:apply-link-copies`（候補が 1 件のコピーをまとめて参照に）、`workspace:remap-refs`（アイテム管理の「重複を削除」を保存したあと、参照の指す先を付け替える）
+- 読むだけ: `workspace:find-link-candidates`（パスと引数が同じメインウィンドウのアイテム）、`workspace:preview-link-copies`（まとめて参照に変える一覧）、`workspace:count-refs`（メインウィンドウのアイテムの id ごとの参照の数。アーカイブを含む。削除の確認・編集画面の帯に使う）
+- 子ウィンドウを開く: `workspace:open-link-picker`（指すアイテムを選ぶ）、`workspace:open-link-copies`（メインウィンドウと同じアイテムを参照に変える）。送信元のウィンドウを親にしたモーダルの子ウィンドウで開く
+- メインウィンドウの右クリックの「📄 ワークスペースにコピーを追加」は、`launcher-menu-add-copy-to-workspace`（イベント）でレンダラーに伝え、レンダラーが `workspace:add-item` を `{ copy: true }` で呼ぶ
 
 ### 失敗時の扱い
 

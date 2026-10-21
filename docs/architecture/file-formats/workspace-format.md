@@ -20,11 +20,11 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 ### 1.2. 設計方針
 
-- **アイテムの語彙はデータファイルと同じ**: `type`（`item` / `clipboard` / `set`）と型ごとのフィールド名は `datafiles/data*.json` の `JsonItem` と一致する。ワークスペース側は所属（`workspaceId` / `groupId`）と並び順（`order` / `addedAt`）を足し、`updatedAt` / `autoImportRuleId` を除いたもの（`type: item` のみ `originalPath` を追加で持つ）。一致は `src/common/types/json-workspace.ts` のコンパイル時アサーションで担保
+- **アイテムの語彙はデータファイルと同じ**: `type`（`item` / `clipboard` / `set`。ワークスペースだけの参照アイテム `ref` を除く）と型ごとのフィールド名は `datafiles/data*.json` の `JsonItem` と一致する。ワークスペース側は所属（`workspaceId` / `groupId`）と並び順（`order` / `addedAt`）を足し、`updatedAt` / `autoImportRuleId` を除いたもの（`type: item` のみ `originalPath` を追加で持つ）。一致は `src/common/types/json-workspace.ts` のコンパイル時アサーションで担保
 - **ファイルには判定結果を保存しない**: `url / file / app / …` の起動種別は保存せず、読込時に `path` から判定する（実行時の `launcherType`）
 - **UI 状態はデータに混ぜない**: 折りたたみ・ウィンドウ位置は `workspace-ui-state.json` に分離
 - **色は CSS 変数名ではなくトークン**: `primary` などの名前で保存し、レンダラーで `var(--group-color-<token>)` に解決する（`src/common/groupColors.ts`）
-- **id は 8 文字英数字**（データファイルと同じ規則・`generateUniqueId()`）。`workspace.json` と `workspace-archive.json` で 1 つの名前空間（復元で id がそのまま戻るため）。データファイルとは別名前空間
+- **id は 8 文字英数字**（データファイルと同じ規則・`generateUniqueId()`）。`workspace.json` と `workspace-archive.json` で 1 つの名前空間（復元で id がそのまま戻るため）。データファイルとは別名前空間で、参照アイテムの `refItemId` だけがデータファイルの名前空間の id を指す
 
 ---
 
@@ -75,7 +75,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に QDL が書き戻すときに消える。
 
-書き出し時のキー順は固定（`version` → `workspaces` → `groups` → `items`。アイテム内は `id, type, displayName, <型固有>, memo, workspaceId, groupId, order, addedAt`）。
+書き出し時のキー順は固定（`version` → `workspaces` → `groups` → `items`。アイテム内は `id, type, displayName, <型固有>, memo, workspaceId, groupId, order, addedAt`。参照アイテムの型固有は `refItemId, lastKnownName`）。
 
 ### 2.3. Workspace（タブ）
 
@@ -109,23 +109,57 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | **id** | string | ✓ | 8 文字英数字。無い・不正・重複なら採番（`idAssigned`） |
-| **type** | string | ✓ | `item` / `clipboard` / `set`。廃止した `window`（ウィンドウ操作）は読み込み時にパスの無い `item` に変換する（6 章） |
-| **displayName** | string | ✓ | 表示名 |
-| **memo** | string | - | 自由記述 |
+| **type** | string | ✓ | `item` / `clipboard` / `set` / `ref`（参照アイテム。[2.6](#26-参照アイテムtype-ref)）。廃止した `window`（ウィンドウ操作）は読み込み時にパスの無い `item` に変換する（6 章） |
+| **displayName** | string | ✓ | 表示名（参照アイテムでは任意。[2.6](#26-参照アイテムtype-ref)） |
+| **memo** | string | - | 自由記述（参照アイテムは持たない） |
 | **workspaceId** | string | ✓ | 所属ワークスペース |
 | **groupId** | string | - | 所属グループ（未分類なら省略）。存在しなければ外す |
 | **order** | number | ✓* | 同じグループ内での並び順 |
 | **addedAt** | number | ✓* | 追加日時（ms） |
 
-型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`set`＝[3.3](data-format.md#33-セットjsonsetitem)）を参照。ワークスペースに固有の違いは次のとおり。
+`item` / `clipboard` / `set`（コピー）の型固有フィールドはデータファイルと同じなので、[データファイル形式 3 章](data-format.md#3-アイテムタイプ詳細) の各アイテムタイプ（`item`＝[3.1](data-format.md#31-通常アイテムjsonlauncheritem)、`clipboard`＝[3.5](data-format.md#35-クリップボードアイテムjsonclipboarditem)、`set`＝[3.3](data-format.md#33-セットjsonsetitem)）を参照。ワークスペースに固有の違いは次のとおり。
 
 - `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri/windowSwitch）は `originalPath` があればそれ、なければ `path` から判定する。`path` は、ウィンドウ切り替えの `window` があれば空でもよい（パスの無い単一アイテム。起動種別は `windowSwitch`、[データファイル形式 3.1.5.7](data-format.md#3157-パスの無い単一アイテム)）。ドット入りのフォルダ名と拡張子の無いファイルの扱い（末尾の区切り文字・読み込み時のディスク確認・`path-type-cache.json`）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
 - データファイルの `updatedAt`・`autoImportRuleId` は持たない
 - `clipboard` は QDL が生成する。手で書かない
-- `set` の行の `itemId` は、ワークスペースのアイテムの id か、データファイルのアイテムの id を指す。実行時はワークスペースのアイテムを先に探す（`src/main/ipc/workspaceHandlers.ts`）
+- `set` の行の `itemId` は、ワークスペースのアイテムの id か、データファイルのアイテムの id を指す。実行時はワークスペースのアイテムを先に探す（`src/main/ipc/workspaceHandlers.ts`）。行が参照アイテムを指すときは、参照を解決した中身で開く
 - `type: item` のウィンドウ切り替え（`window`・`placement` など、[データファイル形式 3.1.5](data-format.md#315-ウィンドウ切り替えitemwindowswitch)）も、データファイルと同じ処理で実行する
 
 アイテム本体の検証はデータファイルの検証関数（`validateJson*Item`）を共用しており、判定はデータファイルと一致する。
+
+### 2.6. 参照アイテム（`type: "ref"`）
+
+メインウィンドウのアイテム（データファイルのアイテム）を id で指すアイテム。中身（パス・メモなど）は書かず、表示・起動のたびにメインウィンドウのアイテムの中身を使う。
+
+```json
+{
+  "id": "It2Ab2Cd",
+  "type": "ref",
+  "displayName": "作業用の GitHub",
+  "refItemId": "Dt1Ab2Cd",
+  "lastKnownName": "GitHub",
+  "workspaceId": "Ws1Ab2Cd",
+  "groupId": "Gr1Ab2Cd",
+  "order": 1,
+  "addedAt": 1700000000000
+}
+```
+
+| フィールド | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| **id** / **workspaceId** / **groupId** / **order** / **addedAt** | | | 共通フィールドと同じ。アーカイブでは `archivedAt`・`archivedGroupId` も持つ（3 章） |
+| **type** | string | ✓ | `"ref"` |
+| **refItemId** | string | ✓ | 指すメインウィンドウのアイテムの id（データファイルの名前空間。8 文字英数字）。無い・形が違うときは `invalid` |
+| **displayName** | string | - | ワークスペースでの表示名。省略するとメインウィンドウのアイテムの表示名を使う。空白だけなら読み込みで落とす |
+| **lastKnownName** | string | - | 最後に見たメインウィンドウのアイテムの表示名。元のアイテムが見つからないときの表示に使う。QDL が書く |
+
+- `memo` は持たない（メインウィンドウのアイテムのメモを使う）。書いてあっても読み込みで落とす。ほかの型固有フィールド（`path` など）も書かない
+- 解決（`src/main/services/workspace/workspaceRefResolver.ts`）: データファイルを読み直すたび（`reloadConfigFiles`）に、id を持つメインウィンドウのアイテム（通常アイテム・クリップボード・セット。フォルダ取込で展開したアイテムとウィンドウ検索の結果は除く）の表を作る。ワークスペースの画面・CLI・起動に渡すときに、参照をその表で埋める
+  - 見つかれば、指す先の種別（`item` / `clipboard` / `set`）の形になる。id・所属・並び順はワークスペースのもの、`displayName` はワークスペースでの表示名（無ければメインウィンドウの表示名）、メモはメインウィンドウのもの。実行時だけの `ref`（`status: "ok"`・`mainDisplayName`・`tabName` など。型は `WorkspaceRefInfo`）が付く
+  - 見つからなければ `type: "ref"` のまま（`status: "missing"`。フォルダ取込の行を指していれば `"unsupported"`）
+  - 書き戻すときは、解決した形でも参照アイテムとして書く（中身をファイルに残さない）
+- データファイルを読み直したあと、参照アイテムがあればワークスペースの画面に読み直しを知らせ、`lastKnownName` を今のメインウィンドウの表示名に合わせて書き直す
+- クリップボードの参照は、メインウィンドウのアイテムの実データ（`clipboard-data/<id>.json`）をそのまま使う（複製しない）
 
 ---
 
@@ -232,7 +266,7 @@ QDL が管理する UI 状態。壊れている・読めないときは警告し
 ## 7. データ型定義（TypeScript）
 
 - ファイル形式: `src/common/types/json-workspace.ts`（`JsonWorkspaceFile`, `JsonWorkspaceItem`, `JsonWorkspaceArchiveFile`, `WorkspaceUiStateFile`）
-- 実行時: `src/common/types/workspace.ts`（`WorkspaceItem` = ファイル形式 + `launcherType` / `icon`、`WorkspaceGroupView` = グループ + `collapsed`）
+- 実行時: `src/common/types/workspace.ts`（`WorkspaceItem` = ファイル形式 + `launcherType` / `icon`（参照から解決したものは `ref` も。解決できない参照は `WorkspaceRefItem`）、`WorkspaceGroupView` = グループ + `collapsed`）
 - 変換: `src/common/utils/workspaceConverters.ts`（AppItem → 本体、WorkspaceItem ⇄ RegisterItem、表示文字列 `describeWorkspaceItem`）
 
 ---

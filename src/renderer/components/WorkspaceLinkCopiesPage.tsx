@@ -1,6 +1,6 @@
 /**
  * 画面: メインウィンドウと同じアイテムを参照に変える（ワークスペースのタブの右クリック）
- * 画面仕様: docs/screens/workspace-window.md#5811-メインウィンドウと同じアイテムを参照に変える
+ * 画面仕様: docs/screens/workspace-window.md#521-メインウィンドウと同じアイテムを参照に変える
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

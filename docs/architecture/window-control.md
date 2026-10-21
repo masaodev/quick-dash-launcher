@@ -369,6 +369,13 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 「✏️ 新しく入力して追加…」は、アイテム編集ウィンドウを新規の形で開く（`openWorkspaceNewItemEditor`、中身は `WorkspaceNewItemPage.tsx`。フォームは `WorkspaceItemEditModal` に `create` を渡したもの）。イベント `workspace-group-menu-add-new`（groupId）→ IPC `workspace:open-new-item-editor`（groupId）で、`window.name` は `workspace-new-item:<groupId>`（フォールバック時は URL クエリ `newItemGroupId`）。編集ウィンドウと同じ表で `new:<groupId>` をキーに持つ。追加は `workspace:create-item`（入力した中身・groupId・workspaceId）で行う
 
+参照アイテムのための 2 つの子ウィンドウも、同じ作り（ワークスペースのレンダラーから `window.open`、送信元を親にしたモーダル、850x800 を作業領域で切り詰め、同じキーのものが開いていれば前面に出す）で開く（`src/main/workspaceLinkWindowManager.ts`）。右クリックの項目は、メインプロセスがその場で開く（IPC `workspace:open-link-picker`・`workspace:open-link-copies` でも開ける）。
+
+| ウィンドウ | 開く操作 | `window.name`（フォールバックの URL クエリ） | 中身 |
+| --- | --- | --- | --- |
+| 指すアイテムを選ぶ | アイテムの右クリック「🔁 別のアイテムを指す…」「🔗 メインウィンドウのアイテムを参照する…」 | `workspace-link-picker:<itemId>`（`linkItemId`） | `WorkspaceLinkPickerPage.tsx`（`SetItemPickerModal` を 1 つだけ選ぶ形で描く）。選んだら `workspace:link-to-main` |
+| メインウィンドウと同じアイテムを参照に変える | ワークスペースのタブの右クリック | `workspace-link-copies:<workspaceId>`（`linkCopiesWorkspaceId`） | `WorkspaceLinkCopiesPage.tsx`。一覧は `workspace:preview-link-copies`、確定は `workspace:apply-link-copies` |
+
 ## ウィンドウ位置・サイズ制御
 
 ### 概要
