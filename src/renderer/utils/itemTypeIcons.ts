@@ -19,5 +19,7 @@ export const ITEM_TYPE_ICONS: Readonly<Record<string, string>> = {
  */
 export function getDefaultIconForItem(item: WorkspaceItem): string {
   if (item.type === 'item') return ITEM_TYPE_ICONS[item.launcherType] ?? ITEM_TYPE_ICONS.file;
+  // 元のアイテムが見つからない参照
+  if (item.type === 'ref') return '❔';
   return ITEM_TYPE_ICONS[item.type];
 }

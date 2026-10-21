@@ -31,6 +31,8 @@ import type {
   Workspace,
   WorkspaceItem,
   WorkspaceItemUpdate,
+  WorkspaceLinkCandidate,
+  WorkspaceLinkCopiesPreview,
   WorkspaceGroup,
   WorkspaceGroupUpdate,
   WorkspaceGroupView,
@@ -285,7 +287,13 @@ export interface ElectronAPI {
     reorderWorkspaces: (ids: string[]) => Promise<{ success: boolean }>;
     // アイテム管理
     loadItems: () => Promise<WorkspaceItem[]>;
-    addItem: (item: AppItem, groupId?: string, workspaceId?: string) => Promise<WorkspaceItem>;
+    /** メインウィンドウのアイテムを足す（既定は参照。copy ならコピー。参照できないものはコピー） */
+    addItem: (
+      item: AppItem,
+      groupId?: string,
+      workspaceId?: string,
+      options?: { copy?: boolean }
+    ) => Promise<WorkspaceItem>;
     /** 中身（編集フォームで新しく入力したもの）からアイテムを作る */
     createItem: (
       body: WorkspaceItemUpdate,
@@ -301,6 +309,24 @@ export interface ElectronAPI {
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
     updateItem: (id: string, updates: WorkspaceItemUpdate) => Promise<{ success: boolean }>;
     launchItem: (item: WorkspaceItem, options?: LaunchOptions) => Promise<{ success: boolean }>;
+    // 参照アイテム
+    /** 参照をコピーにする（メインウィンドウと切り離す） */
+    convertToCopy: (id: string) => Promise<{ success: boolean; item?: WorkspaceItem }>;
+    /** アイテム（コピー・参照）を、メインウィンドウのアイテムの参照にする */
+    linkToMain: (
+      id: string,
+      mainItemId: string
+    ) => Promise<{ success: boolean; item?: WorkspaceItem }>;
+    /** コピーの指す先の候補（パスと引数が同じメインウィンドウのアイテム） */
+    findLinkCandidates: (id: string) => Promise<WorkspaceLinkCandidate[]>;
+    /** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
+    previewLinkCopies: (workspaceId: string) => Promise<WorkspaceLinkCopiesPreview>;
+    /** 一覧で選んだコピーを参照に変える */
+    applyLinkCopies: (ids: string[]) => Promise<{ success: boolean; count?: number }>;
+    /** メインウィンドウのアイテムの id ごとの、ワークスペースの参照の数（0 件は返さない） */
+    countRefs: (itemIds: string[]) => Promise<Record<string, number>>;
+    /** 参照の指す先を付け替える（消した id → 残す id。アイテム管理の「重複を統合」を保存したとき） */
+    remapRefs: (idMap: Record<string, string>) => Promise<{ success: boolean; count?: number }>;
     // グループ管理
     loadGroups: () => Promise<WorkspaceGroupView[]>;
     createGroup: (
@@ -346,6 +372,10 @@ export interface ElectronAPI {
     openItemEditor: (itemId: string) => Promise<void>;
     /** グループに追加するアイテムを選ぶウィンドウを開く */
     openItemPicker: (groupId: string) => Promise<void>;
+    /** アイテムが指すメインウィンドウのアイテムを選ぶウィンドウを開く（参照の指し直し・コピーを参照にする） */
+    openLinkPicker: (itemId: string) => Promise<void>;
+    /** 「メインウィンドウと同じアイテムを参照に変える」のウィンドウを開く */
+    openLinkCopies: (workspaceId: string) => Promise<void>;
     /** グループに新しいアイテムを入力して追加するウィンドウを開く */
     openNewItemEditor: (groupId: string) => Promise<void>;
     /**
@@ -435,6 +465,7 @@ export interface ElectronAPI {
   // LauncherContextMenuイベントリスナー
   onLauncherMenuEditItem: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuAddToWorkspace: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuAddCopyToWorkspace: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenParentFolder: (callback: (item: AppItem) => void) => () => void;

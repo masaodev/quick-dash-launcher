@@ -41,6 +41,8 @@ interface UseAdminTabStructureProps {
   countItems: (fileName: string) => { total: number; unsaved: number };
   /** 消すデータファイルのアイテムを作業中の一覧から除く */
   dropFileItems: (fileName: string) => void;
+  /** データファイルのアイテムの id（作業中の一覧。ワークスペースの参照の数を数えるのに使う） */
+  fileItemIds?: (fileName: string) => string[];
 }
 
 /**
@@ -60,6 +62,7 @@ export function useAdminTabStructure({
   showWarning,
   countItems,
   dropFileItems,
+  fileItemIds,
 }: UseAdminTabStructureProps) {
   const { t } = useTranslation();
   // 続けて操作したときに古い構成から計算しないよう、保存した構成をすぐ覚えておく
@@ -89,6 +92,20 @@ export function useAdminTabStructure({
       return t('itemManager.tabStructure.deletionWarning', { lines: lines.join('\n') });
     },
     [countItems, fileLabel, t]
+  );
+
+  /** 消えるファイルのアイテムがワークスペースから参照されていれば、その知らせ（無ければ空） */
+  const describeRefs = useCallback(
+    async (files: string[]): Promise<string> => {
+      const ids = fileItemIds ? files.flatMap(fileItemIds) : [];
+      if (ids.length === 0) return '';
+      const counts = await window.electronAPI.workspaceAPI
+        .countRefs(ids)
+        .catch(() => ({}) as Record<string, number>);
+      const count = Object.values(counts).reduce((sum, n) => sum + n, 0);
+      return count > 0 ? `\n\n${t('workspace.ref.deleteWarning', { count })}` : '';
+    },
+    [fileItemIds, t]
   );
 
   /** 計算した構成を確定する。成功したら true（successMessage が空ならトーストを出さない） */
@@ -242,7 +259,7 @@ export function useAdminTabStructure({
       if (!edit.ok || !tab) return commit(edit, '');
       const detail =
         edit.filesToDelete.length > 0
-          ? describeDeletion(edit.filesToDelete)
+          ? describeDeletion(edit.filesToDelete) + (await describeRefs(edit.filesToDelete))
           : t('itemManager.tabStructure.tabDeleteKeepsFiles');
       const confirmed = await confirm(
         t('itemManager.tabStructure.tabDeleteConfirm', { name: tab.name, detail }),
@@ -255,7 +272,7 @@ export function useAdminTabStructure({
       if (!confirmed) return false;
       return commit(edit, t('itemManager.tabStructure.tabDeleted', { name: tab.name }));
     },
-    [commit, confirm, describeDeletion, t]
+    [commit, confirm, describeDeletion, describeRefs, t]
   );
 
   /** 新しいデータファイルを作ってタブに入れる。作ったファイル名を返す */
@@ -309,7 +326,8 @@ export function useAdminTabStructure({
         deletes
           ? t('itemManager.tabStructure.fileDeleteConfirm', {
               label,
-              detail: describeDeletion(edit.filesToDelete),
+              detail:
+                describeDeletion(edit.filesToDelete) + (await describeRefs(edit.filesToDelete)),
             })
           : t('itemManager.tabStructure.fileRemoveConfirm', { label }),
         deletes
@@ -331,7 +349,7 @@ export function useAdminTabStructure({
           : t('itemManager.tabStructure.fileRemoved', { label })
       );
     },
-    [commit, confirm, describeDeletion, fileLabel, t]
+    [commit, confirm, describeDeletion, describeRefs, fileLabel, t]
   );
 
   return {

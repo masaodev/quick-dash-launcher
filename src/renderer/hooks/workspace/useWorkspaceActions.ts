@@ -29,6 +29,11 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   const api = window.electronAPI.workspaceAPI;
 
   const handleLaunch = withErrorHandling(async (item: WorkspaceItem) => {
+    // 元のアイテムが見つからない参照は開けない（本体側が理由をトーストで知らせる）
+    if (item.type === 'ref') {
+      await api.launchItem(item);
+      return;
+    }
     // クリップボードは書き戻してから「コピーしました」を出す（失敗は本体側がエラーのトーストで知らせる）
     if (item.type === 'clipboard') {
       const result = await api.launchItem(item);

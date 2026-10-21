@@ -142,6 +142,15 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         itemCategory: 'item',
         memo: item.memo,
       };
+    case 'ref':
+      // 元が見つからない参照は中身を持たない（編集画面には渡さない。型をそろえるための空のアイテム）
+      return {
+        displayName: item.displayName,
+        path: '',
+        type: 'file',
+        targetTab: '',
+        itemCategory: 'item',
+      };
   }
 }
 
@@ -193,6 +202,8 @@ export function expandWorkspaceSetEntries(
   for (const item of workspaceItems) byId.set(item.id, item);
   return entries.map((entry) => {
     const item = entry.itemId ? byId.get(entry.itemId) : undefined;
+    // 参照を指す行は、指す先のメインウィンドウのアイテムの id にする（メインウィンドウにあるのでそのまま開ける）
+    if (item?.ref?.status === 'ok') return { ...entry, itemId: item.ref.itemId };
     const expanded = item?.type === 'item' ? expandWorkspaceEntry(entry, item) : undefined;
     return expanded ?? { ...entry };
   });
@@ -267,6 +278,10 @@ export function describeWorkspaceItem(item: WorkspaceItem, t: TFunction): string
         : t('workspace.describe.clipboard');
     case 'set':
       return t('workspace.describe.set', { count: item.entries.length });
+    case 'ref':
+      return item.ref.status === 'unsupported'
+        ? t('workspace.ref.unsupported')
+        : t('workspace.ref.missing');
   }
 }
 
@@ -275,6 +290,8 @@ export function toToastItemType(item: WorkspaceItem): ToastItemType {
   switch (item.type) {
     case 'item':
       return item.launcherType;
+    case 'ref':
+      return 'file';
     default:
       return item.type;
   }

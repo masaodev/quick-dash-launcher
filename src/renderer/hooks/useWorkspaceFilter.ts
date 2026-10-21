@@ -10,6 +10,12 @@ interface FilterResult {
   showUncategorized: boolean;
 }
 
+/** アイテムの名前が絞り込みの文字を含むか（参照はメインウィンドウの表示名でも当てる） */
+function matchesItemName(item: WorkspaceItem, lower: string): boolean {
+  if (item.displayName.toLowerCase().includes(lower)) return true;
+  return !!item.ref?.mainDisplayName?.toLowerCase().includes(lower);
+}
+
 export function useWorkspaceFilter(
   groups: WorkspaceGroup[],
   items: WorkspaceItem[],
@@ -59,7 +65,7 @@ export function useWorkspaceFilter(
 
       case 'item':
         for (const item of items) {
-          const matches = item.displayName.toLowerCase().includes(lower);
+          const matches = matchesItemName(item, lower);
           itemVisibility.set(item.id, matches);
           if (matches) {
             if (item.groupId) {
@@ -74,7 +80,7 @@ export function useWorkspaceFilter(
       case 'all':
       default:
         for (const item of items) {
-          const itemMatches = item.displayName.toLowerCase().includes(lower);
+          const itemMatches = matchesItemName(item, lower);
           const groupMatches = !!(item.groupId && expandedGroupIds.has(item.groupId));
 
           if (itemMatches || groupMatches) {

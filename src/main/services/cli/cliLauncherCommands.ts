@@ -42,6 +42,8 @@ export interface LauncherStore {
   /** id を保ったまま別のデータファイルへ移す（内容も item に差し替える） */
   move(item: JsonItem, from: string, to: string): void;
   remove(id: string): Promise<void>;
+  /** そのアイテムを指すワークスペースの参照の数（削除の結果で知らせる。無ければ数えない） */
+  countWorkspaceRefs?(id: string): Promise<number>;
   /** 見た目はファイルでも実体がフォルダなら、末尾に区切りを付ける（登録画面と同じ） */
   markFolder(path: string): Promise<string>;
   newId(used: Set<string>): string;
@@ -517,9 +519,12 @@ async function remove(args: readonly string[], ctx: LauncherCommandContext): Pro
   if (!dryRun) await ctx.syncBeforeWrite();
   const entry = await findEntry(key, ctx);
   const removed = view(entry, await ctx.store.tabs());
-  if (dryRun) return { dryRun: true, removed };
+  // ワークスペースの参照は消さない（「元のアイテムが見つかりません」になる）。件数だけ返して知らせる
+  const workspaceRefs = (await ctx.store.countWorkspaceRefs?.(entry.item.id)) ?? 0;
+  const refs = workspaceRefs > 0 ? { workspaceRefs } : {};
+  if (dryRun) return { dryRun: true, removed, ...refs };
 
   await ctx.store.remove(entry.item.id);
   ctx.changed(mainI18n.t('cli.changed.launcherRemoved', { name: itemName(entry.item) }));
-  return { removed };
+  return { removed, ...refs };
 }

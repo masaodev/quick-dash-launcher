@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   RegisterItem,
   EditingAppItem,
@@ -42,6 +42,28 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
     isEditingLauncherItem(request.editingItem) &&
     request.editingItem.isDirExpanded
   );
+  // 編集するアイテムを指すワークスペースの参照の数（帯と削除の確認に出す）
+  const editingId = request.editingItem
+    ? isEditableJsonItem(request.editingItem)
+      ? request.editingItem.item.id
+      : request.editingItem.jsonItemId
+    : undefined;
+  const [linkedCount, setLinkedCount] = useState(0);
+  useEffect(() => {
+    if (!editingId) return;
+    let cancelled = false;
+    window.electronAPI.workspaceAPI
+      .countRefs([editingId])
+      .then((counts) => {
+        if (!cancelled) setLinkedCount(counts[editingId] ?? 0);
+      })
+      .catch((error) => {
+        logError('ワークスペースの参照の数を読めませんでした:', error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [editingId]);
   /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち */
   const pendingSave = useRef<Promise<void> | null>(null);
 
@@ -140,13 +162,21 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
         currentTab={request.currentTab}
         initialCategory={request.initialCategory}
         onDelete={canDelete ? handleDeleteRequest : undefined}
+        notice={linkedCount > 0 ? t('workspace.ref.editBanner', { count: linkedCount }) : undefined}
       />
       <ConfirmDialog
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         message={
-          deleteTarget ? t('register.deleteConfirm', { name: deleteTarget.displayName }) : ''
+          deleteTarget
+            ? [
+                t('register.deleteConfirm', { name: deleteTarget.displayName }),
+                ...(linkedCount > 0
+                  ? [t('workspace.ref.deleteWarning', { count: linkedCount })]
+                  : []),
+              ].join('\n')
+            : ''
         }
         danger={true}
       />

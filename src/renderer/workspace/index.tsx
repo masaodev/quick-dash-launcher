@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import {
   WORKSPACE_CONFIRM_WINDOW_NAME_PREFIX,
   WORKSPACE_EDITOR_WINDOW_NAME_PREFIX,
+  WORKSPACE_LINK_COPIES_WINDOW_NAME_PREFIX,
+  WORKSPACE_LINK_PICKER_WINDOW_NAME_PREFIX,
   WORKSPACE_NEW_ITEM_WINDOW_NAME_PREFIX,
   WORKSPACE_PICKER_WINDOW_NAME_PREFIX,
 } from '@common/constants';
@@ -13,6 +15,8 @@ import WorkspaceItemEditPage from '../components/WorkspaceItemEditPage';
 import WorkspaceConfirmPage from '../components/WorkspaceConfirmPage';
 import WorkspaceItemPickerPage from '../components/WorkspaceItemPickerPage';
 import WorkspaceNewItemPage from '../components/WorkspaceNewItemPage';
+import WorkspaceLinkPickerPage from '../components/WorkspaceLinkPickerPage';
+import WorkspaceLinkCopiesPage from '../components/WorkspaceLinkCopiesPage';
 import { ToastProvider } from '../components/ToastProvider';
 import '../styles/index.css';
 import '../styles/components/WorkspaceWindow.css';
@@ -66,6 +70,14 @@ function renderPage(): React.ReactElement {
   // グループに追加するアイテムを選ぶウィンドウ・新しく入力して追加するウィンドウ（どちらも ID は追加先の groupId）
   const pickerGroupId = getIdFromWindow(WORKSPACE_PICKER_WINDOW_NAME_PREFIX, 'pickGroupId');
   if (pickerGroupId) return <WorkspaceItemPickerPage groupId={pickerGroupId} />;
+  // 参照の指す先を選ぶウィンドウ（ID はワークスペースのアイテム）・一括で参照に変えるウィンドウ（ID はワークスペース）
+  const linkItemId = getIdFromWindow(WORKSPACE_LINK_PICKER_WINDOW_NAME_PREFIX, 'linkItemId');
+  if (linkItemId) return <WorkspaceLinkPickerPage itemId={linkItemId} />;
+  const linkCopiesWorkspaceId = getIdFromWindow(
+    WORKSPACE_LINK_COPIES_WINDOW_NAME_PREFIX,
+    'linkCopiesWorkspaceId'
+  );
+  if (linkCopiesWorkspaceId) return <WorkspaceLinkCopiesPage workspaceId={linkCopiesWorkspaceId} />;
   const newItemGroupId = getIdFromWindow(WORKSPACE_NEW_ITEM_WINDOW_NAME_PREFIX, 'newItemGroupId');
   if (newItemGroupId) return <WorkspaceNewItemPage groupId={newItemGroupId} />;
   const editorItemId = getEditorItemIdFromWindow();

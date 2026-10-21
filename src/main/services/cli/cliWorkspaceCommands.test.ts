@@ -22,6 +22,7 @@ let archivedItems: ArchivedWorkspaceItem[];
 let ctx: WorkspaceCommandContext;
 let nextId: number;
 let saved: number;
+let linkCandidates: Record<string, string[]>;
 
 function group(id: string, name: string, order: number, extra: Partial<WorkspaceGroupView> = {}) {
   return {
@@ -53,6 +54,7 @@ function item(id: string, name: string, order: number, groupId?: string, workspa
 
 beforeEach(() => {
   nextId = 1;
+  linkCandidates = {};
   saved = 0;
   workspaces = [
     { id: 'Ws000001', displayName: '仕事', order: 0, createdAt: 0 },
@@ -112,6 +114,49 @@ beforeEach(() => {
       items.push(added);
       return added;
     },
+    addRef: async (itemId: string, groupId?: string, workspaceId?: string) => {
+      const added = {
+        ...item(
+          `Ref${String(nextId++).padStart(5, '0')}`,
+          `参照${itemId}`,
+          99,
+          groupId,
+          workspaceId
+        ),
+        ref: { itemId, status: 'ok', mainDisplayName: `参照${itemId}` },
+      } as WorkspaceItem;
+      items.push(added);
+      return added;
+    },
+    updateDisplayName: async (id: string, displayName: string) => {
+      items = items.map((i) =>
+        i.id === id && i.ref
+          ? ({
+              ...i,
+              displayName: displayName || i.ref.mainDisplayName,
+              ref: { ...i.ref, alias: displayName || undefined },
+            } as WorkspaceItem)
+          : i.id === id
+            ? { ...i, displayName }
+            : i
+      );
+    },
+    convertToCopy: async (id: string) => {
+      items = items.map((i) => (i.id === id ? ({ ...i, ref: undefined } as WorkspaceItem) : i));
+      return items.find((i) => i.id === id)!;
+    },
+    linkToMain: async (id: string, mainItemId: string) => {
+      items = items.map((i) =>
+        i.id === id
+          ? ({
+              ...i,
+              ref: { itemId: mainItemId, status: 'ok', mainDisplayName: i.displayName },
+            } as WorkspaceItem)
+          : i
+      );
+      return items.find((i) => i.id === id)!;
+    },
+    findLinkCandidates: async (id: string) => linkCandidates[id] ?? [],
     updateItem: async (id: string, update: WorkspaceItemUpdate) => {
       items = items.map((i) => (i.id === id ? ({ ...i, ...update } as WorkspaceItem) : i));
     },
@@ -555,13 +600,55 @@ describe('workspace のクリップボードアイテム（テキスト）', () 
   });
 });
 
-describe('workspace item add --from（メインウィンドウのアイテムを写す）', () => {
-  it('セットを行ごと写し、行はメインウィンドウのアイテムを id で指したまま', async () => {
+describe('workspace item add --from（メインウィンドウのアイテムを参照・コピーで足す）', () => {
+  it('既定は参照で足す（--name はワークスペースでの表示名）', async () => {
+    const addRef = vi.spyOn(ctx.store, 'addRef');
+    const addItem = vi.spyOn(ctx.store, 'addItem');
+    const r = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', '朝', '--group', '案件A', '--name', '朝セット'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(addRef).toHaveBeenCalledWith('SetMorn1', 'GrA00001', 'Ws000001');
+    expect(addItem).not.toHaveBeenCalled();
+    expect(r).toMatchObject({
+      displayName: '朝セット',
+      ref: { itemId: 'SetMorn1', alias: '朝セット' },
+      location: ['仕事', '案件A'],
+      from: { id: 'SetMorn1' },
+    });
+  });
+
+  it('参照の --dry-run は足さずに参照の形を返す', async () => {
+    const r = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', 'SetMorn1', '--dry-run'],
+      ctx
+    )) as { dryRun: boolean; item: Record<string, unknown> };
+    expect(r.item).toMatchObject({
+      type: 'ref',
+      refItemId: 'SetMorn1',
+      displayName: '朝',
+      id: null,
+    });
+    expect(items).toHaveLength(2);
+  });
+
+  it('--copy は --from と一緒にだけ使える（usage）', async () => {
+    const e = await errorOf(
+      runWorkspaceCommand('item', 'add', ['--name', 'x', '--path', 'C:\\x', '--copy'], ctx)
+    );
+    expect(e.code).toBe('usage');
+  });
+
+  it('--copy ならセットを行ごと写し、行はメインウィンドウのアイテムを id で指したまま', async () => {
     const addItem = vi.spyOn(ctx.store, 'addItem');
     const r = await runWorkspaceCommand(
       'item',
       'add',
-      ['--from', '朝', '--group', '案件A', '--position', '0'],
+      ['--from', '朝', '--copy', '--group', '案件A', '--position', '0'],
       ctx
     );
     expect(addItem).toHaveBeenCalledWith(
@@ -582,11 +669,11 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     expect(ctx.changed).toHaveBeenCalled();
   });
 
-  it('--name で名前を変えて写せ、--dry-run では足さずに写す中身を返す', async () => {
+  it('--copy で --name で名前を変えて写せ、--dry-run では足さずに写す中身を返す', async () => {
     const r = (await runWorkspaceCommand(
       'item',
       'add',
-      ['--from', 'SetMorn1', '--name', '朝の準備', '--dry-run'],
+      ['--from', 'SetMorn1', '--copy', '--name', '朝の準備', '--dry-run'],
       ctx
     )) as { dryRun: boolean; item: Record<string, unknown> };
     expect(r.dryRun).toBe(true);
@@ -596,9 +683,9 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     expect(ctx.syncBeforeWrite).not.toHaveBeenCalled();
   });
 
-  it('クリップボードアイテムは実データを複製し、ワークスペース側に自分のファイルを持たせる', async () => {
+  it('--copy のクリップボードアイテムは実データを複製し、ワークスペース側に自分のファイルを持たせる', async () => {
     const addItem = vi.spyOn(ctx.store, 'addItem');
-    await runWorkspaceCommand('item', 'add', ['--from', 'スクショ'], ctx);
+    await runWorkspaceCommand('item', 'add', ['--from', 'スクショ', '--copy'], ctx);
     expect(ctx.duplicateClipboardData).toHaveBeenCalledWith('clipboard-data/Clip0001.json');
     expect(addItem).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -638,5 +725,56 @@ describe('workspace item add --from（メインウィンドウのアイテムを
       const e = await errorOf(runWorkspaceCommand('item', 'add', ['--from', '朝', ...extra], ctx));
       expect(e.code).toBe('usage');
     }
+  });
+});
+
+describe('workspace item update / convert（参照アイテム）', () => {
+  beforeEach(async () => {
+    await runWorkspaceCommand('item', 'add', ['--from', '朝', '--group', '案件A'], ctx);
+  });
+
+  const refId = () => items.find((i) => i.ref)!.id;
+
+  it('参照は --name（ワークスペースでの表示名）と置き場所だけ変えられ、中身は conflict', async () => {
+    const r = (await runWorkspaceCommand('item', 'update', [refId(), '--name', '朝'], ctx)) as {
+      item: Record<string, unknown>;
+    };
+    expect(r.item).toMatchObject({ displayName: '朝' });
+    for (const extra of [
+      ['--path', 'C:\\x'],
+      ['--memo', 'm'],
+      ['--set', 'args=x'],
+    ]) {
+      const e = await errorOf(runWorkspaceCommand('item', 'update', [refId(), ...extra], ctx));
+      expect(e.code).toBe('conflict');
+    }
+  });
+
+  it('convert --to copy で参照をコピーにし、コピーには conflict', async () => {
+    const id = refId();
+    await runWorkspaceCommand('item', 'convert', [id, '--to', 'copy'], ctx);
+    expect(items.find((i) => i.id === id)?.ref).toBeUndefined();
+    const e = await errorOf(runWorkspaceCommand('item', 'convert', [id, '--to', 'copy'], ctx));
+    expect(e.code).toBe('conflict');
+  });
+
+  it('convert --to ref は --from か、パスが同じ候補 1 件で参照にする', async () => {
+    const linkToMain = vi.spyOn(ctx.store, 'linkToMain');
+    await runWorkspaceCommand('item', 'convert', ['It000001', '--to', 'ref', '--from', '朝'], ctx);
+    expect(linkToMain).toHaveBeenCalledWith('It000001', 'SetMorn1');
+
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'convert', ['It000002', '--to', 'ref'], ctx))).code
+    ).toBe('not_found');
+    linkCandidates = { It000002: ['Gmail001'] };
+    await runWorkspaceCommand('item', 'convert', ['It000002', '--to', 'ref'], ctx);
+    expect(linkToMain).toHaveBeenCalledWith('It000002', 'Gmail001');
+    linkCandidates = { It000002: ['Gmail001', 'SetMorn1'] };
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'convert', ['It000002', '--to', 'ref'], ctx))).code
+    ).toBe('ambiguous');
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'convert', ['It000002', '--to', 'x'], ctx))).code
+    ).toBe('usage');
   });
 });

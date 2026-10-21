@@ -563,27 +563,28 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   /**
    * AppItem（LauncherItem/SetItem/ClipboardItem）をワークスペースに追加
    *
-   * ウィンドウ検索結果は送り側でパスの無い単一アイテム（exe 名＋タイトル）に変換済み。
+   * 既定はメインウィンドウのアイテムの参照で、Ctrl を押してドロップしたときはコピー（エクスプローラーの Ctrl と同じ）。
+   * ウィンドウ検索結果は送り側でパスの無い単一アイテム（exe 名＋タイトル）に変換済み（もともとコピー）。
    * windowPosition（placement）が付いていて Ctrl を押してドロップしたときだけ、今の位置・サイズも記録する
    */
   async function addAppItemToWorkspace(
     appItemData: string,
     groupId?: string,
     windowPositionData?: string,
-    includePosition = false
+    ctrlKey = false
   ): Promise<void> {
     let item: AppItem = JSON.parse(appItemData);
     let withPosition = false;
-    if (
-      includePosition &&
-      windowPositionData &&
-      isLauncherItem(item) &&
-      item.type === 'windowSwitch'
-    ) {
+    if (ctrlKey && windowPositionData && isLauncherItem(item) && item.type === 'windowSwitch') {
       item = { ...item, placement: JSON.parse(windowPositionData) as SetPlacement };
       withPosition = true;
     }
-    await window.electronAPI.workspaceAPI.addItem(item, groupId, activeWorkspaceId);
+    await window.electronAPI.workspaceAPI.addItem(
+      item,
+      groupId,
+      activeWorkspaceId,
+      ctrlKey && !withPosition ? { copy: true } : undefined
+    );
     // 型安全のためinチェックを使用（WindowInfo は来ない）
     await window.electronAPI.showToastWindow({
       displayName: 'displayName' in item ? item.displayName : '',

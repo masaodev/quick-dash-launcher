@@ -48,6 +48,7 @@ import { cancelAllChildWindowCreations } from './services/childWindowService.js'
 import { closeAllMainChildWindows } from './mainChildWindowManager.js';
 import { closeAllWorkspaceItemEditors } from './workspaceItemEditorWindowManager.js';
 import { closeAllWorkspaceItemPickers } from './workspaceItemPickerWindowManager.js';
+import { closeAllWorkspaceLinkWindows } from './workspaceLinkWindowManager.js';
 import { closeAllWorkspaceConfirms } from './workspaceConfirmWindowManager.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 import { applyLanguageSetting, registerLanguageHandler } from './services/i18nService.js';
@@ -284,6 +285,7 @@ app.on('will-quit', () => {
   closeAllMainChildWindows();
   closeAllWorkspaceItemEditors();
   closeAllWorkspaceItemPickers();
+  closeAllWorkspaceLinkWindows();
   closeAllWorkspaceConfirms();
   closeAdminWindow();
   closeWorkspaceWindow();

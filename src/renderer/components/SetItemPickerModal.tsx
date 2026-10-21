@@ -35,6 +35,12 @@ interface SetItemPickerModalProps {
   asPage?: boolean;
   /** 追加の処理中（追加のボタンを押せなくする） */
   busy?: boolean;
+  /** 下のボタンの左に出すもの（ワークスペースに追加するときの「コピーで追加」） */
+  footerExtra?: React.ReactNode;
+  /** 追加済みの行に添える言葉（既定は「追加済み」。指す先を選ぶときは「今の指す先」） */
+  addedLabel?: string;
+  /** 一覧の見出し（同じタブ・ほかのタブの代わり。指す先を選ぶときの「同じパスのアイテム」など） */
+  sectionTitles?: { same: string; others: string };
 }
 
 /**
@@ -54,6 +60,9 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
   banner,
   asPage = false,
   busy = false,
+  footerExtra,
+  sectionTitles,
+  addedLabel,
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -145,7 +154,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
           <span className="set-row-name">{item.displayName}</span>
           {/* タブの名前は、ほかのタブのアイテムにだけ添える */}
           {added ? (
-            <span className="set-row-aside">{t('set.picker.added')}</span>
+            <span className="set-row-aside">{addedLabel ?? t('set.picker.added')}</span>
           ) : (
             !item.sameGroup &&
             groups.length > 1 && <span className="set-row-aside">{item.groupName}</span>
@@ -227,17 +236,22 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
           ) : (
             <>
               {same.length > 0 && others.length > 0 && (
-                <div className="set-section-title">{t('set.picker.sameGroup')}</div>
+                <div className="set-section-title">
+                  {sectionTitles?.same ?? t('set.picker.sameGroup')}
+                </div>
               )}
               {renderRows(same)}
               {same.length > 0 && others.length > 0 && (
-                <div className="set-section-title">{t('set.picker.others')}</div>
+                <div className="set-section-title">
+                  {sectionTitles?.others ?? t('set.picker.others')}
+                </div>
               )}
               {renderRows(others)}
             </>
           )}
         </div>
         <div className="modal-actions">
+          {footerExtra && <div className="set-picker-footer-extra">{footerExtra}</div>}
           <Button variant="secondary" onClick={close}>
             {t('common.cancel')}
           </Button>

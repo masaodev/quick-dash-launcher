@@ -1,13 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { AppItem, WorkspaceItem, WorkspaceItemUpdate } from '@common/types';
+import type { AppItem, WorkspaceItem, WorkspaceItemUpdate, WorkspaceRefItem } from '@common/types';
 import logger from '@common/logger';
 import { appItemToWorkspaceItemBody } from '@common/utils/workspaceConverters';
 import { normalizeWorkspaceItemBody } from '@common/utils/workspaceParser';
 
 import type { WorkspaceFileStore } from './WorkspaceFileStore.js';
-import { resolveLauncherType } from './WorkspaceFileStore.js';
+import { refJsonToRuntimeItem, resolveLauncherType } from './WorkspaceFileStore.js';
 
 /**
  * ワークスペースアイテムの管理
@@ -80,6 +80,143 @@ export class WorkspaceItemManager {
     }
   }
 
+  /**
+   * メインウィンドウのアイテムを指す参照アイテムを末尾に足す
+   *
+   * @param refItemId 指すアイテムの id（データファイルの名前空間）
+   * @param lastKnownName いまの表示名（元が見つからなくなったときの表示に使う）
+   */
+  public addRef(
+    refItemId: string,
+    lastKnownName: string,
+    groupId?: string,
+    workspaceId?: string
+  ): WorkspaceItem {
+    const items = this.loadItems();
+    const item = this.materializeRef(refItemId, lastKnownName, {
+      id: this.store.newId(),
+      order: this.getNextOrder(items),
+      groupId,
+      workspaceId: workspaceId || this.store.resolveDefaultWorkspaceId(),
+      addedAt: Date.now(),
+    });
+    items.push(item);
+    this.store.set('items', items);
+    logger.info({ id: item.id, refItemId, groupId }, 'Added reference item to workspace');
+    return item;
+  }
+
+  /** 参照アイテムを作る（normalizeWorkspaceItemBody で検証してから実行時の形にする） */
+  private materializeRef(
+    refItemId: string,
+    lastKnownName: string,
+    meta: { id: string; order: number; groupId?: string; workspaceId: string; addedAt: number },
+    alias?: string
+  ): WorkspaceRefItem {
+    const body = normalizeWorkspaceItemBody(
+      {
+        type: 'ref' as const,
+        refItemId,
+        ...(alias !== undefined && { displayName: alias }),
+        ...(lastKnownName !== '' && { lastKnownName }),
+      },
+      meta.id
+    );
+    return refJsonToRuntimeItem({
+      id: meta.id,
+      ...body,
+      workspaceId: meta.workspaceId,
+      ...(meta.groupId !== undefined && { groupId: meta.groupId }),
+      order: meta.order,
+      addedAt: meta.addedAt,
+    });
+  }
+
+  /**
+   * アイテムを参照アイテムに置き換える（id・並び順・所属・追加日時は保つ。コピー → 参照、指し直し）
+   *
+   * @param alias ワークスペースでの表示名（省略するとメインウィンドウの表示名を使う）
+   */
+  public replaceWithRef(
+    id: string,
+    refItemId: string,
+    lastKnownName: string,
+    alias?: string
+  ): WorkspaceItem {
+    const items = this.loadItems();
+    const index = items.findIndex((i) => i.id === id);
+    if (index === -1) throw new Error(`Item not found: ${id}`);
+    const existing = items[index];
+    const replaced = this.materializeRef(
+      refItemId,
+      lastKnownName,
+      {
+        id: existing.id,
+        order: existing.order,
+        groupId: existing.groupId,
+        workspaceId: existing.workspaceId,
+        addedAt: existing.addedAt,
+      },
+      alias
+    );
+    items[index] = replaced;
+    this.store.set('items', items);
+    logger.info({ id, refItemId }, 'Replaced workspace item with reference');
+    return replaced;
+  }
+
+  /**
+   * 参照アイテムを中身を持つアイテム（コピー）に置き換える（id・並び順・所属・追加日時は保つ）
+   */
+  public replaceWithContent(id: string, body: WorkspaceItemUpdate): WorkspaceItem {
+    const items = this.loadItems();
+    const index = items.findIndex((i) => i.id === id);
+    if (index === -1) throw new Error(`Item not found: ${id}`);
+    const existing = items[index];
+    const replaced = {
+      id: existing.id,
+      ...normalizeWorkspaceItemBody(body, existing.id),
+      workspaceId: existing.workspaceId,
+      ...(existing.groupId !== undefined && { groupId: existing.groupId }),
+      order: existing.order,
+      addedAt: existing.addedAt,
+    } as WorkspaceItem;
+    if (replaced.type === 'item') {
+      replaced.launcherType = resolveLauncherType(replaced);
+    }
+    items[index] = replaced;
+    this.store.set('items', items);
+    logger.info({ id, type: body.type }, 'Replaced reference item with copy');
+    return replaced;
+  }
+
+  /**
+   * 参照アイテムを書き換える（ワークスペースでの表示名・最後に見た表示名・指す先）。変わったものがあれば true
+   *
+   * 表示名は空なら消す（メインウィンドウの表示名に戻る）
+   */
+  public updateRefs(
+    mutate: (item: WorkspaceRefItem) => boolean,
+    target: 'main' | 'archive' = 'main'
+  ): boolean {
+    let changed = false;
+    const apply = (list: WorkspaceItem[]): void => {
+      for (const item of list) {
+        if (item.type === 'ref' && mutate(item)) changed = true;
+      }
+    };
+    if (target === 'main') {
+      const items = this.loadItems();
+      apply(items);
+      if (changed) this.store.set('items', items);
+    } else {
+      const items = this.store.archiveStore.get('items');
+      apply(items);
+      if (changed) this.store.archiveStore.set('items', items);
+    }
+    return changed;
+  }
+
   public addItemFromPath(filePath: string, groupId?: string, workspaceId?: string): WorkspaceItem {
     try {
       if (!fs.existsSync(filePath)) {
@@ -134,7 +271,15 @@ export class WorkspaceItemManager {
         throw new Error(`Item not found: ${id}`);
       }
 
-      item.displayName = displayName;
+      if (item.type === 'ref') {
+        // 参照はワークスペースでの表示名を変える。空ならメインウィンドウの表示名に戻す
+        const alias = displayName.trim();
+        if (alias === '') delete item.ref.alias;
+        else item.ref.alias = displayName;
+        item.displayName = item.ref.alias ?? item.ref.lastKnownName ?? '';
+      } else {
+        item.displayName = displayName;
+      }
       this.store.set('items', items);
       logger.info({ id, displayName }, 'Updated workspace item display name');
     } catch (error) {
@@ -157,6 +302,10 @@ export class WorkspaceItemManager {
       }
 
       const existing = items[itemIndex];
+      if (existing.type === 'ref') {
+        // 参照の中身はメインウィンドウのアイテムのもの。ここでは直さない（メインウィンドウの編集画面で直す）
+        throw new Error(`Reference item cannot be edited in the workspace: ${id}`);
+      }
       // path が変わらない編集ではショートカットのリンク先（originalPath）を保つ
       const carried =
         existing.type === 'item' &&

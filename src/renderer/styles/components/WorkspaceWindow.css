@@ -315,6 +315,16 @@ html:has(.workspace-window.background-transparent) {
   border-color: var(--color-primary);
 }
 
+/* 元のアイテムが見つからない参照（開けないので、薄くして点線の枠にする） */
+.workspace-item-card-missing {
+  border-style: dashed;
+  background-color: var(--bg-warning-light);
+}
+
+.workspace-item-card-missing .workspace-item-content {
+  opacity: 0.55;
+}
+
 /* ドラッグ中のスタイル */
 /* ホバー時は通常のポインターカーソルを維持 */
 

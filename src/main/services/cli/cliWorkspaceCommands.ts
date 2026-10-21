@@ -8,6 +8,7 @@ import type {
   WorkspaceGroupUpdate,
   WorkspaceGroupView,
   WorkspaceItem,
+  WorkspaceRefInfo,
   WorkspaceItemUpdate,
 } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -55,8 +56,23 @@ export interface WorkspaceStore {
   deleteWorkspace(id: string): Promise<void>;
   reorderWorkspaces(ids: string[]): Promise<void>;
   loadGroups(): Promise<WorkspaceGroupView[]>;
+  /** アイテム（参照はメインウィンドウのアイテムの中身で埋めたもの） */
   loadItems(): Promise<WorkspaceItem[]>;
   addItem(item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem>;
+  /** メインウィンドウのアイテム（id）を指す参照を足す。参照できなければ undefined */
+  addRef(
+    itemId: string,
+    groupId?: string,
+    workspaceId?: string
+  ): Promise<WorkspaceItem | undefined>;
+  /** 表示名を変える（参照ならワークスペースでの表示名。空ならメインウィンドウの表示名に戻す） */
+  updateDisplayName(id: string, displayName: string): Promise<void>;
+  /** 参照をコピーにする */
+  convertToCopy(id: string): Promise<WorkspaceItem>;
+  /** アイテムをメインウィンドウのアイテムの参照にする（コピー → 参照・指し直し） */
+  linkToMain(id: string, mainItemId: string): Promise<WorkspaceItem>;
+  /** コピーと同じパス・引数のメインウィンドウのアイテム（id） */
+  findLinkCandidates(id: string): Promise<string[]>;
   updateItem(id: string, update: WorkspaceItemUpdate): Promise<void>;
   removeItem(id: string): Promise<void>;
   moveItemToGroup(itemId: string, groupId?: string): Promise<void>;
@@ -281,6 +297,8 @@ export async function runWorkspaceCommand(
         return updateItem(args, ctx);
       case 'remove':
         return removeItem(args, ctx);
+      case 'convert':
+        return convertItem(args, ctx);
     }
   }
   if (noun === 'group') {
@@ -492,12 +510,15 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
       'text-file',
       'from',
     ],
-    flags: ['dry-run'],
+    flags: ['dry-run', 'copy'],
     allowSet: true,
   });
   expectPositionals(parsed, []);
   const from = optionString(parsed, 'from');
   if (from !== undefined) return addFromLauncher(parsed, from, ctx);
+  if (optionFlag(parsed, 'copy')) {
+    throw new CliError('usage', mainI18n.t('cli.errors.copyNeedsFrom'));
+  }
   const type = optionString(parsed, 'type') ?? 'item';
   if (type === 'window') throw new CliError('usage', mainI18n.t('cli.errors.windowTypeRemoved'));
   if (type !== 'item' && type !== 'clipboard') {
@@ -572,8 +593,9 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
 }
 
 /**
- * メイン画面のアイテムを写して足す（右クリックの「ワークスペースに追加」と同じ）。
- * セットの行はメイン画面のアイテムを id で指したまま。クリップボードは実データを複製して自分のファイルを持たせる
+ * メイン画面のアイテムを足す（右クリックの「ワークスペースに追加」と同じ）。
+ * 既定はメインウィンドウのアイテムを指す参照（--name はワークスペースでの表示名）。--copy なら写す（コピー）。
+ * コピーでは、セットの行はメイン画面のアイテムを id で指したまま。クリップボードは実データを複製して自分のファイルを持たせる
  */
 async function addFromLauncher(
   parsed: ParsedArgs,
@@ -612,9 +634,39 @@ async function addFromLauncher(
     throw new CliError('conflict', mainI18n.t('cli.errors.fromDir', { name: source.displayName }));
   }
   const renamed = name ? ({ ...appItem, displayName: name.trim() } as AppItem) : appItem;
+  const copy = optionFlag(parsed, 'copy');
 
   const s = await snapshot(ctx.store);
   const place = resolvePlace(s, optionString(parsed, 'workspace'), optionString(parsed, 'group'));
+  // 参照（既定）。id を持つアイテムなら参照で足す
+  const mainId = entry.item.id;
+  if (!copy && mainId) {
+    const location = [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)];
+    if (dryRun) {
+      return {
+        dryRun: true,
+        item: {
+          id: null,
+          type: 'ref',
+          refItemId: mainId,
+          displayName: name?.trim() ?? source.displayName,
+          location,
+        },
+        from: source,
+      };
+    }
+    const added = await ctx.store.addRef(mainId, place.groupId, place.workspaceId);
+    if (added) {
+      if (name) await ctx.store.updateDisplayName(added.id, name.trim());
+      if (position !== undefined) {
+        await placeAt(ctx.store, added.id, place.workspaceId, place.groupId, position);
+      }
+      const after = await snapshot(ctx.store);
+      const item = after.items.find((i) => i.id === added.id) ?? added;
+      ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
+      return { ...itemView(item, after), from: source };
+    }
+  }
   if (dryRun) {
     return {
       dryRun: true,
@@ -725,6 +777,9 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
   const current = findItem(key, s);
+  if (current.ref) {
+    return updateRefItem(parsed, current as WorkspaceItem & { ref: WorkspaceRefInfo }, s, ctx);
+  }
   if (text !== undefined && current.type !== 'clipboard') {
     throw new CliError('usage', mainI18n.t('cli.errors.textOnlyClipboard'));
   }
@@ -842,6 +897,138 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   const after = await snapshot(ctx.store);
   const item = after.items.find((i) => i.id === id) ?? current;
   ctx.changed(mainI18n.t('cli.changed.workspaceItemUpdated', { name: item.displayName }));
+  return { before, item: itemView(item, after) };
+}
+
+/**
+ * 参照アイテムを変える。中身（パス・メモなど）はメインウィンドウのアイテムのものなので、変えられるのは
+ * ワークスペースでの表示名（--name。"" でメインウィンドウの表示名に戻す）と置き場所だけ
+ */
+async function updateRefItem(
+  parsed: ParsedArgs,
+  current: WorkspaceItem & { ref: WorkspaceRefInfo },
+  s: Snapshot,
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  for (const option of ['path', 'args', 'memo', 'text', 'text-file']) {
+    if (optionString(parsed, option) !== undefined) {
+      throw new CliError(
+        'conflict',
+        mainI18n.t('cli.errors.refBody', { option, id: current.ref.itemId })
+      );
+    }
+  }
+  if (parsed.sets.length > 0 || parsed.unsets.length > 0) {
+    throw new CliError(
+      'conflict',
+      mainI18n.t('cli.errors.refBody', { option: 'set', id: current.ref.itemId })
+    );
+  }
+  const name = optionString(parsed, 'name');
+  const groupKey = optionString(parsed, 'group');
+  const workspaceKey = optionString(parsed, 'workspace');
+  const position = optionInt(parsed, 'position');
+  if (
+    name === undefined &&
+    groupKey === undefined &&
+    workspaceKey === undefined &&
+    position === undefined
+  ) {
+    throw new CliError(
+      'usage',
+      mainI18n.t('cli.errors.needChanges', { options: '--name --group --workspace --position' })
+    );
+  }
+  const place =
+    groupKey !== undefined || workspaceKey !== undefined
+      ? resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey)
+      : { workspaceId: current.workspaceId, groupId: current.groupId };
+  if (workspaceKey !== undefined && groupKey === undefined) place.groupId = undefined;
+
+  const before = itemView(current, s);
+  if (optionFlag(parsed, 'dry-run')) {
+    return {
+      dryRun: true,
+      before,
+      item: {
+        ...before,
+        ...(name !== undefined && {
+          displayName: name.trim() || current.ref.mainDisplayName || current.displayName,
+        }),
+        location: [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)],
+      },
+    };
+  }
+  const id = current.id;
+  if (name !== undefined) await ctx.store.updateDisplayName(id, name);
+  if (place.workspaceId !== current.workspaceId)
+    await ctx.store.moveItemToWorkspace(id, place.workspaceId);
+  if (place.groupId !== (place.workspaceId !== current.workspaceId ? undefined : current.groupId)) {
+    await ctx.store.moveItemToGroup(id, place.groupId);
+  }
+  if (position !== undefined)
+    await placeAt(ctx.store, id, place.workspaceId, place.groupId, position);
+  const after = await snapshot(ctx.store);
+  const item = after.items.find((i) => i.id === id) ?? current;
+  ctx.changed(mainI18n.t('cli.changed.workspaceItemUpdated', { name: item.displayName }));
+  return { before, item: itemView(item, after) };
+}
+
+/**
+ * 参照とコピーを行き来する（--to copy | ref）。参照にするときの指す先は --from（id か表示名）。
+ * 省略すると、パスと引数が同じメインウィンドウのアイテムが 1 件だけあればそれ
+ */
+async function convertItem(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['to', 'from'], flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const to = optionString(parsed, 'to');
+  if (to !== 'copy' && to !== 'ref') {
+    throw new CliError('usage', mainI18n.t('cli.errors.convertTo', { to: to ?? '' }));
+  }
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const s = await snapshot(ctx.store);
+  const current = findItem(key, s);
+  const before = itemView(current, s);
+
+  if (to === 'copy') {
+    if (!current.ref) throw new CliError('conflict', mainI18n.t('cli.errors.notRef'));
+    if (current.ref.status !== 'ok')
+      throw new CliError('conflict', mainI18n.t('cli.errors.refMissing'));
+    if (dryRun) return { dryRun: true, before, to };
+    const converted = await ctx.store.convertToCopy(current.id);
+    const after = await snapshot(ctx.store);
+    const item = after.items.find((i) => i.id === current.id) ?? converted;
+    ctx.changed(mainI18n.t('workspace.ref.convertedToCopy', { name: item.displayName }));
+    return { before, item: itemView(item, after) };
+  }
+
+  const from = optionString(parsed, 'from');
+  let mainId: string;
+  if (from !== undefined) {
+    const entry = await findLauncherEntry(from, ctx.launcher);
+    if (!entry.item.id || entry.item.type === 'dir') {
+      throw new CliError('conflict', mainI18n.t('cli.errors.fromDir', { name: from }));
+    }
+    mainId = entry.item.id;
+  } else {
+    const candidates = await ctx.store.findLinkCandidates(current.id);
+    if (candidates.length !== 1) {
+      throw new CliError(
+        candidates.length === 0 ? 'not_found' : 'ambiguous',
+        mainI18n.t('cli.errors.noLinkCandidate', { count: candidates.length })
+      );
+    }
+    mainId = candidates[0];
+  }
+  if (dryRun) return { dryRun: true, before, to, refItemId: mainId };
+  const linked = await ctx.store.linkToMain(current.id, mainId);
+  const after = await snapshot(ctx.store);
+  const item = after.items.find((i) => i.id === current.id) ?? linked;
+  ctx.changed(mainI18n.t('workspace.ref.linked', { name: item.displayName }));
   return { before, item: itemView(item, after) };
 }
 

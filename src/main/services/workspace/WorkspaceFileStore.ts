@@ -18,12 +18,16 @@ import type { InvalidWorkspaceEntries } from '@common/utils/workspaceParser';
 import type {
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
+  JsonArchivedItemMeta,
   JsonArchivedWorkspaceItem,
   JsonWorkspaceItem,
+  JsonWorkspaceRefItem,
   LauncherItemType,
   Workspace,
   WorkspaceGroup,
   WorkspaceItem,
+  WorkspaceRefInfo,
+  WorkspaceRefItem,
 } from '@common/types';
 import { JSON_WORKSPACE_VERSION } from '@common/types';
 import { isRecord } from '@common/types/guards';
@@ -199,20 +203,68 @@ async function refineLauncherTypes(items: Array<{ type: string }>): Promise<void
   }
 }
 
-function toRuntimeItem<T extends JsonWorkspaceItem>(
-  item: T
-): T & { launcherType?: LauncherItemType } {
+function toRuntimeItem<T extends JsonWorkspaceItem>(item: T): WorkspaceItem {
   if (item.type === 'item') {
     return { ...item, launcherType: resolveLauncherType(item) };
   }
-  return { ...item };
+  if (item.type === 'ref') {
+    return refJsonToRuntimeItem(item);
+  }
+  return { ...item } as WorkspaceItem;
 }
 
-/** 実行時にだけ持つフィールドを落としてファイル形式に戻す */
-function toJsonItem<T extends JsonWorkspaceItem>(
-  item: T & { icon?: string; launcherType?: string }
-): T {
-  const { icon: _icon, launcherType: _launcherType, ...rest } = item;
+/**
+ * ファイルの参照アイテムを、まだ解決していない実行時の参照アイテムにする
+ * （中身はワークスペースの画面に渡すときに workspaceRefResolver が埋める）
+ */
+export function refJsonToRuntimeItem(item: JsonWorkspaceRefItem): WorkspaceRefItem {
+  const { displayName, lastKnownName, ...rest } = item;
+  return {
+    ...rest,
+    displayName: displayName ?? lastKnownName ?? '',
+    ref: {
+      itemId: item.refItemId,
+      ...(displayName !== undefined && { alias: displayName }),
+      ...(lastKnownName !== undefined && { lastKnownName }),
+      status: 'missing',
+    },
+  };
+}
+
+/** 実行時の参照（解決済みのものを含む）をファイル形式の参照アイテムに戻す */
+function refToJsonItem(
+  item: WorkspaceItem & { ref: WorkspaceRefInfo } & Partial<JsonArchivedItemMeta>
+): JsonWorkspaceRefItem {
+  const { ref } = item;
+  return orderWorkspaceItemKeys({
+    id: item.id,
+    type: 'ref',
+    refItemId: ref.itemId,
+    ...(ref.alias !== undefined && { displayName: ref.alias }),
+    ...(ref.lastKnownName !== undefined && { lastKnownName: ref.lastKnownName }),
+    workspaceId: item.workspaceId,
+    ...(item.groupId !== undefined && { groupId: item.groupId }),
+    order: item.order,
+    addedAt: item.addedAt,
+    ...(item.archivedAt !== undefined && { archivedAt: item.archivedAt }),
+    ...(item.archivedGroupId !== undefined && { archivedGroupId: item.archivedGroupId }),
+  } as JsonWorkspaceRefItem);
+}
+
+/**
+ * 実行時にだけ持つフィールドを落としてファイル形式に戻す
+ *
+ * 参照（ref を持つもの）は、解決して中身を埋めた形でも参照アイテムとして書く（中身をコピーとして残さない）
+ */
+function toJsonItem<T extends JsonWorkspaceItem>(item: WorkspaceItem): T {
+  if (item.ref) return refToJsonItem(item as WorkspaceItem & { ref: WorkspaceRefInfo }) as T;
+  const {
+    icon: _icon,
+    launcherType: _launcherType,
+    ...rest
+  } = item as WorkspaceItem & {
+    launcherType?: string;
+  };
   return orderWorkspaceItemKeys(rest as unknown as T);
 }
 

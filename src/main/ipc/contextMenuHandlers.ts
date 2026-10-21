@@ -29,12 +29,16 @@ import { isLauncherItem, isSetItem } from '@common/types/guards';
 import { mainI18n } from '../services/mainI18n.js';
 import { rerecordSetPositions } from '../services/launch/setRerecord.js';
 import { getMainWindow, showMainWindow } from '../windowManager.js';
+import { openWorkspaceLinkCopies } from '../workspaceLinkWindowManager.js';
+import { isReferenceableAppItem } from '../services/workspace/workspaceRefResolver.js';
 import {
   closeDetachedGroupWindow,
   createDetachedGroupWindow,
   getGroupIdByWebContentsId,
   hasDetachedGroupWindow,
 } from '../detachedGroupWindowManager.js';
+
+import { buildRefMenuItems, editLinkedMainItem } from './workspaceRefMenu.js';
 
 /** メニューの文言（開くたびに作るので、今の表示言語になる） */
 const t = mainI18n.t.bind(mainI18n);
@@ -232,6 +236,17 @@ function setupLauncherContextMenuHandler(): void {
           item
         )
       );
+      // 既定の「ワークスペースに追加」は参照。参照できるアイテムにだけ、コピーで足す項目を並べる
+      if (isReferenceableAppItem(item)) {
+        menu.append(
+          createMenuItem(
+            t('menu.addCopyToWorkspace'),
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE,
+            item
+          )
+        );
+      }
 
       if (!hasPathMenu) {
         menu.popup({ window: senderWindow });
@@ -298,6 +313,9 @@ function setupWorkspaceContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
+      // 参照: 解決できたもの（linked）は編集をメインウィンドウで行う。元が見つからないもの（missing）は中身が無い
+      const linked = item.ref?.status === 'ok';
+      const missing = item.type === 'ref';
       // パス系のメニューは通常アイテム（path を持つ）だけに出す（パスの無い単一アイテムには出さない）
       const isLauncher = item.type === 'item' && item.launcherType !== 'windowSwitch';
       const hasParentFolder =
@@ -307,17 +325,26 @@ function setupWorkspaceContextMenuHandler(): void {
 
       // 並びはメインウィンドウの右クリックに合わせる（編集・メモ → 置き場の操作 → パス → 削除）。
       // 起動はクリックでできるので置かない
+      if (linked) {
+        menu.append(
+          new MenuItem({
+            label: t('menu.workspaceItem.editMain'),
+            click: () => void editLinkedMainItem(item),
+          })
+        );
+      } else if (!missing) {
+        menu.append(
+          createMenuItem(
+            t('menu.edit'),
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM,
+            item.id
+          )
+        );
+      }
       menu.append(
         createMenuItem(
-          t('menu.edit'),
-          event.sender,
-          IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM,
-          item.id
-        )
-      );
-      menu.append(
-        createMenuItem(
-          t('menu.workspaceItem.rename'),
+          item.ref ? t('menu.workspaceItem.renameAlias') : t('menu.workspaceItem.rename'),
           event.sender,
           IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM,
           item.id
@@ -360,14 +387,19 @@ function setupWorkspaceContextMenuHandler(): void {
         placementItems.forEach((menuItem) => menu.append(menuItem));
       }
 
-      // メインウィンドウの「ワークスペースに追加」の逆向き
+      // 参照とコピーの行き来（参照は「コピーにする」「別のアイテムを指す」、コピーは「メインウィンドウのアイテムを参照する」）
       menu.append(createSeparator());
-      menu.append(
-        new MenuItem({
-          label: t('menu.workspaceItem.registerToMain'),
-          click: () => void registerWorkspaceItemToMain(item),
-        })
-      );
+      buildRefMenuItems(event.sender, item).forEach((menuItem) => menu.append(menuItem));
+
+      // メインウィンドウの「ワークスペースに追加」の逆向き（参照はもうメインウィンドウにあるので出さない）
+      if (!item.ref) {
+        menu.append(
+          new MenuItem({
+            label: t('menu.workspaceItem.registerToMain'),
+            click: () => void registerWorkspaceItemToMain(item),
+          })
+        );
+      }
 
       if (isLauncher) {
         menu.append(createSeparator());
@@ -795,6 +827,12 @@ function setupWorkspaceTabContextMenuHandler(): void {
           IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_RENAME,
           workspaceId
         )
+      );
+      menu.append(
+        new MenuItem({
+          label: t('menu.tab.linkCopies'),
+          click: () => void openWorkspaceLinkCopies(event.sender, workspaceId),
+        })
       );
 
       if (canDelete) {
