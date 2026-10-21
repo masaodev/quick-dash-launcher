@@ -228,8 +228,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     orderedItems,
     visibleSelectedItems,
     isFiltered,
-    fileItemCount,
   } = listView;
+  // 絞り込む前の件数（絞り込み中の「合計: 8 / 15 件」に使う）
+  const fileItemCount = currentFileWorkingItems.length;
 
   const columns = useAdminItemColumns();
 

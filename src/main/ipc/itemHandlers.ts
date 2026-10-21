@@ -2,6 +2,7 @@ import { ipcMain, shell } from 'electron';
 import { itemLogger } from '@common/logger';
 import { LauncherItem, AppItem } from '@common/types';
 import type { SetItem } from '@common/types';
+import type { LaunchOptions } from '@common/types/launchUsage';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
@@ -15,7 +16,7 @@ import { openSingleItem } from '../services/launch/itemOpener.js';
 import { mainI18n } from '../services/mainI18n.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
 
-async function openItem(item: LauncherItem): Promise<void> {
+async function openItem(item: LauncherItem, options?: LaunchOptions): Promise<void> {
   itemLogger.info(
     {
       name: item.displayName,
@@ -28,10 +29,11 @@ async function openItem(item: LauncherItem): Promise<void> {
     'アイテムを起動中'
   );
 
-  if (await openSingleItem(item)) {
-    // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ（フォルダ取込の行）に数える
+  // 登録・編集フォームで試しに開いたときは数えない
+  if ((await openSingleItem(item)) && !options?.trial) {
+    // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ取込の行の id で数える
     const usage = LaunchUsageService.getInstance();
-    if (item.isDirExpanded) await usage?.recordByDir(item.expandedFrom);
+    if (item.isDirExpanded) await usage?.recordById(item.expandedFromId);
     else if (item.id) await usage?.recordById(item.id);
     else await usage?.recordByPath(item.path);
   }
@@ -78,10 +80,13 @@ async function notifyParentFolder(item: LauncherItem, message: string): Promise<
 export function setupItemHandlers(): void {
   // 各実行ハンドラでは、起動処理の前にメインウィンドウを閉じる
   // （blur待ちにすると起動の遅いアプリでウィンドウが残り、Enter連打で多重起動するため）
-  ipcMain.handle(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem) => {
-    hideMainWindowOnExecute();
-    await openItem(item);
-  });
+  ipcMain.handle(
+    IPC_CHANNELS.OPEN_ITEM,
+    async (_event, item: LauncherItem, options?: LaunchOptions) => {
+      hideMainWindowOnExecute();
+      await openItem(item, options);
+    }
+  );
 
   ipcMain.handle(IPC_CHANNELS.OPEN_PARENT_FOLDER, async (_event, item: LauncherItem) => {
     hideMainWindowOnExecute();

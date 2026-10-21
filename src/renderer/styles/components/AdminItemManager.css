@@ -738,7 +738,8 @@
 }
 
 .raw-items-table .checkbox-column {
-  width: 40px;
+  /* 幅は adminItemColumns.ts の CHECKBOX_COLUMN_WIDTH を表の style から受け取る */
+  width: var(--checkbox-column-width);
   padding: 0 4px !important;
   text-align: center;
   vertical-align: middle;
@@ -1071,8 +1072,9 @@
 /* 「✏️ 詳細編集」の文字分だけ操作列を広げる（🗑 が隣の列に食い込まないように） */
 .raw-items-table th.actions-column,
 .raw-items-table td.actions-column {
-  width: 64px;
-  min-width: 64px;
+  /* 幅は adminItemColumns.ts の ACTIONS_COLUMN_WIDTH を表の style から受け取る */
+  width: var(--actions-column-width);
+  min-width: var(--actions-column-width);
   text-align: left;
 }
 

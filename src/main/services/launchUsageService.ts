@@ -13,6 +13,12 @@ import { SettingsService } from './settingsService.js';
 
 interface LaunchUsageFile extends LaunchUsageSnapshot {
   version: 1;
+  /** 設定「起動の記録を残す」を切った日時（入れ直したとき、since をその日に進める） */
+  pausedAt?: number;
+}
+
+function emptyFile(): LaunchUsageFile {
+  return { version: 1, since: Date.now(), byId: {}, byPath: {} };
 }
 
 /** 数の項目がそろった記録だけを残す（手で書き換えた・一部が壊れたファイルに備える） */
@@ -44,6 +50,7 @@ const WRITE_DELAY_MS = 1000;
  * データファイルには書かない（起動のたびにデータファイルを書き換えると、ファイル監視で一覧を読み直し、
  * 同期・Git 管理している人の差分も増えるため）。
  * メイン画面・セットからの起動は id で、ワークスペースからの起動は id がメインと違うのでパス（引数は含めない）で記録する。
+ * フォルダ取込で展開したアイテムは、フォルダ取込の行の id で記録する。
  * アイテム管理は id とパスの両方の記録を足して見せる
  */
 export class LaunchUsageService {
@@ -66,29 +73,48 @@ export class LaunchUsageService {
     return LaunchUsageService.instance;
   }
 
-  private load(): LaunchUsageFile {
+  /**
+   * 記録を読む。読めなかったときは null（一時的にロックされているなど。次に呼ばれたとき読み直す）
+   */
+  private load(): LaunchUsageFile | null {
     if (this.data) return this.data;
+    let text: string;
     try {
-      const raw = JSON.parse(fs.readFileSync(this.filePath, 'utf8')) as Partial<LaunchUsageFile>;
+      text = fs.readFileSync(this.filePath, 'utf8');
+    } catch (error) {
+      if ((error as { code?: string }).code === 'ENOENT') {
+        // 初めてなら記録を始め、始めた日時を残す（何も起動しないまま再起動しても日時が進まないように）
+        this.data = emptyFile();
+        this.dirty = true;
+        this.scheduleWrite();
+        return this.data;
+      }
+      // ウイルス対策・同期ソフトが一時的にロックしているなど。始め直すと記録を上書きで消すので、今回は読まない
+      itemLogger.warn({ error }, '起動の記録を読めませんでした（次に読み直します）');
+      return null;
+    }
+    try {
+      const raw = JSON.parse(text) as Partial<LaunchUsageFile>;
       this.data = {
         version: 1,
         since: typeof raw.since === 'number' ? raw.since : Date.now(),
         byId: validRecords(raw.byId),
         byPath: validRecords(raw.byPath),
-        byDir: validRecords(raw.byDir),
+        ...(typeof raw.pausedAt === 'number' ? { pausedAt: raw.pausedAt } : {}),
       };
     } catch (error) {
-      // 初めて（ファイルが無い）なら記録を始める。壊れていたら、消さずに脇へ移してから始め直す
-      if (fs.existsSync(this.filePath)) {
-        const aside = `${this.filePath}.broken-${Date.now()}`;
-        try {
-          fs.renameSync(this.filePath, aside);
-          itemLogger.warn({ error, aside }, '起動の記録が読めなかったので、脇へ移して始め直します');
-        } catch {
-          // 移せなくても始め直す（次の書き込みで上書きする）
-        }
+      // 中身が壊れていたら、消さずに脇へ移してから始め直す。移せなければ上書きしないよう読まない
+      const aside = `${this.filePath}.broken-${Date.now()}`;
+      try {
+        fs.renameSync(this.filePath, aside);
+      } catch (renameError) {
+        itemLogger.warn({ error, renameError }, '壊れた起動の記録を脇へ移せませんでした');
+        return null;
       }
-      this.data = { version: 1, since: Date.now(), byId: {}, byPath: {}, byDir: {} };
+      itemLogger.warn({ error, aside }, '起動の記録が読めなかったので、脇へ移して始め直します');
+      this.data = emptyFile();
+      this.dirty = true;
+      this.scheduleWrite();
     }
     return this.data;
   }
@@ -131,32 +157,48 @@ export class LaunchUsageService {
     }
   }
 
-  /** メイン画面・セットから開いたアイテム（データファイルの id） */
-  async recordById(id: string | undefined): Promise<void> {
-    if (!id || !(await this.isEnabled())) return;
-    this.bump(this.load().byId, id, Date.now());
+  private async record(table: 'byId' | 'byPath', key: string): Promise<void> {
+    if (!(await this.isEnabled())) return;
+    const data = this.load();
+    if (!data) return;
+    this.bump(data[table], key, Date.now());
     this.dirty = true;
     this.scheduleWrite();
+  }
+
+  /** メイン画面・セットから開いたアイテム（データファイルの id。フォルダ取込はその行の id） */
+  async recordById(id: string | undefined): Promise<void> {
+    if (id) await this.record('byId', id);
   }
 
   /** ワークスペースから開いたアイテム（id がデータファイルと違う） */
   async recordByPath(itemPath: string | undefined): Promise<void> {
-    if (!itemPath || !(await this.isEnabled())) return;
-    this.bump(this.load().byPath, launchUsagePathKey(itemPath), Date.now());
-    this.dirty = true;
-    this.scheduleWrite();
+    if (itemPath) await this.record('byPath', launchUsagePathKey(itemPath));
   }
 
-  /** フォルダ取込で展開したアイテム（呼び出し側が展開元のフォルダのパスを渡す） */
-  async recordByDir(dirPath: string | undefined): Promise<void> {
-    if (!dirPath || !(await this.isEnabled())) return;
-    this.bump(this.load().byDir, launchUsagePathKey(dirPath), Date.now());
+  /**
+   * 設定「起動の記録を残す」を変えたとき。切っていた間の起動は記録に無いので、入れ直したら since をその日に進める
+   *（進めないと、切っていた間に使ったアイテムが「90 日以上起動していない」に出る）
+   */
+  setRecording(enabled: boolean): void {
+    const data = this.load();
+    if (!data) return;
+    if (!enabled && data.pausedAt === undefined) {
+      data.pausedAt = Date.now();
+    } else if (enabled && data.pausedAt !== undefined) {
+      data.since = Date.now();
+      delete data.pausedAt;
+    } else {
+      return;
+    }
     this.dirty = true;
     this.scheduleWrite();
   }
 
   getSnapshot(): LaunchUsageSnapshot {
-    const { since, byId, byPath, byDir } = this.load();
-    return { since, byId, byPath, byDir };
+    const data = this.load();
+    if (!data) return { since: Date.now(), byId: {}, byPath: {} };
+    const { since, byId, byPath } = data;
+    return { since, byId, byPath };
   }
 }

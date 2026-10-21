@@ -9,7 +9,7 @@ import type { ProgressEventType } from '../ipcChannels';
 import type { ScreenArea } from '../utils/placementLabel';
 
 import type { SetItemFields } from './launcher';
-import type { LaunchUsageSnapshot } from './launchUsage';
+import type { LaunchOptions, LaunchUsageSnapshot } from './launchUsage';
 import type {
   EditableJsonItem,
   LoadEditableItemsResult,
@@ -87,7 +87,8 @@ export interface ElectronAPI {
    * 'internal' = 変更通知・画面内の一覧取得
    */
   loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
-  openItem: (item: LauncherItem) => Promise<void>;
+  /** options.trial＝登録・編集フォームで試しに開く（起動の記録に数えない） */
+  openItem: (item: LauncherItem, options?: LaunchOptions) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
   /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
   executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
@@ -293,7 +294,7 @@ export interface ElectronAPI {
     removeItem: (id: string) => Promise<{ success: boolean }>;
     updateDisplayName: (id: string, displayName: string) => Promise<{ success: boolean }>;
     updateItem: (id: string, updates: WorkspaceItemUpdate) => Promise<{ success: boolean }>;
-    launchItem: (item: WorkspaceItem) => Promise<{ success: boolean }>;
+    launchItem: (item: WorkspaceItem, options?: LaunchOptions) => Promise<{ success: boolean }>;
     // グループ管理
     loadGroups: () => Promise<WorkspaceGroupView[]>;
     createGroup: (

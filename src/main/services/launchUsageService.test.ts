@@ -38,11 +38,6 @@ describe('LaunchUsageService', () => {
     expect(snapshot.byId.abc12345.count).toBe(2);
     expect(snapshot.byPath[launchUsagePathKey('c:\\tools\\app')].count).toBe(1);
 
-    // フォルダ取込の展開は別に数える（同じフォルダを指す単一アイテムに足さない）
-    await service.recordByDir('C:\\Tools\\App');
-    expect(service.getSnapshot().byDir[launchUsagePathKey('C:\\Tools\\App')].count).toBe(1);
-    expect(snapshot.byPath[launchUsagePathKey('c:\\tools\\app')].count).toBe(1);
-
     service.flush();
     const saved = JSON.parse(fs.readFileSync(path.join(dir, 'item-usage.json'), 'utf8'));
     expect(saved.version).toBe(1);
@@ -84,11 +79,57 @@ describe('LaunchUsageService', () => {
     });
   });
 
-  it('読んだだけ（記録していない）ならファイルを書かない', () => {
+  it('初めて読んだときは始めた日時を書き、次に起動しても日時を進めない', () => {
+    const first = LaunchUsageService.initialize(dir);
+    const since = first.getSnapshot().since;
+    first.flush();
+    const file = path.join(dir, 'item-usage.json');
+    expect(JSON.parse(fs.readFileSync(file, 'utf8')).since).toBe(since);
+
+    // 読んだだけ（記録していない）なら書き直さない
+    const mtime = fs.statSync(file).mtimeMs;
+    const second = LaunchUsageService.initialize(dir);
+    expect(second.getSnapshot().since).toBe(since);
+    second.flush();
+    expect(fs.statSync(file).mtimeMs).toBe(mtime);
+  });
+
+  it('ロックなどで一時的に読めないときは、始め直さず上書きもしない', async () => {
+    const file = path.join(dir, 'item-usage.json');
+    const saved = JSON.stringify({
+      version: 1,
+      since: 1,
+      byId: { a: { lastLaunchedAt: 2, count: 9 } },
+    });
+    // 読めない状態の代わりに、同じ名前のフォルダを置く（読むと ENOENT 以外のエラーになる）
+    fs.mkdirSync(file);
     const service = LaunchUsageService.initialize(dir);
-    service.getSnapshot();
+    await service.recordById('b');
     service.flush();
-    expect(fs.existsSync(path.join(dir, 'item-usage.json'))).toBe(false);
+    expect(fs.statSync(file).isDirectory()).toBe(true);
+    expect(fs.readdirSync(dir)).toEqual(['item-usage.json']);
+
+    // 読めるようになったら続きから数える
+    fs.rmdirSync(file);
+    fs.writeFileSync(file, saved, 'utf8');
+    await service.recordById('a');
+    expect(service.getSnapshot().byId.a.count).toBe(10);
+  });
+
+  it('設定を切って入れ直したら、記録を始めた日時をその日に進める（記録は残す）', async () => {
+    const service = LaunchUsageService.initialize(dir);
+    await service.recordById('a');
+    const since = service.getSnapshot().since;
+    service.setRecording(false);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    service.setRecording(true);
+    expect(service.getSnapshot().since).toBeGreaterThan(since);
+    expect(service.getSnapshot().byId.a.count).toBe(1);
+
+    // 切っていないのに入れたとき（設定の読み直し）は進めない
+    const after = service.getSnapshot().since;
+    service.setRecording(true);
+    expect(service.getSnapshot().since).toBe(after);
   });
 });
 

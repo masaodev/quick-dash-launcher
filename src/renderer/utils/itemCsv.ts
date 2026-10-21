@@ -36,14 +36,18 @@ function formatCsvDate(time?: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** Excel が数式として読む書き出し（= + - @ で始まる値）。' を前に付けて文字のまま読ませる */
-const FORMULA_START = /^[=+\-@]/;
+/**
+ * Excel が数式として読む書き出し（= + - @ で始まる値）。' を前に付けて文字のまま読ませる
+ *
+ * もとから ' の後に = + - @ が続く値（'-- メモ など）にも付ける。付けないと、取り込みで外す ' と区別できない
+ */
+const FORMULA_START = /^'*[=+\-@]/;
 
 function protectFormula(value: string): string {
   return FORMULA_START.test(value) ? `'${value}` : value;
 }
 
-/** protectFormula で付けた ' を外す（' の後が = + - @ のときだけ） */
+/** protectFormula で付けた ' を 1 つ外す */
 function unprotectFormula(value: string): string {
   return value.startsWith("'") && FORMULA_START.test(value.slice(1)) ? value.slice(1) : value;
 }

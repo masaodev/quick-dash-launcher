@@ -10,7 +10,9 @@ import { useAdminContextMenu } from '../hooks/useAdminContextMenu';
 import { getAdminItemIcon, useAdminItemIcons } from '../hooks/useAdminItemIcons';
 import type { AdminItemColumns } from '../hooks/useAdminItemColumns';
 import {
+  ACTIONS_COLUMN_WIDTH,
   ADMIN_ITEM_COLUMNS,
+  CHECKBOX_COLUMN_WIDTH,
   FIXED_COLUMN_COUNT,
   filterColumnOf,
   tableMinWidthOf,
@@ -193,7 +195,13 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
     <div className="editable-raw-item-list" ref={listRef}>
       <table
         className="raw-items-table"
-        style={{ minWidth: tableMinWidthOf(columns.visibleColumns.map((c) => c.width)) }}
+        style={
+          {
+            minWidth: tableMinWidthOf(columns.visibleColumns.map((c) => c.width)),
+            '--checkbox-column-width': `${CHECKBOX_COLUMN_WIDTH}px`,
+            '--actions-column-width': `${ACTIONS_COLUMN_WIDTH}px`,
+          } as React.CSSProperties
+        }
       >
         <AdminItemManagerTableHead
           sortState={sortState}

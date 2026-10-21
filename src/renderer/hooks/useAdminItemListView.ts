@@ -160,11 +160,6 @@ export function useAdminItemListView({
   const clearFilters = useCallback(() => setFilters({}), []);
 
   const isFiltered = searchQuery.trim().length > 0 || activeFilterColumns(filters).length > 0;
-  // 絞り込む前の件数（絞り込み中の「合計: 8 / 15 件」に使う）
-  const fileItemCount = useMemo(
-    () => workingItems.filter((item) => item.meta.sourceFile === selectedDataFile).length,
-    [workingItems, selectedDataFile]
-  );
 
   return {
     sortState,
@@ -179,7 +174,6 @@ export function useAdminItemListView({
     orderedItems,
     visibleSelectedItems,
     isFiltered,
-    fileItemCount,
     clearFilters,
   };
 }

@@ -56,7 +56,7 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
   options,
   onClose,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const popoverStyle = usePopoverPosition(ref, position);
 
@@ -218,7 +218,7 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
         {options.usageSince !== null && (
           <div className="dropdown-section-label column-filter-note">
             {t('itemManager.columnFilter.usageSince', {
-              date: new Date(options.usageSince).toLocaleDateString(),
+              date: new Date(options.usageSince).toLocaleDateString(i18n.language),
             })}
           </div>
         )}

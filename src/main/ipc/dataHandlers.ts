@@ -134,7 +134,6 @@ export function setupDataHandlers(configFolder: string) {
         since: Date.now(),
         byId: {},
         byPath: {},
-        byDir: {},
       }
   );
 

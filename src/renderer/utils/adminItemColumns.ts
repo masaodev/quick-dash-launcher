@@ -185,8 +185,13 @@ export function columnWidthOf(
   return width === undefined ? column.defaultWidth : Math.max(column.minWidth ?? 0, width);
 }
 
-/** 選択・操作の列の幅（px。CSS の .raw-items-table の checkbox-column 40px と actions-column 64px） */
-const FIXED_COLUMNS_WIDTH = 40 + 64;
+/**
+ * 選択・操作の列の幅（px）。表に CSS 変数 --checkbox-column-width・--actions-column-width として渡し、
+ * CSS はその値で描く（表の最小幅の計算と CSS の幅がずれないよう、ここを正にする）
+ */
+export const CHECKBOX_COLUMN_WIDTH = 40;
+export const ACTIONS_COLUMN_WIDTH = 64;
+const FIXED_COLUMNS_WIDTH = CHECKBOX_COLUMN_WIDTH + ACTIONS_COLUMN_WIDTH;
 /** パスと引数の列に残す最低の幅（px）。足りなければ一覧を横にスクロールする */
 export const PATH_COLUMN_MIN_WIDTH = 180;
 

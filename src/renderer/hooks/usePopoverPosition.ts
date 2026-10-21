@@ -18,13 +18,22 @@ export function usePopoverPosition(
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const { width, height } = el.getBoundingClientRect();
-    const maxLeft = window.innerWidth - width - EDGE_MARGIN;
-    const maxTop = window.innerHeight - height - EDGE_MARGIN;
-    setClamped({
-      left: Math.max(EDGE_MARGIN, Math.min(position.x, maxLeft)),
-      top: Math.max(EDGE_MARGIN, Math.min(position.y, maxTop)),
-    });
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      const maxLeft = window.innerWidth - width - EDGE_MARGIN;
+      const maxTop = window.innerHeight - height - EDGE_MARGIN;
+      const next = {
+        left: Math.max(EDGE_MARGIN, Math.min(position.x, maxLeft)),
+        top: Math.max(EDGE_MARGIN, Math.min(position.y, maxTop)),
+      };
+      setClamped((prev) => (prev.left === next.left && prev.top === next.top ? prev : next));
+    };
+    measure();
+    // 開いた後に中身が増えて大きくなったとき（起動の記録を読み終えて「記録は〜から」が出るなど）も収め直す
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [ref, position.x, position.y]);
 
   return clamped;

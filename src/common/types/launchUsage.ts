@@ -12,16 +12,20 @@ export interface LaunchUsageRecord {
 export interface LaunchUsageSnapshot {
   /** 記録を始めた日時（それより前の起動は記録に無い） */
   since: number;
-  /** データファイルのアイテムの id → 記録（メイン画面・セットから開いたとき） */
+  /**
+   * データファイルのアイテムの id → 記録（メイン画面・セットから開いたとき）
+   *
+   * フォルダ取込で展開したアイテムを開いたときは、フォルダ取込の行の id で数える
+   */
   byId: Record<string, LaunchUsageRecord>;
   /** パス → 記録（ワークスペースから開いたとき。キーは launchUsagePathKey） */
   byPath: Record<string, LaunchUsageRecord>;
-  /**
-   * フォルダ取込のフォルダのパス → 記録（展開したアイテムを開いたとき。キーは launchUsagePathKey）
-   *
-   * byPath と分けるのは、同じフォルダを指す単一アイテムに、中のファイルを開いた回数を足さないため
-   */
-  byDir: Record<string, LaunchUsageRecord>;
+}
+
+/** アイテムを開くときの指定 */
+export interface LaunchOptions {
+  /** 登録・編集フォームの「試す」で開く（起動の記録に数えない） */
+  trial?: boolean;
 }
 
 /**

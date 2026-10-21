@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EditableJsonItem } from '@common/types/editableItem';
 import {
   launchUsagePathKey,
@@ -16,6 +16,7 @@ import { logError } from '../utils/debug';
  */
 export function useLaunchUsage() {
   const [snapshot, setSnapshot] = useState<LaunchUsageSnapshot | null>(null);
+  const lastJson = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,7 +24,12 @@ export function useLaunchUsage() {
       window.electronAPI
         .getLaunchUsage()
         .then((next) => {
-          if (!cancelled) setSnapshot(next);
+          if (cancelled) return;
+          // 変わっていなければ置き換えない（戻ってくるたびに一覧を絞り込み直し、描き直さないように）
+          const json = JSON.stringify(next);
+          if (json === lastJson.current) return;
+          lastJson.current = json;
+          setSnapshot(next);
         })
         .catch((error) => logError('起動の記録を読めませんでした:', error));
     };
@@ -35,22 +41,29 @@ export function useLaunchUsage() {
     };
   }, []);
 
+  // 並べ替え・絞り込み・各行で何度も引くので、記録を読み直すまでアイテムごとに覚えておく
+  //（編集したアイテムは別のオブジェクトになるので、古い結果は使わない）
+  const cache = useMemo(
+    () => new WeakMap<EditableJsonItem, LaunchUsageRecord | undefined>(),
+    [snapshot]
+  );
+
   /** そのアイテムの記録（id の記録と、同じパスの記録を足したもの）。無ければ undefined */
   const usageOf = useCallback(
     (item: EditableJsonItem): LaunchUsageRecord | undefined => {
       if (!snapshot) return undefined;
+      if (cache.has(item)) return cache.get(item);
       const json = item.item;
-      // フォルダ取込の行は、展開したアイテムを開いた記録（展開元のフォルダのパスで数えている）
-      if (json.type === 'dir') {
-        return json.path ? snapshot.byDir[launchUsagePathKey(json.path)] : undefined;
-      }
       const byPath =
         json.type === 'item' && json.path
           ? snapshot.byPath[launchUsagePathKey(json.path)]
           : undefined;
-      return mergeLaunchUsage(snapshot.byId[json.id], byPath);
+      // フォルダ取込の行は、展開したアイテムを開いた記録（その行の id で数えている）
+      const record = mergeLaunchUsage(snapshot.byId[json.id], byPath);
+      cache.set(item, record);
+      return record;
     },
-    [snapshot]
+    [snapshot, cache]
   );
 
   return { since: snapshot?.since ?? null, loaded: snapshot !== null, usageOf };
