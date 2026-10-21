@@ -5,7 +5,7 @@ import type { ElectronApplication, Page } from '@playwright/test';
 import type { AppItem, LauncherItem, WorkspaceItem } from '@common/types';
 
 import { test, expect } from '../fixtures/electron-app';
-import { TestUtils } from '../helpers/test-utils';
+import { NativeMenuTestHelper, TestUtils } from '../helpers/test-utils';
 
 /**
  * 常駐しているワークスペースウィンドウを取得する（workspace-groups.spec.ts と同じ）
@@ -140,6 +140,46 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
         workspaceWindow.locator('.workspace-item-name', { hasText: 'GitHub（直した）' })
       ).toBeVisible();
     });
+  });
+
+  test('その場での名前の変更でワークスペースでの表示名を付け、空にして確定するとメインの表示名に戻る', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const menu = new NativeMenuTestHelper(electronApp, workspaceWindow);
+
+    const wiki = await mainItem(mainWindow, 'Wikipedia');
+    const added: WorkspaceItem = await workspaceWindow.evaluate(
+      (item) => window.electronAPI.workspaceAPI.addItem(item),
+      wiki
+    );
+    const input = workspaceWindow.locator('.workspace-item-name-input');
+
+    await menu.simulateWorkspaceMenu('rename', added.id);
+    await input.fill('ウィキ');
+    await input.press('Enter');
+    await expect(
+      workspaceWindow.locator('.workspace-item-name', { hasText: /^ウィキ$/ })
+    ).toBeVisible();
+
+    await menu.simulateWorkspaceMenu('rename', added.id);
+    await input.fill('');
+    await input.press('Enter');
+    await expect(input).toHaveCount(0);
+    await expect
+      .poll(
+        async () =>
+          (await loadWorkspaceItems(workspaceWindow)).find((i) => i.id === added.id)?.ref?.alias
+      )
+      .toBeUndefined();
+    const card = workspaceWindow.locator(`.workspace-item-card[data-ref="ok"]`, {
+      hasText: 'Wikipedia',
+    });
+    await expect(card).toBeVisible();
   });
 
   test('元が消えると薄く表示し、別のアイテムを指し直せる', async ({ electronApp, mainWindow }) => {
