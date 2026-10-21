@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RegisterItem, WorkspaceItem } from '@common/types';
 
-import { toTrialWorkspaceItem } from './workspaceTrialItem';
+import { toTrialNewWorkspaceItem, toTrialWorkspaceItem } from './workspaceTrialItem';
 
 const savedLauncher: WorkspaceItem = {
   id: 'w1',
@@ -76,5 +76,37 @@ describe('toTrialWorkspaceItem', () => {
       entries: [{ itemId: 'bbbb2222' }, { open: { path: 'C:/a.txt' } }],
       launchMode: 'parallel',
     });
+  });
+});
+
+describe('toTrialNewWorkspaceItem', () => {
+  it('保存前の新規の通常アイテムは、入力中のパス・引数で試す', () => {
+    const result = toTrialNewWorkspaceItem({
+      displayName: '新規',
+      path: 'https://example.com',
+      args: '',
+      type: 'url',
+      targetTab: '',
+      itemCategory: 'item',
+    });
+    expect(result).toMatchObject({
+      type: 'item',
+      displayName: '新規',
+      path: 'https://example.com',
+      launcherType: 'url',
+    });
+    expect(result.type === 'item' && result.args).toBeFalsy();
+  });
+
+  it('保存前の新規のセットは、入力中の行で試す', () => {
+    const result = toTrialNewWorkspaceItem({
+      displayName: 'セット',
+      path: '',
+      type: 'app',
+      targetTab: '',
+      itemCategory: 'set',
+      setEntries: [{ itemId: 'a' }],
+    });
+    expect(result).toMatchObject({ type: 'set', entries: [{ itemId: 'a' }] });
   });
 });

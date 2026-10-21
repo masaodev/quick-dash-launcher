@@ -11,6 +11,7 @@ import type { ItemFieldValue } from '../../components/ItemEditFields';
 import { logError } from '../../utils/debug';
 import { hasClipboardContent, saveClipboardText } from '../../utils/clipboardText';
 import { registerPathError } from '../../utils/registerItemValidation';
+import { applyItemCategoryChange } from '../../utils/itemCategoryChange';
 import { useToast } from '../useToast';
 
 interface FormErrors {
@@ -19,16 +20,34 @@ interface FormErrors {
   setEntries?: string;
 }
 
+/** 新規（グループの右クリック「新しく入力して追加」）で開いたときの空のフォーム */
+const EMPTY_ITEM: RegisterItem = {
+  displayName: '',
+  path: '',
+  type: 'app',
+  targetTab: '',
+  itemCategory: 'item',
+};
+
+/** 新規で開いたときの追加の処理（保存の代わりに呼ぶ） */
+export interface WorkspaceItemCreate {
+  onAdd: (body: WorkspaceItemUpdate) => Promise<void>;
+}
+
 /**
  * ワークスペースアイテム編集フォームの状態管理フック
+ *
+ * create を渡すと新規の形になる（空のフォームで始め、保存の代わりに create.onAdd を呼ぶ）
  */
 export function useWorkspaceItemEditForm(
   isOpen: boolean,
   editingItem: WorkspaceItem | null,
   loadCustomIconPreview: (index: number, customIconFileName: string) => Promise<void>,
   onClose: () => void,
-  onSave: (id: string, updates: WorkspaceItemUpdate) => Promise<void>
+  onSave: (id: string, updates: WorkspaceItemUpdate) => Promise<void>,
+  create?: WorkspaceItemCreate
 ) {
+  const isCreate = create !== undefined;
   const { t } = useTranslation();
   const [item, setItem] = useState<RegisterItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -64,14 +83,19 @@ export function useWorkspaceItemEditForm(
       }
 
       setLoading(false);
+    } else if (isCreate) {
+      setItem({ ...EMPTY_ITEM });
     }
-  }, [isOpen, editingItem, loadCustomIconPreview]);
+  }, [isOpen, editingItem, isCreate, loadCustomIconPreview]);
 
   const handleFieldChange = useCallback(
     (field: keyof RegisterItem, value: ItemFieldValue) => {
       if (!item) return;
 
-      const newItem: RegisterItem = { ...item, [field]: value };
+      const newItem: RegisterItem =
+        field === 'itemCategory'
+          ? applyItemCategoryChange(item, value as RegisterItem['itemCategory'])
+          : { ...item, [field]: value };
 
       if (field === 'displayName' || field === 'path') {
         clearErrorField(field);
@@ -169,7 +193,7 @@ export function useWorkspaceItemEditForm(
 
   // 失敗したときは画面を開いたままにして、直してもう一度保存できるようにする
   const handleSave = useCallback(async () => {
-    if (!item || !editingItem) return;
+    if (!item || (!editingItem && !create)) return;
 
     if (!validate()) return;
 
@@ -179,13 +203,17 @@ export function useWorkspaceItemEditForm(
 
     try {
       const updates = registerItemToWorkspaceItemUpdate(committed);
-      await onSave(editingItem.id, updates);
+      if (editingItem) {
+        await onSave(editingItem.id, updates);
+      } else {
+        await create!.onAdd(updates);
+      }
       onClose();
     } catch (error) {
       logError('Failed to save workspace item:', error);
-      showError(t('workspace.edit.updateFailed'));
+      showError(t(editingItem ? 'workspace.edit.updateFailed' : 'workspace.edit.addFailed'));
     }
-  }, [item, editingItem, validate, commitClipboardSession, onSave, onClose, showError, t]);
+  }, [item, editingItem, create, validate, commitClipboardSession, onSave, onClose, showError, t]);
 
   const discardClipboardSession = useCallback(async () => {
     if (!item?.clipboardSessionId) return;

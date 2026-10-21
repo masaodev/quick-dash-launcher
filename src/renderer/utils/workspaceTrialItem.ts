@@ -1,5 +1,6 @@
 import type { RegisterItem, WorkspaceItem, WorkspaceLauncherItem } from '@common/types';
 import { itemWindowSwitchFields, omitItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { registerItemToWorkspaceItemUpdate } from '@common/utils/workspaceConverters';
 
 import { launcherTypeForPath } from './registerItemExecution';
 
@@ -42,4 +43,18 @@ export function toTrialWorkspaceItem(saved: WorkspaceItem, editing: RegisterItem
     };
   }
   return saved;
+}
+
+/**
+ * まだ保存していない新規のアイテム（グループの右クリック「新しく入力して追加」）を、試しに実行する形にする
+ *
+ * 保存済みのアイテムが無いので、入力中の中身から仮のアイテムを作り、編集と同じ組み立てに通す
+ */
+export function toTrialNewWorkspaceItem(editing: RegisterItem): WorkspaceItem {
+  const body = registerItemToWorkspaceItemUpdate(editing);
+  const base = { id: '', workspaceId: '', order: 0, addedAt: 0 };
+  const draft = (
+    body.type === 'item' ? { ...base, ...body, launcherType: 'app' } : { ...base, ...body }
+  ) as WorkspaceItem;
+  return toTrialWorkspaceItem(draft, editing);
 }

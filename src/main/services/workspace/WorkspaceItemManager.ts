@@ -49,9 +49,18 @@ export class WorkspaceItemManager {
   }
 
   public addItem(item: AppItem, groupId?: string, workspaceId?: string): WorkspaceItem {
+    return this.createItem(appItemToWorkspaceItemBody(item), groupId, workspaceId);
+  }
+
+  /** 中身（編集フォームで入力したものなど）から新しいアイテムを作って末尾に足す */
+  public createItem(
+    body: WorkspaceItemUpdate,
+    groupId?: string,
+    workspaceId?: string
+  ): WorkspaceItem {
     try {
       const items = this.loadItems();
-      const workspaceItem = this.materialize(appItemToWorkspaceItemBody(item), {
+      const workspaceItem = this.materialize(body, {
         order: this.getNextOrder(items),
         groupId,
         workspaceId,

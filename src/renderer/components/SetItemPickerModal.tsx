@@ -24,6 +24,17 @@ interface SetItemPickerModalProps {
   onAdd: (items: SetCatalogItem[]) => void;
   /** 1 つだけ選ぶ（行の詳細で、行が開くアイテムを選ぶとき） */
   single?: boolean;
+  /** 見出し（既定は「セットに追加するアイテム」） */
+  title?: string;
+  /** 見出しの上に出す帯（ワークスペースのグループに追加するときの追加先） */
+  banner?: React.ReactNode;
+  /**
+   * 独立したウィンドウの中身として描く（オーバーレイなしでウィンドウいっぱいに広げる）。
+   * 追加を押しても閉じない（開いた側が追加を終えてからウィンドウを閉じる）
+   */
+  asPage?: boolean;
+  /** 追加の処理中（追加のボタンを押せなくする） */
+  busy?: boolean;
 }
 
 /**
@@ -39,6 +50,10 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
   onClose,
   onAdd,
   single = false,
+  title,
+  banner,
+  asPage = false,
+  busy = false,
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -141,21 +156,27 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
 
   const confirm = () => {
     onAdd(catalog.filter((item) => selected.has(item.key)));
-    close();
+    if (!asPage) close();
   };
 
-  return createPortal(
-    <div className="modal-overlay" onClick={close}>
+  const heading = title ?? t(single ? 'set.picker.chooseTitle' : 'set.picker.title');
+
+  const content = (
+    <div
+      className={asPage ? 'set-picker-page' : 'modal-overlay'}
+      onClick={asPage ? undefined : close}
+    >
       <div
-        className="modal-content set-picker-modal"
+        className={`modal-content set-picker-modal${asPage ? ' set-picker-page-content' : ''}`}
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         tabIndex={-1}
         role="dialog"
-        aria-label={t(single ? 'set.picker.chooseTitle' : 'set.picker.title')}
+        aria-label={heading}
       >
+        {banner}
         <div className="set-modal-header">
-          <h3>{t(single ? 'set.picker.chooseTitle' : 'set.picker.title')}</h3>
+          <h3>{heading}</h3>
           {!single && (
             <span className="set-muted">{t('set.picker.selected', { count: selected.size })}</span>
           )}
@@ -220,14 +241,15 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
           <Button variant="secondary" onClick={close}>
             {t('common.cancel')}
           </Button>
-          <Button variant="primary" disabled={selected.size === 0} onClick={confirm}>
+          <Button variant="primary" disabled={selected.size === 0 || busy} onClick={confirm}>
             {single ? t('set.picker.choose') : t('set.picker.add', { count: selected.size })}
           </Button>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
+
+  return asPage ? content : createPortal(content, document.body);
 };
 
 export default SetItemPickerModal;
