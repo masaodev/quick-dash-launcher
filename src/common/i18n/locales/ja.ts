@@ -382,7 +382,7 @@ export const ja = {
     },
     tab: {
       rename: '✏️ 名前を変更',
-      linkCopies: '🔗 メインと同じアイテムを参照に変える…',
+      linkCopies: '🔗 メインウィンドウと同じアイテムを参照に変える…',
       delete: '🗑️ 削除',
     },
     window: {

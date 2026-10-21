@@ -867,6 +867,13 @@
   color: var(--text-secondary);
 }
 
+.set-picker-footer-extra label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
 /* 参照の指す先を選ぶ・一括で参照に変えるウィンドウの説明の帯 */
 .workspace-link-banner {
   margin-bottom: var(--spacing-sm);
@@ -883,9 +890,15 @@
 
 .workspace-link-row-body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--spacing-xxs);
   min-width: 0;
+}
+
+/* 縦に並べるので、行の名前の幅の基準（flex-basis）を高さに効かせない */
+.workspace-link-row-body .set-row-name {
+  flex: none;
 }
 
 .workspace-link-row-note {
