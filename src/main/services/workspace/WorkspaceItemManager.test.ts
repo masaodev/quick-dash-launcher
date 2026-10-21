@@ -141,4 +141,93 @@ describe('WorkspaceItemManager', () => {
     ).toThrow('displayName');
     expect(readItems()[0].displayName).toBe('a');
   });
+
+  describe('参照アイテム', () => {
+    it('addRef は指す id と最後に見た表示名だけをファイルに書くこと', () => {
+      const added = manager.addRef('Main0001', 'Visual Studio Code', 'g1');
+      expect(added).toMatchObject({
+        type: 'ref',
+        refItemId: 'Main0001',
+        displayName: 'Visual Studio Code',
+        ref: { itemId: 'Main0001', lastKnownName: 'Visual Studio Code', status: 'missing' },
+        groupId: 'g1',
+      });
+      expect(readItems()[0]).toEqual({
+        id: added.id,
+        type: 'ref',
+        refItemId: 'Main0001',
+        lastKnownName: 'Visual Studio Code',
+        workspaceId: added.workspaceId,
+        groupId: 'g1',
+        order: 0,
+        addedAt: added.addedAt,
+      });
+    });
+
+    it('updateDisplayName は参照ならワークスペースでの表示名を書き、空なら消すこと', () => {
+      const added = manager.addRef('Main0001', 'Visual Studio Code');
+      manager.updateDisplayName(added.id, 'VSC');
+      expect(readItems()[0]).toMatchObject({
+        displayName: 'VSC',
+        lastKnownName: 'Visual Studio Code',
+      });
+      manager.updateDisplayName(added.id, '  ');
+      expect(readItems()[0].displayName).toBeUndefined();
+      expect(manager.loadItems()[0].displayName).toBe('Visual Studio Code');
+    });
+
+    it('updateItem は参照の中身を直さないこと（メインウィンドウの編集画面で直す）', () => {
+      const added = manager.addRef('Main0001', 'x');
+      expect(() =>
+        manager.updateItem(added.id, { type: 'item', displayName: 'y', path: 'notepad.exe' })
+      ).toThrow('Reference item');
+    });
+
+    it('replaceWithRef・replaceWithContent は id・並び順・所属・追加日時を保って置き換えること', () => {
+      const copy = manager.addItem(
+        { displayName: 'メモ帳', path: 'notepad.exe', type: 'app' },
+        'g1'
+      );
+      const linked = manager.replaceWithRef(copy.id, 'Main0001', 'Notepad', 'メモ帳');
+      expect(linked).toMatchObject({
+        id: copy.id,
+        type: 'ref',
+        groupId: 'g1',
+        order: copy.order,
+        addedAt: copy.addedAt,
+        ref: { itemId: 'Main0001', alias: 'メモ帳' },
+      });
+      const back = manager.replaceWithContent(copy.id, {
+        type: 'item',
+        displayName: 'メモ帳',
+        path: 'notepad.exe',
+      });
+      expect(back).toMatchObject({ id: copy.id, type: 'item', groupId: 'g1', order: copy.order });
+      expect(readItems()[0]).not.toHaveProperty('refItemId');
+    });
+
+    it('duplicateItem は参照を参照のまま複製すること', () => {
+      const added = manager.addRef('Main0001', 'x');
+      manager.updateDisplayName(added.id, '別名');
+      const dup = manager.duplicateItem(added.id);
+      expect(readItems()[1]).toMatchObject({
+        id: dup.id,
+        type: 'ref',
+        refItemId: 'Main0001',
+        displayName: '別名',
+      });
+    });
+
+    it('updateRefs で指す先を付け替えられること', () => {
+      manager.addRef('Old00001', 'x');
+      const changed = manager.updateRefs((item) => {
+        item.ref.itemId = 'New00001';
+        item.refItemId = 'New00001';
+        return true;
+      });
+      expect(changed).toBe(true);
+      expect(readItems()[0].refItemId).toBe('New00001');
+      expect(manager.updateRefs(() => false, 'archive')).toBe(false);
+    });
+  });
 });
