@@ -54,6 +54,8 @@
 | **アイテム登録・編集**（`RegisterWindowPage`） | ファイルドラッグ&ドロップ時<br>➕ボタンクリック時<br>右クリック→「編集」選択時<br>管理画面で✏️ボタンクリック時 | [register-modal.md](./register-modal.md) |
 | **アイコン取得結果**（`IconProgressDetailModal`、`MainChildPage` 経由） | アイコン一括取得完了後、進捗バーの「詳細」ボタンクリック時 | [icon-progress-detail-modal.md](./icon-progress-detail-modal.md) |
 | **ワークスペースアイテム編集**（`WorkspaceItemEditPage`） | ワークスペースウィンドウ・切り離しウィンドウでアイテムを右クリック→「編集」 | [workspace-window.md](./workspace-window.md#各メニュー項目の処理) の「編集」 |
+| **グループに追加するアイテム**（`WorkspaceItemPickerPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「➕ アイテムを追加」→「🔍 メインウィンドウのアイテムから選ぶ…」 | [workspace-window.md](./workspace-window.md#589-グループを右クリックしてアイテムを追加)（一覧の操作は [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) と同じ） |
+| **ワークスペースにアイテムを追加**（`WorkspaceNewItemPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「➕ アイテムを追加」→「✏️ 新しく入力して追加…」 | [workspace-window.md](./workspace-window.md#589-グループを右クリックしてアイテムを追加)（欄は編集ウィンドウと同じ） |
 | **ワークスペースの確認**（`WorkspaceConfirmPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループのアーカイブ・削除を選んだとき | なし（`src/main/workspaceConfirmWindowManager.ts`。説明は [ウィンドウ制御](../architecture/window-control.md#確認ウィンドウグループの削除アーカイブ)） |
 
 ### モーダル

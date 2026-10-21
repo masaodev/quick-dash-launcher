@@ -15,6 +15,7 @@ import { DIR_OPTIONS_DEFAULTS } from '@common/types';
 import { debugInfo } from '../utils/debug';
 import { hasClipboardContent, saveClipboardText } from '../utils/clipboardText';
 import { registerPathError } from '../utils/registerItemValidation';
+import { applyItemCategoryChange } from '../utils/itemCategoryChange';
 
 import { useModalInitializer } from './useModalInitializer';
 import { useToast } from './useToast';
@@ -205,47 +206,10 @@ export function useRegisterForm(
     }
 
     if (field === 'itemCategory') {
-      const item = newItems[index];
-      const clearCommonFields = () => {
-        delete item.folderProcessing;
-        delete item.dirOptions;
-      };
-      const clearClipboardFields = () => {
-        // 未確定のキャプチャは使われなくなるので、メインプロセス側の保持も捨てる
-        if (item.clipboardSessionId) {
-          window.electronAPI.clipboardAPI
-            .discardSession(item.clipboardSessionId)
-            .catch((error) => debugInfo('クリップボードセッションの破棄に失敗:', error));
-        }
-        delete item.clipboardDataRef;
-        delete item.clipboardFormats;
-        delete item.clipboardSavedAt;
-        delete item.clipboardPreview;
-        delete item.clipboardSessionId;
-        delete item.clipboardText;
-      };
-
-      switch (value) {
-        case 'dir':
-          item.folderProcessing = 'expand';
-          item.dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
-          clearClipboardFields();
-          break;
-        case 'set':
-          clearCommonFields();
-          clearClipboardFields();
-          item.setEntries ??= [];
-          break;
-        case 'clipboard':
-          clearCommonFields();
-          item.path = '';
-          item.type = 'clipboard';
-          break;
-        default:
-          clearCommonFields();
-          clearClipboardFields();
-          break;
-      }
+      newItems[index] = applyItemCategoryChange(
+        newItems[index],
+        value as RegisterItem['itemCategory']
+      );
     }
 
     setItems(newItems);

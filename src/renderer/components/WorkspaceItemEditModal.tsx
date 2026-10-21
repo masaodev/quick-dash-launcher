@@ -5,10 +5,13 @@ import type { WorkspaceItem, WorkspaceItemUpdate } from '@common/types';
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { useToast } from '../hooks/useToast';
-import { useWorkspaceItemEditForm } from '../hooks/workspace/useWorkspaceItemEditForm';
+import {
+  useWorkspaceItemEditForm,
+  type WorkspaceItemCreate,
+} from '../hooks/workspace/useWorkspaceItemEditForm';
 import { logError } from '../utils/debug';
 import { getPathsFromDropEvent } from '../utils/fileDropUtils';
-import { toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
+import { toTrialNewWorkspaceItem, toTrialWorkspaceItem } from '../utils/workspaceTrialItem';
 import { isWorkspaceTryExecuteBlocked } from '../utils/registerItemExecution';
 
 import FilePickerDialog from './FilePickerDialog';
@@ -27,6 +30,13 @@ interface WorkspaceItemEditModalProps {
    * ウィンドウを広げて動かす必要があったため、その経路はやめた
    */
   asPage?: boolean;
+  /**
+   * 新規の形で開く（グループの右クリック「新しく入力して追加」）。種別を選べ、保存の代わりに追加する。
+   * 削除のボタンは出さない
+   */
+  create?: WorkspaceItemCreate;
+  /** 見出しの上に出す帯（新規のときの追加先） */
+  banner?: React.ReactNode;
 }
 
 /**
@@ -41,6 +51,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   editingItem,
   onSave,
   asPage = false,
+  create,
+  banner,
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -72,7 +84,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
     handleFetchIcon,
     replacePathFromDrop,
     updateItem,
-  } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave);
+  } = useWorkspaceItemEditForm(isOpen, editingItem, loadCustomIconPreview, onClose, onSave, create);
 
   /**
    * 「ワークスペースから削除」は、一覧の右クリック・× と同じ確認の子ウィンドウ（この画面が親）で確かめてから消す。
@@ -126,7 +138,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
   };
 
   const handleExecute = async () => {
-    if (!item || !editingItem) return;
+    if (!item || (!editingItem && !create)) return;
 
     const originalPinMode = await window.electronAPI.workspaceAPI.getAlwaysOnTop();
     let pinModeChanged = false;
@@ -138,9 +150,10 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
       }
 
       // 保存済みの内容ではなく、編集中の内容で試す
-      await window.electronAPI.workspaceAPI.launchItem(toTrialWorkspaceItem(editingItem, item), {
-        trial: true,
-      });
+      await window.electronAPI.workspaceAPI.launchItem(
+        editingItem ? toTrialWorkspaceItem(editingItem, item) : toTrialNewWorkspaceItem(item),
+        { trial: true }
+      );
     } catch (error) {
       logError('アイテムの実行に失敗しました:', error);
     } finally {
@@ -195,6 +208,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
         >
+          {banner}
           <h2 className="register-title">
             {item && (
               <span className="register-title-icon" aria-hidden>
@@ -205,7 +219,7 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                 )}
               </span>
             )}
-            {t('workspace.edit.title')}
+            {t(create ? 'workspace.edit.newTitle' : 'workspace.edit.title')}
           </h2>
 
           {loading ? (
@@ -220,7 +234,8 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   onUpdate={updateItem}
                   onPathBlur={handlePathBlur}
                   onFetchIcon={handleFetchIcon}
-                  typeLocked
+                  typeLocked={!create}
+                  allowFolderImport={false}
                   setIncludesWorkspace
                   isPathReadOnly={false}
                   iconFetchLoading={iconFetchLoading}
@@ -246,19 +261,21 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   {t('register.tryRun')}
                 </Button>
                 <div className="modal-actions-right">
-                  <Button variant="danger" onClick={() => void handleConfirmDelete()}>
-                    {t('workspace.edit.remove')}
-                  </Button>
+                  {!create && (
+                    <Button variant="danger" onClick={() => void handleConfirmDelete()}>
+                      {t('workspace.edit.remove')}
+                    </Button>
+                  )}
                   <Button variant="secondary" onClick={handleCancel}>
                     {t('common.cancel')}
                   </Button>
                   <Button variant="primary" onClick={handleSave}>
-                    {t('register.update')}
+                    {t(create ? 'workspace.edit.add' : 'register.update')}
                   </Button>
                 </div>
               </div>
             </>
-          ) : (
+          ) : create ? null : (
             <div className="loading">{t('workspace.edit.notFound')}</div>
           )}
 

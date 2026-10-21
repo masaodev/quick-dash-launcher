@@ -269,6 +269,18 @@ export class WorkspaceService {
     return this.itemManager!.addItem(marked, groupId, workspaceId);
   }
 
+  /** 中身（ワークスペースの編集フォームで新しく入力したもの）からアイテムを作る */
+  public async createItem(
+    body: WorkspaceItemUpdate,
+    groupId?: string,
+    workspaceId?: string
+  ): Promise<WorkspaceItem> {
+    await this.initializeStore();
+    const marked =
+      body.type === 'item' ? { ...body, path: await withFolderMarker(body.path) } : body;
+    return this.itemManager!.createItem(marked, groupId, workspaceId);
+  }
+
   public async addItemFromPath(
     filePath: string,
     groupId?: string,

@@ -477,6 +477,27 @@ function setupWorkspaceGroupContextMenuHandler(): void {
         menu.append(createSeparator());
       }
 
+      // 足す操作（アイテム・サブグループ）を 1 つの組にまとめる
+      const addItemSubmenu = new Menu();
+      addItemSubmenu.append(
+        createMenuItem(
+          t('menu.workspaceGroup.addFromMain'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN,
+          group.id
+        )
+      );
+      addItemSubmenu.append(
+        createMenuItem(
+          t('menu.workspaceGroup.addNew'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_NEW,
+          group.id
+        )
+      );
+      menu.append(
+        new MenuItem({ label: t('menu.workspaceGroup.addItem'), submenu: addItemSubmenu })
+      );
       if (canAddSubgroup) {
         menu.append(
           createMenuItem(
@@ -486,8 +507,8 @@ function setupWorkspaceGroupContextMenuHandler(): void {
             group.id
           )
         );
-        menu.append(createSeparator());
       }
+      menu.append(createSeparator());
 
       menu.append(
         createMenuItem(

@@ -68,6 +68,8 @@ interface ItemEditFieldsProps {
   headerInParent?: boolean;
   /** 種別を表示だけにする（ワークスペースのアイテムは種別を変えない） */
   typeLocked?: boolean;
+  /** 種別に「フォルダ取込」を出す（ワークスペースの新規ではデータファイル向けの種別なので出さない） */
+  allowFolderImport?: boolean;
   /** セットの行の追加で、ワークスペースのアイテムも選べるようにする（ワークスペースのセット） */
   setIncludesWorkspace?: boolean;
   /** 編集中のアイテム自身の id（種類をセットに変えたとき、自分を行に選べないようにする） */
@@ -98,6 +100,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   placement,
   headerInParent = false,
   typeLocked = false,
+  allowFolderImport = true,
   setIncludesWorkspace = false,
   selfId,
   isPathReadOnly,
@@ -208,7 +211,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           }
         >
           <option value="item">{t('register.types.item')}</option>
-          <option value="dir">{t('register.types.dir')}</option>
+          {allowFolderImport && <option value="dir">{t('register.types.dir')}</option>}
           <option value="set">{t('register.types.set')}</option>
           <option value="clipboard">{t('register.types.clipboard')}</option>
         </select>

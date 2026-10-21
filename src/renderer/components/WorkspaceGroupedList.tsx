@@ -295,6 +295,16 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         const childCount = groups.filter((g) => g.parentGroupId === parentGroupId).length;
         onAddSubgroup(parentGroupId, childCount);
       }),
+      window.electronAPI.onWorkspaceGroupMenuAddFromMain((groupId) => {
+        window.electronAPI.workspaceAPI.openItemPicker(groupId).catch((error) => {
+          logError('Failed to open item picker:', error);
+        });
+      }),
+      window.electronAPI.onWorkspaceGroupMenuAddNew((groupId) => {
+        window.electronAPI.workspaceAPI.openNewItemEditor(groupId).catch((error) => {
+          logError('Failed to open new item editor:', error);
+        });
+      }),
       window.electronAPI.onWorkspaceGroupMenuMoveToWorkspace(async (groupId, targetWorkspaceId) => {
         try {
           await window.electronAPI.workspaceAPI.moveGroupToWorkspace(groupId, targetWorkspaceId);

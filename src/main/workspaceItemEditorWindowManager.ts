@@ -1,6 +1,9 @@
 import { BrowserWindow } from 'electron';
 import type { WebContents } from 'electron';
-import { WORKSPACE_EDITOR_WINDOW_NAME_PREFIX } from '@common/constants';
+import {
+  WORKSPACE_EDITOR_WINDOW_NAME_PREFIX,
+  WORKSPACE_NEW_ITEM_WINDOW_NAME_PREFIX,
+} from '@common/constants';
 
 import { calculateEditorBounds } from './utils/editorWindowBounds.js';
 import { ModalChildWindows, resolveWorkArea } from './utils/modalChildWindows.js';
@@ -18,7 +21,7 @@ import { mainI18n } from './services/mainI18n.js';
  * 常駐コストはほぼ増えない）。閉じたら破棄する。同じアイテムの編集が開いていれば前面に出す。
  */
 
-/** itemId → 編集ウィンドウ */
+/** itemId（新規は "new:" ＋ groupId） → 編集ウィンドウ */
 const editors = new ModalChildWindows();
 
 /**
@@ -41,6 +44,34 @@ export async function openWorkspaceItemEditor(caller: WebContents, itemId: strin
     // 開き元に対してモーダルにする（開き元より前に出て、閉じるまで開き元を操作させない）
     parent: callerWindow,
     logContext: { itemId },
+  });
+}
+
+/**
+ * グループに新しいアイテムを入力して追加するウィンドウを開く（同じグループの新規が開いていれば前面に出す）
+ *
+ * 中身は編集ウィンドウと同じフォームを新規の形で描く（種別を選べ、保存先はそのグループ）
+ *
+ * @param caller 開き元（ワークスペース本体または切り離しウィンドウ）の webContents
+ * @param groupId 追加先のグループの id
+ */
+export async function openWorkspaceNewItemEditor(
+  caller: WebContents,
+  groupId: string
+): Promise<void> {
+  const key = `new:${groupId}`;
+  if (editors.focus(key)) return;
+
+  const callerWindow = BrowserWindow.fromWebContents(caller);
+  await editors.open(key, {
+    opener: 'workspace',
+    name: `${WORKSPACE_NEW_ITEM_WINDOW_NAME_PREFIX}${groupId}`,
+    html: 'workspace.html',
+    fallbackQuery: `newItemGroupId=${encodeURIComponent(groupId)}`,
+    title: mainI18n.t('workspace.edit.newTitle'),
+    bounds: calculateEditorBounds(resolveWorkArea(callerWindow)),
+    parent: callerWindow,
+    logContext: { groupId, kind: 'new-item' },
   });
 }
 
