@@ -102,7 +102,7 @@ export async function tryExecuteRegisterItem(item: RegisterItem): Promise<void> 
     } else {
       const launcherItem = toLauncherItem(item);
       if (launcherItem) {
-        await window.electronAPI.openItem(launcherItem);
+        await window.electronAPI.openItem(launcherItem, { trial: true });
       }
     }
   } catch (error) {

@@ -1085,6 +1085,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         exists: '✓ ある',
         unknown: '? 確認できない',
       },
+      usageSince: '記録は {{date}} から（それより前の起動は入っていません）',
+      lastLaunched: {
+        within7: '7 日以内に起動',
+        within30: '30 日以内に起動',
+        notWithin90: '90 日以上起動していない（記録なしを含む）',
+        never: '記録なし',
+      },
       updatedAt: {
         within7: '7 日以内',
         within30: '30 日以内',
@@ -1108,6 +1115,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memo: 'メモ',
       source: '取込元',
       link: 'リンク',
+      lastLaunched: '最終起動',
+      launchCount: '起動回数',
       icon: 'アイコン',
       columnMenuHint:
         '右クリックで列の表示を変えられます。見出しの右端をドラッグすると幅を変えられます',
@@ -1125,6 +1134,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memoEmptyTitle: 'クリックしてメモを書く（Enter で改行、Ctrl+Enter で確定、Esc で取り消し）',
       memoMoreLines: '2 行目以降あり',
       memoPlaceholder: 'メモ',
+      memoEditHint: 'Enter で改行・Ctrl+Enter で確定・Esc で取り消し',
       typeSelectTitle:
         '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
@@ -1149,6 +1159,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       selected_other: '{{count}} 件を選択中',
       total_one: '合計: {{count}} 件',
       total_other: '合計: {{count}} 件',
+      totalFiltered: '合計: {{count}} / {{total}} 件（絞り込み中）',
       invalid_one: '入力不備: {{count}} 件',
       invalid_other: '入力不備: {{count}} 件',
       missing_one: 'リンク切れ: {{count}} 件',
@@ -1927,6 +1938,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     iconFailed: 'アイコン抽出に失敗しました',
   },
   itemCsv: {
+    replanned:
+      '確認の画面を出したあとに一覧が変わったので、今の一覧で取り込みの内容を作り直しました。もう一度確かめてください',
     previewTitle: 'CSV の取り込み',
     summary:
       '変更 {{updates}} 件・追加 {{additions}} 件・変化なし {{unchanged}} 件・エラー {{errors}} 件',
@@ -2153,6 +2166,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       autoLaunchEnabledByWindows:
         'Windows の設定で自動起動が有効になっています。止めるときは、チェックを付けてから外すか、Windows の［設定］→［アプリ］→［スタートアップ］でオフにしてください。',
       cli: 'QuickDashLauncher CLI を使えるようにする',
+      recordLaunchUsage: '起動の記録を残す',
+      recordLaunchUsageDescription:
+        'アイテムを起動した日時と回数を記録し、アイテム管理の「最終起動」「起動回数」の列に出します（この PC の設定フォルダの item-usage.json にだけ書きます）。',
       cliDescription:
         'ターミナルや AI から qdl コマンドで、アイテムやワークスペースを操作できるようにします（qdl を PATH に追加します。新しく開いたターミナルから使えます）。',
     },

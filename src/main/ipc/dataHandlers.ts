@@ -14,6 +14,8 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { PathManager } from '../config/pathManager.js';
 import { mainI18n } from '../services/mainI18n.js';
+import { decodeCsvText } from '../utils/csvText.js';
+import { LaunchUsageService } from '../services/launchUsageService.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { getPathKind, withFolderMarker } from '../utils/folderPathProbe.js';
 import { getDefaultBrowser, getFileHandler } from '../utils/defaultBrowser.js';
@@ -125,6 +127,16 @@ export function setupDataHandlers(configFolder: string) {
     }
   );
 
+  ipcMain.handle(
+    IPC_CHANNELS.GET_LAUNCH_USAGE,
+    () =>
+      LaunchUsageService.getInstance()?.getSnapshot() ?? {
+        since: Date.now(),
+        byId: {},
+        byPath: {},
+      }
+  );
+
   ipcMain.handle(IPC_CHANNELS.ITEMS_CSV_READ, async (event) => {
     const parent = BrowserWindow.fromWebContents(event.sender);
     const options: OpenDialogOptions = {
@@ -140,7 +152,7 @@ export function setupDataHandlers(configFolder: string) {
       : await dialog.showOpenDialog(options);
     const filePath = result.canceled ? undefined : result.filePaths[0];
     if (!filePath) return null;
-    return { filePath, text: await fs.promises.readFile(filePath, 'utf8') };
+    return { filePath, text: decodeCsvText(await fs.promises.readFile(filePath)) };
   });
 
   // EditableJsonItem API

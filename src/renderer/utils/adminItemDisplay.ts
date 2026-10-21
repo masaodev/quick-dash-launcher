@@ -94,5 +94,7 @@ export function formatUpdatedAt(updatedAt?: number): string {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+    // 英語でも AM/PM を付けず 24 時間で書く（列の幅に収める）
+    hourCycle: 'h23',
   });
 }

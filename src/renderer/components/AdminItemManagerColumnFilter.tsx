@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { BookmarkAutoImportRule } from '@common/types';
 
 import {
+  LAST_LAUNCHED_FILTERS,
   TYPE_FILTER_KEYS,
   UPDATED_AT_FILTERS,
   type ColumnFilters,
@@ -12,6 +13,7 @@ import {
   type TypeFilterKey,
 } from '../utils/adminItemFilters';
 import type { SortColumn, SortState } from '../utils/editableItemOperations';
+import { usePopoverPosition } from '../hooks/usePopoverPosition';
 
 const LINK_FILTERS: readonly LinkFilter[] = ['missing', 'exists', 'unknown'];
 
@@ -20,6 +22,8 @@ export interface ColumnFilterOptions {
   rules: BookmarkAutoImportRule[];
   /** 「リンク切れを確認」を実行したか（リンクの選択肢はその後だけ選べる） */
   linkChecked: boolean;
+  /** 起動の記録を始めた日時（最終起動のメニューに添える）。読めていなければ null */
+  usageSince: number | null;
 }
 
 interface AdminItemManagerColumnFilterProps {
@@ -52,11 +56,14 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
   options,
   onClose,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
+  const popoverStyle = usePopoverPosition(ref, position);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
+      // 見出しの ▾ の押下は、▾ のクリックの側で開閉・切り替えをする
+      if ((e.target as Element | null)?.closest?.('.column-filter-button')) return;
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -204,6 +211,29 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
     );
   };
 
+  const renderLastLaunchedFilter = () => {
+    const value = filters.lastLaunched;
+    return (
+      <>
+        {options.usageSince !== null && (
+          <div className="dropdown-section-label column-filter-note">
+            {t('itemManager.columnFilter.usageSince', {
+              date: new Date(options.usageSince).toLocaleDateString(i18n.language),
+            })}
+          </div>
+        )}
+        {LAST_LAUNCHED_FILTERS.map((key) =>
+          choice(
+            value === key,
+            t(`itemManager.columnFilter.lastLaunched.${key}`),
+            () => onChange('lastLaunched', value === key ? undefined : key),
+            key
+          )
+        )}
+      </>
+    );
+  };
+
   const renderUpdatedAtFilter = () => {
     const value = filters.updatedAt;
     return (
@@ -232,18 +262,15 @@ const AdminItemManagerColumnFilter: React.FC<AdminItemManagerColumnFilterProps> 
         return renderSourceFilter();
       case 'link':
         return renderLinkFilter();
+      case 'lastLaunched':
+        return renderLastLaunchedFilter();
       case 'updatedAt':
         return renderUpdatedAtFilter();
     }
   };
 
   return (
-    <div
-      ref={ref}
-      className="admin-popover"
-      data-testid="admin-column-filter"
-      style={{ left: position.x, top: position.y }}
-    >
+    <div ref={ref} className="admin-popover" data-testid="admin-column-filter" style={popoverStyle}>
       <div className="dropdown-menu column-filter-menu" role="menu">
         {sortColumn && (
           <>

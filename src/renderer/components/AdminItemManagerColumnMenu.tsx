@@ -7,6 +7,7 @@ import {
   isColumnVisible,
   type AdminItemColumnId,
 } from '../utils/adminItemColumns';
+import { usePopoverPosition } from '../hooks/usePopoverPosition';
 
 interface AdminItemManagerColumnMenuProps {
   /** 画面上の位置（見出しを右クリックした所） */
@@ -31,6 +32,7 @@ const AdminItemManagerColumnMenu: React.FC<AdminItemManagerColumnMenuProps> = ({
 }) => {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
+  const popoverStyle = usePopoverPosition(ref, position);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -51,12 +53,7 @@ const AdminItemManagerColumnMenu: React.FC<AdminItemManagerColumnMenuProps> = ({
   }, [onClose]);
 
   return (
-    <div
-      ref={ref}
-      className="admin-popover"
-      data-testid="admin-column-menu"
-      style={{ left: position.x, top: position.y }}
-    >
+    <div ref={ref} className="admin-popover" data-testid="admin-column-menu" style={popoverStyle}>
       <div className="dropdown-menu" role="menu">
         <div className="dropdown-section-label">{t('itemManager.columnMenu.title')}</div>
         {ADMIN_ITEM_COLUMNS.filter((def) => def.hideable).map((def) => {

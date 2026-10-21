@@ -3,15 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { JsonItem } from '@common/types';
 import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
+import type { LaunchUsageRecord } from '@common/types/launchUsage';
 
 import { useAdminCellEditing } from '../hooks/useAdminCellEditing';
 import { useAdminContextMenu } from '../hooks/useAdminContextMenu';
 import { getAdminItemIcon, useAdminItemIcons } from '../hooks/useAdminItemIcons';
 import type { AdminItemColumns } from '../hooks/useAdminItemColumns';
 import {
+  ACTIONS_COLUMN_WIDTH,
   ADMIN_ITEM_COLUMNS,
+  CHECKBOX_COLUMN_WIDTH,
   FIXED_COLUMN_COUNT,
   filterColumnOf,
+  tableMinWidthOf,
   type AdminItemColumnId,
 } from '../utils/adminItemColumns';
 import {
@@ -54,6 +58,8 @@ interface AdminItemManagerListProps {
   filterOptions: ColumnFilterOptions;
   /** 「リンク切れを確認」の結果（確認していない・対象外のパスは undefined） */
   linkStatusOf: (item: EditableJsonItem) => PathExistenceStatus | undefined;
+  /** 起動の記録（記録が無ければ undefined） */
+  usageOf: (item: EditableJsonItem) => LaunchUsageRecord | undefined;
   /** 追加直後に名前セルを編集状態にするアイテムの id */
   autoEditItemId: string | null;
   onAutoEditHandled: () => void;
@@ -88,6 +94,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   onFilterChange,
   filterOptions,
   linkStatusOf,
+  usageOf,
   autoEditItemId,
   onAutoEditHandled,
   onItemEdit,
@@ -122,9 +129,10 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
     const def = ADMIN_ITEM_COLUMNS.find((c) => c.id === id);
     const column = def ? filterColumnOf(def) : null;
     if (!column) return;
-    // 右端の列でも画面からはみ出さないよう、左の位置を抑える
-    const x = Math.max(0, Math.min(rect.left, window.innerWidth - 260));
-    setOpenFilter((prev) => (prev?.column === column ? null : { column, x, y: rect.bottom }));
+    // 画面からはみ出す分は、メニューの側で測って内側へずらす（usePopoverPosition）
+    setOpenFilter((prev) =>
+      prev?.column === column ? null : { column, x: rect.left, y: rect.bottom }
+    );
   }, []);
   const filteredColumns = useMemo(() => new Set<string>(activeFilterColumns(filters)), [filters]);
   const openFilterDef = openFilter
@@ -185,7 +193,16 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
 
   return (
     <div className="editable-raw-item-list" ref={listRef}>
-      <table className="raw-items-table">
+      <table
+        className="raw-items-table"
+        style={
+          {
+            minWidth: tableMinWidthOf(columns.visibleColumns.map((c) => c.width)),
+            '--checkbox-column-width': `${CHECKBOX_COLUMN_WIDTH}px`,
+            '--actions-column-width': `${ACTIONS_COLUMN_WIDTH}px`,
+          } as React.CSSProperties
+        }
+      >
         <AdminItemManagerTableHead
           sortState={sortState}
           onSortChange={onSortChange}
@@ -216,6 +233,8 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 isChanged={changedIds.has(itemKey)}
                 pathMissing={missingIds.has(itemKey)}
                 linkStatus={linkStatusOf(item)}
+                lastLaunchedAt={usageOf(item)?.lastLaunchedAt}
+                launchCount={usageOf(item)?.count}
                 iconData={getAdminItemIcon(itemIcons, jsonItem)}
                 autoImportRuleName={
                   jsonItem.type === 'item' && jsonItem.autoImportRuleId

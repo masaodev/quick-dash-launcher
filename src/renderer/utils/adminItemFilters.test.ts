@@ -36,8 +36,10 @@ const tools = item({ type: 'dir', path: 'C:\\tools' }, 'c');
 const set = item({ type: 'set', displayName: '朝の準備', entries: [] }, 'd');
 
 const linkStatus: Record<string, PathExistenceStatus> = { c: 'missing' };
+const lastLaunched: Record<string, number> = { a: NOW - DAY, b: NOW - 100 * DAY };
 const context = {
   linkStatusOf: (e: EditableJsonItem) => linkStatus[e.item.id],
+  lastLaunchedAtOf: (e: EditableJsonItem) => lastLaunched[e.item.id],
   now: NOW,
 };
 const pick = (filters: ColumnFilters) =>
@@ -86,6 +88,12 @@ describe('matchesColumnFilters', () => {
     expect(pick({ updatedAt: 'within7' })).toEqual(['a']);
     expect(pick({ updatedAt: 'olderThan365' })).toEqual(['b']);
     expect(pick({ updatedAt: 'none' })).toEqual(['c', 'd']);
+  });
+
+  it('最終起動は記録の日時で絞り、「90 日以上」は記録の無い行も含める', () => {
+    expect(pick({ lastLaunched: 'within7' })).toEqual(['a']);
+    expect(pick({ lastLaunched: 'notWithin90' })).toEqual(['b', 'c', 'd']);
+    expect(pick({ lastLaunched: 'never' })).toEqual(['c', 'd']);
   });
 
   it('複数の条件は AND', () => {

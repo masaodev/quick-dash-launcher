@@ -39,6 +39,10 @@ export function describeColumnFilter(
       }
       case 'link':
         return filters.link ? i18next.t(`itemManager.columnFilter.link.${filters.link}`) : '';
+      case 'lastLaunched':
+        return filters.lastLaunched
+          ? i18next.t(`itemManager.columnFilter.lastLaunched.${filters.lastLaunched}`)
+          : '';
       case 'updatedAt':
         return filters.updatedAt
           ? i18next.t(`itemManager.columnFilter.updatedAt.${filters.updatedAt}`)

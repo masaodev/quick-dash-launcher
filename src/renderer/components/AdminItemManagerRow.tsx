@@ -35,6 +35,9 @@ export interface AdminItemManagerRowProps {
   pathMissing: boolean;
   /** 「リンク切れを確認」の結果（確認していない・対象外なら undefined） */
   linkStatus?: PathExistenceStatus;
+  /** 最後に起動した日時と回数（記録が無ければ undefined） */
+  lastLaunchedAt?: number;
+  launchCount?: number;
   /** この行で編集中のセル。編集中でなければ null */
   editingColumn: 'name' | 'path' | 'memo' | null;
   /** 編集中の入力値（この行が編集中のときだけ意味を持つ） */
@@ -81,6 +84,8 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   autoImportRuleName,
   pathMissing,
   linkStatus,
+  lastLaunchedAt,
+  launchCount,
   editingColumn,
   editingValue,
   measureRef,
@@ -303,20 +308,26 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   const renderMemoCell = () => {
     if (editingColumn === 'memo') {
       return (
-        <textarea
-          value={editingValue}
-          onChange={(e) => onEditingValueChange(e.target.value)}
-          onBlur={() => onCommitMemo(item)}
-          onKeyDown={(e) => onMemoKeyDown(e, item)}
-          onFocus={(e) => {
-            // 続きを書けるように、カーソルを末尾に置く
-            const end = e.currentTarget.value.length;
-            e.currentTarget.setSelectionRange(end, end);
-          }}
-          className="memo-edit-textarea"
-          placeholder={t('itemManager.row.memoPlaceholder')}
-          autoFocus
-        />
+        <div className="memo-edit-overlay">
+          <textarea
+            value={editingValue}
+            onChange={(e) => onEditingValueChange(e.target.value)}
+            onBlur={() => onCommitMemo(item)}
+            onKeyDown={(e) => onMemoKeyDown(e, item)}
+            onFocus={(e) => {
+              // 続きを書けるように、カーソルを末尾に置く
+              const end = e.currentTarget.value.length;
+              e.currentTarget.setSelectionRange(end, end);
+            }}
+            className="memo-edit-textarea"
+            placeholder={t('itemManager.row.memoPlaceholder')}
+            autoFocus
+          />
+          {/* 押すと textarea のフォーカスが外れて確定してしまうので、押下を止める */}
+          <div className="memo-edit-hint" onMouseDown={(e) => e.preventDefault()}>
+            {t('itemManager.row.memoEditHint')}
+          </div>
+        </div>
       );
     }
 
@@ -422,9 +433,29 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
                 {renderLinkCell()}
               </td>
             );
+          case 'lastLaunched':
+            return (
+              <td
+                key={column}
+                className="last-launched-column"
+                title={lastLaunchedAt ? formatUpdatedAt(lastLaunchedAt) : undefined}
+              >
+                {lastLaunchedAt ? formatUpdatedAt(lastLaunchedAt) : '-'}
+              </td>
+            );
+          case 'launchCount':
+            return (
+              <td key={column} className="launch-count-column">
+                {launchCount ?? '-'}
+              </td>
+            );
           case 'updatedAt':
             return (
-              <td key={column} className="updated-at-column">
+              <td
+                key={column}
+                className="updated-at-column"
+                title={jsonItem.updatedAt ? formatUpdatedAt(jsonItem.updatedAt) : undefined}
+              >
                 {formatUpdatedAt(jsonItem.updatedAt)}
               </td>
             );

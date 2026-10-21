@@ -1,6 +1,8 @@
 import { BrowserWindow } from 'electron';
 import type { WindowPinMode } from '@common/types';
 
+import { LaunchUsageService } from '../services/launchUsageService.js';
+
 import { setupDataHandlers } from './dataHandlers';
 import { setupItemHandlers } from './itemHandlers';
 import { setupConfigHandlers } from './configHandlers';
@@ -28,6 +30,7 @@ export function setupIPCHandlers(
   setWindowPinMode: (mode: WindowPinMode) => void,
   setFirstLaunchMode: (isFirstLaunch: boolean) => void
 ) {
+  LaunchUsageService.initialize(configFolder);
   setupDataHandlers(configFolder);
   setupItemHandlers();
   setupConfigHandlers(configFolder);

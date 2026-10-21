@@ -738,7 +738,8 @@
 }
 
 .raw-items-table .checkbox-column {
-  width: 40px;
+  /* 幅は adminItemColumns.ts の CHECKBOX_COLUMN_WIDTH を表の style から受け取る */
+  width: var(--checkbox-column-width);
   padding: 0 4px !important;
   text-align: center;
   vertical-align: middle;
@@ -827,12 +828,30 @@
   color: var(--text-muted);
 }
 
-.raw-items-table .memo-column .memo-edit-textarea {
+/* メモの編集（セルの上に重ねる。下にキー操作の案内） */
+.raw-items-table .memo-column .memo-edit-overlay {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 50;
   width: max(100%, 320px);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.raw-items-table .memo-column .memo-edit-hint {
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raw-items-table .memo-column .memo-edit-textarea {
+  display: block;
+  width: 100%;
   height: 120px;
   padding: var(--spacing-xs) var(--spacing-sm);
   font-family: inherit;
@@ -840,7 +859,6 @@
   border: var(--border-normal);
   border-color: var(--color-primary);
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
   resize: vertical;
   box-sizing: border-box;
 }
@@ -1054,8 +1072,9 @@
 /* 「✏️ 詳細編集」の文字分だけ操作列を広げる（🗑 が隣の列に食い込まないように） */
 .raw-items-table th.actions-column,
 .raw-items-table td.actions-column {
-  width: 64px;
-  min-width: 64px;
+  /* 幅は adminItemColumns.ts の ACTIONS_COLUMN_WIDTH を表の style から受け取る */
+  width: var(--actions-column-width);
+  min-width: var(--actions-column-width);
   text-align: left;
 }
 
@@ -1276,8 +1295,10 @@
   z-index: var(--z-dropdown);
 }
 
+/* 位置は usePopoverPosition が画面の内側に収める。高さも画面いっぱいまで使い、それを超えたらスクロール */
 .admin-popover .dropdown-menu {
   position: static;
+  max-height: calc(100vh - 2 * var(--spacing-sm));
 }
 
 /* 取込元列（手動か、自動取込ルールの名前） */
@@ -1431,4 +1452,28 @@
 .csv-import-modal .csv-import-note {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
+}
+
+/* 最終起動・起動回数の列 */
+.raw-items-table .last-launched-column {
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+/* 日時のセルは幅に収まらなければ … で切る（見出しは ▾ を隠さないよう切らない） */
+.raw-items-table td.last-launched-column,
+.raw-items-table td.updated-at-column {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raw-items-table td.last-launched-column,
+.raw-items-table td.launch-count-column {
+  color: var(--text-muted);
+}
+
+.raw-items-table .launch-count-column {
+  font-size: var(--font-size-sm);
+  text-align: right;
+  white-space: nowrap;
 }

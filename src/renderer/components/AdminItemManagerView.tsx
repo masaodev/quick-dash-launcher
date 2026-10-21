@@ -10,6 +10,7 @@ import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useAdminItemImports } from '../hooks/useAdminItemImports';
 import { useAdminItemColumns } from '../hooks/useAdminItemColumns';
 import { useAdminItemListView } from '../hooks/useAdminItemListView';
+import { useLaunchUsage } from '../hooks/useLaunchUsage';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
@@ -202,6 +203,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [workingItems, selectedDataFile]
   );
 
+  const launchUsage = useLaunchUsage();
   const listView = useAdminItemListView({
     workingItems,
     baseVersion,
@@ -209,6 +211,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     searchQuery,
     selectedItems,
     retainVisibleSelection: editing.retainVisibleSelection,
+    usageOf: launchUsage.usageOf,
+    usageLoaded: launchUsage.loaded,
+    ruleNames: autoImportRuleMap,
   });
   const {
     sortState,
@@ -224,12 +229,18 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     visibleSelectedItems,
     isFiltered,
   } = listView;
+  // 絞り込む前の件数（絞り込み中の「合計: 8 / 15 件」に使う）
+  const fileItemCount = currentFileWorkingItems.length;
 
   const columns = useAdminItemColumns();
 
   const filterOptions = useMemo(
-    () => ({ rules: currentFileRules, linkChecked: pathCheck.hasChecked }),
-    [currentFileRules, pathCheck.hasChecked]
+    () => ({
+      rules: currentFileRules,
+      linkChecked: pathCheck.hasChecked,
+      usageSince: launchUsage.since,
+    }),
+    [currentFileRules, pathCheck.hasChecked, launchUsage.since]
   );
 
   const handleCheckMissingPaths = async () => {
@@ -413,9 +424,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   });
 
   // CSV: 書き出しはすべてのタブ（未保存の変更も含めて今の一覧のまま）、取り込みは確かめてから未保存の変更にする
-  const [csvImport, setCsvImport] = useState<{ fileName: string; plan: CsvImportPlan } | null>(
-    null
-  );
+  const [csvImport, setCsvImport] = useState<{
+    fileName: string;
+    text: string;
+    plan: CsvImportPlan;
+    /** 計画を作ったときの一覧（確定までに変わったら作り直す） */
+    planned: EditableJsonItem[];
+  } | null>(null);
   /** タブの順のデータファイル（どのタブにも入っていないファイルは最後） */
   const orderedDataFiles = useMemo(() => {
     const files = [...new Set(dataFileTabs.flatMap((tab) => tab.files))];
@@ -448,7 +463,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       const file = await window.electronAPI.readItemsCsv();
       if (!file) return;
       const plan = planCsvImport(file.text, workingItems, orderedDataFiles, selectedDataFile);
-      setCsvImport({ fileName: file.filePath, plan });
+      setCsvImport({ fileName: file.filePath, text: file.text, plan, planned: workingItems });
     } catch (error) {
       showWarning(
         t('itemCsv.readFailed', { error: error instanceof Error ? error.message : String(error) })
@@ -458,6 +473,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   const confirmCsvImport = () => {
     if (!csvImport) return;
+    if (csvImport.planned !== workingItems) {
+      const plan = planCsvImport(csvImport.text, workingItems, orderedDataFiles, selectedDataFile);
+      setCsvImport({ ...csvImport, plan, planned: workingItems });
+      showWarning(t('itemCsv.replanned'));
+      return;
+    }
     const { plan } = csvImport;
     setCsvImport(null);
     // 取り込んだ行が絞り込みで隠れないように、検索と絞り込みを外す
@@ -608,6 +629,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           onFilterChange={setColumnFilter}
           filterOptions={filterOptions}
           linkStatusOf={linkStatusOf}
+          usageOf={launchUsage.usageOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}
           onItemEdit={editing.recordEdit}
@@ -628,7 +650,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             : ''}
         </span>
         <span className="total-count">
-          {t('itemManager.status.total', { count: filteredItems.length })}
+          {isFiltered && filteredItems.length !== fileItemCount
+            ? t('itemManager.status.totalFiltered', {
+                count: filteredItems.length,
+                total: fileItemCount,
+              })
+            : t('itemManager.status.total', { count: filteredItems.length })}
         </span>
         {invalidCount > 0 && (
           <span className="invalid-count">

@@ -1,6 +1,6 @@
 import type { JsonItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
-import { generateId } from '@common/utils/jsonParser';
+import { generateUniqueId } from '@common/utils/jsonParser';
 
 import { withEditedMemo } from './adminItemDisplay';
 import { parseCsv, stringifyCsv } from './csv';
@@ -36,6 +36,22 @@ function formatCsvDate(time?: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/**
+ * Excel が数式として読む書き出し（= + - @ で始まる値）。' を前に付けて文字のまま読ませる
+ *
+ * もとから ' の後に = + - @ が続く値（'-- メモ など）にも付ける。付けないと、取り込みで外す ' と区別できない
+ */
+const FORMULA_START = /^'*[=+\-@]/;
+
+function protectFormula(value: string): string {
+  return FORMULA_START.test(value) ? `'${value}` : value;
+}
+
+/** protectFormula で付けた ' を 1 つ外す */
+function unprotectFormula(value: string): string {
+  return value.startsWith("'") && FORMULA_START.test(value.slice(1)) ? value.slice(1) : value;
+}
+
 function rowOf(item: EditableJsonItem): Record<CsvColumn, string> {
   const json = item.item;
   return {
@@ -61,7 +77,7 @@ export function itemsToCsv(items: EditableJsonItem[], files: readonly string[]):
     for (const item of items) {
       if (item.meta.sourceFile !== file) continue;
       const row = rowOf(item);
-      rows.push(ITEM_CSV_COLUMNS.map((column) => row[column]));
+      rows.push(ITEM_CSV_COLUMNS.map((column) => protectFormula(row[column])));
     }
   }
   return stringifyCsv(rows);
@@ -123,6 +139,7 @@ export function planCsvImport(
   }
 
   const byId = new Map(workingItems.map((item) => [item.item.id, item]));
+  const usedIds = new Set(byId.keys());
   const seen = new Set<string>();
   const files = new Set(knownFiles);
 
@@ -132,7 +149,7 @@ export function planCsvImport(
     /** その列が CSV にあれば値、無ければ undefined（変えない） */
     const get = (column: CsvColumn): string | undefined => {
       const i = indexOf(column);
-      return i === -1 ? undefined : (cells[i] ?? '');
+      return i === -1 ? undefined : unprotectFormula(cells[i] ?? '');
     };
     const id = (get('id') ?? '').trim();
     const name = get('displayName')?.trim();
@@ -197,7 +214,9 @@ export function planCsvImport(
       plan.errors.push({ line, code: 'pathRequired' });
       return;
     }
-    const base = { id: generateId(), updatedAt: Date.now() };
+    const newId = generateUniqueId(usedIds);
+    usedIds.add(newId);
+    const base = { id: newId, updatedAt: Date.now() };
     let item: JsonItem;
     if (type === 'dir') {
       item = { ...base, type: 'dir', path: itemPath };

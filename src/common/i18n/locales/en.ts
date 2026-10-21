@@ -1081,6 +1081,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         exists: '✓ Found',
         unknown: "? Couldn't check",
       },
+      usageSince: 'Recorded since {{date}} (earlier launches are not included)',
+      lastLaunched: {
+        within7: 'Opened in the last 7 days',
+        within30: 'Opened in the last 30 days',
+        notWithin90: 'Not opened for 90+ days (including never)',
+        never: 'No record',
+      },
       updatedAt: {
         within7: 'Last 7 days',
         within30: 'Last 30 days',
@@ -1104,6 +1111,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       memo: 'Note',
       source: 'Source',
       link: 'Link',
+      lastLaunched: 'Last opened',
+      launchCount: 'Times opened',
       icon: 'Icon',
       columnMenuHint:
         'Right-click to choose columns. Drag the right edge of a header to resize it.',
@@ -1123,6 +1132,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'Select to write a note (Enter for a new line, Ctrl+Enter to finish, Esc to cancel)',
       memoMoreLines: 'More lines',
       memoPlaceholder: 'Note',
+      memoEditHint: 'Enter: new line · Ctrl+Enter: save · Esc: cancel',
       typeSelectTitle:
         'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows) and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
@@ -1147,6 +1157,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       selected_other: '{{count}} selected',
       total_one: 'Total: {{count}} item',
       total_other: 'Total: {{count}} items',
+      totalFiltered: 'Total: {{count}} of {{total}} items (filtered)',
       invalid_one: 'Problems: {{count}}',
       invalid_other: 'Problems: {{count}}',
       missing_one: 'Broken links: {{count}}',
@@ -1925,6 +1936,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     iconFailed: "Couldn't extract the icon",
   },
   itemCsv: {
+    replanned:
+      'The list changed after the preview opened, so the import was recalculated. Please review it again.',
     previewTitle: 'Import CSV',
     summary: '{{updates}} changed, {{additions}} added, {{unchanged}} unchanged, {{errors}} errors',
     updatesHeading: 'Changed ({{count}})',
@@ -2143,6 +2156,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       autoLaunchEnabledByWindows:
         'Startup is turned on in Windows settings. To stop it, select this check box and clear it again, or turn it off in Windows Settings > Apps > Startup.',
       cli: 'Enable QuickDashLauncher CLI',
+      recordLaunchUsage: 'Keep a launch history',
+      recordLaunchUsageDescription:
+        'Records when and how often you open each item, shown in the Last opened and Times opened columns in Item Manager (saved only in item-usage.json in the settings folder on this PC).',
       cliDescription:
         'Lets terminals and AI tools work with items and workspaces through the qdl command (adds qdl to PATH; use it from a new terminal window).',
     },
