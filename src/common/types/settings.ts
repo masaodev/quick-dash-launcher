@@ -84,6 +84,16 @@ export type AutoLaunchStatus =
   | { mode: 'unsupported' };
 
 /**
+ * アイテム管理の一覧の列の表示と幅（列の id ごと。書かれていない列は既定のまま）
+ */
+export interface AdminItemColumnsSetting {
+  /** 列を出すか（true=出す、false=隠す） */
+  visible: Record<string, boolean>;
+  /** ドラッグで変えた列の幅（px） */
+  widths: Record<string, number>;
+}
+
+/**
  * アプリケーションの設定を管理するインターフェース
  * electron-storeを使用して永続化される
  */
@@ -154,4 +164,6 @@ export interface AppSettings {
   detachedPositionMode: DetachedPositionMode;
   /** ディスプレイの端に近づけたら吸着する（デフォルト: true） */
   windowSnapEnabled: boolean;
+  /** アイテム管理の一覧の列の表示と幅（デフォルト: すべて既定） */
+  adminItemColumns: AdminItemColumnsSetting;
 }

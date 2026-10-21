@@ -14,12 +14,15 @@ import {
   hasDisplayName,
   isPathEditable,
 } from '../utils/adminItemDisplay';
+import type { AdminItemColumnId } from '../utils/adminItemColumns';
 import { describePathAndArgs, getItemKey } from '../utils/editableItemOperations';
 import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 import { activateOnEnterOrSpace } from '../utils/keyboardActivation';
 
 export interface AdminItemManagerRowProps {
   item: EditableJsonItem;
+  /** 出す列（見出しと同じ順。選択と操作の列は常に出す） */
+  columns: readonly AdminItemColumnId[];
   index: number;
   isSelected: boolean;
   /** 未保存の変更があるか（行の左端に印） */
@@ -31,7 +34,7 @@ export interface AdminItemManagerRowProps {
   /** パスが実在しない（リンク切れ）か */
   pathMissing: boolean;
   /** この行で編集中のセル。編集中でなければ null */
-  editingColumn: 'name' | 'path' | null;
+  editingColumn: 'name' | 'path' | 'memo' | null;
   /** 編集中の入力値（この行が編集中のときだけ意味を持つ） */
   editingValue: string;
   /** 仮想化の実測用 ref */
@@ -48,6 +51,9 @@ export interface AdminItemManagerRowProps {
   onCommitPath: (item: EditableJsonItem) => void;
   onNameKeyDown: (e: React.KeyboardEvent, item: EditableJsonItem) => void;
   onPathKeyDown: (e: React.KeyboardEvent, item: EditableJsonItem) => void;
+  onStartMemoEdit: (item: EditableJsonItem) => void;
+  onCommitMemo: (item: EditableJsonItem) => void;
+  onMemoKeyDown: (e: React.KeyboardEvent, item: EditableJsonItem) => void;
 }
 
 /** 種類のプルダウンの選択肢（詳細編集が開くものは名前の後に … を付ける） */
@@ -65,6 +71,7 @@ const TYPE_OPTIONS: ReadonlyArray<{ type: JsonItem['type']; opensDetail: boolean
  */
 const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   item,
+  columns,
   index,
   isSelected,
   isChanged,
@@ -86,6 +93,9 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   onCommitPath,
   onNameKeyDown,
   onPathKeyDown,
+  onStartMemoEdit,
+  onCommitMemo,
+  onMemoKeyDown,
 }) => {
   const { t } = useTranslation();
   const jsonItem = item.item;
@@ -243,6 +253,50 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     );
   };
 
+  const renderMemoCell = () => {
+    if (editingColumn === 'memo') {
+      return (
+        <textarea
+          value={editingValue}
+          onChange={(e) => onEditingValueChange(e.target.value)}
+          onBlur={() => onCommitMemo(item)}
+          onKeyDown={(e) => onMemoKeyDown(e, item)}
+          onFocus={(e) => {
+            // 続きを書けるように、カーソルを末尾に置く
+            const end = e.currentTarget.value.length;
+            e.currentTarget.setSelectionRange(end, end);
+          }}
+          className="memo-edit-textarea"
+          placeholder={t('itemManager.row.memoPlaceholder')}
+          autoFocus
+        />
+      );
+    }
+
+    const memo = jsonItem.memo ?? '';
+    const [firstLine, ...restLines] = memo.split(/\r?\n/);
+    const hasMoreLines = restLines.some((line) => line.trim().length > 0);
+    return (
+      <div
+        className="editable-cell memo-cell"
+        role="button"
+        tabIndex={0}
+        onClick={() => onStartMemoEdit(item)}
+        onKeyDown={activateOnEnterOrSpace(() => onStartMemoEdit(item))}
+        title={
+          memo ? t('itemManager.row.memoTitle', { memo }) : t('itemManager.row.memoEmptyTitle')
+        }
+      >
+        {firstLine}
+        {hasMoreLines && (
+          <span className="memo-more" aria-label={t('itemManager.row.memoMoreLines')}>
+            ↵
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <tr
       data-index={index}
@@ -277,11 +331,46 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
           </button>
         </div>
       </td>
-      <td className="type-column">{renderTypeCell()}</td>
-      <td className="icon-column">{renderIconCell()}</td>
-      <td className="name-column">{renderNameCell()}</td>
-      <td className="content-column">{renderPathCell()}</td>
-      <td className="updated-at-column">{formatUpdatedAt(jsonItem.updatedAt)}</td>
+      {columns.map((column) => {
+        switch (column) {
+          case 'type':
+            return (
+              <td key={column} className="type-column">
+                {renderTypeCell()}
+              </td>
+            );
+          case 'icon':
+            return (
+              <td key={column} className="icon-column">
+                {renderIconCell()}
+              </td>
+            );
+          case 'name':
+            return (
+              <td key={column} className="name-column">
+                {renderNameCell()}
+              </td>
+            );
+          case 'pathAndArgs':
+            return (
+              <td key={column} className="content-column">
+                {renderPathCell()}
+              </td>
+            );
+          case 'memo':
+            return (
+              <td key={column} className="memo-column">
+                {renderMemoCell()}
+              </td>
+            );
+          case 'updatedAt':
+            return (
+              <td key={column} className="updated-at-column">
+                {formatUpdatedAt(jsonItem.updatedAt)}
+              </td>
+            );
+        }
+      })}
     </tr>
   );
 };

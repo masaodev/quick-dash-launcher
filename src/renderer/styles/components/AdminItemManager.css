@@ -61,7 +61,7 @@
   line-height: 1;
 }
 
-.edit-mode-toolbar .dropdown-menu {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-menu {
   position: absolute;
   top: calc(100% + var(--spacing-xs));
   left: 0;
@@ -77,12 +77,12 @@
 }
 
 /* 右端に来ることがあるメニュー（整理 ▼）は右寄せで開く */
-.edit-mode-toolbar .dropdown-menu-right {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-menu-right {
   left: auto;
   right: 0;
 }
 
-.edit-mode-toolbar .dropdown-item {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-item {
   display: block;
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -97,23 +97,23 @@
   color: var(--text-primary);
 }
 
-.edit-mode-toolbar .dropdown-item:hover:not(:disabled) {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-item:hover:not(:disabled) {
   background-color: var(--bg-hover);
 }
 
-.edit-mode-toolbar .dropdown-item:disabled {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-item:disabled {
   color: var(--text-disabled);
   cursor: not-allowed;
 }
 
-.edit-mode-toolbar .dropdown-item.selected {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-item.selected {
   background-color: var(--bg-selected);
   color: var(--color-primary);
   font-weight: 600;
 }
 
 /* メニュー項目の下に添える短い説明 */
-.edit-mode-toolbar .dropdown-item-desc {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-item-desc {
   display: block;
   margin-top: var(--spacing-xxs);
   font-size: var(--font-size-sm);
@@ -122,7 +122,7 @@
 }
 
 /* メニュー内の小見出し（取込元・表示） */
-.edit-mode-toolbar .dropdown-section-label {
+:is(.edit-mode-toolbar, .admin-popover) .dropdown-section-label {
   padding: var(--spacing-xs) var(--spacing-lg) var(--spacing-xxs);
   font-size: var(--font-size-sm);
   color: var(--text-muted);
@@ -766,8 +766,8 @@
   width: 160px;
 }
 
-/* 列リサイズハンドル */
-.raw-items-table th.name-column {
+/* 列リサイズハンドル（幅を変えられる列の見出し） */
+.raw-items-table th.resizable-header {
   position: relative;
 }
 
@@ -804,6 +804,45 @@
   width: auto;
   min-width: 250px;
   word-break: break-all;
+}
+
+/* メモ列（1 行目だけを出し、編集は下に広がる入力欄で行う） */
+.raw-items-table .memo-column {
+  width: 200px;
+  position: relative;
+  padding: 1px 2px !important;
+}
+
+.raw-items-table .memo-column .memo-cell {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 20px;
+}
+
+.raw-items-table .memo-column .memo-more {
+  margin-left: var(--spacing-xs);
+  color: var(--text-muted);
+}
+
+.raw-items-table .memo-column .memo-edit-textarea {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: max(100%, 320px);
+  height: 120px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-color: var(--color-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  resize: vertical;
+  box-sizing: border-box;
 }
 
 /* 更新日列 */
@@ -1229,4 +1268,14 @@
 
 .admin-tab-popup-item.danger:disabled {
   color: var(--text-disabled);
+}
+
+/* 一覧の上に出す小さなメニュー（見出しの右クリック・見出しの ▾）。ツールバーと同じ見た目 */
+.admin-popover {
+  position: fixed;
+  z-index: var(--z-dropdown);
+}
+
+.admin-popover .dropdown-menu {
+  position: static;
 }

@@ -120,6 +120,7 @@ export {
 // 設定関連の型
 export type {
   AppSettings,
+  AdminItemColumnsSetting,
   WindowPinMode,
   PinLevel,
   WindowPositionMode,
