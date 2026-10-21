@@ -1012,6 +1012,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unknownType: '(unknown type)',
     },
     toolbar: {
+      importCsv: '📄 Import from CSV',
+      importCsvTitle: 'Import an edited CSV (matched by id; review the changes before importing)',
       addItem: '+ Add item',
       addItemTitle:
         'Adds a single item at the top. Change its type in the Type column, and its arguments and note in ✏️ Edit details.',
@@ -1020,12 +1022,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addFolder: '🗂️ Add folder import',
       addFolderTitle:
         'Adds an item that lists the files in a folder each time the launcher opens (folder import)',
-      filter: 'Filter',
-      filterActive: 'Filter ({{count}})',
-      filterTitle: 'Filters the list by source or broken links',
-      filterSource: 'Source',
-      filterShow: 'Show',
-      missingOnlyChip: 'Broken links only',
       removeFilter: 'Remove the "{{name}}" filter',
       deleteSelected: 'Delete',
       deleteSelectedTitle: 'Deletes the checked items',
@@ -1041,6 +1037,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       save: 'Save changes',
     },
     header: {
+      exportCsv: '📤 Export to CSV',
+      exportCsvDesc: 'All tabs in one CSV file (opens in Excel)',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
       autoImportSettings: '⚙️ Bookmark auto-import settings…',
@@ -1053,12 +1051,49 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       checkingMissing: 'Checking…',
       checkMissingTitle:
         'Checks whether the local paths in this data file exist (URLs, shell:, and command names are skipped; runs only when you select it)',
-      missingOnly: 'Show broken links only',
-      missingOnlyTitle: "Shows only items whose paths weren't found",
-      missingOnlyUnavailable: 'Run "Check for broken links" in "Clean up" first',
       dedupe: 'Remove duplicates',
       dedupeDesc: 'Keeps one of each item with the same type, name, and path',
       dedupeTitle: 'Deletes items with the same type, name, and path, keeping the first one',
+    },
+    columnFilter: {
+      open: 'Filter and sort {{column}}',
+      title: 'Filter',
+      sortAsc: '▲ Sort ascending',
+      sortDesc: '▼ Sort descending',
+      clear: 'Clear this filter',
+      clearAll: 'Clear all',
+      chip: '{{column}}: {{value}}',
+      containsPlaceholder: 'Contains',
+      containsValue: 'contains "{{text}}"',
+      nonEmpty: 'Not empty',
+      empty: 'Empty',
+      rules: 'Auto-import rules',
+      linkNotChecked: 'Run "Check for broken links" in "Clean up ▼" first',
+      types: {
+        itemUrl: 'Single item (URL)',
+        itemOther: 'Single item (not a URL)',
+        dir: 'Folder import',
+        set: 'Set',
+        clipboard: 'Clipboard',
+      },
+      link: {
+        missing: '⚠ Not found',
+        exists: '✓ Found',
+        unknown: "? Couldn't check",
+      },
+      usageSince: 'Recorded since {{date}} (earlier launches are not included)',
+      lastLaunched: {
+        within7: 'Opened in the last 7 days',
+        within30: 'Opened in the last 30 days',
+        notWithin90: 'Not opened for 90+ days (including never)',
+        never: 'No record',
+      },
+      updatedAt: {
+        within7: 'Last 7 days',
+        within30: 'Last 30 days',
+        olderThan365: 'Over a year ago',
+        none: 'No date',
+      },
     },
     columnMenu: {
       title: 'Columns',
@@ -1074,6 +1109,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       pathAndArgsTitle: 'Select a path to edit it. Edit arguments in ✏️ Edit details.',
       updatedAt: 'Updated',
       memo: 'Note',
+      source: 'Source',
+      link: 'Link',
+      lastLaunched: 'Last opened',
+      launchCount: 'Times opened',
       icon: 'Icon',
       columnMenuHint:
         'Right-click to choose columns. Drag the right edge of a header to resize it.',
@@ -1082,12 +1121,18 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'This data file has no items. Add one with "+ Add item", or use the ▼ next to it to import browser bookmarks or installed apps.',
     },
     row: {
+      sourceManual: 'Manual',
+      sourceAutoTitle: 'Imported by the auto-import rule "{{rule}}"',
+      linkExistsTitle: 'The path was found',
+      linkUnknownTitle:
+        "No response in time (for example, a network path). This isn't counted as a broken link.",
       memoTitle:
         '{{memo}}\n\nSelect to edit (Enter for a new line, Ctrl+Enter to finish, Esc to cancel)',
       memoEmptyTitle:
         'Select to write a note (Enter for a new line, Ctrl+Enter to finish, Esc to cancel)',
       memoMoreLines: 'More lines',
       memoPlaceholder: 'Note',
+      memoEditHint: 'Enter: new line · Ctrl+Enter: save · Esc: cancel',
       typeSelectTitle:
         'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows) and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
@@ -1112,6 +1157,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       selected_other: '{{count}} selected',
       total_one: 'Total: {{count}} item',
       total_other: 'Total: {{count}} items',
+      totalFiltered: 'Total: {{count}} of {{total}} items (filtered)',
       invalid_one: 'Problems: {{count}}',
       invalid_other: 'Problems: {{count}}',
       missing_one: 'Broken links: {{count}}',
@@ -1128,7 +1174,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       someMissing_one: '{{count}} broken link ({{checked}} checked{{unknownNote}})',
       someMissing_other: '{{count}} broken links ({{checked}} checked{{unknownNote}})',
       statusTitle:
-        'To see only these, select Filter > Show broken links only. Paths that do not respond (such as network paths) are not counted as broken.',
+        'To see only these, use ▾ on the Link column. Paths that do not respond (such as network paths) are not counted as broken.',
     },
     movedTo: 'Moved "{{name}}" to {{file}} (save to keep this change)',
     saved: 'Changes saved',
@@ -1423,12 +1469,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     deleteItemsToo: 'Also delete the imported items',
   },
   autoImportFilter: {
-    all: 'All',
     autoImportOnly: 'Auto-imported only',
     manualOnly: 'Added manually only',
-    label: 'Source: {{filter}}',
     unknownRule: 'Unknown rule',
-    title: 'Filter by auto-import',
   },
   appImport: {
     registeredApp: '(registered app)',
@@ -1892,6 +1935,35 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     iconNotFound: "The icon wasn't found",
     iconFailed: "Couldn't extract the icon",
   },
+  itemCsv: {
+    replanned:
+      'The list changed after the preview opened, so the import was recalculated. Please review it again.',
+    previewTitle: 'Import CSV',
+    summary: '{{updates}} changed, {{additions}} added, {{unchanged}} unchanged, {{errors}} errors',
+    updatesHeading: 'Changed ({{count}})',
+    additionsHeading: 'Added ({{count}})',
+    errorsHeading: 'Rows not imported ({{count}})',
+    errorLine: 'Line {{line}}: {{message}}',
+    errors: {
+      noIdColumn: 'The header row has no id column (keep the header from the exported CSV)',
+      notFound: 'No item has the id "{{value}}"',
+      duplicateId: 'The id "{{value}}" appears more than once (only the first row is imported)',
+      nameRequired: 'The name is empty',
+      pathRequired: 'The path is empty',
+      typeNotAddable: 'Items of type "{{value}}" can\'t be added from CSV (only item and dir)',
+      unknownDataFile: 'There is no data file "{{value}}"',
+    },
+    note: "Imported rows become unsaved changes. Select Save changes to keep them, or Discard to undo. Items that aren't in the CSV aren't deleted.",
+    confirm: 'Import',
+    exported: 'Exported {{count}} items: {{path}}',
+    exportedUnsaved: 'Exported {{count}} items (including unsaved changes): {{path}}',
+    imported:
+      'Imported the CSV ({{updates}} changed, {{additions}} added). Save to keep the changes.',
+    readFailed: "Couldn't read the CSV: {{error}}",
+    exportFailed: "Couldn't export the CSV: {{error}}",
+    exportTitle: 'Export items to CSV',
+    importTitle: 'Choose a CSV to import',
+  },
   bookmarkErrors: {
     pathNotAllowed: "This file path isn't allowed",
     tooLarge: 'The file is too large',
@@ -2084,6 +2156,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       autoLaunchEnabledByWindows:
         'Startup is turned on in Windows settings. To stop it, select this check box and clear it again, or turn it off in Windows Settings > Apps > Startup.',
       cli: 'Enable QuickDashLauncher CLI',
+      recordLaunchUsage: 'Keep a launch history',
+      recordLaunchUsageDescription:
+        'Records when and how often you open each item, shown in the Last opened and Times opened columns in Item Manager (saved only in item-usage.json in the settings folder on this PC).',
       cliDescription:
         'Lets terminals and AI tools work with items and workspaces through the qdl command (adds qdl to PATH; use it from a new terminal window).',
     },

@@ -26,6 +26,7 @@ import {
   type InlineItemType,
   type RebaseConflict,
 } from '../utils/editableItemOperations';
+import { applyCsvImportPlan, type CsvImportPlan } from '../utils/itemCsv';
 
 /** ディスクの内容が外部で変わり、未保存の変更を載せ直したときの結果 */
 export interface RebaseNotice {
@@ -245,6 +246,12 @@ export function useAdminItemEditing(
     [updateWorking]
   );
 
+  /** CSV の取り込みの計画を、未保存の変更として当てる */
+  const applyCsvImport = useCallback(
+    (plan: CsvImportPlan) => updateWorking((working) => applyCsvImportPlan(working, plan)),
+    [updateWorking]
+  );
+
   /** 指定データファイル内の重複件数（ファイル順で 2 件目以降） */
   const countDuplicates = useCallback(
     (sourceFile: string): number =>
@@ -341,6 +348,7 @@ export function useAdminItemEditing(
     addBlankItem,
     importBookmarks,
     importApps,
+    applyCsvImport,
     countDuplicates,
     dedupeFile,
     saveChanges,

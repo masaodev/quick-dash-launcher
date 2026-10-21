@@ -8,16 +8,20 @@ import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useAdminItemImports } from '../hooks/useAdminItemImports';
+import { useAdminItemColumns } from '../hooks/useAdminItemColumns';
 import { useAdminItemListView } from '../hooks/useAdminItemListView';
+import { useLaunchUsage } from '../hooks/useLaunchUsage';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
+import { itemsToCsv, planCsvImport, type CsvImportPlan } from '../utils/itemCsv';
 
 import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerTabBar from './AdminItemManagerTabBar';
 import AdminItemManagerToolbar from './AdminItemManagerToolbar';
 import BookmarkImportModal from './BookmarkImportModal';
 import AppImportModal from './AppImportModal';
+import AdminItemCsvImportModal from './AdminItemCsvImportModal';
 import ConfirmDialog from './ConfirmDialog';
 
 interface EditModeViewProps {
@@ -199,6 +203,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [workingItems, selectedDataFile]
   );
 
+  const launchUsage = useLaunchUsage();
   const listView = useAdminItemListView({
     workingItems,
     baseVersion,
@@ -206,24 +211,44 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     searchQuery,
     selectedItems,
     retainVisibleSelection: editing.retainVisibleSelection,
+    usageOf: launchUsage.usageOf,
+    usageLoaded: launchUsage.loaded,
+    ruleNames: autoImportRuleMap,
   });
   const {
     sortState,
     handleSortChange,
-    autoImportFilter,
-    setAutoImportFilter,
-    missingOnly,
-    toggleMissingOnly,
+    setSort,
+    filters,
+    setColumnFilter,
     pathCheck,
+    linkStatusOf,
     missingIds,
     filteredItems,
     orderedItems,
     visibleSelectedItems,
     isFiltered,
   } = listView;
+  // 絞り込む前の件数（絞り込み中の「合計: 8 / 15 件」に使う）
+  const fileItemCount = currentFileWorkingItems.length;
+
+  const columns = useAdminItemColumns();
+
+  const filterOptions = useMemo(
+    () => ({
+      rules: currentFileRules,
+      linkChecked: pathCheck.hasChecked,
+      usageSince: launchUsage.since,
+    }),
+    [currentFileRules, pathCheck.hasChecked, launchUsage.since]
+  );
 
   const handleCheckMissingPaths = async () => {
     const summary = await pathCheck.runCheck(currentFileWorkingItems);
+    // 結果はリンクの列に出すので、隠していたら出す（既定では隠している）
+    if (summary.checked > 0 && !columns.visibleColumns.some((c) => c.def.id === 'link')) {
+      columns.setColumnVisible('link', true);
+    }
     if (summary.checked === 0) {
       showInfo(t('itemManager.missingCheck.nothingToCheck'));
       return;
@@ -398,6 +423,73 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     onClearPendingImportModal,
   });
 
+  // CSV: 書き出しはすべてのタブ（未保存の変更も含めて今の一覧のまま）、取り込みは確かめてから未保存の変更にする
+  const [csvImport, setCsvImport] = useState<{
+    fileName: string;
+    text: string;
+    plan: CsvImportPlan;
+    /** 計画を作ったときの一覧（確定までに変わったら作り直す） */
+    planned: EditableJsonItem[];
+  } | null>(null);
+  /** タブの順のデータファイル（どのタブにも入っていないファイルは最後） */
+  const orderedDataFiles = useMemo(() => {
+    const files = [...new Set(dataFileTabs.flatMap((tab) => tab.files))];
+    for (const item of workingItems) {
+      if (!files.includes(item.meta.sourceFile)) files.push(item.meta.sourceFile);
+    }
+    return files;
+  }, [dataFileTabs, workingItems]);
+
+  const handleExportCsv = async () => {
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    try {
+      const savedPath = await window.electronAPI.exportItemsCsv(
+        itemsToCsv(workingItems, orderedDataFiles),
+        `quick-dash-items-${stamp}.csv`
+      );
+      if (!savedPath) return;
+      const key = hasUnsavedChanges ? 'itemCsv.exportedUnsaved' : 'itemCsv.exported';
+      showSuccess(t(key, { count: workingItems.length, path: savedPath }), { duration: 5000 });
+    } catch (error) {
+      showWarning(
+        t('itemCsv.exportFailed', { error: error instanceof Error ? error.message : String(error) })
+      );
+    }
+  };
+
+  const handleImportCsv = async () => {
+    try {
+      const file = await window.electronAPI.readItemsCsv();
+      if (!file) return;
+      const plan = planCsvImport(file.text, workingItems, orderedDataFiles, selectedDataFile);
+      setCsvImport({ fileName: file.filePath, text: file.text, plan, planned: workingItems });
+    } catch (error) {
+      showWarning(
+        t('itemCsv.readFailed', { error: error instanceof Error ? error.message : String(error) })
+      );
+    }
+  };
+
+  const confirmCsvImport = () => {
+    if (!csvImport) return;
+    if (csvImport.planned !== workingItems) {
+      const plan = planCsvImport(csvImport.text, workingItems, orderedDataFiles, selectedDataFile);
+      setCsvImport({ ...csvImport, plan, planned: workingItems });
+      showWarning(t('itemCsv.replanned'));
+      return;
+    }
+    const { plan } = csvImport;
+    setCsvImport(null);
+    // 取り込んだ行が絞り込みで隠れないように、検索と絞り込みを外す
+    if (searchQuery) onSearchChange('');
+    listView.clearFilters();
+    editing.applyCsvImport(plan);
+    showInfo(
+      t('itemCsv.imported', { updates: plan.updates.length, additions: plan.additions.length })
+    );
+  };
+
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
   const handleRequestDelete = useCallback(
     (items: EditableJsonItem[]) => {
@@ -495,16 +587,15 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onAddFolder={handleAddFolder}
         onOpenBookmarkImport={imports.openBookmarkModal}
         onOpenAppImport={imports.openAppImportModal}
+        onImportCsv={() => void handleImportCsv()}
+        onExportCsv={() => void handleExportCsv()}
         onOpenAutoImportSettings={onOpenAutoImportSettings}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
-        autoImportFilter={autoImportFilter}
-        onAutoImportFilterChange={setAutoImportFilter}
-        rules={currentFileRules}
+        filters={filters}
+        onClearColumnFilter={(column) => setColumnFilter(column, undefined)}
+        onClearAllFilters={listView.clearFilters}
         ruleNames={autoImportRuleMap}
-        missingOnly={missingOnly}
-        missingOnlyAvailable={pathCheck.hasChecked}
-        onToggleMissingOnly={toggleMissingOnly}
         onCheckMissingPaths={() => void handleCheckMissingPaths()}
         checkingMissingPaths={pathCheck.checking}
         onDedupe={handleDedupe}
@@ -532,6 +623,13 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           isFiltered={isFiltered}
           sortState={sortState}
           onSortChange={handleSortChange}
+          onSort={setSort}
+          columns={columns}
+          filters={filters}
+          onFilterChange={setColumnFilter}
+          filterOptions={filterOptions}
+          linkStatusOf={linkStatusOf}
+          usageOf={launchUsage.usageOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}
           onItemEdit={editing.recordEdit}
@@ -552,7 +650,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
             : ''}
         </span>
         <span className="total-count">
-          {t('itemManager.status.total', { count: filteredItems.length })}
+          {isFiltered && filteredItems.length !== fileItemCount
+            ? t('itemManager.status.totalFiltered', {
+                count: filteredItems.length,
+                total: fileItemCount,
+              })
+            : t('itemManager.status.total', { count: filteredItems.length })}
         </span>
         {invalidCount > 0 && (
           <span className="invalid-count">
@@ -600,6 +703,16 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         dataFileLabels={dataFileLabels}
         initialTabIndex={selectedTabIndex}
       />
+
+      {csvImport && (
+        <AdminItemCsvImportModal
+          fileName={csvImport.fileName}
+          plan={csvImport.plan}
+          getFileLabel={getFileLabel}
+          onConfirm={confirmCsvImport}
+          onCancel={() => setCsvImport(null)}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}

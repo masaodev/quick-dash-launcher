@@ -738,7 +738,8 @@
 }
 
 .raw-items-table .checkbox-column {
-  width: 40px;
+  /* 幅は adminItemColumns.ts の CHECKBOX_COLUMN_WIDTH を表の style から受け取る */
+  width: var(--checkbox-column-width);
   padding: 0 4px !important;
   text-align: center;
   vertical-align: middle;
@@ -827,12 +828,30 @@
   color: var(--text-muted);
 }
 
-.raw-items-table .memo-column .memo-edit-textarea {
+/* メモの編集（セルの上に重ねる。下にキー操作の案内） */
+.raw-items-table .memo-column .memo-edit-overlay {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 50;
   width: max(100%, 320px);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.raw-items-table .memo-column .memo-edit-hint {
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raw-items-table .memo-column .memo-edit-textarea {
+  display: block;
+  width: 100%;
   height: 120px;
   padding: var(--spacing-xs) var(--spacing-sm);
   font-family: inherit;
@@ -840,7 +859,6 @@
   border: var(--border-normal);
   border-color: var(--color-primary);
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
   resize: vertical;
   box-sizing: border-box;
 }
@@ -1054,8 +1072,9 @@
 /* 「✏️ 詳細編集」の文字分だけ操作列を広げる（🗑 が隣の列に食い込まないように） */
 .raw-items-table th.actions-column,
 .raw-items-table td.actions-column {
-  width: 64px;
-  min-width: 64px;
+  /* 幅は adminItemColumns.ts の ACTIONS_COLUMN_WIDTH を表の style から受け取る */
+  width: var(--actions-column-width);
+  min-width: var(--actions-column-width);
   text-align: left;
 }
 
@@ -1276,6 +1295,185 @@
   z-index: var(--z-dropdown);
 }
 
+/* 位置は usePopoverPosition が画面の内側に収める。高さも画面いっぱいまで使い、それを超えたらスクロール */
 .admin-popover .dropdown-menu {
   position: static;
+  max-height: calc(100vh - 2 * var(--spacing-sm));
+}
+
+/* 取込元列（手動か、自動取込ルールの名前） */
+.raw-items-table .source-column {
+  width: 110px;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  padding: 1px 6px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raw-items-table .source-column .source-manual {
+  color: var(--text-muted);
+}
+
+/* リンク列（「リンク切れを確認」の結果） */
+.raw-items-table .link-column {
+  width: 110px;
+  font-size: var(--font-size-sm);
+  padding: 1px 6px !important;
+  white-space: nowrap;
+}
+
+.raw-items-table .link-column .link-exists {
+  color: var(--color-success);
+}
+
+.raw-items-table .link-column .link-unknown {
+  color: var(--text-muted);
+}
+
+/* 見出しの ▾（列の絞り込みと並べ替え） */
+.raw-items-table th .column-filter-button {
+  margin-left: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.raw-items-table th .column-filter-button:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--color-gray-300);
+}
+
+.raw-items-table th .column-filter-button.is-active {
+  color: var(--color-white);
+  background-color: var(--color-primary);
+}
+
+.admin-popover .column-filter-menu {
+  min-width: 240px;
+}
+
+.admin-popover .column-filter-text {
+  padding: var(--spacing-xs) var(--spacing-lg);
+}
+
+.admin-popover .column-filter-input {
+  width: 100%;
+  height: var(--input-height-sm);
+  padding: 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+}
+
+.admin-popover .column-filter-note {
+  white-space: normal;
+  max-width: 260px;
+}
+
+/* チップが 2 つ以上のときの「すべて外す」 */
+.edit-mode-filter-chips .filter-chips-clear-all {
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* CSV の取り込みの確認 */
+.csv-import-modal {
+  width: min(720px, 90vw);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  box-sizing: border-box;
+}
+
+.csv-import-modal h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.csv-import-modal .csv-import-file {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.csv-import-modal .csv-import-summary {
+  font-weight: 600;
+}
+
+.csv-import-modal .csv-import-sections {
+  overflow-y: auto;
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.csv-import-modal .csv-import-sections h3 {
+  margin: var(--spacing-sm) 0 var(--spacing-xs);
+  font-size: var(--font-size-base);
+}
+
+.csv-import-modal .csv-import-sections ul {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+}
+
+.csv-import-modal .csv-import-change {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.csv-import-modal .csv-import-dest {
+  margin-left: var(--spacing-sm);
+  color: var(--text-muted);
+}
+
+.csv-import-modal .csv-import-errors {
+  color: var(--text-warning);
+}
+
+.csv-import-modal .csv-import-note {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* 最終起動・起動回数の列 */
+.raw-items-table .last-launched-column {
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+/* 日時のセルは幅に収まらなければ … で切る（見出しは ▾ を隠さないよう切らない） */
+.raw-items-table td.last-launched-column,
+.raw-items-table td.updated-at-column {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raw-items-table td.last-launched-column,
+.raw-items-table td.launch-count-column {
+  color: var(--text-muted);
+}
+
+.raw-items-table .launch-count-column {
+  font-size: var(--font-size-sm);
+  text-align: right;
+  white-space: nowrap;
 }

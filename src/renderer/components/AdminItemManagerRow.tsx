@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { JsonItem } from '@common/types';
 import { isJsonLauncherItem } from '@common/types';
-import type { EditableJsonItem } from '@common/types/editableItem';
+import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isPathlessItem } from '@common/utils/itemWindowConversion';
 
@@ -33,6 +33,11 @@ export interface AdminItemManagerRowProps {
   autoImportRuleName?: string;
   /** パスが実在しない（リンク切れ）か */
   pathMissing: boolean;
+  /** 「リンク切れを確認」の結果（確認していない・対象外なら undefined） */
+  linkStatus?: PathExistenceStatus;
+  /** 最後に起動した日時と回数（記録が無ければ undefined） */
+  lastLaunchedAt?: number;
+  launchCount?: number;
   /** この行で編集中のセル。編集中でなければ null */
   editingColumn: 'name' | 'path' | 'memo' | null;
   /** 編集中の入力値（この行が編集中のときだけ意味を持つ） */
@@ -78,6 +83,9 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   iconData,
   autoImportRuleName,
   pathMissing,
+  linkStatus,
+  lastLaunchedAt,
+  launchCount,
   editingColumn,
   editingValue,
   measureRef,
@@ -100,6 +108,9 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   const { t } = useTranslation();
   const jsonItem = item.item;
   const itemKey = getItemKey(item);
+  // 取込元・リンクの列を出しているときは、名前・パスのセルに同じ印を重ねない
+  const showsSourceColumn = columns.includes('source');
+  const showsLinkColumn = columns.includes('link');
 
   const renderTypeCell = () => (
     <span className="type-cell">
@@ -178,7 +189,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
         }
       >
         {jsonItem.displayName || t('itemManager.noName')}
-        {isJsonLauncherItem(jsonItem) && jsonItem.autoImportRuleId && (
+        {!showsSourceColumn && isJsonLauncherItem(jsonItem) && jsonItem.autoImportRuleId && (
           <span
             className="auto-import-label"
             title={autoImportRuleName ?? t('itemManager.row.unknownRule')}
@@ -192,11 +203,12 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
 
   const renderPathCell = () => {
     const text = describePathAndArgs(jsonItem);
-    const missingBadge = pathMissing ? (
-      <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
-        {t('itemManager.row.pathMissing')}
-      </span>
-    ) : null;
+    const missingBadge =
+      pathMissing && !showsLinkColumn ? (
+        <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
+          {t('itemManager.row.pathMissing')}
+        </span>
+      ) : null;
 
     if (editingColumn === 'path') {
       return (
@@ -253,23 +265,69 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     );
   };
 
+  const renderSourceCell = () => {
+    if (!isJsonLauncherItem(jsonItem) || !jsonItem.autoImportRuleId) {
+      return <span className="source-manual">{t('itemManager.row.sourceManual')}</span>;
+    }
+    const ruleName = autoImportRuleName ?? t('itemManager.row.unknownRule');
+    return (
+      <span
+        className="auto-import-label"
+        title={t('itemManager.row.sourceAutoTitle', { rule: ruleName })}
+      >
+        {ruleName}
+      </span>
+    );
+  };
+
+  const renderLinkCell = () => {
+    if (linkStatus === 'missing') {
+      return (
+        <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
+          {t('itemManager.row.pathMissing')}
+        </span>
+      );
+    }
+    if (linkStatus === 'exists') {
+      return (
+        <span className="link-exists" title={t('itemManager.row.linkExistsTitle')}>
+          ✓
+        </span>
+      );
+    }
+    if (linkStatus === 'unknown') {
+      return (
+        <span className="link-unknown" title={t('itemManager.row.linkUnknownTitle')}>
+          ?
+        </span>
+      );
+    }
+    return null;
+  };
+
   const renderMemoCell = () => {
     if (editingColumn === 'memo') {
       return (
-        <textarea
-          value={editingValue}
-          onChange={(e) => onEditingValueChange(e.target.value)}
-          onBlur={() => onCommitMemo(item)}
-          onKeyDown={(e) => onMemoKeyDown(e, item)}
-          onFocus={(e) => {
-            // 続きを書けるように、カーソルを末尾に置く
-            const end = e.currentTarget.value.length;
-            e.currentTarget.setSelectionRange(end, end);
-          }}
-          className="memo-edit-textarea"
-          placeholder={t('itemManager.row.memoPlaceholder')}
-          autoFocus
-        />
+        <div className="memo-edit-overlay">
+          <textarea
+            value={editingValue}
+            onChange={(e) => onEditingValueChange(e.target.value)}
+            onBlur={() => onCommitMemo(item)}
+            onKeyDown={(e) => onMemoKeyDown(e, item)}
+            onFocus={(e) => {
+              // 続きを書けるように、カーソルを末尾に置く
+              const end = e.currentTarget.value.length;
+              e.currentTarget.setSelectionRange(end, end);
+            }}
+            className="memo-edit-textarea"
+            placeholder={t('itemManager.row.memoPlaceholder')}
+            autoFocus
+          />
+          {/* 押すと textarea のフォーカスが外れて確定してしまうので、押下を止める */}
+          <div className="memo-edit-hint" onMouseDown={(e) => e.preventDefault()}>
+            {t('itemManager.row.memoEditHint')}
+          </div>
+        </div>
       );
     }
 
@@ -363,9 +421,41 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
                 {renderMemoCell()}
               </td>
             );
+          case 'source':
+            return (
+              <td key={column} className="source-column">
+                {renderSourceCell()}
+              </td>
+            );
+          case 'link':
+            return (
+              <td key={column} className="link-column">
+                {renderLinkCell()}
+              </td>
+            );
+          case 'lastLaunched':
+            return (
+              <td
+                key={column}
+                className="last-launched-column"
+                title={lastLaunchedAt ? formatUpdatedAt(lastLaunchedAt) : undefined}
+              >
+                {lastLaunchedAt ? formatUpdatedAt(lastLaunchedAt) : '-'}
+              </td>
+            );
+          case 'launchCount':
+            return (
+              <td key={column} className="launch-count-column">
+                {launchCount ?? '-'}
+              </td>
+            );
           case 'updatedAt':
             return (
-              <td key={column} className="updated-at-column">
+              <td
+                key={column}
+                className="updated-at-column"
+                title={jsonItem.updatedAt ? formatUpdatedAt(jsonItem.updatedAt) : undefined}
+              >
                 {formatUpdatedAt(jsonItem.updatedAt)}
               </td>
             );

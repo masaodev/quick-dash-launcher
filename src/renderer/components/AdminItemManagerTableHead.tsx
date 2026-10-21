@@ -21,6 +21,10 @@ interface AdminItemManagerTableHeadProps {
   ) => void;
   /** 見出しの右クリック（列のメニューを開く） */
   onHeaderContextMenu: (e: React.MouseEvent) => void;
+  /** 絞り込みがかかっている列（▾ を目立たせる） */
+  filteredColumns: ReadonlySet<string>;
+  /** 見出しの ▾ を押したとき。rect は見出しの位置（メニューを下に出す） */
+  onOpenFilter: (id: AdminItemColumnId, rect: DOMRect) => void;
 }
 
 /** アイテム管理の一覧の見出し行（全選択・並べ替え・列の幅変更・列のメニュー） */
@@ -33,6 +37,8 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
   onSelectAll,
   onResizeStart,
   onHeaderContextMenu,
+  filteredColumns,
+  onOpenFilter,
 }) => {
   const { t } = useTranslation();
   const headerRefs = useRef(new Map<AdminItemColumnId, HTMLTableCellElement | null>());
@@ -85,6 +91,24 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
             {label}
             {sortColumn && renderSortIndicator(sortColumn)}
           </span>
+        )}
+        {def.filterable && (
+          <button
+            type="button"
+            className={`column-filter-button${filteredColumns.has(def.id) ? ' is-active' : ''}`}
+            aria-label={t('itemManager.columnFilter.open', { column: label || def.id })}
+            title={t('itemManager.columnFilter.open', { column: label || def.id })}
+            aria-haspopup="menu"
+            // 見出しのクリック（並べ替え）・キー操作に届かないようにする
+            onClick={(e) => {
+              e.stopPropagation();
+              const th = headerRefs.current.get(def.id);
+              if (th) onOpenFilter(def.id, th.getBoundingClientRect());
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            ▾
+          </button>
         )}
         {def.minWidth !== undefined && (
           <div

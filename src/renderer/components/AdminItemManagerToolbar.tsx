@@ -1,18 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { BookmarkAutoImportRule } from '@common/types';
 
 import { useDropdown } from '../hooks/useDropdown';
-import type { AutoImportFilter } from '../utils/editableItemOperations';
+import { describeColumnFilter } from '../utils/adminItemFilterLabels';
+import {
+  activeFilterColumns,
+  type ColumnFilters,
+  type FilterableColumnId,
+} from '../utils/adminItemFilters';
 
 import { Button } from './ui/Button';
-
-/** 取込元の基本の絞り込み（文言は辞書の autoImportFilter） */
-const BASIC_FILTERS = [
-  { value: 'all', label: 'all' },
-  { value: 'auto-import-only', label: 'autoImportOnly' },
-  { value: 'manual-only', label: 'manualOnly' },
-] as const;
 
 interface AdminItemManagerToolbarProps {
   /** 追加: ボタン本体と「▼」の「一覧に行を追加」 */
@@ -21,29 +18,28 @@ interface AdminItemManagerToolbarProps {
   onAddFolder: () => void;
   onOpenBookmarkImport: () => void;
   onOpenAppImport: () => void;
+  /** 追加「▼」: CSV から取り込む */
+  onImportCsv: () => void;
   /** 追加「▼」: 設定「ブックマーク自動取込」を開く */
   onOpenAutoImportSettings?: () => void;
 
   searchQuery: string;
   onSearchChange: (query: string) => void;
 
-  /** 絞り込み: 取込元（自動取込ルール） */
-  autoImportFilter: AutoImportFilter;
-  onAutoImportFilterChange: (filter: AutoImportFilter) => void;
-  /** 選択中のデータファイルを取込先とするルール */
-  rules: BookmarkAutoImportRule[];
-  /** ルール ID → ルール名（別ファイルのルールを選んだ状態でも名前を出すため全ルール分） */
+  /** 見出しの ▾ でかけた絞り込み（ツールバーの下にチップで並べる） */
+  filters: ColumnFilters;
+  onClearColumnFilter: (column: FilterableColumnId) => void;
+  onClearAllFilters: () => void;
+  /** ルール ID → ルール名（取込元のチップの文言） */
   ruleNames: Map<string, string>;
-  /** 絞り込み: リンク切れだけ表示（確認した後だけ選べる） */
-  missingOnly: boolean;
-  missingOnlyAvailable: boolean;
-  onToggleMissingOnly: () => void;
 
   /** 整理: リンク切れの確認（押したときだけ確認する） */
   onCheckMissingPaths: () => void;
   checkingMissingPaths: boolean;
   /** 整理: 重複を削除 */
   onDedupe: () => void;
+  /** 整理: すべてのタブのアイテムを CSV に書き出す */
+  onExportCsv: () => void;
 
   /** 表示中のうち選択しているアイテムの数。1 件以上なら選択中の操作に切り替える */
   selectedCount: number;
@@ -61,28 +57,14 @@ interface AdminItemManagerToolbarProps {
 /**
  * アイテム管理のツールバー（1 段）
  *
- * 左＝追加・検索・絞り込み・整理（行を選んでいる間は選択中の操作）、右＝保存。
- * 絞り込みがかかっている間は、その条件を下の段に出して ✕ で外せるようにする。
+ * 左＝追加・検索・整理（行を選んでいる間は選択中の操作）、右＝保存。
+ * 絞り込みは一覧の見出しの ▾ でかけ、かかっている間はその条件を下の段に出して ✕ で外せるようにする。
  * タブ・データファイルの選択は AdminItemManagerTabBar
  */
 const AdminItemManagerToolbar: React.FC<AdminItemManagerToolbarProps> = (props) => {
   const { t } = useTranslation();
-  const {
-    autoImportFilter,
-    onAutoImportFilterChange,
-    ruleNames,
-    missingOnly,
-    onToggleMissingOnly,
-    selectedCount,
-  } = props;
-
-  const sourceFilterLabel = (() => {
-    const basic = BASIC_FILTERS.find((item) => item.value === autoImportFilter);
-    return basic
-      ? t(`autoImportFilter.${basic.label}`)
-      : (ruleNames.get(autoImportFilter) ?? t('autoImportFilter.unknownRule'));
-  })();
-  const activeFilterCount = (autoImportFilter !== 'all' ? 1 : 0) + (missingOnly ? 1 : 0);
+  const { filters, onClearColumnFilter, onClearAllFilters, ruleNames, selectedCount } = props;
+  const activeColumns = activeFilterColumns(filters);
 
   return (
     <>
@@ -93,25 +75,24 @@ const AdminItemManagerToolbar: React.FC<AdminItemManagerToolbarProps> = (props) 
           <div className="toolbar-left">
             <AddSplitButton {...props} />
             <SearchBox {...props} />
-            <FilterDropdown {...props} activeCount={activeFilterCount} />
             <OrganizeDropdown {...props} />
           </div>
         )}
         <SaveArea {...props} />
       </div>
-      {activeFilterCount > 0 && (
+      {activeColumns.length > 0 && (
         <div className="edit-mode-filter-chips" data-testid="item-filter-chips">
-          {autoImportFilter !== 'all' && (
+          {activeColumns.map((column) => (
             <FilterChip
-              label={t('autoImportFilter.label', { filter: sourceFilterLabel })}
-              onRemove={() => onAutoImportFilterChange('all')}
+              key={column}
+              label={describeColumnFilter(column, filters, ruleNames)}
+              onRemove={() => onClearColumnFilter(column)}
             />
-          )}
-          {missingOnly && (
-            <FilterChip
-              label={t('itemManager.toolbar.missingOnlyChip')}
-              onRemove={onToggleMissingOnly}
-            />
+          ))}
+          {activeColumns.length > 1 && (
+            <button type="button" className="filter-chips-clear-all" onClick={onClearAllFilters}>
+              {t('itemManager.columnFilter.clearAll')}
+            </button>
           )}
         </div>
       )}
@@ -125,6 +106,7 @@ const AddSplitButton: React.FC<AdminItemManagerToolbarProps> = ({
   onAddFolder,
   onOpenBookmarkImport,
   onOpenAppImport,
+  onImportCsv,
   onOpenAutoImportSettings,
 }) => {
   const { t } = useTranslation();
@@ -167,6 +149,13 @@ const AddSplitButton: React.FC<AdminItemManagerToolbarProps> = ({
           </button>
           <button className="dropdown-item" onClick={choose(onOpenAppImport)}>
             {t('itemManager.header.addApps')}
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={choose(onImportCsv)}
+            title={t('itemManager.toolbar.importCsvTitle')}
+          >
+            {t('itemManager.toolbar.importCsv')}
           </button>
           {onOpenAutoImportSettings && (
             <>
@@ -213,87 +202,12 @@ const SearchBox: React.FC<AdminItemManagerToolbarProps> = ({ searchQuery, onSear
   );
 };
 
-/** 「絞り込み ▼」: 取込元とリンク切れだけ表示 */
-const FilterDropdown: React.FC<AdminItemManagerToolbarProps & { activeCount: number }> = ({
-  autoImportFilter,
-  onAutoImportFilterChange,
-  rules,
-  missingOnly,
-  missingOnlyAvailable,
-  onToggleMissingOnly,
-  activeCount,
-}) => {
-  const { t } = useTranslation();
-  const dropdown = useDropdown();
-  const select = (value: AutoImportFilter) => {
-    onAutoImportFilterChange(value);
-    dropdown.close();
-  };
-
-  return (
-    <div className="toolbar-dropdown filter-dropdown" ref={dropdown.ref}>
-      <button
-        className={`dropdown-trigger-btn${activeCount > 0 ? ' is-active' : ''}`}
-        onClick={dropdown.toggle}
-        title={t('itemManager.toolbar.filterTitle')}
-        aria-expanded={dropdown.isOpen}
-      >
-        <span className="dropdown-trigger-text">
-          {activeCount > 0
-            ? t('itemManager.toolbar.filterActive', { count: activeCount })
-            : t('itemManager.toolbar.filter')}
-        </span>
-        <span className="dropdown-trigger-icon">{dropdown.isOpen ? '▲' : '▼'}</span>
-      </button>
-      {dropdown.isOpen && (
-        <div className="dropdown-menu" role="menu">
-          <div className="dropdown-section-label">{t('itemManager.toolbar.filterSource')}</div>
-          {BASIC_FILTERS.map(({ value, label }) => (
-            <button
-              key={value}
-              className={`dropdown-item ${autoImportFilter === value ? 'selected' : ''}`}
-              onClick={() => select(value)}
-            >
-              {t(`autoImportFilter.${label}`)}
-            </button>
-          ))}
-          {rules.map((rule) => (
-            <button
-              key={rule.id}
-              className={`dropdown-item ${autoImportFilter === rule.id ? 'selected' : ''}`}
-              onClick={() => select(rule.id)}
-            >
-              {rule.name}
-            </button>
-          ))}
-          <div className="dropdown-separator" />
-          <div className="dropdown-section-label">{t('itemManager.toolbar.filterShow')}</div>
-          <button
-            className={`dropdown-item ${missingOnly ? 'selected' : ''}`}
-            disabled={!missingOnlyAvailable}
-            onClick={() => {
-              dropdown.close();
-              onToggleMissingOnly();
-            }}
-            title={
-              missingOnlyAvailable
-                ? t('itemManager.header.missingOnlyTitle')
-                : t('itemManager.header.missingOnlyUnavailable')
-            }
-          >
-            {missingOnly ? '☑' : '☐'} {t('itemManager.header.missingOnly')}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
 /** 「整理 ▼」: 一覧の点検・片付け */
 const OrganizeDropdown: React.FC<AdminItemManagerToolbarProps> = ({
   onCheckMissingPaths,
   checkingMissingPaths,
   onDedupe,
+  onExportCsv,
 }) => {
   const { t } = useTranslation();
   const dropdown = useDropdown();
@@ -335,6 +249,17 @@ const OrganizeDropdown: React.FC<AdminItemManagerToolbarProps> = ({
           >
             {t('itemManager.header.dedupe')}
             <small className="dropdown-item-desc">{t('itemManager.header.dedupeDesc')}</small>
+          </button>
+          <div className="dropdown-separator" />
+          <button
+            className="dropdown-item"
+            onClick={() => {
+              dropdown.close();
+              onExportCsv();
+            }}
+          >
+            {t('itemManager.header.exportCsv')}
+            <small className="dropdown-item-desc">{t('itemManager.header.exportCsvDesc')}</small>
           </button>
         </div>
       )}

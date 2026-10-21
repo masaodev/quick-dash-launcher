@@ -151,7 +151,9 @@ const AdminApp: React.FC = () => {
   async function handleSettingsSave(newSettings: AppSettings): Promise<void> {
     try {
       const isHotkeyChanged = settings && settings.hotkey !== newSettings.hotkey;
-      await window.electronAPI.setMultipleSettings(newSettings);
+      // 列の表示と幅はアイテム管理がその場で保存するので、開いたときの古い値で書き戻さない
+      const { adminItemColumns: _columns, ...settingsToSave } = newSettings;
+      await window.electronAPI.setMultipleSettings(settingsToSave);
 
       if (isHotkeyChanged) {
         const success = await window.electronAPI.changeHotkey(newSettings.hotkey);
