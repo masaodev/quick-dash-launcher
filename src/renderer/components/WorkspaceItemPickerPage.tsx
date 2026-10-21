@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppItem, ClipboardItem, LauncherItem, SetItem, WorkspaceItem } from '@common/types';
 import { isClipboardItem, isLauncherItem, isSetItem } from '@common/types/guards';
+import { samePathKey } from '@common/utils/workspaceRefs';
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
@@ -36,17 +37,14 @@ interface PickerEntry {
 }
 
 /**
- * 「追加済み」とみなすキー。ワークスペースのアイテムは元のアイテムを指す情報を持たないので、
- * パスを持つアイテムはパスと引数で比べる（種別は追加のときに判定し直すことがあるので比べない）。
- * パスの無いアイテム（セット・クリップボード・パスの無い単一アイテム）は比べない
+ * 「追加済み」とみなすキー。参照は指すアイテムの id で比べる（refIds）。コピーは元のアイテムを指す情報を
+ * 持たないので、パスを持つアイテムはパスと引数で比べる（種別は追加のときに判定し直すことがあるので比べない）。
+ * パスの無いコピー（セット・クリップボード・パスの無い単一アイテム）は比べない
  */
-function contentKey(path: string, args: string | undefined): string | null {
-  if (!path) return null;
-  return [path.toLowerCase(), args ?? ''].join('\n');
-}
+const contentKey = samePathKey;
 
 function workspaceItemKey(item: WorkspaceItem): string | null {
-  return item.type === 'item' ? contentKey(item.path, item.args) : null;
+  return item.type === 'item' && !item.ref ? contentKey(item.path, item.args) : null;
 }
 
 function appItemKey(item: PickableItem): string | null {
@@ -73,6 +71,8 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
   const [addedKeys, setAddedKeys] = useState<ReadonlySet<string>>(new Set());
   const [notFound, setNotFound] = useState(false);
   const [busy, setBusy] = useState(false);
+  // 既定は参照で追加する。チェックするとコピーで追加する
+  const [asCopy, setAsCopy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,12 +102,11 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
           file ??
           '';
 
+        const groupItems = workspaceItems.filter((item) => item.groupId === groupId);
         const inGroup = new Set(
-          workspaceItems
-            .filter((item) => item.groupId === groupId)
-            .map(workspaceItemKey)
-            .filter((key): key is string => key !== null)
+          groupItems.map(workspaceItemKey).filter((key): key is string => key !== null)
         );
+        const refIds = new Set(groupItems.flatMap((item) => (item.ref ? [item.ref.itemId] : [])));
         const added = new Set<string>();
         const list: PickerEntry[] = [];
         allItems.forEach((item, index) => {
@@ -115,7 +114,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
           // フォルダ取込の展開分は id を持たないので、並び順で一意にする
           const key = item.id ?? `index:${index}`;
           const itemKey = appItemKey(item);
-          if (itemKey && inGroup.has(itemKey)) added.add(key);
+          if ((itemKey && inGroup.has(itemKey)) || (item.id && refIds.has(item.id))) added.add(key);
           list.push({
             item,
             row: {
@@ -157,7 +156,12 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
       try {
         await expandDestinationGroup(destination);
         for (const item of items) {
-          await window.electronAPI.workspaceAPI.addItem(item, group.id, group.workspaceId);
+          await window.electronAPI.workspaceAPI.addItem(
+            item,
+            group.id,
+            group.workspaceId,
+            asCopy ? { copy: true } : undefined
+          );
         }
         const single = items.length === 1 ? items[0] : undefined;
         await window.electronAPI.showToastWindow({
@@ -176,7 +180,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
         setBusy(false);
       }
     },
-    [destination, entries, t]
+    [asCopy, destination, entries, t]
   );
 
   if (notFound) {
@@ -205,6 +209,12 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
       busy={busy}
       onClose={close}
       onAdd={(rows) => void add(rows)}
+      footerExtra={
+        <label>
+          <input type="checkbox" checked={asCopy} onChange={(e) => setAsCopy(e.target.checked)} />
+          {t('workspace.picker.addAsCopy')}
+        </label>
+      }
     />
   );
 };

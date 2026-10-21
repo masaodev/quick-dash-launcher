@@ -14,6 +14,7 @@ import type {
   WindowInfo,
   VirtualDesktopInfo,
   IconFetchErrorRecord,
+  WorkspaceItem,
 } from '@common/types';
 import { isWindowInfo, isClipboardItem, isSetItem, isLauncherItem } from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
@@ -126,11 +127,27 @@ function App(): React.ReactElement {
   activeTabRef.current = activeTab;
   const showKeyboardHints = useShowKeyboardHints();
 
+  // ワークスペースからドラッグされたアイテム。参照はもうメインウィンドウにあるので、登録画面を開かずに知らせる
+  const handleWorkspaceItemDropped = useCallback(
+    (item: WorkspaceItem) => {
+      if (item.type === 'ref') {
+        showWarning(t('workspace.ref.cannotRegisterMissing', { name: item.displayName }));
+        return;
+      }
+      if (item.ref) {
+        showWarning(t('workspace.ref.alreadyInMain', { name: item.displayName }));
+        return;
+      }
+      void openWithWorkspaceItem(item);
+    },
+    [openWithWorkspaceItem, showWarning, t]
+  );
+
   const { isDraggingOver, dragOverKind } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
     showErrorAlert,
     isRegisterWindowOpen,
-    openWithWorkspaceItem
+    handleWorkspaceItemDropped
   );
 
   const loadIconFetchErrors = useCallback(async () => {

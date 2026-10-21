@@ -254,8 +254,8 @@ const electronAPI: ElectronAPI = {
     reorderWorkspaces: (ids) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_WORKSPACES, ids),
     // アイテム管理
     loadItems: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS),
-    addItem: (item, groupId, workspaceId) =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_ITEM, item, groupId, workspaceId),
+    addItem: (item, groupId, workspaceId, options) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_ADD_ITEM, item, groupId, workspaceId, options),
     createItem: (body, groupId, workspaceId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CREATE_ITEM, body, groupId, workspaceId),
     addItemsFromPaths: (filePaths, groupId, workspaceId) =>
@@ -272,6 +272,16 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_ITEM, id, updates),
     launchItem: (item, options) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM, item, options),
+    // 参照アイテム
+    convertToCopy: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CONVERT_TO_COPY, id),
+    linkToMain: (id, mainItemId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LINK_TO_MAIN, id, mainItemId),
+    findLinkCandidates: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, id),
+    previewLinkCopies: (workspaceId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_PREVIEW_LINK_COPIES, workspaceId),
+    applyLinkCopies: (ids) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, ids),
+    countRefs: (itemIds) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_COUNT_REFS, itemIds),
+    remapRefs: (idMap) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMAP_REFS, idMap),
     // グループ管理
     loadGroups: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
     createGroup: (name, color, parentGroupId, workspaceId) =>
@@ -321,6 +331,9 @@ const electronAPI: ElectronAPI = {
     openItemEditor: (itemId) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, itemId),
     openItemPicker: (groupId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_PICKER, groupId),
+    openLinkPicker: (itemId) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_LINK_PICKER, itemId),
+    openLinkCopies: (workspaceId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_LINK_COPIES, workspaceId),
     openNewItemEditor: (groupId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_NEW_ITEM_EDITOR, groupId),
     openConfirm: (request) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_OPEN_CONFIRM, request),
@@ -369,6 +382,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, callback),
   onLauncherMenuAddToWorkspace: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, callback),
+  onLauncherMenuAddCopyToWorkspace: (callback) =>
+    createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE, callback),
   onLauncherMenuCopyPath: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH, callback),
   onLauncherMenuCopyParentPath: (callback) =>

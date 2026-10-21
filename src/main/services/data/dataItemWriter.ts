@@ -125,6 +125,36 @@ export async function deleteItemsById(configFolder: string, ids: string[]): Prom
   }
 }
 
+/**
+ * ID でアイテムのメモだけを書き換える（ワークスペースのコピーを参照に変えるとき、コピーのメモを移す）
+ *
+ * @param options.onlyIfEmpty 今のメモが空のときだけ書く（ファイルの今の内容で決める）
+ * @returns 書いたら true
+ * @throws アイテムが見つからない場合、または書き込みに失敗した場合
+ */
+export function updateItemMemoById(
+  configFolder: string,
+  id: string,
+  memo: string,
+  options: { onlyIfEmpty?: boolean } = {}
+): boolean {
+  const { files, corrupted } = readDataFilesForSearch(configFolder);
+  for (const entry of files) {
+    const item = entry.jsonData.items.find((i) => i.id === id);
+    if (item) {
+      if (options.onlyIfEmpty && item.memo?.trim()) return false;
+      item.memo = memo || undefined;
+      item.updatedAt = Date.now();
+      writeOrThrow(entry);
+      return true;
+    }
+  }
+  if (corrupted.length > 0) {
+    throw new Error(mainI18n.t('dataErrors.saveBlockedCorrupted', { files: corrupted.join(', ') }));
+  }
+  throw new Error(mainI18n.t('dataErrors.itemNotFound', { id }));
+}
+
 /** IDでdirアイテムを更新する */
 export function updateDirItemById(
   configFolder: string,

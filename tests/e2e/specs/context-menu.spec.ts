@@ -283,7 +283,11 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
 
   test('パスの無い単一アイテムにはパス系の項目が出ない', async ({ electronApp, mainWindow }) => {
     const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eパスの無いアイテム');
-    expect(labels).toEqual(['✏️ 編集', '⭐ ワークスペースに追加']);
+    expect(labels).toEqual([
+      '✏️ 編集',
+      '⭐ ワークスペースに追加',
+      '📄 ワークスペースにコピーを追加',
+    ]);
   });
 
   test('置き場所のあるセットには「ウィンドウ位置を更新」が出て、パス系の項目は出ない', async ({
@@ -291,6 +295,11 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
     mainWindow,
   }) => {
     const labels = await captureMenuLabels(electronApp, mainWindow, 'E2Eセット');
-    expect(labels).toEqual(['✏️ 編集', '📍 ウィンドウ位置を更新', '⭐ ワークスペースに追加']);
+    expect(labels).toEqual([
+      '✏️ 編集',
+      '📍 ウィンドウ位置を更新',
+      '⭐ ワークスペースに追加',
+      '📄 ワークスペースにコピーを追加',
+    ]);
   });
 });

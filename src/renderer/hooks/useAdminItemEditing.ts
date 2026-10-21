@@ -26,6 +26,7 @@ import {
   type InlineItemType,
   type RebaseConflict,
 } from '../utils/editableItemOperations';
+import { logError } from '../utils/debug';
 import { applyCsvImportPlan, type CsvImportPlan } from '../utils/itemCsv';
 
 /** ディスクの内容が外部で変わり、未保存の変更を載せ直したときの結果 */
@@ -259,12 +260,19 @@ export function useAdminItemEditing(
     []
   );
 
+  /**
+   * 重複を除いたときの「消した id → 残す id」。ワークスペースの参照は、保存できたときに付け替える
+   * （保存せずに戻したら付け替えない）
+   */
+  const pendingRelinkRef = useRef(new Map<string, string>());
+
   /** 指定データファイル内の重複を除き、除いた件数を返す */
   const dedupeFile = useCallback(
     (sourceFile: string): number => {
-      const { removed } = dedupeFileItems(stateRef.current.workingItems, sourceFile);
+      const { removed, relinked } = dedupeFileItems(stateRef.current.workingItems, sourceFile);
       if (removed > 0) {
         updateWorking((working) => dedupeFileItems(working, sourceFile).items);
+        for (const [from, to] of relinked) pendingRelinkRef.current.set(from, to);
       }
       return removed;
     },
@@ -285,12 +293,22 @@ export function useAdminItemEditing(
     const ok = await onSaveRef.current(itemsToSave);
     if (ok) {
       dispatch({ type: 'saved', items: itemsToSave });
+      const relink = pendingRelinkRef.current;
+      if (relink.size > 0) {
+        pendingRelinkRef.current = new Map();
+        await window.electronAPI.workspaceAPI
+          .remapRefs(Object.fromEntries(relink))
+          .catch((error) => logError('ワークスペースの参照を付け替えられませんでした:', error));
+      }
     }
     return ok;
   }, []);
 
   /** 未保存の変更（追加・削除・編集すべて）を捨てて、ディスクの内容に戻す */
-  const discardChanges = useCallback(() => dispatch({ type: 'discard' }), []);
+  const discardChanges = useCallback(() => {
+    pendingRelinkRef.current = new Map();
+    dispatch({ type: 'discard' });
+  }, []);
 
   /**
    * 消すデータファイルのアイテムを作業中の一覧から除く

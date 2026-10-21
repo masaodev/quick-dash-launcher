@@ -182,12 +182,18 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       latestRef.current.onEditItem?.(item);
     });
 
-    const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(async (item) => {
+    // 「ワークスペースに追加」は参照（参照できないものはコピー）、「ワークスペースにコピーを追加」はコピー
+    const addToWorkspace = async (item: AppItem, copy: boolean) => {
       // どの種類でも結果を知らせる。パスは LauncherItem だけ、アイコンは持っていれば添える
       //（ウィンドウ検索の結果は別のイベント onWindowMenuAddToWorkspace で来るが、型の上では来うる）
       const displayName = isWindowInfo(item) ? item.title : item.displayName;
       try {
-        await window.electronAPI.workspaceAPI.addItem(item);
+        await window.electronAPI.workspaceAPI.addItem(
+          item,
+          undefined,
+          undefined,
+          copy ? { copy } : undefined
+        );
         await window.electronAPI.showToastWindow({
           displayName,
           itemType: 'workspaceAdd',
@@ -198,7 +204,15 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         // 失敗は本体側がエラーのトーストで知らせる
         logError('ワークスペースへの追加に失敗しました:', error);
       }
+    };
+    const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace((item) => {
+      void addToWorkspace(item, false);
     });
+    const cleanupAddCopyToWorkspace = window.electronAPI.onLauncherMenuAddCopyToWorkspace(
+      (item) => {
+        void addToWorkspace(item, true);
+      }
+    );
 
     type LauncherItemHandlerKey =
       | 'onCopyPath'
@@ -227,6 +241,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     const cleanups = [
       cleanupEditItem,
       cleanupAddToWorkspace,
+      cleanupAddCopyToWorkspace,
       window.electronAPI.onLauncherMenuCopyPath(createLauncherItemHandler('onCopyPath')),
       window.electronAPI.onLauncherMenuCopyParentPath(
         createLauncherItemHandler('onCopyParentPath')

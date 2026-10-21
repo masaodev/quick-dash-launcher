@@ -12,6 +12,7 @@ import type {
   Workspace,
   WorkspaceItem,
   WorkspaceItemUpdate,
+  WorkspaceRefItem,
   WorkspaceGroupUpdate,
   WorkspaceGroupView,
   ArchivedWorkspaceGroup,
@@ -22,6 +23,7 @@ import logger from '@common/logger';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { FileUtils } from '@common/utils/fileUtils';
 import { isRecord } from '@common/types/guards';
+import { appItemToWorkspaceItemBody } from '@common/utils/workspaceConverters';
 
 import PathManager from '../../config/pathManager.js';
 import { BackupService } from '../backupService.js';
@@ -31,6 +33,13 @@ import type { LoadReportFile } from '../loadReportService.js';
 import { markKnownFolderPath, withFolderMarker } from '../../utils/folderPathProbe.js';
 
 import { WorkspaceFileStore } from './WorkspaceFileStore.js';
+import {
+  countRefsByItemId,
+  getMainItemIndex,
+  resolveWorkspaceItem,
+  resolveWorkspaceItems,
+  type ReferenceableAppItem,
+} from './workspaceRefResolver.js';
 import type { WorkspaceReloadResult } from './WorkspaceFileStore.js';
 import { WorkspaceUiStateStore } from './WorkspaceUiStateStore.js';
 import { WorkspaceItemManager } from './WorkspaceItemManager.js';
@@ -84,6 +93,8 @@ export class WorkspaceService {
   private itemManager: WorkspaceItemManager | null = null;
   private groupManager: WorkspaceGroupManager | null = null;
   private archiveManager: WorkspaceArchiveManager | null = null;
+  /** 前回の syncRefs で解決した参照の中身（変わったときだけ画面に読み直させる） */
+  private lastRefSignature = '[]';
 
   private static instance: WorkspaceService;
   /** 初期化の Promise（並行呼び出しで initializeStore が二重に走らないように 1 本にまとめる） */
@@ -301,7 +312,169 @@ export class WorkspaceService {
 
   public async updateDisplayName(id: string, displayName: string): Promise<void> {
     await this.initializeStore();
-    this.itemManager!.updateDisplayName(id, displayName);
+    const item = this.itemManager!.loadItems().find((i) => i.id === id);
+    // 参照で、メインウィンドウの表示名と同じ名前にしたら、ワークスペースでの表示名を消す（以後はメインに追随する）
+    const mainName =
+      item?.type === 'ref' ? getMainItemIndex()?.byId.get(item.ref.itemId)?.displayName : undefined;
+    this.itemManager!.updateDisplayName(id, mainName === displayName.trim() ? '' : displayName);
+  }
+
+  // --- 参照アイテム ---
+
+  /** ワークスペースの画面・CLI に渡す形（参照をメインウィンドウのアイテムの中身で埋めたもの） */
+  public async loadResolvedItems(): Promise<WorkspaceItem[]> {
+    return resolveWorkspaceItems(await this.loadItems(), getMainItemIndex());
+  }
+
+  /** アーカイブのアイテム（参照を埋めたもの） */
+  public async loadResolvedArchivedItems(): Promise<ArchivedWorkspaceItem[]> {
+    return resolveWorkspaceItems(
+      await this.loadArchivedItems(),
+      getMainItemIndex()
+    ) as ArchivedWorkspaceItem[];
+  }
+
+  /** 1 件を id で引いて、参照を埋めた形で返す（無ければ undefined） */
+  public async findResolvedItem(id: string): Promise<WorkspaceItem | undefined> {
+    const item = (await this.loadItems()).find((i) => i.id === id);
+    return item ? resolveWorkspaceItem(item, getMainItemIndex()) : undefined;
+  }
+
+  /** メインウィンドウのアイテムを指す参照を足す */
+  public async addRef(
+    main: ReferenceableAppItem & { id: string },
+    groupId?: string,
+    workspaceId?: string
+  ): Promise<WorkspaceItem> {
+    await this.initializeStore();
+    const added = this.itemManager!.addRef(main.id, main.displayName, groupId, workspaceId);
+    return resolveWorkspaceItem(added, getMainItemIndex());
+  }
+
+  /**
+   * データファイルを読み直したあと、参照の「最後に見た表示名」を今のメインウィンドウの表示名に合わせる
+   *
+   * @returns 参照の解決した中身が前回から変わったか（変わればワークスペースの画面に再取得を知らせる）
+   */
+  public async syncRefs(): Promise<boolean> {
+    await this.initializeStore();
+    const all = [...this.itemManager!.loadItems(), ...this.archiveManager!.getAllArchivedItems()];
+    const refs = all.filter((item) => item.type === 'ref');
+    const index = getMainItemIndex();
+    // 解決した中身を前回と比べ、変わったときだけ画面に読み直させる（メインの関係ないアイテムの変更では知らせない）
+    const signature = JSON.stringify(resolveWorkspaceItems(refs, index));
+    const changed = signature !== this.lastRefSignature;
+    this.lastRefSignature = signature;
+    if (refs.length === 0 || !index) return changed;
+    const sync = (item: WorkspaceRefItem): boolean => {
+      const name = index.byId.get(item.ref.itemId)?.displayName;
+      if (name === undefined || name === item.ref.lastKnownName) return false;
+      item.ref.lastKnownName = name;
+      return true;
+    };
+    try {
+      this.itemManager!.updateRefs(sync, 'main');
+      this.itemManager!.updateRefs(sync, 'archive');
+    } catch (error) {
+      // 控えの名前は表示の補助なので、書けなくても読み込みは止めない
+      logger.warn({ error }, '参照アイテムの表示名の控えを更新できませんでした');
+    }
+    return changed;
+  }
+
+  /**
+   * ワークスペースのセットの行が指すアイテムを付け替える（コピーを参照に変えたとき、ワークスペースの id →
+   * メインウィンドウのアイテムの id）
+   */
+  public async relinkSetEntries(fromId: string, toId: string): Promise<void> {
+    await this.initializeStore();
+    const items = this.itemManager!.loadItems();
+    let changed = false;
+    for (const item of items) {
+      if (item.type !== 'set' || !item.entries.some((e) => e.itemId === fromId)) continue;
+      item.entries = item.entries.map((e) => (e.itemId === fromId ? { ...e, itemId: toId } : e));
+      changed = true;
+    }
+    if (changed) this.store!.set('items', items);
+  }
+
+  /**
+   * 参照をコピー（中身を持つアイテム）にする。表示名はワークスペースでの表示名があればそれ
+   *
+   * @param main 中身にするメインウィンドウのアイテム（クリップボードは呼び出し側で実データを複製しておく）
+   */
+  public async convertRefToCopy(id: string, main: ReferenceableAppItem): Promise<WorkspaceItem> {
+    await this.initializeStore();
+    const item = this.itemManager!.loadItems().find((i) => i.id === id);
+    if (item?.type !== 'ref') throw new Error(`Not a reference item: ${id}`);
+    const body = appItemToWorkspaceItemBody(main);
+    const marked =
+      body.type === 'item' && 'type' in main && main.type === 'folder' && !body.originalPath
+        ? { ...body, path: markKnownFolderPath(body.path) }
+        : body;
+    return this.itemManager!.replaceWithContent(id, {
+      ...marked,
+      displayName: item.ref.alias ?? main.displayName,
+    });
+  }
+
+  /**
+   * アイテムを、メインウィンドウのアイテムの参照に置き換える（コピー → 参照・参照の指し直し）
+   *
+   * コピーの表示名がメインウィンドウの表示名と違えば、ワークスペースでの表示名として残す。
+   * 参照の指し直しでは、ワークスペースでの表示名をそのまま引き継ぐ
+   */
+  public async replaceWithRef(
+    id: string,
+    main: ReferenceableAppItem & { id: string }
+  ): Promise<WorkspaceItem> {
+    await this.initializeStore();
+    const item = this.itemManager!.loadItems().find((i) => i.id === id);
+    if (!item) throw new Error(`Item not found: ${id}`);
+    const alias =
+      item.type === 'ref'
+        ? item.ref.alias
+        : item.displayName !== main.displayName
+          ? item.displayName
+          : undefined;
+    const replaced = this.itemManager!.replaceWithRef(id, main.id, main.displayName, alias);
+    return resolveWorkspaceItem(replaced, getMainItemIndex());
+  }
+
+  /**
+   * 参照の指す先を付け替える（アイテム管理の「重複を統合」で消えるアイテム → 残すアイテム）
+   *
+   * @returns 付け替えた件数
+   */
+  public async remapRefs(idMap: ReadonlyMap<string, string>): Promise<number> {
+    await this.initializeStore();
+    let count = 0;
+    const remap = (item: WorkspaceRefItem): boolean => {
+      const next = idMap.get(item.ref.itemId);
+      if (next === undefined || next === item.ref.itemId) return false;
+      item.ref.itemId = next;
+      item.refItemId = next;
+      count++;
+      return true;
+    };
+    this.itemManager!.updateRefs(remap, 'main');
+    this.itemManager!.updateRefs(remap, 'archive');
+    return count;
+  }
+
+  /** メインウィンドウのアイテムの id ごとの、参照の件数（ワークスペースとアーカイブの合計。0 件は返さない） */
+  public async countRefs(itemIds: readonly string[]): Promise<Record<string, number>> {
+    await this.initializeStore();
+    const counts = countRefsByItemId([
+      ...this.itemManager!.loadItems(),
+      ...this.archiveManager!.getAllArchivedItems(),
+    ]);
+    const result: Record<string, number> = {};
+    for (const id of itemIds) {
+      const count = counts.get(id);
+      if (count) result[id] = count;
+    }
+    return result;
   }
 
   public async updateItem(id: string, update: WorkspaceItemUpdate): Promise<void> {

@@ -40,6 +40,7 @@ import {
   openWorkspaceNewItemEditor,
 } from '../workspaceItemEditorWindowManager.js';
 import { openWorkspaceItemPicker } from '../workspaceItemPickerWindowManager.js';
+import { openWorkspaceLinkCopies, openWorkspaceLinkPicker } from '../workspaceLinkWindowManager.js';
 import {
   getWorkspaceConfirmRequest,
   openWorkspaceConfirm,
@@ -230,6 +231,13 @@ export function setupWindowHandlers(
   // グループに追加するアイテムを選ぶウィンドウも、送信元を親にした子ウィンドウで開く
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_PICKER, (event, groupId: string) =>
     openWorkspaceItemPicker(event.sender, groupId)
+  );
+  // 参照の指す先を選ぶウィンドウ・一括で参照に変えるウィンドウも、送信元を親にした子ウィンドウで開く
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_LINK_PICKER, (event, itemId: string) =>
+    openWorkspaceLinkPicker(event.sender, itemId)
+  );
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_LINK_COPIES, (event, workspaceId: string) =>
+    openWorkspaceLinkCopies(event.sender, workspaceId)
   );
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_NEW_ITEM_EDITOR, (event, groupId: string) =>
     openWorkspaceNewItemEditor(event.sender, groupId)

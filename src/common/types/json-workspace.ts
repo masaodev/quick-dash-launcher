@@ -167,13 +167,41 @@ export interface JsonWorkspaceSetItem extends JsonWorkspaceItemBase {
 }
 
 /**
+ * 参照アイテム（type: "ref"）
+ * メインウィンドウのアイテム（データファイルのアイテム）を id で指す。中身（パス・メモなど）は持たず、
+ * 表示・起動のたびにメインウィンドウのアイテムの中身を使う
+ */
+export interface JsonWorkspaceRefItem extends Omit<JsonWorkspaceItemBase, 'displayName' | 'memo'> {
+  /** アイテムタイプ */
+  type: 'ref';
+  /**
+   * 指すメインウィンドウのアイテムの id（データファイルの名前空間）
+   * @pattern ^[A-Za-z0-9]{8}$
+   */
+  refItemId: string;
+  /**
+   * ワークスペースでの表示名（オプション）。省略するとメインウィンドウのアイテムの表示名を使う
+   * @minLength 1
+   */
+  displayName?: string;
+  /** 最後に見たメインウィンドウのアイテムの表示名（元が見つからないときの表示に使う。QDL が書く） */
+  lastKnownName?: string;
+}
+
+/**
  * ワークスペースアイテム（Union型）
  */
 export type JsonWorkspaceItem =
-  JsonWorkspaceLauncherItem | JsonWorkspaceClipboardItem | JsonWorkspaceSetItem;
+  | JsonWorkspaceLauncherItem
+  | JsonWorkspaceClipboardItem
+  | JsonWorkspaceSetItem
+  | JsonWorkspaceRefItem;
+
+/** 中身を持つワークスペースアイテム（参照アイテム以外） */
+export type JsonWorkspaceContentItem = Exclude<JsonWorkspaceItem, JsonWorkspaceRefItem>;
 
 /** ワークスペースアイテムの type の一覧 */
-export const JSON_WORKSPACE_ITEM_TYPES = ['item', 'clipboard', 'set'] as const;
+export const JSON_WORKSPACE_ITEM_TYPES = ['item', 'clipboard', 'set', 'ref'] as const;
 
 // ============================================================
 // workspace-archive.json

@@ -104,7 +104,8 @@ export async function loadSetCatalog(
   if (includeWorkspace) {
     const workspaceItems: WorkspaceItem[] = await window.electronAPI.workspaceAPI.loadItems();
     for (const item of workspaceItems) {
-      if (item.type !== 'item') continue;
+      // 参照は指す先のメインウィンドウのアイテムが下に並ぶので出さない（選べばメインのアイテムの id が入る）
+      if (item.type !== 'item' || item.ref) continue;
       result.push({
         key: item.id,
         id: item.id,

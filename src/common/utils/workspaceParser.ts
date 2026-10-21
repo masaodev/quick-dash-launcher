@@ -336,11 +336,33 @@ function validateItemBody(source: Record<string, unknown>, id: string): Record<s
       return validateJsonClipboardItem(body) as unknown as Record<string, unknown>;
     case 'set':
       return validateJsonSetItem(body) as unknown as Record<string, unknown>;
+    case 'ref':
+      return validateRefItemBody(body);
     default:
       throw new Error(
         `Unknown item type: ${String(raw.type)} (one of ${JSON_WORKSPACE_ITEM_TYPES.join(' / ')})`
       );
   }
+}
+
+/**
+ * 参照アイテムの本体を検証する（指す id は必須。ワークスペースでの表示名・最後に見た表示名は任意）
+ *
+ * 参照アイテムはメモを持たない（メインウィンドウのアイテムのメモを使う）ので、書いてあっても落とす
+ */
+function validateRefItemBody(body: Record<string, unknown>): Record<string, unknown> {
+  if (!isValidId(body.refItemId)) {
+    throw new Error('refItemId must be an 8-character alphanumeric id');
+  }
+  const displayName = optionalString(body, 'displayName');
+  const lastKnownName = optionalString(body, 'lastKnownName');
+  return {
+    id: body.id,
+    type: 'ref',
+    refItemId: body.refItemId,
+    ...(displayName !== undefined && displayName.trim() !== '' && { displayName }),
+    ...(lastKnownName !== undefined && lastKnownName !== '' && { lastKnownName }),
+  };
 }
 
 // ============================================================
@@ -351,6 +373,7 @@ const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
   item: ['path', 'args', 'originalPath', 'customIcon', ...ITEM_WINDOW_SWITCH_KEYS],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
   set: ['entries', 'launchMode', 'customIcon'],
+  ref: ['refItemId', 'lastKnownName'],
 };
 
 function pick(source: Record<string, unknown>, keys: string[]): Record<string, unknown> {

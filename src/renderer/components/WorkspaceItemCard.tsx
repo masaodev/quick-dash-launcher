@@ -93,11 +93,14 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
     onRemove(item.id);
   };
 
-  // Enter とフォーカスを外したときで同じ扱い（空・変更なしなら元の名前に戻す）
+  // Enter とフォーカスを外したときで同じ扱い（空・変更なしなら元の名前に戻す）。
+  // 参照でワークスペースでの表示名があるときは、空にするとそれを消してメインウィンドウの表示名に戻す
   const commitEdit = () => {
     const name = resolveInlineName(editValue, item.displayName);
     if (name) {
       onUpdateDisplayName(item.id, name);
+    } else if (item.ref?.alias !== undefined && editValue.trim() === '') {
+      onUpdateDisplayName(item.id, '');
     } else {
       setEditValue(item.displayName);
       onStartEdit(); // 編集モード終了
@@ -114,7 +117,23 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   };
 
   const getTooltipText = (): string => {
-    const lines: string[] = [describeWorkspaceItem(item, t)];
+    const lines: string[] = [];
+    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カード自体には印を付けない）
+    if (item.type === 'ref') {
+      lines.push(
+        t('workspace.ref.tooltipMissing', {
+          reason: describeWorkspaceItem(item, t),
+          name: item.ref.lastKnownName ?? item.displayName,
+        }),
+        t('workspace.ref.tooltipMissingHint')
+      );
+      return lines.join('\n');
+    }
+    if (item.ref) {
+      lines.push(t('workspace.ref.tooltipMain', { name: item.ref.mainDisplayName ?? '' }));
+      if (item.ref.tabName) lines.push(t('workspace.ref.tooltipTab', { tab: item.ref.tabName }));
+    }
+    lines.push(describeWorkspaceItem(item, t));
     if (item.type === 'set') {
       const summary = setEntriesSummary(item.entries, nameOfItem ?? (() => undefined));
       if (summary) lines.push(summary);
@@ -148,8 +167,9 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   return (
     <div
-      className="workspace-item-card"
+      className={`workspace-item-card${item.type === 'ref' ? ' workspace-item-card-missing' : ''}`}
       data-drop-zone={dropZone || undefined}
+      data-ref={item.ref ? item.ref.status : undefined}
       onClick={handleClick}
       onContextMenu={onContextMenu}
       draggable={!isEditing}

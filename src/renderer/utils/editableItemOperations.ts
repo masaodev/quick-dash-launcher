@@ -176,14 +176,15 @@ function findDuplicates(items: EditableJsonItem[], sourceFile: string): Map<stri
 /**
  * 指定データファイル内の重複を除く（他のファイルのアイテムは消さない）
  *
- * 消すアイテムを指しているセットの行は、残す 1 件目の id に付け替える（どのファイルのセットでも）
+ * 消すアイテムを指しているセットの行は、残す 1 件目の id に付け替える（どのファイルのセットでも）。
+ * 消す id → 残す id の表（relinked）も返す（ワークスペースの参照は保存したあとで付け替える）
  */
 export function dedupeFileItems(
   items: EditableJsonItem[],
   sourceFile: string
-): { items: EditableJsonItem[]; removed: number } {
+): { items: EditableJsonItem[]; removed: number; relinked: ReadonlyMap<string, string> } {
   const duplicates = findDuplicates(items, sourceFile);
-  if (duplicates.size === 0) return { items, removed: 0 };
+  if (duplicates.size === 0) return { items, removed: 0, relinked: duplicates };
   const relinked = items.map((item) => {
     if (item.item.type !== 'set') return item;
     const entries = item.item.entries;
@@ -197,7 +198,11 @@ export function dedupeFileItems(
       ),
     });
   });
-  return { items: removeItems(relinked, [...duplicates.keys()]), removed: duplicates.size };
+  return {
+    items: removeItems(relinked, [...duplicates.keys()]),
+    removed: duplicates.size,
+    relinked: duplicates,
+  };
 }
 
 /** キー順に依存しない JSON 文字列（内容の比較用） */

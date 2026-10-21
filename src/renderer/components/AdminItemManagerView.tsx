@@ -186,6 +186,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     },
     [workingItems, changedIds]
   );
+  const fileItemIds = useCallback(
+    (fileName: string) =>
+      workingItems.filter((item) => item.meta.sourceFile === fileName).map((item) => item.item.id),
+    [workingItems]
+  );
   const tabStructure = useAdminTabStructure({
     dataFileTabs,
     dataFileLabels,
@@ -196,6 +201,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     showWarning,
     countItems,
     dropFileItems: editing.dropFileItems,
+    fileItemIds,
   });
 
   const currentFileWorkingItems = useMemo(
@@ -492,7 +498,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
 
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
   const handleRequestDelete = useCallback(
-    (items: EditableJsonItem[]) => {
+    async (items: EditableJsonItem[]) => {
       if (items.length === 0) return;
       const names = items
         .map((item) => t('itemManager.quotedName', { name: describeItem(item) }))
@@ -508,6 +514,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       if (items.some((item) => item.item.type === 'clipboard')) {
         notes.push(t('itemManager.deleteClipboardData'));
       }
+      // ワークスペースから参照されていれば、参照が「元のアイテムが見つかりません」になることを添える
+      const refCounts = await window.electronAPI.workspaceAPI
+        .countRefs(items.map((item) => item.item.id))
+        .catch(() => ({}) as Record<string, number>);
+      const refCount = Object.values(refCounts).reduce((sum, n) => sum + n, 0);
+      if (refCount > 0) notes.push(t('workspace.ref.deleteWarning', { count: refCount }));
       const message = `${question}\n\n${notes.join('\n')}`;
       openConfirmDialog({ message, confirmText: t('itemManager.deleteButton'), danger: true }, () =>
         editing.deleteItems(items)
@@ -517,7 +529,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     [editing.deleteItems, t]
   );
 
-  const handleDeleteSelected = () => handleRequestDelete(visibleSelectedItems);
+  const handleDeleteSelected = () => void handleRequestDelete(visibleSelectedItems);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.ctrlKey && e.key === 's') {

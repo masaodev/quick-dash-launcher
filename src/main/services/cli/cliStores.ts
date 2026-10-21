@@ -26,6 +26,12 @@ import { closeDetachedWindowsForGroup } from '../../ipc/workspaceHandlers.js';
 import { getLastLoadReport, reloadConfigFiles } from '../data/dataFileLoader.js';
 import { convertJsonItemToAppItems } from '../data/jsonItemConverter.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
+import {
+  convertRefToCopy,
+  ensureMainItemIndex,
+  findLinkCandidates,
+  linkToMainItem,
+} from '../workspace/workspaceRefOperations.js';
 import { showToastWindow } from '../overlayWindowService.js';
 import { ClipboardService } from '../clipboardService.js';
 import { mainI18n } from '../mainI18n.js';
@@ -63,6 +69,8 @@ function createLauncherStore(configFolder: string): LauncherStore {
     replace: (item) => replaceItemById(configFolder, item),
     move: (item, from, to) => moveItemToFile(configFolder, item, from, to),
     remove: (id) => deleteItemsById(configFolder, [id]),
+    countWorkspaceRefs: async (id) =>
+      (await (await WorkspaceService.getInstance()).countRefs([id]))[id] ?? 0,
     markFolder: withFolderMarker,
     newId: generateUniqueId,
   };
@@ -171,7 +179,26 @@ export function createCliContext(
       reorderWorkspaces: async (ids) =>
         (await WorkspaceService.getInstance()).reorderWorkspaces(ids),
       loadGroups: async () => (await WorkspaceService.getInstance()).loadGroups(),
-      loadItems: async () => (await WorkspaceService.getInstance()).loadItems(),
+      // 参照はメインウィンドウのアイテムの中身で埋めて返す
+      loadItems: async () => {
+        await ensureMainItemIndex();
+        return (await WorkspaceService.getInstance()).loadResolvedItems();
+      },
+      addRef: async (itemId, groupId, workspaceId) => {
+        const index = await ensureMainItemIndex();
+        const main = index.byId.get(itemId);
+        if (!main) return undefined;
+        return (await WorkspaceService.getInstance()).addRef(
+          { ...main, id: itemId },
+          groupId,
+          workspaceId
+        );
+      },
+      updateDisplayName: async (id, displayName) =>
+        (await WorkspaceService.getInstance()).updateDisplayName(id, displayName),
+      convertToCopy: (id) => convertRefToCopy(id),
+      linkToMain: (id, mainItemId) => linkToMainItem(id, mainItemId),
+      findLinkCandidates: async (id) => (await findLinkCandidates(id)).map((c) => c.itemId),
       addItem: async (item, groupId, workspaceId) =>
         (await WorkspaceService.getInstance()).addItem(item, groupId, workspaceId),
       updateItem: async (id, update) =>
@@ -191,7 +218,10 @@ export function createCliContext(
         (await WorkspaceService.getInstance()).deleteGroup(id, deleteItems),
       archiveGroup: async (id) => (await WorkspaceService.getInstance()).archiveGroup(id),
       loadArchivedGroups: async () => (await WorkspaceService.getInstance()).loadArchivedGroups(),
-      loadArchivedItems: async () => (await WorkspaceService.getInstance()).loadArchivedItems(),
+      loadArchivedItems: async () => {
+        await ensureMainItemIndex();
+        return (await WorkspaceService.getInstance()).loadResolvedArchivedItems();
+      },
       moveGroupToWorkspace: async (id, workspaceId) =>
         (await WorkspaceService.getInstance()).moveGroupToWorkspace(id, workspaceId),
     },

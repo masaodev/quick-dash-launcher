@@ -856,3 +856,58 @@
   justify-content: center;
   gap: var(--spacing-lg);
 }
+
+/* 下のボタンの左に寄せる欄（ワークスペースに追加するときの「コピーで追加」） */
+.set-picker-footer-extra {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.set-picker-footer-extra label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+/* 参照の指す先を選ぶ・一括で参照に変えるウィンドウの説明の帯 */
+.workspace-link-banner {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-info-hover);
+  background-color: var(--bg-info-light);
+  border-radius: var(--border-radius);
+}
+
+.workspace-link-row {
+  align-items: flex-start;
+}
+
+.workspace-link-row-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+  min-width: 0;
+}
+
+/* 縦に並べるので、行の名前の幅の基準（flex-basis）を高さに効かせない */
+.workspace-link-row-body .set-row-name {
+  flex: none;
+}
+
+.workspace-link-row-note {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.workspace-link-footnote {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}

@@ -13,9 +13,10 @@ import type {
   JsonArchivedWorkspaceGroup,
   JsonWorkspace,
   JsonWorkspaceClipboardItem,
+  JsonWorkspaceContentItem,
   JsonWorkspaceGroup,
-  JsonWorkspaceItem,
   JsonWorkspaceLauncherItem,
+  JsonWorkspaceRefItem,
   JsonWorkspaceSetItem,
 } from './json-workspace';
 
@@ -39,19 +40,76 @@ interface RuntimeIcon {
   icon?: string;
 }
 
+/**
+ * 参照の解決の結果
+ * - ok: メインウィンドウのアイテムが見つかった（中身はそのアイテムのもの）
+ * - missing: 見つからない（消された・id が変わった）
+ * - unsupported: 見つかったが参照できない種別（フォルダ取込）
+ */
+export type WorkspaceRefStatus = 'ok' | 'missing' | 'unsupported';
+
+/**
+ * 参照アイテムの情報（実行時）
+ *
+ * ファイルの参照アイテム（type: "ref"）を読んだときに付く。解決できたアイテムは、指す先の種別
+ * （item / clipboard / set）の形で中身を持ち、この情報で参照だと分かる
+ */
+export interface WorkspaceRefInfo {
+  /** 指すメインウィンドウのアイテムの id */
+  itemId: string;
+  /** ワークスペースでの表示名（無ければメインウィンドウの表示名を使う） */
+  alias?: string;
+  /** 最後に見たメインウィンドウの表示名 */
+  lastKnownName?: string;
+  /** 解決の結果 */
+  status: WorkspaceRefStatus;
+  /** メインウィンドウのアイテムの表示名（解決できたときだけ） */
+  mainDisplayName?: string;
+  /** メインウィンドウのアイテムのデータファイル（解決できたときだけ） */
+  sourceFile?: string;
+  /** メインウィンドウのアイテムのタブの名前（解決できたときだけ） */
+  tabName?: string;
+}
+
+/** 参照から解決したときだけ付く情報 */
+interface RuntimeRef {
+  ref?: WorkspaceRefInfo;
+}
+
 export type WorkspaceLauncherItem = JsonWorkspaceLauncherItem &
-  RuntimeIcon & {
+  RuntimeIcon &
+  RuntimeRef & {
     /** path（ショートカットならリンク先）から判定した起動種別 */
     launcherType: LauncherItemType;
   };
-export type WorkspaceClipboardItem = JsonWorkspaceClipboardItem & RuntimeIcon;
-export type WorkspaceSetItem = JsonWorkspaceSetItem & RuntimeIcon;
+export type WorkspaceClipboardItem = JsonWorkspaceClipboardItem & RuntimeIcon & RuntimeRef;
+export type WorkspaceSetItem = JsonWorkspaceSetItem & RuntimeIcon & RuntimeRef;
 
 /**
- * ワークスペースに追加されたアイテム（実行時）
- * メイン画面のアイテムをコピーし、独立して管理される。type で判別できる union
+ * 解決していない（または解決できなかった）参照アイテム（実行時）
+ *
+ * displayName は表示に使う名前（ワークスペースでの表示名 → 最後に見た表示名の順）。ファイルに書くときは
+ * ref.alias・ref.lastKnownName から書き戻す
  */
-export type WorkspaceItem = WorkspaceLauncherItem | WorkspaceClipboardItem | WorkspaceSetItem;
+export type WorkspaceRefItem = Omit<JsonWorkspaceRefItem, 'displayName' | 'lastKnownName'> &
+  RuntimeIcon & {
+    displayName: string;
+    ref: WorkspaceRefInfo;
+    /** 型をそろえるため（参照アイテムはメモを持たない） */
+    memo?: undefined;
+  };
+
+/**
+ * ワークスペースに追加されたアイテム（実行時）。type で判別できる union
+ *
+ * メインウィンドウのアイテムのコピー（item / clipboard / set）か、参照（ref。解決できたら指す先の種別の形になり
+ * ref を持つ）
+ */
+export type WorkspaceItem =
+  WorkspaceLauncherItem | WorkspaceClipboardItem | WorkspaceSetItem | WorkspaceRefItem;
+
+/** 中身を持つワークスペースアイテム（解決できた参照を含む） */
+export type WorkspaceContentItem = Exclude<WorkspaceItem, WorkspaceRefItem>;
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -60,7 +118,7 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
  * id・並び順・所属（groupId / workspaceId）は変えられない
  */
 export type WorkspaceItemUpdate = DistributiveOmit<
-  JsonWorkspaceItem,
+  JsonWorkspaceContentItem,
   'id' | 'order' | 'addedAt' | 'groupId' | 'workspaceId'
 >;
 
@@ -91,3 +149,43 @@ export type ArchivedWorkspaceGroup = JsonArchivedWorkspaceGroup;
 
 /** アーカイブされたアイテム（実行時） */
 export type ArchivedWorkspaceItem = WorkspaceItem & JsonArchivedItemMeta;
+
+/** コピーを参照に変えるときの、指す先の候補（メインウィンドウのアイテム） */
+export interface WorkspaceLinkCandidate {
+  /** メインウィンドウのアイテムの id */
+  itemId: string;
+  /** 表示名 */
+  displayName: string;
+  /** タブの名前 */
+  tabName?: string;
+}
+
+/**
+ * 「メインウィンドウと同じアイテムを参照に変える」の 1 行（パスと引数が同じメインウィンドウのアイテムがあるコピー）
+ *
+ * memo: none＝どちらにも無いか同じ／move＝コピーにだけあり、メインウィンドウへ移す／conflict＝両方にあって違う
+ */
+export interface WorkspaceLinkCopyEntry {
+  /** ワークスペースのアイテムの id */
+  id: string;
+  /** ワークスペースの表示名 */
+  displayName: string;
+  /** 候補（2 件以上なら選べないので、右クリックから 1 件ずつ選ぶ） */
+  candidates: WorkspaceLinkCandidate[];
+  /** 参照にしたあとのワークスペースでの表示名（メインウィンドウの表示名と違うときだけ） */
+  alias?: string;
+  /** メモの扱い */
+  memo: 'none' | 'move' | 'conflict';
+  /** ウィンドウ切り替え・カスタムアイコンがメインウィンドウのアイテムと違う（参照にするとメインのものになる） */
+  settingsDiffer: boolean;
+}
+
+/** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
+export interface WorkspaceLinkCopiesPreview {
+  /** 対象のワークスペースの表示名 */
+  workspaceName: string;
+  /** 候補のあるコピー */
+  entries: WorkspaceLinkCopyEntry[];
+  /** パスで比べられないコピー（クリップボード・セット・パスの無い単一アイテム）の数 */
+  notMatchable: number;
+}

@@ -38,6 +38,8 @@ interface RegisterModalProps {
   onDelete?: (item: EditingAppItem | EditableJsonItem) => void; // 削除ハンドラー
   /** 独立した子ウィンドウの中身として描く（オーバーレイなしでウィンドウいっぱいに広げる） */
   asPage?: boolean;
+  /** 見出しの下に出す知らせ（ワークスペースで参照されているアイテムを編集するとき） */
+  notice?: string;
 }
 
 /**
@@ -64,6 +66,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   currentTab,
   onDelete,
   asPage = false,
+  notice,
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -258,6 +261,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
           {editingItem && isAutoImportItem(editingItem) && (
             <div className="auto-import-warning">{t('register.autoImportWarning')}</div>
           )}
+          {notice && <div className="register-linked-notice">{notice}</div>}
 
           {loading ? (
             <div className="loading">{t('register.loading')}</div>

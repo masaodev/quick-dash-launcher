@@ -505,3 +505,57 @@ describe('workspaceParser: パスの無い単一アイテム', () => {
     expect(result.invalid.items).toEqual([empty]);
   });
 });
+
+describe('workspaceParser: 参照アイテム（type: ref）', () => {
+  const refItem = {
+    addedAt: 1,
+    order: 2,
+    workspaceId: 'wsAAAAA1',
+    lastKnownName: 'Visual Studio Code',
+    displayName: 'VSC',
+    refItemId: 'MainAAA1',
+    type: 'ref',
+    id: 'itAAAAA9',
+  };
+
+  it('参照アイテムを読み、キーを id・type・displayName・refItemId・lastKnownName の順に揃えること', () => {
+    const result = parseWorkspaceFileLenient(
+      file({ items: [launcher, refItem] }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.invalid.items).toEqual([]);
+    expect(Object.keys(result.data.items[1])).toEqual([
+      'id',
+      'type',
+      'displayName',
+      'refItemId',
+      'lastKnownName',
+      'workspaceId',
+      'order',
+      'addedAt',
+    ]);
+  });
+
+  it('メモは持たず、空のワークスペースでの表示名は落とすこと', () => {
+    const result = parseWorkspaceFileLenient(
+      file({ items: [{ ...refItem, memo: 'x', displayName: ' ' }] }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.data.items[0]).not.toHaveProperty('memo');
+    expect(result.data.items[0]).not.toHaveProperty('displayName');
+  });
+
+  it('指す id が無い・形が違う参照は invalid にすること', () => {
+    const result = parseWorkspaceFileLenient(
+      file({
+        items: [
+          { ...refItem, refItemId: undefined },
+          { ...refItem, id: 'itAAAAB9', refItemId: 'short' },
+        ],
+      }),
+      createWorkspaceParseContext(NOW)
+    );
+    expect(result.data.items).toEqual([]);
+    expect(result.invalid.items).toHaveLength(2);
+  });
+});

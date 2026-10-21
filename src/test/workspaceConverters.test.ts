@@ -415,3 +415,22 @@ describe('workspaceConverters: 表示', () => {
     expect(toToastItemType(groupItem)).toBe('set');
   });
 });
+
+describe('expandWorkspaceSetEntries: 参照を指す行', () => {
+  it('参照（見つかったもの）を指す行は、指す先のメインウィンドウのアイテムの id にすること', () => {
+    const linked = {
+      id: 'WsRef001',
+      type: 'item',
+      displayName: 'VSC',
+      path: 'code.exe',
+      launcherType: 'app',
+      workspaceId: 'W',
+      order: 0,
+      addedAt: 0,
+      ref: { itemId: 'Main0001', status: 'ok' },
+    } as WorkspaceItem;
+    expect(expandWorkspaceSetEntries([{ itemId: 'WsRef001', label: 'x' }], [linked])).toEqual([
+      { itemId: 'Main0001', label: 'x' },
+    ]);
+  });
+});

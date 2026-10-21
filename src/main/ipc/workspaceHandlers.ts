@@ -13,10 +13,8 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
-import { isClipboardItem } from '@common/types/guards';
 import type { LaunchOptions } from '@common/types/launchUsage';
 
-import { ClipboardService } from '../services/clipboardService.js';
 import { launchItem } from '../utils/itemLauncher.js';
 import {
   WorkspaceService,
@@ -41,19 +39,17 @@ import {
 } from '../services/launch/setExecutor.js';
 import { notifyLaunchFailure, openSingleItem } from '../services/launch/itemOpener.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
+import {
+  addAppItemToWorkspace,
+  applyLinkCopies,
+  convertRefToCopy,
+  ensureMainItemIndex,
+  findLinkCandidates,
+  linkToMainItem,
+  previewLinkCopies,
+} from '../services/workspace/workspaceRefOperations.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
-
-/**
- * クリップボードアイテムなら実データを複製した参照に差し替える
- * （メインウィンドウと 1 つのファイルを共有すると、メインウィンドウで消したときにワークスペース側が復元できなくなる）。
- * 複製できなければ元の参照のまま足す
- */
-function withOwnClipboardData(item: AppItem): AppItem {
-  if (!isClipboardItem(item)) return item;
-  const newRef = ClipboardService.getInstance().duplicateClipboardData(item.clipboardDataRef);
-  return newRef ? { ...item, clipboardDataRef: newRef } : item;
-}
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -164,7 +160,9 @@ async function withWorkspaceChange<T = void>(
 export function setupWorkspaceHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS, () =>
     withWorkspaceService(async (service) => {
-      const items = await service.loadItems();
+      // 参照はメインウィンドウのアイテムの中身で埋めて渡す（まだデータファイルを読んでいなければ読む）
+      await ensureMainItemIndex();
+      const items = await service.loadResolvedItems();
       logger.info({ count: items.length }, 'Loaded workspace items');
       return items;
     }, 'Failed to load workspace items')
@@ -172,16 +170,29 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
-    (_event, item: AppItem, groupId?: string, workspaceId?: string) =>
+    (_event, item: AppItem, groupId?: string, workspaceId?: string, options?: { copy?: boolean }) =>
       withWorkspaceService(
-        async (service) => {
-          const addedItem = await service.addItem(withOwnClipboardData(item), groupId, workspaceId);
+        async () => {
+          // 既定はメインウィンドウのアイテムの参照。参照できないもの・copy の指定はコピー（クリップボードは実データを複製）
+          const result = await addAppItemToWorkspace(item, groupId, workspaceId, options);
           logger.info(
-            { id: addedItem.id, name: addedItem.displayName, groupId, workspaceId },
+            {
+              id: result.item.id,
+              name: result.item.displayName,
+              groupId,
+              workspaceId,
+              linked: result.linked,
+            },
             'Added item to workspace'
           );
           notifyWorkspaceChanged();
-          return addedItem;
+          if (result.fellBackToCopy) {
+            showToastWindow({
+              message: mainI18n.t('workspace.ref.addedAsCopy'),
+              type: 'info',
+            }).catch(() => {});
+          }
+          return result.item;
         },
         'Failed to add item to workspace',
         undefined,
@@ -277,7 +288,11 @@ export function setupWorkspaceHandlers(): void {
     IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME,
     (_event, id: string, displayName: string) =>
       withWorkspaceChange(
-        (service) => service.updateDisplayName(id, displayName),
+        // 参照でメインの表示名と同じ名前にしたかを見るので、メインのアイテムの表を先に用意する
+        async (service) => {
+          await ensureMainItemIndex();
+          await service.updateDisplayName(id, displayName);
+        },
         'Updated workspace item display name',
         'Failed to update workspace item display name',
         { id, displayName },
@@ -302,8 +317,28 @@ export function setupWorkspaceHandlers(): void {
    */
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM,
-    async (_event, item: WorkspaceItem, options?: LaunchOptions) => {
+    async (_event, requested: WorkspaceItem, options?: LaunchOptions) => {
+      let item = requested;
       try {
+        // 参照はメインウィンドウのアイテムの今の中身で開く（画面が持っている中身は古いことがある）
+        if (requested.ref) {
+          await ensureMainItemIndex();
+          const workspaceService = await WorkspaceService.getInstance();
+          item = (await workspaceService.findResolvedItem(requested.id)) ?? requested;
+        }
+        if (item.type === 'ref') {
+          const reason =
+            item.ref.status === 'unsupported'
+              ? mainI18n.t('workspace.ref.unsupported')
+              : mainI18n.t('workspace.ref.missing');
+          logger.warn({ id: item.id, refItemId: item.ref.itemId }, 'Reference item not resolved');
+          await showToastWindow({
+            message: mainI18n.t('workspace.ref.launchMissing', { name: item.displayName, reason }),
+            type: 'warning',
+          });
+          return { success: false };
+        }
+
         // クリップボードタイプの場合
         if (item.type === 'clipboard') {
           if (!item.dataFileRef) {
@@ -326,6 +361,9 @@ export function setupWorkspaceHandlers(): void {
             return { success: false };
           }
 
+          if (item.ref && !options?.trial) {
+            await LaunchUsageService.getInstance()?.recordById(item.ref.itemId);
+          }
           logger.info(
             { id: item.id, name: item.displayName },
             'Restored clipboard from workspace item'
@@ -336,9 +374,9 @@ export function setupWorkspaceHandlers(): void {
         // セット: 行はワークスペースのアイテムを先に、データファイルのアイテムを後に探す
         if (item.type === 'set') {
           const workspaceService = await WorkspaceService.getInstance();
-          const workspaceItems = await workspaceService.loadItems();
           const configFolder = PathManager.getConfigFolder();
           const allItems = await reloadConfigFiles(configFolder, 'internal');
+          const workspaceItems = await workspaceService.loadResolvedItems();
           const byId = indexItemsById(allItems);
           for (const wsItem of workspaceItems) {
             const converted = workspaceItemToLaunchable(wsItem);
@@ -359,6 +397,9 @@ export function setupWorkspaceHandlers(): void {
             });
           const result = await executeSet(item, resolve);
           await notifySetFailures(item, result);
+          if (item.ref && !options?.trial) {
+            await LaunchUsageService.getInstance()?.recordById(item.ref.itemId);
+          }
           logger.info(
             { id: item.id, name: item.displayName, ...result, entries: undefined },
             'Executed set from workspace item'
@@ -374,9 +415,13 @@ export function setupWorkspaceHandlers(): void {
         if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
           return { success: false };
         }
-        // ワークスペースのアイテムはメインのコピーで id が違うので、パスでメインのアイテムに寄せる
+        // 参照はメインウィンドウのアイテムの id で数える。コピーは id が違うので、パスでメインのアイテムに寄せる
         //（編集画面で試しに開いたときは数えない）
-        if (!options?.trial) await LaunchUsageService.getInstance()?.recordByPath(item.path);
+        if (!options?.trial) {
+          const usage = LaunchUsageService.getInstance();
+          if (item.ref) await usage?.recordById(item.ref.itemId);
+          else await usage?.recordByPath(item.path);
+        }
 
         logger.info(
           { id: item.id, name: item.displayName, path: item.path },
@@ -396,6 +441,61 @@ export function setupWorkspaceHandlers(): void {
         throw error;
       }
     }
+  );
+
+  // ==================== 参照アイテム ====================
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CONVERT_TO_COPY, (_event, id: string) =>
+    withWorkspaceChange(
+      async () => ({ item: await convertRefToCopy(id) }),
+      'Converted reference item to copy',
+      'Failed to convert reference item to copy',
+      { id },
+      { id }
+    )
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LINK_TO_MAIN, (_event, id: string, mainItemId: string) =>
+    withWorkspaceChange(
+      async () => ({ item: await linkToMainItem(id, mainItemId) }),
+      'Linked workspace item to launcher item',
+      'Failed to link workspace item',
+      { id, mainItemId },
+      { id, mainItemId }
+    )
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, (_event, id: string) =>
+    withWorkspaceService(() => findLinkCandidates(id), 'Failed to find link candidates', { id })
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_PREVIEW_LINK_COPIES, (_event, workspaceId: string) =>
+    withWorkspaceService(() => previewLinkCopies(workspaceId), 'Failed to preview linking copies', {
+      workspaceId,
+    })
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, (_event, ids: string[]) =>
+    withWorkspaceChange(
+      async () => ({ count: await applyLinkCopies(ids) }),
+      'Linked workspace copies to launcher items',
+      'Failed to link workspace copies',
+      { count: ids.length }
+    )
+  );
+
+  // メインウィンドウのアイテムを指すワークスペースの参照の数（削除の確認・編集画面の帯に出す）
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_COUNT_REFS, (_event, itemIds: string[]) =>
+    withWorkspaceService((service) => service.countRefs(itemIds), 'Failed to count references')
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REMAP_REFS, (_event, idMap: Record<string, string>) =>
+    withWorkspaceChange(
+      async (service) => ({ count: await service.remapRefs(new Map(Object.entries(idMap))) }),
+      'Remapped workspace references',
+      'Failed to remap workspace references',
+      { count: Object.keys(idMap).length }
+    )
   );
 
   // ==================== ワークスペース（タブ）管理ハンドラー ====================
@@ -621,7 +721,8 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_ITEMS, () =>
     withWorkspaceService(async (service) => {
-      const archivedItems = await service.loadArchivedItems();
+      await ensureMainItemIndex();
+      const archivedItems = await service.loadResolvedArchivedItems();
       logger.info({ count: archivedItems.length }, 'Loaded archived items');
       return archivedItems;
     }, 'Failed to load archived items')

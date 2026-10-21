@@ -9,7 +9,7 @@ import {
   hasLegacyWindowConfig,
 } from '@common/utils/itemWindowConversion';
 import { isJsonLauncherItem } from '@common/types';
-import type { AppItem, JsonDataFile, JsonItem } from '@common/types';
+import type { AppItem, DataFileTab, JsonDataFile, JsonItem } from '@common/types';
 import { isLauncherItem, isRecord, isWindowInfo } from '@common/types/guards';
 
 import { SettingsService } from '../settingsService.js';
@@ -26,6 +26,7 @@ import {
 import { buildLoadReport, formatLoadReportToast } from '../loadReportService.js';
 import type { LoadReport, LoadReportFile, LoadTrigger } from '../loadReportService.js';
 import { notifyWorkspaceChanged } from '../../ipc/notifications.js';
+import { buildMainItemIndex, setMainItemIndex } from '../workspace/workspaceRefResolver.js';
 import {
   beginLoadProbeSession,
   endLoadProbeSession,
@@ -425,6 +426,16 @@ function collectLauncherPaths(items: AppItem[]): string[] {
 }
 
 /** ワークスペース（アーカイブを含む）のアイテムのパス（ショートカットはリンク先も） */
+/** タブの設定（読めなければ空。タブの名前は参照アイテムのツールチップに出すだけなので、止めない） */
+async function readDataFileTabs(): Promise<DataFileTab[]> {
+  try {
+    const settingsService = await SettingsService.getInstance();
+    return await settingsService.get('dataFileTabs');
+  } catch {
+    return [];
+  }
+}
+
 async function collectWorkspaceItemPaths(service: WorkspaceService): Promise<string[]> {
   const items = [...(await service.loadItems()), ...(await service.loadArchivedItems())];
   return items.flatMap((item) => {
@@ -482,7 +493,11 @@ async function reloadConfigFilesInternal(
     throw error;
   }
 
+  // ワークスペースの参照アイテムが指す先の表を作り直す（ワークスペースを読み直す前に。参照の名前の控えに使う）
+  setMainItemIndex(buildMainItemIndex(data.items, await readDataFileTabs()));
+
   // ワークスペースも同じタイミングで読み直す（読めなくてもデータファイルの表示は止めない）
+  let workspaceRefsChanged = false;
   let workspaceReports: LoadReportFile[] = [];
   let workspaceExternal: Array<{ relativePath: string; content: string }> = [];
   let workspaceChanged = false;
@@ -496,6 +511,8 @@ async function reloadConfigFilesInternal(
     workspaceExternal = consumed.externallyChanged;
     workspaceCorrupted = workspaceService.isCorrupted();
     workspacePaths = await collectWorkspaceItemPaths(workspaceService);
+    // 参照アイテムがあれば、メインウィンドウのアイテムの変更を画面に反映させる（最後に見た表示名も控え直す）
+    workspaceRefsChanged = await workspaceService.syncRefs();
   } catch (error) {
     dataLogger.error({ error }, 'ワークスペースファイルの再読込に失敗しました');
   }
@@ -556,7 +573,7 @@ async function reloadConfigFilesInternal(
     });
   }
 
-  if (workspaceChanged) {
+  if (workspaceChanged || workspaceRefsChanged) {
     notifyWorkspaceChanged();
   }
 

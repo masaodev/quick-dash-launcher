@@ -73,7 +73,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 ### 構成上のポイント
 
 - **データファイル**: 読み込み・変換・保存は `src/main/services/data/` に分かれる（読み込みと外部変更の検知、JSON アイテムから表示用アイテムへの変換、管理画面の一覧の保存と楽観ロック、データファイル自体の作成・削除（`dataFileOps.ts`。アイテム管理のタブ構成と CLI の `launcher tab` が使う）、破損ファイルの記録）
-- **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
+- **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。メインウィンドウのアイテムを指す参照アイテムは、データファイルを読み直すたびに作るメインウィンドウのアイテムの表（`workspaceRefResolver.ts`）で、画面・CLI・起動に渡すときに中身を埋める。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
 - **トースト通知**: トーストとセットの進み具合は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する
 - **子ウィンドウ**: メインのレンダラーを共有する子ウィンドウは `childWindowService.ts` で開く（[ウィンドウとレンダラープロセスの対応](#ウィンドウとレンダラープロセスの対応)）
 - **配布形式**: 開発版・Store 版・ポータブル版・インストーラー版の判定は `utils/appDistribution.ts`。自動起動はこれで分かれ、Store 版は WinRT の StartupTask、それ以外はスタートアップフォルダのショートカットを使う（`services/autoLaunchService.ts`）

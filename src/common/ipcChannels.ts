@@ -154,6 +154,15 @@ export const IPC_CHANNELS = {
   WORKSPACE_UPDATE_DISPLAY_NAME: 'workspace:update-display-name',
   WORKSPACE_UPDATE_ITEM: 'workspace:update-item',
   WORKSPACE_LAUNCH_ITEM: 'workspace:launch-item',
+  WORKSPACE_CONVERT_TO_COPY: 'workspace:convert-to-copy',
+  WORKSPACE_LINK_TO_MAIN: 'workspace:link-to-main',
+  WORKSPACE_FIND_LINK_CANDIDATES: 'workspace:find-link-candidates',
+  WORKSPACE_PREVIEW_LINK_COPIES: 'workspace:preview-link-copies',
+  WORKSPACE_APPLY_LINK_COPIES: 'workspace:apply-link-copies',
+  WORKSPACE_COUNT_REFS: 'workspace:count-refs',
+  WORKSPACE_REMAP_REFS: 'workspace:remap-refs',
+  WORKSPACE_OPEN_LINK_PICKER: 'workspace:open-link-picker',
+  WORKSPACE_OPEN_LINK_COPIES: 'workspace:open-link-copies',
 
   // ワークスペース - ウィンドウ制御
   WORKSPACE_TOGGLE_WINDOW: 'workspace:toggle-window',
@@ -253,6 +262,7 @@ export const IPC_CHANNELS = {
   SHOW_LAUNCHER_CONTEXT_MENU: 'show-launcher-context-menu',
   EVENT_LAUNCHER_MENU_EDIT_ITEM: 'launcher-menu-edit-item',
   EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE: 'launcher-menu-add-to-workspace',
+  EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE: 'launcher-menu-add-copy-to-workspace',
   EVENT_LAUNCHER_MENU_COPY_PATH: 'launcher-menu-copy-path',
   EVENT_LAUNCHER_MENU_COPY_PARENT_PATH: 'launcher-menu-copy-parent-path',
   EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER: 'launcher-menu-open-parent-folder',

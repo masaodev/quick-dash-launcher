@@ -342,6 +342,7 @@ export const ja = {
     edit: '✏️ 編集',
     showNote: '📝 メモを表示',
     addToWorkspace: '⭐ ワークスペースに追加',
+    addCopyToWorkspace: '📄 ワークスペースにコピーを追加',
     admin: {
       duplicate: '📋 複製',
       duplicateRows_one: '📋 複製（{{count}} 行）',
@@ -353,6 +354,11 @@ export const ja = {
     },
     workspaceItem: {
       rename: '🏷️ 表示名を変更',
+      editMain: '✏️ 編集（メインウィンドウのアイテム）',
+      renameAlias: '🏷️ 表示名を変更（ワークスペースだけ）',
+      convertToCopy: '📄 コピーにする（メインウィンドウと切り離す）',
+      retarget: '🔁 別のアイテムを指す…',
+      linkToMain: '🔗 メインウィンドウのアイテムを参照する…',
       registerToMain: '🚀 メインウィンドウに登録',
       moveToWorkspace: '📁 ワークスペースを移動',
       removeFromGroup: '📤 グループから外す',
@@ -376,6 +382,7 @@ export const ja = {
     },
     tab: {
       rename: '✏️ 名前を変更',
+      linkCopies: '🔗 メインウィンドウと同じアイテムを参照に変える…',
       delete: '🗑️ 削除',
     },
     window: {
@@ -520,11 +527,14 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
                                               --workspace --position <0 始まり> --set key=value --dry-run。
                                               --type clipboard なら --path の代わりに --text | --text-file）
-  qdl workspace item add --from <id か表示名>  メインウィンドウのアイテム（セットなど）を写して追加
-                                              （--name --group --workspace --position --dry-run）
+  qdl workspace item add --from <id か表示名>  メインウィンドウのアイテムを参照で追加（--copy ならコピー。
+                                              --name（参照ならワークスペースでの表示名）--group --workspace
+                                              --position --dry-run）
   qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
                                               --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
+  qdl workspace item convert <id か表示名>    参照とコピーを行き来する（--to copy | ref は必須。ref なら --from <指す先>。
+                                              省略時はパスと引数が同じメインウィンドウのアイテム、--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
   qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
   qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
@@ -602,6 +612,14 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       missingSetNoun: 'launcher set の後に row を指定してください',
       missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
+      copyNeedsFrom: '--copy は --from と一緒に使います',
+      refBody:
+        '参照アイテムの中身はメインウィンドウのアイテムのものです（--{{option}} は使えません）。中身は qdl launcher item update {{id}} で直してください',
+      convertTo: '--to には copy か ref を指定してください（{{to}}）',
+      notRef: '参照アイテムではありません',
+      refMissing: '元のアイテムが見つからないので、コピーにできません',
+      noLinkCandidate:
+        'パスと引数が同じメインウィンドウのアイテムが {{count}} 件です。--from で指す先を指定してください',
       missingVerb: '操作を指定してください（list / add / update / remove）',
       missingWorkspaceNoun:
         'workspace の後に list / add / update / remove / item / group / archive を指定してください',
@@ -2111,6 +2129,33 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       set_one: 'セット: {{count}} 件',
       set_other: 'セット: {{count}} 件',
     },
+    ref: {
+      missing: '元のアイテムが見つかりません',
+      unsupported: 'フォルダ取込は参照できません',
+      unknownName: '（見つからないアイテム）',
+      tooltipMain: '🔗 メインウィンドウのアイテム: {{name}}',
+      tooltipTab: 'タブ: {{tab}}',
+      tooltipMissing: '⚠ {{reason}}（最後に見た表示名: {{name}}）',
+      tooltipMissingHint: '右クリックで、別のアイテムを指すか、ワークスペースから削除できます',
+      launchMissing: '「{{name}}」は開けません。{{reason}}',
+      addedAsCopy: '参照できないアイテムなので、コピーで追加しました',
+      convertedToCopy: '「{{name}}」をコピーにしました',
+      linked: '「{{name}}」をメインウィンドウのアイテムの参照にしました',
+      retargeted: '「{{name}}」の指すアイテムを変えました',
+      alreadyInMain:
+        '「{{name}}」はメインウィンドウのアイテムを参照しています（もうメインウィンドウにあります）',
+      editBanner_one:
+        '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
+      editBanner_other:
+        '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
+      editMainNotFound: 'メインウィンドウのアイテムが見つかりません',
+      cannotRegisterMissing:
+        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウに登録できません',
+      deleteWarning_one:
+        'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
+      deleteWarning_other:
+        'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
+    },
     confirmNotFound: '確認する内容が見つかりません。',
     edit: {
       title: 'ワークスペースアイテムの編集',
@@ -2133,7 +2178,46 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_one: '{{count}} 件のアイテム',
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
+      addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
       addFailed: 'アイテムを追加できませんでした',
+    },
+    linkPicker: {
+      windowTitle: '指すアイテムを選ぶ',
+      title: '「{{name}}」が指すメインウィンドウのアイテム',
+      banner:
+        '選んだメインウィンドウのアイテムを指す参照にします。表示とメモはメインウィンドウのアイテムのものになります。',
+      candidates: '同じパスのアイテム',
+      others: 'ほかのアイテム',
+      current: '今の指す先',
+      notFound: 'ワークスペースのアイテムが見つかりません（削除された可能性があります）。',
+      failed: '参照にできませんでした',
+    },
+    linkCopies: {
+      title: 'メインウィンドウと同じアイテムを参照に変える',
+      banner:
+        'ワークスペース「{{workspace}}」のコピーのうち、パスと引数が同じメインウィンドウのアイテムが見つかったものです。チェックしたものを参照に変えます。',
+      target: '→ {{name}}',
+      tab: '（タブ: {{tab}}）',
+      alias: '「{{name}}」をワークスペースでの表示名にする',
+      memoMove: 'メモをメインウィンドウへ移す',
+      memoConflict: '⚠ メモが両方にあって違う（参照にするとコピーのメモは消えます）',
+      settingsDiffer:
+        '⚠ ウィンドウ切り替え・アイコンがメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
+      ambiguous_one:
+        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
+      ambiguous_other:
+        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
+      notMatchable_one:
+        'クリップボード・セット・パスの無い単一アイテム {{count}} 件は、パスで比べられないので対象外です。',
+      notMatchable_other:
+        'クリップボード・セット・パスの無い単一アイテム {{count}} 件は、パスで比べられないので対象外です。',
+      empty: '参照に変えられるコピーはありません。',
+      apply_one: '{{count}} 件を参照に変える',
+      apply_other: '{{count}} 件を参照に変える',
+      done_one: '{{count}} 件を参照に変えました',
+      done_other: '{{count}} 件を参照に変えました',
+      failed: '参照に変えられませんでした',
+      notFound: 'ワークスペースが見つかりません（削除された可能性があります）。',
     },
   },
   settings: {
