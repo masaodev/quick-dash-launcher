@@ -130,6 +130,10 @@ function App(): React.ReactElement {
   // ワークスペースからドラッグされたアイテム。参照はもうメインウィンドウにあるので、登録画面を開かずに知らせる
   const handleWorkspaceItemDropped = useCallback(
     (item: WorkspaceItem) => {
+      if (item.type === 'ref') {
+        showWarning(t('workspace.ref.cannotRegisterMissing', { name: item.displayName }));
+        return;
+      }
       if (item.ref) {
         showWarning(t('workspace.ref.alreadyInMain', { name: item.displayName }));
         return;

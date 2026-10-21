@@ -288,7 +288,11 @@ export function setupWorkspaceHandlers(): void {
     IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME,
     (_event, id: string, displayName: string) =>
       withWorkspaceChange(
-        (service) => service.updateDisplayName(id, displayName),
+        // 参照でメインの表示名と同じ名前にしたかを見るので、メインのアイテムの表を先に用意する
+        async (service) => {
+          await ensureMainItemIndex();
+          await service.updateDisplayName(id, displayName);
+        },
         'Updated workspace item display name',
         'Failed to update workspace item display name',
         { id, displayName },

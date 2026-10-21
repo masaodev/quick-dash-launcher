@@ -2150,6 +2150,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       editBanner_other:
         '🔗 You are editing a launcher item. The change also shows in {{count}} linked items in the workspace',
       editMainNotFound: 'The launcher item was not found',
+      cannotRegisterMissing:
+        'Can\'t add "{{name}}" to the launcher because the original item was not found',
       deleteWarning_one:
         '{{count}} workspace item links to this. If you delete it, that link shows "The original item was not found".',
       deleteWarning_other:

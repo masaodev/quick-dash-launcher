@@ -93,6 +93,8 @@ export class WorkspaceService {
   private itemManager: WorkspaceItemManager | null = null;
   private groupManager: WorkspaceGroupManager | null = null;
   private archiveManager: WorkspaceArchiveManager | null = null;
+  /** 前回の syncRefs で解決した参照の中身（変わったときだけ画面に読み直させる） */
+  private lastRefSignature = '[]';
 
   private static instance: WorkspaceService;
   /** 初期化の Promise（並行呼び出しで initializeStore が二重に走らないように 1 本にまとめる） */
@@ -352,14 +354,18 @@ export class WorkspaceService {
   /**
    * データファイルを読み直したあと、参照の「最後に見た表示名」を今のメインウィンドウの表示名に合わせる
    *
-   * @returns 参照アイテムがあるか（あればワークスペースの画面に再取得を知らせる）
+   * @returns 参照の解決した中身が前回から変わったか（変わればワークスペースの画面に再取得を知らせる）
    */
   public async syncRefs(): Promise<boolean> {
     await this.initializeStore();
     const all = [...this.itemManager!.loadItems(), ...this.archiveManager!.getAllArchivedItems()];
-    if (!all.some((item) => item.type === 'ref')) return false;
+    const refs = all.filter((item) => item.type === 'ref');
     const index = getMainItemIndex();
-    if (!index) return true;
+    // 解決した中身を前回と比べ、変わったときだけ画面に読み直させる（メインの関係ないアイテムの変更では知らせない）
+    const signature = JSON.stringify(resolveWorkspaceItems(refs, index));
+    const changed = signature !== this.lastRefSignature;
+    this.lastRefSignature = signature;
+    if (refs.length === 0 || !index) return changed;
     const sync = (item: WorkspaceRefItem): boolean => {
       const name = index.byId.get(item.ref.itemId)?.displayName;
       if (name === undefined || name === item.ref.lastKnownName) return false;
@@ -373,7 +379,23 @@ export class WorkspaceService {
       // 控えの名前は表示の補助なので、書けなくても読み込みは止めない
       logger.warn({ error }, '参照アイテムの表示名の控えを更新できませんでした');
     }
-    return true;
+    return changed;
+  }
+
+  /**
+   * ワークスペースのセットの行が指すアイテムを付け替える（コピーを参照に変えたとき、ワークスペースの id →
+   * メインウィンドウのアイテムの id）
+   */
+  public async relinkSetEntries(fromId: string, toId: string): Promise<void> {
+    await this.initializeStore();
+    const items = this.itemManager!.loadItems();
+    let changed = false;
+    for (const item of items) {
+      if (item.type !== 'set' || !item.entries.some((e) => e.itemId === fromId)) continue;
+      item.entries = item.entries.map((e) => (e.itemId === fromId ? { ...e, itemId: toId } : e));
+      changed = true;
+    }
+    if (changed) this.store!.set('items', items);
   }
 
   /**

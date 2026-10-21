@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppItem, ClipboardItem, LauncherItem, SetItem, WorkspaceItem } from '@common/types';
 import { isClipboardItem, isLauncherItem, isSetItem } from '@common/types/guards';
+import { samePathKey } from '@common/utils/workspaceRefs';
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
@@ -40,10 +41,7 @@ interface PickerEntry {
  * 持たないので、パスを持つアイテムはパスと引数で比べる（種別は追加のときに判定し直すことがあるので比べない）。
  * パスの無いコピー（セット・クリップボード・パスの無い単一アイテム）は比べない
  */
-function contentKey(path: string, args: string | undefined): string | null {
-  if (!path) return null;
-  return [path.toLowerCase(), args ?? ''].join('\n');
-}
+const contentKey = samePathKey;
 
 function workspaceItemKey(item: WorkspaceItem): string | null {
   return item.type === 'item' && !item.ref ? contentKey(item.path, item.args) : null;

@@ -292,4 +292,52 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     );
     expect(counts).toEqual({ [calc.id!]: 2 });
   });
+
+  test('同じアイテムのコピー 2 件を参照に変えても、先に移したメモを上書きせず、セットの行も付け替える', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const google = await mainItem(mainWindow, 'Google');
+    const addCopy = (memo: string) =>
+      workspaceWindow.evaluate(
+        ({ item, memo }) =>
+          window.electronAPI.workspaceAPI.addItem({ ...item, memo }, undefined, undefined, {
+            copy: true,
+          }),
+        { item: google, memo }
+      ) as Promise<WorkspaceItem>;
+    const first = await addCopy('1 件目のメモ');
+    const second = await addCopy('2 件目のメモ');
+    // ワークスペースのセットの行が 1 件目のコピーを指している
+    const set: WorkspaceItem = await workspaceWindow.evaluate(
+      (id) =>
+        window.electronAPI.workspaceAPI.createItem({
+          type: 'set',
+          displayName: 'コピーを指すセット',
+          entries: [{ itemId: id }],
+        }),
+      first.id
+    );
+
+    const preview = await workspaceWindow.evaluate(
+      (id) => window.electronAPI.workspaceAPI.previewLinkCopies(id),
+      first.workspaceId
+    );
+    expect(preview.entries.find((e) => e.id === first.id)?.memo).toBe('move');
+    expect(preview.entries.find((e) => e.id === second.id)?.memo).toBe('conflict');
+
+    await workspaceWindow.evaluate(
+      (ids) => window.electronAPI.workspaceAPI.applyLinkCopies(ids),
+      [first.id, second.id]
+    );
+    await expect.poll(async () => (await mainItem(mainWindow, 'Google')).memo).toBe('1 件目のメモ');
+    const items = await loadWorkspaceItems(workspaceWindow);
+    const relinked = items.find((i) => i.id === set.id);
+    expect(relinked?.type === 'set' && relinked.entries[0].itemId).toBe(google.id);
+  });
 });

@@ -1,15 +1,13 @@
 import type {
   AppItem,
-  ClipboardItem,
   DataFileTab,
-  LauncherItem,
-  SetItem,
   WorkspaceItem,
   WorkspaceRefInfo,
   WorkspaceRefItem,
 } from '@common/types';
-import { isClipboardItem, isLauncherItem, isSetItem, isWindowInfo } from '@common/types/guards';
+import { isClipboardItem, isLauncherItem, isSetItem } from '@common/types/guards';
 import { appItemToWorkspaceItemBody } from '@common/utils/workspaceConverters';
+import { isReferenceableAppItem, type ReferenceableAppItem } from '@common/utils/workspaceRefs';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -21,8 +19,7 @@ import { mainI18n } from '../mainI18n.js';
  * 参照のまま残す（中身を書かない）。
  */
 
-/** 参照できるメインウィンドウのアイテム（ウィンドウ検索の結果は除く） */
-export type ReferenceableAppItem = LauncherItem | ClipboardItem | SetItem;
+export { isReferenceableAppItem, type ReferenceableAppItem };
 
 /** メインウィンドウのアイテムの表 */
 export interface MainItemIndex {
@@ -35,14 +32,6 @@ export interface MainItemIndex {
 }
 
 let currentIndex: MainItemIndex | null = null;
-
-/** 参照できるメインウィンドウのアイテムか（id を持つ通常アイテム・クリップボード・セット。展開したものは除く） */
-export function isReferenceableAppItem(item: AppItem): item is ReferenceableAppItem {
-  if (isWindowInfo(item)) return false;
-  if (!item.id) return false;
-  if (isLauncherItem(item) && (item.isDirExpanded || item.expandedFromId)) return false;
-  return true;
-}
 
 /** データファイルの読み込み結果から表を作る */
 export function buildMainItemIndex(

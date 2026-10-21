@@ -2149,6 +2149,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       editBanner_other:
         '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
       editMainNotFound: 'メインウィンドウのアイテムが見つかりません',
+      cannotRegisterMissing:
+        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウに登録できません',
       deleteWarning_one:
         'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
       deleteWarning_other:

@@ -4,8 +4,9 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppItem, ClipboardItem, LauncherItem, SetItem, WorkspaceItem } from '@common/types';
+import type { AppItem, LauncherItem, WorkspaceItem } from '@common/types';
 import { isClipboardItem, isLauncherItem, isSetItem } from '@common/types/guards';
+import { isReferenceableAppItem, type ReferenceableAppItem } from '@common/utils/workspaceRefs';
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
@@ -18,11 +19,10 @@ interface WorkspaceLinkPickerPageProps {
 }
 
 /** 指せるアイテム（id を持つメインウィンドウのアイテム。フォルダ取込で展開したものは除く） */
-type LinkableItem = (LauncherItem | ClipboardItem | SetItem) & { id: string };
+type LinkableItem = ReferenceableAppItem & { id: string };
 
 function isLinkable(item: AppItem): item is LinkableItem {
-  if (isLauncherItem(item)) return !!item.id && !item.isDirExpanded && !item.expandedFromId;
-  return (isSetItem(item) || isClipboardItem(item)) && !!item.id;
+  return isReferenceableAppItem(item);
 }
 
 function rowKind(item: LinkableItem): SetCatalogItem['kind'] {

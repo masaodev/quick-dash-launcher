@@ -8,6 +8,7 @@ import type {
 } from '@common/types';
 import { isClipboardItem, isLauncherItem } from '@common/types/guards';
 import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { samePathKey } from '@common/utils/workspaceRefs';
 
 import PathManager from '../../config/pathManager.js';
 import { ClipboardService } from '../clipboardService.js';
@@ -30,14 +31,26 @@ import {
  * たびに作り直されるので、まだ読んでいなければここで読む
  */
 
-/** メインウィンドウのアイテムの表を返す（まだ無ければデータファイルを読む） */
-export async function ensureMainItemIndex(): Promise<MainItemIndex> {
+const EMPTY_INDEX: MainItemIndex = {
+  byId: new Map(),
+  folderImportIds: new Set(),
+  tabNameOfFile: new Map(),
+};
+
+/**
+ * メインウィンドウのアイテムの表を返す（まだ無い、または refresh のときはデータファイルを読む）
+ *
+ * 読めなくてもワークスペースは開けるよう、失敗したら手元の表か空の表を返す（参照は「見つからない」として出る）
+ */
+export async function ensureMainItemIndex(refresh = false): Promise<MainItemIndex> {
   const existing = getMainItemIndex();
-  if (existing) return existing;
-  await reloadConfigFiles(PathManager.getConfigFolder(), 'internal');
-  return (
-    getMainItemIndex() ?? { byId: new Map(), folderImportIds: new Set(), tabNameOfFile: new Map() }
-  );
+  if (existing && !refresh) return existing;
+  try {
+    await reloadConfigFiles(PathManager.getConfigFolder(), 'internal');
+  } catch (error) {
+    logger.error({ error }, '参照の解決のためのデータファイルの読み込みに失敗しました');
+  }
+  return getMainItemIndex() ?? existing ?? EMPTY_INDEX;
 }
 
 /**
@@ -73,19 +86,23 @@ export async function addAppItemToWorkspace(
   options: { copy?: boolean } = {}
 ): Promise<AddToWorkspaceResult> {
   const service = await WorkspaceService.getInstance();
-  if (!options.copy && isReferenceableAppItem(item) && item.id) {
-    const index = await ensureMainItemIndex();
-    const main = index.byId.get(item.id);
+  const referenceable = isReferenceableAppItem(item);
+  if (!options.copy && referenceable && item.id) {
+    // 表に無ければ（登録した直後など、表を作り直す前）1 回だけ読み直して引き直す
+    const main =
+      (await ensureMainItemIndex()).byId.get(item.id) ??
+      (await ensureMainItemIndex(true)).byId.get(item.id);
     if (main) {
       const added = await service.addRef({ ...main, id: item.id }, groupId, workspaceId);
       return { item: added, linked: true, fellBackToCopy: false };
     }
   }
   const added = await service.addItem(withOwnClipboardData(item), groupId, workspaceId);
-  // 展開したアイテムのように「メインウィンドウのアイテムだが参照できない」ものだけ知らせる
-  // （ウィンドウ検索の結果・パスの無い単一アイテムはもともとコピー）
+  // 「メインウィンドウのアイテムだが参照できない」もの（展開したアイテム・データファイルに見つからないもの）だけ知らせる
+  // （ウィンドウ検索の結果・ファイルのドロップなどはもともとコピー）
   const fellBackToCopy =
-    !options.copy && isLauncherItem(item) && (!!item.isDirExpanded || !!item.expandedFromId);
+    !options.copy &&
+    (referenceable || (isLauncherItem(item) && (!!item.isDirExpanded || !!item.expandedFromId)));
   return { item: added, linked: false, fellBackToCopy };
 }
 
@@ -100,12 +117,7 @@ export async function convertRefToCopy(id: string): Promise<WorkspaceItem> {
   return service.convertRefToCopy(id, withOwnClipboardData(main));
 }
 
-/** 比べるためのパスのキー（大文字小文字・末尾の区切り文字の違いを無視する。パスが無ければ null） */
-function pathKey(path: string | undefined, args: string | undefined): string | null {
-  const trimmed = (path ?? '').trim().replace(/[\\/]+$/, '');
-  if (!trimmed) return null;
-  return [trimmed.toLowerCase(), (args ?? '').trim()].join('\n');
-}
+const pathKey = samePathKey;
 
 function candidateOf(item: ReferenceableAppItem, index: MainItemIndex): WorkspaceLinkCandidate {
   const tabName = item.sourceFile ? index.tabNameOfFile.get(item.sourceFile) : undefined;
@@ -141,7 +153,10 @@ export async function findLinkCandidates(id: string): Promise<WorkspaceLinkCandi
 /**
  * アイテム（コピーまたは参照）を、メインウィンドウのアイテムの参照にする
  *
- * コピーのメモは、メインウィンドウのアイテムにメモが無ければメインへ移す（両方にあれば、コピーのメモは捨てる）
+ * - コピーのメモは、メインウィンドウのアイテムにメモが無ければメインへ移す（両方にあれば、コピーのメモは捨てる）。
+ *   メモが有るかはデータファイルの今の内容で決める（一括で同じアイテムへ続けて移すとき、先に移したメモを上書きしない）
+ * - ワークスペースのセットの行がこのアイテムを指していれば、メインウィンドウのアイテムの id に付け替える
+ *   （参照はセットの行を選ぶ候補に出さないので、ワークスペースの id のままだと編集画面で見つからなくなる）
  */
 export async function linkToMainItem(id: string, mainItemId: string): Promise<WorkspaceItem> {
   const service = await WorkspaceService.getInstance();
@@ -151,12 +166,18 @@ export async function linkToMainItem(id: string, mainItemId: string): Promise<Wo
   const main = index.byId.get(mainItemId);
   if (!main) throw new Error(`The launcher item was not found: ${mainItemId}`);
 
+  // 先に参照へ置き換える（ワークスペースへ書けなければ、メインのメモも書かない）
+  const linked = await service.replaceWithRef(id, { ...main, id: mainItemId });
+  await service.relinkSetEntries(id, mainItemId);
   const copyMemo = item.type !== 'ref' ? item.memo?.trim() : undefined;
-  if (copyMemo && !main.memo?.trim()) {
-    updateItemMemoById(PathManager.getConfigFolder(), mainItemId, item.memo ?? '');
+  if (
+    copyMemo &&
+    updateItemMemoById(PathManager.getConfigFolder(), mainItemId, item.memo ?? '', {
+      onlyIfEmpty: true,
+    })
+  ) {
     notifyDataChanged();
   }
-  const linked = await service.replaceWithRef(id, { ...main, id: mainItemId });
   logger.info({ id, mainItemId }, 'Linked workspace item to launcher item');
   return linked;
 }
@@ -178,6 +199,8 @@ export async function previewLinkCopies(workspaceId: string): Promise<WorkspaceL
   const workspaces = await service.loadWorkspaces();
   const items = (await service.loadItems()).filter((i) => i.workspaceId === workspaceId);
   const entries: WorkspaceLinkCopyEntry[] = [];
+  // メモを移す先（同じメインのアイテムへは 2 件目から移せないので、メモが消えると知らせる）
+  const memoTargets = new Set<string>();
   let notMatchable = 0;
   for (const item of items) {
     if (item.type === 'ref') continue;
@@ -190,8 +213,12 @@ export async function previewLinkCopies(workspaceId: string): Promise<WorkspaceL
     const main = mains[0];
     const copyMemo = item.memo?.trim() ?? '';
     const mainMemo = main.memo?.trim() ?? '';
-    const memo: WorkspaceLinkCopyEntry['memo'] =
+    let memo: WorkspaceLinkCopyEntry['memo'] =
       copyMemo === '' || copyMemo === mainMemo ? 'none' : mainMemo === '' ? 'move' : 'conflict';
+    if (memo === 'move' && mains.length === 1 && main.id) {
+      if (memoTargets.has(main.id)) memo = 'conflict';
+      else memoTargets.add(main.id);
+    }
     entries.push({
       id: item.id,
       displayName: item.displayName,
