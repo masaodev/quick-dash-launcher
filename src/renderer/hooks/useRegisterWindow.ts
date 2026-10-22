@@ -4,10 +4,7 @@ import type { EditingAppItem, RegisterWindowRequest } from '@common/types';
 import { logError } from '../utils/debug';
 
 /** 開くときに要求へ載せる内容（種別と今のタブはこのフックが付ける） */
-type RegisterWindowContent = Pick<
-  RegisterWindowRequest,
-  'droppedPaths' | 'editingItem' | 'prefillItems'
->;
+type RegisterWindowContent = Pick<RegisterWindowRequest, 'droppedPaths' | 'editingItem'>;
 
 /**
  * アイテムの登録・編集ウィンドウを開くフック（メイン画面用）

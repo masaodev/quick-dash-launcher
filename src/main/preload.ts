@@ -540,8 +540,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, sessionId),
     discardSession: (sessionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION, sessionId),
-    duplicateData: (dataFileRef) =>
-      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DUPLICATE_DATA, dataFileRef),
     saveText: (text) => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_SAVE_TEXT, text),
     readContent: (source) => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_READ_CONTENT, source),
   },

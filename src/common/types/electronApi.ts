@@ -539,8 +539,6 @@ export interface ElectronAPI {
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;
     discardSession: (sessionId: string) => Promise<boolean>;
-    /** 実データのファイルを複製し、新しい参照を返す（読めなければ null） */
-    duplicateData: (dataFileRef: string) => Promise<string | null>;
     /** 登録画面で書いたテキストを、テキストだけの実データとして保存する */
     saveText: (text: string) => Promise<ClipboardCaptureResult>;
     /** 未確定のキャプチャか保存済みの実データから、テキストの全文と画像の縮小版を読む（読めなければ null） */
