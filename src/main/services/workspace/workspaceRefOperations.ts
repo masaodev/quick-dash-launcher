@@ -12,7 +12,6 @@ import { samePathKey } from '@common/utils/workspaceRefs';
 import { convertRegisterItemToJsonItem, getDefaultTab } from '@common/utils/dataConverters';
 import {
   expandWorkspaceSetEntries,
-  toSavedSetEntries,
   workspaceItemToRegisterItem,
 } from '@common/utils/workspaceConverters';
 
@@ -221,7 +220,7 @@ export async function moveWorkspaceItemToMain(
 
   const registerItem = workspaceItemToRegisterItem(item);
   if (item.type === 'set') {
-    registerItem.setEntries = toSavedSetEntries(expandWorkspaceSetEntries(item.entries, items));
+    registerItem.setEntries = expandWorkspaceSetEntries(item.entries, items);
   }
   const jsonItem = convertRegisterItemToJsonItem(registerItem);
   // 指定が無ければ先頭のタブの先頭のファイル

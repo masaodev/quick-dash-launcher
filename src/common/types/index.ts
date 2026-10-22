@@ -189,7 +189,6 @@ export type {
   DirPreviewStatus,
   ItemPathPickKind,
   RegisterItem,
-  RegisterSetEntry,
 } from './register';
 
 // 編集用アイテムの型と関数

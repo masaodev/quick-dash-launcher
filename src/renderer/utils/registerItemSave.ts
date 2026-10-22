@@ -1,7 +1,6 @@
 import i18next from 'i18next';
 import type { RegisterItem, EditingAppItem } from '@common/types';
 import { itemWindowSwitchFields } from '@common/utils/itemWindowConversion';
-import { toSavedSetEntries } from '@common/utils/workspaceConverters';
 
 /**
  * 登録フォームの内容をデータファイルへ保存する
@@ -13,13 +12,9 @@ import { toSavedSetEntries } from '@common/utils/workspaceConverters';
  * @returns 'registered' | 'updated'（編集だったかどうか）
  */
 export async function saveRegisterItems(
-  formItems: RegisterItem[],
+  items: RegisterItem[],
   editingItem: EditingAppItem | null | undefined
 ): Promise<'registered' | 'updated'> {
-  // セットの行の、画面の中だけで使う印は保存しない
-  const items = formItems.map((item) =>
-    item.setEntries ? { ...item, setEntries: toSavedSetEntries(item.setEntries) } : item
-  );
   if (!editingItem || items.length !== 1) {
     await window.electronAPI.registerItems(items);
     return 'registered';
