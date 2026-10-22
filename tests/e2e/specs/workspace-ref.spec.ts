@@ -380,4 +380,81 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     const relinked = items.find((i) => i.id === set.id);
     expect(relinked?.type === 'set' && relinked.entries[0].itemId).toBe(google.id);
   });
+
+  test('コピーをメインウィンドウへ移すと、メインウィンドウのアイテムになり、ワークスペース側は参照になる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const copy: WorkspaceItem = await workspaceWindow.evaluate(() =>
+      window.electronAPI.workspaceAPI.createItem({
+        type: 'item',
+        displayName: '移すアイテム',
+        path: 'https://example.com/move-to-main',
+        memo: '移すアイテムのメモ',
+      })
+    );
+    // 移すアイテムを指すワークスペースのセット（移したあと、行はメインウィンドウのアイテムを指す）
+    const set: WorkspaceItem = await workspaceWindow.evaluate(
+      (id) =>
+        window.electronAPI.workspaceAPI.createItem({
+          type: 'set',
+          displayName: '移すセット',
+          entries: [{ itemId: id }],
+        }),
+      copy.id
+    );
+
+    await test.step('通常アイテムを移す', async () => {
+      const moved = await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        copy.id
+      );
+      expect(moved).toBe(true);
+      const main = await mainItem(mainWindow, '移すアイテム');
+      expect(main).toMatchObject({
+        path: 'https://example.com/move-to-main',
+        memo: '移すアイテムのメモ',
+      });
+      const stored = readWorkspaceFile(configHelper.getConfigDir()).items.find(
+        (i) => i.id === copy.id
+      );
+      expect(stored).toMatchObject({ type: 'ref', refItemId: main.id });
+      const items = await loadWorkspaceItems(workspaceWindow);
+      const relinked = items.find((i) => i.id === set.id);
+      expect(relinked?.type === 'set' && relinked.entries[0].itemId).toBe(main.id);
+    });
+
+    await test.step('セットを移す（行はメインウィンドウのアイテムを指したまま）', async () => {
+      const main = await mainItem(mainWindow, '移すアイテム');
+      await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        set.id
+      );
+      const items: AppItem[] = await mainWindow.evaluate(() =>
+        window.electronAPI.loadDataFiles('internal')
+      );
+      const mainSet = items.find(
+        (item) => 'displayName' in item && item.displayName === '移すセット'
+      );
+      expect(mainSet).toMatchObject({ type: 'set', entries: [{ itemId: main.id }] });
+      const stored = readWorkspaceFile(configHelper.getConfigDir()).items.find(
+        (i) => i.id === set.id
+      );
+      expect(stored).toMatchObject({ type: 'ref' });
+    });
+
+    await test.step('参照は移さない', async () => {
+      const moved = await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        copy.id
+      );
+      expect(moved).toBe(false);
+    });
+  });
 });

@@ -50,6 +50,7 @@ import {
 } from '../services/workspace/workspaceRefOperations.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
+import { moveItemToMain } from './workspaceRefMenu.js';
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -463,6 +464,11 @@ export function setupWorkspaceHandlers(): void {
       { id, mainItemId },
       { id, mainItemId }
     )
+  );
+
+  // メインウィンドウへのドロップ。結果は右クリックと同じくトーストで知らせる（ワークスペースの画面へもここで知らせる）
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, (_event, id: string, file?: string) =>
+    moveItemToMain(id, file)
   );
 
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, (_event, id: string) =>

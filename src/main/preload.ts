@@ -6,7 +6,6 @@ import type {
   AppItem,
   WindowInfo,
   MainChildWindowResult,
-  WorkspaceItem,
   ToastEventData,
   AdminTab,
 } from '@common/types';
@@ -276,6 +275,7 @@ const electronAPI: ElectronAPI = {
     convertToCopy: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CONVERT_TO_COPY, id),
     linkToMain: (id, mainItemId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LINK_TO_MAIN, id, mainItemId),
+    moveToMain: (id, file) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, id, file),
     findLinkCandidates: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, id),
     previewLinkCopies: (workspaceId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_PREVIEW_LINK_COPIES, workspaceId),
@@ -452,11 +452,6 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, callback),
   onWorkspaceMenuEditItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, callback),
-  onRegisterWorkspaceItemToMain: (callback) =>
-    createEventListener<WorkspaceItem>(
-      IPC_CHANNELS.EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN,
-      callback
-    ),
   onWorkspaceMenuShowMemo: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_SHOW_MEMO, callback),
   onWorkspaceMenuCopyPath: (callback) =>

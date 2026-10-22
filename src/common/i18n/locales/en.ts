@@ -58,7 +58,7 @@ export const en: LocaleMessages = {
       cancel: 'Cancel',
     },
     dropToAdd: 'Drop a file or URL to add it',
-    dropWorkspaceItemToAdd: 'Drop to add it to the launcher',
+    dropWorkspaceItemToMove: 'Drop to move it to the launcher (the workspace item becomes a link)',
     dropPathUnavailable: "Couldn't get the file path.\nDrag the file directly from File Explorer.",
     hints: {
       closeMarked: 'Close {{count}}',
@@ -358,7 +358,7 @@ export const en: LocaleMessages = {
       convertToCopy: '📄 Make a copy (unlink from the launcher)',
       retarget: '🔁 Link to another item…',
       linkToMain: '🔗 Link to a launcher item…',
-      registerToMain: '🚀 Add to the launcher',
+      moveToMain: '🚀 Move to the launcher and link to it',
       moveToWorkspace: '📁 Move to workspace',
       removeFromGroup: '📤 Remove from group',
       remove: '🗑️ Remove from workspace',
@@ -2150,8 +2150,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       editBanner_other:
         '🔗 You are editing a launcher item. The change also shows in {{count}} linked items in the workspace',
       editMainNotFound: 'The launcher item was not found',
-      cannotRegisterMissing:
-        'Can\'t add "{{name}}" to the launcher because the original item was not found',
+      cannotMoveMissing:
+        'Can\'t move "{{name}}" to the launcher because the original item was not found',
+      movedToMain:
+        'Moved "{{name}}" to the "{{tab}}" tab of the launcher and linked the workspace item to it',
+      movedToMainNoTab: 'Moved "{{name}}" to the launcher and linked the workspace item to it',
       deleteWarning_one:
         '{{count}} workspace item links to this. If you delete it, that link shows "The original item was not found".',
       deleteWarning_other:

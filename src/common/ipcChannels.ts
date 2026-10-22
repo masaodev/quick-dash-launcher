@@ -156,6 +156,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_LAUNCH_ITEM: 'workspace:launch-item',
   WORKSPACE_CONVERT_TO_COPY: 'workspace:convert-to-copy',
   WORKSPACE_LINK_TO_MAIN: 'workspace:link-to-main',
+  WORKSPACE_MOVE_TO_MAIN: 'workspace:move-to-main',
   WORKSPACE_FIND_LINK_CANDIDATES: 'workspace:find-link-candidates',
   WORKSPACE_PREVIEW_LINK_COPIES: 'workspace:preview-link-copies',
   WORKSPACE_APPLY_LINK_COPIES: 'workspace:apply-link-copies',
@@ -275,8 +276,6 @@ export const IPC_CHANNELS = {
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',
   EVENT_WORKSPACE_MENU_RENAME_ITEM: 'workspace-menu-rename-item',
   EVENT_WORKSPACE_MENU_EDIT_ITEM: 'workspace-menu-edit-item',
-  // 「メインウィンドウに登録」: メインプロセス → メインウィンドウ（ワークスペースのアイテムを初期値にして登録画面を開く）
-  EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN: 'workspace-menu-register-to-main',
   EVENT_WORKSPACE_MENU_SHOW_MEMO: 'workspace-menu-show-memo',
   EVENT_WORKSPACE_MENU_COPY_PATH: 'workspace-menu-copy-path',
   EVENT_WORKSPACE_MENU_COPY_PARENT_PATH: 'workspace-menu-copy-parent-path',

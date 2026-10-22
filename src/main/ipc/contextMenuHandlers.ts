@@ -28,7 +28,6 @@ import { isLauncherItem, isSetItem } from '@common/types/guards';
 
 import { mainI18n } from '../services/mainI18n.js';
 import { rerecordSetPositions } from '../services/launch/setRerecord.js';
-import { getMainWindow, showMainWindow } from '../windowManager.js';
 import { openWorkspaceLinkCopies } from '../workspaceLinkWindowManager.js';
 import { isReferenceableAppItem } from '../services/workspace/workspaceRefResolver.js';
 import {
@@ -38,7 +37,11 @@ import {
   hasDetachedGroupWindow,
 } from '../detachedGroupWindowManager.js';
 
-import { buildRefMenuItems, editLinkedMainItem } from './workspaceRefMenu.js';
+import {
+  buildMoveToMainMenuItem,
+  buildRefMenuItems,
+  editLinkedMainItem,
+} from './workspaceRefMenu.js';
 
 /** メニューの文言（開くたびに作るので、今の表示言語になる） */
 const t = mainI18n.t.bind(mainI18n);
@@ -288,17 +291,6 @@ function buildMoveToWorkspaceSubmenu(
   return new MenuItem({ label, submenu });
 }
 
-/**
- * ワークスペースのアイテムをメインウィンドウに登録する（登録画面はメインウィンドウが子ウィンドウで開く）
- * 登録画面はメインウィンドウを親にして開くので、先にメインウィンドウを出す
- */
-async function registerWorkspaceItemToMain(item: WorkspaceItem): Promise<void> {
-  await showMainWindow();
-  const mainWindow = getMainWindow();
-  if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN, item);
-}
-
 /** WorkspaceContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceContextMenuHandler(): void {
   ipcMain.handle(
@@ -391,14 +383,10 @@ function setupWorkspaceContextMenuHandler(): void {
       menu.append(createSeparator());
       buildRefMenuItems(event.sender, item).forEach((menuItem) => menu.append(menuItem));
 
-      // メインウィンドウの「ワークスペースに追加」の逆向き（参照はもうメインウィンドウにあるので出さない）
+      // メインウィンドウの「ワークスペースに追加」の逆向き。移したあとワークスペース側は参照になる
+      // （参照はもうメインウィンドウにあるので出さない）
       if (!item.ref) {
-        menu.append(
-          new MenuItem({
-            label: t('menu.workspaceItem.registerToMain'),
-            click: () => void registerWorkspaceItemToMain(item),
-          })
-        );
+        menu.append(await buildMoveToMainMenuItem(item));
       }
 
       if (isLauncher) {

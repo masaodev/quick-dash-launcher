@@ -99,13 +99,8 @@ function App(): React.ReactElement {
     useSearchHistory();
   // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
   const activeTabRef = useRef<string | undefined>(undefined);
-  const {
-    isRegisterWindowOpen,
-    openRegisterWindow,
-    openEditWindow,
-    openWithDroppedPaths,
-    openWithWorkspaceItem,
-  } = useRegisterWindow(useCallback(() => activeTabRef.current, []));
+  const { isRegisterWindowOpen, openRegisterWindow, openEditWindow, openWithDroppedPaths } =
+    useRegisterWindow(useCallback(() => activeTabRef.current, []));
   const {
     handleCopyPath,
     handleCopyParentPath,
@@ -127,20 +122,23 @@ function App(): React.ReactElement {
   activeTabRef.current = activeTab;
   const showKeyboardHints = useShowKeyboardHints();
 
-  // ワークスペースからドラッグされたアイテム。参照はもうメインウィンドウにあるので、登録画面を開かずに知らせる
+  // ワークスペースからドラッグされたアイテム。選んでいるタブ（の先頭のファイル）へ移し、ワークスペース側を参照にする
+  // （結果はメインプロセスがトーストで知らせる）。参照はもうメインウィンドウにあるので、移さずに知らせる
   const handleWorkspaceItemDropped = useCallback(
     (item: WorkspaceItem) => {
       if (item.type === 'ref') {
-        showWarning(t('workspace.ref.cannotRegisterMissing', { name: item.displayName }));
+        showWarning(t('workspace.ref.cannotMoveMissing', { name: item.displayName }));
         return;
       }
       if (item.ref) {
         showWarning(t('workspace.ref.alreadyInMain', { name: item.displayName }));
         return;
       }
-      void openWithWorkspaceItem(item);
+      window.electronAPI.workspaceAPI
+        .moveToMain(item.id, activeTabRef.current || undefined)
+        .catch((error) => logError('メインウィンドウへ移せませんでした:', error));
     },
-    [openWithWorkspaceItem, showWarning, t]
+    [showWarning, t]
   );
 
   const { isDraggingOver, dragOverKind } = useDragAndDrop(
@@ -581,13 +579,6 @@ function App(): React.ReactElement {
       showSuccess(t(messageKeys[result.action]));
     });
 
-    // ワークスペースの右クリック「メインウィンドウに登録」（メインプロセスがこの画面を出してから送ってくる）
-    const cleanupRegisterWorkspaceItem = window.electronAPI.onRegisterWorkspaceItemToMain(
-      (item) => {
-        void openWithWorkspaceItem(item);
-      }
-    );
-
     return () => {
       cleanupWindowShown();
       cleanupWindowShownItemSearch();
@@ -596,7 +587,6 @@ function App(): React.ReactElement {
       cleanupWorkspaceOpenChanged();
       cleanupPinChanged();
       cleanupChildResult();
-      cleanupRegisterWorkspaceItem();
     };
   }, []);
 
@@ -859,7 +849,7 @@ function App(): React.ReactElement {
         <div className="drag-overlay">
           <div className="drag-message">
             {dragOverKind === 'workspaceItem'
-              ? t('launcher.dropWorkspaceItemToAdd')
+              ? t('launcher.dropWorkspaceItemToMove')
               : t('launcher.dropToAdd')}
           </div>
         </div>

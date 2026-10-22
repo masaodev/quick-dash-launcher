@@ -317,6 +317,8 @@ export interface ElectronAPI {
       id: string,
       mainItemId: string
     ) => Promise<{ success: boolean; item?: WorkspaceItem }>;
+    /** アイテム（コピー）をメインウィンドウのデータファイルへ移し、参照に変える（結果はトーストで知らせる） */
+    moveToMain: (id: string, file?: string) => Promise<boolean>;
     /** コピーの指す先の候補（パスと引数が同じメインウィンドウのアイテム） */
     findLinkCandidates: (id: string) => Promise<WorkspaceLinkCandidate[]>;
     /** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
@@ -495,8 +497,6 @@ export interface ElectronAPI {
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuEditItem: (callback: (itemId: string) => void) => () => void;
-  /** ワークスペースの「メインウィンドウに登録」（メインウィンドウで受ける） */
-  onRegisterWorkspaceItemToMain: (callback: (item: WorkspaceItem) => void) => () => void;
   onWorkspaceMenuShowMemo: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => () => void;

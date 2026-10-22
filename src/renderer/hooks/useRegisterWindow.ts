@@ -1,14 +1,5 @@
 import { useCallback, useState } from 'react';
-import type {
-  EditingAppItem,
-  RegisterItem,
-  RegisterWindowRequest,
-  WorkspaceItem,
-} from '@common/types';
-import {
-  expandWorkspaceSetEntries,
-  workspaceItemToRegisterItem,
-} from '@common/utils/workspaceConverters';
+import type { EditingAppItem, RegisterWindowRequest } from '@common/types';
 
 import { logError } from '../utils/debug';
 
@@ -64,34 +55,10 @@ export function useRegisterWindow(getCurrentTab: () => string | undefined) {
     [open]
   );
 
-  /**
-   * ワークスペースのアイテムを初期値にして開く（メインウィンドウへの登録）
-   *
-   * セットは、ワークスペースのアイテムを指す行をパスを書いた行に置き換えてから開く
-   * （メインウィンドウのセットはワークスペースのアイテムを探さないため）
-   */
-  const openWithWorkspaceItem = useCallback(
-    async (item: WorkspaceItem) => {
-      const prefill: RegisterItem = workspaceItemToRegisterItem(item);
-      if (item.type === 'set') {
-        try {
-          const workspaceItems = await window.electronAPI.workspaceAPI.loadItems();
-          prefill.setEntries = expandWorkspaceSetEntries(item.entries, workspaceItems);
-        } catch (error) {
-          // 読めなければ置き換えずに開く（指す先の無い行は登録画面に「アイテムが見つかりません」と出る）
-          logError('ワークスペースのアイテムを読めませんでした:', error);
-        }
-      }
-      await open({ droppedPaths: [], editingItem: null, prefillItems: [prefill] });
-    },
-    [open]
-  );
-
   return {
     isRegisterWindowOpen,
     openRegisterWindow,
     openEditWindow,
     openWithDroppedPaths,
-    openWithWorkspaceItem,
   };
 }

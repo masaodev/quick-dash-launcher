@@ -59,7 +59,8 @@ export const ja = {
       cancel: 'キャンセル',
     },
     dropToAdd: 'ファイル / URLをドロップして登録',
-    dropWorkspaceItemToAdd: 'ドロップしてメインウィンドウに登録',
+    dropWorkspaceItemToMove:
+      'ドロップしてメインウィンドウへ移す（ワークスペースのアイテムは参照になります）',
     dropPathUnavailable:
       'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。',
     hints: {
@@ -359,7 +360,7 @@ export const ja = {
       convertToCopy: '📄 コピーにする（メインウィンドウと切り離す）',
       retarget: '🔁 別のアイテムを指す…',
       linkToMain: '🔗 メインウィンドウのアイテムを参照する…',
-      registerToMain: '🚀 メインウィンドウに登録',
+      moveToMain: '🚀 メインウィンドウへ移して参照にする',
       moveToWorkspace: '📁 ワークスペースを移動',
       removeFromGroup: '📤 グループから外す',
       remove: '🗑️ ワークスペースから削除',
@@ -2149,8 +2150,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       editBanner_other:
         '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
       editMainNotFound: 'メインウィンドウのアイテムが見つかりません',
-      cannotRegisterMissing:
-        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウに登録できません',
+      cannotMoveMissing:
+        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウへ移せません',
+      movedToMain:
+        '「{{name}}」をメインウィンドウの「{{tab}}」タブへ移し、ワークスペースのアイテムは参照にしました',
+      movedToMainNoTab:
+        '「{{name}}」をメインウィンドウへ移し、ワークスペースのアイテムは参照にしました',
       deleteWarning_one:
         'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
       deleteWarning_other:

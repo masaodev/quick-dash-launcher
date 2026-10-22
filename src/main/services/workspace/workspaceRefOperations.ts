@@ -9,11 +9,18 @@ import type {
 import { isClipboardItem, isLauncherItem } from '@common/types/guards';
 import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { samePathKey } from '@common/utils/workspaceRefs';
+import { convertRegisterItemToJsonItem, getDefaultTab } from '@common/utils/dataConverters';
+import {
+  expandWorkspaceSetEntries,
+  toSavedSetEntries,
+  workspaceItemToRegisterItem,
+} from '@common/utils/workspaceConverters';
 
 import PathManager from '../../config/pathManager.js';
 import { ClipboardService } from '../clipboardService.js';
+import { SettingsService } from '../settingsService.js';
 import { reloadConfigFiles } from '../data/dataFileLoader.js';
-import { updateItemMemoById } from '../data/dataItemWriter.js';
+import { appendJsonItems, updateItemMemoById } from '../data/dataItemWriter.js';
 import { notifyDataChanged } from '../../ipc/notifications.js';
 
 import { WorkspaceService } from './WorkspaceService.js';
@@ -180,6 +187,57 @@ export async function linkToMainItem(id: string, mainItemId: string): Promise<Wo
   }
   logger.info({ id, mainItemId }, 'Linked workspace item to launcher item');
   return linked;
+}
+
+/** メインウィンドウへ移した結果 */
+export interface MoveToMainResult {
+  /** 参照に変えたワークスペースのアイテム */
+  item: WorkspaceItem;
+  /** 移した先のデータファイル */
+  file: string;
+  /** 移した先のタブの名前（タブに載っていないファイルなら無い） */
+  tabName?: string;
+}
+
+/**
+ * ワークスペースのアイテム（コピー）をメインウィンドウのデータファイルへ移し、ワークスペース側を参照に変える
+ *
+ * - 中身は登録画面と同じ変換（convertRegisterItemToJsonItem）でデータファイルの末尾に足す。id は新しく振る
+ * - セットは、ワークスペースのアイテムを指す行をパスの行に置き換える（メインウィンドウのセットはワークスペースを探さない）
+ * - クリップボードは実データを複製せず、そのままメインのアイテムへ引き継ぐ（ワークスペース側は参照になり、実データを持たなくなる）
+ *
+ * @throws 参照（もうメインウィンドウにある）・見つからないアイテム・データファイルに書けない場合
+ */
+export async function moveWorkspaceItemToMain(
+  id: string,
+  file?: string
+): Promise<MoveToMainResult> {
+  const service = await WorkspaceService.getInstance();
+  await ensureMainItemIndex();
+  const items = await service.loadResolvedItems();
+  const item = items.find((i) => i.id === id);
+  if (!item) throw new Error(`Item not found: ${id}`);
+  if (item.type === 'ref' || item.ref) throw new Error(`Already a reference item: ${id}`);
+
+  const registerItem = workspaceItemToRegisterItem(item);
+  if (item.type === 'set') {
+    registerItem.setEntries = toSavedSetEntries(expandWorkspaceSetEntries(item.entries, items));
+  }
+  const jsonItem = convertRegisterItemToJsonItem(registerItem);
+  // 指定が無ければ先頭のタブの先頭のファイル
+  const target = getDefaultTab(
+    file,
+    await (await SettingsService.getInstance()).get('dataFileTabs')
+  );
+  appendJsonItems(PathManager.getConfigFolder(), target, [jsonItem]);
+  notifyDataChanged();
+
+  // 足したアイテムを表に載せてから参照に変える
+  const index = await ensureMainItemIndex(true);
+  const linked = await linkToMainItem(id, jsonItem.id);
+  logger.info({ id, mainItemId: jsonItem.id, file: target }, 'Moved workspace item to launcher');
+  const tabName = index.tabNameOfFile.get(target);
+  return { item: linked, file: target, ...(tabName !== undefined && { tabName }) };
 }
 
 /** ウィンドウ切り替え・カスタムアイコンが違うか */
