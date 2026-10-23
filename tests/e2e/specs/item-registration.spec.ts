@@ -672,3 +672,71 @@ test.describe('QuickDashLauncher - パスの無い単一アイテム', () => {
     });
   });
 });
+
+/**
+ * クリップボードアイテムの保存先（タブ）を変える編集
+ * - 中身を変えずに保存先だけ変えても、実データ（clipboard-data のファイル）は消えずに使い続ける
+ */
+test.describe('QuickDashLauncher - クリップボードアイテムの保存先を変える', () => {
+  test.use({ configTemplate: 'with-tabs' });
+
+  test('保存先のタブを変えても、実データが残る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+    await utils.waitForPageLoad();
+
+    const saved = await mainWindow.evaluate(() =>
+      window.electronAPI.clipboardAPI.saveText('タブを移す本文')
+    );
+    expect(saved.success).toBe(true);
+    const dataFileRef = saved.dataFileRef!;
+    await mainWindow.evaluate(
+      (ref) =>
+        window.electronAPI.registerItems([
+          {
+            displayName: '移すクリップボード',
+            path: '',
+            type: 'clipboard',
+            targetTab: 'datafiles/data.json',
+            itemCategory: 'clipboard',
+            clipboardDataRef: ref,
+            clipboardFormats: ['text'],
+            clipboardPreview: 'タブを移す本文',
+            clipboardSavedAt: Date.now(),
+          },
+        ]),
+      dataFileRef
+    );
+    const target = await mainWindow.evaluate(async () => {
+      const items = await window.electronAPI.loadDataFiles('internal');
+      return items.find((i) => 'displayName' in i && i.displayName === '移すクリップボード');
+    });
+    expect(target).toBeDefined();
+
+    await menuHelper.simulateLauncherMenu('edit', target as unknown as Record<string, unknown>);
+    const editor = await utils.waitForRegisterWindow(electronApp);
+    // 最初の select が保存先のタブ
+    await editor.locator('.register-modal select').first().selectOption({ label: 'サブ1' });
+    await editor.locator('.modal-actions button', { hasText: '保存' }).click();
+
+    await expect
+      .poll(
+        () =>
+          configHelper
+            .readDataFile('data2.json')
+            .items.find((i) => 'displayName' in i && i.displayName === '移すクリップボード'),
+        { timeout: 10000 }
+      )
+      .toMatchObject({ type: 'clipboard', dataFileRef });
+    expect(
+      configHelper
+        .readDataFile('data.json')
+        .items.some((i) => 'displayName' in i && i.displayName === '移すクリップボード')
+    ).toBe(false);
+    expect(fs.existsSync(path.join(configHelper.getConfigDir(), dataFileRef))).toBe(true);
+  });
+});

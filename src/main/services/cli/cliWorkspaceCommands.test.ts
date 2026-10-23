@@ -114,6 +114,7 @@ beforeEach(() => {
       items.push(added);
       return added;
     },
+    canRef: async (itemId: string) => !unrefable.has(itemId),
     addRef: async (itemId: string, groupId?: string, workspaceId?: string) => {
       const added = {
         ...item(
@@ -157,6 +158,22 @@ beforeEach(() => {
       return items.find((i) => i.id === id)!;
     },
     findLinkCandidates: async (id: string) => linkCandidates[id] ?? [],
+    moveToMain: vi.fn(async (id: string, file: string) => {
+      items = items.map((i) =>
+        i.id === id
+          ? ({
+              ...i,
+              ref: { itemId: 'Moved001', status: 'ok', mainDisplayName: i.displayName },
+            } as WorkspaceItem)
+          : i
+      );
+      return {
+        item: items.find((i) => i.id === id)!,
+        file,
+        tabName: file === 'datafiles/data2.json' ? '仕事' : 'メイン',
+        reused: false,
+      };
+    }),
     updateItem: async (id: string, update: WorkspaceItemUpdate) => {
       items = items.map((i) => (i.id === id ? ({ ...i, ...update } as WorkspaceItem) : i));
     },
@@ -247,7 +264,10 @@ beforeEach(() => {
 });
 
 let launcherEntries: LauncherEntry[];
+/** 参照できない（表に無い）ことにするメインウィンドウのアイテムの id */
+let unrefable: Set<string>;
 beforeEach(() => {
+  unrefable = new Set();
   launcherEntries = [
     {
       item: {
@@ -620,6 +640,35 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     });
   });
 
+  it('参照できないアイテムはコピーで足し、fellBackToCopy で知らせる（--dry-run も同じ）', async () => {
+    unrefable.add('SetMorn1');
+    const addRef = vi.spyOn(ctx.store, 'addRef');
+    const dry = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', 'SetMorn1', '--dry-run'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(dry).toMatchObject({ dryRun: true, fellBackToCopy: true });
+    expect((dry.item as Record<string, unknown>).type).not.toBe('ref');
+    const r = (await runWorkspaceCommand('item', 'add', ['--from', 'SetMorn1'], ctx)) as Record<
+      string,
+      unknown
+    >;
+    expect(addRef).not.toHaveBeenCalled();
+    expect(r).toMatchObject({ fellBackToCopy: true, from: { id: 'SetMorn1' } });
+  });
+
+  it('--copy で足したときは fellBackToCopy を付けない', async () => {
+    const r = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', 'SetMorn1', '--copy'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(r.fellBackToCopy).toBeUndefined();
+  });
+
   it('参照の --dry-run は足さずに参照の形を返す', async () => {
     const r = (await runWorkspaceCommand(
       'item',
@@ -725,6 +774,52 @@ describe('workspace item add --from（メインウィンドウのアイテムを
       const e = await errorOf(runWorkspaceCommand('item', 'add', ['--from', '朝', ...extra], ctx));
       expect(e.code).toBe('usage');
     }
+  });
+});
+
+describe('workspace item move-to-main（コピーをメインウィンドウへ移して参照にする）', () => {
+  it('既定のデータファイルへ移し、参照になったアイテムと移した先を返す', async () => {
+    const r = (await runWorkspaceCommand('item', 'move-to-main', ['It000001'], ctx)) as Record<
+      string,
+      unknown
+    >;
+    expect(ctx.store.moveToMain).toHaveBeenCalledWith('It000001', 'datafiles/data.json');
+    expect(r).toMatchObject({
+      file: 'datafiles/data.json',
+      reused: false,
+      item: { id: 'It000001', ref: { itemId: 'Moved001' } },
+    });
+  });
+
+  it('--tab はそのタブの先頭のデータファイル、--file はそのファイルへ移す', async () => {
+    await runWorkspaceCommand('item', 'move-to-main', ['It000001', '--tab', '仕事'], ctx);
+    expect(ctx.store.moveToMain).toHaveBeenLastCalledWith('It000001', 'datafiles/data2.json');
+    await runWorkspaceCommand('item', 'move-to-main', ['It000002', '--file', 'data2.json'], ctx);
+    expect(ctx.store.moveToMain).toHaveBeenLastCalledWith('It000002', 'datafiles/data2.json');
+    const both = await errorOf(
+      runWorkspaceCommand(
+        'item',
+        'move-to-main',
+        ['It000001', '--file', 'data.json', '--tab', 'メイン'],
+        ctx
+      )
+    );
+    expect(both.code).toBe('usage');
+  });
+
+  it('--dry-run は移さずに移す先を返し、参照は conflict', async () => {
+    const r = (await runWorkspaceCommand(
+      'item',
+      'move-to-main',
+      ['It000001', '--dry-run'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(r).toMatchObject({ dryRun: true, file: 'datafiles/data.json' });
+    expect(ctx.store.moveToMain).not.toHaveBeenCalled();
+
+    await runWorkspaceCommand('item', 'move-to-main', ['It000001'], ctx);
+    const e = await errorOf(runWorkspaceCommand('item', 'move-to-main', ['It000001'], ctx));
+    expect(e.code).toBe('conflict');
   });
 });
 

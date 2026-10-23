@@ -1,7 +1,6 @@
 import i18next from 'i18next';
 import type { RegisterItem, EditingAppItem } from '@common/types';
 import { itemWindowSwitchFields } from '@common/utils/itemWindowConversion';
-import { toSavedSetEntries } from '@common/utils/workspaceConverters';
 
 /**
  * 登録フォームの内容をデータファイルへ保存する
@@ -13,13 +12,9 @@ import { toSavedSetEntries } from '@common/utils/workspaceConverters';
  * @returns 'registered' | 'updated'（編集だったかどうか）
  */
 export async function saveRegisterItems(
-  formItems: RegisterItem[],
+  items: RegisterItem[],
   editingItem: EditingAppItem | null | undefined
 ): Promise<'registered' | 'updated'> {
-  // セットの行の、画面の中だけで使う印は保存しない
-  const items = formItems.map((item) =>
-    item.setEntries ? { ...item, setEntries: toSavedSetEntries(item.setEntries) } : item
-  );
   if (!editingItem || items.length !== 1) {
     await window.electronAPI.registerItems(items);
     return 'registered';
@@ -35,7 +30,10 @@ export async function saveRegisterItems(
   const itemId = editingItem.jsonItemId;
 
   if (isFileChanged) {
-    await window.electronAPI.deleteItemsById([{ id: itemId }]);
+    // クリップボードアイテムは、登録し直すアイテムが使う実データを残す（中身を変えていれば古い実データだけ消える）
+    const keepClipboardDataRefs =
+      item.itemCategory === 'clipboard' && item.clipboardDataRef ? [item.clipboardDataRef] : [];
+    await window.electronAPI.deleteItemsById([{ id: itemId }], { keepClipboardDataRefs });
     // id を引き継ぐ（変えるとセットの行が「アイテムが見つかりません」になる）
     await window.electronAPI.registerItems([{ ...item, keepId: itemId }]);
   } else if (item.itemCategory === 'dir') {
@@ -66,27 +64,4 @@ export async function saveRegisterItems(
     });
   }
   return 'updated';
-}
-
-/**
- * 初期値として渡されたクリップボードアイテムが元の実データを指したままなら、複製した参照に差し替える
- * （ワークスペースと 1 つのファイルを共有すると、片方で消したときにもう片方が復元できなくなる）。
- * 登録画面で取り直したアイテムは新しい実データを指すので、そのまま
- */
-export async function withOwnClipboardData(
-  items: RegisterItem[],
-  prefillItems: RegisterItem[] | undefined
-): Promise<RegisterItem[]> {
-  const prefillRefs = new Set(
-    (prefillItems ?? []).map((item) => item.clipboardDataRef).filter((ref) => !!ref)
-  );
-  if (prefillRefs.size === 0) return items;
-  return Promise.all(
-    items.map(async (item) => {
-      if (item.itemCategory !== 'clipboard' || !item.clipboardDataRef) return item;
-      if (!prefillRefs.has(item.clipboardDataRef)) return item;
-      const newRef = await window.electronAPI.clipboardAPI.duplicateData(item.clipboardDataRef);
-      return newRef ? { ...item, clipboardDataRef: newRef } : item;
-    })
-  );
 }

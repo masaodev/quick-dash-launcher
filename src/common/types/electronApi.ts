@@ -210,7 +210,11 @@ export interface ElectronAPI {
   getLanguage: () => Promise<AppLanguage>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
-  deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;
+  /** keepClipboardDataRefs＝消さずに残すクリップボードの実データ（保存先を変える編集で、同じ実データを使い続けるとき） */
+  deleteItemsById: (
+    requests: { id: string }[],
+    options?: { keepClipboardDataRefs?: string[] }
+  ) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   /**
@@ -292,7 +296,7 @@ export interface ElectronAPI {
       item: AppItem,
       groupId?: string,
       workspaceId?: string,
-      options?: { copy?: boolean }
+      options?: { copy?: boolean; freshClipboardData?: boolean }
     ) => Promise<WorkspaceItem>;
     /** 中身（編集フォームで新しく入力したもの）からアイテムを作る */
     createItem: (
@@ -317,12 +321,17 @@ export interface ElectronAPI {
       id: string,
       mainItemId: string
     ) => Promise<{ success: boolean; item?: WorkspaceItem }>;
+    /** アイテム（コピー）をメインウィンドウのデータファイルへ移し、参照に変える（結果はトーストで知らせる） */
+    moveToMain: (id: string, file?: string) => Promise<boolean>;
     /** コピーの指す先の候補（パスと引数が同じメインウィンドウのアイテム） */
     findLinkCandidates: (id: string) => Promise<WorkspaceLinkCandidate[]>;
     /** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
     previewLinkCopies: (workspaceId: string) => Promise<WorkspaceLinkCopiesPreview>;
-    /** 一覧で選んだコピーを参照に変える */
-    applyLinkCopies: (ids: string[]) => Promise<{ success: boolean; count?: number }>;
+    /** 一覧で選んだコピーを参照に変える（choices＝候補が 2 件以上のコピーで選んだ指す先。コピーの id → メインウィンドウのアイテムの id） */
+    applyLinkCopies: (
+      ids: string[],
+      choices?: Record<string, string>
+    ) => Promise<{ success: boolean; count?: number }>;
     /** メインウィンドウのアイテムの id ごとの、ワークスペースの参照の数（0 件は返さない） */
     countRefs: (itemIds: string[]) => Promise<Record<string, number>>;
     /** 参照の指す先を付け替える（消した id → 残す id。アイテム管理の「重複を統合」を保存したとき） */
@@ -495,8 +504,6 @@ export interface ElectronAPI {
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuEditItem: (callback: (itemId: string) => void) => () => void;
-  /** ワークスペースの「メインウィンドウに登録」（メインウィンドウで受ける） */
-  onRegisterWorkspaceItemToMain: (callback: (item: WorkspaceItem) => void) => () => void;
   onWorkspaceMenuShowMemo: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => () => void;
@@ -504,7 +511,6 @@ export interface ElectronAPI {
   onWorkspaceMenuCopyShortcutPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
-  onWorkspaceMenuRemoveFromGroup: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuMoveToWorkspace: (
     callback: (itemId: string, targetWorkspaceId: string) => void
@@ -539,8 +545,6 @@ export interface ElectronAPI {
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;
     discardSession: (sessionId: string) => Promise<boolean>;
-    /** 実データのファイルを複製し、新しい参照を返す（読めなければ null） */
-    duplicateData: (dataFileRef: string) => Promise<string | null>;
     /** 登録画面で書いたテキストを、テキストだけの実データとして保存する */
     saveText: (text: string) => Promise<ClipboardCaptureResult>;
     /** 未確定のキャプチャか保存済みの実データから、テキストの全文と画像の縮小版を読む（読めなければ null） */

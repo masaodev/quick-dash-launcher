@@ -89,6 +89,11 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
       expect(fs.existsSync(dataFile)).toBe(true);
       const saved = JSON.parse(fs.readFileSync(dataFile, 'utf-8')) as { text?: string };
       expect(saved.text).toBe(text);
+      // 取り込んだ実データをそのまま使い、複製を作らない（使われない実データを残さない）
+      const dataDir = path.dirname(dataFile);
+      expect(fs.readdirSync(dataDir).filter((f) => f.endsWith('.json'))).toEqual([
+        path.basename(added.dataFileRef),
+      ]);
     });
 
     await test.step('URL は URL アイテム、パスは起動アイテムになる', async () => {

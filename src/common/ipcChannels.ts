@@ -156,6 +156,7 @@ export const IPC_CHANNELS = {
   WORKSPACE_LAUNCH_ITEM: 'workspace:launch-item',
   WORKSPACE_CONVERT_TO_COPY: 'workspace:convert-to-copy',
   WORKSPACE_LINK_TO_MAIN: 'workspace:link-to-main',
+  WORKSPACE_MOVE_TO_MAIN: 'workspace:move-to-main',
   WORKSPACE_FIND_LINK_CANDIDATES: 'workspace:find-link-candidates',
   WORKSPACE_PREVIEW_LINK_COPIES: 'workspace:preview-link-copies',
   WORKSPACE_APPLY_LINK_COPIES: 'workspace:apply-link-copies',
@@ -275,8 +276,6 @@ export const IPC_CHANNELS = {
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',
   EVENT_WORKSPACE_MENU_RENAME_ITEM: 'workspace-menu-rename-item',
   EVENT_WORKSPACE_MENU_EDIT_ITEM: 'workspace-menu-edit-item',
-  // 「メインウィンドウに登録」: メインプロセス → メインウィンドウ（ワークスペースのアイテムを初期値にして登録画面を開く）
-  EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN: 'workspace-menu-register-to-main',
   EVENT_WORKSPACE_MENU_SHOW_MEMO: 'workspace-menu-show-memo',
   EVENT_WORKSPACE_MENU_COPY_PATH: 'workspace-menu-copy-path',
   EVENT_WORKSPACE_MENU_COPY_PARENT_PATH: 'workspace-menu-copy-parent-path',
@@ -284,7 +283,6 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH: 'workspace-menu-copy-shortcut-path',
   EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH: 'workspace-menu-copy-shortcut-parent-path',
   EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'workspace-menu-open-shortcut-parent-folder',
-  EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP: 'workspace-menu-remove-from-group',
   EVENT_WORKSPACE_MENU_REMOVE_ITEM: 'workspace-menu-remove-item',
   EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE: 'workspace-menu-move-to-workspace',
 
@@ -338,7 +336,6 @@ export const IPC_CHANNELS = {
   CLIPBOARD_COMMIT_SESSION: 'clipboard:commit-session',
   CLIPBOARD_DISCARD_SESSION: 'clipboard:discard-session',
   // 実データの複製（メインウィンドウとワークスペースの間で写すとき）
-  CLIPBOARD_DUPLICATE_DATA: 'clipboard:duplicate-data',
   // 登録画面の内容欄（書いたテキストの保存と、見せる中身＝全文・画像の縮小版の読み出し）
   CLIPBOARD_SAVE_TEXT: 'clipboard:save-text',
   CLIPBOARD_READ_CONTENT: 'clipboard:read-content',

@@ -6,7 +6,6 @@ import type {
   AppItem,
   WindowInfo,
   MainChildWindowResult,
-  WorkspaceItem,
   ToastEventData,
   AdminTab,
 } from '@common/types';
@@ -145,7 +144,8 @@ const electronAPI: ElectronAPI = {
   getAllWindowsAllDesktops: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS),
   getVirtualDesktopInfo: () => ipcRenderer.invoke(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO),
   updateItemById: (request) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM_BY_ID, request),
-  deleteItemsById: (requests) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS_BY_ID, requests),
+  deleteItemsById: (requests, options) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS_BY_ID, requests, options),
   // EditableJsonItem API
   loadEditableItems: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
   saveEditableItems: (editableItems, expectedHashes) =>
@@ -276,10 +276,12 @@ const electronAPI: ElectronAPI = {
     convertToCopy: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_CONVERT_TO_COPY, id),
     linkToMain: (id, mainItemId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LINK_TO_MAIN, id, mainItemId),
+    moveToMain: (id, file) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, id, file),
     findLinkCandidates: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, id),
     previewLinkCopies: (workspaceId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_PREVIEW_LINK_COPIES, workspaceId),
-    applyLinkCopies: (ids) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, ids),
+    applyLinkCopies: (ids, choices) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, ids, choices),
     countRefs: (itemIds) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_COUNT_REFS, itemIds),
     remapRefs: (idMap) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMAP_REFS, idMap),
     // グループ管理
@@ -452,11 +454,6 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_RENAME_ITEM, callback),
   onWorkspaceMenuEditItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_EDIT_ITEM, callback),
-  onRegisterWorkspaceItemToMain: (callback) =>
-    createEventListener<WorkspaceItem>(
-      IPC_CHANNELS.EVENT_WORKSPACE_MENU_REGISTER_TO_MAIN,
-      callback
-    ),
   onWorkspaceMenuShowMemo: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_SHOW_MEMO, callback),
   onWorkspaceMenuCopyPath: (callback) =>
@@ -477,8 +474,6 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
       callback
     ),
-  onWorkspaceMenuRemoveFromGroup: (callback) =>
-    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, callback),
   onWorkspaceMenuRemoveItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
   onWorkspaceMenuMoveToWorkspace: (callback) =>
@@ -545,8 +540,6 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, sessionId),
     discardSession: (sessionId) =>
       ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION, sessionId),
-    duplicateData: (dataFileRef) =>
-      ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_DUPLICATE_DATA, dataFileRef),
     saveText: (text) => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_SAVE_TEXT, text),
     readContent: (source) => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_READ_CONTENT, source),
   },

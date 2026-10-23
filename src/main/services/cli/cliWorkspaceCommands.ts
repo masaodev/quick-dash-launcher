@@ -40,7 +40,7 @@ import {
 } from './cliShared.js';
 import type { ClipboardTextStore } from './cliShared.js';
 import { checkCliSetEntries } from './cliSetCommands.js';
-import { findLauncherEntry, launcherCandidate } from './cliLauncherCommands.js';
+import { findLauncherEntry, launcherCandidate, resolveTargetFile } from './cliLauncherCommands.js';
 import type { LauncherEntry, LauncherStore } from './cliLauncherCommands.js';
 
 /**
@@ -59,6 +59,8 @@ export interface WorkspaceStore {
   /** アイテム（参照はメインウィンドウのアイテムの中身で埋めたもの） */
   loadItems(): Promise<WorkspaceItem[]>;
   addItem(item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem>;
+  /** メインウィンドウのアイテム（id）を参照できるか（今のデータファイルにあり、フォルダ取込で展開したものでない） */
+  canRef(itemId: string): Promise<boolean>;
   /** メインウィンドウのアイテム（id）を指す参照を足す。参照できなければ undefined */
   addRef(
     itemId: string,
@@ -69,6 +71,14 @@ export interface WorkspaceStore {
   updateDisplayName(id: string, displayName: string): Promise<void>;
   /** 参照をコピーにする */
   convertToCopy(id: string): Promise<WorkspaceItem>;
+  /**
+   * コピーをメインウィンドウのデータファイルへ移し、参照に変える（画面の「メインウィンドウへ移して参照にする」と同じ）。
+   * reused は、移す先に同じアイテムがあり、新しく作らずにそれを指したとき
+   */
+  moveToMain(
+    id: string,
+    file: string
+  ): Promise<{ item: WorkspaceItem; file: string; tabName?: string; reused: boolean }>;
   /** アイテムをメインウィンドウのアイテムの参照にする（コピー → 参照・指し直し） */
   linkToMain(id: string, mainItemId: string): Promise<WorkspaceItem>;
   /** コピーと同じパス・引数のメインウィンドウのアイテム（id） */
@@ -299,6 +309,8 @@ export async function runWorkspaceCommand(
         return removeItem(args, ctx);
       case 'convert':
         return convertItem(args, ctx);
+      case 'move-to-main':
+        return moveItemToMain(args, ctx);
     }
   }
   if (noun === 'group') {
@@ -638,9 +650,12 @@ async function addFromLauncher(
 
   const s = await snapshot(ctx.store);
   const place = resolvePlace(s, optionString(parsed, 'workspace'), optionString(parsed, 'group'));
-  // 参照（既定）。id を持つアイテムなら参照で足す
+  // 参照（既定）。参照できるアイテムなら参照で足す。参照できなければ、画面と同じくコピーで足し、
+  // 結果に fellBackToCopy を付けて知らせる（--dry-run も同じ形を返す）
   const mainId = entry.item.id;
-  if (!copy && mainId) {
+  const refable = !copy && !!mainId && (await ctx.store.canRef(mainId));
+  let fellBackToCopy = !copy && !refable;
+  if (refable && mainId) {
     const location = [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)];
     if (dryRun) {
       return {
@@ -666,7 +681,10 @@ async function addFromLauncher(
       ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
       return { ...itemView(item, after), from: source };
     }
+    // 調べてから足すまでの間に参照できなくなった
+    fellBackToCopy = true;
   }
+  const fellBack = fellBackToCopy ? { fellBackToCopy: true } : {};
   if (dryRun) {
     return {
       dryRun: true,
@@ -676,6 +694,7 @@ async function addFromLauncher(
         location: [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)],
       },
       from: source,
+      ...fellBack,
     };
   }
 
@@ -691,7 +710,7 @@ async function addFromLauncher(
   const after = await snapshot(ctx.store);
   const item = after.items.find((i) => i.id === added.id) ?? added;
   ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
-  return { ...itemView(item, after), from: source };
+  return { ...itemView(item, after), from: source, ...fellBack };
 }
 
 /**
@@ -1030,6 +1049,48 @@ async function convertItem(
   const item = after.items.find((i) => i.id === current.id) ?? linked;
   ctx.changed(mainI18n.t('workspace.ref.linked', { name: item.displayName }));
   return { before, item: itemView(item, after) };
+}
+
+/**
+ * コピーをメインウィンドウへ移し、ワークスペース側を参照に変える（画面の「🚀 メインウィンドウへ移して参照にする」と同じ）。
+ * 移す先は --file か --tab（無ければ既定のデータファイル）。参照・元が見つからない参照は conflict
+ */
+async function moveItemToMain(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['file', 'tab'], flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const file = await resolveTargetFile(
+    { store: ctx.launcher },
+    optionString(parsed, 'file'),
+    optionString(parsed, 'tab')
+  );
+  const s = await snapshot(ctx.store);
+  const current = findItem(key, s);
+  if (current.type === 'ref' || current.ref) {
+    throw new CliError('conflict', mainI18n.t('cli.errors.alreadyInMain'));
+  }
+  const before = itemView(current, s);
+  if (dryRun) return { dryRun: true, before, file };
+
+  const result = await ctx.store.moveToMain(current.id, file);
+  const after = await snapshot(ctx.store);
+  const item = after.items.find((i) => i.id === current.id) ?? result.item;
+  const name = item.displayName;
+  const tab = result.tabName;
+  ctx.changed(
+    result.reused
+      ? tab !== undefined
+        ? mainI18n.t('workspace.ref.linkedToSameInMain', { name, tab })
+        : mainI18n.t('workspace.ref.linkedToSameInMainNoTab', { name })
+      : tab !== undefined
+        ? mainI18n.t('workspace.ref.movedToMain', { name, tab })
+        : mainI18n.t('workspace.ref.movedToMainNoTab', { name })
+  );
+  return { before, item: itemView(item, after), file: result.file, reused: result.reused };
 }
 
 async function removeItem(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {

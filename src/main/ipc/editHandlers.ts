@@ -63,10 +63,11 @@ export function registerEditHandlers(configFolder: string): void {
 
   createSafeIpcHandler(
     IPC_CHANNELS.DELETE_ITEMS_BY_ID,
-    async (requests: DeleteItemByIdRequest[]) => {
+    async (requests: DeleteItemByIdRequest[], options?: { keepClipboardDataRefs?: string[] }) => {
       await deleteItemsById(
         configFolder,
-        requests.map((r) => r.id)
+        requests.map((r) => r.id),
+        options
       );
       notifyDataChanged();
       return { success: true };

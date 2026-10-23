@@ -30,8 +30,6 @@ interface RegisterModalProps {
   onRegister: (items: RegisterItem[]) => void;
   droppedPaths: string[];
   editingItem?: EditingAppItem | EditableJsonItem | null;
-  /** 新規登録の初期値にするアイテム（ワークスペースのアイテムを登録するとき） */
-  prefillItems?: RegisterItem[];
   /** 開いたときにこの種別へ切り替える（管理画面の種類プルダウンから、詳細編集でしか作れない種別を選んだとき） */
   initialCategory?: RegisterItem['itemCategory'];
   currentTab?: string; // 現在開いているタブ
@@ -61,7 +59,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   onRegister,
   droppedPaths,
   editingItem,
-  prefillItems,
   initialCategory,
   currentTab,
   onDelete,
@@ -91,7 +88,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
     isOpen,
     editingItem,
     droppedPaths,
-    prefillItems,
     currentTab,
     loadCustomIconPreview,
     onClose,

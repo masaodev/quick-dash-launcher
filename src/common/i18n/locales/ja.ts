@@ -59,7 +59,8 @@ export const ja = {
       cancel: 'キャンセル',
     },
     dropToAdd: 'ファイル / URLをドロップして登録',
-    dropWorkspaceItemToAdd: 'ドロップしてメインウィンドウに登録',
+    dropWorkspaceItemToMove:
+      'ドロップしてメインウィンドウへ移す（ワークスペースのアイテムは参照になります）',
     dropPathUnavailable:
       'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。',
     hints: {
@@ -360,10 +361,8 @@ export const ja = {
       renameAlias: '🏷️ 表示名を変更（ワークスペースだけ）',
       convertToCopy: '📄 コピーにする（メインウィンドウと切り離す）',
       retarget: '🔁 別のアイテムを指す…',
-      linkToMain: '🔗 メインウィンドウのアイテムを参照する…',
-      registerToMain: '🚀 メインウィンドウに登録',
+      moveToMain: '🚀 メインウィンドウへ移して参照にする',
       moveToWorkspace: '📁 ワークスペースを移動',
-      removeFromGroup: '📤 グループから外す',
       remove: '🗑️ ワークスペースから削除',
     },
     workspaceGroup: {
@@ -537,6 +536,9 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace item convert <id か表示名>    参照とコピーを行き来する（--to copy | ref は必須。ref なら --from <指す先>。
                                               省略時はパスと引数が同じメインウィンドウのアイテム、--dry-run）
+  qdl workspace item move-to-main <id か表示名>
+                                              コピーをメインウィンドウへ移し、参照に変える（--file | --tab
+                                              <移す先>。省略時は既定のデータファイル、--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
   qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
   qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
@@ -619,6 +621,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '参照アイテムの中身はメインウィンドウのアイテムのものです（--{{option}} は使えません）。中身は qdl launcher item update {{id}} で直してください',
       convertTo: '--to には copy か ref を指定してください（{{to}}）',
       notRef: '参照アイテムではありません',
+      alreadyInMain: '参照アイテムはもうメインウィンドウにあります（移せるのはコピーだけです）',
       refMissing: '元のアイテムが見つからないので、コピーにできません',
       noLinkCandidate:
         'パスと引数が同じメインウィンドウのアイテムが {{count}} 件です。--from で指す先を指定してください',
@@ -814,9 +817,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       parallel: '同時に開く',
       moveOnly: 'ウィンドウを動かすだけ',
       missing: 'アイテムが見つかりません',
-      expanded: 'パスに置き換えました',
-      expandedHint:
-        'ワークスペースのアイテム「{{name}}」を、このセットに書いたパスに置き換えました（メインウィンドウのセットはワークスペースのアイテムを指せないため）。元のアイテムを直しても、このセットには効きません',
       moveUp: '上へ',
       moveDown: '下へ',
       remove: '行を削除',
@@ -2150,8 +2150,16 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       editBanner_other:
         '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
       editMainNotFound: 'メインウィンドウのアイテムが見つかりません',
-      cannotRegisterMissing:
-        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウに登録できません',
+      cannotMoveMissing:
+        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウへ移せません',
+      movedToMain:
+        '「{{name}}」をメインウィンドウの「{{tab}}」タブへ移し、ワークスペースのアイテムは参照にしました',
+      movedToMainNoTab:
+        '「{{name}}」をメインウィンドウへ移し、ワークスペースのアイテムは参照にしました',
+      linkedToSameInMain:
+        'メインウィンドウの「{{tab}}」タブに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
+      linkedToSameInMainNoTab:
+        'メインウィンドウに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
       deleteWarning_one:
         'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
       deleteWarning_other:
@@ -2180,7 +2188,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
       addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
-      addFailed: 'アイテムを追加できませんでした',
     },
     linkPicker: {
       windowTitle: '指すアイテムを選ぶ',
@@ -2191,7 +2198,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       others: 'ほかのアイテム',
       current: '今の指す先',
       notFound: 'ワークスペースのアイテムが見つかりません（削除された可能性があります）。',
-      failed: '参照にできませんでした',
     },
     linkCopies: {
       title: 'メインウィンドウと同じアイテムを参照に変える',
@@ -2204,10 +2210,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memoConflict: '⚠ メモが両方にあって違う（参照にするとコピーのメモは消えます）',
       settingsDiffer:
         '⚠ ウィンドウ切り替え・アイコンがメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
-      ambiguous_one:
-        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
-      ambiguous_other:
-        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
+      ambiguous_one: '⚠ 候補が {{count}} 件。指す先を選んでください',
+      ambiguous_other: '⚠ 候補が {{count}} 件。指す先を選んでください',
+      choose: '指す先を選ぶ…',
+      chooseLabel: '「{{name}}」が指すメインウィンドウのアイテム',
       notMatchable_one:
         'クリップボード・セット・パスの無い単一アイテム {{count}} 件は、パスで比べられないので対象外です。',
       notMatchable_other:
@@ -2217,7 +2223,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       apply_other: '{{count}} 件を参照に変える',
       done_one: '{{count}} 件を参照に変えました',
       done_other: '{{count}} 件を参照に変えました',
-      failed: '参照に変えられませんでした',
       notFound: 'ワークスペースが見つかりません（削除された可能性があります）。',
     },
   },

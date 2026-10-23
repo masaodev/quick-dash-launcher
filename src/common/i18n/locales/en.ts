@@ -58,7 +58,7 @@ export const en: LocaleMessages = {
       cancel: 'Cancel',
     },
     dropToAdd: 'Drop a file or URL to add it',
-    dropWorkspaceItemToAdd: 'Drop to add it to the launcher',
+    dropWorkspaceItemToMove: 'Drop to move it to the launcher (the workspace item becomes a link)',
     dropPathUnavailable: "Couldn't get the file path.\nDrag the file directly from File Explorer.",
     hints: {
       closeMarked: 'Close {{count}}',
@@ -359,10 +359,8 @@ export const en: LocaleMessages = {
       renameAlias: '🏷️ Rename (workspace only)',
       convertToCopy: '📄 Make a copy (unlink from the launcher)',
       retarget: '🔁 Link to another item…',
-      linkToMain: '🔗 Link to a launcher item…',
-      registerToMain: '🚀 Add to the launcher',
+      moveToMain: '🚀 Move to the launcher and link to it',
       moveToWorkspace: '📁 Move to workspace',
-      removeFromGroup: '📤 Remove from group',
       remove: '🗑️ Remove from workspace',
     },
     workspaceGroup: {
@@ -537,6 +535,9 @@ Works with workspaces (workspace.json).
   qdl workspace item convert <id or name>     Switch between a link and a copy (--to copy | ref is required. For ref,
                                               --from <target>; defaults to the launcher item with the same path and
                                               arguments. --dry-run)
+  qdl workspace item move-to-main <id or name>
+                                              Move a copy to the launcher and link to it (--file | --tab
+                                              <destination>; defaults to the default data file. --dry-run)
   qdl workspace group list                    List groups (--workspace --grep)
   qdl workspace group add                     Add a group (--name is required. --color --parent --workspace --dry-run)
   qdl workspace group update <id or name>     Change a group (--name --color --parent <parent> ("" for top level) --dry-run)
@@ -620,6 +621,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         "A linked item's content comes from the launcher item (--{{option}} can't be used). Change it with qdl launcher item update {{id}}",
       convertTo: 'Set --to to copy or ref ({{to}})',
       notRef: 'The item is not linked to a launcher item',
+      alreadyInMain: 'A linked item is already in the launcher (only copies can be moved)',
       refMissing: "The original item was not found, so it can't be made a copy",
       noLinkCandidate:
         'Found {{count}} launcher items with the same path and arguments. Choose one with --from',
@@ -811,9 +813,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       parallel: 'All at once',
       moveOnly: 'Moves a window only',
       missing: "Couldn't find the item",
-      expanded: 'Replaced with a path',
-      expandedHint:
-        'Replaced the workspace item "{{name}}" with a path written in this set, because sets in the launcher can\'t point to workspace items. Changes to the original item won\'t apply to this set',
       moveUp: 'Move up',
       moveDown: 'Move down',
       remove: 'Remove row',
@@ -2151,8 +2150,15 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       editBanner_other:
         '🔗 You are editing a launcher item. The change also shows in {{count}} linked items in the workspace',
       editMainNotFound: 'The launcher item was not found',
-      cannotRegisterMissing:
-        'Can\'t add "{{name}}" to the launcher because the original item was not found',
+      cannotMoveMissing:
+        'Can\'t move "{{name}}" to the launcher because the original item was not found',
+      movedToMain:
+        'Moved "{{name}}" to the "{{tab}}" tab of the launcher and linked the workspace item to it',
+      movedToMainNoTab: 'Moved "{{name}}" to the launcher and linked the workspace item to it',
+      linkedToSameInMain:
+        'The "{{tab}}" tab already had the same item, so "{{name}}" now links to it',
+      linkedToSameInMainNoTab:
+        'The launcher already had the same item, so "{{name}}" now links to it',
       deleteWarning_one:
         '{{count}} workspace item links to this. If you delete it, that link shows "The original item was not found".',
       deleteWarning_other:
@@ -2181,7 +2187,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addedItems_other: '{{count}} items',
       addedToGroup: 'Added to "{{group}}"',
       addAsCopy: 'Add as copies (not linked to the launcher)',
-      addFailed: "Couldn't add the items",
     },
     linkPicker: {
       windowTitle: 'Choose the item to link to',
@@ -2192,7 +2197,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       others: 'Other items',
       current: 'Currently linked',
       notFound: 'The workspace item was not found. It may have been deleted.',
-      failed: "Couldn't link the item",
     },
     linkCopies: {
       title: 'Link copies to matching launcher items',
@@ -2205,8 +2209,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       memoConflict: '⚠ Both have different notes (the copy note will be removed)',
       settingsDiffer:
         '⚠ Window switching or icon differs from the launcher item (the launcher settings will be used)',
-      ambiguous_one: '⚠ {{count}} candidate (right-click and select "Link to a launcher item")',
-      ambiguous_other: '⚠ {{count}} candidates (right-click and select "Link to a launcher item")',
+      ambiguous_one: '⚠ {{count}} candidate. Choose which one to link to',
+      ambiguous_other: '⚠ {{count}} candidates. Choose which one to link to',
+      choose: 'Choose the item to link to…',
+      chooseLabel: 'Launcher item that "{{name}}" links to',
       notMatchable_one:
         "{{count}} clipboard item, set, or item without a path can't be compared by path, so it isn't included.",
       notMatchable_other:
@@ -2216,7 +2222,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       apply_other: 'Link {{count}} items',
       done_one: 'Linked {{count}} item',
       done_other: 'Linked {{count}} items',
-      failed: "Couldn't link the copies",
       notFound: 'The workspace was not found. It may have been deleted.',
     },
   },

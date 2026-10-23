@@ -92,7 +92,10 @@ export function useClipboardPaste(
         preview: result.preview,
         formats: result.formats ?? [],
       };
-      await window.electronAPI.workspaceAPI.addItem(item, activeGroupId, activeWorkspaceId);
+      // 取り込んだ実データはこのアイテムだけが使うので、複製させない
+      await window.electronAPI.workspaceAPI.addItem(item, activeGroupId, activeWorkspaceId, {
+        freshClipboardData: true,
+      });
       await notifyAdded(displayName, result.preview ?? '');
       onItemsAdded();
     }

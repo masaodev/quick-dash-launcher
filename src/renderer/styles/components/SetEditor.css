@@ -904,6 +904,18 @@
   flex: none;
 }
 
+.workspace-link-row-choice {
+  align-self: flex-start;
+  max-width: 100%;
+  margin: var(--spacing-xxs) 0;
+  padding: 2px var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--text-primary);
+}
+
 .workspace-link-row-note {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);

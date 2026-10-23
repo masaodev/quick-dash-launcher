@@ -50,6 +50,7 @@ import {
 } from '../services/workspace/workspaceRefOperations.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
+import { moveItemToMain } from './workspaceRefMenu.js';
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -170,7 +171,13 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
-    (_event, item: AppItem, groupId?: string, workspaceId?: string, options?: { copy?: boolean }) =>
+    (
+      _event,
+      item: AppItem,
+      groupId?: string,
+      workspaceId?: string,
+      options?: { copy?: boolean; freshClipboardData?: boolean }
+    ) =>
       withWorkspaceService(
         async () => {
           // 既定はメインウィンドウのアイテムの参照。参照できないもの・copy の指定はコピー（クリップボードは実データを複製）
@@ -465,6 +472,11 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
+  // メインウィンドウへのドロップ。結果は右クリックと同じくトーストで知らせる（ワークスペースの画面へもここで知らせる）
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, (_event, id: string, file?: string) =>
+    moveItemToMain(id, file)
+  );
+
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, (_event, id: string) =>
     withWorkspaceService(() => findLinkCandidates(id), 'Failed to find link candidates', { id })
   );
@@ -475,13 +487,15 @@ export function setupWorkspaceHandlers(): void {
     })
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, (_event, ids: string[]) =>
-    withWorkspaceChange(
-      async () => ({ count: await applyLinkCopies(ids) }),
-      'Linked workspace copies to launcher items',
-      'Failed to link workspace copies',
-      { count: ids.length }
-    )
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES,
+    (_event, ids: string[], choices?: Record<string, string>) =>
+      withWorkspaceChange(
+        async () => ({ count: await applyLinkCopies(ids, choices) }),
+        'Linked workspace copies to launcher items',
+        'Failed to link workspace copies',
+        { count: ids.length }
+      )
   );
 
   // メインウィンドウのアイテムを指すワークスペースの参照の数（削除の確認・編集画面の帯に出す）

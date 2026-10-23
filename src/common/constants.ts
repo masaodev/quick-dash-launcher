@@ -54,8 +54,8 @@ export const WORKSPACE_CONFIRM_WINDOW_NAME_PREFIX = 'workspace-confirm:';
 export const WORKSPACE_PICKER_WINDOW_NAME_PREFIX = 'workspace-picker:';
 
 /**
- * ワークスペースのアイテムが指すメインウィンドウのアイテムを選ぶウィンドウ（参照の「別のアイテムを指す」・
- * コピーの「メインウィンドウのアイテムを参照する」）の window.name 接頭辞。`<接頭辞><itemId>`
+ * ワークスペースの参照が指すメインウィンドウのアイテムを選ぶウィンドウ（参照の「別のアイテムを指す」）の
+ * window.name 接頭辞。`<接頭辞><itemId>`
  */
 export const WORKSPACE_LINK_PICKER_WINDOW_NAME_PREFIX = 'workspace-link-picker:';
 

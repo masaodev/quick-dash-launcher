@@ -223,16 +223,15 @@
 
 ## メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
 
-メイン画面の「アイテムの登録・編集」（➕「アイテムを追加…」 / 右クリック「編集」/ ドラッグ&ドロップ / ワークスペースのアイテムの「メインウィンドウに登録」）と「アイコン取得結果」（進捗バーの詳細）は、メインウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.38 以降）。
+メイン画面の「アイテムの登録・編集」（➕「アイテムを追加…」 / 右クリック「編集」/ ドラッグ&ドロップ / ワークスペースの参照アイテムの右クリック「✏️ 編集（メインウィンドウのアイテム）」）と「アイコン取得結果」（進捗バーの詳細）は、メインウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.38 以降）。
 
 - **実装場所**: `src/main/mainChildWindowManager.ts`（メインプロセス。生成・表示・破棄はワークスペースの編集ウィンドウと共通の `src/main/utils/modalChildWindows.ts`）、`src/renderer/components/MainChildPage.tsx`・`RegisterWindowPage.tsx`（レンダラー）
 - IPC `window:open-main-child`（要求 `MainChildWindowRequest`）を受け、メインウィンドウを親にした子ウィンドウを開く。子ウィンドウが閉じるまで解決しない
-- 要求（何を表示するか。登録ならドロップしたパス・編集対象・新規登録の初期値にするアイテム（`prefillItems`）・今のタブ）はメインプロセスが requestId で預かり、子ウィンドウは `window.name`（`main-child:<requestId>`）から requestId を取り出して `window:get-main-child-request` で受け取る
+- ワークスペースの参照アイテムの右クリック「✏️ 編集（メインウィンドウのアイテム）」は、メインプロセスが指す先のメインウィンドウのアイテムを探し、メインウィンドウを出してから `launcher-menu-edit-item` イベントを送る。メインウィンドウの右クリック「編集」と同じ経路で、メインウィンドウを親にした編集ウィンドウが開く（`editLinkedMainItem`、`src/main/ipc/workspaceRefMenu.ts`）。指す先が見つからなければ開かず、警告のトースト「メインウィンドウのアイテムが見つかりません」を出す
+- 要求（何を表示するか。登録ならドロップしたパス・編集対象・今のタブ）はメインプロセスが requestId で預かり、子ウィンドウは `window.name`（`main-child:<requestId>`）から requestId を取り出して `window:get-main-child-request` で受け取る
 - 位置はメインウィンドウと同じディスプレイの作業領域の中央、サイズは登録 850x900・アイコン取得結果 760x700 を作業領域で切り詰める（`utils/mainChildWindowSpec.ts`・`utils/editorWindowBounds.ts`）。**メインウィンドウのサイズ・位置は変えない**
 - 親に対してモーダル（`parent` + `modal: true`）。閉じると破棄
-- ワークスペースのアイテムをメインウィンドウに登録するときは、メインウィンドウのレンダラーが要求を出す。経路は次の 2 つで、どちらもアイテムを `prefillItems` に変換して `window:open-main-child` を呼ぶ（`src/renderer/hooks/useRegisterWindow.ts`）
-  - ドラッグ&ドロップ: ドラッグ元が dataTransfer の型 `workspaceItem`（`WORKSPACE_ITEM_DRAG_TYPE`）に載せたアイテムの JSON を、メインウィンドウがファイル・URL より先に読む
-  - 右クリックの「メインウィンドウに登録」: メインプロセスが `showMainWindow()` でメインウィンドウを出してから、`workspace-menu-register-to-main` イベントでアイテムを送る（登録画面はメインウィンドウを親にするため）
+- ワークスペースのアイテムをメインウィンドウへドロップしたときは、子ウィンドウを開かない。ドラッグ元が dataTransfer の型 `workspaceItem`（`WORKSPACE_ITEM_DRAG_TYPE`）に載せたアイテムの JSON を、メインウィンドウがファイル・URL より先に読み、`workspace:move-to-main` で今のタブへ移す（[ワークスペース機能 - メインウィンドウへ移す](../features/workspace.md#メインウィンドウへ移す)）
 - 開いている間はメインウィンドウを**モーダルモード**にする（`windowManager.setModalMode(true)`）: フォーカスアウト・Escape・ホットキー・アイテム実行で隠れず、最前面に固定。閉じたら戻す
 - 保存は子ウィンドウが `register-items` / `update-*-by-id` / `delete-items-by-id` で行い、メイン画面は `data-changed` で読み直す。結果（登録・更新・削除）は `window:notify-main-child-result` → `window:main-child-result` でメイン画面に中継され、メイン画面がトーストを出す
 - 子ウィンドウはメインのレンダラーから `window.open` で開く（レンダラープロセス共有、[システム概要](overview.md#ウィンドウとレンダラープロセスの対応)）。開き元が使えないときは `index.html?childRequestId=` で直接生成する
@@ -309,6 +308,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 表示するたびに `setWorkspacePosition()` で `workspacePositionMode` に従って置き直す。
 
 - **ディスプレイの左端・右端**（`displayLeft`・`displayRight`）: `workspaceTargetDisplayIndex` のディスプレイの作業領域の端に、作業領域の高さで置く。`-1`（`MAIN_WINDOW_DISPLAY_INDEX`。既定）はメインウィンドウと同じディスプレイ（`getMainWindowDisplay()`、`src/main/utils/referenceDisplay.ts`。メインウィンドウの bounds が載っているディスプレイ）で、メインウィンドウと一緒に出すたびにメイン側のディスプレイへ移る。メインウィンドウの表示位置がどのモードでも、メインと同じディスプレイになる
+  - 作業領域の高さで置いたあと、ワークスペースのレンダラーに `workspace-refit-height` を送り、高さを中身に合わせ直させる。レンダラーは中身の高さが変わらないと合わせ直さないので、送らないと作業領域いっぱいの高さのまま下に余白が残る（`useWorkspaceAutoFit`。切り離しウィンドウは合わせ直さない）
 - ワークスペースの ⚙️ メニューの「左端に寄せる」「右端に寄せる」は、`workspacePositionMode` を `displayLeft`・`displayRight` にし、配置先をマウスカーソルのあるディスプレイの番号にする。ただし `-1` のときは `-1` のまま残す。メニューは今のモードに ✓ を付ける（`primaryLeft`・`primaryRight` も左端・右端として扱う）
 - **固定位置**（`fixed`。設定画面ではワークスペースウィンドウの節の「表示する場所」の「最後に置いた場所」）: 最後に動かした位置。まだ動かしていないとき・保存した位置が画面外のときは、プライマリディスプレイの作業領域の右上に置く（タスクバーが左・上にあっても作業領域の端に合わせる）
 - 拡大率の違うディスプレイへ移すとサイズがずれることがあるので、当てたサイズとずれていればもう一度当てる（`setBoundsAcrossDisplays()`、`src/main/utils/screenPosition.ts`）
@@ -373,7 +373,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 | ウィンドウ | 開く操作 | `window.name`（フォールバックの URL クエリ） | 中身 |
 | --- | --- | --- | --- |
-| 指すアイテムを選ぶ | アイテムの右クリック「🔁 別のアイテムを指す…」「🔗 メインウィンドウのアイテムを参照する…」 | `workspace-link-picker:<itemId>`（`linkItemId`） | `WorkspaceLinkPickerPage.tsx`（`SetItemPickerModal` を 1 つだけ選ぶ形で描く）。選んだら `workspace:link-to-main` |
+| 指すアイテムを選ぶ | 参照の右クリック「🔁 別のアイテムを指す…」 | `workspace-link-picker:<itemId>`（`linkItemId`） | `WorkspaceLinkPickerPage.tsx`（`SetItemPickerModal` を 1 つだけ選ぶ形で描く）。選んだら `workspace:link-to-main` |
 | メインウィンドウと同じアイテムを参照に変える | ワークスペースのタブの右クリック | `workspace-link-copies:<workspaceId>`（`linkCopiesWorkspaceId`） | `WorkspaceLinkCopiesPage.tsx`。一覧は `workspace:preview-link-copies`、確定は `workspace:apply-link-copies` |
 
 ## ウィンドウ位置・サイズ制御

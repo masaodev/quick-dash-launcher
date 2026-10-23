@@ -325,6 +325,33 @@ html:has(.workspace-window.background-transparent) {
   opacity: 0.55;
 }
 
+/*
+ * 参照（元が見つかるもの）は右下の角に小さなショートカットの矢印を出す。
+ * マウスを載せると削除の × と入れ替わりに消える
+ * （カードの ::before・::after はドロップ位置の線とグループの木の線で使うので、要素で描く）
+ */
+.workspace-item-ref-mark {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-gray-600);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 9.5 C3 6 5 4 8.6 4 M6.3 1.8 L8.8 4 L6.3 6.2' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.workspace-item-card:hover .workspace-item-ref-mark {
+  opacity: 0;
+}
+
+/* 長い名前が矢印の下に潜らないよう、名前の右に矢印の分をあける */
+.workspace-item-card[data-ref='ok'] .workspace-item-name {
+  padding-right: 10px;
+}
+
 /* ドラッグ中のスタイル */
 /* ホバー時は通常のポインターカーソルを維持 */
 

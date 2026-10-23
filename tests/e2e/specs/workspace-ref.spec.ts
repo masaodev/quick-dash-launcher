@@ -380,4 +380,199 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     const relinked = items.find((i) => i.id === set.id);
     expect(relinked?.type === 'set' && relinked.entries[0].itemId).toBe(google.id);
   });
+
+  test('コピーをメインウィンドウへ移すと、メインウィンドウのアイテムになり、ワークスペース側は参照になる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const copy: WorkspaceItem = await workspaceWindow.evaluate(() =>
+      window.electronAPI.workspaceAPI.createItem({
+        type: 'item',
+        displayName: '移すアイテム',
+        path: 'https://example.com/move-to-main',
+        memo: '移すアイテムのメモ',
+      })
+    );
+    // 移すアイテムを指すワークスペースのセット（移したあと、行はメインウィンドウのアイテムを指す）
+    const set: WorkspaceItem = await workspaceWindow.evaluate(
+      (id) =>
+        window.electronAPI.workspaceAPI.createItem({
+          type: 'set',
+          displayName: '移すセット',
+          entries: [{ itemId: id }],
+        }),
+      copy.id
+    );
+
+    await test.step('通常アイテムを移す', async () => {
+      const moved = await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        copy.id
+      );
+      expect(moved).toBe(true);
+      const main = await mainItem(mainWindow, '移すアイテム');
+      expect(main).toMatchObject({
+        path: 'https://example.com/move-to-main',
+        memo: '移すアイテムのメモ',
+      });
+      const stored = readWorkspaceFile(configHelper.getConfigDir()).items.find(
+        (i) => i.id === copy.id
+      );
+      expect(stored).toMatchObject({ type: 'ref', refItemId: main.id });
+      const items = await loadWorkspaceItems(workspaceWindow);
+      const relinked = items.find((i) => i.id === set.id);
+      expect(relinked?.type === 'set' && relinked.entries[0].itemId).toBe(main.id);
+    });
+
+    await test.step('セットを移す（行はメインウィンドウのアイテムを指したまま）', async () => {
+      const main = await mainItem(mainWindow, '移すアイテム');
+      await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        set.id
+      );
+      const items: AppItem[] = await mainWindow.evaluate(() =>
+        window.electronAPI.loadDataFiles('internal')
+      );
+      const mainSet = items.find(
+        (item) => 'displayName' in item && item.displayName === '移すセット'
+      );
+      expect(mainSet).toMatchObject({ type: 'set', entries: [{ itemId: main.id }] });
+      const stored = readWorkspaceFile(configHelper.getConfigDir()).items.find(
+        (i) => i.id === set.id
+      );
+      expect(stored).toMatchObject({ type: 'ref' });
+    });
+
+    await test.step('参照は移さない', async () => {
+      const moved = await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        copy.id
+      );
+      expect(moved).toBe(false);
+    });
+  });
+
+  test('移す先に同じアイテムがあるコピーを移すと、新しく作らずにそれを指す参照になる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const google = await mainItem(mainWindow, 'Google');
+    const copy: WorkspaceItem = await workspaceWindow.evaluate(
+      (item) => window.electronAPI.workspaceAPI.addItem(item, undefined, undefined, { copy: true }),
+      google
+    );
+    const moved = await workspaceWindow.evaluate(
+      (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+      copy.id
+    );
+    expect(moved).toBe(true);
+
+    const items: AppItem[] = await mainWindow.evaluate(() =>
+      window.electronAPI.loadDataFiles('internal')
+    );
+    expect(items.filter((i) => 'path' in i && i.path === google.path)).toHaveLength(1);
+    const stored = readWorkspaceFile(configHelper.getConfigDir()).items.find(
+      (i) => i.id === copy.id
+    );
+    expect(stored).toMatchObject({ type: 'ref', refItemId: google.id });
+    // 参照のカードには右下に矢印の印が出る（コピーには出ない）
+    await expect(
+      workspaceWindow
+        .locator('.workspace-item-card', { hasText: 'Google' })
+        .locator('.workspace-item-ref-mark')
+    ).toBeVisible();
+
+    await test.step('カスタムアイコンが違うコピーは、設定を消さないよう新しく足す', async () => {
+      const iconCopy: WorkspaceItem = await workspaceWindow.evaluate(
+        (item) =>
+          window.electronAPI.workspaceAPI.addItem(
+            { ...item, displayName: 'アイコン付きの Google', customIcon: 'custom-google.png' },
+            undefined,
+            undefined,
+            { copy: true }
+          ),
+        google
+      );
+      await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        iconCopy.id
+      );
+      const after: AppItem[] = await mainWindow.evaluate(() =>
+        window.electronAPI.loadDataFiles('internal')
+      );
+      expect(after.filter((i) => 'path' in i && i.path === google.path)).toHaveLength(2);
+      const moved = await mainItem(mainWindow, 'アイコン付きの Google');
+      expect(moved.customIcon).toBe('custom-google.png');
+    });
+  });
+
+  test('一括で参照に変えるとき、候補が 2 件以上のコピーは選んだアイテムを指す', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+
+    const google = await mainItem(mainWindow, 'Google');
+    // パスが同じメインウィンドウのアイテムをもう 1 つ作る
+    await mainWindow.evaluate(
+      (path) =>
+        window.electronAPI.registerItems([
+          {
+            displayName: 'Google（2 つ目）',
+            path,
+            type: 'url',
+            targetTab: 'datafiles/data.json',
+            itemCategory: 'item',
+          },
+        ]),
+      google.path
+    );
+    const second = await mainItem(mainWindow, 'Google（2 つ目）');
+    const copy: WorkspaceItem = await workspaceWindow.evaluate(
+      (item) => window.electronAPI.workspaceAPI.addItem(item, undefined, undefined, { copy: true }),
+      google
+    );
+
+    const preview = await workspaceWindow.evaluate(
+      (id) => window.electronAPI.workspaceAPI.previewLinkCopies(id),
+      copy.workspaceId
+    );
+    expect(preview.entries.find((e) => e.id === copy.id)?.candidates).toHaveLength(2);
+
+    await test.step('選ばなければ変えない', async () => {
+      const result = await workspaceWindow.evaluate(
+        (ids) => window.electronAPI.workspaceAPI.applyLinkCopies(ids),
+        [copy.id]
+      );
+      expect(result.count).toBe(0);
+    });
+
+    await test.step('選んだアイテムを指す', async () => {
+      const result = await workspaceWindow.evaluate(
+        ({ id, mainId }) => window.electronAPI.workspaceAPI.applyLinkCopies([id], { [id]: mainId }),
+        { id: copy.id, mainId: second.id ?? '' }
+      );
+      expect(result.count).toBe(1);
+      const stored = readWorkspaceFile(configHelper.getConfigDir()).items.find(
+        (i) => i.id === copy.id
+      );
+      expect(stored).toMatchObject({ type: 'ref', refItemId: second.id });
+    });
+  });
 });

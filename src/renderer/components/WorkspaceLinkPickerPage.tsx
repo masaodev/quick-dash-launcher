@@ -1,5 +1,5 @@
 /**
- * 画面: 指すアイテムを選ぶ（ワークスペースのアイテムの右クリック「別のアイテムを指す」「メインウィンドウのアイテムを参照する」）
+ * 画面: 指すアイテムを選ぶ（ワークスペースの参照の右クリック「別のアイテムを指す」）
  * 画面仕様: docs/screens/workspace-window.md#520-指すアイテムを選ぶ
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
