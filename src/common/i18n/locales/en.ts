@@ -89,6 +89,7 @@ export const en: LocaleMessages = {
       quickAdd: '📄 Add item…',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
+      clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",
     },
     empty: {
       noMatch: 'No items match "{{query}}"',
@@ -346,6 +347,26 @@ export const en: LocaleMessages = {
     showNote: '📝 Show note',
     addToWorkspace: '⭐ Add to workspace',
     addCopyToWorkspace: '📄 Add a copy to workspace',
+    delete: '🗑️ Delete…',
+    text: {
+      undo: 'Undo',
+      redo: 'Redo',
+      cut: 'Cut',
+      copy: 'Copy',
+      paste: 'Paste',
+      selectAll: 'Select all',
+    },
+    launcherBlank: {
+      registerFromClipboard: '📋 Add from a path or URL on the clipboard…',
+    },
+    workspace: {
+      addGroup: '➕ Add group',
+      addWorkspace: '➕ Add workspace',
+      paste: '📋 Paste',
+      expandAll: '🔽 Expand all',
+      collapseAll: '🔼 Collapse all',
+      groupUncategorized: '📁 Put into a new group',
+    },
     admin: {
       duplicate: '📋 Duplicate',
       duplicateRows_one: '📋 Duplicate ({{count}} row)',
@@ -409,6 +430,8 @@ export const en: LocaleMessages = {
     help: 'Help',
     restart: 'Restart',
     quit: 'Exit',
+    showWorkspace: 'Show workspace',
+    itemManager: 'Item Manager',
     devRestart: {
       title: 'Restart (development mode)',
       message: "Automatic restart isn't supported in development mode",
@@ -2061,6 +2084,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       expandAll: 'Expand all',
       collapseAll: 'Collapse all',
       addGroup: 'Add group',
+      add: 'Add',
       menu: 'Settings',
       openSettings: '⚙️ Settings',
       alignLeft: '⬅️ Move to left edge',
@@ -2078,7 +2102,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     tabs: {
       archive: 'Archive',
-      add: 'Add workspace',
       defaultName: 'Workspace {{number}}',
       deleteTitle: 'Delete workspace',
       deleteConfirm:
@@ -2112,6 +2135,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     empty: {
       title: 'This workspace is empty',
       hint: 'Right-click an item in the launcher and select "Add to workspace".',
+      addGroup: '+ Add group',
     },
     restoresPosition: "When it's open, moves this window back to the recorded window position",
     restoredGroupName: '{{name}} (restored)',
@@ -2188,6 +2212,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addedItems_one: '{{count}} item',
       addedItems_other: '{{count}} items',
       addedToGroup: 'Added to "{{group}}"',
+      titleUncategorized: 'Items to add to "Ungrouped"',
+      addedToUncategorized: 'Added to "Ungrouped"',
       addAsCopy: 'Add as copies (not linked to the launcher)',
     },
     linkPicker: {

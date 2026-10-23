@@ -92,6 +92,7 @@ export const ja = {
       quickAdd: '📄 アイテムを追加…',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
+      clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
     empty: {
       noMatch: '「{{query}}」に合うアイテムはありません',
@@ -348,6 +349,26 @@ export const ja = {
     showNote: '📝 メモを表示',
     addToWorkspace: '⭐ ワークスペースに追加',
     addCopyToWorkspace: '📄 ワークスペースにコピーを追加',
+    delete: '🗑️ 削除…',
+    text: {
+      undo: '元に戻す',
+      redo: 'やり直し',
+      cut: '切り取り',
+      copy: 'コピー',
+      paste: '貼り付け',
+      selectAll: 'すべて選択',
+    },
+    launcherBlank: {
+      registerFromClipboard: '📋 クリップボードのパス・URL から追加…',
+    },
+    workspace: {
+      addGroup: '➕ グループを追加',
+      addWorkspace: '➕ ワークスペースを追加',
+      paste: '📋 貼り付け',
+      expandAll: '🔽 すべて展開',
+      collapseAll: '🔼 すべて折りたたむ',
+      groupUncategorized: '📁 グループにまとめる',
+    },
     admin: {
       duplicate: '📋 複製',
       duplicateRows_one: '📋 複製（{{count}} 行）',
@@ -411,6 +432,8 @@ export const ja = {
     help: 'ヘルプ',
     restart: '再起動',
     quit: '終了',
+    showWorkspace: 'ワークスペースを表示',
+    itemManager: 'アイテム管理',
     devRestart: {
       title: '再起動（開発モード）',
       message: '開発モードでは自動再起動をサポートしていません',
@@ -2060,6 +2083,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       expandAll: 'すべて展開',
       collapseAll: 'すべて折りたたむ',
       addGroup: 'グループを追加',
+      add: '追加',
       menu: '設定',
       openSettings: '⚙️ 設定',
       alignLeft: '⬅️ 左端に寄せる',
@@ -2077,7 +2101,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     tabs: {
       archive: 'アーカイブ',
-      add: '新しいワークスペースを追加',
       defaultName: 'ワークスペース {{number}}',
       deleteTitle: 'ワークスペースの削除',
       deleteConfirm:
@@ -2111,6 +2134,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     empty: {
       title: 'ワークスペースは空です',
       hint: 'メインウィンドウのアイテムを右クリックして「ワークスペースに追加」を選択してください',
+      addGroup: '＋ グループを追加',
     },
     restoresPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
     restoredGroupName: '{{name}}（復元）',
@@ -2189,6 +2213,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_one: '{{count}} 件のアイテム',
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
+      titleUncategorized: '「未分類」に追加するアイテム',
+      addedToUncategorized: '「未分類」に追加しました',
       addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
     },
     linkPicker: {

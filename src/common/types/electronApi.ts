@@ -72,6 +72,7 @@ import type {
   ConfirmWindowRequest,
   ConfirmWindowResult,
   AdminTab,
+  WorkspaceBlankMenuKind,
 } from './index';
 
 export interface ElectronAPI {
@@ -249,6 +250,8 @@ export interface ElectronAPI {
   getInitialTab: () => Promise<AdminTab>;
   getPendingImportModal: () => Promise<'bookmark' | 'app' | null>;
   copyToClipboard: (text: string) => Promise<boolean>;
+  /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
+  readClipboardForRegister: () => Promise<{ files: string[]; text: string }>;
   /**
    * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
    * 開き元（メイン画面・管理画面）は動かさない。子ウィンドウが閉じたら、子が返した内容
@@ -461,6 +464,18 @@ export interface ElectronAPI {
   showWorkspaceTabContextMenu: (workspaceId: string, canDelete: boolean) => Promise<void>;
   onWorkspaceTabMenuRename: (callback: (workspaceId: string) => void) => () => void;
   onWorkspaceTabMenuDelete: (callback: (workspaceId: string) => void) => () => void;
+  /** ワークスペースの余白・「未分類」の見出しの右クリックと、ヘッダーの ＋ のメニュー（anchor は画面内の座標） */
+  showWorkspaceBlankContextMenu: (
+    workspaceId: string,
+    kind: WorkspaceBlankMenuKind,
+    anchor?: { x: number; y: number }
+  ) => Promise<void>;
+  onWorkspaceMenuAddGroup: (callback: (workspaceId: string) => void) => () => void;
+  onWorkspaceMenuAddWorkspace: (callback: () => void) => () => void;
+  onWorkspaceMenuSetAllCollapsed: (
+    callback: (workspaceId: string, collapsed: boolean) => void
+  ) => () => void;
+  onWorkspaceMenuGroupUncategorized: (callback: (workspaceId: string) => void) => () => void;
   // FileTabContextMenu
   showFileTabContextMenu: (tabIndex: number) => Promise<void>;
   onFileTabMenuRename: (callback: (tabIndex: number) => void) => () => void;
@@ -484,6 +499,11 @@ export interface ElectronAPI {
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuShowMemo: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuDeleteItem: (callback: (item: AppItem) => void) => () => void;
+  /** メインウィンドウの一覧の余白の右クリックメニュー */
+  showLauncherBlankContextMenu: () => Promise<void>;
+  onLauncherBlankMenuAddItem: (callback: () => void) => () => void;
+  onLauncherBlankMenuRegisterFromClipboard: (callback: () => void) => () => void;
   // WindowContextMenuイベントリスナー
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
   /** ウィンドウ検索結果の右クリック「ワークスペースに追加」（includePosition: 今の位置・サイズも記録） */

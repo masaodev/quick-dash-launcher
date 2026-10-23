@@ -16,6 +16,7 @@ import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
+import { readClipboardFilePaths } from '../services/clipboardService.js';
 import {
   hideAdminWindow,
   toggleAdminWindow,
@@ -176,6 +177,13 @@ export function setupWindowHandlers(
     await clipboard.writeText(text);
     return true;
   });
+
+  // メインウィンドウの余白の右クリック「クリップボードのパス・URL から追加」。振り分けはレンダラーが行う
+  // （この版の Electron では clipboard.readText は Promise を返すので待つ）
+  ipcMain.handle(IPC_CHANNELS.READ_CLIPBOARD_FOR_REGISTER, async () => ({
+    files: readClipboardFilePaths(),
+    text: await clipboard.readText(),
+  }));
 
   // メイン画面・管理画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）。閉じるまで待つ
   ipcMain.handle(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, (event, request: MainChildWindowRequest) =>

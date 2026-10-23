@@ -32,6 +32,7 @@ import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
 import ColorPicker from './ColorPicker';
 import MemoViewModal from './MemoViewModal';
+import { Button } from './ui/Button';
 
 /**
  * カラーピッカーモーダル専用コンポーネント
@@ -85,6 +86,10 @@ interface WorkspaceGroupedListProps {
     onReorderMixed: (parentGroupId: string | undefined, entries: MixedOrderEntry[]) => void;
     onNativeFileDrop?: (e: React.DragEvent, groupId?: string) => Promise<void>;
     onDetachGroup?: (groupId: string, screenX: number, screenY: number) => void;
+    /** 余白・「未分類」の見出しの右クリック（未指定なら何も出さない。アーカイブ・切り離しウィンドウでは渡さない） */
+    onBlankContextMenu?: (kind: 'blank' | 'uncategorized') => void;
+    /** 空のワークスペースの［＋ グループを追加］（未指定ならボタンを出さない） */
+    onAddGroup?: () => void;
   };
   ui: {
     editingItemId: string | null;
@@ -129,6 +134,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onReorderMixed,
     onNativeFileDrop,
     onDetachGroup,
+    onBlankContextMenu,
+    onAddGroup,
   } = handlers;
   const {
     editingItemId,
@@ -772,18 +779,30 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     );
   };
 
+  // 余白の右クリック。アイテム・グループの右クリックはそれぞれが受けて preventDefault 済み
+  const handleBlankContextMenu = (e: React.MouseEvent) => {
+    if (!onBlankContextMenu || e.defaultPrevented) return;
+    e.preventDefault();
+    onBlankContextMenu('blank');
+  };
+
   // アイテムが1つもない場合
   if (items.length === 0 && groups.length === 0) {
     return (
-      <div className="workspace-empty">
+      <div className="workspace-empty" onContextMenu={handleBlankContextMenu}>
         <p>{t('workspace.empty.title')}</p>
         <p className="workspace-empty-hint">{t('workspace.empty.hint')}</p>
+        {onAddGroup && (
+          <Button variant="secondary" size="sm" onClick={onAddGroup}>
+            {t('workspace.empty.addGroup')}
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="workspace-item-list">
+    <div className="workspace-item-list" onContextMenu={handleBlankContextMenu}>
       <div ref={contentRef}>
         {/* ツリー構造でグループをレンダリング */}
         {groupTree.map((node) => renderGroupNode(node))}
@@ -797,6 +816,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
             <div
               className="workspace-group-header"
               onClick={handleUncategorizedToggle}
+              onContextMenu={(e) => {
+                if (!onBlankContextMenu) return;
+                e.preventDefault();
+                onBlankContextMenu('uncategorized');
+              }}
               style={{ '--group-color': resolveGroupColorCss('secondary') } as React.CSSProperties}
             >
               <span

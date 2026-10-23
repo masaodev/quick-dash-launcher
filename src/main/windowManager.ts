@@ -33,6 +33,7 @@ import {
   bringWorkspaceToFront,
   getWorkspaceWindow,
   hideWorkspaceWithMain,
+  showWorkspaceWindow,
   showWorkspaceWithMain,
 } from './workspaceWindowManager.js';
 import { getHwnd, moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
@@ -289,7 +290,11 @@ export async function createTray(): Promise<void> {
     });
   }
 
-  // ホットキーと同じ表示処理を通す（ワークスペース・切り離しウィンドウも一緒に出す）
+  // ホットキーと同じ表示処理を通す（ワークスペース・切り離しウィンドウも一緒に出す）。
+  // シングルクリックでも出す（ダブルクリックは click が先に来るので、同じ表示処理が重なるだけ）
+  tray.on('click', () => {
+    void showMainWindow();
+  });
   tray.on('double-click', () => {
     void showMainWindow();
   });
@@ -325,6 +330,19 @@ async function updateTrayMenu(): Promise<void> {
       label: t('tray.showAtCenter'),
       click: () => {
         void showWindowAtCenter();
+      },
+    },
+    {
+      label: t('tray.showWorkspace'),
+      click: () => {
+        void showWorkspaceWindow();
+      },
+    },
+    { type: 'separator' },
+    {
+      label: t('tray.itemManager'),
+      click: async () => {
+        await showAdminWindowWithTab('edit');
       },
     },
     {

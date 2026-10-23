@@ -17,6 +17,7 @@ import { useClipboardPaste } from './hooks/useClipboardPaste';
 import { useCollapsibleSections } from './hooks/useCollapsibleSections';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
+import { useLatestRef } from './hooks/useLatestRef';
 import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
 import {
   useWorkspaceActions,
@@ -294,6 +295,84 @@ const WorkspaceApp: React.FC = () => {
     }
   };
 
+  /** グループを追加する（選んでいないタブなら、そのタブに切り替えてから） */
+  const addGroupTo = (workspaceId: string) => {
+    if (workspaceId !== activeWorkspaceId) {
+      setActiveWorkspaceId(workspaceId);
+    }
+    setIsArchiveMode(false);
+    const count = groups.filter((g) => g.workspaceId === workspaceId).length;
+    actions.handleAddGroup(count, undefined, workspaceId);
+  };
+
+  const addWorkspace = () => {
+    actions.handleCreateWorkspace(
+      t('workspace.tabs.defaultName', { number: workspaces.length + 1 })
+    );
+  };
+
+  /** タブの右クリックの「すべて展開／折りたたむ」。選んでいないタブなら、そのタブに切り替えてから */
+  const setAllCollapsedIn = async (workspaceId: string, collapsed: boolean) => {
+    if (workspaceId === activeWorkspaceId && !isArchiveMode) {
+      await setAllGroupsCollapsed(collapsed);
+      return;
+    }
+    setActiveWorkspaceId(workspaceId);
+    setIsArchiveMode(false);
+    const ids = groups
+      .filter((g) => g.workspaceId === workspaceId && g.collapsed !== collapsed)
+      .map((g) => g.id);
+    try {
+      if (ids.length > 0) await window.electronAPI.workspaceAPI.setGroupsCollapsed(ids, collapsed);
+    } catch (error) {
+      logError(`Failed to ${collapsed ? 'collapse' : 'expand'} all groups:`, error);
+    }
+    loadAllDataWithLoading();
+  };
+
+  /** 「未分類」のアイテムを新しいグループにまとめる（グループは未分類と同じワークスペースの最後に作る） */
+  const groupUncategorizedIn = async (workspaceId: string) => {
+    const targets = items.filter((i) => i.workspaceId === workspaceId && !i.groupId);
+    if (targets.length === 0) return;
+    try {
+      const count = groups.filter((g) => g.workspaceId === workspaceId).length;
+      const group = await window.electronAPI.workspaceAPI.createGroup(
+        t('workspace.groups.defaultName', { number: count + 1 }),
+        undefined,
+        undefined,
+        workspaceId
+      );
+      for (const item of targets) {
+        await window.electronAPI.workspaceAPI.moveItemToGroup(item.id, group.id);
+      }
+    } catch (error) {
+      logError('Failed to group uncategorized items:', error);
+    }
+    loadAllDataWithLoading();
+  };
+
+  // タブ・余白・「未分類」の見出しの右クリックと、ヘッダーの ＋ のメニューで選ばれたもの（切り離しウィンドウでは出さない）
+  const menuActions = useLatestRef({
+    addGroupTo,
+    addWorkspace,
+    setAllCollapsedIn,
+    groupUncategorizedIn,
+  });
+  useEffect(() => {
+    if (isDetached) return;
+    const cleanups = [
+      window.electronAPI.onWorkspaceMenuAddGroup((id) => menuActions.current.addGroupTo(id)),
+      window.electronAPI.onWorkspaceMenuAddWorkspace(() => menuActions.current.addWorkspace()),
+      window.electronAPI.onWorkspaceMenuSetAllCollapsed(
+        (id, collapsed) => void menuActions.current.setAllCollapsedIn(id, collapsed)
+      ),
+      window.electronAPI.onWorkspaceMenuGroupUncategorized(
+        (id) => void menuActions.current.groupUncategorizedIn(id)
+      ),
+    ];
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [isDetached, menuActions]);
+
   const handleNativeFileDrop = async (e: React.DragEvent, groupId?: string) => {
     try {
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
@@ -497,8 +576,8 @@ const WorkspaceApp: React.FC = () => {
         }}
         onExpandAll={() => setAllGroupsCollapsed(false)}
         onCollapseAll={() => setAllGroupsCollapsed(true)}
-        onAddGroup={() =>
-          actions.handleAddGroup(displayGroups.length, undefined, activeWorkspaceId)
+        onAddMenu={(anchor) =>
+          void window.electronAPI.showWorkspaceBlankContextMenu(activeWorkspaceId, 'add', anchor)
         }
         pinLevel={pinLevel}
         onPinLevelChange={setPinLevel}
@@ -511,7 +590,6 @@ const WorkspaceApp: React.FC = () => {
           setActiveWorkspaceId(id);
           setIsArchiveMode(false);
         }}
-        onCreateWorkspace={actions.handleCreateWorkspace}
         onRenameWorkspace={actions.handleRenameWorkspace}
         onDeleteWorkspace={actions.handleDeleteWorkspace}
         onReorderWorkspaces={actions.handleReorderWorkspaces}
@@ -538,6 +616,11 @@ const WorkspaceApp: React.FC = () => {
         handlers={{
           ...commonHandlers,
           onDetachGroup: isArchiveMode ? undefined : handleDetachGroup,
+          onBlankContextMenu: isArchiveMode
+            ? undefined
+            : (kind) =>
+                void window.electronAPI.showWorkspaceBlankContextMenu(activeWorkspaceId, kind),
+          onAddGroup: isArchiveMode ? undefined : () => addGroupTo(activeWorkspaceId),
         }}
         ui={{
           ...commonUi,

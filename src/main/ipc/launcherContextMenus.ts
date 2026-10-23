@@ -9,8 +9,10 @@ import type { AppItem, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { desktopLabel } from '@common/utils/desktopLabel';
 import { isLauncherItem, isSetItem } from '@common/types/guards';
+import { getDeletableItemId } from '@common/utils/launcherItemDelete';
 
 import { rerecordSetPositions } from '../services/launch/setRerecord.js';
+import { showAdminWindowWithImportModal } from '../adminWindowManager.js';
 import { isReferenceableAppItem } from '../services/workspace/workspaceRefResolver.js';
 
 import {
@@ -140,20 +142,69 @@ function setupLauncherContextMenuHandler(): void {
         );
       }
 
-      if (!hasPathMenu) {
-        menu.popup({ window: senderWindow });
-        return;
+      if (hasPathMenu) {
+        menu.append(createSeparator());
+        appendPathMenuItems(menu, event.sender, LAUNCHER_PATH_MENU_CHANNELS, item, {
+          hasParentFolder,
+          isShortcut,
+        });
       }
 
-      menu.append(createSeparator());
-      appendPathMenuItems(menu, event.sender, LAUNCHER_PATH_MENU_CHANNELS, item, {
-        hasParentFolder,
-        isShortcut,
-      });
+      // 削除は確認してから（確認はメインウィンドウの中に出す）。フォルダ取込で並んだもの・自動取込のものには出さない
+      if (getDeletableItemId(item)) {
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            t('menu.delete'),
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_DELETE_ITEM,
+            item
+          )
+        );
+      }
 
       menu.popup({ window: senderWindow });
     }
   );
+}
+
+/** メインウィンドウの一覧の余白（アイテムの無い所）の右クリックメニュー。➕ と同じ追加の入口を出す */
+function setupLauncherBlankContextMenuHandler(): void {
+  ipcMain.handle(IPC_CHANNELS.SHOW_LAUNCHER_BLANK_CONTEXT_MENU, async (event): Promise<void> => {
+    const senderWindow = getValidWindow(event);
+    if (!senderWindow) return;
+
+    const menu = new Menu();
+    menu.append(
+      createMenuItem(
+        t('launcher.registerMenu.quickAdd'),
+        event.sender,
+        IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM
+      )
+    );
+    menu.append(
+      createMenuItem(
+        t('menu.launcherBlank.registerFromClipboard'),
+        event.sender,
+        IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD
+      )
+    );
+    menu.append(createSeparator());
+    menu.append(
+      new MenuItem({
+        label: t('launcher.registerMenu.addBookmarks'),
+        click: () => void showAdminWindowWithImportModal('bookmark'),
+      })
+    );
+    menu.append(
+      new MenuItem({
+        label: t('launcher.registerMenu.addApps'),
+        click: () => void showAdminWindowWithImportModal('app'),
+      })
+    );
+
+    menu.popup({ window: senderWindow });
+  });
 }
 
 /** FileTabContextMenu用のネイティブメニューハンドラーを設定 */
@@ -364,6 +415,7 @@ function setupWindowsContextMenuHandler(): void {
 export function setupLauncherContextMenus(): void {
   setupAdminItemContextMenuHandler();
   setupLauncherContextMenuHandler();
+  setupLauncherBlankContextMenuHandler();
   setupFileTabContextMenuHandler();
   setupWindowContextMenuHandler();
   setupWindowsContextMenuHandler();

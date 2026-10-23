@@ -30,6 +30,7 @@ import LauncherItemCountDisplay from './components/LauncherItemCountDisplay';
 import MissingIconNotice from './components/MissingIconNotice';
 import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
+import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { findNoMatchElsewhere } from './utils/noMatchElsewhere';
@@ -50,6 +51,8 @@ import { useWindowMultiSelect } from './hooks/useWindowMultiSelect';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
 import { useAlertDialog } from './hooks/useDialogManager';
+import { useLauncherItemDelete } from './hooks/useLauncherItemDelete';
+import { classifyPastedText } from './utils/pasteClassifier';
 
 /** ウィンドウ検索の既定のデスクトップのタブ: 今のデスクトップ（分からなければ「すべて」） */
 function defaultDesktopTab(info: Pick<VirtualDesktopInfo, 'supported' | 'currentDesktop'>): number {
@@ -142,6 +145,34 @@ function App(): React.ReactElement {
     },
     [showWarning, t]
   );
+
+  const itemDelete = useLauncherItemDelete(showErrorAlert);
+
+  // 一覧の余白の右クリック（➕ と同じ追加の入口。ウィンドウ検索では出さない）
+  useEffect(() => {
+    const cleanups = [
+      window.electronAPI.onLauncherBlankMenuAddItem(() => void openRegisterWindow()),
+      window.electronAPI.onLauncherBlankMenuRegisterFromClipboard(async () => {
+        try {
+          const { files, text } = await window.electronAPI.readClipboardForRegister();
+          if (files.length > 0) {
+            void openWithDroppedPaths(files);
+            return;
+          }
+          // ファイル・フォルダ・URL の形をしているものだけ（ただの文字列は登録の初期値にしない）
+          const pasted = classifyPastedText(text);
+          if (pasted && pasted.kind !== 'text') {
+            void openWithDroppedPaths([pasted.value]);
+            return;
+          }
+          showWarning(t('launcher.registerMenu.clipboardEmpty'));
+        } catch (error) {
+          logError('クリップボードを読めませんでした:', error);
+        }
+      }),
+    ];
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [openRegisterWindow, openWithDroppedPaths, showWarning, t]);
 
   const { isDraggingOver, dragOverKind } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
@@ -491,8 +522,13 @@ function App(): React.ReactElement {
   // リストの行や余白（フォーカスを受け取らない要素）をクリックするとフォーカスが body に移り、
   // .app の onKeyDown にキーが届かなくなる。body に来たキーは検索欄にフォーカスを戻してから処理する
   //（文字キーも検索欄に入る）
-  const handleKeyDownRef = useRef(handleKeyDown);
-  handleKeyDownRef.current = handleKeyDown;
+  // 削除の確認を出している間は、Enter・Esc などを確認ダイアログだけが受ける（一覧のアイテムを開かない）
+  const handleAppKeyDown = useCallback(
+    (e: React.KeyboardEvent) => (itemDelete.isOpen ? undefined : handleKeyDown(e)),
+    [handleKeyDown, itemDelete.isOpen]
+  );
+  const handleKeyDownRef = useRef(handleAppKeyDown);
+  handleKeyDownRef.current = handleAppKeyDown;
   useEffect(() => {
     const handleBodyKeyDown = (e: KeyboardEvent) => {
       if (e.target !== document.body || !searchInputRef.current) return;
@@ -704,14 +740,14 @@ function App(): React.ReactElement {
   return (
     <div
       className={`app search-mode-${searchMode} ${isDraggingOver ? 'dragging-over' : ''}`}
-      onKeyDown={handleKeyDown}
+      onKeyDown={handleAppKeyDown}
     >
       <div className="header">
         <LauncherSearchBox
           ref={searchInputRef}
           value={searchQuery}
           onChange={handleSearch}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleAppKeyDown}
           searchMode={searchMode}
           onToggleSearchMode={handleToggleSearchMode}
         />
@@ -785,6 +821,11 @@ function App(): React.ReactElement {
               : null
         }
         onAddItem={() => void openRegisterWindow()}
+        onBlankContextMenu={
+          searchMode === 'normal'
+            ? () => void window.electronAPI.showLauncherBlankContextMenu()
+            : undefined
+        }
         onSwitchTab={() => {
           switchToNextTab();
           searchInputRef.current?.focus();
@@ -859,6 +900,15 @@ function App(): React.ReactElement {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={itemDelete.dialog !== null}
+        onClose={itemDelete.dialog?.onClose ?? (() => {})}
+        onConfirm={itemDelete.dialog?.onConfirm ?? (() => {})}
+        message={itemDelete.dialog?.message ?? ''}
+        confirmText={t('register.delete')}
+        danger
+      />
 
       <AlertDialog
         isOpen={alertDialog.isOpen}
