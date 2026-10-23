@@ -343,6 +343,8 @@ export interface ElectronAPI {
     remapRefs: (idMap: Record<string, string>) => Promise<{ success: boolean; count?: number }>;
     // グループ管理
     loadGroups: () => Promise<WorkspaceGroupView[]>;
+    /** グループをサブグループとアイテムごと複製する（複製は元と同じ親の最後に入る） */
+    duplicateGroup: (groupId: string, name: string) => Promise<WorkspaceGroupView>;
     createGroup: (
       name: string,
       color?: string,
@@ -540,6 +542,7 @@ export interface ElectronAPI {
   onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuMoveToGroup: (callback: (itemId: string, groupId: string) => void) => () => void;
   onWorkspaceMenuMoveToWorkspace: (
     callback: (itemId: string, targetWorkspaceId: string) => void
   ) => () => void;
@@ -552,6 +555,9 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddFromMain: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddNew: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuOpenAll: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuDuplicate: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuCollapseOthers: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuMoveToWorkspace: (
     callback: (groupId: string, targetWorkspaceId: string) => void
   ) => () => void;
