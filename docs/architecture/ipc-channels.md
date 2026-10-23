@@ -89,7 +89,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 ### `register-items` と ID ベースの更新
 
 - `register-items`: `RegisterItem[]` をデータファイルに追加する。`RegisterItem` の項目は `src/common/types/register.ts` を参照。登録先が `datafiles/` 直下の `.json` でないアイテムが 1 件でもあれば、何も書かずに例外を返す（`create-data-file`・`delete-data-file` も同じ名前の制約で、外れると `{ success: false, error }` を返す。判定は `src/common/utils/dataFileName.ts`。`create-data-file` は同じ名前のファイルが既にあるときも作らず、`alreadyExists: true` を添えて返す）
-- `update-item-by-id`・`update-dir-item-by-id`・`update-set-item-by-id`・`delete-items-by-id`: アイテムの `id` で対象を特定して書き換える（行番号では特定しない）。`delete-items-by-id` はクリップボードアイテムの保存データも消す
+- `update-item-by-id`・`update-dir-item-by-id`・`update-set-item-by-id`・`delete-items-by-id`: アイテムの `id` で対象を特定して書き換える（行番号では特定しない）。`delete-items-by-id` はクリップボードアイテムの保存データも消す（2 つ目の引数 `{ keepClipboardDataRefs }` に挙げた保存データは残す。保存先を変える編集は「消してから同じ id で登録し直す」ので、登録し直すアイテムが使う保存データを挙げる）
 - いずれも処理後に `data-changed` を全ウィンドウへ送る
 
 ### `data-changed` (イベント)
@@ -165,7 +165,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
 - `load-data-files` の再読み込みでワークスペースの内容が変わっていた場合にも送られる
-- `workspace:add-item`（`item, groupId?, workspaceId?, options?: { copy?: boolean }`）は、参照できるメインウィンドウのアイテム（id を持ち、今のデータファイルにあるもの）なら参照アイテムを足す。`options.copy` のときと、参照できないもの（フォルダ取込で展開したアイテム・ウィンドウ検索の結果など）はコピーを足す。展開したアイテムを参照で足そうとしてコピーにしたときは、トーストで知らせる（`src/main/services/workspace/workspaceRefOperations.ts` の `addAppItemToWorkspace`）。コピーのクリップボードアイテムは、保存データ（`clipboard-data/<id>.json`）を `ClipboardService.duplicateClipboardData` で複製し、複製を指すアイテムとして足す（メインウィンドウと 1 つのファイルを共有しない。複製できなければ元の参照のまま）。逆向き（`workspace:move-to-main`）は複製せず、メインウィンドウへ移したアイテムが保存データを引き継ぐ
+- `workspace:add-item`（`item, groupId?, workspaceId?, options?: { copy?: boolean }`）は、参照できるメインウィンドウのアイテム（id を持ち、今のデータファイルにあるもの）なら参照アイテムを足す。`options.freshClipboardData`（ワークスペースの Ctrl+V で取り込んだばかりの保存データ）なら保存データを複製しない。`options.copy` のときと、参照できないもの（フォルダ取込で展開したアイテム・ウィンドウ検索の結果など）はコピーを足す。展開したアイテムを参照で足そうとしてコピーにしたときは、トーストで知らせる（`src/main/services/workspace/workspaceRefOperations.ts` の `addAppItemToWorkspace`）。コピーのクリップボードアイテムは、保存データ（`clipboard-data/<id>.json`）を `ClipboardService.duplicateClipboardData` で複製し、複製を指すアイテムとして足す（メインウィンドウと 1 つのファイルを共有しない。複製できなければ元の参照のまま）。逆向き（`workspace:move-to-main`）は複製せず、メインウィンドウへ移したアイテムが保存データを引き継ぐ
 - データファイルを読み直したあと、ワークスペースに参照アイテムがあれば、ワークスペースの内容が変わっていなくても送る（参照の中身はメインウィンドウのアイテムのものなので）
 
 ### 参照アイテム

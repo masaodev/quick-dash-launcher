@@ -311,6 +311,15 @@ describe('dataItemWriter', () => {
       expect(deleteClipboardData).toHaveBeenCalledWith('clipboard-data/cccccccc.json');
     });
 
+    it('残す実データの参照を渡すと、その実データは消さないこと（保存先を変える編集）', async () => {
+      await deleteItemsById(tempRoot.dir, ['cccccccc'], {
+        keepClipboardDataRefs: ['clipboard-data/cccccccc.json'],
+      });
+
+      expect(readItems('datafiles/data2.json').map((i) => i.id)).toEqual(['aaaaaaaa']);
+      expect(deleteClipboardData).not.toHaveBeenCalled();
+    });
+
     it('消す id が壊れたファイルにあるかもしれないときは、何も消さずにエラーにすること', async () => {
       await expect(deleteItemsById(tempRoot.dir, ['aaaaaaaa', 'zzzzzzzz'])).rejects.toThrow(
         /datafiles\/data\.json/

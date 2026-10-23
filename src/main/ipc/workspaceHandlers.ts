@@ -171,7 +171,13 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
-    (_event, item: AppItem, groupId?: string, workspaceId?: string, options?: { copy?: boolean }) =>
+    (
+      _event,
+      item: AppItem,
+      groupId?: string,
+      workspaceId?: string,
+      options?: { copy?: boolean; freshClipboardData?: boolean }
+    ) =>
       withWorkspaceService(
         async () => {
           // 既定はメインウィンドウのアイテムの参照。参照できないもの・copy の指定はコピー（クリップボードは実データを複製）

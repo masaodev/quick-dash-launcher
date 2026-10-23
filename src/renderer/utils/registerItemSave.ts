@@ -30,7 +30,10 @@ export async function saveRegisterItems(
   const itemId = editingItem.jsonItemId;
 
   if (isFileChanged) {
-    await window.electronAPI.deleteItemsById([{ id: itemId }]);
+    // クリップボードアイテムは、登録し直すアイテムが使う実データを残す（中身を変えていれば古い実データだけ消える）
+    const keepClipboardDataRefs =
+      item.itemCategory === 'clipboard' && item.clipboardDataRef ? [item.clipboardDataRef] : [];
+    await window.electronAPI.deleteItemsById([{ id: itemId }], { keepClipboardDataRefs });
     // id を引き継ぐ（変えるとセットの行が「アイテムが見つかりません」になる）
     await window.electronAPI.registerItems([{ ...item, keepId: itemId }]);
   } else if (item.itemCategory === 'dir') {

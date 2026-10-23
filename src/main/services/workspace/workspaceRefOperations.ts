@@ -84,12 +84,15 @@ export interface AddToWorkspaceResult {
  *
  * 参照にできるのは、id を持ち、今のデータファイルにあるメインウィンドウのアイテム（通常アイテム・クリップボード・
  * セット）。フォルダ取込で展開したアイテム・ウィンドウ検索の結果などはコピーで足す
+ *
+ * @param options.freshClipboardData - 取り込んだばかりで、どこからも使われていないクリップボードの実データ
+ *   （ワークスペースの Ctrl+V）。複製せずにそのまま使う（複製すると、取り込んだ方が使われずに残る）
  */
 export async function addAppItemToWorkspace(
   item: AppItem,
   groupId: string | undefined,
   workspaceId: string | undefined,
-  options: { copy?: boolean } = {}
+  options: { copy?: boolean; freshClipboardData?: boolean } = {}
 ): Promise<AddToWorkspaceResult> {
   const service = await WorkspaceService.getInstance();
   const referenceable = isReferenceableAppItem(item);
@@ -103,7 +106,11 @@ export async function addAppItemToWorkspace(
       return { item: added, linked: true, fellBackToCopy: false };
     }
   }
-  const added = await service.addItem(withOwnClipboardData(item), groupId, workspaceId);
+  const added = await service.addItem(
+    options.freshClipboardData ? item : withOwnClipboardData(item),
+    groupId,
+    workspaceId
+  );
   // 「メインウィンドウのアイテムだが参照できない」もの（展開したアイテム・データファイルに見つからないもの）だけ知らせる
   // （ウィンドウ検索の結果・ファイルのドロップなどはもともとコピー）
   const fellBackToCopy =

@@ -144,7 +144,8 @@ const electronAPI: ElectronAPI = {
   getAllWindowsAllDesktops: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS),
   getVirtualDesktopInfo: () => ipcRenderer.invoke(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO),
   updateItemById: (request) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM_BY_ID, request),
-  deleteItemsById: (requests) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS_BY_ID, requests),
+  deleteItemsById: (requests, options) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS_BY_ID, requests, options),
   // EditableJsonItem API
   loadEditableItems: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
   saveEditableItems: (editableItems, expectedHashes) =>

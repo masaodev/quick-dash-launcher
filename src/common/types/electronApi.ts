@@ -210,7 +210,11 @@ export interface ElectronAPI {
   getLanguage: () => Promise<AppLanguage>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
-  deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;
+  /** keepClipboardDataRefs＝消さずに残すクリップボードの実データ（保存先を変える編集で、同じ実データを使い続けるとき） */
+  deleteItemsById: (
+    requests: { id: string }[],
+    options?: { keepClipboardDataRefs?: string[] }
+  ) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   /**
@@ -292,7 +296,7 @@ export interface ElectronAPI {
       item: AppItem,
       groupId?: string,
       workspaceId?: string,
-      options?: { copy?: boolean }
+      options?: { copy?: boolean; freshClipboardData?: boolean }
     ) => Promise<WorkspaceItem>;
     /** 中身（編集フォームで新しく入力したもの）からアイテムを作る */
     createItem: (
