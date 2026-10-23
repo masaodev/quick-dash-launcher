@@ -2187,7 +2187,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
       addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
-      addFailed: 'アイテムを追加できませんでした',
     },
     linkPicker: {
       windowTitle: '指すアイテムを選ぶ',
@@ -2198,7 +2197,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       others: 'ほかのアイテム',
       current: '今の指す先',
       notFound: 'ワークスペースのアイテムが見つかりません（削除された可能性があります）。',
-      failed: '参照にできませんでした',
     },
     linkCopies: {
       title: 'メインウィンドウと同じアイテムを参照に変える',
@@ -2224,7 +2222,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       apply_other: '{{count}} 件を参照に変える',
       done_one: '{{count}} 件を参照に変えました',
       done_other: '{{count}} 件を参照に変えました',
-      failed: '参照に変えられませんでした',
       notFound: 'ワークスペースが見つかりません（削除された可能性があります）。',
     },
   },

@@ -2186,7 +2186,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addedItems_other: '{{count}} items',
       addedToGroup: 'Added to "{{group}}"',
       addAsCopy: 'Add as copies (not linked to the launcher)',
-      addFailed: "Couldn't add the items",
     },
     linkPicker: {
       windowTitle: 'Choose the item to link to',
@@ -2197,7 +2196,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       others: 'Other items',
       current: 'Currently linked',
       notFound: 'The workspace item was not found. It may have been deleted.',
-      failed: "Couldn't link the item",
     },
     linkCopies: {
       title: 'Link copies to matching launcher items',
@@ -2223,7 +2221,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       apply_other: 'Link {{count}} items',
       done_one: 'Linked {{count}} item',
       done_other: 'Linked {{count}} items',
-      failed: "Couldn't link the copies",
       notFound: 'The workspace was not found. It may have been deleted.',
     },
   },

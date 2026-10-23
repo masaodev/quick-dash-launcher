@@ -160,7 +160,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### 変更操作と `workspace-changed` (イベント)
 
-`workspace:*` の変更系チャンネル（アイテム・グループ・ワークスペース（タブ）・アーカイブの追加・更新・削除・並び替え）は、成功すると `workspace-changed` を全ウィンドウに送る（`src/main/ipc/workspaceHandlers.ts`）。主に `withWorkspaceChange()` を使い、追加・作成（`workspace:add-item`・`workspace:add-items-from-paths`・`workspace:create-workspace`・`workspace:create-group`）と、先に切り離しウィンドウを閉じる削除・アーカイブ（`workspace:delete-workspace`・`workspace:delete-group`・`workspace:archive-group`）は `notifyWorkspaceChanged()` を直接呼ぶ。受け手のワークスペース画面は一覧を読み直す。
+`workspace:*` の変更系チャンネル（アイテム・グループ・ワークスペース（タブ）・アーカイブの追加・更新・削除・並び替え）は、成功すると `workspace-changed` を全ウィンドウに送る（`src/main/ipc/workspaceHandlers.ts`）。主に `withWorkspaceChange()` を使い、追加・作成（`workspace:add-item`・`workspace:create-item`・`workspace:add-items-from-paths`・`workspace:create-workspace`・`workspace:create-group`）は `notifyWorkspaceChanged()` を直接呼ぶ。先に切り離しウィンドウを閉じる削除・アーカイブ（`workspace:delete-workspace`・`workspace:delete-group`・`workspace:archive-group`）も、閉じる処理ごと `withWorkspaceChange()` の中で行う。受け手のワークスペース画面は一覧を読み直す。
 
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
 - **パラメータ**: なし
@@ -217,7 +217,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る（`MainChildWindowReturn` は、「更新」なら `{ kind: 'register', items }`、「削除」なら `{ kind: 'delete' }`。削除は管理画面で未保存の削除になる）
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う
-- 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）、グループに追加するアイテムを選ぶウィンドウは `workspace:open-item-picker`（`src/main/workspaceItemPickerWindowManager.ts`）、グループに新しく入力して追加するウィンドウは `workspace:open-new-item-editor`（編集ウィンドウと同じ `workspaceItemEditorWindowManager.ts`）。どれも要求を預けず、`window.name` の ID（itemId・groupId）だけで中身を決める
+- 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）、グループに追加するアイテムを選ぶウィンドウは `workspace:open-item-picker`（`src/main/workspaceItemPickerWindowManager.ts`）、グループに新しく入力して追加するウィンドウは `workspace:open-new-item-editor`（編集ウィンドウと同じ `workspaceItemEditorWindowManager.ts`）、参照の指すアイテムを選ぶウィンドウ・メインウィンドウと同じアイテムを参照に変えるウィンドウは `workspace:open-link-picker`・`workspace:open-link-copies`（`src/main/workspaceLinkWindowManager.ts`）。どれも要求を預けず、`window.name` の ID（itemId・groupId・workspaceId）だけで中身を決める
 - 詳細は [ウィンドウ制御](window-control.md) を参照
 
 ## 外部で開く
