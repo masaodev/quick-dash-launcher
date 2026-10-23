@@ -638,7 +638,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
-      cannotOpenDir: 'フォルダ取込の行は開けません（中に並ぶアイテムも CLI からは開けません）: {{name}}',
+      cannotOpenDir:
+        'フォルダ取込の行は開けません（中に並ぶアイテムも CLI からは開けません）: {{name}}',
       cannotOpen: 'このアイテムは開けません: {{name}}',
       openFailed: '開けませんでした: {{name}}（{{error}}）',
       unknownShowTarget: '出すものは main か workspace です: {{target}}',
