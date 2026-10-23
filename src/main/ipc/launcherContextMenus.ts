@@ -1,0 +1,370 @@
+/**
+ * メインウィンドウ・管理ウィンドウの右クリックメニュー
+ * （アイテム・タブ・ウィンドウ検索の行・アイテム管理の行）
+ *
+ * 画面仕様: docs/screens/context-menu.md
+ */
+import { ipcMain, Menu, MenuItem } from 'electron';
+import type { AppItem, WindowInfo, VirtualDesktopInfo } from '@common/types';
+import { IPC_CHANNELS } from '@common/ipcChannels';
+import { desktopLabel } from '@common/utils/desktopLabel';
+import { isLauncherItem, isSetItem } from '@common/types/guards';
+
+import { rerecordSetPositions } from '../services/launch/setRerecord.js';
+import { isReferenceableAppItem } from '../services/workspace/workspaceRefResolver.js';
+
+import {
+  appendPathMenuItems,
+  createMenuItem,
+  createSeparator,
+  getValidWindow,
+  LAUNCHER_PATH_MENU_CHANNELS,
+  t,
+} from './contextMenuShared.js';
+
+/** AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定 */
+function setupAdminItemContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_ADMIN_ITEM_CONTEXT_MENU,
+    async (event, selectedCount: number, isSingleLine: boolean): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+
+      menu.append(
+        createMenuItem(
+          isSingleLine
+            ? t('menu.admin.duplicate')
+            : t('menu.admin.duplicateRows', { count: selectedCount }),
+          event.sender,
+          IPC_CHANNELS.EVENT_ADMIN_MENU_DUPLICATE_ITEMS
+        )
+      );
+
+      if (isSingleLine) {
+        menu.append(
+          createMenuItem(
+            t('menu.admin.editDetails'),
+            event.sender,
+            IPC_CHANNELS.EVENT_ADMIN_MENU_EDIT_ITEM
+          )
+        );
+      }
+
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          isSingleLine
+            ? t('menu.admin.delete')
+            : t('menu.admin.deleteRows', { count: selectedCount }),
+          event.sender,
+          IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS
+        )
+      );
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
+/** LauncherContextMenu用のネイティブメニューハンドラーを設定 */
+function setupLauncherContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU,
+    async (event, item: AppItem): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+      // パス系の項目はパスを持つアイテムだけ（セット・クリップボード・ウィンドウ操作・パスの無い単一アイテムには出さない）
+      const hasPathMenu = isLauncherItem(item) && item.type !== 'windowSwitch';
+      const hasParentFolder = hasPathMenu && item.type !== 'url' && item.type !== 'customUri';
+      const isShortcut = hasPathMenu && item.originalPath !== undefined;
+      const hasMemo = 'memo' in item && item.memo && item.memo.trim().length > 0;
+
+      // F2 はメインウィンドウのキー処理で受けるので、ここでは右端に表示するだけ（登録しない）
+      menu.append(
+        new MenuItem({
+          label: t('menu.edit'),
+          accelerator: 'F2',
+          registerAccelerator: false,
+          click: () => event.sender.send(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, item),
+        })
+      );
+
+      if (hasMemo) {
+        menu.append(
+          createMenuItem(
+            t('menu.showNote'),
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO,
+            item
+          )
+        );
+      }
+
+      if (hasPathMenu) {
+        menu.append(createSeparator());
+      }
+
+      // 置き場所のある行を持つセットは、今の画面から位置を取り直せる
+      if (isSetItem(item) && item.entries.some((entry) => entry.placement)) {
+        menu.append(createSeparator());
+        menu.append(
+          new MenuItem({
+            label: t('set.redo.menu'),
+            click: () => void rerecordSetPositions(item),
+          })
+        );
+        menu.append(createSeparator());
+      }
+
+      menu.append(
+        createMenuItem(
+          t('menu.addToWorkspace'),
+          event.sender,
+          IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
+          item
+        )
+      );
+      // 既定の「ワークスペースに追加」は参照。参照できるアイテムにだけ、コピーで足す項目を並べる
+      if (isReferenceableAppItem(item)) {
+        menu.append(
+          createMenuItem(
+            t('menu.addCopyToWorkspace'),
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE,
+            item
+          )
+        );
+      }
+
+      if (!hasPathMenu) {
+        menu.popup({ window: senderWindow });
+        return;
+      }
+
+      menu.append(createSeparator());
+      appendPathMenuItems(menu, event.sender, LAUNCHER_PATH_MENU_CHANNELS, item, {
+        hasParentFolder,
+        isShortcut,
+      });
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
+/** FileTabContextMenu用のネイティブメニューハンドラーを設定 */
+function setupFileTabContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_FILE_TAB_CONTEXT_MENU,
+    async (event, tabIndex: number): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+
+      menu.append(
+        createMenuItem(
+          t('menu.tab.rename'),
+          event.sender,
+          IPC_CHANNELS.EVENT_FILE_TAB_MENU_RENAME,
+          tabIndex
+        )
+      );
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
+/** WindowContextMenu用のネイティブメニューハンドラーを設定 */
+function setupWindowContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
+    async (
+      event,
+      windowInfo: WindowInfo,
+      desktopInfo: VirtualDesktopInfo,
+      isPinned: boolean
+    ): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+
+      menu.append(
+        createMenuItem(
+          t('menu.window.activate'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE,
+          windowInfo
+        )
+      );
+      menu.append(createSeparator());
+
+      // ワークスペースへの登録（通常アイテムと同じ入口を用意する）。
+      // 既定はタイトルとプロセス名でアクティブ化するだけ。位置の記録は明示的に選ばせる
+      menu.append(
+        createMenuItem(
+          t('menu.addToWorkspace'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
+          { windowInfo, includePosition: false }
+        )
+      );
+      menu.append(
+        createMenuItem(
+          t('menu.window.addToWorkspaceWithPosition'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
+          { windowInfo, includePosition: true }
+        )
+      );
+      menu.append(createSeparator());
+
+      const canMoveToDesktop = desktopInfo.supported && desktopInfo.desktopCount > 1;
+
+      if (canMoveToDesktop) {
+        const virtualDesktopSubmenu = new Menu();
+
+        for (let i = 1; i <= desktopInfo.desktopCount; i++) {
+          const isCurrentDesktop = windowInfo.desktopNumber === i;
+          const number = desktopLabel(i, desktopInfo.desktopNames);
+          const label = isCurrentDesktop
+            ? t('menu.window.currentDesktop', { number })
+            : t('menu.window.desktop', { number });
+
+          virtualDesktopSubmenu.append(
+            new MenuItem({
+              label,
+              enabled: !isCurrentDesktop,
+              click: () =>
+                event.sender.send(
+                  IPC_CHANNELS.EVENT_WINDOW_MENU_MOVE_TO_DESKTOP,
+                  windowInfo.hwnd,
+                  i
+                ),
+            })
+          );
+        }
+
+        menu.append(
+          new MenuItem({ label: t('menu.window.moveToDesktop'), submenu: virtualDesktopSubmenu })
+        );
+      } else {
+        menu.append(new MenuItem({ label: t('menu.window.moveToDesktop'), enabled: false }));
+      }
+
+      if (desktopInfo.supported) {
+        menu.append(createSeparator());
+        const pinLabel = isPinned
+          ? t('menu.window.stopShowingOnAllDesktops')
+          : t('menu.window.showOnAllDesktops');
+        const pinChannel = isPinned
+          ? IPC_CHANNELS.EVENT_WINDOW_MENU_UNPIN
+          : IPC_CHANNELS.EVENT_WINDOW_MENU_PIN;
+        // Ctrl+P・Ctrl+D はメインウィンドウのキー処理で受けるので、右端に表示するだけ（登録しない）
+        menu.append(
+          new MenuItem({
+            label: pinLabel,
+            accelerator: 'Ctrl+P',
+            registerAccelerator: false,
+            click: () => event.sender.send(pinChannel, windowInfo.hwnd),
+          })
+        );
+      }
+
+      menu.append(createSeparator());
+      menu.append(
+        new MenuItem({
+          label: t('menu.window.close'),
+          accelerator: 'Ctrl+D',
+          registerAccelerator: false,
+          click: () => event.sender.send(IPC_CHANNELS.EVENT_WINDOW_MENU_CLOSE, windowInfo),
+        })
+      );
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
+/**
+ * ウィンドウ検索で 2 つ以上を選んでいるときの右クリックメニュー
+ * 1 つのときのメニューから、まとめてできる操作（固定・移動・閉じる）だけを出す。
+ * どのウィンドウに効かせるかはレンダラー側の選択で決める
+ */
+function setupWindowsContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU,
+    async (event, count: number, desktopInfo: VirtualDesktopInfo): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+
+      const menu = new Menu();
+      menu.append(new MenuItem({ label: t('menu.window.count', { count }), enabled: false }));
+      menu.append(createSeparator());
+
+      if (desktopInfo.supported && desktopInfo.desktopCount > 1) {
+        const submenu = new Menu();
+        for (let i = 1; i <= desktopInfo.desktopCount; i++) {
+          submenu.append(
+            createMenuItem(
+              t('menu.window.desktop', { number: desktopLabel(i, desktopInfo.desktopNames) }),
+              event.sender,
+              IPC_CHANNELS.EVENT_WINDOWS_MENU_MOVE_TO_DESKTOP,
+              i
+            )
+          );
+        }
+        menu.append(new MenuItem({ label: t('menu.window.moveToDesktop'), submenu }));
+      } else {
+        menu.append(new MenuItem({ label: t('menu.window.moveToDesktop'), enabled: false }));
+      }
+
+      if (desktopInfo.supported) {
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            t('menu.window.showOnAllDesktops'),
+            event.sender,
+            IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN,
+            true
+          )
+        );
+        menu.append(
+          createMenuItem(
+            t('menu.window.stopShowingOnAllDesktops'),
+            event.sender,
+            IPC_CHANNELS.EVENT_WINDOWS_MENU_PIN,
+            false
+          )
+        );
+      }
+
+      menu.append(createSeparator());
+      menu.append(
+        new MenuItem({
+          label: t('menu.window.closeCount', { count }),
+          accelerator: 'Ctrl+D',
+          registerAccelerator: false,
+          click: () => event.sender.send(IPC_CHANNELS.EVENT_WINDOWS_MENU_CLOSE),
+        })
+      );
+
+      menu.popup({ window: senderWindow });
+    }
+  );
+}
+
+/** メインウィンドウ・管理ウィンドウの右クリックメニューを設定 */
+export function setupLauncherContextMenus(): void {
+  setupAdminItemContextMenuHandler();
+  setupLauncherContextMenuHandler();
+  setupFileTabContextMenuHandler();
+  setupWindowContextMenuHandler();
+  setupWindowsContextMenuHandler();
+}

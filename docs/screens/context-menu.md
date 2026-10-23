@@ -34,7 +34,7 @@ OS 標準のメニューなので、表示と閉じ方は次のとおりです�
 
 | 項目 | 内容 |
 | --- | --- |
-| **ファイル名** | `src/main/ipc/contextMenuHandlers.ts` |
+| **ファイル名** | `src/main/ipc/launcherContextMenus.ts`（共通部品は `contextMenuShared.ts`、登録は `contextMenuHandlers.ts`） |
 | **表示条件** | メインウィンドウでアイテムを右クリック（ウィンドウ検索結果を右クリックした場合は別のメニュー。[メインウィンドウ仕様書](./main-window.md#526-ウィンドウ検索モード)参照） |
 | **メニュータイプ** | ネイティブElectronメニュー |
 | **親画面** | メインウィンドウ |
