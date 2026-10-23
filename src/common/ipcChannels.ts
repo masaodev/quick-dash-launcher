@@ -278,8 +278,6 @@ export const IPC_CHANNELS = {
   SHOW_LAUNCHER_BLANK_CONTEXT_MENU: 'show-launcher-blank-context-menu',
   EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM: 'launcher-blank-menu-add-item',
   EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD: 'launcher-blank-menu-register-from-clipboard',
-  /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
-  READ_CLIPBOARD_FOR_REGISTER: 'read-clipboard-for-register',
 
   // コンテキストメニュー - Workspace
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',
@@ -349,6 +347,8 @@ export const IPC_CHANNELS = {
   // クリップボード操作
   CLIPBOARD_CAPTURE: 'clipboard:capture',
   CLIPBOARD_RESTORE: 'clipboard:restore',
+  /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
+  CLIPBOARD_READ_FOR_REGISTER: 'clipboard:read-for-register',
   CLIPBOARD_CHECK_CURRENT: 'clipboard:check-current',
   // クリップボードセッション管理（登録確定前の一時保存）
   CLIPBOARD_CAPTURE_TO_SESSION: 'clipboard:capture-to-session',

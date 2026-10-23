@@ -180,7 +180,7 @@ export function setupWindowHandlers(
 
   // メインウィンドウの余白の右クリック「クリップボードのパス・URL から追加」。振り分けはレンダラーが行う
   // （この版の Electron では clipboard.readText は Promise を返すので待つ）
-  ipcMain.handle(IPC_CHANNELS.READ_CLIPBOARD_FOR_REGISTER, async () => ({
+  ipcMain.handle(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER, async () => ({
     files: readClipboardFilePaths(),
     text: await clipboard.readText(),
   }));

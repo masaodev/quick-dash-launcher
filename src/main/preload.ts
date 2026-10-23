@@ -190,7 +190,7 @@ const electronAPI: ElectronAPI = {
   getInitialTab: () => ipcRenderer.invoke(IPC_CHANNELS.GET_INITIAL_TAB),
   getPendingImportModal: () => ipcRenderer.invoke(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL),
   copyToClipboard: (text) => ipcRenderer.invoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
-  readClipboardForRegister: () => ipcRenderer.invoke(IPC_CHANNELS.READ_CLIPBOARD_FOR_REGISTER),
+  readClipboardForRegister: () => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER),
   // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
   openMainChildWindow: (request) =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, request),
