@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
+import { parseKeywords } from '../utils/dataParser';
 import { SET_KIND_ICONS, type SetCatalogItem } from '../utils/setEditing';
 import { toggleInSet } from '../utils/setUtils';
 import '../styles/components/WindowSelectorModal.css';
@@ -41,12 +42,25 @@ interface SetItemPickerModalProps {
   addedLabel?: string;
   /** 一覧の見出し（同じタブ・ほかのタブの代わり。指す先を選ぶときの「同じパスのアイテム」など） */
   sectionTitles?: { same: string; others: string };
+  /**
+   * 「すべて」のタブを出す（タブをまたいで先に並べたいものがあるとき。指す先を選ぶ画面の「同じパスのアイテム」）。
+   * 既定はメインウィンドウと同じく、タブを 1 つ選んでその中を探す
+   */
+  allTab?: boolean;
+}
+
+/** 表示名が検索のキーワードをすべて含むか（メインウィンドウの検索と同じく、空白で区切った AND） */
+function matchesKeywords(item: SetCatalogItem, keywords: readonly string[]): boolean {
+  if (keywords.length === 0) return true;
+  const name = item.displayName.toLowerCase();
+  return keywords.every((keyword) => name.includes(keyword));
 }
 
 /**
  * セットに追加するアイテムを選ぶ画面
  *
- * どのタブのアイテムも選べる。同じタブのアイテムを先に並べ、上のタブの切り替えで 1 つのタブに絞れる。
+ * どのタブのアイテムも選べる。メインウィンドウと同じく、上のタブを 1 つ選んでその中を探す（開いたときはセットと同じタブ）。
+ * allTab のときだけ「すべて」のタブを出し、同じタブ（候補）のアイテムを先に並べる。
  * single のときは行の詳細から開き、行が開くアイテムを 1 つだけ選ぶ
  */
 const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
@@ -63,6 +77,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
   footerExtra,
   sectionTitles,
   addedLabel,
+  allTab = false,
 }) => {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -84,28 +99,31 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
     return names;
   }, [catalog]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return catalog.filter(
-      (item) =>
-        (group === null || item.groupName === group) &&
-        (!q || item.displayName.toLowerCase().includes(q))
-    );
-  }, [catalog, query, group]);
+  // 選んでいるタブ。まだ選んでいなければ先頭のタブ（catalog は同じタブを先に並べているので、セットと同じタブ）。
+  // 「すべて」があるときは、選んでいなければ「すべて」
+  const activeGroup = allTab ? group : (group ?? groups[0] ?? null);
+  const keywords = useMemo(() => parseKeywords(query), [query]);
+
+  const filtered = useMemo(
+    () =>
+      catalog.filter(
+        (item) =>
+          (activeGroup === null || item.groupName === activeGroup) &&
+          matchesKeywords(item, keywords)
+      ),
+    [catalog, keywords, activeGroup]
+  );
 
   // 検索欄で Tab・Shift+Tab を押すと、上のタブを順に切り替える（メインウィンドウの Tab と同じ。検索中は合うアイテムの無いタブを飛ばす）
   const switchGroupByTab = (event: KeyboardEvent): boolean => {
     if (document.activeElement !== searchRef.current || groups.length <= 1) return false;
-    const tabs: (string | null)[] = [null, ...groups];
-    const q = query.trim().toLowerCase();
+    const tabs: (string | null)[] = allTab ? [null, ...groups] : groups;
     const hasMatch = (tab: string | null) =>
-      !q ||
       catalog.some(
-        (item) =>
-          (tab === null || item.groupName === tab) && item.displayName.toLowerCase().includes(q)
+        (item) => (tab === null || item.groupName === tab) && matchesKeywords(item, keywords)
       );
     const step = event.shiftKey ? -1 : 1;
-    const current = tabs.indexOf(group);
+    const current = tabs.indexOf(activeGroup);
     for (let i = 1; i < tabs.length; i++) {
       const next = tabs[(current + step * i + tabs.length) % tabs.length];
       if (hasMatch(next)) {
@@ -152,10 +170,11 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
             {item.icon ? <img src={item.icon} alt="" /> : (SET_KIND_ICONS[item.kind] ?? '📄')}
           </span>
           <span className="set-row-name">{item.displayName}</span>
-          {/* タブの名前は、ほかのタブのアイテムにだけ添える */}
+          {/* タブの名前は、「すべて」のタブで、ほかのタブのアイテムにだけ添える */}
           {added ? (
             <span className="set-row-aside">{addedLabel ?? t('set.picker.added')}</span>
           ) : (
+            activeGroup === null &&
             !item.sameGroup &&
             groups.length > 1 && <span className="set-row-aside">{item.groupName}</span>
           )}
@@ -198,26 +217,28 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
           placeholder={t('set.picker.search')}
           onChange={(e) => setQuery(e.target.value)}
         />
-        {/* タブの絞り込み（ウィンドウを選ぶ画面の仮想デスクトップのタブと同じ形）。タブが 1 つなら出さない */}
+        {/* タブの切り替え（ウィンドウを選ぶ画面の仮想デスクトップのタブと同じ形。多いときは折り返す）。タブが 1 つなら出さない */}
         {groups.length > 1 && (
           <div className="desktop-tabs set-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={group === null}
-              className={`desktop-tab${group === null ? ' active' : ''}`}
-              onClick={() => setGroup(null)}
-            >
-              {t('set.picker.all')}
-              <span className="tab-count">({catalog.length})</span>
-            </button>
+            {allTab && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeGroup === null}
+                className={`desktop-tab${activeGroup === null ? ' active' : ''}`}
+                onClick={() => setGroup(null)}
+              >
+                {t('set.picker.all')}
+                <span className="tab-count">({catalog.length})</span>
+              </button>
+            )}
             {groups.map((name) => (
               <button
                 key={name}
                 type="button"
                 role="tab"
-                aria-selected={group === name}
-                className={`desktop-tab${group === name ? ' active' : ''}`}
+                aria-selected={activeGroup === name}
+                className={`desktop-tab${activeGroup === name ? ' active' : ''}`}
                 onClick={() => setGroup(name)}
               >
                 {name}

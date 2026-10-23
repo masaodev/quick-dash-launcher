@@ -150,6 +150,8 @@ const WorkspaceLinkPickerPage: React.FC<WorkspaceLinkPickerPageProps> = ({ itemI
       asPage
       isOpen
       single
+      // 同じパスのアイテムはタブをまたいで先に並べるので、そのときだけ「すべて」のタブを出す
+      allTab={hasCandidates}
       catalog={catalog}
       addedKeys={currentKeys}
       addedLabel={t('workspace.linkPicker.current')}

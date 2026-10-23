@@ -339,6 +339,9 @@
 /* タブの絞り込みは、ウィンドウを選ぶ画面の .desktop-tabs をそのまま使う */
 .set-tabs {
   margin-bottom: 0;
+  /* タブが多いときは、横にはみ出さずに折り返す */
+  flex-wrap: wrap;
+  row-gap: var(--spacing-xs);
 }
 
 .set-picker-list,

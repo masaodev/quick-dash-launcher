@@ -783,7 +783,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     picker: {
       title: 'Items to add to the set',
-      search: 'Search by name (all tabs)',
+      search: 'Search by name',
       all: 'All',
       sameGroup: 'Same tab as this set',
       others: 'Other tabs',

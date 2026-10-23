@@ -98,27 +98,46 @@ export async function loadSetCatalog(
   const currentTab = tabOf(currentFile);
 
   const launchers = allItems.filter((item): item is LauncherItem => isLauncherItem(item));
-  const icons = await window.electronAPI.loadCachedIcons(launchers).catch(() => ({}));
+  // 参照は指す先のメインウィンドウのアイテムが下に並ぶので出さない（選べばメインのアイテムの id が入る）
+  const workspaceItems = includeWorkspace
+    ? (await window.electronAPI.workspaceAPI.loadItems()).filter(
+        (item): item is Extract<WorkspaceItem, { type: 'item' }> =>
+          item.type === 'item' && !item.ref
+      )
+    : [];
+  // ワークスペースのアイテムは読んだだけではアイコンを持たないので、メインウィンドウのアイテムと同じくキャッシュから読む。
+  // 同じパスでもカスタムアイコンが違うことがあるので、メインウィンドウのアイテムとは分けて読む
+  const [icons, workspaceIcons] = await Promise.all([
+    window.electronAPI.loadCachedIcons(launchers).catch(() => ({})),
+    workspaceItems.length > 0
+      ? window.electronAPI
+          .loadCachedIcons(
+            workspaceItems.map((item) => ({
+              displayName: item.displayName,
+              path: item.path,
+              type: item.launcherType,
+              customIcon: item.customIcon,
+              originalPath: item.originalPath,
+            }))
+          )
+          .catch(() => ({}))
+      : Promise.resolve({}),
+  ]);
 
   const result: SetCatalogItem[] = [];
-  if (includeWorkspace) {
-    const workspaceItems: WorkspaceItem[] = await window.electronAPI.workspaceAPI.loadItems();
-    for (const item of workspaceItems) {
-      // 参照は指す先のメインウィンドウのアイテムが下に並ぶので出さない（選べばメインのアイテムの id が入る）
-      if (item.type !== 'item' || item.ref) continue;
-      result.push({
-        key: item.id,
-        id: item.id,
-        displayName: item.displayName,
-        kind: launcherKind({ type: item.launcherType }),
-        path: item.path,
-        args: item.args,
-        icon: item.icon,
-        groupName: i18next.t('set.picker.workspace'),
-        sameGroup: true,
-        ...switchFieldsOf(item),
-      });
-    }
+  for (const item of workspaceItems) {
+    result.push({
+      key: item.id,
+      id: item.id,
+      displayName: item.displayName,
+      kind: launcherKind({ type: item.launcherType }),
+      path: item.path,
+      args: item.args,
+      icon: (workspaceIcons as Record<string, string>)[item.path] || item.icon,
+      groupName: i18next.t('set.picker.workspace'),
+      sameGroup: true,
+      ...switchFieldsOf(item),
+    });
   }
 
   for (const item of allItems) {

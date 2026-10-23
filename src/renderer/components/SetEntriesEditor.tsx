@@ -54,6 +54,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
 }) => {
   const { t } = useTranslation();
   const [catalog, setCatalog] = useState<SetCatalogItem[]>([]);
+  /** catalog を読み終えたか（読む前は、アイテムを指す行を「見つからない」と出さない） */
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
   /** 行が自分で持つパスのアイコン（アイテムを指す行は catalog のアイコンを使う） */
   const [ownIcons, setOwnIcons] = useState<ReadonlyMap<string, string>>(new Map());
   const [screens, setScreens] = useState<ScreenArea[]>([]);
@@ -72,9 +74,11 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   useEffect(() => {
     let cancelled = false;
     loadSetCatalog(currentFile, includeWorkspace)
-      .then(
-        (items) => !cancelled && setCatalog(items.filter((item) => item.id !== selfId || !selfId))
-      )
+      .then((items) => {
+        if (cancelled) return;
+        setCatalog(items.filter((item) => item.id !== selfId || !selfId));
+        setCatalogLoaded(true);
+      })
       .catch((e) => logError('セットに追加できるアイテムを読めませんでした:', e));
     window.electronAPI
       .getScreenAreas()
@@ -113,6 +117,13 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     for (const item of catalog) if (item.id) map.set(item.id, item);
     return map;
   }, [catalog]);
+
+  /** 行の表示。catalog を読む前は、アイテムを指す行を見つからない扱いにしない（開いた直後に一瞬「存在しないアイテム」と出ないように） */
+  const describe = (entry: SetEntry, icons?: ReadonlyMap<string, string>): SetEntryView => {
+    const view = describeSetEntry(entry, catalogById, icons);
+    if (catalogLoaded || !view.missing || !entry.itemId) return view;
+    return { ...view, name: entry.label ?? '', missing: false };
+  };
 
   const addedKeys = useMemo(() => {
     const keys = new Set<string>();
@@ -174,7 +185,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
           <div className="set-empty">{t('set.editor.empty')}</div>
         ) : (
           entries.map((entry, index) => {
-            const view = describeSetEntry(entry, catalogById, ownIcons);
+            const view = describe(entry, ownIcons);
             const place = placementText(entry, screens, desktopNames);
             return (
               <div
@@ -369,7 +380,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         </li>
         {/* 動かすだけの行があるときだけ、閉じていると動かないことと、開くものの足し方を添える */}
         {entries.some((entry) => {
-          const view = describeSetEntry(entry, catalogById);
+          const view = describe(entry);
           return view.moveOnly && !view.missing;
         }) && (
           <li>
