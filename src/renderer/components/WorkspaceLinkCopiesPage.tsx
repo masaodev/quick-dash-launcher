@@ -156,13 +156,16 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
               const selectable = !ambiguous || !!choices[entry.id];
               const checked = selected.has(entry.id);
               const candidate = entry.candidates[0];
+              // 指す先を選ぶ欄がある行は label にしない（label の中の select は、無効なチェックボックスに引きずられる）
+              const Row = ambiguous ? 'div' : 'label';
               return (
-                <label
+                <Row
                   key={entry.id}
                   className={`set-picker-row workspace-link-row${checked ? ' checked' : ''}`}
                 >
                   <input
                     type="checkbox"
+                    aria-label={entry.displayName}
                     checked={checked}
                     disabled={!selectable}
                     onChange={() => setSelected((prev) => toggleInSet(prev, entry.id))}
@@ -203,7 +206,7 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
                       </span>
                     ))}
                   </span>
-                </label>
+                </Row>
               );
             })
           )}

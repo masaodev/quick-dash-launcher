@@ -328,9 +328,9 @@ html:has(.workspace-window.background-transparent) {
 /*
  * 参照（元が見つかるもの）は右下の角に小さなショートカットの矢印を出す。
  * マウスを載せると削除の × と入れ替わりに消える
+ * （カードの ::before・::after はドロップ位置の線とグループの木の線で使うので、要素で描く）
  */
-.workspace-item-card[data-ref='ok']::after {
-  content: '';
+.workspace-item-ref-mark {
   position: absolute;
   right: 4px;
   bottom: 3px;
@@ -343,7 +343,7 @@ html:has(.workspace-window.background-transparent) {
   transition: opacity 0.2s ease;
 }
 
-.workspace-item-card[data-ref='ok']:hover::after {
+.workspace-item-card:hover .workspace-item-ref-mark {
   opacity: 0;
 }
 

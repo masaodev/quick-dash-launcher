@@ -487,6 +487,12 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       (i) => i.id === copy.id
     );
     expect(stored).toMatchObject({ type: 'ref', refItemId: google.id });
+    // 参照のカードには右下に矢印の印が出る（コピーには出ない）
+    await expect(
+      workspaceWindow
+        .locator('.workspace-item-card', { hasText: 'Google' })
+        .locator('.workspace-item-ref-mark')
+    ).toBeVisible();
   });
 
   test('一括で参照に変えるとき、候補が 2 件以上のコピーは選んだアイテムを指す', async ({

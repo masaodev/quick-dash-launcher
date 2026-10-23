@@ -118,7 +118,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   const getTooltipText = (): string => {
     const lines: string[] = [];
-    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カードには右下の矢印だけ。CSS の data-ref）
+    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カードには右下の矢印だけ）
     if (item.type === 'ref') {
       lines.push(
         t('workspace.ref.tooltipMissing', {
@@ -201,6 +201,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
           <div className="workspace-item-name">{item.displayName}</div>
         )}
       </div>
+      {item.ref?.status === 'ok' && <span className="workspace-item-ref-mark" aria-hidden="true" />}
       <button
         className="workspace-item-delete-btn"
         onClick={handleRemoveClick}
