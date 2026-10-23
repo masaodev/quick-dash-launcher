@@ -31,6 +31,7 @@ import {
   ensureMainItemIndex,
   findLinkCandidates,
   linkToMainItem,
+  moveWorkspaceItemToMain,
 } from '../workspace/workspaceRefOperations.js';
 import { showToastWindow } from '../overlayWindowService.js';
 import { ClipboardService } from '../clipboardService.js';
@@ -184,6 +185,7 @@ export function createCliContext(
         await ensureMainItemIndex();
         return (await WorkspaceService.getInstance()).loadResolvedItems();
       },
+      canRef: async (itemId) => (await ensureMainItemIndex()).byId.has(itemId),
       addRef: async (itemId, groupId, workspaceId) => {
         const index = await ensureMainItemIndex();
         const main = index.byId.get(itemId);
@@ -198,6 +200,7 @@ export function createCliContext(
         (await WorkspaceService.getInstance()).updateDisplayName(id, displayName),
       convertToCopy: (id) => convertRefToCopy(id),
       linkToMain: (id, mainItemId) => linkToMainItem(id, mainItemId),
+      moveToMain: (id, file) => moveWorkspaceItemToMain(id, file),
       findLinkCandidates: async (id) => (await findLinkCandidates(id)).map((c) => c.itemId),
       addItem: async (item, groupId, workspaceId) =>
         (await WorkspaceService.getInstance()).addItem(item, groupId, workspaceId),

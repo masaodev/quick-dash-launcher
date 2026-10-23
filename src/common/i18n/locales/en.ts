@@ -533,6 +533,9 @@ Works with workspaces (workspace.json).
   qdl workspace item convert <id or name>     Switch between a link and a copy (--to copy | ref is required. For ref,
                                               --from <target>; defaults to the launcher item with the same path and
                                               arguments. --dry-run)
+  qdl workspace item move-to-main <id or name>
+                                              Move a copy to the launcher and link to it (--file | --tab
+                                              <destination>; defaults to the default data file. --dry-run)
   qdl workspace group list                    List groups (--workspace --grep)
   qdl workspace group add                     Add a group (--name is required. --color --parent --workspace --dry-run)
   qdl workspace group update <id or name>     Change a group (--name --color --parent <parent> ("" for top level) --dry-run)
@@ -616,6 +619,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         "A linked item's content comes from the launcher item (--{{option}} can't be used). Change it with qdl launcher item update {{id}}",
       convertTo: 'Set --to to copy or ref ({{to}})',
       notRef: 'The item is not linked to a launcher item',
+      alreadyInMain: 'A linked item is already in the launcher (only copies can be moved)',
       refMissing: "The original item was not found, so it can't be made a copy",
       noLinkCandidate:
         'Found {{count}} launcher items with the same path and arguments. Choose one with --from',

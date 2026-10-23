@@ -534,6 +534,9 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace item convert <id か表示名>    参照とコピーを行き来する（--to copy | ref は必須。ref なら --from <指す先>。
                                               省略時はパスと引数が同じメインウィンドウのアイテム、--dry-run）
+  qdl workspace item move-to-main <id か表示名>
+                                              コピーをメインウィンドウへ移し、参照に変える（--file | --tab
+                                              <移す先>。省略時は既定のデータファイル、--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
   qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
   qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
@@ -616,6 +619,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '参照アイテムの中身はメインウィンドウのアイテムのものです（--{{option}} は使えません）。中身は qdl launcher item update {{id}} で直してください',
       convertTo: '--to には copy か ref を指定してください（{{to}}）',
       notRef: '参照アイテムではありません',
+      alreadyInMain: '参照アイテムはもうメインウィンドウにあります（移せるのはコピーだけです）',
       refMissing: '元のアイテムが見つからないので、コピーにできません',
       noLinkCandidate:
         'パスと引数が同じメインウィンドウのアイテムが {{count}} 件です。--from で指す先を指定してください',

@@ -98,8 +98,9 @@ export function launcherCandidate(entry: LauncherEntry, tabs: DataFileTab[]): Cl
   };
 }
 
-async function resolveTargetFile(
-  ctx: LauncherCommandContext,
+/** --file・--tab から書き込む先のデータファイルを決める（どちらも無ければ既定のデータファイル） */
+export async function resolveTargetFile(
+  ctx: Pick<LauncherCommandContext, 'store'>,
   file: string | undefined,
   tab: string | undefined
 ): Promise<string> {
