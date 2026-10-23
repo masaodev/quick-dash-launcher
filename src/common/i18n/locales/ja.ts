@@ -784,7 +784,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     picker: {
       title: 'セットに追加するアイテム',
-      search: '名前で検索（すべてのタブ）',
+      search: '名前で検索',
       all: 'すべて',
       sameGroup: 'このセットと同じタブ',
       others: 'ほかのタブ',
