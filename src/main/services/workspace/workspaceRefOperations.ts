@@ -207,7 +207,8 @@ export interface MoveToMainResult {
  * - セットは、ワークスペースのアイテムを指す行をパスの行に置き換える（メインウィンドウのセットはワークスペースを探さない）
  * - クリップボードは実データを複製せず、そのままメインのアイテムへ引き継ぐ（ワークスペース側は参照になり、実データを持たなくなる）
  * - 通常アイテムで、移す先のデータファイルにパスと引数が同じアイテムが既にあれば、新しく作らずにそれを指す参照にする
- *   （メインウィンドウとワークスペースの両方に登録していたアイテムを移しても、メインウィンドウに重複を作らない）
+ *   （メインウィンドウとワークスペースの両方に登録していたアイテムを移しても、メインウィンドウに重複を作らない）。
+ *   ウィンドウ切り替え・カスタムアイコンが違うときは、参照にするとコピーの設定が消えるので、これまでどおり新しく足す
  *
  * @throws 参照（もうメインウィンドウにある）・見つからないアイテム・データファイルに書けない場合
  */
@@ -235,7 +236,7 @@ export async function moveWorkspaceItemToMain(
   const existing =
     item.type === 'item'
       ? findSamePathItems(item.path, item.args, currentIndex).find(
-          (main) => main.sourceFile === target && main.id
+          (main) => main.sourceFile === target && main.id && !settingsDiffer(item, main)
         )
       : undefined;
   if (existing?.id) {

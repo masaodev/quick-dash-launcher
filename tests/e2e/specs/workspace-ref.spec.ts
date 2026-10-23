@@ -493,6 +493,29 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
         .locator('.workspace-item-card', { hasText: 'Google' })
         .locator('.workspace-item-ref-mark')
     ).toBeVisible();
+
+    await test.step('カスタムアイコンが違うコピーは、設定を消さないよう新しく足す', async () => {
+      const iconCopy: WorkspaceItem = await workspaceWindow.evaluate(
+        (item) =>
+          window.electronAPI.workspaceAPI.addItem(
+            { ...item, displayName: 'アイコン付きの Google', customIcon: 'custom-google.png' },
+            undefined,
+            undefined,
+            { copy: true }
+          ),
+        google
+      );
+      await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.moveToMain(id),
+        iconCopy.id
+      );
+      const after: AppItem[] = await mainWindow.evaluate(() =>
+        window.electronAPI.loadDataFiles('internal')
+      );
+      expect(after.filter((i) => 'path' in i && i.path === google.path)).toHaveLength(2);
+      const moved = await mainItem(mainWindow, 'アイコン付きの Google');
+      expect(moved.customIcon).toBe('custom-google.png');
+    });
   });
 
   test('一括で参照に変えるとき、候補が 2 件以上のコピーは選んだアイテムを指す', async ({
