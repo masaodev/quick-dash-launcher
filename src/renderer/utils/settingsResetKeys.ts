@@ -19,7 +19,13 @@ export const SETTINGS_RESET_KEYS: Record<
   ResettableSettingsCategory,
   ReadonlyArray<keyof AppSettings>
 > = {
-  basic: ['autoLaunch', 'cliEnabled', 'recordLaunchUsage', 'showKeyboardHints'],
+  basic: [
+    'autoLaunch',
+    'cliEnabled',
+    'recordLaunchUsage',
+    'showKeyboardHints',
+    'searchMemoAndPath',
+  ],
   window: [
     'windowWidth',
     'windowHeight',

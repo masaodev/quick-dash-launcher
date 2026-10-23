@@ -63,6 +63,7 @@ export class SettingsService {
     detachedVisibleOnAllDesktops: true,
     backupIncludeClipboard: false,
     showKeyboardHints: true,
+    searchMemoAndPath: false,
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     detachedPositionMode: 'mainDisplay',

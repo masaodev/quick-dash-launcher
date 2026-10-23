@@ -154,6 +154,8 @@ export interface AppSettings {
   detachedVisibleOnAllDesktops: boolean;
   /** メインウィンドウの下に、気づきにくいキー操作のヒントを表示する（デフォルト: true） */
   showKeyboardHints: boolean;
+  /** メインウィンドウの検索で、表示名に加えてメモとパスにも当てる（デフォルト: false） */
+  searchMemoAndPath: boolean;
   /** ウィンドウ検索で起動のホットキー（デフォルト: 'Ctrl+Alt+Space'、空の場合は無効） */
   itemSearchHotkey: string;
   /** クリップボードデータもバックアップに含めるか（デフォルト: false） */
