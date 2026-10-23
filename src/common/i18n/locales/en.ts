@@ -357,10 +357,8 @@ export const en: LocaleMessages = {
       renameAlias: '🏷️ Rename (workspace only)',
       convertToCopy: '📄 Make a copy (unlink from the launcher)',
       retarget: '🔁 Link to another item…',
-      linkToMain: '🔗 Link to a launcher item…',
       moveToMain: '🚀 Move to the launcher and link to it',
       moveToWorkspace: '📁 Move to workspace',
-      removeFromGroup: '📤 Remove from group',
       remove: '🗑️ Remove from workspace',
     },
     workspaceGroup: {
@@ -2152,6 +2150,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       movedToMain:
         'Moved "{{name}}" to the "{{tab}}" tab of the launcher and linked the workspace item to it',
       movedToMainNoTab: 'Moved "{{name}}" to the launcher and linked the workspace item to it',
+      linkedToSameInMain:
+        'The "{{tab}}" tab already had the same item, so "{{name}}" now links to it',
+      linkedToSameInMainNoTab:
+        'The launcher already had the same item, so "{{name}}" now links to it',
       deleteWarning_one:
         '{{count}} workspace item links to this. If you delete it, that link shows "The original item was not found".',
       deleteWarning_other:
@@ -2204,8 +2206,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       memoConflict: '⚠ Both have different notes (the copy note will be removed)',
       settingsDiffer:
         '⚠ Window switching or icon differs from the launcher item (the launcher settings will be used)',
-      ambiguous_one: '⚠ {{count}} candidate (right-click and select "Link to a launcher item")',
-      ambiguous_other: '⚠ {{count}} candidates (right-click and select "Link to a launcher item")',
+      ambiguous_one: '⚠ {{count}} candidate. Choose which one to link to',
+      ambiguous_other: '⚠ {{count}} candidates. Choose which one to link to',
+      choose: 'Choose the item to link to…',
+      chooseLabel: 'Launcher item that "{{name}}" links to',
       notMatchable_one:
         "{{count}} clipboard item, set, or item without a path can't be compared by path, so it isn't included.",
       notMatchable_other:

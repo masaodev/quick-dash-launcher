@@ -118,7 +118,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   const getTooltipText = (): string => {
     const lines: string[] = [];
-    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カード自体には印を付けない）
+    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カードには右下の矢印だけ。CSS の data-ref）
     if (item.type === 'ref') {
       lines.push(
         t('workspace.ref.tooltipMissing', {

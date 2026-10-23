@@ -359,10 +359,8 @@ export const ja = {
       renameAlias: '🏷️ 表示名を変更（ワークスペースだけ）',
       convertToCopy: '📄 コピーにする（メインウィンドウと切り離す）',
       retarget: '🔁 別のアイテムを指す…',
-      linkToMain: '🔗 メインウィンドウのアイテムを参照する…',
       moveToMain: '🚀 メインウィンドウへ移して参照にする',
       moveToWorkspace: '📁 ワークスペースを移動',
-      removeFromGroup: '📤 グループから外す',
       remove: '🗑️ ワークスペースから削除',
     },
     workspaceGroup: {
@@ -2153,6 +2151,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '「{{name}}」をメインウィンドウの「{{tab}}」タブへ移し、ワークスペースのアイテムは参照にしました',
       movedToMainNoTab:
         '「{{name}}」をメインウィンドウへ移し、ワークスペースのアイテムは参照にしました',
+      linkedToSameInMain:
+        'メインウィンドウの「{{tab}}」タブに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
+      linkedToSameInMainNoTab:
+        'メインウィンドウに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
       deleteWarning_one:
         'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
       deleteWarning_other:
@@ -2205,10 +2207,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memoConflict: '⚠ メモが両方にあって違う（参照にするとコピーのメモは消えます）',
       settingsDiffer:
         '⚠ ウィンドウ切り替え・アイコンがメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
-      ambiguous_one:
-        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
-      ambiguous_other:
-        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
+      ambiguous_one: '⚠ 候補が {{count}} 件。指す先を選んでください',
+      ambiguous_other: '⚠ 候補が {{count}} 件。指す先を選んでください',
+      choose: '指す先を選ぶ…',
+      chooseLabel: '「{{name}}」が指すメインウィンドウのアイテム',
       notMatchable_one:
         'クリップボード・セット・パスの無い単一アイテム {{count}} 件は、パスで比べられないので対象外です。',
       notMatchable_other:

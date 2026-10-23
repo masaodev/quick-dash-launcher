@@ -279,7 +279,8 @@ const electronAPI: ElectronAPI = {
     findLinkCandidates: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, id),
     previewLinkCopies: (workspaceId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_PREVIEW_LINK_COPIES, workspaceId),
-    applyLinkCopies: (ids) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, ids),
+    applyLinkCopies: (ids, choices) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, ids, choices),
     countRefs: (itemIds) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_COUNT_REFS, itemIds),
     remapRefs: (idMap) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMAP_REFS, idMap),
     // グループ管理
@@ -472,8 +473,6 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER,
       callback
     ),
-  onWorkspaceMenuRemoveFromGroup: (callback) =>
-    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP, callback),
   onWorkspaceMenuRemoveItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
   onWorkspaceMenuMoveToWorkspace: (callback) =>

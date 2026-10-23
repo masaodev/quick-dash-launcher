@@ -283,7 +283,6 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PATH: 'workspace-menu-copy-shortcut-path',
   EVENT_WORKSPACE_MENU_COPY_SHORTCUT_PARENT_PATH: 'workspace-menu-copy-shortcut-parent-path',
   EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'workspace-menu-open-shortcut-parent-folder',
-  EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP: 'workspace-menu-remove-from-group',
   EVENT_WORKSPACE_MENU_REMOVE_ITEM: 'workspace-menu-remove-item',
   EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE: 'workspace-menu-move-to-workspace',
 

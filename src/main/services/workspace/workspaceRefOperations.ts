@@ -196,6 +196,8 @@ export interface MoveToMainResult {
   file: string;
   /** 移した先のタブの名前（タブに載っていないファイルなら無い） */
   tabName?: string;
+  /** 移す先に同じアイテムが既にあったので、新しく作らずにそれを指したか */
+  reused: boolean;
 }
 
 /**
@@ -204,6 +206,8 @@ export interface MoveToMainResult {
  * - 中身は登録画面と同じ変換（convertRegisterItemToJsonItem）でデータファイルの末尾に足す。id は新しく振る
  * - セットは、ワークスペースのアイテムを指す行をパスの行に置き換える（メインウィンドウのセットはワークスペースを探さない）
  * - クリップボードは実データを複製せず、そのままメインのアイテムへ引き継ぐ（ワークスペース側は参照になり、実データを持たなくなる）
+ * - 通常アイテムで、移す先のデータファイルにパスと引数が同じアイテムが既にあれば、新しく作らずにそれを指す参照にする
+ *   （メインウィンドウとワークスペースの両方に登録していたアイテムを移しても、メインウィンドウに重複を作らない）
  *
  * @throws 参照（もうメインウィンドウにある）・見つからないアイテム・データファイルに書けない場合
  */
@@ -212,22 +216,42 @@ export async function moveWorkspaceItemToMain(
   file?: string
 ): Promise<MoveToMainResult> {
   const service = await WorkspaceService.getInstance();
-  await ensureMainItemIndex();
+  const currentIndex = await ensureMainItemIndex();
   const items = await service.loadResolvedItems();
   const item = items.find((i) => i.id === id);
   if (!item) throw new Error(`Item not found: ${id}`);
   if (item.type === 'ref' || item.ref) throw new Error(`Already a reference item: ${id}`);
+
+  // 指定が無ければ先頭のタブの先頭のファイル
+  const target = getDefaultTab(
+    file,
+    await (await SettingsService.getInstance()).get('dataFileTabs')
+  );
+  const tabNameOf = (index: MainItemIndex) => {
+    const tabName = index.tabNameOfFile.get(target);
+    return tabName !== undefined ? { tabName } : {};
+  };
+
+  const existing =
+    item.type === 'item'
+      ? findSamePathItems(item.path, item.args, currentIndex).find(
+          (main) => main.sourceFile === target && main.id
+        )
+      : undefined;
+  if (existing?.id) {
+    const linked = await linkToMainItem(id, existing.id);
+    logger.info(
+      { id, mainItemId: existing.id, file: target },
+      'Linked workspace item to the same launcher item'
+    );
+    return { item: linked, file: target, ...tabNameOf(currentIndex), reused: true };
+  }
 
   const registerItem = workspaceItemToRegisterItem(item);
   if (item.type === 'set') {
     registerItem.setEntries = expandWorkspaceSetEntries(item.entries, items);
   }
   const jsonItem = convertRegisterItemToJsonItem(registerItem);
-  // 指定が無ければ先頭のタブの先頭のファイル
-  const target = getDefaultTab(
-    file,
-    await (await SettingsService.getInstance()).get('dataFileTabs')
-  );
   appendJsonItems(PathManager.getConfigFolder(), target, [jsonItem]);
   notifyDataChanged();
 
@@ -235,8 +259,7 @@ export async function moveWorkspaceItemToMain(
   const index = await ensureMainItemIndex(true);
   const linked = await linkToMainItem(id, jsonItem.id);
   logger.info({ id, mainItemId: jsonItem.id, file: target }, 'Moved workspace item to launcher');
-  const tabName = index.tabNameOfFile.get(target);
-  return { item: linked, file: target, ...(tabName !== undefined && { tabName }) };
+  return { item: linked, file: target, ...tabNameOf(index), reused: false };
 }
 
 /** ウィンドウ切り替え・カスタムアイコンが違うか */
@@ -293,8 +316,16 @@ export async function previewLinkCopies(workspaceId: string): Promise<WorkspaceL
   };
 }
 
-/** 一覧で選んだコピーを参照に変える（候補が 1 件のものだけ）。変えた件数を返す */
-export async function applyLinkCopies(ids: readonly string[]): Promise<number> {
+/**
+ * 一覧で選んだコピーを参照に変える。変えた件数を返す
+ *
+ * 指す先は、候補が 1 件ならそれ、2 件以上なら choices（コピーの id → メインウィンドウのアイテムの id）で選んだもの。
+ * choices が候補に無ければ変えない
+ */
+export async function applyLinkCopies(
+  ids: readonly string[],
+  choices: Readonly<Record<string, string>> = {}
+): Promise<number> {
   const service = await WorkspaceService.getInstance();
   const index = await ensureMainItemIndex();
   const items = await service.loadItems();
@@ -303,8 +334,14 @@ export async function applyLinkCopies(ids: readonly string[]): Promise<number> {
     const item = items.find((i) => i.id === id);
     if (item?.type !== 'item') continue;
     const mains = findSamePathItems(item.path, item.args, index);
-    if (mains.length !== 1 || !mains[0].id) continue;
-    await linkToMainItem(id, mains[0].id);
+    const chosen = choices[id];
+    const main = chosen
+      ? mains.find((m) => m.id === chosen)
+      : mains.length === 1
+        ? mains[0]
+        : undefined;
+    if (!main?.id) continue;
+    await linkToMainItem(id, main.id);
     count++;
   }
   logger.info({ count }, 'Linked workspace copies to launcher items');

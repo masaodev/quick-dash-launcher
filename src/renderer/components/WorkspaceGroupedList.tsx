@@ -244,11 +244,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceMenuOpenShortcutParentFolder(
         withItem((item) => handlePathOperation(item, 'open', 'parent', true))
       ),
-      window.electronAPI.onWorkspaceMenuRemoveFromGroup(
-        withItem((item) => {
-          if (item.groupId) latest.current.onMoveItemToGroup(item.id, undefined);
-        })
-      ),
       window.electronAPI.onWorkspaceMenuRemoveItem((itemId) => latest.current.onRemoveItem(itemId)),
       window.electronAPI.onWorkspaceMenuMoveToWorkspace(async (itemId, targetWorkspaceId) => {
         try {

@@ -22,7 +22,7 @@ import { notifyWorkspaceChanged } from './notifications.js';
  *
  * - 参照: 編集はメインウィンドウの編集画面で行う。「コピーにする」「別のアイテムを指す」を出す
  * - 元が見つからない参照: 「別のアイテムを指す」だけ（中身が無いので編集・パスの項目は出さない）
- * - コピー: 「メインウィンドウのアイテムを参照する」「メインウィンドウへ移して参照にする」を出す
+ * - コピー: 「メインウィンドウへ移して参照にする」を出す
  */
 
 const t = mainI18n.t.bind(mainI18n);
@@ -76,8 +76,11 @@ export async function moveItemToMain(id: string, file?: string): Promise<boolean
     notifyWorkspaceChanged();
     const name = result.item.displayName;
     await showToastWindow({
-      message:
-        result.tabName !== undefined
+      message: result.reused
+        ? result.tabName !== undefined
+          ? t('workspace.ref.linkedToSameInMain', { name, tab: result.tabName })
+          : t('workspace.ref.linkedToSameInMainNoTab', { name })
+        : result.tabName !== undefined
           ? t('workspace.ref.movedToMain', { name, tab: result.tabName })
           : t('workspace.ref.movedToMainNoTab', { name }),
       type: 'success',
@@ -125,7 +128,7 @@ export async function buildMoveToMainMenuItem(item: WorkspaceItem): Promise<Menu
   return new MenuItem({ label, submenu });
 }
 
-/** 「別のアイテムを指す」「メインウィンドウのアイテムを参照する」（指す先を選ぶウィンドウを開く） */
+/** 「別のアイテムを指す」（指す先を選ぶウィンドウを開く） */
 function linkPickerMenuItem(sender: WebContents, item: WorkspaceItem, label: string): MenuItem {
   return new MenuItem({
     label,
@@ -133,7 +136,7 @@ function linkPickerMenuItem(sender: WebContents, item: WorkspaceItem, label: str
   });
 }
 
-/** 参照（解決できたもの）の「コピーにする」「別のアイテムを指す」 */
+/** 参照の「コピーにする」「別のアイテムを指す」（コピーには出さない。コピーは「メインウィンドウへ移して参照にする」で参照にする） */
 export function buildRefMenuItems(sender: WebContents, item: WorkspaceItem): MenuItem[] {
   if (item.ref?.status === 'ok') {
     return [
@@ -147,6 +150,5 @@ export function buildRefMenuItems(sender: WebContents, item: WorkspaceItem): Men
   if (item.type === 'ref') {
     return [linkPickerMenuItem(sender, item, t('menu.workspaceItem.retarget'))];
   }
-  // コピー: パスの無い単一アイテムも、選べば参照にできる
-  return [linkPickerMenuItem(sender, item, t('menu.workspaceItem.linkToMain'))];
+  return [];
 }

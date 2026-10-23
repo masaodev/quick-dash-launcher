@@ -18,13 +18,14 @@ interface WorkspaceLinkCopiesPageProps {
   workspaceId: string;
 }
 
-/** 候補が 1 件のものだけ変えられる。メモが両方にあって違うものは、メモを失わないよう既定で外す */
-function isSelectable(entry: WorkspaceLinkCopyEntry): boolean {
-  return entry.candidates.length === 1;
+/** 候補が 2 件以上か（行の中で指す先を選んでから変える） */
+function isAmbiguous(entry: WorkspaceLinkCopyEntry): boolean {
+  return entry.candidates.length > 1;
 }
 
+/** 候補が 1 件のものは既定でチェックする（メモが両方にあって違うものは、メモを失わないよう外す） */
 function isCheckedByDefault(entry: WorkspaceLinkCopyEntry): boolean {
-  return isSelectable(entry) && entry.memo !== 'conflict';
+  return !isAmbiguous(entry) && entry.memo !== 'conflict';
 }
 
 /**
@@ -36,6 +37,8 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
   const modalRef = useRef<HTMLDivElement>(null);
   const [preview, setPreview] = useState<WorkspaceLinkCopiesPreview | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // 候補が 2 件以上のコピーで選んだ指す先（コピーの id → メインウィンドウのアイテムの id）
+  const [choices, setChoices] = useState<Record<string, string>>({});
   const [notFound, setNotFound] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -71,7 +74,8 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
     if (selected.size === 0) return;
     setBusy(true);
     try {
-      const result = await window.electronAPI.workspaceAPI.applyLinkCopies([...selected]);
+      const chosen = Object.fromEntries(Object.entries(choices).filter(([id]) => selected.has(id)));
+      const result = await window.electronAPI.workspaceAPI.applyLinkCopies([...selected], chosen);
       if (!result.success) throw new Error('link failed');
       await window.electronAPI.showToastWindow({
         message: t('workspace.linkCopies.done', { count: result.count ?? 0 }),
@@ -83,7 +87,7 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
       logError('コピーを参照に変えられませんでした:', error);
       setBusy(false);
     }
-  }, [selected, t]);
+  }, [selected, choices, t]);
 
   if (notFound) {
     return (
@@ -100,8 +104,23 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
     return <div className="set-picker-page" />;
   }
 
+  const choose = (entryId: string, itemId: string) => {
+    setChoices((prev) => {
+      const next = { ...prev };
+      if (itemId) next[entryId] = itemId;
+      else delete next[entryId];
+      return next;
+    });
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (itemId) next.add(entryId);
+      else next.delete(entryId);
+      return next;
+    });
+  };
+
   const renderNotes = (entry: WorkspaceLinkCopyEntry): string[] => {
-    if (!isSelectable(entry)) {
+    if (isAmbiguous(entry)) {
       return [t('workspace.linkCopies.ambiguous', { count: entry.candidates.length })];
     }
     const notes: string[] = [];
@@ -133,13 +152,14 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
             <div className="set-empty">{t('workspace.linkCopies.empty')}</div>
           ) : (
             preview.entries.map((entry) => {
-              const selectable = isSelectable(entry);
+              const ambiguous = isAmbiguous(entry);
+              const selectable = !ambiguous || !!choices[entry.id];
               const checked = selected.has(entry.id);
               const candidate = entry.candidates[0];
               return (
                 <label
                   key={entry.id}
-                  className={`set-picker-row workspace-link-row${checked ? ' checked' : ''}${selectable ? '' : ' added'}`}
+                  className={`set-picker-row workspace-link-row${checked ? ' checked' : ''}`}
                 >
                   <input
                     type="checkbox"
@@ -150,7 +170,7 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
                   <span className="workspace-link-row-body">
                     <span className="set-row-name">
                       {entry.displayName}
-                      {selectable && (
+                      {!ambiguous && (
                         <span className="set-muted">
                           {' '}
                           {t('workspace.linkCopies.target', { name: candidate.displayName })}
@@ -159,6 +179,24 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
                         </span>
                       )}
                     </span>
+                    {ambiguous && (
+                      <select
+                        className="workspace-link-row-choice"
+                        aria-label={t('workspace.linkCopies.chooseLabel', {
+                          name: entry.displayName,
+                        })}
+                        value={choices[entry.id] ?? ''}
+                        onChange={(e) => choose(entry.id, e.target.value)}
+                      >
+                        <option value="">{t('workspace.linkCopies.choose')}</option>
+                        {entry.candidates.map((c) => (
+                          <option key={c.itemId} value={c.itemId}>
+                            {c.displayName}
+                            {c.tabName && ` ${t('workspace.linkCopies.tab', { tab: c.tabName })}`}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {renderNotes(entry).map((note) => (
                       <span key={note} className="workspace-link-row-note">
                         {note}

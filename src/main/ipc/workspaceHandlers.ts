@@ -481,13 +481,15 @@ export function setupWorkspaceHandlers(): void {
     })
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, (_event, ids: string[]) =>
-    withWorkspaceChange(
-      async () => ({ count: await applyLinkCopies(ids) }),
-      'Linked workspace copies to launcher items',
-      'Failed to link workspace copies',
-      { count: ids.length }
-    )
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES,
+    (_event, ids: string[], choices?: Record<string, string>) =>
+      withWorkspaceChange(
+        async () => ({ count: await applyLinkCopies(ids, choices) }),
+        'Linked workspace copies to launcher items',
+        'Failed to link workspace copies',
+        { count: ids.length }
+      )
   );
 
   // メインウィンドウのアイテムを指すワークスペースの参照の数（削除の確認・編集画面の帯に出す）

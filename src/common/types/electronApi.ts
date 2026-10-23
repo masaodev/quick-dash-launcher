@@ -323,8 +323,11 @@ export interface ElectronAPI {
     findLinkCandidates: (id: string) => Promise<WorkspaceLinkCandidate[]>;
     /** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
     previewLinkCopies: (workspaceId: string) => Promise<WorkspaceLinkCopiesPreview>;
-    /** 一覧で選んだコピーを参照に変える */
-    applyLinkCopies: (ids: string[]) => Promise<{ success: boolean; count?: number }>;
+    /** 一覧で選んだコピーを参照に変える（choices＝候補が 2 件以上のコピーで選んだ指す先。コピーの id → メインウィンドウのアイテムの id） */
+    applyLinkCopies: (
+      ids: string[],
+      choices?: Record<string, string>
+    ) => Promise<{ success: boolean; count?: number }>;
     /** メインウィンドウのアイテムの id ごとの、ワークスペースの参照の数（0 件は返さない） */
     countRefs: (itemIds: string[]) => Promise<Record<string, number>>;
     /** 参照の指す先を付け替える（消した id → 残す id。アイテム管理の「重複を統合」を保存したとき） */
@@ -504,7 +507,6 @@ export interface ElectronAPI {
   onWorkspaceMenuCopyShortcutPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
-  onWorkspaceMenuRemoveFromGroup: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuMoveToWorkspace: (
     callback: (itemId: string, targetWorkspaceId: string) => void

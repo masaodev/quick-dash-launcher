@@ -353,7 +353,6 @@ function setupWorkspaceContextMenuHandler(): void {
         );
       }
 
-      const placementItems: MenuItem[] = [];
       if (workspaces && workspaces.length >= 1) {
         const moveSubmenu = buildMoveToWorkspaceSubmenu(
           event.sender,
@@ -362,24 +361,13 @@ function setupWorkspaceContextMenuHandler(): void {
           item.workspaceId,
           workspaces
         );
-        if (moveSubmenu) placementItems.push(moveSubmenu);
-      }
-      if (item.groupId !== undefined) {
-        placementItems.push(
-          createMenuItem(
-            t('menu.workspaceItem.removeFromGroup'),
-            event.sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_FROM_GROUP,
-            item.id
-          )
-        );
-      }
-      if (placementItems.length > 0) {
-        menu.append(createSeparator());
-        placementItems.forEach((menuItem) => menu.append(menuItem));
+        if (moveSubmenu) {
+          menu.append(createSeparator());
+          menu.append(moveSubmenu);
+        }
       }
 
-      // 参照とコピーの行き来（参照は「コピーにする」「別のアイテムを指す」、コピーは「メインウィンドウのアイテムを参照する」）
+      // 参照は「コピーにする」「別のアイテムを指す」（コピーを参照にするのは下の「メインウィンドウへ移して参照にする」）
       menu.append(createSeparator());
       buildRefMenuItems(event.sender, item).forEach((menuItem) => menu.append(menuItem));
 
