@@ -82,6 +82,8 @@ function context(overrides: Partial<CliContext> = {}): CliContext {
     beforeGroupRemoved: vi.fn(),
     launcherAppItem: vi.fn(async () => undefined),
     duplicateClipboardData: vi.fn(() => null),
+    openLauncherEntry: vi.fn(async () => ({ type: 'url' })),
+    show: vi.fn(async () => {}),
     ...overrides,
   };
 }
@@ -178,6 +180,59 @@ describe('runCliCommand', () => {
     expect(res.exitCode).toBe(CLI_EXIT.usage);
     expect(JSON.parse(res.stdout).error.code).toBe('ambiguous');
     expect(res.stderr).toContain('Aaaaaaa1');
+  });
+});
+
+describe('runCliCommand（open・show）', () => {
+  const launcherWith = (...names: string[]) => ({
+    ...context().launcher,
+    load: async () =>
+      names.map((name, i) => ({
+        item: { id: `Item000${i}`, type: 'item' as const, displayName: name, path: `C:\${i}` },
+        file: 'datafiles/data.json',
+      })),
+  });
+
+  it('open は表示名か id で 1 件に絞って開き、開いたアイテムを返す', async () => {
+    const openLauncherEntry = vi.fn(async () => ({ type: 'app' }));
+    const ctx = context({ launcher: launcherWith('メモ帳', '電卓'), openLauncherEntry });
+    const res = await runCliCommand(request(['open', '電卓']), ctx);
+    expect(res.exitCode).toBe(CLI_EXIT.ok);
+    expect(JSON.parse(res.stdout)).toEqual({
+      opened: { id: 'Item0001', name: '電卓', type: 'app' },
+    });
+    expect(openLauncherEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ item: expect.objectContaining({ id: 'Item0001' }) })
+    );
+
+    const byId = await runCliCommand(request(['open', 'Item0000']), ctx);
+    expect(JSON.parse(byId.stdout).opened.name).toBe('メモ帳');
+  });
+
+  it('open は見つからない・複数当たる・引数が無いときに開かずエラーを返す', async () => {
+    const openLauncherEntry = vi.fn(async () => ({ type: 'app' }));
+    const ctx = context({ launcher: launcherWith('x', 'x'), openLauncherEntry });
+    const ambiguous = await runCliCommand(request(['open', 'x']), ctx);
+    expect(JSON.parse(ambiguous.stdout).error.code).toBe('ambiguous');
+    const notFound = await runCliCommand(request(['open', 'nope']), ctx);
+    expect(JSON.parse(notFound.stdout).error.code).toBe('not_found');
+    const missing = await runCliCommand(request(['open']), ctx);
+    expect(missing.exitCode).toBe(CLI_EXIT.usage);
+    expect(openLauncherEntry).not.toHaveBeenCalled();
+  });
+
+  it('show は既定でメインウィンドウ、workspace でワークスペースを出す。ほかは usage', async () => {
+    const show = vi.fn(async () => {});
+    const ctx = context({ show });
+    expect(JSON.parse((await runCliCommand(request(['show']), ctx)).stdout)).toEqual({
+      shown: 'main',
+    });
+    expect(JSON.parse((await runCliCommand(request(['show', 'workspace']), ctx)).stdout)).toEqual({
+      shown: 'workspace',
+    });
+    const bad = await runCliCommand(request(['show', 'admin']), ctx);
+    expect(bad.exitCode).toBe(CLI_EXIT.usage);
+    expect(show.mock.calls).toEqual([['main'], ['workspace']]);
   });
 });
 

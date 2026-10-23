@@ -2,6 +2,8 @@ import { generateUniqueId } from '@common/utils/jsonParser';
 import { setTabManagerTranslator } from '@common/utils/tabManager';
 import type { TabManagerTranslate } from '@common/utils/tabManager';
 import { createChildLogger } from '@common/logger';
+import type { AppItem, WindowInfo } from '@common/types';
+import { isLauncherItem, isWindowInfo } from '@common/types/guards';
 import { screen } from 'electron';
 
 import PathManager from '../../config/pathManager.js';
@@ -36,8 +38,12 @@ import {
 import { showToastWindow } from '../overlayWindowService.js';
 import { ClipboardService } from '../clipboardService.js';
 import { mainI18n } from '../mainI18n.js';
+import { launchAppItem } from '../launch/appItemLauncher.js';
+import { showMainWindow } from '../../windowManager.js';
+import { showWorkspaceWindow } from '../../workspaceWindowManager.js';
 
 import { CliError } from './cliArgs.js';
+import { itemName } from './cliLauncherCommands.js';
 import type { LauncherStore } from './cliLauncherCommands.js';
 import type { TabStore } from './cliTabCommands.js';
 import type { SettingsStore } from './cliSettingsCommands.js';
@@ -244,6 +250,32 @@ export function createCliContext(
       return entry.item.type !== 'dir' && converted.length === 1 ? converted[0] : undefined;
     },
     duplicateClipboardData: (ref) => ClipboardService.getInstance().duplicateClipboardData(ref),
+    // 画面で Enter を押したのと同じく、読み込んだ形（.lnk のリンク先・セットの行の解決）で開く
+    openLauncherEntry: async (entry) => {
+      const name = itemName(entry.item);
+      if (entry.item.type === 'dir') {
+        throw new CliError('invalid', mainI18n.t('cli.errors.cannotOpenDir', { name }));
+      }
+      const all = await reloadConfigFiles(configFolder, 'internal');
+      const item = all.find(
+        (i): i is Exclude<AppItem, WindowInfo> =>
+          !isWindowInfo(i) && !(isLauncherItem(i) && i.isDirExpanded) && i.id === entry.item.id
+      );
+      if (!item) throw new CliError('invalid', mainI18n.t('cli.errors.cannotOpen', { name }));
+      try {
+        await launchAppItem(item, all);
+      } catch (error) {
+        throw new CliError(
+          'unavailable',
+          mainI18n.t('cli.errors.openFailed', { name, error: (error as Error)?.message ?? '' })
+        );
+      }
+      return { type: item.type };
+    },
+    show: async (target) => {
+      if (target === 'workspace') await showWorkspaceWindow();
+      else await showMainWindow();
+    },
     clipboard: {
       save: (text) => {
         const result = ClipboardService.getInstance().saveText(text);

@@ -495,6 +495,8 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove|archive   ワークスペースのグループ
   workspace archive list|restore           アーカイブしたグループ
+  open <id か表示名>                       メインウィンドウのアイテムを開く（画面で Enter を押したのと同じ）
+  show [main|workspace]                    メインウィンドウ（既定）かワークスペースを出す
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
   reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
   status                                   本体の版・設定フォルダなどを表示する
@@ -636,6 +638,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
+      cannotOpenDir: 'フォルダ取込の行は開けません（中に並ぶアイテムも CLI からは開けません）: {{name}}',
+      cannotOpen: 'このアイテムは開けません: {{name}}',
+      openFailed: '開けませんでした: {{name}}（{{error}}）',
+      unknownShowTarget: '出すものは main か workspace です: {{target}}',
       unknownLauncherNoun:
         '不明なコマンドです: launcher {{noun}}（launcher item・launcher set・launcher tab のみ）',
       missingSetNoun: 'launcher set の後に row を指定してください',

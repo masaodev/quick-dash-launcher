@@ -493,6 +493,8 @@ Commands:
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove|archive   Groups in workspaces
   workspace archive list|restore           Archived groups
+  open <id or name>                        Open an item in the launcher (same as pressing Enter)
+  show [main|workspace]                    Show the launcher (default) or the workspace
   check                                    Show the result of the last load (invalid entries, new IDs, outside changes) without reloading
   reload                                   Reload the settings files (same as F5 in the launcher)
   status                                   Show the app version, the settings folder, and more
@@ -636,6 +638,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       notFound: 'Couldn\'t find the {{what}} "{{key}}" (use the id or the exact display name)',
       ambiguous: '{{count}} matches for the {{what}} "{{key}}". Use the id',
       unknownCommand: 'Unknown command: {{command}}',
+      cannotOpenDir:
+        "Folder import rows and the items listed from them can't be opened from the CLI: {{name}}",
+      cannotOpen: "This item can't be opened: {{name}}",
+      openFailed: "Couldn't open {{name}} ({{error}})",
+      unknownShowTarget: 'Show main or workspace: {{target}}',
       unknownLauncherNoun:
         'Unknown command: launcher {{noun}} (only launcher item, launcher set, and launcher tab)',
       missingSetNoun: 'Specify row after launcher set',
