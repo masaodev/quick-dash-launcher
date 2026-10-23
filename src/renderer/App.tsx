@@ -92,6 +92,8 @@ function App(): React.ReactElement {
 
   // アイコン取得エラー記録
   const [iconFetchErrors, setIconFetchErrors] = useState<IconFetchErrorRecord[]>([]);
+  // 進捗バーを出さない裏の取得の最中か（その間は「アイコン未取得」を出さない）
+  const [isFetchingIconsSilently, setIsFetchingIconsSilently] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
@@ -622,7 +624,7 @@ function App(): React.ReactElement {
     hotkey: string;
     autoLaunch: boolean;
     itemSearchHotkey: string;
-  }) => {
+  }): Promise<boolean> => {
     try {
       await window.electronAPI.setMultipleSettings({
         hotkey: settings.hotkey,
@@ -636,10 +638,13 @@ function App(): React.ReactElement {
       setIsFirstLaunch(false);
       // 初回のサンプルにはアイコンがまだ無いので、「取得」を押さなくても出るように取りに行く。
       // 頼まれた処理ではないので、進捗バーは出さない
-      void handleFetchMissingIconsSilently();
+      setIsFetchingIconsSilently(true);
+      void handleFetchMissingIconsSilently().finally(() => setIsFetchingIconsSilently(false));
+      return true;
     } catch (error) {
+      // 初回設定の間はダイアログを描かないので、知らせるのは初回設定画面に任せる
       logError('初回設定の保存に失敗しました:', error);
-      showErrorAlert(t('firstLaunch.saveFailed'));
+      return false;
     }
   };
 
@@ -835,7 +840,7 @@ function App(): React.ReactElement {
         </div>
       )}
 
-      {!progressState.isActive && missingIconCount > 0 && (
+      {!progressState.isActive && !isFetchingIconsSilently && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
       )}
 

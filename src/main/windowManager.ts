@@ -766,15 +766,16 @@ function bringMainWindowToCurrentDesktop(): boolean {
 export async function hideMainWindow(): Promise<void> {
   if (!mainWindow) return;
 
-  if (windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible') {
-    await activateMainWindowWithFocus();
-    return;
-  }
-
+  // 固定モードより先に見る（固定モードで起動していても、試してみるで押せたことが届くように）
   if (isFirstLaunchMode) {
     // 初回設定の「試してみる」で、押せたことを画面に出す
     mainWindow.webContents.send(IPC_CHANNELS.EVENT_FIRST_LAUNCH_HOTKEY_PRESSED);
     windowLogger.info('初回設定の途中なので、ホットキーで非表示にせず画面に知らせました');
+    return;
+  }
+
+  if (windowPinMode === 'alwaysOnTop' || windowPinMode === 'stayVisible') {
+    await activateMainWindowWithFocus();
     return;
   }
 

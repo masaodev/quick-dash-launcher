@@ -299,6 +299,8 @@ export const ja = {
     windowSearchHotkeySummary: '開いているウィンドウを探すキーも決める（あとからでも決められます）',
     windowSearchHotkeyDescription: '開いているウィンドウを名前で探して、切り替えます。',
     windowSearchHotkeyNone: '使わない',
+    windowSearchHotkeyInUse:
+      'このキーはほかのアプリか起動ホットキーが使っています。別のキーを選ぶか「使わない」を押してください。',
     notSet: '未設定',
     tryTitle: '準備ができました',
     tryDescription: '試しに、決めたキーを押してみてください。',
@@ -313,7 +315,7 @@ export const ja = {
     autoLaunchHint: '起動していないと、キーを押しても出ません。',
     changeLater: 'どれもあとから「設定」で変えられます',
     complete: '使いはじめる',
-    saveFailed: '設定の保存に失敗しました。',
+    saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
     defaultTabName: 'メイン',
   },
   hotkeyInput: {

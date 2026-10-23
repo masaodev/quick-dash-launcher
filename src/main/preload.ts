@@ -172,6 +172,8 @@ const electronAPI: ElectronAPI = {
   changeHotkey: (newHotkey) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, newHotkey),
   changeItemSearchHotkey: (newHotkey) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY, newHotkey),
+  isItemSearchHotkeyAvailable: (hotkey) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_IS_ITEM_SEARCH_HOTKEY_AVAILABLE, hotkey),
   setHotkeyRecording: (recording) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, recording),
   getDisplays: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DISPLAYS),

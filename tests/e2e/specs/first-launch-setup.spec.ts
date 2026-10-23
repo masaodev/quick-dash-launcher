@@ -198,6 +198,33 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     expect(settings.autoLaunch).toBe(false);
   });
 
+  test('保存に失敗したら初回設定画面に知らせ、ボタンを押せる状態に戻す', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await goToHotkeyStep(mainWindow);
+    await goToTryStep(mainWindow);
+
+    // 設定ファイルに書けないときと同じく、保存を失敗させる
+    await electronApp.evaluate(({ ipcMain }) => {
+      ipcMain.removeHandler('settings:set-multiple');
+      ipcMain.handle('settings:set-multiple', () => {
+        throw new Error('EPERM: operation not permitted');
+      });
+    });
+    await pressHotkeyAndStart(electronApp, mainWindow);
+
+    await expect(mainWindow.getByRole('alert')).toHaveText(
+      '設定を保存できませんでした。もう一度「使いはじめる」を押してください。'
+    );
+    await expect(mainWindow.locator('.first-launch-title')).toHaveText('準備ができました');
+    await expect(mainWindow.getByRole('button', { name: '使いはじめる' })).toBeEnabled();
+    await expect(mainWindow.getByRole('button', { name: '戻る' })).toBeEnabled();
+    await expect(mainWindow.locator('.auto-launch-checkbox')).toBeEnabled();
+  });
+
   test.describe('データファイルが無い状態から始める', () => {
     // ひな形 first-launch にはデータファイルがあるので、お試し用のアイテムは作られない。無いひな形で確かめる
     test.use({ configTemplate: 'first-launch-fresh' });
@@ -223,6 +250,33 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       await expect(mainWindow.locator('.item-name').first()).toContainText(
         'QuickDashLauncher の使い方'
       );
+    });
+  });
+
+  test.describe('お試し用のアイテムのアイコンを裏で取る', () => {
+    test.use({ configTemplate: 'first-launch-fresh' });
+
+    test('取っている間は「アイコン未取得」の通知を出さない', async ({
+      electronApp,
+      mainWindow,
+    }) => {
+      const utils = new TestUtils(mainWindow);
+      await utils.waitForPageLoad();
+      await goToHotkeyStep(mainWindow);
+      await goToTryStep(mainWindow);
+
+      // 取得が終わらないようにして、取っている最中の画面を見る
+      await electronApp.evaluate(({ ipcMain }) => {
+        ipcMain.removeHandler('fetch-icons-combined');
+        ipcMain.handle('fetch-icons-combined', () => new Promise(() => {}));
+      });
+      await pressHotkeyAndStart(electronApp, mainWindow);
+      await expect(mainWindow.locator('.first-launch-title')).toHaveCount(0);
+      await expect(mainWindow.locator('.item-name').first()).toBeVisible();
+
+      // 前はここで「⚠ アイコン未取得: 6 件」と「取得」が出た
+      await mainWindow.waitForTimeout(1000);
+      await expect(mainWindow.locator('.missing-icon-notice')).toHaveCount(0);
     });
   });
 

@@ -341,6 +341,15 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
+  // 初回設定のホットキーの「次へ」で使う（初回設定を終えるまではウィンドウ検索のホットキーを登録しないため）
+  ipcMain.handle(
+    IPC_CHANNELS.SETTINGS_IS_ITEM_SEARCH_HOTKEY_AVAILABLE,
+    (_event, hotkey: string): boolean => {
+      if (EnvConfig.disableGlobalHotkey) return true;
+      return HotkeyService.getInstance().isHotkeyAvailable(hotkey, true);
+    }
+  );
+
   ipcMain.handle(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, (event, recording: boolean) => {
     setHotkeyRecording(event.sender, recording);
   });

@@ -298,6 +298,8 @@ export const en: LocaleMessages = {
     windowSearchHotkeySummary: 'Also set a hotkey for finding open windows (you can do this later)',
     windowSearchHotkeyDescription: 'Find an open window by name and switch to it.',
     windowSearchHotkeyNone: "Don't use",
+    windowSearchHotkeyInUse:
+      'Another app or the launch hotkey is already using these keys. Choose different keys or click "Don\'t use".',
     notSet: 'Not set',
     tryTitle: "You're all set",
     tryDescription: 'Try pressing the hotkey you chose.',
@@ -312,7 +314,7 @@ export const en: LocaleMessages = {
     autoLaunchHint: "If it isn't running, the hotkey won't bring it up.",
     changeLater: 'You can change all of this later in Settings.',
     complete: 'Get started',
-    saveFailed: "Couldn't save the settings.",
+    saveFailed: 'Couldn\'t save the settings. Click "Get started" again.',
     defaultTabName: 'Main',
   },
   hotkeyInput: {
