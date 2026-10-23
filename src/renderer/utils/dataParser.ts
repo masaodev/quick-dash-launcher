@@ -10,27 +10,27 @@ export function parseKeywords(query: string): string[] {
     .filter((k) => k.length > 0);
 }
 
-/** 設定「検索でメモとパスにも当てる」（searchMemoAndPath）。メインウィンドウが設定を読んで入れる */
-let includeMemoAndPath = false;
+/** 設定「検索でメモにも当てる」（searchMemo）。メインウィンドウが設定を読んで入れる */
+let includeMemo = false;
 
-/** 検索でメモとパスにも当てるかを切り替える（設定の読み込み・変更のたびに呼ぶ） */
-export function setSearchMemoAndPath(enabled: boolean): void {
-  includeMemoAndPath = enabled;
+/** 検索でメモにも当てるかを切り替える（設定の読み込み・変更のたびに呼ぶ） */
+export function setSearchMemo(enabled: boolean): void {
+  includeMemo = enabled;
 }
 
 /**
  * アイテムから検索対象テキストを取得する
  * WindowInfo は title と processName（一覧に表示している exe 名）、それ以外は displayName を使用。
- * 設定でメモとパスにも当てるときは、メモとパス（URL を含む）を後ろに足す（改行でつなぐので、語をまたいで当たらない）
+ * 設定でメモにも当てるときは、メモを後ろに足す（改行でつなぐので、語をまたいで当たらない）
  */
 function getSearchText(item: AppItem): string {
   if ('hwnd' in item) {
     const { title, processName } = item as WindowInfo;
     return processName ? `${title} ${processName}` : title;
   }
-  const { displayName, memo, path } = item as { displayName: string; memo?: string; path?: string };
-  if (!includeMemoAndPath) return displayName;
-  return [displayName, memo, path].filter((part) => !!part).join('\n');
+  const { displayName, memo } = item as { displayName: string; memo?: string };
+  if (!includeMemo) return displayName;
+  return memo ? `${displayName}\n${memo}` : displayName;
 }
 
 /**
@@ -39,11 +39,11 @@ function getSearchText(item: AppItem): string {
  * 作り直されるため、WeakMapで古いオブジェクトごと自動解放される。
  */
 const lowerSearchTextCache = new WeakMap<AppItem, string>();
-/** メモとパスにも当てるときのキャッシュ（設定を切り替えても作り直さずに済むよう分ける） */
+/** メモにも当てるときのキャッシュ（設定を切り替えても作り直さずに済むよう分ける） */
 const lowerSearchTextWithMemoCache = new WeakMap<AppItem, string>();
 
 function getLowerSearchText(item: AppItem): string {
-  const cache = includeMemoAndPath ? lowerSearchTextWithMemoCache : lowerSearchTextCache;
+  const cache = includeMemo ? lowerSearchTextWithMemoCache : lowerSearchTextCache;
   let text = cache.get(item);
   if (text === undefined) {
     text = getSearchText(item).toLowerCase();

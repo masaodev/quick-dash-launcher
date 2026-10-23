@@ -2314,9 +2314,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       keyboardHints: 'Show keyboard hints',
       keyboardHintsDescription:
         'Shows easy-to-miss keys at the bottom of the launcher (such as F2 to edit, or Shift+Enter to open the containing folder).',
-      searchMemoAndPath: 'Search notes and paths too',
-      searchMemoAndPathDescription:
-        'When you search in the launcher, also finds items whose note or path (including URLs) contains the words. When off, only display names are searched.',
+      searchMemo: 'Search notes too',
+      searchMemoDescription:
+        'When you search in the launcher, also finds items whose note contains the words. When off, only display names are searched.',
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',

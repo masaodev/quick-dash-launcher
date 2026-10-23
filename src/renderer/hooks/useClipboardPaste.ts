@@ -100,10 +100,8 @@ export function useClipboardPaste(
       onItemsAdded();
     }
 
-    const handleKeyDown = async (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.key !== 'v') return;
-      if (isInputElement(e.target)) return;
-
+    /** ファイル以外（URL・パス・テキスト・画像）の貼り付け */
+    async function pasteNonFile(): Promise<void> {
       try {
         const state = await window.electronAPI.clipboardAPI.checkCurrent();
         if (!state.hasContent) return;
@@ -140,27 +138,30 @@ export function useClipboardPaste(
       } catch (error) {
         logError('Failed to add item from clipboard paste:', error);
       }
-    };
+    }
 
+    // Ctrl+V も右クリックの「貼り付け」（webContents.paste）も paste イベントになるので、ここ 1 か所で振り分ける
+    //（以前は Ctrl+V の keydown で振り分けており、右クリックの「貼り付け」ではファイルしか足せなかった）
     const handlePaste = async (e: ClipboardEvent) => {
       if (isInputElement(e.target)) return;
-      if (!e.clipboardData?.files || e.clipboardData.files.length === 0) return;
-
       e.preventDefault();
+      const files = e.clipboardData?.files;
       try {
-        // スクリーンショットのような、パスを持たない画像 File は空になり何も追加されない
-        //（その場合は keydown 側がクリップボードアイテムにしている）
-        const filePaths = await extractFilePaths(e.clipboardData.files);
-        await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId, activeWorkspaceId);
+        // スクリーンショットのような、パスを持たない画像 File はパスが空になるので、ファイル以外として扱う
+        const filePaths = files && files.length > 0 ? await extractFilePaths(files) : [];
+        if (filePaths.length > 0) {
+          await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId, activeWorkspaceId);
+          return;
+        }
       } catch (error) {
         logError('Failed to add items from file paste:', error);
+        return;
       }
+      await pasteNonFile();
     };
 
-    document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('paste', handlePaste);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
   }, [

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 
 import { logError } from '../utils/debug';
-import { setSearchMemoAndPath } from '../utils/dataParser';
+import { setSearchMemo } from '../utils/dataParser';
 
 /**
- * 設定「検索でメモとパスにも当てる」（searchMemoAndPath）を読んで検索に入れ、設定が変わったら追従する
+ * 設定「検索でメモにも当てる」（searchMemo）を読んで検索に入れ、設定が変わったら追従する
  *
  * 返り値は、一覧を絞り直すきっかけ（useMemo の依存）に使う。読み込みが終わるまでは既定値（false）
  */
-export function useSearchMemoAndPath(): boolean {
+export function useSearchMemo(): boolean {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -17,8 +17,8 @@ export function useSearchMemoAndPath(): boolean {
       try {
         const settings = await window.electronAPI.getSettings();
         if (cancelled) return;
-        const value = settings.searchMemoAndPath ?? false;
-        setSearchMemoAndPath(value);
+        const value = settings.searchMemo ?? false;
+        setSearchMemo(value);
         setEnabled(value);
       } catch (error) {
         logError('検索の設定の読み込みに失敗しました:', error);

@@ -526,9 +526,11 @@ function buildAddItemSubmenuItem(sender: WebContents, target: string): MenuItem 
 /**
  * ワークスペースの余白・「未分類」の見出しの右クリックと、ヘッダーの ＋ のメニュー
  *
- * - blank（余白）: グループを追加・アイテムを追加（未分類へ）・貼り付け・すべて展開／折りたたむ
+ * - blank（余白）: グループを追加・貼り付け・すべて展開／折りたたむ
  * - uncategorized（「未分類」の見出し）: アイテムを追加（未分類へ）・グループにまとめる
- * - add（ヘッダーの ＋）: グループを追加・アイテムを追加（未分類へ）・ワークスペースを追加
+ * - add（ヘッダーの ＋）: グループを追加・ワークスペースを追加
+ *
+ * 未分類へアイテムを足す入口は「未分類」の見出しだけにする（未分類はなるべく使わない方針。2026-10-24 本人）
  */
 function setupWorkspaceBlankContextMenuHandler(): void {
   ipcMain.handle(
@@ -549,10 +551,8 @@ function setupWorkspaceBlankContextMenuHandler(): void {
         IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_GROUP,
         workspaceId
       );
-      const addItem = buildAddItemSubmenuItem(sender, uncategorizedAddTarget(workspaceId));
-
       if (kind === 'uncategorized') {
-        menu.append(addItem);
+        menu.append(buildAddItemSubmenuItem(sender, uncategorizedAddTarget(workspaceId)));
         menu.append(createSeparator());
         menu.append(
           createMenuItem(
@@ -564,7 +564,6 @@ function setupWorkspaceBlankContextMenuHandler(): void {
         );
       } else if (kind === 'add') {
         menu.append(addGroup);
-        menu.append(addItem);
         menu.append(createSeparator());
         menu.append(
           createMenuItem(
@@ -575,7 +574,6 @@ function setupWorkspaceBlankContextMenuHandler(): void {
         );
       } else {
         menu.append(addGroup);
-        menu.append(addItem);
         // Ctrl+V と同じ（貼り付けのイベントをページに起こし、ページ側の振り分けを通す）
         menu.append(
           new MenuItem({
