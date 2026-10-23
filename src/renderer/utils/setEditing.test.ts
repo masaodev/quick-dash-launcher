@@ -10,6 +10,7 @@ import {
   usesItemSwitch,
   type SetCatalogItem,
   loadSetEntryIcons,
+  loadSetCatalog,
   entryOpensAsTab,
   linkEntryToWindow,
   setEntryNames,
@@ -192,6 +193,61 @@ describe('loadSetEntryIcons', () => {
     ]);
     expect(icons.size).toBe(0);
     expect(api.loadCachedIcons).not.toHaveBeenCalled();
+  });
+});
+
+describe('loadSetCatalog', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(window, 'electronAPI');
+  });
+
+  it('ワークスペースのアイテムにも、キャッシュのアイコンを付ける（読んだだけではアイコンを持たない）', async () => {
+    const loadCachedIcons = vi.fn(async (items: { path: string }[]) =>
+      Object.fromEntries(items.map((item) => [item.path, `data:${item.path}`]))
+    );
+    Object.defineProperty(window, 'electronAPI', {
+      configurable: true,
+      value: {
+        loadDataFiles: vi.fn(async () => [
+          {
+            id: 'm1',
+            type: 'app',
+            displayName: 'メモ帳',
+            path: 'notepad.exe',
+            sourceFile: 'data.json',
+          },
+        ]),
+        getSettings: vi.fn(async () => ({
+          dataFileTabs: [{ name: 'メイン', files: ['data.json'] }],
+        })),
+        loadCachedIcons,
+        workspaceAPI: {
+          loadItems: vi.fn(async () => [
+            {
+              id: 'w1',
+              type: 'item',
+              displayName: 'ターミナル',
+              path: 'wt.exe',
+              launcherType: 'app',
+            },
+            {
+              id: 'w2',
+              type: 'item',
+              displayName: '参照',
+              path: 'x.exe',
+              launcherType: 'app',
+              ref: 'm1',
+            },
+          ]),
+        },
+      },
+    });
+
+    const catalog = await loadSetCatalog(undefined, true);
+    expect(catalog.map((item) => [item.id, item.icon])).toEqual([
+      ['w1', 'data:wt.exe'],
+      ['m1', 'data:notepad.exe'],
+    ]);
   });
 });
 

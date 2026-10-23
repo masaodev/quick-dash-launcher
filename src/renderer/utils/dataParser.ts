@@ -3,7 +3,7 @@ import { AppItem, SearchMode, WindowInfo } from '@common/types';
 /**
  * クエリ文字列をキーワード配列に分割する
  */
-function parseKeywords(query: string): string[] {
+export function parseKeywords(query: string): string[] {
   return query
     .toLowerCase()
     .split(/\s+/)
