@@ -11,6 +11,7 @@ import type {
   BookmarkAutoImportRule,
 } from '@common/types/bookmarkAutoImport';
 import { checkAppDuplicates } from '@common/utils/appDuplicateDetector';
+import { formatImportCounts, importResultCounts } from '@common/utils/bookmarkImportUtils';
 import { checkDuplicates } from '@common/utils/duplicateDetector';
 
 import type { AppImportDestination } from '../components/AppImportModal';
@@ -153,7 +154,7 @@ export function useAdminItemImports({
     if (result.success) {
       const message = t('itemManager.ruleSavedAndRun', {
         name: rule.name,
-        count: result.importedCount,
+        counts: formatImportCounts(importResultCounts(result), t),
       });
       if (result.manualDuplicateCount) {
         showWarning(
