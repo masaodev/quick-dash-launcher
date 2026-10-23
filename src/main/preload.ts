@@ -381,8 +381,8 @@ const electronAPI: ElectronAPI = {
   onAdminMenuDeleteItems: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS, callback),
   // LauncherContextMenu
-  showLauncherContextMenu: (item) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, item),
+  showLauncherContextMenu: (item, anchor) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, item, anchor),
   onLauncherMenuEditItem: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, callback),
   onLauncherMenuAddToWorkspace: (callback) =>
@@ -447,8 +447,14 @@ const electronAPI: ElectronAPI = {
   onFileTabMenuRename: (callback) =>
     createEventListener<number>(IPC_CHANNELS.EVENT_FILE_TAB_MENU_RENAME, callback),
   // WindowContextMenu
-  showWindowContextMenu: (windowInfo, desktopInfo, isPinned) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo, isPinned),
+  showWindowContextMenu: (windowInfo, desktopInfo, isPinned, anchor) =>
+    ipcRenderer.invoke(
+      IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
+      windowInfo,
+      desktopInfo,
+      isPinned,
+      anchor
+    ),
   onWindowMenuActivate: (callback) =>
     createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, callback),
   onWindowMenuAddToWorkspace: (callback) =>
@@ -456,8 +462,8 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
       callback
     ),
-  showWindowsContextMenu: (count, desktopInfo) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo),
+  showWindowsContextMenu: (count, desktopInfo, anchor) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo, anchor),
   onWindowsMenuClose: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOWS_MENU_CLOSE, callback),
   onWindowsMenuPin: (callback) =>
