@@ -231,6 +231,20 @@ describe('jsonParser: パースとシリアライズ', () => {
       expect(() => parseJsonDataFile(json)).toThrow('Unknown item type');
     });
 
+    it('単一アイテムの runAsAdmin（常に管理者として実行）は真偽値だけを受けること', () => {
+      const parse = (runAsAdmin: unknown) =>
+        parseJsonDataFile(
+          JSON.stringify({
+            version: '1.0',
+            items: [
+              { id: 'a1b2c3d4', type: 'item', displayName: 'T', path: 'C:\\t.exe', runAsAdmin },
+            ],
+          })
+        );
+      expect((parse(true).items[0] as JsonLauncherItem).runAsAdmin).toBe(true);
+      expect(() => parse('yes')).toThrow('runAsAdmin must be a boolean');
+    });
+
     it('無効なIDでエラーをスローすること', () => {
       const json = JSON.stringify({
         version: '1.0',

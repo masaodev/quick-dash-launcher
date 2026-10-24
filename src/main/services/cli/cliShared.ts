@@ -5,6 +5,7 @@ import { validateJsonItem } from '@common/utils/jsonParser';
 import { validateEditableItem } from '@common/types/editableItem';
 import type { ClipboardFormat, JsonItem } from '@common/types';
 import { truncateClipboardPreview } from '@common/types/clipboard';
+import { canSetRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { mainI18n } from '../mainI18n.js';
 
@@ -153,6 +154,10 @@ export function validateAsDataItem(
       'invalid',
       mainI18n.t('cli.errors.unknownFields', { type: cleaned.type, fields: unknown.join(', ') })
     );
+  }
+  // 「常に管理者として実行」はアプリ（exe・.lnk・.bat/.cmd など）だけ
+  if (cleaned.type === 'item' && cleaned.runAsAdmin === true && !canSetRunAsAdmin(cleaned.path)) {
+    throw new CliError('invalid', mainI18n.t('cli.errors.runAsAdminNotApp'));
   }
   const result = validateEditableItem(cleaned, mainI18n.t);
   if (!result.isValid)

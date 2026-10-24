@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { ClipboardFormat, DataFileTab, RegisterItem, SetEntry } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isPathlessItem } from '@common/utils/itemWindowConversion';
+import { canSetRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { debugLog } from '../utils/debug';
 import { describeDirOptionsShort } from '../utils/editableItemOperations';
@@ -144,8 +145,14 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   const [memoOpenChoice, setMemoOpenChoice] = useState<boolean | null>(null);
   const memoOpen = memoOpenChoice ?? !!item.memo?.trim();
   const memoFirstLine = item.memo?.trim().split(/\r?\n/)[0] ?? '';
-  const dirOptionsSummary =
-    item.itemCategory === 'dir' && item.dirOptions ? describeDirOptionsShort(item.dirOptions) : '';
+  // 「常に管理者として実行」はアプリ（exe・.lnk・.bat/.cmd など）の単一アイテムだけ
+  const canRunAsAdmin = item.itemCategory === 'item' && canSetRunAsAdmin(item.path);
+  const optionsSummary =
+    item.itemCategory === 'dir' && item.dirOptions
+      ? describeDirOptionsShort(item.dirOptions)
+      : canRunAsAdmin && item.runAsAdmin
+        ? t('register.runAsAdminSummary')
+        : '';
 
   const flashClass = convertedFlash ? ' item-converted-flash' : '';
   const selectedTab = placement?.availableTabs.find((tab) => tab.files.includes(item.targetTab));
@@ -306,10 +313,10 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             <span>
               {item.itemCategory === 'item' ? t('register.itemOptions') : t('register.dirOptions')}
             </span>
-            {/* たたんでいても、今効いているフォルダ取込の設定が分かるように見出しの横に出す */}
-            {dirOptionsSummary && (
-              <span className="options-toggle-summary" data-testid="dir-options-summary">
-                {dirOptionsSummary}
+            {/* たたんでいても、今効いているフォルダ取込の設定・管理者として実行が分かるように見出しの横に出す */}
+            {optionsSummary && (
+              <span className="options-toggle-summary" data-testid="options-summary">
+                {optionsSummary}
               </span>
             )}
           </button>
@@ -328,6 +335,20 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
                       placeholder={t('register.argsPlaceholder')}
                     />
                   </div>
+                  {canRunAsAdmin && (
+                    <div className="form-group">
+                      <label className="register-check">
+                        <input
+                          type="checkbox"
+                          checked={item.runAsAdmin === true}
+                          onChange={(e) =>
+                            onUpdate({ runAsAdmin: e.target.checked ? true : undefined })
+                          }
+                        />
+                        {t('register.runAsAdmin')}
+                      </label>
+                    </div>
+                  )}
                   {customIconEditor}
                 </>
               )}

@@ -274,6 +274,7 @@ export async function moveWorkspaceItemToMain(
 function settingsDiffer(copy: WorkspaceItem, main: ReferenceableAppItem): boolean {
   if (copy.type !== 'item' || !isLauncherItem(main)) return false;
   if ((copy.customIcon ?? '') !== (main.customIcon ?? '')) return true;
+  if ((copy.runAsAdmin === true) !== (main.runAsAdmin === true)) return true;
   return JSON.stringify(pickItemWindowSwitch(copy)) !== JSON.stringify(pickItemWindowSwitch(main));
 }
 

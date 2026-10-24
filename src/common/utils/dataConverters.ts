@@ -24,6 +24,7 @@ import {
 
 import { generateId } from './jsonParser.js';
 import { itemWindowSwitchFields, pickItemWindowSwitch } from './itemWindowConversion.js';
+import { canSetRunAsAdmin, pickRunAsAdmin } from './runAsAdmin.js';
 
 /** 展開したアイテムが持つ取込の設定を、編集フォームのフォルダ取込のオプションにする */
 function toJsonDirOptions(options: DirOptionsForProcessing | undefined): JsonDirOptions {
@@ -158,6 +159,7 @@ export function convertEditingAppItemToRegisterItem(
       path: item.path,
       type: item.type,
       args: item.args || undefined,
+      ...pickRunAsAdmin(item),
       targetTab: defaultTab,
       targetFile: item.sourceFile,
       folderProcessing: item.type === 'folder' ? 'folder' : undefined,
@@ -219,6 +221,7 @@ export function convertEditableJsonItemToRegisterItem(
       path: jsonItem.path,
       type: 'app' as const,
       args: jsonItem.args || undefined,
+      ...pickRunAsAdmin(jsonItem),
       targetTab: defaultTab,
       targetFile: sourceFile,
       folderProcessing: undefined,
@@ -338,6 +341,8 @@ export function convertRegisterItemToJsonItem(
     path: registerItem.path,
     ...(registerItem.args && { args: registerItem.args }),
     ...(registerItem.customIcon && { customIcon: registerItem.customIcon }),
+    // 種類をアプリ以外に変えたときは、隠れたチェックの値を残さない
+    ...(canSetRunAsAdmin(registerItem.path) && pickRunAsAdmin(registerItem)),
     ...itemWindowSwitchFields(registerItem),
     ...(memo && { memo }),
     updatedAt: now,

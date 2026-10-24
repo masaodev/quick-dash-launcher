@@ -32,6 +32,7 @@ import {
   itemWindowSwitchFields,
   pickItemWindowSwitch,
 } from './itemWindowConversion.js';
+import { canSetRunAsAdmin, pickRunAsAdmin } from './runAsAdmin.js';
 
 /** undefined の値を持つキーを落とす（ファイルに `"args": undefined` のような穴を残さないため） */
 function compact<T extends object>(obj: T): T {
@@ -50,6 +51,7 @@ function launcherBody(item: LauncherItem): WorkspaceItemUpdate {
     args: item.args,
     originalPath: item.originalPath,
     customIcon: item.customIcon,
+    ...pickRunAsAdmin(item),
     ...pickItemWindowSwitch(item),
     memo: item.memo,
   });
@@ -135,6 +137,7 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         path: item.path,
         type: item.launcherType,
         args: item.args,
+        ...pickRunAsAdmin(item),
         icon: item.icon,
         targetTab: '',
         customIcon: item.customIcon,
@@ -245,6 +248,7 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         path: registerItem.path,
         args: registerItem.args || undefined,
         customIcon: registerItem.customIcon,
+        ...(canSetRunAsAdmin(registerItem.path) && pickRunAsAdmin(registerItem)),
         ...itemWindowSwitchFields(registerItem),
         memo,
       });

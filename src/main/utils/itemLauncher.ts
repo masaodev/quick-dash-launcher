@@ -8,6 +8,7 @@ import * as path from 'path';
 import { shell } from 'electron';
 import { Logger } from 'pino';
 import { parseArgs } from '@common/utils/argsParser';
+import { shouldRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { ClipboardService } from '../services/clipboardService.js';
 import { mainI18n } from '../services/mainI18n.js';
@@ -25,10 +26,16 @@ export interface LaunchableItem {
   args?: string;
   displayName?: string;
   clipboardDataRef?: string;
+  /** 常に管理者として実行する（アプリだけ。対象外の種類なら普通に開く） */
+  runAsAdmin?: boolean;
 }
 
-/** 起動の結果（失敗のときは利用者に見せる理由） */
-export type LaunchResult = { success: true } | { success: false; error: string };
+/**
+ * 起動の結果（失敗のときは利用者に見せる理由）
+ *
+ * cancelled は、管理者として実行するときに UAC で「いいえ」を押した（知らせない・起動の記録に数えない）
+ */
+export type LaunchResult = { success: true } | { success: false; error: string; cancelled?: true };
 
 /** 失敗の理由（無ければ成功）を LaunchResult にする */
 function toResult(error: string | undefined): LaunchResult {
@@ -62,6 +69,8 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
       }
 
       case 'app':
+        if (shouldRunAsAdmin(item))
+          return adminResultToLaunchResult(await launchItemAsAdmin(item, logger));
         return toResult(await launchApp(item, logger));
 
       case 'clipboard':
@@ -212,6 +221,13 @@ export function buildRunAsRequest(item: Pick<LaunchableItem, 'path' | 'args'>): 
     ...(parameters && { parameters }),
     ...(directory && { directory }),
   };
+}
+
+/** 管理者として起動した結果を、普通に開いたときの結果の形にする */
+function adminResultToLaunchResult(result: AdminLaunchResult): LaunchResult {
+  if (result.status === 'launched') return { success: true };
+  if (result.status === 'cancelled') return { success: false, error: '', cancelled: true };
+  return { success: false, error: result.error };
 }
 
 /** ShellExecuteExW のエラーコードを、利用者に見せる理由にする */

@@ -130,6 +130,8 @@ export interface JsonWorkspaceLauncherItem extends JsonWorkspaceItemBase, ItemWi
   originalPath?: string;
   /** カスタムアイコンファイル名（オプション） */
   customIcon?: string;
+  /** 常に管理者として実行する（アプリだけ。省略時 false。true のときだけ書く） */
+  runAsAdmin?: boolean;
 }
 
 /**

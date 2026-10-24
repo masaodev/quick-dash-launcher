@@ -208,6 +208,24 @@
   flex: 1;
 }
 
+/* 行全体がチェックボックスのラベル（「常に管理者として実行」）。入力欄の幅・高さを当てない */
+.register-item .form-group .register-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.register-item .form-group .register-check input {
+  flex: none;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+}
+
 /* textarea行はラベルを上揃え */
 .register-item .form-group:has(textarea) {
   align-items: flex-start;

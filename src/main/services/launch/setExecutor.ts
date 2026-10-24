@@ -93,6 +93,8 @@ export interface SetEntryResult {
   success: boolean;
   /** 動かすだけの行で、ウィンドウが開いていなかったので何もしなかった（success は true） */
   skipped?: boolean;
+  /** 管理者として実行する行で、UAC で「いいえ」を押したので開かなかった（skipped・success も true） */
+  adminCancelled?: boolean;
   error?: string;
 }
 
@@ -191,6 +193,8 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
           path: item.path,
           args: item.args,
           displayName: item.displayName,
+          // セットの行は持たず、指すアイテムの「常に管理者として実行」に従う
+          ...(item.runAsAdmin === true && { runAsAdmin: true }),
         },
         itemWindowConfig: itemWindowConfigOf(item),
         ...(item.icon ? { icon: item.icon } : {}),
@@ -463,6 +467,23 @@ async function runSet(
     );
   };
 
+  /** 管理者として実行する行で、UAC で「いいえ」を押した（失敗にせず、知らせない） */
+  const skipAdminCancelled = (index: number) => {
+    results.push({
+      index,
+      name: resolved[index].name,
+      success: true,
+      skipped: true,
+      adminCancelled: true,
+    });
+    update(index, 'skipped', mainI18n.t('set.run.adminCancelled'));
+  };
+  /** 開いた結果で行を終える（UAC で「いいえ」は飛ばしたことにする） */
+  const finishLaunch = (index: number, launched: LaunchResult) => {
+    if (!launched.success && launched.cancelled) return skipAdminCancelled(index);
+    return finish(index, launched.success ? undefined : launched.error);
+  };
+
   /**
    * 1 行を実行する。opened は「開く」まで済んだら解決し（順番に開くときの次の行の合図）、
    * done は位置合わせまで終わったら解決する
@@ -508,7 +529,7 @@ async function runSet(
           if (result.windowFound) return finish(index);
         }
         const launched = await deps.launch(r.launch, logger);
-        return finish(index, launched.success ? undefined : launched.error);
+        return finishLaunch(index, launched);
       }
 
       // 置き場所のある行。今は無い画面の位置なら、主画面に収める（見えない所へ動かさない）
@@ -539,8 +560,8 @@ async function runSet(
       );
       if (!config) {
         // 見つけ方を決められない（URL など）: 開くだけにする
-        const launched = r.launch ? await deps.launch(r.launch, logger) : undefined;
-        return finish(index, launched && !launched.success ? launched.error : undefined);
+        if (!r.launch) return finish(index);
+        return finishLaunch(index, await deps.launch(r.launch, logger));
       }
 
       let hwnd = entry.ifOpen === 'openNew' ? null : findUnclaimed(config);
@@ -554,7 +575,7 @@ async function runSet(
           while ((found = deps.findWindow(config, before)) !== null) before.add(found);
         }
         const launched = await deps.launch(r.launch, logger);
-        if (!launched.success) return finish(index, launched.error);
+        if (!launched.success) return finishLaunch(index, launched);
         markOpened();
         hwnd = await waitForWindow(config, before, entry.waitSeconds ?? SET_DEFAULT_WAIT_SECONDS);
         if (hwnd === null) {
@@ -683,7 +704,7 @@ const SINGLE_ITEM_ROW_ID = ':single-item:';
 /** 単一アイテムの実行に要る項目 */
 export type ExecutableLauncherItem = Pick<
   LauncherItem,
-  'displayName' | 'path' | 'type' | 'args' | 'icon' | 'id'
+  'displayName' | 'path' | 'type' | 'args' | 'icon' | 'id' | 'runAsAdmin'
 > &
   ItemWindowSwitch;
 
@@ -727,6 +748,7 @@ export async function executeLauncherItem(
     type: item.type,
     ...(item.args ? { args: item.args } : {}),
     ...(item.icon ? { icon: item.icon } : {}),
+    ...(item.runAsAdmin === true ? { runAsAdmin: true } : {}),
     // パスの無い単一アイテムかを行の解決で見分ける（対象ウィンドウ自体は行の window で探す）
     ...(item.window ? { window: item.window } : {}),
   };
@@ -756,6 +778,8 @@ export async function notifyLauncherItemFailure(
   result: SetExecutionResult
 ): Promise<void> {
   if (result.cancelled) return;
+  // 管理者として実行で UAC の「いいえ」を押したときは知らせない
+  if (result.entries.some((entry) => entry.adminCancelled)) return;
   if (result.entries.some((entry) => entry.skipped)) {
     await showToastWindow({
       displayName: item.displayName,

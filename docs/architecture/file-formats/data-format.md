@@ -136,7 +136,8 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 - **必須**: `type: "item"`・`displayName`（表示名）・`path`（ファイルパス・URL・コマンド）。`displayName` は空文字不可
 - `path` は、ウィンドウ切り替えの `window`（`processName` か `title`）があれば空文字でもよい（パスの無い単一アイテム、3.1.5.7）。どちらも空のアイテムは不正（5.1）
-- **任意**: `args`（コマンドライン引数）・`customIcon`（3.1.4）・ウィンドウ切り替えの `window`・`placement`・`ifOpen`・`activateWindow`・`waitSeconds`・`pinToAllDesktops`（3.1.5）・`autoImportRuleId`
+- **任意**: `args`（コマンドライン引数）・`customIcon`（3.1.4）・`runAsAdmin`・ウィンドウ切り替えの `window`・`placement`・`ifOpen`・`activateWindow`・`waitSeconds`・`pinToAllDesktops`（3.1.5）・`autoImportRuleId`
+- `runAsAdmin`（真偽値。省略時 `false`）は「常に管理者として実行」。`true` なら、開くたびに管理者として起動する（UAC の確認が出る。`ShellExecuteExW` の `runas`、`src/main/utils/itemLauncher.ts`）。効くのは起動種別がアプリ（exe・.lnk・.bat/.cmd など。ストアアプリを除く）のときだけで、ほかの種類では無視して普通に開く。QDL は `true` のときだけ書き、登録・編集画面でパスをアプリ以外に変えて保存すると外す。セットの行は持たず、行が指すアイテムの値に従う
 - `autoImportRuleId` は自動取込ルールの ID。このフィールドがあるアイテムは自動取込の管理対象になる
 
 #### 3.1.2. サポートされるパス種類
@@ -325,7 +326,7 @@ v0.8.0-beta.12 までは、ウィンドウ切り替えを `windowConfig` オブ�
 1. **ターゲットパス抽出**: ショートカットが指すファイル・フォルダのパスを取り出す（`path` は `.lnk` のまま）
 2. **引数抽出**: ショートカットに設定されたコマンドライン引数を使う（JSON の `args` は使わない）
 3. **表示名**: JSON の `displayName` をそのまま使う。ショートカットのファイル名（`.lnk` を除く）を表示名にするのは、フォルダ取込（3.2）で展開したときだけ
-4. **その他の項目**: `id`・`memo`・`customIcon`・ウィンドウ切り替え（3.1.5）・`autoImportRuleId` は JSON の値を使う
+4. **その他の項目**: `id`・`memo`・`customIcon`・`runAsAdmin`・ウィンドウ切り替え（3.1.5）・`autoImportRuleId` は JSON の値を使う
 
 解析できなかったときは、通常のアイテムとして扱います。
 

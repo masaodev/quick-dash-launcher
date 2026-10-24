@@ -640,6 +640,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unsetProtected: "--unset can't remove {{key}}",
       fieldMissing: '{{key}} is missing (pass it with {{how}})',
       fieldInvalid: '{{key}} has an invalid value (use {{expected}})',
+      runAsAdminNotApp: 'runAsAdmin can only be set on apps (exe, .lnk, .bat/.cmd, and so on)',
       invalidContent: 'The content is invalid: {{reason}}',
       unknownFields:
         'Fields not allowed for type {{type}}: {{fields}} (see the settings file format in the docs)',
@@ -811,6 +812,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     run: {
       titleNotMatched: 'No window with a matching title ({{exe}} is open)',
       notOpen: "Not open, so it wasn't moved",
+      adminCancelled: 'Running as administrator was canceled',
       itemNotOpen: "Not open, so it didn't switch",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
       desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
@@ -1680,6 +1682,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     dirOptions: 'Folder import options',
     args: 'Arguments',
     argsPlaceholder: 'Command-line arguments (for executables and apps only)',
+    runAsAdmin: '🛡️ Always run as administrator (asks for UAC confirmation each time)',
+    runAsAdminSummary: '🛡️ Always run as administrator',
     clipboardFallbackName: 'Clipboard',
     note: 'Note',
     notePlaceholder: 'Add a note (optional)',
@@ -2257,7 +2261,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       memoMove: 'Move the note to the launcher',
       memoConflict: '⚠ Both have different notes (the copy note will be removed)',
       settingsDiffer:
-        '⚠ Window switching or icon differs from the launcher item (the launcher settings will be used)',
+        '⚠ Window switching, icon, or run as administrator differs from the launcher item (the launcher settings will be used)',
       ambiguous_one: '⚠ {{count}} candidate. Choose which one to link to',
       ambiguous_other: '⚠ {{count}} candidates. Choose which one to link to',
       choose: 'Choose the item to link to…',
