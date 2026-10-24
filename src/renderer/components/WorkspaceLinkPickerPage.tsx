@@ -10,6 +10,7 @@ import { isReferenceableAppItem, type ReferenceableAppItem } from '@common/utils
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
+import { sortByTabOrder } from '../utils/tabOrder';
 
 import SetItemPickerModal from './SetItemPickerModal';
 import { Button } from './ui';
@@ -74,7 +75,12 @@ const WorkspaceLinkPickerPage: React.FC<WorkspaceLinkPickerPageProps> = ({ itemI
           file ??
           '';
         const candidateIds = new Set(candidates.map((c) => c.itemId));
-        const rows: SetCatalogItem[] = allItems.filter(isLinkable).map((item) => ({
+        const linkable = sortByTabOrder(
+          allItems.filter(isLinkable),
+          settings.dataFileTabs,
+          (item) => item.sourceFile
+        );
+        const rows: SetCatalogItem[] = linkable.map((item) => ({
           key: item.id,
           id: item.id,
           displayName: item.displayName,

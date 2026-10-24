@@ -35,6 +35,7 @@ import {
 import { desktopLabel } from '@common/utils/desktopLabel';
 
 import { ITEM_TYPE_ICONS } from './itemTypeIcons';
+import { sortByTabOrder } from './tabOrder';
 
 /** セットに追加できるアイテム（追加の画面の 1 行） */
 export interface SetCatalogItem {
@@ -140,8 +141,13 @@ export async function loadSetCatalog(
     });
   }
 
-  for (const item of allItems) {
-    if (!isLauncherItem(item)) continue;
+  // タブは設定の順に並べる（読み込んだ一覧は名前順で、先頭のアイテムのタブが最初になってしまう）
+  const launchersInTabOrder = sortByTabOrder(
+    launchers,
+    settings.dataFileTabs,
+    (item) => item.sourceFile
+  );
+  for (const item of launchersInTabOrder) {
     const tab = tabOf(item.sourceFile);
     const sameGroup = !includeWorkspace && !!currentTab && tab === currentTab;
     const groupName = tab?.name ?? item.sourceFile ?? '';
