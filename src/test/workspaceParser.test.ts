@@ -45,6 +45,7 @@ const pathlessItem = {
   window: { title: '*Chrome' },
   placement: { x: 0, y: 0, width: 800, height: 600 },
   workspaceId: 'wsAAAAA1',
+  groupId: 'grAAAAA1',
   order: 1,
   addedAt: 1,
 };
@@ -58,6 +59,7 @@ const legacyWindowItem = {
   x: 0,
   moveToActiveMonitorCenter: true,
   workspaceId: 'wsAAAAA1',
+  groupId: 'grAAAAA1',
   order: 2,
   addedAt: 1,
 };
@@ -186,6 +188,47 @@ describe('workspaceParser: ヘッダ・ワークスペースの補完', () => {
   });
 });
 
+describe('workspaceParser: グループに入っていないアイテム（A3-157）', () => {
+  it('ワークスペースごとに「未分類」グループを最後に作って入れ、書き戻し要にすること', () => {
+    const ws2 = { id: 'wsAAAAA2', displayName: 'サブ', order: 1, createdAt: 1 };
+    const loose = (id: string, workspaceId: string) => ({
+      ...launcher,
+      id,
+      workspaceId,
+      groupId: undefined,
+    });
+    const result = parseWorkspaceFileLenient(
+      file({
+        workspaces: [ws, ws2],
+        items: [
+          launcher,
+          loose('itAAAAB1', 'wsAAAAA1'),
+          loose('itAAAAB2', 'wsAAAAA1'),
+          loose('itAAAAB3', 'wsAAAAA2'),
+        ],
+      }),
+      createWorkspaceParseContext(NOW)
+    );
+    const created = result.data.groups.filter((g) => g.displayName === '未分類');
+    expect(created.map((g) => g.workspaceId)).toEqual(['wsAAAAA1', 'wsAAAAA2']);
+    // 既存のグループ（order 0）の後ろ。グループの無いワークスペースでは 0
+    expect(created.map((g) => g.order)).toEqual([1, 0]);
+    const groupOf = (id: string) => result.data.items.find((i) => i.id === id)?.groupId;
+    expect(groupOf('itAAAAA1')).toBe('grAAAAA1');
+    expect(groupOf('itAAAAB1')).toBe(created[0].id);
+    expect(groupOf('itAAAAB2')).toBe(created[0].id);
+    expect(groupOf('itAAAAB3')).toBe(created[1].id);
+    expect(result.modified).toBe(true);
+    expect(result.issues.filter((i) => i.kind === 'normalized')).toHaveLength(2);
+  });
+
+  it('すべてのアイテムがグループに入っていれば何も変えないこと', () => {
+    const result = parseWorkspaceFileLenient(file(), createWorkspaceParseContext(NOW));
+    expect(result.data.groups).toHaveLength(1);
+    expect(result.modified).toBe(false);
+  });
+});
+
 describe('workspaceParser: id の採番と参照の追随', () => {
   it('不正な id（UUID など）は採番し直し、参照も新 id に書き換えること', () => {
     const result = parseWorkspaceFileLenient(
@@ -232,8 +275,10 @@ describe('workspaceParser: id の採番と参照の追随', () => {
     );
     expect(result.data.groups[1].parentGroupId).toBeUndefined();
     expect(result.data.groups[1].workspaceId).toBe('wsAAAAA1');
-    expect(result.data.items[0].groupId).toBeUndefined();
-    expect(result.issues.filter((i) => i.kind === 'normalized')).toHaveLength(3);
+    // 外した groupId のアイテムは、グループに入っていないので「未分類」グループに入る（A3-157）
+    const placed = result.data.groups.find((g) => g.id === result.data.items[0].groupId);
+    expect(placed?.displayName).toBe('未分類');
+    expect(result.issues.filter((i) => i.kind === 'normalized')).toHaveLength(4);
   });
 
   it('不正なグループへの参照（groupId / parentGroupId）は外さず保つこと', () => {
@@ -346,6 +391,7 @@ describe('workspaceParser: 不正な要素', () => {
       window: { processName: 'notepad.exe' },
       placement: { x: 0 },
       workspaceId: 'wsAAAAA1',
+      groupId: 'grAAAAA1',
       order: 2,
       addedAt: 1,
     });
@@ -531,6 +577,7 @@ describe('workspaceParser: 参照アイテム（type: ref）', () => {
       'refItemId',
       'lastKnownName',
       'workspaceId',
+      'groupId',
       'order',
       'addedAt',
     ]);

@@ -347,6 +347,10 @@ export const en: LocaleMessages = {
     showNote: '📝 Show note',
     addToWorkspace: '⭐ Add to workspace',
     addCopyToWorkspace: '📄 Add a copy to workspace',
+    groupPicker: {
+      createGroup: '➕ Put it in a new group',
+      createUncategorized: '➕ Put it in a new "Ungrouped" group',
+    },
     delete: '🗑️ Delete…',
     text: {
       undo: 'Undo',
@@ -365,7 +369,6 @@ export const en: LocaleMessages = {
       paste: '📋 Paste',
       expandAll: '🔽 Expand all',
       collapseAll: '🔼 Collapse all',
-      groupUncategorized: '📁 Put into a new group',
     },
     admin: {
       duplicate: '📋 Duplicate',
@@ -554,14 +557,14 @@ Works with workspaces (workspace.json).
   qdl workspace update <id or name>           Change a workspace (--name --position --dry-run)
   qdl workspace remove <id or name>           Delete an empty workspace (--dry-run)
   qdl workspace item list                     List items (--workspace --group --grep --with-text)
-  qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
+  qdl workspace item add                      Add an item (--name, --path, and --group in a workspace with groups are required. --args --memo
                                               --workspace --position <0-based> --set key=value --dry-run.
                                               With --type clipboard, --text | --text-file instead of --path)
   qdl workspace item add --from <id or name>  Add a launcher item as a link (--copy adds a copy.
                                               --name (the workspace name for a link) --group --workspace
                                               --position --dry-run)
   qdl workspace item update <id or name>      Change an item (--name --path --args --memo --text --text-file --set --unset,
-                                              --group <group> ("" for ungrouped) --workspace --position --dry-run)
+                                              --group <group> --workspace --position --dry-run)
   qdl workspace item remove <id or name>      Delete an item (--dry-run)
   qdl workspace item convert <id or name>     Switch between a link and a copy (--to copy | ref is required. For ref,
                                               --from <target>; defaults to the launcher item with the same path and
@@ -710,6 +713,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       needChanges: 'Specify what to change ({{options}})',
       noPath: "Type {{type}} doesn't have --path",
       noWorkspace: 'There are no workspaces',
+      groupRequired:
+        'The workspace "{{workspace}}" has groups, so use --group to choose the group to put it in',
+      groupEmpty: '--group "" is not supported (there is no Ungrouped anymore). Choose a group',
       badColor: '--color is invalid: {{color}} (see qdl workspace --help for the list)',
       emptyName: '--name is empty',
       groupNotEmpty:
@@ -1938,6 +1944,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     externalSummary: 'Data edited outside QDL: {{parts}}',
   },
   workspaceErrors: {
+    groupRequired:
+      'Choose a group to put it in (in a workspace that has groups, items are added to a group).',
     externalChange:
       '{{file}} was changed outside QDL. Press F5 in the launcher to reload, and then try again.',
     writeFailed: "Couldn't write {{file}}. Check the free disk space and permissions.",
@@ -2075,6 +2083,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     parentCycle: 'parentGroupId was removed because it was circular',
     parentTooDeep: 'parentGroupId was removed because the nesting was deeper than {{max}} levels',
     defaultWorkspaceCreated: 'There were no workspaces, so the default workspace was created',
+    ungroupedItemsGrouped: 'Put {{count}} items that were not in a group into the group "{{name}}"',
     archivedGroupNotFound:
       'Excluded from loading because the archived group "{{id}}" for archivedGroupId doesn\'t exist',
   },
@@ -2123,6 +2132,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       itemCount_one: '{{count}}',
       itemCount_other: '{{count}}',
       uncategorized: 'Ungrouped',
+      copiedAsText: 'Copied "{{name}}" as text',
+      copyAsTextFailed: 'Couldn\'t copy "{{name}}" as text',
       defaultName: 'Group {{number}}',
       defaultSubgroupName: 'Subgroup {{number}}',
       contents: 'This group contains {{items}}.',
@@ -2133,7 +2144,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       contentSubgroups_other: '{{count}} subgroups',
       deleteTitle: 'Delete group',
       deleteConfirm: 'Delete "{{name}}"?',
-      deleteItems: 'Also delete the items in the group',
+      deleteWithContentsWarning:
+        'Everything in it is deleted too. To keep it, use Archive instead of deleting.',
       deleteFromArchiveTitle: 'Delete from archive',
       deleteFromArchiveConfirm: 'Permanently delete "{{name}}" from the archive?',
       deleteFromArchiveIrreversible: "Its items are deleted too, and this can't be undone.",
@@ -2154,6 +2166,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addGroup: '+ Add group',
     },
     restoresPosition: "When it's open, moves this window back to the recorded window position",
+    dropOnGroup: 'Drop it on a group (items must be in a group)',
+    chooseGroupToPaste: 'Click the header of the group to paste into, and then paste',
     restoredGroupName: '{{name}} (restored)',
     defaultWorkspaceName: 'Default',
     detached: {
@@ -2228,8 +2242,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addedItems_one: '{{count}} item',
       addedItems_other: '{{count}} items',
       addedToGroup: 'Added to "{{group}}"',
-      titleUncategorized: 'Items to add to "Ungrouped"',
-      addedToUncategorized: 'Added to "Ungrouped"',
       addAsCopy: 'Add as copies (not linked to the launcher)',
     },
     linkPicker: {

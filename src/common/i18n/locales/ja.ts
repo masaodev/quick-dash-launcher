@@ -349,6 +349,10 @@ export const ja = {
     showNote: '📝 メモを表示',
     addToWorkspace: '⭐ ワークスペースに追加',
     addCopyToWorkspace: '📄 ワークスペースにコピーを追加',
+    groupPicker: {
+      createGroup: '➕ 新しいグループを作って入れる',
+      createUncategorized: '➕ 「未分類」グループを作って入れる',
+    },
     delete: '🗑️ 削除…',
     text: {
       undo: '元に戻す',
@@ -367,7 +371,6 @@ export const ja = {
       paste: '📋 貼り付け',
       expandAll: '🔽 すべて展開',
       collapseAll: '🔼 すべて折りたたむ',
-      groupUncategorized: '📁 グループにまとめる',
     },
     admin: {
       duplicate: '📋 複製',
@@ -556,14 +559,14 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace update <id か名前>            変更（--name --position --dry-run）
   qdl workspace remove <id か名前>            空のワークスペースを削除（--dry-run）
   qdl workspace item list                     アイテムの一覧（--workspace --group --grep --with-text）
-  qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
+  qdl workspace item add                      追加（--name・--path と、グループのあるワークスペースなら --group も必須。--args --memo
                                               --workspace --position <0 始まり> --set key=value --dry-run。
                                               --type clipboard なら --path の代わりに --text | --text-file）
   qdl workspace item add --from <id か表示名>  メインウィンドウのアイテムを参照で追加（--copy ならコピー。
                                               --name（参照ならワークスペースでの表示名）--group --workspace
                                               --position --dry-run）
   qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
-                                              --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
+                                              --group <グループ> --workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace item convert <id か表示名>    参照とコピーを行き来する（--to copy | ref は必須。ref なら --from <指す先>。
                                               省略時はパスと引数が同じメインウィンドウのアイテム、--dry-run）
@@ -712,6 +715,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       needChanges: '変えるものを指定してください（{{options}}）',
       noPath: '種類 {{type}} は --path を持ちません',
       noWorkspace: 'ワークスペースがありません',
+      groupRequired:
+        'ワークスペース「{{workspace}}」にはグループがあるので、--group で入れるグループを指定してください',
+      groupEmpty:
+        '--group "" は使えません（未分類は無くなりました）。入れるグループを指定してください',
       badColor: '--color が正しくありません: {{color}}（qdl workspace --help で一覧）',
       emptyName: '--name が空です',
       groupNotEmpty:
@@ -1939,6 +1946,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     externalSummary: '外部編集されたデータ: {{parts}}',
   },
   workspaceErrors: {
+    groupRequired:
+      'どのグループに入れるかを選んでください（グループがあるワークスペースでは、グループを指定して足します）',
     externalChange:
       '{{file}} が QDL の外で変更されています。メインウィンドウで F5 を押して再読み込みしてから操作してください',
     writeFailed: '{{file}} の書き込みに失敗しました。ディスクの空き容量や権限を確認してください',
@@ -2074,6 +2083,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     parentCycle: 'parentGroupId が循環しているため親を外しました',
     parentTooDeep: 'parentGroupId の入れ子が {{max}} 段を超えるため親を外しました',
     defaultWorkspaceCreated: 'ワークスペースが 1 件も無いため既定のワークスペースを作りました',
+    ungroupedItemsGrouped:
+      'グループに入っていないアイテム {{count}} 件を、グループ「{{name}}」に入れました',
     archivedGroupNotFound:
       'archivedGroupId "{{id}}" のアーカイブグループが無いため読み込みから外しました',
   },
@@ -2122,6 +2133,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       itemCount_one: '{{count}} 件',
       itemCount_other: '{{count}} 件',
       uncategorized: '未分類',
+      copiedAsText: '「{{name}}」をテキストでコピーしました',
+      copyAsTextFailed: '「{{name}}」をテキストでコピーできませんでした',
       defaultName: 'グループ {{number}}',
       defaultSubgroupName: 'サブグループ {{number}}',
       contents: 'このグループには{{items}}が含まれています。',
@@ -2132,7 +2145,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       contentSubgroups_other: 'サブグループ {{count}} 件',
       deleteTitle: 'グループの削除',
       deleteConfirm: '「{{name}}」を削除してもよろしいですか？',
-      deleteItems: 'グループ内のアイテムも削除する',
+      deleteWithContentsWarning:
+        '中に入っているものもすべて消えます。残したいときは、削除せずに「アーカイブ」を使ってください。',
       deleteFromArchiveTitle: 'アーカイブから削除',
       deleteFromArchiveConfirm: '「{{name}}」をアーカイブから完全に削除してもよろしいですか？',
       deleteFromArchiveIrreversible: 'アイテムごと削除され、元に戻せません。',
@@ -2153,6 +2167,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addGroup: '＋ グループを追加',
     },
     restoresPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
+    dropOnGroup: 'グループの上に落としてください（グループの外には置けません）',
+    chooseGroupToPaste: '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください',
     restoredGroupName: '{{name}}（復元）',
     defaultWorkspaceName: '既定',
     detached: {
@@ -2229,8 +2245,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_one: '{{count}} 件のアイテム',
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
-      titleUncategorized: '「未分類」に追加するアイテム',
-      addedToUncategorized: '「未分類」に追加しました',
       addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
     },
     linkPicker: {

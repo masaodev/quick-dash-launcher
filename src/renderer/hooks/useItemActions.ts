@@ -114,6 +114,8 @@ export function useItemActions() {
   );
 
   return {
+    // ワークスペースのパスのコピーも同じ知らせ方にするため、そのまま渡す
+    copyToClipboard,
     handleCopyPath,
     handleCopyParentPath,
     handleCopyShortcutPath,

@@ -310,7 +310,9 @@ describe('workspaceMigration: v1 → 2.0', () => {
         .items,
     };
     const parsedMain = parseWorkspaceFileLenient(JSON.stringify(main), ctx);
-    expect(parsedMain.issues).toEqual([]);
+    // 旧版の未分類のアイテムは「未分類」グループに入る（A3-157）。それ以外の補正は無い
+    expect(parsedMain.issues).toHaveLength(1);
+    expect(parsedMain.issues[0]).toMatchObject({ kind: 'normalized', index: -1 });
     expect(parsedMain.data.items).toHaveLength(6);
     const parsedArchive = parseWorkspaceArchiveFileLenient(JSON.stringify(result.archive), ctx);
     expect(parsedArchive.issues).toEqual([]);

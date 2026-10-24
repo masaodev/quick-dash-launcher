@@ -12,7 +12,6 @@ import type {
   SetPlacement,
 } from '@common/types';
 import { PathUtils } from '@common/utils/pathUtils';
-import { resolveGroupColorCss } from '@common/groupColors';
 import { WORKSPACE_ITEM_DRAG_TYPE } from '@common/constants';
 import { isLauncherItem } from '@common/types/guards';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
@@ -26,6 +25,8 @@ import {
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
 import { useLatestRef } from '../hooks/useLatestRef';
+import { useItemActions } from '../hooks/useItemActions';
+import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
@@ -86,13 +87,13 @@ interface WorkspaceGroupedListProps {
     onArchiveGroup: (groupId: string) => void;
     onAddSubgroup: (parentGroupId: string, subgroupCount: number) => void;
     onDuplicateItem: (sourceItemId: string, targetGroupId?: string, insertOrder?: number) => void;
-    onMoveItemToGroup: (itemId: string, groupId?: string) => void;
+    onMoveItemToGroup: (itemId: string, groupId: string) => void;
     onMoveGroupToParent: (groupId: string, newParentGroupId?: string) => void;
     onReorderMixed: (parentGroupId: string | undefined, entries: MixedOrderEntry[]) => void;
     onNativeFileDrop?: (e: React.DragEvent, groupId?: string) => Promise<void>;
     onDetachGroup?: (groupId: string, screenX: number, screenY: number) => void;
-    /** 余白・「未分類」の見出しの右クリック（未指定なら何も出さない。アーカイブ・切り離しウィンドウでは渡さない） */
-    onBlankContextMenu?: (kind: 'blank' | 'uncategorized') => void;
+    /** 余白の右クリック（未指定なら何も出さない。アーカイブ・切り離しウィンドウでは渡さない） */
+    onBlankContextMenu?: () => void;
     /** グループの右クリック「ほかのグループを折りたたむ」（未指定なら何もしない。切り離しウィンドウでは出さない） */
     onCollapseOtherGroups?: (groupId: string) => void;
     /** 空のワークスペースの［＋ グループを追加］（未指定ならボタンを出さない） */
@@ -101,14 +102,11 @@ interface WorkspaceGroupedListProps {
   ui: {
     editingItemId: string | null;
     setEditingItemId: (id: string | null) => void;
-    uncategorizedCollapsed: boolean;
-    onToggleUncategorized: () => void;
     activeGroupId?: string;
     setActiveGroupId: (id: string | undefined) => void;
     activeWorkspaceId?: string;
     visibleGroupIds?: Set<string> | null;
     itemVisibility?: Map<string, boolean> | null;
-    showUncategorized?: boolean;
     /** アーカイブタブの表示中（グループの右クリックは復元・完全削除だけ） */
     isArchiveMode?: boolean;
     /** 切り離しウィンドウで表示しているグループ（その見出しを掴むとウィンドウが動く） */
@@ -124,6 +122,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   ui,
 }) => {
   const { t } = useTranslation();
+  const { copyToClipboard } = useItemActions();
+  const { showSuccess, showError } = useToast();
   const { groups, items } = data;
   const {
     onLaunch,
@@ -148,14 +148,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const {
     editingItemId,
     setEditingItemId,
-    uncategorizedCollapsed,
-    onToggleUncategorized,
     setActiveGroupId,
     activeWorkspaceId,
     visibleGroupIds,
     itemVisibility,
     isArchiveMode,
-    showUncategorized = true,
     detachedRootGroupId,
   } = ui;
 
@@ -169,8 +166,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const [dragOverGroupId, setDragOverGroupId] = React.useState<string | null>(null);
   const dragOverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { itemsByGroup, uncategorizedItems, groupTree, mixedChildrenByGroup } =
-    useWorkspaceItemGroups(items, groups);
+  const { itemsByGroup, groupTree, mixedChildrenByGroup } = useWorkspaceItemGroups(items, groups);
 
   const itemsMap = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
   const nameOfWorkspaceItem = React.useCallback(
@@ -181,12 +177,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const groupsMap = React.useMemo(
     () => new Map(groups.map((group) => [group.id, group])),
     [groups]
-  );
-
-  const filteredUncategorizedItems = React.useMemo(
-    () =>
-      uncategorizedItems.filter((item) => !itemVisibility || itemVisibility.get(item.id) !== false),
-    [uncategorizedItems, itemVisibility]
   );
 
   const handlePathOperation = React.useCallback(
@@ -203,12 +193,20 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       const targetPath = pathType === 'parent' ? PathUtils.getParentPath(basePath) : basePath;
 
       if (operation === 'copy') {
-        window.electronAPI.copyToClipboard(targetPath);
+        // メインウィンドウと同じく、画面の右下に「コピーしました」を出す
+        const target = useOriginalPath
+          ? pathType === 'parent'
+            ? 'shortcutParentPath'
+            : 'shortcutPath'
+          : pathType === 'parent'
+            ? 'parentPath'
+            : 'path';
+        await copyToClipboard(targetPath, target);
       } else {
         await window.electronAPI.openFolder(targetPath);
       }
     },
-    []
+    [copyToClipboard]
   );
 
   // コンテキストメニューの購読は一度だけ張り、ハンドラーの中で最新の値を読む
@@ -226,6 +224,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onAddSubgroup,
     onLaunch,
     onCollapseOtherGroups,
+    showSuccess,
+    showError,
     t,
   });
 
@@ -265,13 +265,19 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceMenuMoveToGroup((itemId, groupId) =>
         latest.current.onMoveItemToGroup(itemId, groupId)
       ),
-      window.electronAPI.onWorkspaceMenuMoveToWorkspace(async (itemId, targetWorkspaceId) => {
-        try {
-          await window.electronAPI.workspaceAPI.moveItemToWorkspace(itemId, targetWorkspaceId);
-        } catch (error) {
-          logError('Failed to move item to workspace:', error);
+      window.electronAPI.onWorkspaceMenuMoveToWorkspace(
+        async (itemId, targetWorkspaceId, groupId) => {
+          try {
+            await window.electronAPI.workspaceAPI.moveItemToWorkspace(
+              itemId,
+              targetWorkspaceId,
+              groupId
+            );
+          } catch (error) {
+            logError('Failed to move item to workspace:', error);
+          }
         }
-      }),
+      ),
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
@@ -282,7 +288,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceGroupMenuRename(setEditingGroupId),
       window.electronAPI.onWorkspaceGroupMenuShowColorPicker(setColorPickerGroupId),
       window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
-        const { groupsMap, itemsByGroup, t } = latest.current;
+        const { groupsMap, itemsByGroup, showSuccess, showError, t } = latest.current;
         const group = groupsMap.get(groupId);
         if (group) {
           const groupItems = itemsByGroup[groupId] || [];
@@ -296,7 +302,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
             }
           });
           /* eslint-enable no-irregular-whitespace */
-          window.electronAPI.copyToClipboard(text);
+          const name = group.displayName;
+          window.electronAPI
+            .copyToClipboard(text)
+            .then(() => showSuccess(t('workspace.groups.copiedAsText', { name })))
+            .catch((error: unknown) => {
+              logError('Failed to copy group as text:', error);
+              showError(t('workspace.groups.copyAsTextFailed', { name }));
+            });
         }
       }),
       window.electronAPI.onWorkspaceGroupMenuArchive((groupId) =>
@@ -457,10 +470,10 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     if (parentGroupId) {
       return (mixedChildrenByGroup[parentGroupId] || []).map(toMixedEntry);
     }
-    if (dragKind === 'group') {
-      return groupTree.map((node) => ({ id: node.group.id, kind: 'group' as const }));
-    }
-    return uncategorizedItems.map((item) => ({ id: item.id, kind: 'item' as const }));
+    // トップレベルに並ぶのはグループだけ（アイテムはどれかのグループに入る。A3-157）
+    return dragKind === 'group'
+      ? groupTree.map((node) => ({ id: node.group.id, kind: 'group' as const }))
+      : [];
   };
 
   /**
@@ -547,7 +560,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         if (draggedParentGroupId !== parentGroupId) {
           if (draggedElement.kind === 'group') {
             onMoveGroupToParent(draggedElement.id, parentGroupId);
-          } else {
+          } else if (parentGroupId) {
+            // トップレベルのグループの前後はアイテムの置き場ではない（グループの外には置けない）
             onMoveItemToGroup(draggedElement.id, parentGroupId);
           }
           setDraggedElement(null);
@@ -609,7 +623,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     );
   };
 
-  const handleGroupDragOver = (groupId?: string) => (e: React.DragEvent) => {
+  const handleGroupDragOver = (groupId: string) => (e: React.DragEvent) => {
     e.preventDefault();
     const isNative = isNativeFileDrag(e);
     const isCopy =
@@ -621,8 +635,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
     // ワークスペース内アイテム並び替え以外はハイライト表示
     if (isCopy) {
-      const id = groupId ?? '__uncategorized__';
-      setDragOverGroupId(id);
+      setDragOverGroupId(groupId);
       // dragoverは継続発火するため、タイマーでリセット
       if (dragOverTimerRef.current) {
         clearTimeout(dragOverTimerRef.current);
@@ -642,7 +655,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
    */
   async function addAppItemToWorkspace(
     appItemData: string,
-    groupId?: string,
+    groupId: string,
     windowPositionData?: string,
     ctrlKey = false
   ): Promise<void> {
@@ -668,7 +681,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     });
   }
 
-  const handleGroupDrop = (groupId?: string) => async (e: React.DragEvent) => {
+  const handleGroupDrop = (groupId: string) => async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverGroupId(null);
@@ -739,11 +752,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const handleGroupToggle = (groupId: string) => {
     onToggleGroup(groupId);
     setActiveGroupId(groupId);
-  };
-
-  const handleUncategorizedToggle = () => {
-    onToggleUncategorized();
-    setActiveGroupId(undefined);
   };
 
   /** 子ノードのマップ（renderGroupNode内でサブグループ再帰用） */
@@ -859,7 +867,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const handleBlankContextMenu = (e: React.MouseEvent) => {
     if (!onBlankContextMenu || e.defaultPrevented) return;
     e.preventDefault();
-    onBlankContextMenu('blank');
+    onBlankContextMenu();
   };
 
   // アイテムが1つもない場合
@@ -882,39 +890,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       <div ref={contentRef}>
         {/* ツリー構造でグループをレンダリング */}
         {groupTree.map((node) => renderGroupNode(node))}
-
-        {filteredUncategorizedItems.length > 0 && showUncategorized && (
-          <div
-            className={`workspace-uncategorized-section${dragOverGroupId === '__uncategorized__' ? ' drag-over' : ''}`}
-            onDragOver={handleGroupDragOver(undefined)}
-            onDrop={handleGroupDrop(undefined)}
-          >
-            <div
-              className="workspace-group-header"
-              onClick={handleUncategorizedToggle}
-              onContextMenu={(e) => {
-                if (!onBlankContextMenu) return;
-                e.preventDefault();
-                onBlankContextMenu('uncategorized');
-              }}
-              style={{ '--group-color': resolveGroupColorCss('secondary') } as React.CSSProperties}
-            >
-              <span
-                className={`workspace-group-collapse-icon${uncategorizedCollapsed ? ' collapsed' : ''}`}
-              >
-                ▼
-              </span>
-              <span className="workspace-group-name">{t('workspace.groups.uncategorized')}</span>
-
-              <span className="workspace-group-badge">{filteredUncategorizedItems.length}</span>
-            </div>
-            {!uncategorizedCollapsed && (
-              <div className="workspace-group-items">
-                {filteredUncategorizedItems.map((item) => renderItemCard(item))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* カラーピッカー */}
         {colorPickerGroupId && (

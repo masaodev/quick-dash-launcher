@@ -49,6 +49,8 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
       await menuHelper.sendIpcToRenderer(IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE, {
         windowInfo,
         includePosition: false,
+        // グループの無いワークスペースなので、足すときに「未分類」グループが作られる（A3-157）
+        target: {},
       });
       await expect(
         workspaceWindow.locator('.workspace-item-card', { hasText: '設計書.docx - Word' })
@@ -56,9 +58,14 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
     });
 
     await test.step('位置・サイズも記録', async () => {
+      // 1 件目で「未分類」グループができたので、2 件目からはそのグループを選んで足す
+      const [group] = await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.loadGroups()
+      );
       await menuHelper.sendIpcToRenderer(IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE, {
         windowInfo: { ...windowInfo, title: '位置つき - Word' },
         includePosition: true,
+        target: { groupId: group.id },
       });
       await expect(
         workspaceWindow.locator('.workspace-item-card', { hasText: '位置つき - Word' })
@@ -102,9 +109,12 @@ test.describe('QuickDashLauncher - セットをワークスペースに追加', 
     const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
 
     await menuHelper.sendIpcToRenderer(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, {
-      type: 'set',
-      displayName: 'E2E朝のセット',
-      entries: [{ label: 'GitHub' }, { label: 'Google' }],
+      item: {
+        type: 'set',
+        displayName: 'E2E朝のセット',
+        entries: [{ label: 'GitHub' }, { label: 'Google' }],
+      },
+      target: {},
     });
 
     await expect(

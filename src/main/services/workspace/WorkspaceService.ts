@@ -31,6 +31,7 @@ import { SettingsService } from '../settingsService.js';
 import type { GroupNameResolver } from '../data/setMigration.js';
 import type { LoadReportFile } from '../loadReportService.js';
 import { markKnownFolderPath, withFolderMarker } from '../../utils/folderPathProbe.js';
+import { mainI18n } from '../mainI18n.js';
 
 import { WorkspaceFileStore } from './WorkspaceFileStore.js';
 import {
@@ -46,6 +47,7 @@ import { WorkspaceItemManager } from './WorkspaceItemManager.js';
 import { WorkspaceGroupManager } from './WorkspaceGroupManager.js';
 import { WorkspaceArchiveManager } from './WorkspaceArchiveManager.js';
 import { applyOrders } from './orderUtils.js';
+import { WorkspaceGroupRequiredError } from './workspacePlacement.js';
 
 /**
  * ワークスペースアイテムを管理するサービスクラス
@@ -266,6 +268,36 @@ export class WorkspaceService {
     return this.itemManager!.loadItems();
   }
 
+  /**
+   * 足す先のグループを決める（A3-157。未分類は無く、どのアイテムもグループに入る）
+   *
+   * - groupId があればそれ（ワークスペースはグループのもの）
+   * - 無ければ、そのワークスペースにグループが 1 つも無いときだけ「未分類」グループを作って入れる
+   * - グループがあるのに指定が無ければ WorkspaceGroupRequiredError（どこへ入れるかは利用者に選ばせる）
+   */
+  private resolvePlacement(
+    groupId?: string,
+    workspaceId?: string
+  ): { groupId: string; workspaceId: string } {
+    const groups = this.groupManager!.loadGroups();
+    if (groupId !== undefined) {
+      const group = groups.find((g) => g.id === groupId);
+      if (!group) throw new Error(`Group not found: ${groupId}`);
+      return { groupId, workspaceId: group.workspaceId };
+    }
+    const targetWorkspaceId = workspaceId || this.store!.resolveDefaultWorkspaceId();
+    if (groups.some((g) => g.workspaceId === targetWorkspaceId)) {
+      throw new WorkspaceGroupRequiredError();
+    }
+    const created = this.groupManager!.createGroup(
+      mainI18n.t('workspace.groups.uncategorized'),
+      undefined,
+      undefined,
+      targetWorkspaceId
+    );
+    return { groupId: created.id, workspaceId: targetWorkspaceId };
+  }
+
   public async addItem(
     item: AppItem,
     groupId?: string,
@@ -277,7 +309,8 @@ export class WorkspaceService {
       'type' in item && item.type === 'folder' && 'path' in item && !item.originalPath
         ? { ...item, path: markKnownFolderPath(item.path) }
         : item;
-    return this.itemManager!.addItem(marked, groupId, workspaceId);
+    const place = this.resolvePlacement(groupId, workspaceId);
+    return this.itemManager!.addItem(marked, place.groupId, place.workspaceId);
   }
 
   /** 中身（ワークスペースの編集フォームで新しく入力したもの）からアイテムを作る */
@@ -289,7 +322,8 @@ export class WorkspaceService {
     await this.initializeStore();
     const marked =
       body.type === 'item' ? { ...body, path: await withFolderMarker(body.path) } : body;
-    return this.itemManager!.createItem(marked, groupId, workspaceId);
+    const place = this.resolvePlacement(groupId, workspaceId);
+    return this.itemManager!.createItem(marked, place.groupId, place.workspaceId);
   }
 
   public async addItemFromPath(
@@ -298,11 +332,9 @@ export class WorkspaceService {
     workspaceId?: string
   ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.addItemFromPath(
-      await withFolderMarker(filePath),
-      groupId,
-      workspaceId
-    );
+    const markedPath = await withFolderMarker(filePath);
+    const place = this.resolvePlacement(groupId, workspaceId);
+    return this.itemManager!.addItemFromPath(markedPath, place.groupId, place.workspaceId);
   }
 
   public async removeItem(id: string): Promise<void> {
@@ -347,7 +379,13 @@ export class WorkspaceService {
     workspaceId?: string
   ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    const added = this.itemManager!.addRef(main.id, main.displayName, groupId, workspaceId);
+    const place = this.resolvePlacement(groupId, workspaceId);
+    const added = this.itemManager!.addRef(
+      main.id,
+      main.displayName,
+      place.groupId,
+      place.workspaceId
+    );
     return resolveWorkspaceItem(added, getMainItemIndex());
   }
 
@@ -573,10 +611,11 @@ export class WorkspaceService {
     this.groupManager!.updateGroup(id, updates);
   }
 
-  public async deleteGroup(id: string, deleteItems: boolean): Promise<void> {
+  /** グループを、サブグループと中のアイテムごと消す（未分類が無いので、中身を移す先は無い。A3-157） */
+  public async deleteGroup(id: string): Promise<void> {
     await this.initializeStore();
     const items = this.itemManager!.loadItems();
-    this.groupManager!.deleteGroup(id, deleteItems, items);
+    this.groupManager!.deleteGroup(id, items);
     this.pruneUiState();
   }
 
@@ -626,33 +665,48 @@ export class WorkspaceService {
   public async duplicateItem(
     sourceItemId: string,
     targetGroupId?: string,
-    insertOrder?: number
+    insertOrder?: number,
+    duplicateClipboardData?: (dataFileRef: string) => string | null
   ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.duplicateItem(sourceItemId, targetGroupId, insertOrder);
+    return this.itemManager!.duplicateItem(
+      sourceItemId,
+      targetGroupId,
+      insertOrder,
+      duplicateClipboardData
+    );
   }
 
-  public async moveItemToGroup(itemId: string, groupId?: string): Promise<void> {
+  public async moveItemToGroup(itemId: string, groupId: string): Promise<void> {
     await this.initializeStore();
     const groups = this.groupManager!.loadGroups();
     this.itemManager!.moveItemToGroup(itemId, groupId, groups);
   }
 
-  public async moveItemToWorkspace(itemId: string, targetWorkspaceId: string): Promise<void> {
+  /**
+   * アイテムを別のワークスペースのグループへ移す（アーカイブのアイテムなら復元して移す）
+   *
+   * @param groupId 移す先のグループ。省略できるのは、移す先にグループが 1 つも無いときだけ（「未分類」グループを作る）
+   */
+  public async moveItemToWorkspace(
+    itemId: string,
+    targetWorkspaceId: string,
+    groupId?: string
+  ): Promise<void> {
     await this.initializeStore();
+    const place = this.resolvePlacement(groupId, targetWorkspaceId);
     const items = this.store!.get('items');
     const item = items.find((i) => i.id === itemId);
     if (item) {
-      item.workspaceId = targetWorkspaceId;
-      // グループから外す（移動先ワークスペースにはそのグループが存在しないため）
-      delete item.groupId;
+      item.workspaceId = place.workspaceId;
+      item.groupId = place.groupId;
       this.store!.set('items', items);
-      logger.info({ itemId, targetWorkspaceId }, 'Moved item to workspace');
+      logger.info({ itemId, ...place }, 'Moved item to workspace');
       return;
     }
 
     // アーカイブから復元してワークスペースに移動
-    this.archiveManager!.restoreItemToWorkspace(itemId, targetWorkspaceId, items);
+    this.archiveManager!.restoreItemToWorkspace(itemId, place, items);
   }
 
   public async moveGroupToWorkspace(groupId: string, targetWorkspaceId: string): Promise<void> {

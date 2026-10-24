@@ -132,11 +132,10 @@ export class WorkspaceGroupManager {
   /**
    * グループを削除（子孫サブグループも連鎖削除）
    * @param id 削除するグループのID
-   * @param deleteItems グループ内のアイテムも削除するか（false: 未分類に移動）
    * @param items 現在のアイテム一覧
    * @returns 更新されたアイテム一覧
    */
-  public deleteGroup(id: string, deleteItems: boolean, items: WorkspaceItem[]): WorkspaceItem[] {
+  public deleteGroup(id: string, items: WorkspaceItem[]): WorkspaceItem[] {
     try {
       const groups = this.loadGroups();
 
@@ -151,33 +150,16 @@ export class WorkspaceGroupManager {
 
       const filteredGroups = groups.filter((group) => !allDeleteIds.has(group.id));
 
-      let updatedItems: WorkspaceItem[];
-
-      if (deleteItems) {
-        // アイテムも削除
-        updatedItems = items.filter((item) => !item.groupId || !allDeleteIds.has(item.groupId));
-        logger.info(
-          {
-            id,
-            deletedItems: items.length - updatedItems.length,
-            descendantCount: descendantIds.length,
-          },
-          'Deleted group (with descendants) and its items'
-        );
-      } else {
-        // アイテムを未分類に移動（groupIdをundefinedに）
-        updatedItems = items.map((item) => {
-          if (item.groupId && allDeleteIds.has(item.groupId)) {
-            const { groupId: _, ...rest } = item;
-            return rest;
-          }
-          return item;
-        });
-        logger.info(
-          { id, descendantCount: descendantIds.length },
-          'Deleted group (with descendants) and moved items to uncategorized'
-        );
-      }
+      // 中のアイテムも消す（未分類が無いので、移す先は無い。A3-157）
+      const updatedItems = items.filter((item) => !item.groupId || !allDeleteIds.has(item.groupId));
+      logger.info(
+        {
+          id,
+          deletedItems: items.length - updatedItems.length,
+          descendantCount: descendantIds.length,
+        },
+        'Deleted group (with descendants) and its items'
+      );
 
       this.store.update((main) => {
         main.groups = filteredGroups;
