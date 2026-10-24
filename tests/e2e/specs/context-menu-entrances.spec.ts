@@ -402,4 +402,50 @@ test.describe('QuickDashLauncher - ワークスペースの右クリックと �
     const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
     expect(items.some((i) => i.displayName === '行き先なし')).toBe(false);
   });
+
+  test('ワークスペースのアイテムの「ワークスペースを移動 ▸」に、移す先のグループが並び、そこへ移せる（A3-157）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const { itemId, targetWorkspaceId, targetGroupId } = await workspaceWindow.evaluate(
+      async () => {
+        const api = window.electronAPI.workspaceAPI;
+        const [current] = await api.loadWorkspaces();
+        const fromGroup = await api.createGroup('移す元', undefined, undefined, current.id);
+        const item = await api.addItem(
+          { displayName: '移すメモ帳', path: 'notepad.exe', type: 'app' },
+          fromGroup.id,
+          current.id
+        );
+        const target = await api.createWorkspace('移す先のワークスペース');
+        const toGroup = await api.createGroup('移す先', undefined, undefined, target.id);
+        return { itemId: item.id, targetWorkspaceId: target.id, targetGroupId: toGroup.id };
+      }
+    );
+
+    await clickSubmenuPath(electronApp, [
+      '📁 ワークスペースを移動',
+      '移す先のワークスペース',
+      '移す先',
+    ]);
+    await workspaceWindow
+      .locator('.workspace-item-card', { hasText: '移すメモ帳' })
+      .click({ button: 'right' });
+    // 移す先のワークスペースのグループが並ぶ（今のワークスペースのグループしか知らないと「未分類を作る」だけになっていた）
+    await expect
+      .poll(() => readSubmenuLabels(electronApp))
+      .toEqual(['移す先', '➕ 新しいグループを作って入れる']);
+    await expect
+      .poll(async () => {
+        const items = await workspaceWindow.evaluate(() =>
+          window.electronAPI.workspaceAPI.loadItems()
+        );
+        const moved = items.find((i) => i.id === itemId);
+        return moved && { workspaceId: moved.workspaceId, groupId: moved.groupId };
+      })
+      .toEqual({ workspaceId: targetWorkspaceId, groupId: targetGroupId });
+  });
 });

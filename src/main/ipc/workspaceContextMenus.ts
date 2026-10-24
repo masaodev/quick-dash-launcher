@@ -13,8 +13,6 @@ import type {
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { openWorkspaceLinkCopies } from '../workspaceLinkWindowManager.js';
-import { openWorkspaceItemPicker } from '../workspaceItemPickerWindowManager.js';
-import { openWorkspaceNewItemEditor } from '../workspaceItemEditorWindowManager.js';
 import {
   closeDetachedGroupWindow,
   createDetachedGroupWindow,
@@ -35,7 +33,7 @@ import {
   buildRefMenuItems,
   editLinkedMainItem,
 } from './workspaceRefMenu.js';
-import { buildWorkspaceTargetSubmenu } from './workspaceGroupPicker.js';
+import { buildWorkspaceTargetSubmenu, loadWorkspaceTargets } from './workspaceGroupPicker.js';
 
 /** ワークスペース移動サブメニューを構築 */
 function buildMoveToWorkspaceSubmenu(
@@ -124,11 +122,13 @@ function setupWorkspaceContextMenuHandler(): void {
       }
 
       if (workspaces && workspaces.length >= 1) {
-        // 移す先のワークスペースのグループをその場で選ぶ（未分類は無い。A3-157）
+        // 移す先のワークスペースのグループをその場で選ぶ（未分類は無い。A3-157）。
+        // 画面から届く groups は今のワークスペースの分だけなので、全ワークスペースの分を読み直す
+        const targets = await loadWorkspaceTargets();
         const moveSubmenu = buildWorkspaceTargetSubmenu(
           t('menu.workspaceItem.moveToWorkspace'),
-          workspaces,
-          groups ?? [],
+          targets.workspaces,
+          targets.groups,
           (pick) =>
             event.sender.send(
               IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
@@ -506,28 +506,6 @@ function appendCollapseMenuItems(menu: Menu, sender: WebContents, workspaceId: s
       true
     )
   );
-}
-
-/**
- * 「➕ アイテムを追加 ▸」（メインウィンドウのアイテムから選ぶ・新しく入力して追加）
- *
- * @param target 追加先のグループの id
- */
-function buildAddItemSubmenuItem(sender: WebContents, target: string): MenuItem {
-  const submenu = new Menu();
-  submenu.append(
-    new MenuItem({
-      label: t('menu.workspaceGroup.addFromMain'),
-      click: () => void openWorkspaceItemPicker(sender, target),
-    })
-  );
-  submenu.append(
-    new MenuItem({
-      label: t('menu.workspaceGroup.addNew'),
-      click: () => void openWorkspaceNewItemEditor(sender, target),
-    })
-  );
-  return new MenuItem({ label: t('menu.workspaceGroup.addItem'), submenu });
 }
 
 /**
