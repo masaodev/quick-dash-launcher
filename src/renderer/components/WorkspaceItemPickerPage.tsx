@@ -10,6 +10,7 @@ import { samePathKey } from '@common/utils/workspaceRefs';
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
+import { sortByTabOrder } from '../utils/tabOrder';
 
 import SetItemPickerModal from './SetItemPickerModal';
 import WorkspaceDestinationBand, {
@@ -132,7 +133,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
         });
         if (cancelled) return;
         setAddedKeys(added);
-        setEntries(list);
+        setEntries(sortByTabOrder(list, settings.dataFileTabs, (entry) => entry.item.sourceFile));
       } catch (error) {
         logError('グループに追加できるアイテムの読み込みに失敗しました:', error);
         if (!cancelled) setNotFound(true);
