@@ -53,22 +53,35 @@ async function sendToWorkspace(
 }
 
 /**
- * アイテムを選ぶウィンドウ（独立した子ウィンドウ）を待つ（workspace-item-picker.spec.ts と同じ）
+ * 次に出るメニューのサブメニューを読み、指定のラベルの順にたどって押す（A3-157 の「ワークスペースに追加 ▸」用）
+ *
+ * @returns たどったサブメニューの項目のラベル（区切り線を除く）
  */
-async function waitForPickerWindow(electronApp: ElectronApplication): Promise<Page> {
-  const deadline = Date.now() + 15000;
-  while (Date.now() < deadline) {
-    for (const win of electronApp.windows()) {
-      if (win.isClosed()) continue;
-      try {
-        if ((await win.locator('.set-picker-page .set-picker-modal').count()) > 0) return win;
-      } catch {
-        // 書き込み前・閉じた直後のウィンドウは無視する
+async function clickSubmenuPath(electronApp: ElectronApplication, path: string[]): Promise<void> {
+  await electronApp.evaluate(({ Menu }, labels) => {
+    type Item = { type: string; label: string; click: () => void; submenu?: { items: Item[] } };
+    const g = globalThis as { __e2eSubmenuLabels?: string[] | null };
+    g.__e2eSubmenuLabels = null;
+    Menu.prototype.popup = function (this: { items: Item[] }) {
+      let items = this.items;
+      for (const [index, label] of labels.entries()) {
+        const found = items.find((i) => i.label === label);
+        if (!found) return;
+        if (index === labels.length - 1) {
+          found.click();
+          return;
+        }
+        items = found.submenu?.items ?? [];
+        g.__e2eSubmenuLabels = items.filter((i) => i.type !== 'separator').map((i) => i.label);
       }
-    }
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-  throw new Error('アイテムを選ぶウィンドウが開きませんでした');
+    };
+  }, path);
+}
+
+async function readSubmenuLabels(electronApp: ElectronApplication): Promise<string[]> {
+  return electronApp.evaluate(
+    () => (globalThis as { __e2eSubmenuLabels?: string[] | null }).__e2eSubmenuLabels ?? []
+  );
 }
 
 test.describe('QuickDashLauncher - メインウィンドウの右クリックの入口', () => {
@@ -195,7 +208,38 @@ test.describe('QuickDashLauncher - 文字入力欄の右クリック', () => {
 });
 
 test.describe('QuickDashLauncher - ワークスペースの右クリックと ＋ の入口', () => {
-  test('＋ は 1 つにまとまり、タブ・余白・「未分類」の見出しの右クリックに追加の項目が出る', async ({
+  test('メインの右クリック「ワークスペースに追加 ▸」で、足す先のグループをその場で選ぶ（A3-157）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const groupId = await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      return (await api.createGroup('入れる先', undefined, undefined, workspace.id)).id;
+    });
+
+    await clickSubmenuPath(electronApp, ['⭐ ワークスペースに追加', '入れる先']);
+    await mainWindow.locator('.item', { hasText: 'Wikipedia' }).click({ button: 'right' });
+    // ワークスペースが 1 つなので、ワークスペースの段は無く、グループと「新しいグループ」が並ぶ
+    await expect
+      .poll(() => readSubmenuLabels(electronApp))
+      .toEqual(['入れる先', '➕ 新しいグループを作って入れる']);
+    await expect
+      .poll(async () => {
+        const items = await workspaceWindow.evaluate(() =>
+          window.electronAPI.workspaceAPI.loadItems()
+        );
+        return items.find(
+          (i) => i.ref?.mainDisplayName === 'Wikipedia' || i.displayName === 'Wikipedia'
+        )?.groupId;
+      })
+      .toBe(groupId);
+  });
+
+  test('＋ は 1 つにまとまり、タブ・余白の右クリックに追加の項目が出る', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -208,7 +252,7 @@ test.describe('QuickDashLauncher - ワークスペースの右クリックと �
     await workspaceWindow.evaluate(
       (id) =>
         window.electronAPI.workspaceAPI.addItem(
-          { displayName: '未分類のメモ帳', path: 'notepad.exe', type: 'app' },
+          { displayName: 'グループの無いところへ足したメモ帳', path: 'notepad.exe', type: 'app' },
           undefined,
           id
         ),
@@ -250,18 +294,18 @@ test.describe('QuickDashLauncher - ワークスペースの右クリックと �
         .toEqual(['➕ グループを追加', '📋 貼り付け', '🔽 すべて展開', '🔼 すべて折りたたむ']);
     });
 
-    await test.step('「未分類」の見出しの右クリック', async () => {
+    await test.step('グループの無いワークスペースに足すと「未分類」という普通のグループができる（A3-157）', async () => {
+      await expect(workspaceWindow.locator('.workspace-uncategorized-section')).toHaveCount(0);
       await captureMenuLabels(electronApp);
       await workspaceWindow
-        .locator('.workspace-uncategorized-section .workspace-group-header')
+        .locator('.workspace-group-header', { hasText: '未分類' })
         .click({ button: 'right' });
-      await expect
-        .poll(() => readMenuLabels(electronApp))
-        .toEqual(['➕ アイテムを追加', '📁 グループにまとめる']);
+      // 普通のグループのメニュー（改名・削除もできる）
+      await expect.poll(() => readMenuLabels(electronApp)).toContain('🗑️ グループを削除');
     });
   });
 
-  test('メニューの項目でグループの追加・未分類のまとめ・開閉・ワークスペースの追加ができる', async ({
+  test('メニューの項目でグループの追加・開閉・ワークスペースの追加ができる', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -282,35 +326,13 @@ test.describe('QuickDashLauncher - ワークスペースの右クリックと �
     const [workspace] = (await api('loadWorkspaces')) as Array<{ id: string }>;
     await api(
       'addItem',
-      { displayName: 'まとめるA', path: 'a.txt', type: 'file' },
-      undefined,
-      workspace.id
-    );
-    await api(
-      'addItem',
-      { displayName: 'まとめるB', path: 'b.txt', type: 'file' },
+      { displayName: '開閉を見るA', path: 'a.txt', type: 'file' },
       undefined,
       workspace.id
     );
     await expect(
-      workspaceWindow.locator('.workspace-item-card', { hasText: 'まとめるB' })
-    ).toBeVisible({
-      timeout: 10000,
-    });
-
-    await test.step('「グループにまとめる」で未分類のアイテムが新しいグループに入る', async () => {
-      await sendToWorkspace(electronApp, 'workspace-menu-group-uncategorized', workspace.id);
-      await expect
-        .poll(async () => {
-          const items = (await api('loadItems')) as Array<{
-            displayName: string;
-            groupId?: string;
-          }>;
-          return items.filter((i) => i.displayName.startsWith('まとめる') && i.groupId).length;
-        })
-        .toBe(2);
-      await expect(workspaceWindow.locator('.workspace-uncategorized-section')).toHaveCount(0);
-    });
+      workspaceWindow.locator('.workspace-item-card', { hasText: '開閉を見るA' })
+    ).toBeVisible({ timeout: 10000 });
 
     await test.step('「グループを追加」でグループが増える', async () => {
       const before = ((await api('loadGroups')) as unknown[]).length;
@@ -354,37 +376,76 @@ test.describe('QuickDashLauncher - ワークスペースの右クリックと �
     });
   });
 
-  test('未分類へ追加する画面で選んだアイテムが、どのグループにも入らずに入る', async ({
+  test('グループのあるワークスペースへは、グループを指定せずに足せない（A3-157）', async ({
     electronApp,
     mainWindow,
   }) => {
     await new TestUtils(mainWindow).waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
-    const [workspace] = await workspaceWindow.evaluate(() =>
-      window.electronAPI.workspaceAPI.loadWorkspaces()
+    const outcome = await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('ある', undefined, undefined, workspace.id);
+      try {
+        await api.addItem(
+          { displayName: '行き先なし', path: 'x.txt', type: 'file' },
+          undefined,
+          workspace.id
+        );
+        return 'added';
+      } catch {
+        return 'rejected';
+      }
+    });
+    expect(outcome).toBe('rejected');
+    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
+    expect(items.some((i) => i.displayName === '行き先なし')).toBe(false);
+  });
+
+  test('ワークスペースのアイテムの「ワークスペースを移動 ▸」に、移す先のグループが並び、そこへ移せる（A3-157）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const { itemId, targetWorkspaceId, targetGroupId } = await workspaceWindow.evaluate(
+      async () => {
+        const api = window.electronAPI.workspaceAPI;
+        const [current] = await api.loadWorkspaces();
+        const fromGroup = await api.createGroup('移す元', undefined, undefined, current.id);
+        const item = await api.addItem(
+          { displayName: '移すメモ帳', path: 'notepad.exe', type: 'app' },
+          fromGroup.id,
+          current.id
+        );
+        const target = await api.createWorkspace('移す先のワークスペース');
+        const toGroup = await api.createGroup('移す先', undefined, undefined, target.id);
+        return { itemId: item.id, targetWorkspaceId: target.id, targetGroupId: toGroup.id };
+      }
     );
 
-    await workspaceWindow.evaluate(
-      (id) => window.electronAPI.workspaceAPI.openItemPicker(`ws:${id}`),
-      workspace.id
-    );
-    const picker = await waitForPickerWindow(electronApp);
-
-    await expect(picker.locator('.set-modal-header h3')).toHaveText('「未分類」に追加するアイテム');
-    await expect(picker.locator('.workspace-dest')).toContainText('未分類');
-    await picker.locator('.set-picker-row', { hasText: '電卓' }).click();
-    const addButton = picker.locator('.modal-actions button', { hasText: '1 件を追加' });
-    await Promise.all([picker.waitForEvent('close', { timeout: 10000 }), addButton.click()]);
-
+    await clickSubmenuPath(electronApp, [
+      '📁 ワークスペースを移動',
+      '移す先のワークスペース',
+      '移す先',
+    ]);
+    await workspaceWindow
+      .locator('.workspace-item-card', { hasText: '移すメモ帳' })
+      .click({ button: 'right' });
+    // 移す先のワークスペースのグループが並ぶ（今のワークスペースのグループしか知らないと「未分類を作る」だけになっていた）
+    await expect
+      .poll(() => readSubmenuLabels(electronApp))
+      .toEqual(['移す先', '➕ 新しいグループを作って入れる']);
     await expect
       .poll(async () => {
         const items = await workspaceWindow.evaluate(() =>
           window.electronAPI.workspaceAPI.loadItems()
         );
-        const added = items.find((item) => item.displayName === '電卓');
-        return added ? { groupId: added.groupId ?? null, workspaceId: added.workspaceId } : null;
+        const moved = items.find((i) => i.id === itemId);
+        return moved && { workspaceId: moved.workspaceId, groupId: moved.groupId };
       })
-      .toEqual({ groupId: null, workspaceId: workspace.id });
+      .toEqual({ workspaceId: targetWorkspaceId, groupId: targetGroupId });
   });
 });

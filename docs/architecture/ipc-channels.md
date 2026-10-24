@@ -185,7 +185,8 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - 変更系（成功すると `workspace-changed`）: `workspace:convert-to-copy`（参照 → コピー）、`workspace:link-to-main`（参照の指し直し・CLI の `convert --to ref`。コピーのメモは、メインウィンドウのアイテムにメモが無ければデータファイルへ移す）、`workspace:apply-link-copies`（`ids, choices?`。コピーをまとめて参照に。候補が 1 件ならそれ、2 件以上なら `choices`＝コピーの id → 選んだメインウィンドウのアイテムの id）、`workspace:move-to-main`（`id, file?`。コピーをメインウィンドウのデータファイルへ移して参照に変える（移す先に同じパス・引数の通常アイテムがあれば、足さずにそれを指す）。`file` が無ければ先頭のタブの先頭のファイル。結果はメインプロセスがトーストで知らせ、`boolean` を返す。右クリックの「🚀 メインウィンドウへ移して参照にする」と同じ処理＝`src/main/ipc/workspaceRefMenu.ts` の `moveItemToMain`。メインウィンドウへのドロップで使う。データファイルにも書くので `data-changed` も送る）、`workspace:remap-refs`（アイテム管理の「重複を削除」を保存したあと、参照の指す先を付け替える）
 - 読むだけ: `workspace:find-link-candidates`（パスと引数が同じメインウィンドウのアイテム）、`workspace:preview-link-copies`（まとめて参照に変える一覧）、`workspace:count-refs`（メインウィンドウのアイテムの id ごとの参照の数。アーカイブを含む。削除の確認・編集画面の帯に使う）
 - 子ウィンドウを開く: `workspace:open-link-picker`（指すアイテムを選ぶ）、`workspace:open-link-copies`（メインウィンドウと同じアイテムを参照に変える）。送信元のウィンドウを親にしたモーダルの子ウィンドウで開く
-- メインウィンドウの右クリックの「📄 ワークスペースにコピーを追加」は、`launcher-menu-add-copy-to-workspace`（イベント）でレンダラーに伝え、レンダラーが `workspace:add-item` を `{ copy: true }` で呼ぶ
+- メインウィンドウの右クリックの「📄 ワークスペースにコピーを追加 ▸」は、`launcher-menu-add-copy-to-workspace`（イベント）でレンダラーに伝え、レンダラーが `workspace:add-item` を `{ copy: true }` で呼ぶ。「⭐ ワークスペースに追加 ▸」（`launcher-menu-add-to-workspace`）も含め、イベントにはサブメニューで選んだ置き場（`target`＝ワークスペースとグループ）を付ける（サブメニューは `src/main/ipc/workspaceGroupPicker.ts`）
+- グループのあるワークスペースへ、グループを指定せずにアイテムを足す・移すと、`WorkspaceService` が `WorkspaceGroupRequiredError` で断る（`workspacePlacement.ts`）。グループが 1 つも無いワークスペースだけ、「未分類」という名前のグループを作って入れる
 
 ### 失敗時の扱い
 

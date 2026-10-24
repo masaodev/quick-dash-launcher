@@ -8,6 +8,7 @@ import type {
   MainChildWindowResult,
   ToastEventData,
   AdminTab,
+  WorkspaceTarget,
 } from '@common/types';
 import type { ElectronAPI } from '@common/types/electronApi';
 import {
@@ -301,8 +302,7 @@ const electronAPI: ElectronAPI = {
       ),
     updateGroup: (id, updates) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_UPDATE_GROUP, id, updates),
-    deleteGroup: (id, deleteItems) =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, id, deleteItems),
+    deleteGroup: (id) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, id),
     reorderMixed: (parentGroupId, entries) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REORDER_MIXED, parentGroupId, entries),
     duplicateItem: (sourceItemId, targetGroupId, insertOrder) =>
@@ -316,8 +316,13 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP, itemId, groupId),
     moveGroupToParent: (groupId, newParentGroupId) =>
       ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_PARENT, groupId, newParentGroupId),
-    moveItemToWorkspace: (itemId, targetWorkspaceId) =>
-      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_WORKSPACE, itemId, targetWorkspaceId),
+    moveItemToWorkspace: (itemId, targetWorkspaceId, groupId) =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_WORKSPACE,
+        itemId,
+        targetWorkspaceId,
+        groupId
+      ),
     moveGroupToWorkspace: (groupId, targetWorkspaceId) =>
       ipcRenderer.invoke(
         IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_WORKSPACE,
@@ -388,9 +393,15 @@ const electronAPI: ElectronAPI = {
   onLauncherMenuEditItem: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, callback),
   onLauncherMenuAddToWorkspace: (callback) =>
-    createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE, callback),
+    createEventListener<{ item: AppItem; target: WorkspaceTarget }>(
+      IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
+      callback
+    ),
   onLauncherMenuAddCopyToWorkspace: (callback) =>
-    createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE, callback),
+    createEventListener<{ item: AppItem; target: WorkspaceTarget }>(
+      IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE,
+      callback
+    ),
   onLauncherMenuCopyPath: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH, callback),
   onLauncherMenuCopyParentPath: (callback) =>
@@ -441,8 +452,6 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WORKSPACE_MENU_SET_ALL_COLLAPSED,
       callback
     ),
-  onWorkspaceMenuGroupUncategorized: (callback) =>
-    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_GROUP_UNCATEGORIZED, callback),
   // FileTabContextMenu
   showFileTabContextMenu: (tabIndex) =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_FILE_TAB_CONTEXT_MENU, tabIndex),
@@ -460,10 +469,11 @@ const electronAPI: ElectronAPI = {
   onWindowMenuActivate: (callback) =>
     createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, callback),
   onWindowMenuAddToWorkspace: (callback) =>
-    createEventListener<{ windowInfo: WindowInfo; includePosition: boolean }>(
-      IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
-      callback
-    ),
+    createEventListener<{
+      windowInfo: WindowInfo;
+      includePosition: boolean;
+      target: WorkspaceTarget;
+    }>(IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE, callback),
   showWindowsContextMenu: (count, desktopInfo, anchor) =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo, anchor),
   onWindowsMenuClose: (callback) =>
@@ -514,11 +524,13 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
   onWorkspaceMenuMoveToGroup: (callback) =>
     createEventListener2<string, string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_GROUP, callback),
-  onWorkspaceMenuMoveToWorkspace: (callback) =>
-    createEventListener2<string, string>(
-      IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
-      callback
-    ),
+  onWorkspaceMenuMoveToWorkspace: (callback) => {
+    const listener = (_event: unknown, itemId: string, workspaceId: string, groupId?: string) =>
+      callback(itemId, workspaceId, groupId);
+    ipcRenderer.on(IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE, listener);
+    return () =>
+      ipcRenderer.removeListener(IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE, listener);
+  },
   // WorkspaceGroupContextMenu
   showWorkspaceGroupContextMenu: (group, canAddSubgroup, workspaces, isArchived) =>
     ipcRenderer.invoke(

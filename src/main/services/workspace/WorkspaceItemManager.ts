@@ -397,7 +397,7 @@ export class WorkspaceItemManager {
     }
   }
 
-  public moveItemToGroup(itemId: string, groupId?: string, groups?: { id: string }[]): void {
+  public moveItemToGroup(itemId: string, groupId: string, groups?: { id: string }[]): void {
     try {
       const items = this.loadItems();
       const item = items.find((i) => i.id === itemId);
@@ -407,13 +407,12 @@ export class WorkspaceItemManager {
         throw new Error(`Item not found: ${itemId}`);
       }
 
-      if (groupId && groups && !groups.some((g) => g.id === groupId)) {
+      if (groups && !groups.some((g) => g.id === groupId)) {
         logger.warn({ groupId }, 'Group not found in workspace');
         throw new Error(`Group not found: ${groupId}`);
       }
 
-      if (groupId === undefined) delete item.groupId;
-      else item.groupId = groupId;
+      item.groupId = groupId;
 
       this.store.set('items', items);
       logger.info({ itemId, groupId }, 'Moved item to group');

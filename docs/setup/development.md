@@ -349,7 +349,6 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - `src/renderer/hooks/workspace/useWorkspaceActions.ts` - アクション処理の統合
 - `src/renderer/hooks/useNativeDragDrop.ts` - ネイティブドラッグ&ドロップ処理
 - `src/renderer/hooks/useClipboardPaste.ts` - クリップボードからのペースト処理
-- `src/renderer/hooks/useCollapsibleSections.ts` - 折りたたみ状態管理
 - `src/renderer/hooks/workspace/useWorkspaceItemGroups.ts` - アイテムグループ化ロジック
 - `src/renderer/hooks/workspace/useWorkspaceResize.ts` - ワークスペースウィンドウのサイズ変更処理
 - `src/renderer/hooks/useFileOperations.ts` - ファイルパスの取り出しとアイテム追加の共通処理（ドロップ処理とクリップボードのペーストが共用）
