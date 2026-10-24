@@ -1,8 +1,9 @@
 import { type Dispatch, type SetStateAction } from 'react';
-import { DEFAULT_DATA_FILE, AppItem, LauncherItem, DataFileTab } from '@common/types';
+import { AppItem, LauncherItem, DataFileTab } from '@common/types';
 import { isWindowInfo, isLauncherItem } from '@common/types/guards';
 
 import { debugInfo } from '../utils/debug';
+import { getActiveTabFiles } from '../utils/tabFiles';
 
 type IconResults = {
   favicons: Record<string, string | null>;
@@ -12,7 +13,6 @@ type IconResults = {
 type UseIconFetcherOptions = {
   mainItems: AppItem[];
   setMainItems: Dispatch<SetStateAction<AppItem[]>>;
-  showDataFileTabs: boolean;
   activeTab: string;
   dataFileTabs: DataFileTab[];
   reloadIconFetchErrors: () => Promise<void>;
@@ -60,24 +60,11 @@ function applyIconsToItems(items: AppItem[], results: IconResults): AppItem[] {
  * アイコン取得管理フック
  */
 export function useIconFetcher(options: UseIconFetcherOptions): UseIconFetcherResult {
-  const {
-    mainItems,
-    setMainItems,
-    showDataFileTabs,
-    activeTab,
-    dataFileTabs,
-    reloadIconFetchErrors,
-  } = options;
+  const { mainItems, setMainItems, activeTab, dataFileTabs, reloadIconFetchErrors } = options;
 
+  // 一覧に出ているのと同じ範囲（「複数タブを表示」がオフでも、出ている最初のタブの中身）
   function getCurrentTabItems(): AppItem[] {
-    if (!showDataFileTabs) {
-      return mainItems.filter(
-        (item) => !isWindowInfo(item) && item.sourceFile === DEFAULT_DATA_FILE
-      );
-    }
-
-    const activeTabConfig = dataFileTabs.find((tab) => tab.files.includes(activeTab));
-    const targetFiles = activeTabConfig ? activeTabConfig.files : [activeTab];
+    const targetFiles = getActiveTabFiles(dataFileTabs, activeTab);
 
     return mainItems.filter(
       (item) => !isWindowInfo(item) && targetFiles.includes(item.sourceFile || '')

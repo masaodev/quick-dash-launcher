@@ -4,7 +4,10 @@ import type { EditingAppItem, RegisterWindowRequest } from '@common/types';
 import { logError } from '../utils/debug';
 
 /** 開くときに要求へ載せる内容（種別と今のタブはこのフックが付ける） */
-type RegisterWindowContent = Pick<RegisterWindowRequest, 'droppedPaths' | 'editingItem'>;
+type RegisterWindowContent = Pick<
+  RegisterWindowRequest,
+  'droppedPaths' | 'editingItem' | 'addExcludeName'
+>;
 
 /**
  * アイテムの登録・編集ウィンドウを開くフック（メイン画面用）
@@ -42,7 +45,8 @@ export function useRegisterWindow(getCurrentTab: () => string | undefined) {
 
   /** 既存アイテムの編集で開く */
   const openEditWindow = useCallback(
-    (item: EditingAppItem) => open({ droppedPaths: [], editingItem: item }),
+    (item: EditingAppItem, options: { addExcludeName?: string } = {}) =>
+      open({ droppedPaths: [], editingItem: item, ...options }),
     [open]
   );
 

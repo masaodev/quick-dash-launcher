@@ -70,12 +70,6 @@
   opacity: 0.6;
 }
 
-.form-group input.readonly {
-  background-color: var(--bg-input-disabled);
-  color: var(--text-muted);
-  cursor: not-allowed;
-}
-
 .modal-actions {
   display: flex;
   justify-content: flex-end;

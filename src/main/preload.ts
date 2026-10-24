@@ -413,6 +413,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO, callback),
   onLauncherMenuDeleteItem: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_DELETE_ITEM, callback),
+  onLauncherMenuExcludeFromDir: (callback) =>
+    createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EXCLUDE_FROM_DIR, callback),
   showLauncherBlankContextMenu: () =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_BLANK_CONTEXT_MENU),
   onLauncherBlankMenuAddItem: (callback) =>

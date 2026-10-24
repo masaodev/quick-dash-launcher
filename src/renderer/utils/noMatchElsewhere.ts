@@ -3,6 +3,7 @@ import type { AppItem, DataFileTab, SearchMode, WindowInfo } from '@common/types
 import { isWindowInfo } from '@common/types/guards';
 
 import { filterItems } from './dataParser';
+import { getActiveTabFiles } from './tabFiles';
 
 /**
  * 検索で一覧が 0 件のとき、別の場所に合うものがあるか
@@ -27,7 +28,7 @@ interface NoMatchElsewhereParams {
   activeDesktopTab: number;
 }
 
-/** 通常の検索で、どれかのタブに出るアイテムが検索語に合うか（タブ表示 OFF なら今のファイルだけを見る） */
+/** 通常の検索で、どれかのタブに出るアイテムが検索語に合うか（タブ表示 OFF なら今のタブに出るファイルだけを見る） */
 function hasNormalMatch(
   mainItems: AppItem[],
   query: string,
@@ -37,7 +38,7 @@ function hasNormalMatch(
 ): boolean {
   const reachableFiles = showDataFileTabs
     ? new Set(dataFileTabs.flatMap((tab) => tab.files))
-    : new Set([activeTab]);
+    : new Set(getActiveTabFiles(dataFileTabs, activeTab));
   const reachable = mainItems.filter(
     (item) => !isWindowInfo(item) && reachableFiles.has(item.sourceFile || '')
   );
