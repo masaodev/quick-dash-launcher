@@ -22,7 +22,8 @@ export async function notifyLaunchFailure(
   displayName: string | undefined,
   result: LaunchResult
 ): Promise<void> {
-  if (result.success) return;
+  // UAC で「いいえ」を押したときは知らせない
+  if (result.success || result.cancelled) return;
   await showToastWindow({
     type: 'error',
     message: mainI18n.t('launcher.messages.launchFailed', {
@@ -52,7 +53,13 @@ export async function openSingleItem(
   }
 
   const result = await launchItem(
-    { type: item.type, path: item.path, args: item.args, displayName: item.displayName },
+    {
+      type: item.type,
+      path: item.path,
+      args: item.args,
+      displayName: item.displayName,
+      runAsAdmin: item.runAsAdmin,
+    },
     logger
   );
   await notifyLaunchFailure(item.displayName, result);

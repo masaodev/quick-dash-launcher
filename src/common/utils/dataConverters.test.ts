@@ -80,3 +80,43 @@ describe('dataConverters の単一アイテムのウィンドウ切り替え', (
     expect(saved).not.toHaveProperty('windowConfig');
   });
 });
+
+describe('dataConverters の「常に管理者として実行」', () => {
+  const tabs = [{ name: 'メイン', files: ['datafiles/data.json'] }];
+  const editableOf = (item: JsonLauncherItem): EditableJsonItem => ({
+    item,
+    displayText: '',
+    meta: { sourceFile: 'datafiles/data.json', lineNumber: 0, isValid: true },
+  });
+
+  it('アプリは編集用に変換して戻しても runAsAdmin を保つ', () => {
+    const item: JsonLauncherItem = {
+      id: 'Admin001',
+      type: 'item',
+      displayName: '管理ツール',
+      path: 'C:\\Tools\\admin.exe',
+      runAsAdmin: true,
+    };
+    const registerItem = convertEditableJsonItemToRegisterItem(editableOf(item), tabs);
+    expect(registerItem.runAsAdmin).toBe(true);
+    expect(convertRegisterItemToJsonItem(registerItem, item.id)).toMatchObject({
+      runAsAdmin: true,
+    });
+  });
+
+  it('パスをアプリ以外に変えたら、隠れたチェックの値を保存しない', () => {
+    const item: JsonLauncherItem = {
+      id: 'Admin002',
+      type: 'item',
+      displayName: 'サイト',
+      path: 'C:\\Tools\\admin.exe',
+      runAsAdmin: true,
+    };
+    const registerItem = convertEditableJsonItemToRegisterItem(editableOf(item), tabs);
+    const saved = convertRegisterItemToJsonItem(
+      { ...registerItem, path: 'https://example.com/', type: 'url' },
+      item.id
+    );
+    expect(saved).not.toHaveProperty('runAsAdmin');
+  });
+});

@@ -50,6 +50,7 @@ import {
   launchItem,
   launchItemAsAdmin,
 } from './itemLauncher';
+import { shellExecuteRunAs } from './shellExecuteRunAs.js';
 
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
 
@@ -205,6 +206,41 @@ describe('launchItem の結果', () => {
       success: false,
       error: 'launcher.messages.appNotFoundInPath',
     });
+  });
+});
+
+describe('launchItem（常に管理者として実行）', () => {
+  beforeEach(() => {
+    vi.mocked(shellExecuteRunAs).mockReset();
+    spawnMock.mockClear();
+    shellMock.openPath.mockClear();
+  });
+
+  it('アプリに runAsAdmin が付いていれば管理者として開く（spawn・openPath は使わない）', async () => {
+    vi.mocked(shellExecuteRunAs).mockResolvedValue(0);
+    await expect(
+      launchItem({ type: 'app', path: 'C:\\Tools\\t.exe', args: '-x', runAsAdmin: true }, logger)
+    ).resolves.toEqual({ success: true });
+    expect(shellExecuteRunAs).toHaveBeenCalledWith({
+      file: 'C:\\Tools\\t.exe',
+      parameters: '-x',
+      directory: 'C:\\Tools',
+    });
+    expect(spawnMock).not.toHaveBeenCalled();
+    expect(shellMock.openPath).not.toHaveBeenCalled();
+  });
+
+  it('UAC で「いいえ」を押したら、知らせない印（cancelled）を付けて開けなかったことにする', async () => {
+    vi.mocked(shellExecuteRunAs).mockResolvedValue(ERROR_CANCELLED);
+    await expect(
+      launchItem({ type: 'app', path: 'C:\\Tools\\t.exe', runAsAdmin: true }, logger)
+    ).resolves.toEqual({ success: false, error: '', cancelled: true });
+  });
+
+  it('アプリ以外は runAsAdmin が付いていても普通に開く', async () => {
+    await launchItem({ type: 'file', path: 'C:\\docs\\a.txt', runAsAdmin: true }, logger);
+    expect(shellExecuteRunAs).not.toHaveBeenCalled();
+    expect(shellMock.openPath).toHaveBeenCalledWith('C:\\docs\\a.txt');
   });
 });
 

@@ -18,6 +18,7 @@ export function toTrialWorkspaceItem(saved: WorkspaceItem, editing: RegisterItem
       displayName: editing.displayName,
       path: editing.path,
       args: editing.args || undefined,
+      runAsAdmin: editing.runAsAdmin === true ? true : undefined,
       launcherType:
         editing.type === 'clipboard'
           ? saved.launcherType

@@ -11,6 +11,7 @@ import {
 } from '@common/types';
 import type { JsonItem } from '@common/types';
 import { isPathlessItem, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { pickRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { refineItemType } from '../../utils/folderPathProbe.js';
 
@@ -64,6 +65,7 @@ export async function convertJsonItemToAppItems(
           ...lnkItem,
           id: jsonItem.id,
           customIcon: jsonItem.customIcon,
+          ...pickRunAsAdmin(jsonItem),
           ...pickItemWindowSwitch(jsonItem),
           memo: jsonItem.memo,
           autoImportRuleId: jsonItem.autoImportRuleId,
@@ -78,6 +80,7 @@ export async function convertJsonItemToAppItems(
       type: await refineItemType(jsonItem.path, detectItemTypeSync(jsonItem.path)),
       args: jsonItem.args,
       customIcon: jsonItem.customIcon,
+      ...pickRunAsAdmin(jsonItem),
       ...pickItemWindowSwitch(jsonItem),
       sourceFile,
       lineNumber,

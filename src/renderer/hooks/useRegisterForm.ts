@@ -218,23 +218,30 @@ export function useRegisterForm(
     }
 
     const newType = await detectItemType(item.path);
-    const newItems = [...items];
-    newItems[index] = { ...item, type: newType };
+    const cachedIcon =
+      newType === 'folder'
+        ? undefined
+        : (await loadCachedIconsForItems([{ ...item, type: newType }]))[item.path];
 
-    if (newType === 'folder') {
-      newItems[index].folderProcessing ??= 'folder';
-      newItems[index].dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
-    } else {
-      delete newItems[index].folderProcessing;
-      delete newItems[index].dirOptions;
-
-      const cachedIcons = await loadCachedIconsForItems([newItems[index]]);
-      if (cachedIcons[item.path]) {
-        newItems[index].icon = cachedIcons[item.path];
+    // 待っている間に変わったほかの欄（パス欄を離れてすぐ押したチェックなど）を戻さないよう、今の内容に当てる
+    setItems((prev) => {
+      const next = [...prev];
+      const current: RegisterItem = {
+        ...prev[index],
+        ...(pickedPath !== undefined && { path: pickedPath }),
+        type: newType,
+      };
+      if (newType === 'folder') {
+        current.folderProcessing ??= 'folder';
+        current.dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
+      } else {
+        delete current.folderProcessing;
+        delete current.dirOptions;
+        if (cachedIcon) current.icon = cachedIcon;
       }
-    }
-
-    setItems(newItems);
+      next[index] = current;
+      return next;
+    });
   };
 
   const validateAndRegister = async () => {

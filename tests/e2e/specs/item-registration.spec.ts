@@ -456,13 +456,49 @@ test.describe('QuickDashLauncher - メモの折りたたみ', () => {
     await utils.waitForPageLoad();
     const register = await utils.openRegisterModal(electronApp);
     await register.locator('.register-kind select').selectOption('dir');
-    const summary = register.getByTestId('dir-options-summary');
+    const summary = register.getByTestId('options-summary');
     await expect(summary).toHaveText('このフォルダのみ');
 
     await register.locator('.options-toggle', { hasText: 'フォルダ取込のオプション' }).click();
     await register.locator('.dir-options select').first().selectOption('2');
     await register.locator('.dir-options select').nth(1).selectOption('file');
     await expect(summary).toHaveText('2 階層・ファイルのみ');
+  });
+
+  test('アプリには「常に管理者として実行」を付けられ、保存すると runAsAdmin が書かれる（URL には出ない）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const register = await utils.openRegisterModal(electronApp);
+    const check = register.getByRole('checkbox', { name: /常に管理者として実行/ });
+    const openOptions = () =>
+      register.locator('.options-toggle', { hasText: 'オプション設定（引数・アイコン）' }).click();
+
+    await test.step('URL には出ない', async () => {
+      await utils.fillRegisterForm({ name: 'E2E管理者サイト', path: 'https://example.com/' });
+      await openOptions();
+      await expect(register.locator('.options-content')).toBeVisible();
+      await expect(check).toHaveCount(0);
+    });
+
+    await test.step('exe に変えると出て、付けると見出しの横にも出る', async () => {
+      await utils.fillRegisterForm({
+        name: 'E2E管理者ツール',
+        path: 'C:\\Windows\\System32\\cmd.exe',
+      });
+      await check.check();
+      await expect(register.getByTestId('options-summary')).toHaveText('🛡️ 常に管理者として実行');
+      await utils.clickRegisterButton();
+      await expect
+        .poll(() => {
+          const saved = configHelper.getItemByDisplayName('data.json', 'E2E管理者ツール');
+          return saved && 'runAsAdmin' in saved ? saved.runAsAdmin : undefined;
+        })
+        .toBe(true);
+    });
   });
 });
 

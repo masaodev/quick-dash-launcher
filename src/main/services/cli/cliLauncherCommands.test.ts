@@ -201,6 +201,44 @@ describe('launcher item add', () => {
     expect(empty.message).toContain('--path か --set window=… を指定してください');
   });
 
+  it('--set runAsAdmin=true で「常に管理者として実行」を付けられる（アプリだけ。セットは持たない）', async () => {
+    const r = await runLauncherItemCommand(
+      'add',
+      ['--name', '管理ツール', '--path', 'C:\\Tools\\admin.exe', '--set', 'runAsAdmin=true'],
+      ctx
+    );
+    expect(r).toMatchObject({ runAsAdmin: true });
+
+    const url = await errorOf(
+      runLauncherItemCommand(
+        'add',
+        ['--name', 'サイト', '--path', 'https://example.com/', '--set', 'runAsAdmin=true'],
+        ctx
+      )
+    );
+    expect(url.code).toBe('invalid');
+    expect(url.message).toContain('runAsAdmin はアプリ');
+
+    const set = await errorOf(
+      runLauncherItemCommand(
+        'add',
+        [
+          '--type',
+          'set',
+          '--name',
+          '朝',
+          '--set',
+          'entries=[{"itemId":"Memo0001"}]',
+          '--set',
+          'runAsAdmin=true',
+        ],
+        ctx
+      )
+    );
+    expect(set.code).toBe('invalid');
+    expect(set.message).toContain('runAsAdmin');
+  });
+
   it('その種類に無い項目を --set すると、黙って落とさずに invalid', async () => {
     const e = await errorOf(
       runLauncherItemCommand(

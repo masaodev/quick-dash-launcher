@@ -81,6 +81,8 @@ export interface LauncherItem extends ItemWindowSwitch {
   customIcon?: string;
   /** 実行時のコマンドライン引数（オプション） */
   args?: string;
+  /** 常に管理者として実行する（アプリだけ。開くときに UAC の確認が出る） */
+  runAsAdmin?: boolean;
   /** ショートカットファイル（.lnk）のリンク先のパス（オプション） */
   originalPath?: string;
   /** 元のデータファイル */
