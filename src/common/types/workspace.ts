@@ -195,5 +195,6 @@ export interface WorkspaceLinkCopiesPreview {
  * - blank: 余白の右クリック
  * - uncategorized: 「未分類」の見出しの右クリック
  * - add: ヘッダーの ＋
+ * - tabBar: タブの並びの空いた所の右クリック
  */
-export type WorkspaceBlankMenuKind = 'blank' | 'uncategorized' | 'add';
+export type WorkspaceBlankMenuKind = 'blank' | 'uncategorized' | 'add' | 'tabBar';

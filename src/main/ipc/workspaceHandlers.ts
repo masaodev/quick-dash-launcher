@@ -668,7 +668,10 @@ export function setupWorkspaceHandlers(): void {
     IPC_CHANNELS.WORKSPACE_DUPLICATE_ITEM,
     (_event, sourceItemId: string, targetGroupId?: string, insertOrder?: number) =>
       withWorkspaceChange(
-        (service) => service.duplicateItem(sourceItemId, targetGroupId, insertOrder),
+        (service) =>
+          service.duplicateItem(sourceItemId, targetGroupId, insertOrder, (ref) =>
+            ClipboardService.getInstance().duplicateClipboardData(ref)
+          ),
         'Duplicated workspace item',
         'Failed to duplicate workspace item',
         { sourceItemId, targetGroupId, insertOrder },

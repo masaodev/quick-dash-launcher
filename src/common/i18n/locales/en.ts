@@ -2123,6 +2123,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       itemCount_one: '{{count}}',
       itemCount_other: '{{count}}',
       uncategorized: 'Ungrouped',
+      copiedAsText: 'Copied "{{name}}" as text',
+      copyAsTextFailed: 'Couldn\'t copy "{{name}}" as text',
       defaultName: 'Group {{number}}',
       defaultSubgroupName: 'Subgroup {{number}}',
       contents: 'This group contains {{items}}.',

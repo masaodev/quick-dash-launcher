@@ -336,10 +336,15 @@ export class WorkspaceItemManager {
     }
   }
 
+  /**
+   * @param duplicateClipboardData クリップボードアイテムの実データを写して新しい参照を返す（失敗は null）。
+   *   元と同じ実データを指したままにすると、片方を消したときにもう片方が復元できなくなるため（グループの複製と同じ）
+   */
   public duplicateItem(
     sourceItemId: string,
     targetGroupId?: string,
-    insertOrder?: number
+    insertOrder?: number,
+    duplicateClipboardData?: (dataFileRef: string) => string | null
   ): WorkspaceItem {
     try {
       const items = this.loadItems();
@@ -369,6 +374,14 @@ export class WorkspaceItemManager {
         order,
         groupId: targetGroupId !== undefined ? targetGroupId : sourceItem.groupId,
       };
+      if (
+        duplicatedItem.type === 'clipboard' &&
+        duplicatedItem.dataFileRef &&
+        duplicateClipboardData
+      ) {
+        const newRef = duplicateClipboardData(duplicatedItem.dataFileRef);
+        if (newRef) duplicatedItem.dataFileRef = newRef;
+      }
 
       items.push(duplicatedItem);
       this.store.set('items', items);

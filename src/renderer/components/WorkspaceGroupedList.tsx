@@ -26,6 +26,8 @@ import {
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
 import { useLatestRef } from '../hooks/useLatestRef';
+import { useItemActions } from '../hooks/useItemActions';
+import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
@@ -124,6 +126,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   ui,
 }) => {
   const { t } = useTranslation();
+  const { copyToClipboard } = useItemActions();
+  const { showSuccess, showError } = useToast();
   const { groups, items } = data;
   const {
     onLaunch,
@@ -203,12 +207,20 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       const targetPath = pathType === 'parent' ? PathUtils.getParentPath(basePath) : basePath;
 
       if (operation === 'copy') {
-        window.electronAPI.copyToClipboard(targetPath);
+        // メインウィンドウと同じく、画面の右下に「コピーしました」を出す
+        const target = useOriginalPath
+          ? pathType === 'parent'
+            ? 'shortcutParentPath'
+            : 'shortcutPath'
+          : pathType === 'parent'
+            ? 'parentPath'
+            : 'path';
+        await copyToClipboard(targetPath, target);
       } else {
         await window.electronAPI.openFolder(targetPath);
       }
     },
-    []
+    [copyToClipboard]
   );
 
   // コンテキストメニューの購読は一度だけ張り、ハンドラーの中で最新の値を読む
@@ -226,6 +238,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onAddSubgroup,
     onLaunch,
     onCollapseOtherGroups,
+    showSuccess,
+    showError,
     t,
   });
 
@@ -282,7 +296,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceGroupMenuRename(setEditingGroupId),
       window.electronAPI.onWorkspaceGroupMenuShowColorPicker(setColorPickerGroupId),
       window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
-        const { groupsMap, itemsByGroup, t } = latest.current;
+        const { groupsMap, itemsByGroup, showSuccess, showError, t } = latest.current;
         const group = groupsMap.get(groupId);
         if (group) {
           const groupItems = itemsByGroup[groupId] || [];
@@ -296,7 +310,14 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
             }
           });
           /* eslint-enable no-irregular-whitespace */
-          window.electronAPI.copyToClipboard(text);
+          const name = group.displayName;
+          window.electronAPI
+            .copyToClipboard(text)
+            .then(() => showSuccess(t('workspace.groups.copiedAsText', { name })))
+            .catch((error: unknown) => {
+              logError('Failed to copy group as text:', error);
+              showError(t('workspace.groups.copyAsTextFailed', { name }));
+            });
         }
       }),
       window.electronAPI.onWorkspaceGroupMenuArchive((groupId) =>

@@ -2122,6 +2122,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       itemCount_one: '{{count}} 件',
       itemCount_other: '{{count}} 件',
       uncategorized: '未分類',
+      copiedAsText: '「{{name}}」をテキストでコピーしました',
+      copyAsTextFailed: '「{{name}}」をテキストでコピーできませんでした',
       defaultName: 'グループ {{number}}',
       defaultSubgroupName: 'サブグループ {{number}}',
       contents: 'このグループには{{items}}が含まれています。',

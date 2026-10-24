@@ -626,10 +626,16 @@ export class WorkspaceService {
   public async duplicateItem(
     sourceItemId: string,
     targetGroupId?: string,
-    insertOrder?: number
+    insertOrder?: number,
+    duplicateClipboardData?: (dataFileRef: string) => string | null
   ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    return this.itemManager!.duplicateItem(sourceItemId, targetGroupId, insertOrder);
+    return this.itemManager!.duplicateItem(
+      sourceItemId,
+      targetGroupId,
+      insertOrder,
+      duplicateClipboardData
+    );
   }
 
   public async moveItemToGroup(itemId: string, groupId?: string): Promise<void> {

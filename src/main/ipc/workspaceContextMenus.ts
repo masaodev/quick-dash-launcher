@@ -529,6 +529,7 @@ function buildAddItemSubmenuItem(sender: WebContents, target: string): MenuItem 
  * - blank（余白）: グループを追加・貼り付け・すべて展開／折りたたむ
  * - uncategorized（「未分類」の見出し）: アイテムを追加（未分類へ）・グループにまとめる
  * - add（ヘッダーの ＋）: グループを追加・ワークスペースを追加
+ * - tabBar（タブの並びの空いた所）: ワークスペースを追加
  *
  * 未分類へアイテムを足す入口は「未分類」の見出しだけにする（未分類はなるべく使わない方針。2026-10-24 本人）
  */
@@ -560,6 +561,14 @@ function setupWorkspaceBlankContextMenuHandler(): void {
             sender,
             IPC_CHANNELS.EVENT_WORKSPACE_MENU_GROUP_UNCATEGORIZED,
             workspaceId
+          )
+        );
+      } else if (kind === 'tabBar') {
+        menu.append(
+          createMenuItem(
+            t('menu.workspace.addWorkspace'),
+            sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_WORKSPACE
           )
         );
       } else if (kind === 'add') {
