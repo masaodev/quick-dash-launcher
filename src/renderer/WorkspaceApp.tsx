@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PinLevel, WorkspaceItem, WorkspaceGroupView } from '@common/types';
-import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
+import { getAncestorGroupIds, getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
 
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
@@ -330,6 +330,25 @@ const WorkspaceApp: React.FC = () => {
     loadAllDataWithLoading();
   };
 
+  /** グループの右クリック「ほかのグループを折りたたむ」: そのグループ（と親）だけを開き、ほかを折りたたむ */
+  const collapseOtherGroups = async (groupId: string) => {
+    const keep = new Set([groupId, ...getAncestorGroupIds(groupId, displayGroups)]);
+    const toCollapse = displayGroups
+      .filter((g) => !keep.has(g.id) && !g.collapsed)
+      .map((g) => g.id);
+    const toExpand = displayGroups.filter((g) => keep.has(g.id) && g.collapsed).map((g) => g.id);
+    try {
+      if (toCollapse.length > 0) {
+        await window.electronAPI.workspaceAPI.setGroupsCollapsed(toCollapse, true);
+      }
+      if (toExpand.length > 0)
+        await window.electronAPI.workspaceAPI.setGroupsCollapsed(toExpand, false);
+    } catch (error) {
+      logError('Failed to collapse other groups:', error);
+    }
+    loadAllDataWithLoading();
+  };
+
   /** 「未分類」のアイテムを新しいグループにまとめる（グループは未分類と同じワークスペースの最後に作る） */
   const groupUncategorizedIn = async (workspaceId: string) => {
     const targets = items.filter((i) => i.workspaceId === workspaceId && !i.groupId);
@@ -621,6 +640,7 @@ const WorkspaceApp: React.FC = () => {
             : (kind) =>
                 void window.electronAPI.showWorkspaceBlankContextMenu(activeWorkspaceId, kind),
           onAddGroup: isArchiveMode ? undefined : () => addGroupTo(activeWorkspaceId),
+          onCollapseOtherGroups: isArchiveMode ? undefined : collapseOtherGroups,
         }}
         ui={{
           ...commonUi,

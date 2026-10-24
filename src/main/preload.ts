@@ -289,6 +289,8 @@ const electronAPI: ElectronAPI = {
     remapRefs: (idMap) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMAP_REFS, idMap),
     // グループ管理
     loadGroups: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
+    duplicateGroup: (groupId, name) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DUPLICATE_GROUP, groupId, name),
     createGroup: (name, color, parentGroupId, workspaceId) =>
       ipcRenderer.invoke(
         IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
@@ -510,6 +512,8 @@ const electronAPI: ElectronAPI = {
     ),
   onWorkspaceMenuRemoveItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
+  onWorkspaceMenuMoveToGroup: (callback) =>
+    createEventListener2<string, string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_GROUP, callback),
   onWorkspaceMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
@@ -543,6 +547,12 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN, callback),
   onWorkspaceGroupMenuAddNew: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_NEW, callback),
+  onWorkspaceGroupMenuOpenAll: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_OPEN_ALL, callback),
+  onWorkspaceGroupMenuDuplicate: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DUPLICATE, callback),
+  onWorkspaceGroupMenuCollapseOthers: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COLLAPSE_OTHERS, callback),
   onWorkspaceGroupMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,

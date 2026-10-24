@@ -202,6 +202,18 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           </label>
           <div className="setting-description">{t('settings.display.dataFileTabsDescription')}</div>
         </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.searchMemo ?? false}
+              onChange={(e) => handleSettingChange('searchMemo', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.display.searchMemo')}
+          </label>
+          <div className="setting-description">{t('settings.display.searchMemoDescription')}</div>
+        </div>
       </div>
     </>
   );

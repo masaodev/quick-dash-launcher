@@ -224,7 +224,7 @@ test.describe('QuickDashLauncher - ワークスペースの右クリックと �
       await workspaceWindow.getByTestId('workspace-add-menu-button').click();
       await expect
         .poll(() => readMenuLabels(electronApp))
-        .toEqual(['➕ グループを追加', '➕ アイテムを追加', '➕ ワークスペースを追加']);
+        .toEqual(['➕ グループを追加', '➕ ワークスペースを追加']);
     });
 
     await test.step('タブの右クリックにグループの追加と開閉が出る', async () => {
@@ -247,13 +247,7 @@ test.describe('QuickDashLauncher - ワークスペースの右クリックと �
       await workspaceWindow.locator('.workspace-item-list').dispatchEvent('contextmenu');
       await expect
         .poll(() => readMenuLabels(electronApp))
-        .toEqual([
-          '➕ グループを追加',
-          '➕ アイテムを追加',
-          '📋 貼り付け',
-          '🔽 すべて展開',
-          '🔼 すべて折りたたむ',
-        ]);
+        .toEqual(['➕ グループを追加', '📋 貼り付け', '🔽 すべて展開', '🔼 すべて折りたたむ']);
     });
 
     await test.step('「未分類」の見出しの右クリック', async () => {

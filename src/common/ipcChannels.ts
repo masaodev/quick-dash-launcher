@@ -185,6 +185,8 @@ export const IPC_CHANNELS = {
   // ワークスペース - グループ管理
   WORKSPACE_LOAD_GROUPS: 'workspace:load-groups',
   WORKSPACE_CREATE_GROUP: 'workspace:create-group',
+  /** グループをサブグループとアイテムごと複製する */
+  WORKSPACE_DUPLICATE_GROUP: 'workspace:duplicate-group',
   WORKSPACE_UPDATE_GROUP: 'workspace:update-group',
   WORKSPACE_DELETE_GROUP: 'workspace:delete-group',
   WORKSPACE_REORDER_MIXED: 'workspace:reorder-mixed',
@@ -292,6 +294,8 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'workspace-menu-open-shortcut-parent-folder',
   EVENT_WORKSPACE_MENU_REMOVE_ITEM: 'workspace-menu-remove-item',
   EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE: 'workspace-menu-move-to-workspace',
+  /** アイテムを別のグループへ移す（引数: アイテムの id、移す先のグループの id） */
+  EVENT_WORKSPACE_MENU_MOVE_TO_GROUP: 'workspace-menu-move-to-group',
 
   // コンテキストメニュー - Workspace Group
   SHOW_WORKSPACE_GROUP_CONTEXT_MENU: 'show-workspace-group-context-menu',
@@ -304,6 +308,9 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN: 'workspace-group-menu-add-from-main',
   EVENT_WORKSPACE_GROUP_MENU_ADD_NEW: 'workspace-group-menu-add-new',
   EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE: 'workspace-group-menu-move-to-workspace',
+  EVENT_WORKSPACE_GROUP_MENU_OPEN_ALL: 'workspace-group-menu-open-all',
+  EVENT_WORKSPACE_GROUP_MENU_DUPLICATE: 'workspace-group-menu-duplicate',
+  EVENT_WORKSPACE_GROUP_MENU_COLLAPSE_OTHERS: 'workspace-group-menu-collapse-others',
 
   // コンテキストメニュー - Workspace Tab
   SHOW_WORKSPACE_TAB_CONTEXT_MENU: 'show-workspace-tab-context-menu',

@@ -41,6 +41,7 @@ import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
 import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
+import { suppressSystemContextMenu } from './utils/systemContextMenu.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -198,6 +199,7 @@ export async function createWindow(): Promise<BrowserWindow> {
     icon: iconPath,
     webPreferences: DEFAULT_WEB_PREFERENCES,
   });
+  suppressSystemContextMenu(mainWindow);
 
   // タスクバーのアイコンを明示的に設定（Windowsで必要）
   const icon = nativeImage.createFromPath(iconPath);
