@@ -326,7 +326,6 @@ export const IPC_CHANNELS = {
   /** すべて展開・すべて折りたたむ（引数: ワークスペースの id、折りたたむなら true） */
   EVENT_WORKSPACE_MENU_SET_ALL_COLLAPSED: 'workspace-menu-set-all-collapsed',
   /** 「未分類」のアイテムを新しいグループにまとめる（引数: ワークスペースの id） */
-  EVENT_WORKSPACE_MENU_GROUP_UNCATEGORIZED: 'workspace-menu-group-uncategorized',
 
   // コンテキストメニュー - File Tab
   SHOW_FILE_TAB_CONTEXT_MENU: 'show-file-tab-context-menu',

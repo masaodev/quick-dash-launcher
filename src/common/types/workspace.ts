@@ -193,7 +193,13 @@ export interface WorkspaceLinkCopiesPreview {
 /**
  * ワークスペースの余白・見出し・＋ のメニューの種類
  * - blank: 余白の右クリック
- * - uncategorized: 「未分類」の見出しの右クリック
  * - add: ヘッダーの ＋
+ * - tabBar: タブの並びの空いた所の右クリック
  */
-export type WorkspaceBlankMenuKind = 'blank' | 'uncategorized' | 'add';
+/** ワークスペースへ足す先（右クリックでその場で選んだもの。groupId が無いのはグループの無いワークスペース） */
+export interface WorkspaceTarget {
+  workspaceId?: string;
+  groupId?: string;
+}
+
+export type WorkspaceBlankMenuKind = 'blank' | 'add' | 'tabBar';

@@ -84,7 +84,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   );
 
   const handleDeleteGroup = withErrorHandling(
-    async (groupId: string, deleteItems: boolean) => api.deleteGroup(groupId, deleteItems),
+    async (groupId: string) => api.deleteGroup(groupId),
     'Failed to delete workspace group:',
     onDataChanged
   );
@@ -151,7 +151,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
   );
 
   const handleMoveItemToGroup = withErrorHandling(
-    async (itemId: string, groupId?: string) => api.moveItemToGroup(itemId, groupId),
+    async (itemId: string, groupId: string) => api.moveItemToGroup(itemId, groupId),
     'Failed to move item to group:',
     onDataChanged
   );

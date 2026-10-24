@@ -303,7 +303,7 @@ export class WorkspaceArchiveManager {
    */
   public restoreItemToWorkspace(
     itemId: string,
-    targetWorkspaceId: string,
+    place: { workspaceId: string; groupId: string },
     currentItems: WorkspaceItem[]
   ): void {
     const archivedItems = this.archiveStore.get('items');
@@ -321,7 +321,8 @@ export class WorkspaceArchiveManager {
     } = archivedItem;
     const restoredItem = {
       ...workspaceItem,
-      workspaceId: targetWorkspaceId,
+      workspaceId: place.workspaceId,
+      groupId: place.groupId,
       order: maxOrder + 1,
     } as WorkspaceItem;
 
@@ -330,6 +331,6 @@ export class WorkspaceArchiveManager {
       archive.items = archive.items.filter((i) => i.id !== itemId);
     }, 'main');
 
-    logger.info({ itemId, targetWorkspaceId }, 'Restored archived item to workspace');
+    logger.info({ itemId, ...place }, 'Restored archived item to workspace');
   }
 }

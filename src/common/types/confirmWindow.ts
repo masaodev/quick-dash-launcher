@@ -11,6 +11,8 @@ export interface ConfirmWindowRequest {
   cancelText?: string;
   /** 取り消せない操作（確認ボタンを赤くする） */
   danger?: boolean;
+  /** 本文の下に赤字で出す注意（例: 中のアイテムもすべて消えます） */
+  warning?: string;
   /** 確認と一緒に選ばせるチェックボックス（例: グループ内のアイテムも削除する） */
   checkbox?: { label: string; checked: boolean };
 }

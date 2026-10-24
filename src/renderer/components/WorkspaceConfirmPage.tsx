@@ -89,6 +89,7 @@ const WorkspaceConfirmPage: React.FC<WorkspaceConfirmPageProps> = ({ requestId }
       confirmText={request.confirmText}
       cancelText={request.cancelText}
       danger={request.danger}
+      warning={request.warning}
       showCheckbox={request.checkbox !== undefined}
       checkboxLabel={request.checkbox?.label}
       checkboxChecked={checked}

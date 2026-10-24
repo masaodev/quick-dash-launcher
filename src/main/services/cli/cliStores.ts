@@ -215,16 +215,15 @@ export function createCliContext(
       removeItem: async (id) => (await WorkspaceService.getInstance()).removeItem(id),
       moveItemToGroup: async (id, groupId) =>
         (await WorkspaceService.getInstance()).moveItemToGroup(id, groupId),
-      moveItemToWorkspace: async (id, workspaceId) =>
-        (await WorkspaceService.getInstance()).moveItemToWorkspace(id, workspaceId),
+      moveItemToWorkspace: async (id, workspaceId, groupId) =>
+        (await WorkspaceService.getInstance()).moveItemToWorkspace(id, workspaceId, groupId),
       reorderMixed: async (parentGroupId, entries) =>
         (await WorkspaceService.getInstance()).reorderMixed(parentGroupId, entries),
       createGroup: async (name, color, parentGroupId, workspaceId) =>
         (await WorkspaceService.getInstance()).createGroup(name, color, parentGroupId, workspaceId),
       updateGroup: async (id, updates) =>
         (await WorkspaceService.getInstance()).updateGroup(id, updates),
-      deleteGroup: async (id, deleteItems) =>
-        (await WorkspaceService.getInstance()).deleteGroup(id, deleteItems),
+      deleteGroup: async (id) => (await WorkspaceService.getInstance()).deleteGroup(id),
       archiveGroup: async (id) => (await WorkspaceService.getInstance()).archiveGroup(id),
       loadArchivedGroups: async () => (await WorkspaceService.getInstance()).loadArchivedGroups(),
       loadArchivedItems: async () => {

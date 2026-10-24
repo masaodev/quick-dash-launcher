@@ -85,8 +85,9 @@ export interface WorkspaceStore {
   findLinkCandidates(id: string): Promise<string[]>;
   updateItem(id: string, update: WorkspaceItemUpdate): Promise<void>;
   removeItem(id: string): Promise<void>;
-  moveItemToGroup(itemId: string, groupId?: string): Promise<void>;
-  moveItemToWorkspace(itemId: string, workspaceId: string): Promise<void>;
+  moveItemToGroup(itemId: string, groupId: string): Promise<void>;
+  /** groupId を省けるのは、移す先にグループが無いとき（「未分類」グループを作る） */
+  moveItemToWorkspace(itemId: string, workspaceId: string, groupId?: string): Promise<void>;
   reorderMixed(parentGroupId: string | undefined, entries: MixedOrderEntry[]): Promise<void>;
   createGroup(
     name: string,
@@ -95,7 +96,8 @@ export interface WorkspaceStore {
     workspaceId?: string
   ): Promise<WorkspaceGroupView>;
   updateGroup(id: string, updates: WorkspaceGroupUpdate): Promise<void>;
-  deleteGroup(id: string, deleteItems: boolean): Promise<void>;
+  /** サブグループと中のアイテムごと消す */
+  deleteGroup(id: string): Promise<void>;
   /** 子孫のサブグループとアイテムごとアーカイブへ移す */
   archiveGroup(id: string): Promise<void>;
   loadArchivedGroups(): Promise<ArchivedWorkspaceGroup[]>;
@@ -231,32 +233,45 @@ function defaultWorkspace(s: Snapshot): Workspace {
 
 /**
  * --workspace と --group から置き場を決める。グループを指定したらそのワークスペースに従う
+ *
+ * 未分類は無いので、グループのあるワークスペースでは --group が要る。
+ * グループが 1 つも無いワークスペースだけ groupId を返さず、足すときに「未分類」グループが作られる（A3-157）
  */
 function resolvePlace(
   s: Snapshot,
   workspaceKey: string | undefined,
   groupKey: string | undefined
 ): { workspaceId: string; groupId?: string } {
+  if (groupKey === '') throw new CliError('usage', mainI18n.t('cli.errors.groupEmpty'));
   const workspace = workspaceKey ? findWorkspace(workspaceKey, s) : undefined;
-  if (groupKey === undefined || groupKey === '') {
-    return { workspaceId: (workspace ?? defaultWorkspace(s)).id };
+  if (groupKey === undefined) {
+    const target = workspace ?? defaultWorkspace(s);
+    if (s.groups.some((g) => g.workspaceId === target.id)) {
+      throw new CliError(
+        'usage',
+        mainI18n.t('cli.errors.groupRequired', { workspace: target.displayName })
+      );
+    }
+    return { workspaceId: target.id };
   }
   const group = findGroup(groupKey, s, workspace?.id);
   return { workspaceId: group.workspaceId, groupId: group.id };
 }
 
 /**
- * 同じ親の中で position 番目（0 始まり）に置く。グループの中はサブグループとアイテムが同じ並びで、
- * 未分類（グループ外）はアイテムだけの並び（画面の表示と同じ）
+ * 同じ親の中で position 番目（0 始まり）に置く。グループの中はサブグループとアイテムが同じ並び（画面の表示と同じ）
+ *
+ * @param groupId 省いたら、アイテムが今入っているグループ（足したときに作られた「未分類」グループなど）
  */
 async function placeAt(
   store: WorkspaceStore,
   itemId: string,
   workspaceId: string,
-  groupId: string | undefined,
+  placeGroupId: string | undefined,
   position: number
 ): Promise<void> {
   const s = await snapshot(store);
+  const groupId = placeGroupId ?? s.items.find((i) => i.id === itemId)?.groupId;
   const siblings: Array<MixedOrderEntry & { order: number }> = [
     ...s.items
       .filter((i) => i.workspaceId === workspaceId && i.groupId === groupId && i.id !== itemId)
@@ -886,10 +901,6 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     groupKey !== undefined || workspaceKey !== undefined
       ? resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey)
       : { workspaceId: current.workspaceId, groupId: current.groupId };
-  if (workspaceKey !== undefined && groupKey === undefined) {
-    // ワークスペースだけ変えたら、移った先では未分類になる
-    place.groupId = undefined;
-  }
 
   const before = itemView(current, s);
   if (dryRun) {
@@ -905,9 +916,9 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   }
 
   if (changesBody) await ctx.store.updateItem(id, merged as unknown as WorkspaceItemUpdate);
-  if (place.workspaceId !== current.workspaceId)
-    await ctx.store.moveItemToWorkspace(id, place.workspaceId);
-  if (place.groupId !== (place.workspaceId !== current.workspaceId ? undefined : current.groupId)) {
+  if (place.workspaceId !== current.workspaceId) {
+    await ctx.store.moveItemToWorkspace(id, place.workspaceId, place.groupId);
+  } else if (place.groupId !== undefined && place.groupId !== current.groupId) {
     await ctx.store.moveItemToGroup(id, place.groupId);
   }
   if (position !== undefined)
@@ -962,7 +973,6 @@ async function updateRefItem(
     groupKey !== undefined || workspaceKey !== undefined
       ? resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey)
       : { workspaceId: current.workspaceId, groupId: current.groupId };
-  if (workspaceKey !== undefined && groupKey === undefined) place.groupId = undefined;
 
   const before = itemView(current, s);
   if (optionFlag(parsed, 'dry-run')) {
@@ -980,9 +990,9 @@ async function updateRefItem(
   }
   const id = current.id;
   if (name !== undefined) await ctx.store.updateDisplayName(id, name);
-  if (place.workspaceId !== current.workspaceId)
-    await ctx.store.moveItemToWorkspace(id, place.workspaceId);
-  if (place.groupId !== (place.workspaceId !== current.workspaceId ? undefined : current.groupId)) {
+  if (place.workspaceId !== current.workspaceId) {
+    await ctx.store.moveItemToWorkspace(id, place.workspaceId, place.groupId);
+  } else if (place.groupId !== undefined && place.groupId !== current.groupId) {
     await ctx.store.moveItemToGroup(id, place.groupId);
   }
   if (position !== undefined)
@@ -1232,7 +1242,7 @@ async function removeGroup(
   }
   if (dryRun) return { dryRun: true, removed: view };
   await ctx.beforeGroupRemoved(group.id);
-  await ctx.store.deleteGroup(group.id, false);
+  await ctx.store.deleteGroup(group.id);
   ctx.changed(mainI18n.t('cli.changed.groupRemoved', { name: group.displayName }));
   return { removed: view };
 }

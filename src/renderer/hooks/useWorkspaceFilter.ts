@@ -9,7 +9,6 @@ export type FilterScope = 'all' | 'group' | 'item';
 interface FilterResult {
   visibleGroupIds: Set<string> | null;
   itemVisibility: Map<string, boolean> | null;
-  showUncategorized: boolean;
 }
 
 /** 文がすべての語を含むか（メインウィンドウの検索と同じく、スペース区切りの AND） */
@@ -33,7 +32,7 @@ export function useWorkspaceFilter(
 ): FilterResult {
   return useMemo(() => {
     if (!filterText.trim()) {
-      return { visibleGroupIds: null, itemVisibility: null, showUncategorized: true };
+      return { visibleGroupIds: null, itemVisibility: null };
     }
 
     const keywords = parseKeywords(filterText);
@@ -47,7 +46,6 @@ export function useWorkspaceFilter(
         : '';
     const visibleGroupIds = new Set<string>();
     const itemVisibility = new Map<string, boolean>();
-    let showUncategorized = false;
 
     /** グループIDとその全祖先をvisibleGroupIdsに追加 */
     function addGroupWithAncestors(groupId: string): void {
@@ -84,13 +82,7 @@ export function useWorkspaceFilter(
         for (const item of items) {
           const matches = includesAll(itemNameText(item), keywords);
           itemVisibility.set(item.id, matches);
-          if (matches) {
-            if (item.groupId) {
-              addGroupWithAncestors(item.groupId);
-            } else {
-              showUncategorized = true;
-            }
-          }
+          if (matches && item.groupId) addGroupWithAncestors(item.groupId);
         }
         break;
 
@@ -106,11 +98,7 @@ export function useWorkspaceFilter(
 
           if (itemMatches || groupMatches) {
             itemVisibility.set(item.id, true);
-            if (item.groupId) {
-              addGroupWithAncestors(item.groupId);
-            } else if (itemMatches) {
-              showUncategorized = true;
-            }
+            if (item.groupId) addGroupWithAncestors(item.groupId);
           } else {
             itemVisibility.set(item.id, false);
           }
@@ -122,7 +110,6 @@ export function useWorkspaceFilter(
     return {
       visibleGroupIds: visibleGroupIds.size > 0 ? visibleGroupIds : null,
       itemVisibility,
-      showUncategorized,
     };
   }, [groups, items, filterText, filterScope]);
 }
