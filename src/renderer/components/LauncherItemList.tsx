@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { isLauncherItem, isWindowInfo, isSetItem, isClipboardItem } from '@common/types/guards';
-import { LauncherItem, AppItem, WindowInfo } from '@common/types';
+import { LauncherItem, AppItem, WindowInfo, type WorkspaceTarget } from '@common/types';
 import { windowInfoToPathlessItem } from '@common/utils/windowInfoConverter';
 import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
@@ -191,15 +191,15 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     });
 
     // 「ワークスペースに追加」は参照（参照できないものはコピー）、「ワークスペースにコピーを追加」はコピー
-    const addToWorkspace = async (item: AppItem, copy: boolean) => {
+    const addToWorkspace = async (item: AppItem, target: WorkspaceTarget, copy: boolean) => {
       // どの種類でも結果を知らせる。パスは LauncherItem だけ、アイコンは持っていれば添える
       //（ウィンドウ検索の結果は別のイベント onWindowMenuAddToWorkspace で来るが、型の上では来うる）
       const displayName = isWindowInfo(item) ? item.title : item.displayName;
       try {
         await window.electronAPI.workspaceAPI.addItem(
           item,
-          undefined,
-          undefined,
+          target.groupId,
+          target.workspaceId,
           copy ? { copy } : undefined
         );
         await window.electronAPI.showToastWindow({
@@ -213,12 +213,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         logError('ワークスペースへの追加に失敗しました:', error);
       }
     };
-    const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace((item) => {
-      void addToWorkspace(item, false);
-    });
+    const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(
+      ({ item, target }) => {
+        void addToWorkspace(item, target, false);
+      }
+    );
     const cleanupAddCopyToWorkspace = window.electronAPI.onLauncherMenuAddCopyToWorkspace(
-      (item) => {
-        void addToWorkspace(item, true);
+      ({ item, target }) => {
+        void addToWorkspace(item, target, true);
       }
     );
 
@@ -270,24 +272,30 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       ),
       window.electronAPI.onLauncherMenuShowMemo(openMemoModal),
       window.electronAPI.onWindowMenuActivate((item) => latestRef.current.onItemExecute(item)),
-      window.electronAPI.onWindowMenuAddToWorkspace(async ({ windowInfo, includePosition }) => {
-        // 開いているウィンドウへ切り替えるだけのパスの無い単一アイテム（exe のパスは使わない）
-        const windowItem = windowInfoToPathlessItem(windowInfo, { includePosition });
-        try {
-          await window.electronAPI.workspaceAPI.addItem(windowItem);
-          await window.electronAPI.showToastWindow({
-            displayName: windowItem.displayName,
-            itemType: 'workspaceAdd',
-            icon: windowInfo.icon,
-            message: includePosition
-              ? t('launcher.messages.windowAddedWithPosition')
-              : t('launcher.messages.windowAdded'),
-          });
-        } catch (error) {
-          // 失敗は本体側がエラーのトーストで知らせる
-          logError('ウィンドウのワークスペースへの追加に失敗しました:', error);
+      window.electronAPI.onWindowMenuAddToWorkspace(
+        async ({ windowInfo, includePosition, target }) => {
+          // 開いているウィンドウへ切り替えるだけのパスの無い単一アイテム（exe のパスは使わない）
+          const windowItem = windowInfoToPathlessItem(windowInfo, { includePosition });
+          try {
+            await window.electronAPI.workspaceAPI.addItem(
+              windowItem,
+              target.groupId,
+              target.workspaceId
+            );
+            await window.electronAPI.showToastWindow({
+              displayName: windowItem.displayName,
+              itemType: 'workspaceAdd',
+              icon: windowInfo.icon,
+              message: includePosition
+                ? t('launcher.messages.windowAddedWithPosition')
+                : t('launcher.messages.windowAdded'),
+            });
+          } catch (error) {
+            // 失敗は本体側がエラーのトーストで知らせる
+            logError('ウィンドウのワークスペースへの追加に失敗しました:', error);
+          }
         }
-      }),
+      ),
       window.electronAPI.onWindowMenuClose((windowInfo) => {
         void latestRef.current.onCloseWindow?.(windowInfo);
       }),

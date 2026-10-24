@@ -628,15 +628,15 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string, deleteItems: boolean) =>
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string) =>
     withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(id);
-        await service.deleteGroup(id, deleteItems);
+        await service.deleteGroup(id);
       },
       'Deleted workspace group',
       'Failed to delete workspace group',
-      { id, deleteItems },
+      { id },
       { id }
     )
   );
@@ -669,7 +669,10 @@ export function setupWorkspaceHandlers(): void {
     IPC_CHANNELS.WORKSPACE_DUPLICATE_ITEM,
     (_event, sourceItemId: string, targetGroupId?: string, insertOrder?: number) =>
       withWorkspaceChange(
-        (service) => service.duplicateItem(sourceItemId, targetGroupId, insertOrder),
+        (service) =>
+          service.duplicateItem(sourceItemId, targetGroupId, insertOrder, (ref) =>
+            ClipboardService.getInstance().duplicateClipboardData(ref)
+          ),
         'Duplicated workspace item',
         'Failed to duplicate workspace item',
         { sourceItemId, targetGroupId, insertOrder },
@@ -679,7 +682,7 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP,
-    (_event, itemId: string, groupId?: string) =>
+    (_event, itemId: string, groupId: string) =>
       withWorkspaceChange(
         (service) => service.moveItemToGroup(itemId, groupId),
         'Moved item to group',
@@ -705,13 +708,13 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_WORKSPACE,
-    (_event, itemId: string, targetWorkspaceId: string) =>
+    (_event, itemId: string, targetWorkspaceId: string, groupId?: string) =>
       withWorkspaceChange(
-        (service) => service.moveItemToWorkspace(itemId, targetWorkspaceId),
+        (service) => service.moveItemToWorkspace(itemId, targetWorkspaceId, groupId),
         'Moved item to workspace',
         'Failed to move item to workspace',
-        { itemId, targetWorkspaceId },
-        { itemId, targetWorkspaceId }
+        { itemId, targetWorkspaceId, groupId },
+        { itemId, targetWorkspaceId, groupId }
       )
   );
 

@@ -78,7 +78,8 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
       <h1>{t('workspace.title')}</h1>
       <div className="workspace-header-controls">
         <button
-          className={`action-btn workspace-control-btn ${isFilterVisible ? 'active' : ''}`}
+          className={`action-btn workspace-control-btn ${isFilterVisible ? 'toggle-on' : ''}`}
+          aria-pressed={isFilterVisible}
           onClick={onToggleFilter}
           title={t('workspace.header.filter')}
         >

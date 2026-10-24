@@ -11,12 +11,9 @@ import type {
   WorkspaceGroup,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { uncategorizedAddTarget } from '@common/utils/workspaceAddTarget';
 import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { openWorkspaceLinkCopies } from '../workspaceLinkWindowManager.js';
-import { openWorkspaceItemPicker } from '../workspaceItemPickerWindowManager.js';
-import { openWorkspaceNewItemEditor } from '../workspaceItemEditorWindowManager.js';
 import { openWorkspaceItemAsAdmin } from '../services/launch/adminItemLauncher.js';
 import {
   closeDetachedGroupWindow,
@@ -38,6 +35,7 @@ import {
   buildRefMenuItems,
   editLinkedMainItem,
 } from './workspaceRefMenu.js';
+import { buildWorkspaceTargetSubmenu, loadWorkspaceTargets } from './workspaceGroupPicker.js';
 
 /** ワークスペース移動サブメニューを構築 */
 function buildMoveToWorkspaceSubmenu(
@@ -135,12 +133,21 @@ function setupWorkspaceContextMenuHandler(): void {
       }
 
       if (workspaces && workspaces.length >= 1) {
-        const moveSubmenu = buildMoveToWorkspaceSubmenu(
-          event.sender,
-          IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
-          item.id,
-          item.workspaceId,
-          workspaces
+        // 移す先のワークスペースのグループをその場で選ぶ（未分類は無い。A3-157）。
+        // 画面から届く groups は今のワークスペースの分だけなので、全ワークスペースの分を読み直す
+        const targets = await loadWorkspaceTargets();
+        const moveSubmenu = buildWorkspaceTargetSubmenu(
+          t('menu.workspaceItem.moveToWorkspace'),
+          targets.workspaces,
+          targets.groups,
+          (pick) =>
+            event.sender.send(
+              IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
+              item.id,
+              pick.workspaceId,
+              pick.groupId
+            ),
+          { excludeWorkspaceId: item.workspaceId }
         );
         if (moveSubmenu) {
           menu.append(createSeparator());
@@ -513,35 +520,11 @@ function appendCollapseMenuItems(menu: Menu, sender: WebContents, workspaceId: s
 }
 
 /**
- * 「➕ アイテムを追加 ▸」（メインウィンドウのアイテムから選ぶ・新しく入力して追加）
- *
- * @param target 追加先（グループの id か、未分類なら uncategorizedAddTarget の値）
- */
-function buildAddItemSubmenuItem(sender: WebContents, target: string): MenuItem {
-  const submenu = new Menu();
-  submenu.append(
-    new MenuItem({
-      label: t('menu.workspaceGroup.addFromMain'),
-      click: () => void openWorkspaceItemPicker(sender, target),
-    })
-  );
-  submenu.append(
-    new MenuItem({
-      label: t('menu.workspaceGroup.addNew'),
-      click: () => void openWorkspaceNewItemEditor(sender, target),
-    })
-  );
-  return new MenuItem({ label: t('menu.workspaceGroup.addItem'), submenu });
-}
-
-/**
- * ワークスペースの余白・「未分類」の見出しの右クリックと、ヘッダーの ＋ のメニュー
+ * ワークスペースの余白・タブの並びの空いた所の右クリックと、ヘッダーの ＋ のメニュー
  *
  * - blank（余白）: グループを追加・貼り付け・すべて展開／折りたたむ
- * - uncategorized（「未分類」の見出し）: アイテムを追加（未分類へ）・グループにまとめる
  * - add（ヘッダーの ＋）: グループを追加・ワークスペースを追加
- *
- * 未分類へアイテムを足す入口は「未分類」の見出しだけにする（未分類はなるべく使わない方針。2026-10-24 本人）
+ * - tabBar（タブの並びの空いた所）: ワークスペースを追加
  */
 function setupWorkspaceBlankContextMenuHandler(): void {
   ipcMain.handle(
@@ -562,15 +545,12 @@ function setupWorkspaceBlankContextMenuHandler(): void {
         IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_GROUP,
         workspaceId
       );
-      if (kind === 'uncategorized') {
-        menu.append(buildAddItemSubmenuItem(sender, uncategorizedAddTarget(workspaceId)));
-        menu.append(createSeparator());
+      if (kind === 'tabBar') {
         menu.append(
           createMenuItem(
-            t('menu.workspace.groupUncategorized'),
+            t('menu.workspace.addWorkspace'),
             sender,
-            IPC_CHANNELS.EVENT_WORKSPACE_MENU_GROUP_UNCATEGORIZED,
-            workspaceId
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_WORKSPACE
           )
         );
       } else if (kind === 'add') {

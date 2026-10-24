@@ -67,6 +67,26 @@ function readWorkspaceFile(configDir: string): { items: Record<string, unknown>[
  * - 元が消えると薄く表示し、別のアイテムを指し直せる
  * - 参照とコピーを行き来できる（1 件ずつ・一括）
  */
+
+declare global {
+  var __e2eGroupId: string | undefined;
+}
+
+/**
+ * ワークスペースに足すときのグループを用意する（グループのあるワークスペースへは、グループを指定して足す。A3-157）
+ *
+ * ページの globalThis.__e2eGroupId に入れ、各テストの evaluate の中で addItem・createItem に渡す
+ */
+async function prepareTestGroup(workspaceWindow: Page): Promise<void> {
+  await workspaceWindow.evaluate(async () => {
+    const api = window.electronAPI.workspaceAPI;
+    const [workspace] = await api.loadWorkspaces();
+    const groups = (await api.loadGroups()).filter((g) => g.workspaceId === workspace.id);
+    globalThis.__e2eGroupId =
+      groups[0]?.id ?? (await api.createGroup('テスト', undefined, undefined, workspace.id)).id;
+  });
+}
+
 test.describe('QuickDashLauncher - ワークスペースの参照アイテム', () => {
   test('メインウィンドウから足すと参照になり、メインで直すとワークスペースにも出る', async ({
     electronApp,
@@ -77,10 +97,11 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const github = await mainItem(mainWindow, 'GitHub');
     const added: WorkspaceItem = await workspaceWindow.evaluate(
-      (item) => window.electronAPI.workspaceAPI.addItem(item),
+      (item) => window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId),
       github
     );
 
@@ -150,11 +171,12 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
     const menu = new NativeMenuTestHelper(electronApp, workspaceWindow);
 
     const wiki = await mainItem(mainWindow, 'Wikipedia');
     const added: WorkspaceItem = await workspaceWindow.evaluate(
-      (item) => window.electronAPI.workspaceAPI.addItem(item),
+      (item) => window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId),
       wiki
     );
     const input = workspaceWindow.locator('.workspace-item-name-input');
@@ -187,10 +209,11 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const notepad = await mainItem(mainWindow, 'メモ帳');
     const added: WorkspaceItem = await workspaceWindow.evaluate(
-      (item) => window.electronAPI.workspaceAPI.addItem(item),
+      (item) => window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId),
       notepad
     );
 
@@ -244,18 +267,19 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const google = await mainItem(mainWindow, 'Google');
     const wikipedia = await mainItem(mainWindow, 'Wikipedia');
     const linked: WorkspaceItem = await workspaceWindow.evaluate(
-      (item) => window.electronAPI.workspaceAPI.addItem(item),
+      (item) => window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId),
       google
     );
     const copy: WorkspaceItem = await workspaceWindow.evaluate(
       (item) =>
         window.electronAPI.workspaceAPI.addItem(
           { ...item, displayName: 'ウィキ', memo: 'コピーのメモ' },
-          undefined,
+          globalThis.__e2eGroupId,
           undefined,
           { copy: true }
         ),
@@ -320,11 +344,12 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const calc = await mainItem(mainWindow, '電卓');
     await workspaceWindow.evaluate(async (item) => {
-      await window.electronAPI.workspaceAPI.addItem(item);
-      await window.electronAPI.workspaceAPI.addItem(item);
+      await window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId);
+      await window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId);
     }, calc);
     const counts = await mainWindow.evaluate(
       (id) => window.electronAPI.workspaceAPI.countRefs([id, 'noSuchId']),
@@ -341,14 +366,20 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const google = await mainItem(mainWindow, 'Google');
     const addCopy = (memo: string) =>
       workspaceWindow.evaluate(
         ({ item, memo }) =>
-          window.electronAPI.workspaceAPI.addItem({ ...item, memo }, undefined, undefined, {
-            copy: true,
-          }),
+          window.electronAPI.workspaceAPI.addItem(
+            { ...item, memo },
+            globalThis.__e2eGroupId,
+            undefined,
+            {
+              copy: true,
+            }
+          ),
         { item: google, memo }
       ) as Promise<WorkspaceItem>;
     const first = await addCopy('1 件目のメモ');
@@ -356,11 +387,14 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     // ワークスペースのセットの行が 1 件目のコピーを指している
     const set: WorkspaceItem = await workspaceWindow.evaluate(
       (id) =>
-        window.electronAPI.workspaceAPI.createItem({
-          type: 'set',
-          displayName: 'コピーを指すセット',
-          entries: [{ itemId: id }],
-        }),
+        window.electronAPI.workspaceAPI.createItem(
+          {
+            type: 'set',
+            displayName: 'コピーを指すセット',
+            entries: [{ itemId: id }],
+          },
+          globalThis.__e2eGroupId
+        ),
       first.id
     );
 
@@ -390,23 +424,30 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const copy: WorkspaceItem = await workspaceWindow.evaluate(() =>
-      window.electronAPI.workspaceAPI.createItem({
-        type: 'item',
-        displayName: '移すアイテム',
-        path: 'https://example.com/move-to-main',
-        memo: '移すアイテムのメモ',
-      })
+      window.electronAPI.workspaceAPI.createItem(
+        {
+          type: 'item',
+          displayName: '移すアイテム',
+          path: 'https://example.com/move-to-main',
+          memo: '移すアイテムのメモ',
+        },
+        globalThis.__e2eGroupId
+      )
     );
     // 移すアイテムを指すワークスペースのセット（移したあと、行はメインウィンドウのアイテムを指す）
     const set: WorkspaceItem = await workspaceWindow.evaluate(
       (id) =>
-        window.electronAPI.workspaceAPI.createItem({
-          type: 'set',
-          displayName: '移すセット',
-          entries: [{ itemId: id }],
-        }),
+        window.electronAPI.workspaceAPI.createItem(
+          {
+            type: 'set',
+            displayName: '移すセット',
+            entries: [{ itemId: id }],
+          },
+          globalThis.__e2eGroupId
+        ),
       copy.id
     );
 
@@ -467,10 +508,14 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const google = await mainItem(mainWindow, 'Google');
     const copy: WorkspaceItem = await workspaceWindow.evaluate(
-      (item) => window.electronAPI.workspaceAPI.addItem(item, undefined, undefined, { copy: true }),
+      (item) =>
+        window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId, undefined, {
+          copy: true,
+        }),
       google
     );
     const moved = await workspaceWindow.evaluate(
@@ -499,7 +544,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
         (item) =>
           window.electronAPI.workspaceAPI.addItem(
             { ...item, displayName: 'アイコン付きの Google', customIcon: 'custom-google.png' },
-            undefined,
+            globalThis.__e2eGroupId,
             undefined,
             { copy: true }
           ),
@@ -527,6 +572,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await utils.waitForPageLoad();
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
+    await prepareTestGroup(workspaceWindow);
 
     const google = await mainItem(mainWindow, 'Google');
     // パスが同じメインウィンドウのアイテムをもう 1 つ作る
@@ -545,7 +591,10 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     );
     const second = await mainItem(mainWindow, 'Google（2 つ目）');
     const copy: WorkspaceItem = await workspaceWindow.evaluate(
-      (item) => window.electronAPI.workspaceAPI.addItem(item, undefined, undefined, { copy: true }),
+      (item) =>
+        window.electronAPI.workspaceAPI.addItem(item, globalThis.__e2eGroupId, undefined, {
+          copy: true,
+        }),
       google
     );
 

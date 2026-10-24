@@ -31,6 +31,22 @@ async function pasteText(
 }
 
 /**
+ * 貼り付ける先のグループを作り、見出しを 2 回クリックして選ぶ（1 回目で閉じるので、2 回目で開き直す）
+ *
+ * グループのあるワークスペースでは、選んだグループに貼る（未分類は無い。A3-157）
+ */
+async function selectPasteGroup(workspaceWindow: Page, name: string): Promise<void> {
+  await workspaceWindow.evaluate(async (groupName) => {
+    const api = window.electronAPI.workspaceAPI;
+    const [workspace] = await api.loadWorkspaces();
+    await api.createGroup(groupName, undefined, undefined, workspace.id);
+  }, name);
+  const header = workspaceWindow.locator('.workspace-group-header', { hasText: name });
+  await header.click();
+  await header.click();
+}
+
+/**
  * ワークスペースへの Ctrl+V 貼り付けの振り分け
  * - ただのテキストはフォルダにならず、クリップボードアイテムになる（以前は「拡張子なし → folder」だった）
  * - URL は URL アイテム、Windows のパスは起動アイテムになる
@@ -48,6 +64,7 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
     const text = '会議メモ\n二行目も残る';
+    await selectPasteGroup(workspaceWindow, '貼り付け先');
 
     await test.step('ただのテキスト', async () => {
       await pasteText(electronApp, workspaceWindow, text);
@@ -125,8 +142,8 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
     await electronApp.evaluate(({ clipboard }) => clipboard.writeText('https://example.org/menu'));
+    await selectPasteGroup(workspaceWindow, 'メニューで貼る先');
     await workspaceWindow.bringToFront();
-    await workspaceWindow.locator('body').click({ position: { x: 5, y: 5 } });
     // メニューの「📋 貼り付け」がすることと同じ（以前は paste イベントでファイルしか扱わず、何も足されなかった）
     // ワークスペースはメインのレンダラーから window.open で開くので、URL ではなくタイトルで探す
     await electronApp.evaluate(({ BrowserWindow }) => {
@@ -136,6 +153,31 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     await expect(
       workspaceWindow.locator('.workspace-item-card', { hasText: 'https://example.org/menu' })
     ).toBeVisible({ timeout: 15000 });
+  });
+
+  test('グループのあるワークスペースで、グループを選ばずに貼ると足さずに知らせる（A3-157）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('選ばないグループ', undefined, undefined, workspace.id);
+    });
+    await expect(
+      workspaceWindow.locator('.workspace-group-header', { hasText: '選ばないグループ' })
+    ).toBeVisible();
+    await pasteText(electronApp, workspaceWindow, 'https://example.net/nowhere');
+    await expect(
+      workspaceWindow.getByText(
+        '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください'
+      )
+    ).toBeVisible();
+    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
+    expect(items.some((i) => i.displayName === 'https://example.net/nowhere')).toBe(false);
   });
 
   test('クリップボードアイテムの編集画面にはパス欄を出さず、名前を変えても中身の参照は保つ', async ({

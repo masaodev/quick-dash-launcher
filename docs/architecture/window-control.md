@@ -351,7 +351,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **実装場所**: `src/main/workspaceConfirmWindowManager.ts`（`openWorkspaceConfirm`）、`src/renderer/components/WorkspaceConfirmPage.tsx`（中身。`ConfirmDialog` をページとして描く）
 
-- IPC `workspace:open-confirm`（要求 `ConfirmWindowRequest`: タイトル・文面・ボタン名・`danger`・チェックボックス）を受け、送信元を親にしたモーダルな子ウィンドウを同じディスプレイの中央に開く（520x320 を作業領域で切り詰める）。**開き元のウィンドウのサイズ・位置は変えない**
+- IPC `workspace:open-confirm`（要求 `ConfirmWindowRequest`: タイトル・文面・ボタン名・`danger`・本文の下に赤字で出す `warning`・チェックボックス）を受け、送信元を親にしたモーダルな子ウィンドウを同じディスプレイの中央に開く（520x320 を作業領域で切り詰める）。**開き元のウィンドウのサイズ・位置は変えない**
 - ワークスペースのレンダラーから `window.open` で開く。`window.name` は `workspace-confirm:<requestId>` で、要求は `workspace:get-confirm-request` で受け取る（フォールバック時は URL クエリ `confirmRequestId`）
 - 確定したら `workspace:return-confirm-result` で結果（チェックボックスの状態）を預けて閉じる。`workspace:open-confirm` は閉じたときに結果を返す。キャンセル・Escape・閉じたときは `null`
 - 切り離しウィンドウから開いたとき、フォーカスが子ウィンドウへ移っても「メインと連動して隠す」で切り離しウィンドウが隠れないようにしている（アイテムの編集ウィンドウも同じ）

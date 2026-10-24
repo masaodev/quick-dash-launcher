@@ -36,6 +36,7 @@ import type {
   WorkspaceGroup,
   WorkspaceGroupUpdate,
   WorkspaceGroupView,
+  WorkspaceTarget,
   DetachedWindowState,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
@@ -354,7 +355,8 @@ export interface ElectronAPI {
       workspaceId?: string
     ) => Promise<WorkspaceGroupView>;
     updateGroup: (id: string, updates: WorkspaceGroupUpdate) => Promise<{ success: boolean }>;
-    deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
+    /** グループを、サブグループと中のアイテムごと消す */
+    deleteGroup: (id: string) => Promise<{ success: boolean }>;
     reorderMixed: (
       parentGroupId: string | undefined,
       entries: MixedOrderEntry[]
@@ -364,14 +366,16 @@ export interface ElectronAPI {
       targetGroupId?: string,
       insertOrder?: number
     ) => Promise<{ success: boolean }>;
-    moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+    moveItemToGroup: (itemId: string, groupId: string) => Promise<{ success: boolean }>;
     moveGroupToParent: (
       groupId: string,
       newParentGroupId?: string
     ) => Promise<{ success: boolean }>;
+    /** 別のワークスペースのグループへ移す（groupId を省けるのは、移す先にグループが無いときだけ） */
     moveItemToWorkspace: (
       itemId: string,
-      targetWorkspaceId: string
+      targetWorkspaceId: string,
+      groupId?: string
     ) => Promise<{ success: boolean }>;
     moveGroupToWorkspace: (
       groupId: string,
@@ -480,7 +484,6 @@ export interface ElectronAPI {
   onWorkspaceMenuSetAllCollapsed: (
     callback: (workspaceId: string, collapsed: boolean) => void
   ) => () => void;
-  onWorkspaceMenuGroupUncategorized: (callback: (workspaceId: string) => void) => () => void;
   // FileTabContextMenu
   showFileTabContextMenu: (tabIndex: number) => Promise<void>;
   onFileTabMenuRename: (callback: (tabIndex: number) => void) => () => void;
@@ -496,8 +499,13 @@ export interface ElectronAPI {
   onAdminMenuDeleteItems: (callback: () => void) => () => void;
   // LauncherContextMenuイベントリスナー
   onLauncherMenuEditItem: (callback: (item: AppItem) => void) => () => void;
-  onLauncherMenuAddToWorkspace: (callback: (item: AppItem) => void) => () => void;
-  onLauncherMenuAddCopyToWorkspace: (callback: (item: AppItem) => void) => () => void;
+  /** 「ワークスペースに追加 ▸」で足す先のグループを選んだ（target はその場で選んだ置き場） */
+  onLauncherMenuAddToWorkspace: (
+    callback: (payload: { item: AppItem; target: WorkspaceTarget }) => void
+  ) => () => void;
+  onLauncherMenuAddCopyToWorkspace: (
+    callback: (payload: { item: AppItem; target: WorkspaceTarget }) => void
+  ) => () => void;
   onLauncherMenuCopyPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenParentFolder: (callback: (item: AppItem) => void) => () => void;
@@ -515,7 +523,11 @@ export interface ElectronAPI {
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
   /** ウィンドウ検索結果の右クリック「ワークスペースに追加」（includePosition: 今の位置・サイズも記録） */
   onWindowMenuAddToWorkspace: (
-    callback: (payload: { windowInfo: WindowInfo; includePosition: boolean }) => void
+    callback: (payload: {
+      windowInfo: WindowInfo;
+      includePosition: boolean;
+      target: WorkspaceTarget;
+    }) => void
   ) => () => void;
   /** ウィンドウ検索で 2 つ以上を選んでいるときの右クリックメニュー */
   showWindowsContextMenu: (
@@ -546,8 +558,9 @@ export interface ElectronAPI {
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuMoveToGroup: (callback: (itemId: string, groupId: string) => void) => () => void;
+  /** アイテムを別のワークスペースのグループへ移す（groupId が無いのは、移す先にグループが無いとき） */
   onWorkspaceMenuMoveToWorkspace: (
-    callback: (itemId: string, targetWorkspaceId: string) => void
+    callback: (itemId: string, targetWorkspaceId: string, groupId?: string) => void
   ) => () => void;
   // WorkspaceGroupContextMenuイベントリスナー
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => () => void;

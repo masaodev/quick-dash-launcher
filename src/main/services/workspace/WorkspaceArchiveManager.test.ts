@@ -132,7 +132,7 @@ describe('WorkspaceArchiveManager', () => {
     it('同名グループがあれば 「（復元）」を付け、親が無くなっていればトップレベルにすること', () => {
       const { parent, child } = seedTree();
       manager.archiveGroup(child.id, groups.loadGroups(), items.loadItems());
-      groups.deleteGroup(parent.id, false, items.loadItems());
+      groups.deleteGroup(parent.id, items.loadItems());
       groups.createGroup('子');
 
       const { restoredGroup } = manager.restoreGroup(
@@ -196,23 +196,35 @@ describe('WorkspaceArchiveManager', () => {
   });
 
   describe('restoreItemToWorkspace', () => {
-    it('メタと groupId を外して指定ワークスペースの末尾に戻し、アーカイブから消すこと', () => {
+    it('メタを外して指定ワークスペースのグループの末尾に戻し、アーカイブから消すこと', () => {
       const { parent, inParent, inChild } = seedTree();
       manager.archiveGroup(parent.id, groups.loadGroups(), items.loadItems());
       const ws2 = addWorkspace('WS2');
+      const target = groups.createGroup('移す先', undefined, undefined, ws2.id);
       const last = addItem('last');
 
-      manager.restoreItemToWorkspace(inChild.id, ws2.id, items.loadItems());
+      manager.restoreItemToWorkspace(
+        inChild.id,
+        { workspaceId: ws2.id, groupId: target.id },
+        items.loadItems()
+      );
 
       const restored = items.loadItems().find((i) => i.id === inChild.id)!;
-      expect(restored).toMatchObject({ workspaceId: ws2.id, order: last.order + 1 });
-      expect(restored).not.toHaveProperty('groupId');
+      expect(restored).toMatchObject({
+        workspaceId: ws2.id,
+        groupId: target.id,
+        order: last.order + 1,
+      });
       expect(restored).not.toHaveProperty('archivedAt');
       expect(manager.getAllArchivedItems().map((i) => i.id)).toEqual([inParent.id]);
 
-      expect(() => manager.restoreItemToWorkspace('missing1', ws2.id, items.loadItems())).toThrow(
-        'Archived item not found'
-      );
+      expect(() =>
+        manager.restoreItemToWorkspace(
+          'missing1',
+          { workspaceId: ws2.id, groupId: target.id },
+          items.loadItems()
+        )
+      ).toThrow('Archived item not found');
     });
   });
 });
