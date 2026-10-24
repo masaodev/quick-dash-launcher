@@ -39,6 +39,7 @@ import {
 } from '../services/launch/setExecutor.js';
 import { notifyLaunchFailure, openSingleItem } from '../services/launch/itemOpener.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
+import { ClipboardService } from '../services/clipboardService.js';
 import {
   addAppItemToWorkspace,
   applyLinkCopies,
@@ -578,6 +579,21 @@ export function setupWorkspaceHandlers(): void {
       logger.info({ count: groups.length }, 'Loaded workspace groups');
       return groups;
     }, 'Failed to load workspace groups')
+  );
+
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DUPLICATE_GROUP, (_event, groupId: string, name: string) =>
+    withWorkspaceService(
+      async (service) => {
+        const group = await service.duplicateGroup(groupId, name, (ref) =>
+          ClipboardService.getInstance().duplicateClipboardData(ref)
+        );
+        notifyWorkspaceChanged();
+        return group;
+      },
+      'Failed to duplicate workspace group',
+      { groupId },
+      true
+    )
   );
 
   ipcMain.handle(

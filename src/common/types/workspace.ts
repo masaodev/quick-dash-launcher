@@ -189,3 +189,11 @@ export interface WorkspaceLinkCopiesPreview {
   /** パスで比べられないコピー（クリップボード・セット・パスの無い単一アイテム）の数 */
   notMatchable: number;
 }
+
+/**
+ * ワークスペースの余白・見出し・＋ のメニューの種類
+ * - blank: 余白の右クリック
+ * - uncategorized: 「未分類」の見出しの右クリック
+ * - add: ヘッダーの ＋
+ */
+export type WorkspaceBlankMenuKind = 'blank' | 'uncategorized' | 'add';

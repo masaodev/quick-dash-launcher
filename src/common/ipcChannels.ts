@@ -185,6 +185,8 @@ export const IPC_CHANNELS = {
   // ワークスペース - グループ管理
   WORKSPACE_LOAD_GROUPS: 'workspace:load-groups',
   WORKSPACE_CREATE_GROUP: 'workspace:create-group',
+  /** グループをサブグループとアイテムごと複製する */
+  WORKSPACE_DUPLICATE_GROUP: 'workspace:duplicate-group',
   WORKSPACE_UPDATE_GROUP: 'workspace:update-group',
   WORKSPACE_DELETE_GROUP: 'workspace:delete-group',
   WORKSPACE_REORDER_MIXED: 'workspace:reorder-mixed',
@@ -272,6 +274,12 @@ export const IPC_CHANNELS = {
   EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH: 'launcher-menu-copy-shortcut-parent-path',
   EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'launcher-menu-open-shortcut-parent-folder',
   EVENT_LAUNCHER_MENU_SHOW_MEMO: 'launcher-menu-show-memo',
+  /** 「削除…」（フォルダ取込で並んだアイテム・自動取込のアイテムには出さない） */
+  EVENT_LAUNCHER_MENU_DELETE_ITEM: 'launcher-menu-delete-item',
+  // コンテキストメニュー - メインウィンドウの一覧の余白
+  SHOW_LAUNCHER_BLANK_CONTEXT_MENU: 'show-launcher-blank-context-menu',
+  EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM: 'launcher-blank-menu-add-item',
+  EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD: 'launcher-blank-menu-register-from-clipboard',
 
   // コンテキストメニュー - Workspace
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',
@@ -286,6 +294,8 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'workspace-menu-open-shortcut-parent-folder',
   EVENT_WORKSPACE_MENU_REMOVE_ITEM: 'workspace-menu-remove-item',
   EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE: 'workspace-menu-move-to-workspace',
+  /** アイテムを別のグループへ移す（引数: アイテムの id、移す先のグループの id） */
+  EVENT_WORKSPACE_MENU_MOVE_TO_GROUP: 'workspace-menu-move-to-group',
 
   // コンテキストメニュー - Workspace Group
   SHOW_WORKSPACE_GROUP_CONTEXT_MENU: 'show-workspace-group-context-menu',
@@ -298,11 +308,24 @@ export const IPC_CHANNELS = {
   EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN: 'workspace-group-menu-add-from-main',
   EVENT_WORKSPACE_GROUP_MENU_ADD_NEW: 'workspace-group-menu-add-new',
   EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE: 'workspace-group-menu-move-to-workspace',
+  EVENT_WORKSPACE_GROUP_MENU_OPEN_ALL: 'workspace-group-menu-open-all',
+  EVENT_WORKSPACE_GROUP_MENU_DUPLICATE: 'workspace-group-menu-duplicate',
+  EVENT_WORKSPACE_GROUP_MENU_COLLAPSE_OTHERS: 'workspace-group-menu-collapse-others',
 
   // コンテキストメニュー - Workspace Tab
   SHOW_WORKSPACE_TAB_CONTEXT_MENU: 'show-workspace-tab-context-menu',
   EVENT_WORKSPACE_TAB_MENU_RENAME: 'workspace-tab-menu-rename',
   EVENT_WORKSPACE_TAB_MENU_DELETE: 'workspace-tab-menu-delete',
+
+  // コンテキストメニュー - ワークスペースの余白・「未分類」の見出し・ヘッダーの ＋（タブの右クリックとも共通の動作）
+  SHOW_WORKSPACE_BLANK_CONTEXT_MENU: 'show-workspace-blank-context-menu',
+  /** グループを追加（引数: 追加先のワークスペースの id） */
+  EVENT_WORKSPACE_MENU_ADD_GROUP: 'workspace-menu-add-group',
+  EVENT_WORKSPACE_MENU_ADD_WORKSPACE: 'workspace-menu-add-workspace',
+  /** すべて展開・すべて折りたたむ（引数: ワークスペースの id、折りたたむなら true） */
+  EVENT_WORKSPACE_MENU_SET_ALL_COLLAPSED: 'workspace-menu-set-all-collapsed',
+  /** 「未分類」のアイテムを新しいグループにまとめる（引数: ワークスペースの id） */
+  EVENT_WORKSPACE_MENU_GROUP_UNCATEGORIZED: 'workspace-menu-group-uncategorized',
 
   // コンテキストメニュー - File Tab
   SHOW_FILE_TAB_CONTEXT_MENU: 'show-file-tab-context-menu',
@@ -331,6 +354,8 @@ export const IPC_CHANNELS = {
   // クリップボード操作
   CLIPBOARD_CAPTURE: 'clipboard:capture',
   CLIPBOARD_RESTORE: 'clipboard:restore',
+  /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
+  CLIPBOARD_READ_FOR_REGISTER: 'clipboard:read-for-register',
   CLIPBOARD_CHECK_CURRENT: 'clipboard:check-current',
   // クリップボードセッション管理（登録確定前の一時保存）
   CLIPBOARD_CAPTURE_TO_SESSION: 'clipboard:capture-to-session',

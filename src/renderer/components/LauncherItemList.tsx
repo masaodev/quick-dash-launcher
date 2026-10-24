@@ -33,6 +33,8 @@ interface ItemListProps {
   emptyState?: LauncherEmptyState | null;
   /** 空のタブと、どこにも合わないときの案内の「アイテムを追加…」 */
   onAddItem?: () => void;
+  /** 一覧の余白（アイテムの無い所）の右クリック。未指定なら何も出さない */
+  onBlankContextMenu?: () => void;
   /** 他のタブにあるときの案内の「Tab:タブを切り替える」（Tab キーと同じ動き） */
   onSwitchTab?: () => void;
   /** 右クリックの固定・固定解除（pin: true で固定） */
@@ -106,6 +108,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   nameOfItem,
   emptyState,
   onAddItem,
+  onBlankContextMenu,
   onSwitchTab,
 }) => {
   const { t } = useTranslation();
@@ -356,6 +359,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   const handleContextMenu = async (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
     event.stopPropagation();
+    // Shift+F10・アプリケーションキーで出したとき（ページが起こしたイベント）は、行の位置に出す
+    const anchor = event.nativeEvent.isTrusted ? undefined : { x: event.clientX, y: event.clientY };
 
     const selection = latestRef.current.windowSelection;
     if (
@@ -365,7 +370,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       selection.isMarked(item.hwnd)
     ) {
       const desktopInfo = await window.electronAPI.getVirtualDesktopInfo();
-      window.electronAPI.showWindowsContextMenu(selection.markedCount, desktopInfo);
+      window.electronAPI.showWindowsContextMenu(selection.markedCount, desktopInfo, anchor);
       return;
     }
 
@@ -374,16 +379,25 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         window.electronAPI.getVirtualDesktopInfo(),
         window.electronAPI.isWindowPinned(item.hwnd),
       ]);
-      window.electronAPI.showWindowContextMenu(item, desktopInfo, isPinned);
+      window.electronAPI.showWindowContextMenu(item, desktopInfo, isPinned, anchor);
       return;
     }
 
-    window.electronAPI.showLauncherContextMenu(item);
+    window.electronAPI.showLauncherContextMenu(item, anchor);
   };
 
   return (
     <>
-      <div className="item-list" ref={listRef}>
+      <div
+        className="item-list"
+        ref={listRef}
+        onContextMenu={(e) => {
+          // アイテムの行は行の右クリックが受ける（stopPropagation 済み）。ここに来るのは余白・空のときの案内
+          if (!onBlankContextMenu) return;
+          e.preventDefault();
+          onBlankContextMenu();
+        }}
+      >
         {items.length === 0 && emptyState && (
           <div className="item-list-empty" role="status">
             {emptyState.kind === 'noMatch' ? (

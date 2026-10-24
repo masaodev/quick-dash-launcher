@@ -33,6 +33,7 @@ import {
   bringWorkspaceToFront,
   getWorkspaceWindow,
   hideWorkspaceWithMain,
+  showWorkspaceWindow,
   showWorkspaceWithMain,
 } from './workspaceWindowManager.js';
 import { getHwnd, moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
@@ -40,6 +41,7 @@ import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
 import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
+import { suppressSystemContextMenu } from './utils/systemContextMenu.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -197,6 +199,7 @@ export async function createWindow(): Promise<BrowserWindow> {
     icon: iconPath,
     webPreferences: DEFAULT_WEB_PREFERENCES,
   });
+  suppressSystemContextMenu(mainWindow);
 
   // タスクバーのアイコンを明示的に設定（Windowsで必要）
   const icon = nativeImage.createFromPath(iconPath);
@@ -289,7 +292,11 @@ export async function createTray(): Promise<void> {
     });
   }
 
-  // ホットキーと同じ表示処理を通す（ワークスペース・切り離しウィンドウも一緒に出す）
+  // ホットキーと同じ表示処理を通す（ワークスペース・切り離しウィンドウも一緒に出す）。
+  // シングルクリックでも出す（ダブルクリックは click が先に来るので、同じ表示処理が重なるだけ）
+  tray.on('click', () => {
+    void showMainWindow();
+  });
   tray.on('double-click', () => {
     void showMainWindow();
   });
@@ -325,6 +332,19 @@ async function updateTrayMenu(): Promise<void> {
       label: t('tray.showAtCenter'),
       click: () => {
         void showWindowAtCenter();
+      },
+    },
+    {
+      label: t('tray.showWorkspace'),
+      click: () => {
+        void showWorkspaceWindow();
+      },
+    },
+    { type: 'separator' },
+    {
+      label: t('tray.itemManager'),
+      click: async () => {
+        await showAdminWindowWithTab('edit');
       },
     },
     {

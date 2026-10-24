@@ -190,6 +190,7 @@ const electronAPI: ElectronAPI = {
   getInitialTab: () => ipcRenderer.invoke(IPC_CHANNELS.GET_INITIAL_TAB),
   getPendingImportModal: () => ipcRenderer.invoke(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL),
   copyToClipboard: (text) => ipcRenderer.invoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
+  readClipboardForRegister: () => ipcRenderer.invoke(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER),
   // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
   openMainChildWindow: (request) =>
     ipcRenderer.invoke(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, request),
@@ -288,6 +289,8 @@ const electronAPI: ElectronAPI = {
     remapRefs: (idMap) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMAP_REFS, idMap),
     // グループ管理
     loadGroups: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
+    duplicateGroup: (groupId, name) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DUPLICATE_GROUP, groupId, name),
     createGroup: (name, color, parentGroupId, workspaceId) =>
       ipcRenderer.invoke(
         IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
@@ -380,8 +383,8 @@ const electronAPI: ElectronAPI = {
   onAdminMenuDeleteItems: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS, callback),
   // LauncherContextMenu
-  showLauncherContextMenu: (item) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, item),
+  showLauncherContextMenu: (item, anchor) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, item, anchor),
   onLauncherMenuEditItem: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, callback),
   onLauncherMenuAddToWorkspace: (callback) =>
@@ -408,6 +411,17 @@ const electronAPI: ElectronAPI = {
     ),
   onLauncherMenuShowMemo: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO, callback),
+  onLauncherMenuDeleteItem: (callback) =>
+    createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_DELETE_ITEM, callback),
+  showLauncherBlankContextMenu: () =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_BLANK_CONTEXT_MENU),
+  onLauncherBlankMenuAddItem: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM, callback),
+  onLauncherBlankMenuRegisterFromClipboard: (callback) =>
+    createEventListenerNoArg(
+      IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD,
+      callback
+    ),
   // WorkspaceTabContextMenu
   showWorkspaceTabContextMenu: (workspaceId, canDelete) =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_TAB_CONTEXT_MENU, workspaceId, canDelete),
@@ -415,14 +429,34 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_RENAME, callback),
   onWorkspaceTabMenuDelete: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_TAB_MENU_DELETE, callback),
+  // ワークスペースの余白・「未分類」の見出し・ヘッダーの ＋
+  showWorkspaceBlankContextMenu: (workspaceId, kind, anchor) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_BLANK_CONTEXT_MENU, workspaceId, kind, anchor),
+  onWorkspaceMenuAddGroup: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_GROUP, callback),
+  onWorkspaceMenuAddWorkspace: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_WORKSPACE, callback),
+  onWorkspaceMenuSetAllCollapsed: (callback) =>
+    createEventListener2<string, boolean>(
+      IPC_CHANNELS.EVENT_WORKSPACE_MENU_SET_ALL_COLLAPSED,
+      callback
+    ),
+  onWorkspaceMenuGroupUncategorized: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_GROUP_UNCATEGORIZED, callback),
   // FileTabContextMenu
   showFileTabContextMenu: (tabIndex) =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_FILE_TAB_CONTEXT_MENU, tabIndex),
   onFileTabMenuRename: (callback) =>
     createEventListener<number>(IPC_CHANNELS.EVENT_FILE_TAB_MENU_RENAME, callback),
   // WindowContextMenu
-  showWindowContextMenu: (windowInfo, desktopInfo, isPinned) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo, isPinned),
+  showWindowContextMenu: (windowInfo, desktopInfo, isPinned, anchor) =>
+    ipcRenderer.invoke(
+      IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
+      windowInfo,
+      desktopInfo,
+      isPinned,
+      anchor
+    ),
   onWindowMenuActivate: (callback) =>
     createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, callback),
   onWindowMenuAddToWorkspace: (callback) =>
@@ -430,8 +464,8 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
       callback
     ),
-  showWindowsContextMenu: (count, desktopInfo) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo),
+  showWindowsContextMenu: (count, desktopInfo, anchor) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo, anchor),
   onWindowsMenuClose: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOWS_MENU_CLOSE, callback),
   onWindowsMenuPin: (callback) =>
@@ -478,6 +512,8 @@ const electronAPI: ElectronAPI = {
     ),
   onWorkspaceMenuRemoveItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
+  onWorkspaceMenuMoveToGroup: (callback) =>
+    createEventListener2<string, string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_GROUP, callback),
   onWorkspaceMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
@@ -511,6 +547,12 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN, callback),
   onWorkspaceGroupMenuAddNew: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_NEW, callback),
+  onWorkspaceGroupMenuOpenAll: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_OPEN_ALL, callback),
+  onWorkspaceGroupMenuDuplicate: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DUPLICATE, callback),
+  onWorkspaceGroupMenuCollapseOthers: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COLLAPSE_OTHERS, callback),
   onWorkspaceGroupMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,

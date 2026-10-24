@@ -188,16 +188,7 @@ export class ClipboardService {
   }
 
   private readFilePaths(): string[] {
-    try {
-      const files = clipboardFiles.readFiles();
-      if (files?.length > 0) {
-        logger.debug({ files }, 'クリップボードからファイルパスを取得');
-        return files;
-      }
-    } catch (error) {
-      logger.debug({ error }, 'ファイルパスの読み取りに失敗');
-    }
-    return [];
+    return readClipboardFilePaths();
   }
 
   private async collectClipboardData(): Promise<CollectResult> {
@@ -676,3 +667,17 @@ export class ClipboardService {
 }
 
 export default ClipboardService;
+
+/** エクスプローラーでコピーしたファイル・フォルダのパスを読む（無ければ空） */
+export function readClipboardFilePaths(): string[] {
+  try {
+    const files = clipboardFiles.readFiles();
+    if (files?.length > 0) {
+      logger.debug({ files }, 'クリップボードからファイルパスを取得');
+      return files;
+    }
+  } catch (error) {
+    logger.debug({ error }, 'ファイルパスの読み取りに失敗');
+  }
+  return [];
+}

@@ -11,7 +11,6 @@ interface WorkspaceTabBarProps {
   workspaces: Workspace[];
   activeWorkspaceId: string;
   onTabClick: (workspaceId: string) => void;
-  onCreateWorkspace: (name: string) => void;
   onRenameWorkspace: (id: string, name: string) => void;
   onDeleteWorkspace: (id: string) => void;
   onReorderWorkspaces?: (ids: string[]) => void;
@@ -23,7 +22,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   workspaces,
   activeWorkspaceId,
   onTabClick,
-  onCreateWorkspace,
   onRenameWorkspace,
   onDeleteWorkspace,
   onReorderWorkspaces,
@@ -121,11 +119,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     e.preventDefault();
     const canDelete = workspaces.length > 1;
     window.electronAPI.showWorkspaceTabContextMenu(ws.id, canDelete);
-  };
-
-  const handleAddWorkspace = () => {
-    const name = t('workspace.tabs.defaultName', { number: workspaces.length + 1 });
-    onCreateWorkspace(name);
   };
 
   const handleConfirmDelete = () => {
@@ -233,13 +226,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
             🗄️
           </button>
         )}
-        <button
-          className="tab-button workspace-add-tab-btn"
-          onClick={handleAddWorkspace}
-          title={t('workspace.tabs.add')}
-        >
-          +
-        </button>
       </div>
       <ConfirmDialog
         isOpen={deleteConfirmId !== null && deleteTargetWs !== null}

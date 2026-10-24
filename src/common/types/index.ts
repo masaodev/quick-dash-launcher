@@ -50,6 +50,7 @@ export type {
   MixedChild,
   MixedOrderEntry,
   GroupDropZone,
+  WorkspaceBlankMenuKind,
 } from './workspace';
 
 // ワークスペース設定ファイル（ファイル形式 2.0）の型・定数

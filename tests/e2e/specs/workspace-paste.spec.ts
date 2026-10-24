@@ -117,6 +117,27 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     });
   });
 
+  test('余白の右クリックの「貼り付け」（webContents.paste）でも、ファイル以外の URL が足せる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await electronApp.evaluate(({ clipboard }) => clipboard.writeText('https://example.org/menu'));
+    await workspaceWindow.bringToFront();
+    await workspaceWindow.locator('body').click({ position: { x: 5, y: 5 } });
+    // メニューの「📋 貼り付け」がすることと同じ（以前は paste イベントでファイルしか扱わず、何も足されなかった）
+    // ワークスペースはメインのレンダラーから window.open で開くので、URL ではなくタイトルで探す
+    await electronApp.evaluate(({ BrowserWindow }) => {
+      const ws = BrowserWindow.getAllWindows().find((win) => win.getTitle() === 'Workspace');
+      ws?.webContents.paste();
+    });
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'https://example.org/menu' })
+    ).toBeVisible({ timeout: 15000 });
+  });
+
   test('クリップボードアイテムの編集画面にはパス欄を出さず、名前を変えても中身の参照は保つ', async ({
     electronApp,
     mainWindow,

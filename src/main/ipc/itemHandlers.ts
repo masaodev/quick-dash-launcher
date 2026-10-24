@@ -4,40 +4,14 @@ import { LauncherItem, AppItem } from '@common/types';
 import type { SetItem } from '@common/types';
 import type { LaunchOptions } from '@common/types/launchUsage';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import { hasItemWindowSwitch, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
-import { executeSet, indexItemsById, notifySetFailures } from '../services/launch/setExecutor.js';
-import { openSingleItem } from '../services/launch/itemOpener.js';
+import { executeSetItem, openLauncherItem } from '../services/launch/appItemLauncher.js';
 import { mainI18n } from '../services/mainI18n.js';
-import { LaunchUsageService } from '../services/launchUsageService.js';
-
-async function openItem(item: LauncherItem, options?: LaunchOptions): Promise<void> {
-  itemLogger.info(
-    {
-      name: item.displayName,
-      type: item.type,
-      path: item.path,
-      args: item.args || 'なし',
-      originalPath: item.originalPath || 'なし',
-      window: hasItemWindowSwitch(item) ? JSON.stringify(pickItemWindowSwitch(item)) : 'なし',
-    },
-    'アイテムを起動中'
-  );
-
-  // 登録・編集フォームで試しに開いたときは数えない
-  if ((await openSingleItem(item)) && !options?.trial) {
-    // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ取込の行の id で数える
-    const usage = LaunchUsageService.getInstance();
-    if (item.isDirExpanded) await usage?.recordById(item.expandedFromId);
-    else if (item.id) await usage?.recordById(item.id);
-    else await usage?.recordByPath(item.path);
-  }
-}
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
   itemLogger.info({ name: item.displayName, type: item.type, path: item.path }, '親フォルダを開く');
@@ -84,7 +58,7 @@ export function setupItemHandlers(): void {
     IPC_CHANNELS.OPEN_ITEM,
     async (_event, item: LauncherItem, options?: LaunchOptions) => {
       hideMainWindowOnExecute();
-      await openItem(item, options);
+      await openLauncherItem(item, options);
     }
   );
 
@@ -95,12 +69,7 @@ export function setupItemHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_SET, async (_event, item: SetItem, allItems: AppItem[]) => {
     hideMainWindowOnExecute();
-    const byId = indexItemsById(allItems);
-    const result = await executeSet(item, (itemId) => byId.get(itemId));
-    await notifySetFailures(item, result);
-    if (!result.skipped && !result.cancelled && result.successCount > 0) {
-      await LaunchUsageService.getInstance()?.recordById(item.id);
-    }
+    await executeSetItem(item, allItems);
   });
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {

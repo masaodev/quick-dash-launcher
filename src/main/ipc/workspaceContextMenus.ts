@@ -4,10 +4,18 @@
  * 画面仕様: docs/screens/context-menu.md
  */
 import { ipcMain, screen, Menu, MenuItem, WebContents } from 'electron';
-import type { Workspace, WorkspaceItem, WorkspaceGroup } from '@common/types';
+import type {
+  Workspace,
+  WorkspaceBlankMenuKind,
+  WorkspaceItem,
+  WorkspaceGroup,
+} from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { uncategorizedAddTarget } from '@common/utils/workspaceAddTarget';
 
 import { openWorkspaceLinkCopies } from '../workspaceLinkWindowManager.js';
+import { openWorkspaceItemPicker } from '../workspaceItemPickerWindowManager.js';
+import { openWorkspaceNewItemEditor } from '../workspaceItemEditorWindowManager.js';
 import {
   closeDetachedGroupWindow,
   createDetachedGroupWindow,
@@ -60,7 +68,7 @@ function setupWorkspaceContextMenuHandler(): void {
     async (
       event,
       item: WorkspaceItem,
-      _groups: WorkspaceGroup[],
+      groups: WorkspaceGroup[],
       workspaces: Workspace[]
     ): Promise<void> => {
       const senderWindow = getValidWindow(event);
@@ -128,6 +136,8 @@ function setupWorkspaceContextMenuHandler(): void {
           menu.append(moveSubmenu);
         }
       }
+      const moveToGroup = buildMoveToGroupSubmenu(event.sender, item, groups ?? []);
+      if (moveToGroup) menu.append(moveToGroup);
 
       // 参照は「コピーにする」「別のアイテムを指す」（コピーを参照にするのは下の「メインウィンドウへ移して参照にする」）
       menu.append(createSeparator());
@@ -160,6 +170,39 @@ function setupWorkspaceContextMenuHandler(): void {
       menu.popup({ window: senderWindow });
     }
   );
+}
+
+/**
+ * 「📁 グループへ移動 ▸」（同じワークスペースのほかのグループ。サブグループは字下げして親の下に並べる）
+ *
+ * 未分類は移す先に入れない（「グループから外す」は無くした。2026-10-23 本人「未分類はいらない」）。
+ * アーカイブの表示中（workspaceId が空）と、ほかにグループが無いときは出さない
+ */
+function buildMoveToGroupSubmenu(
+  sender: WebContents,
+  item: WorkspaceItem,
+  groups: WorkspaceGroup[]
+): MenuItem | null {
+  if (!item.workspaceId) return null;
+  const inWorkspace = groups.filter((g) => g.workspaceId === item.workspaceId);
+  const byOrder = (a: WorkspaceGroup, b: WorkspaceGroup) => a.order - b.order;
+  const submenu = new Menu();
+  const appendTree = (parentId: string | undefined, depth: number) => {
+    for (const group of inWorkspace.filter((g) => g.parentGroupId === parentId).sort(byOrder)) {
+      submenu.append(
+        new MenuItem({
+          label: `${'　'.repeat(depth)}${group.displayName}`,
+          enabled: group.id !== item.groupId,
+          click: () =>
+            sender.send(IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_GROUP, item.id, group.id),
+        })
+      );
+      appendTree(group.id, depth + 1);
+    }
+  };
+  appendTree(undefined, 0);
+  const movable = inWorkspace.some((g) => g.id !== item.groupId);
+  return movable ? new MenuItem({ label: t('menu.workspaceItem.moveToGroup'), submenu }) : null;
 }
 
 /**
@@ -241,6 +284,17 @@ function setupWorkspaceGroupContextMenuHandler(): void {
         return;
       }
 
+      // グループのアイテム（サブグループの中も）を順に開く
+      menu.append(
+        createMenuItem(
+          t('menu.workspaceGroup.openAll'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_OPEN_ALL,
+          group.id
+        )
+      );
+      menu.append(createSeparator());
+
       const detachItem = buildDetachMenuItem(event.sender, group);
       if (detachItem) {
         menu.append(detachItem);
@@ -296,6 +350,25 @@ function setupWorkspaceGroupContextMenuHandler(): void {
           group.id
         )
       );
+      menu.append(
+        createMenuItem(
+          t('menu.workspaceGroup.duplicate'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DUPLICATE,
+          group.id
+        )
+      );
+      // 切り離しウィンドウにはほかのグループが無いので出さない
+      if (getGroupIdByWebContentsId(event.sender.id) === undefined) {
+        menu.append(
+          createMenuItem(
+            t('menu.workspaceGroup.collapseOthers'),
+            event.sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COLLAPSE_OTHERS,
+            group.id
+          )
+        );
+      }
       menu.append(createSeparator());
       menu.append(
         createMenuItem(
@@ -369,6 +442,26 @@ function setupWorkspaceTabContextMenuHandler(): void {
         })
       );
 
+      // このタブに足す・このタブのグループを開閉する（選んでいないタブなら、そのタブに切り替えてから）
+      menu.append(createSeparator());
+      menu.append(
+        createMenuItem(
+          t('menu.workspace.addGroup'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_GROUP,
+          workspaceId
+        )
+      );
+      menu.append(
+        createMenuItem(
+          t('menu.workspace.addWorkspace'),
+          event.sender,
+          IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_WORKSPACE
+        )
+      );
+      menu.append(createSeparator());
+      appendCollapseMenuItems(menu, event.sender, workspaceId);
+
       if (canDelete) {
         menu.append(createSeparator());
         menu.append(
@@ -386,9 +479,128 @@ function setupWorkspaceTabContextMenuHandler(): void {
   );
 }
 
+/** 「すべて展開」「すべて折りたたむ」を足す */
+function appendCollapseMenuItems(menu: Menu, sender: WebContents, workspaceId: string): void {
+  menu.append(
+    createMenuItem(
+      t('menu.workspace.expandAll'),
+      sender,
+      IPC_CHANNELS.EVENT_WORKSPACE_MENU_SET_ALL_COLLAPSED,
+      workspaceId,
+      false
+    )
+  );
+  menu.append(
+    createMenuItem(
+      t('menu.workspace.collapseAll'),
+      sender,
+      IPC_CHANNELS.EVENT_WORKSPACE_MENU_SET_ALL_COLLAPSED,
+      workspaceId,
+      true
+    )
+  );
+}
+
+/**
+ * 「➕ アイテムを追加 ▸」（メインウィンドウのアイテムから選ぶ・新しく入力して追加）
+ *
+ * @param target 追加先（グループの id か、未分類なら uncategorizedAddTarget の値）
+ */
+function buildAddItemSubmenuItem(sender: WebContents, target: string): MenuItem {
+  const submenu = new Menu();
+  submenu.append(
+    new MenuItem({
+      label: t('menu.workspaceGroup.addFromMain'),
+      click: () => void openWorkspaceItemPicker(sender, target),
+    })
+  );
+  submenu.append(
+    new MenuItem({
+      label: t('menu.workspaceGroup.addNew'),
+      click: () => void openWorkspaceNewItemEditor(sender, target),
+    })
+  );
+  return new MenuItem({ label: t('menu.workspaceGroup.addItem'), submenu });
+}
+
+/**
+ * ワークスペースの余白・「未分類」の見出しの右クリックと、ヘッダーの ＋ のメニュー
+ *
+ * - blank（余白）: グループを追加・貼り付け・すべて展開／折りたたむ
+ * - uncategorized（「未分類」の見出し）: アイテムを追加（未分類へ）・グループにまとめる
+ * - add（ヘッダーの ＋）: グループを追加・ワークスペースを追加
+ *
+ * 未分類へアイテムを足す入口は「未分類」の見出しだけにする（未分類はなるべく使わない方針。2026-10-24 本人）
+ */
+function setupWorkspaceBlankContextMenuHandler(): void {
+  ipcMain.handle(
+    IPC_CHANNELS.SHOW_WORKSPACE_BLANK_CONTEXT_MENU,
+    async (
+      event,
+      workspaceId: string,
+      kind: WorkspaceBlankMenuKind,
+      anchor?: { x: number; y: number }
+    ): Promise<void> => {
+      const senderWindow = getValidWindow(event);
+      if (!senderWindow) return;
+      const sender = event.sender;
+      const menu = new Menu();
+      const addGroup = createMenuItem(
+        t('menu.workspace.addGroup'),
+        sender,
+        IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_GROUP,
+        workspaceId
+      );
+      if (kind === 'uncategorized') {
+        menu.append(buildAddItemSubmenuItem(sender, uncategorizedAddTarget(workspaceId)));
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            t('menu.workspace.groupUncategorized'),
+            sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_GROUP_UNCATEGORIZED,
+            workspaceId
+          )
+        );
+      } else if (kind === 'add') {
+        menu.append(addGroup);
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            t('menu.workspace.addWorkspace'),
+            sender,
+            IPC_CHANNELS.EVENT_WORKSPACE_MENU_ADD_WORKSPACE
+          )
+        );
+      } else {
+        menu.append(addGroup);
+        // Ctrl+V と同じ（貼り付けのイベントをページに起こし、ページ側の振り分けを通す）
+        menu.append(
+          new MenuItem({
+            label: t('menu.workspace.paste'),
+            accelerator: 'Ctrl+V',
+            registerAccelerator: false,
+            click: () => sender.paste(),
+          })
+        );
+        menu.append(createSeparator());
+        appendCollapseMenuItems(menu, sender, workspaceId);
+      }
+
+      // ＋ のメニューはボタンの下に出す（右クリックはカーソルの位置）
+      menu.popup(
+        anchor
+          ? { window: senderWindow, x: Math.round(anchor.x), y: Math.round(anchor.y) }
+          : { window: senderWindow }
+      );
+    }
+  );
+}
+
 /** ワークスペース・切り離しウィンドウの右クリックメニューを設定 */
 export function setupWorkspaceContextMenus(): void {
   setupWorkspaceContextMenuHandler();
   setupWorkspaceGroupContextMenuHandler();
   setupWorkspaceTabContextMenuHandler();
+  setupWorkspaceBlankContextMenuHandler();
 }
