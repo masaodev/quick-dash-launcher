@@ -11,6 +11,7 @@ import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { executeSetItem, openLauncherItem } from '../services/launch/appItemLauncher.js';
+import { openLauncherItemAsAdmin } from '../services/launch/adminItemLauncher.js';
 import { mainI18n } from '../services/mainI18n.js';
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
@@ -65,6 +66,11 @@ export function setupItemHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.OPEN_PARENT_FOLDER, async (_event, item: LauncherItem) => {
     hideMainWindowOnExecute();
     await openParentFolder(item);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.RUN_ITEM_AS_ADMIN, async (_event, item: LauncherItem) => {
+    hideMainWindowOnExecute();
+    await openLauncherItemAsAdmin(item);
   });
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_SET, async (_event, item: SetItem, allItems: AppItem[]) => {

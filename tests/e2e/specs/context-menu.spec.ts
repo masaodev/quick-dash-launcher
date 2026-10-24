@@ -4,6 +4,7 @@ import * as path from 'path';
 import type { ElectronApplication, Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/electron-app';
+import { IPC_CHANNELS } from '../../../src/common/ipcChannels';
 import { TestUtils, NativeMenuTestHelper } from '../helpers/test-utils';
 
 /**
@@ -279,6 +280,64 @@ test.describe('QuickDashLauncher - 右クリックメニューの項目', () => 
     const labels = await captureMenuLabels(electronApp, mainWindow, 'メモ帳');
     expect(labels).toContain('📋 パスをコピー');
     expect(labels).toContain('📂 親フォルダを開く');
+  });
+
+  test('アプリには「管理者として実行」が出て、URL には出ない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const appLabels = await captureMenuLabels(electronApp, mainWindow, 'メモ帳');
+    expect(appLabels.slice(0, 2)).toEqual(['✏️ 編集', '🛡️ 管理者として実行']);
+    const urlLabels = await captureMenuLabels(electronApp, mainWindow, 'Google');
+    expect(urlLabels).not.toContain('🛡️ 管理者として実行');
+  });
+
+  test('右クリックの「管理者として実行」と Ctrl+Shift+Enter は、選んだアプリを管理者として実行に渡す', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    // 本物の UAC を出さないよう、本体の「管理者として実行」の受け口を差し替えて、渡されたアイテムを記録する
+    await electronApp.evaluate(({ ipcMain }, channel) => {
+      const g = globalThis as { __e2eRunAsAdmin?: string[] };
+      g.__e2eRunAsAdmin = [];
+      ipcMain.removeHandler(channel);
+      ipcMain.handle(channel, (_event, item: { displayName: string }) => {
+        g.__e2eRunAsAdmin!.push(item.displayName);
+      });
+    }, IPC_CHANNELS.RUN_ITEM_AS_ADMIN);
+    const recorded = () =>
+      electronApp.evaluate(
+        () => (globalThis as { __e2eRunAsAdmin?: string[] }).__e2eRunAsAdmin ?? []
+      );
+    const utils = new TestUtils(mainWindow);
+
+    await test.step('右クリックの「管理者として実行」', async () => {
+      await new NativeMenuTestHelper(electronApp, mainWindow).simulateLauncherMenu('runAsAdmin', {
+        displayName: '電卓',
+        path: 'calc.exe',
+        type: 'app',
+      });
+      await expect.poll(recorded).toEqual(['電卓']);
+    });
+
+    await test.step('Ctrl+Shift+Enter（親フォルダは開かない）', async () => {
+      await electronApp.evaluate(({ shell }) => {
+        const g = globalThis as { __e2eShownInFolder?: string[] };
+        g.__e2eShownInFolder = [];
+        shell.showItemInFolder = (fullPath: string) => {
+          g.__e2eShownInFolder!.push(fullPath);
+        };
+      });
+      await utils.searchFor('メモ帳');
+      await expect(mainWindow.locator('.item', { hasText: 'メモ帳' })).toBeVisible();
+      await mainWindow.keyboard.press('Control+Shift+Enter');
+      await expect.poll(recorded).toEqual(['電卓', 'メモ帳']);
+      expect(
+        await electronApp.evaluate(
+          () => (globalThis as { __e2eShownInFolder?: string[] }).__e2eShownInFolder ?? []
+        )
+      ).toEqual([]);
+    });
   });
 
   test('パスの無い単一アイテムにはパス系の項目が出ない', async ({ electronApp, mainWindow }) => {

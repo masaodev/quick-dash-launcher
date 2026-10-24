@@ -10,6 +10,7 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { desktopLabel } from '@common/utils/desktopLabel';
 import { isLauncherItem, isSetItem } from '@common/types/guards';
 import { getDeletableItemId } from '@common/utils/launcherItemDelete';
+import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { rerecordSetPositions } from '../services/launch/setRerecord.js';
 import { showAdminWindowWithImportModal } from '../adminWindowManager.js';
@@ -18,6 +19,7 @@ import { isReferenceableAppItem } from '../services/workspace/workspaceRefResolv
 import {
   appendPathMenuItems,
   createMenuItem,
+  createMenuItemWithKey,
   createSeparator,
   getValidWindow,
   LAUNCHER_PATH_MENU_CHANNELS,
@@ -103,6 +105,19 @@ function setupLauncherContextMenuHandler(): void {
             t('menu.showNote'),
             event.sender,
             IPC_CHANNELS.EVENT_LAUNCHER_MENU_SHOW_MEMO,
+            item
+          )
+        );
+      }
+
+      // アプリ（exe・.lnk・.bat/.cmd）だけ。Ctrl+Shift+Enter はメインウィンドウのキー処理で受ける
+      if (isLauncherItem(item) && canRunAsAdmin(item)) {
+        menu.append(
+          createMenuItemWithKey(
+            t('menu.runAsAdmin'),
+            'Ctrl+Shift+Enter',
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_RUN_AS_ADMIN,
             item
           )
         );

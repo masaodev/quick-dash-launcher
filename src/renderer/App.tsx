@@ -18,6 +18,7 @@ import type {
 } from '@common/types';
 import { isWindowInfo, isClipboardItem, isSetItem, isLauncherItem } from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherHintBar from './components/LauncherHintBar';
@@ -425,6 +426,42 @@ function App(): React.ReactElement {
     [searchMode, searchQuery, executeAppItem, addHistoryEntry, t]
   );
 
+  // 管理者として実行（右クリック・Ctrl+Shift+Enter）。対象はアプリだけで、ほかの種類は実行せずに知らせる
+  const handleRunAsAdmin = useCallback(
+    async (item: AppItem) => {
+      if (isWindowInfo(item)) return;
+      if (!isLauncherItem(item) || !canRunAsAdmin(item)) {
+        await window.electronAPI.showToastWindow({
+          type: 'info',
+          message: t('launcher.messages.cannotRunAsAdmin', { name: item.displayName }),
+        });
+        return;
+      }
+      const searchQueryForHistory = searchQuery.trim();
+      try {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: item.type,
+          path: item.path,
+          icon: item.icon,
+        });
+        await window.electronAPI.runItemAsAdmin(item);
+        if (searchQueryForHistory) {
+          addHistoryEntry(searchQueryForHistory).catch((error) => {
+            logError('検索履歴の追加に失敗しました:', error);
+          });
+        }
+      } catch (error) {
+        showErrorAlert(
+          t('launcher.messages.openFailed', {
+            reason: error instanceof Error ? error.message : String(error),
+          })
+        );
+      }
+    },
+    [searchQuery, addHistoryEntry, t]
+  );
+
   const tabFilteredItems = useMemo(
     () => getTabFilteredItems(mainItems),
     [getTabFilteredItems, mainItems]
@@ -549,6 +586,7 @@ function App(): React.ReactElement {
     onCopyPath: handleCopyPath,
     onCopyParentPath: handleCopyParentPath,
     onOpenContextMenu: openRowContextMenu,
+    onRunAsAdmin: handleRunAsAdmin,
   });
 
   // リストの行や余白（フォーカスを受け取らない要素）をクリックするとフォーカスが body に移り、
@@ -868,6 +906,7 @@ function App(): React.ReactElement {
         onCopyPath={handleCopyPath}
         onCopyParentPath={handleCopyParentPath}
         onOpenParentFolder={handleOpenParentFolder}
+        onRunAsAdmin={(item) => void handleRunAsAdmin(item)}
         onCopyShortcutPath={handleCopyShortcutPath}
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={handleOpenShortcutParentFolder}

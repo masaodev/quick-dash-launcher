@@ -34,9 +34,22 @@ vi.mock('./pathResolver.js', async (importOriginal) => ({
 }));
 vi.mock('../services/clipboardService.js', () => ({ ClipboardService: { getInstance: vi.fn() } }));
 vi.mock('./folderPathProbe.js', () => ({ noteLaunchedPath: vi.fn().mockResolvedValue(undefined) }));
-vi.mock('../services/mainI18n.js', () => ({ mainI18n: { t: (key: string) => key } }));
+vi.mock('../services/mainI18n.js', () => ({
+  mainI18n: {
+    t: (key: string, params?: Record<string, unknown>) =>
+      params ? `${key}:${JSON.stringify(params)}` : key,
+  },
+}));
+// koffi を読み込まないよう、ShellExecuteExW を呼ぶ関数は差し替える（テストでは引数で渡す）
+vi.mock('./shellExecuteRunAs.js', () => ({ shellExecuteRunAs: vi.fn() }));
 
-import { getWorkingDirectory, launchItem } from './itemLauncher';
+import {
+  buildRunAsRequest,
+  ERROR_CANCELLED,
+  getWorkingDirectory,
+  launchItem,
+  launchItemAsAdmin,
+} from './itemLauncher';
 
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
 
@@ -191,6 +204,82 @@ describe('launchItem の結果', () => {
     await expect(launchItem({ type: 'app', path: 'nothing.exe' }, logger)).resolves.toEqual({
       success: false,
       error: 'launcher.messages.appNotFoundInPath',
+    });
+  });
+});
+
+describe('buildRunAsRequest', () => {
+  it('exe は引数と、exe のフォルダを作業フォルダとして渡す', () => {
+    expect(buildRunAsRequest({ path: 'C:\\Tools\\tool.exe', args: ' --port 80 ' })).toEqual({
+      file: 'C:\\Tools\\tool.exe',
+      parameters: '--port 80',
+      directory: 'C:\\Tools',
+    });
+  });
+
+  it('.bat も同じく引数と作業フォルダを渡す', () => {
+    expect(buildRunAsRequest({ path: 'C:\\scripts\\setup.bat', args: '-y' })).toEqual({
+      file: 'C:\\scripts\\setup.bat',
+      parameters: '-y',
+      directory: 'C:\\scripts',
+    });
+  });
+
+  it('引数が無ければ渡さない。ファイル名だけなら作業フォルダも渡さない（Windows が PATH から探す）', () => {
+    expect(buildRunAsRequest({ path: 'notepad.exe' })).toEqual({ file: 'notepad.exe' });
+    expect(buildRunAsRequest({ path: 'cmd.exe', args: '  ' })).toEqual({ file: 'cmd.exe' });
+  });
+
+  it('ショートカット（.lnk）は引数・作業フォルダを渡さない（ショートカット自身が持つ）', () => {
+    expect(buildRunAsRequest({ path: 'C:\\Links\\Tool.LNK', args: '--from-lnk' })).toEqual({
+      file: 'C:\\Links\\Tool.LNK',
+    });
+  });
+});
+
+describe('launchItemAsAdmin', () => {
+  const item = { path: 'C:\\Tools\\tool.exe', args: '-v', displayName: 'Tool' };
+
+  it('組み立てたものを渡し、0 が返れば起動できた', async () => {
+    const execute = vi.fn(async () => 0);
+    await expect(launchItemAsAdmin(item, logger, execute)).resolves.toEqual({
+      status: 'launched',
+    });
+    expect(execute).toHaveBeenCalledWith({
+      file: 'C:\\Tools\\tool.exe',
+      parameters: '-v',
+      directory: 'C:\\Tools',
+    });
+  });
+
+  it('UAC で「いいえ」を押した（1223）ときは取りやめ（失敗にしない）', async () => {
+    expect(ERROR_CANCELLED).toBe(1223);
+    await expect(launchItemAsAdmin(item, logger, async () => 1223)).resolves.toEqual({
+      status: 'cancelled',
+    });
+  });
+
+  it.each([2, 3])('ファイルが見つからない（%i）ときは、その理由で失敗にする', async (code) => {
+    await expect(launchItemAsAdmin(item, logger, async () => code)).resolves.toEqual({
+      status: 'failed',
+      error: 'launcher.messages.fileNotFound',
+    });
+  });
+
+  it('ほかのエラーコードは、コードを添えて失敗にする', async () => {
+    await expect(launchItemAsAdmin(item, logger, async () => 1155)).resolves.toEqual({
+      status: 'failed',
+      error: 'launcher.messages.windowsError:{"code":1155}',
+    });
+  });
+
+  it('呼び出しが投げたら、その理由で失敗にする（投げ返さない）', async () => {
+    const execute = vi.fn(async () => {
+      throw new Error('koffi failed');
+    });
+    await expect(launchItemAsAdmin(item, logger, execute)).resolves.toEqual({
+      status: 'failed',
+      error: 'koffi failed',
     });
   });
 });

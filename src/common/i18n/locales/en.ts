@@ -222,6 +222,9 @@ export const en: LocaleMessages = {
       launchFailed: 'Couldn\'t open "{{name}}": {{error}}',
       appNotFoundInPath: "Couldn't find the app in PATH",
       clipboardDataMissing: "Couldn't find the clipboard data",
+      cannotRunAsAdmin: '"{{name}}" can\'t be run as administrator (apps only)',
+      fileNotFound: "Couldn't find the file",
+      windowsError: 'Windows error (code {{code}})',
     },
     itemActions: {
       targets: {
@@ -340,6 +343,7 @@ export const en: LocaleMessages = {
     copyPath: '📋 Copy path',
     copyParentPath: '📋 Copy containing folder path',
     openParentFolder: '📂 Open containing folder',
+    runAsAdmin: '🛡️ Run as administrator',
     copyShortcutPath: '📋 Copy shortcut path',
     copyShortcutParentPath: "📋 Copy shortcut's containing folder path",
     openShortcutParentFolder: "📂 Open shortcut's containing folder",
@@ -1576,6 +1580,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       toggleWorkspace: 'Show or hide the workspace (in the launcher)',
       open: 'Open the selected item',
       openFolder: "Open the selected item's containing folder",
+      runAsAdmin: 'Run the selected app as administrator',
       edit: 'Edit the selected item (in normal search mode)',
       select: 'Select an item',
       history: 'Browse search history',

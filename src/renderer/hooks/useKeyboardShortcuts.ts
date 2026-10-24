@@ -47,6 +47,8 @@ export interface UseKeyboardShortcutsParams {
   onCopyParentPath?: (item: LauncherItem) => void | Promise<void>;
   /** Shift+F10・アプリケーションキー: 選んでいる行の右クリックメニューを出す */
   onOpenContextMenu?: (index: number) => void;
+  /** Ctrl+Shift+Enter: 選んでいるアイテムを管理者として実行（対象外の種類は呼び出し側で知らせる） */
+  onRunAsAdmin?: (item: AppItem) => void | Promise<void>;
 }
 
 export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
@@ -84,6 +86,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     onCopyPath,
     onCopyParentPath,
     onOpenContextMenu,
+    onRunAsAdmin,
   } = params;
 
   function buildDesktopTabIds(): number[] {
@@ -321,6 +324,11 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
         e.stopPropagation();
         // 押しっぱなしのキーリピートでは実行しない（多重起動や、失敗のダイアログを閉じた直後の実行し直しを防ぐ）
         if (e.repeat || !selectedItem) return;
+        // Ctrl+Shift+Enter: 管理者として実行（ウィンドウ検索の行は Enter と同じく前面に出す）
+        if (e.ctrlKey && e.shiftKey && !isWindowInfo(selectedItem)) {
+          await onRunAsAdmin?.(selectedItem);
+          return;
+        }
         if (e.shiftKey && isLauncherItem(selectedItem)) {
           // URL・カスタム URI・パスの無い単一アイテムには親フォルダが無い。押しても無反応だと故障に見えるので知らせる
           if (

@@ -31,12 +31,17 @@ export async function openLauncherItem(item: LauncherItem, options?: LaunchOptio
   );
 
   if ((await openSingleItem(item)) && !options?.trial) {
-    // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ取込の行の id で数える
-    const usage = LaunchUsageService.getInstance();
-    if (item.isDirExpanded) await usage?.recordById(item.expandedFromId);
-    else if (item.id) await usage?.recordById(item.id);
-    else await usage?.recordByPath(item.path);
+    await recordLauncherItemLaunch(item);
   }
+}
+
+/** メインウィンドウの単一アイテムを開けたことを、起動の記録に数える */
+export async function recordLauncherItemLaunch(item: LauncherItem): Promise<void> {
+  // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ取込の行の id で数える
+  const usage = LaunchUsageService.getInstance();
+  if (item.isDirExpanded) await usage?.recordById(item.expandedFromId);
+  else if (item.id) await usage?.recordById(item.id);
+  else await usage?.recordByPath(item.path);
 }
 
 /** セットを開き、失敗した行を知らせ、1 つでも開けたら起動の記録に数える */

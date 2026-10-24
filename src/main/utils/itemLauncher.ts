@@ -14,6 +14,7 @@ import { mainI18n } from '../services/mainI18n.js';
 
 import { noteLaunchedPath } from './folderPathProbe.js';
 import { isBareFileName, resolveFromPath } from './pathResolver.js';
+import { shellExecuteRunAs, type RunAsRequest } from './shellExecuteRunAs.js';
 
 /**
  * 起動可能なアイテムの最小インターフェース
@@ -185,6 +186,73 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<string |
  */
 export function getWorkingDirectory(executablePath: string): string | undefined {
   return path.win32.isAbsolute(executablePath) ? path.win32.dirname(executablePath) : undefined;
+}
+
+/** UAC の確認で「いいえ」を押したときのエラーコード（ERROR_CANCELLED） */
+export const ERROR_CANCELLED = 1223;
+const ERROR_FILE_NOT_FOUND = 2;
+const ERROR_PATH_NOT_FOUND = 3;
+
+/** 管理者として起動した結果（cancelled は UAC で「いいえ」を押した。知らせない） */
+export type AdminLaunchResult =
+  { status: 'launched' } | { status: 'cancelled' } | { status: 'failed'; error: string };
+
+/**
+ * 管理者として起動するときに渡すものを組み立てる（引数・作業フォルダは普通に開くときと同じ）
+ *
+ * ショートカット（.lnk）は、引数・作業フォルダをショートカット自身が持つので渡さない
+ * （アイテムの引数はショートカットから読んだものなので、渡すと二重になる）
+ */
+export function buildRunAsRequest(item: Pick<LaunchableItem, 'path' | 'args'>): RunAsRequest {
+  if (/\.lnk$/i.test(item.path)) return { file: item.path };
+  const parameters = item.args?.trim();
+  const directory = getWorkingDirectory(item.path);
+  return {
+    file: item.path,
+    ...(parameters && { parameters }),
+    ...(directory && { directory }),
+  };
+}
+
+/** ShellExecuteExW のエラーコードを、利用者に見せる理由にする */
+function describeRunAsError(code: number): string {
+  if (code === ERROR_FILE_NOT_FOUND || code === ERROR_PATH_NOT_FOUND) {
+    return mainI18n.t('launcher.messages.fileNotFound');
+  }
+  return mainI18n.t('launcher.messages.windowsError', { code });
+}
+
+/**
+ * アイテムを管理者として起動する（UAC の確認が出る）
+ *
+ * 失敗しても投げず、ログに残して結果を返す（知らせるのは呼び出し側）
+ *
+ * @param execute ShellExecuteExW を呼ぶ関数（テストで差し替える）
+ */
+export async function launchItemAsAdmin(
+  item: Pick<LaunchableItem, 'path' | 'args' | 'displayName'>,
+  logger: Logger,
+  execute: (request: RunAsRequest) => Promise<number> = shellExecuteRunAs
+): Promise<AdminLaunchResult> {
+  const request = buildRunAsRequest(item);
+  const logContext = { name: item.displayName, ...request };
+  try {
+    const code = await execute(request);
+    if (code === 0) {
+      logger.info(logContext, '管理者として起動しました');
+      return { status: 'launched' };
+    }
+    if (code === ERROR_CANCELLED) {
+      logger.info(logContext, '管理者としての起動を UAC で取りやめました');
+      return { status: 'cancelled' };
+    }
+    logger.error({ ...logContext, code }, '管理者として起動できませんでした');
+    return { status: 'failed', error: describeRunAsError(code) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error({ ...logContext, error: message }, '管理者として起動できませんでした');
+    return { status: 'failed', error: message };
+  }
 }
 
 /** @returns 失敗の理由（復元できたら undefined） */

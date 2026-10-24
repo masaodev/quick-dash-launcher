@@ -23,6 +23,8 @@ interface ItemListProps {
   onCopyPath?: (item: LauncherItem) => void;
   onCopyParentPath?: (item: LauncherItem) => void;
   onOpenParentFolder?: (item: LauncherItem) => void;
+  /** 右クリックの「管理者として実行」 */
+  onRunAsAdmin?: (item: LauncherItem) => void;
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
   onOpenShortcutParentFolder?: (item: LauncherItem) => void;
@@ -97,6 +99,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onCopyPath,
   onCopyParentPath,
   onOpenParentFolder,
+  onRunAsAdmin,
   onCopyShortcutPath,
   onCopyShortcutParentPath,
   onOpenShortcutParentFolder,
@@ -155,6 +158,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onCopyPath,
     onCopyParentPath,
     onOpenParentFolder,
+    onRunAsAdmin,
     onCopyShortcutPath,
     onCopyShortcutParentPath,
     onOpenShortcutParentFolder,
@@ -170,6 +174,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onCopyPath,
     onCopyParentPath,
     onOpenParentFolder,
+    onRunAsAdmin,
     onCopyShortcutPath,
     onCopyShortcutParentPath,
     onOpenShortcutParentFolder,
@@ -221,6 +226,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       | 'onCopyPath'
       | 'onCopyParentPath'
       | 'onOpenParentFolder'
+      | 'onRunAsAdmin'
       | 'onCopyShortcutPath'
       | 'onCopyShortcutParentPath'
       | 'onOpenShortcutParentFolder';
@@ -252,6 +258,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       window.electronAPI.onLauncherMenuOpenParentFolder(
         createLauncherItemHandler('onOpenParentFolder')
       ),
+      window.electronAPI.onLauncherMenuRunAsAdmin(createLauncherItemHandler('onRunAsAdmin')),
       window.electronAPI.onLauncherMenuCopyShortcutPath(
         createLauncherItemHandler('onCopyShortcutPath')
       ),

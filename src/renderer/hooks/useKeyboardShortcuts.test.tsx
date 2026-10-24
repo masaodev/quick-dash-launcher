@@ -62,6 +62,7 @@ function setup(
     canPinWindow,
     activeDesktopTab: 0,
     setActiveDesktopTab: vi.fn(),
+    onRunAsAdmin: vi.fn(async () => undefined),
   };
   const { result } = renderHook(() => {
     const windowOps = useWindowOperations(params);
@@ -226,6 +227,37 @@ describe('useKeyboardShortcuts', () => {
 
     expect(openParentFolder).toHaveBeenCalledWith(item);
     expect(showToastWindow).not.toHaveBeenCalled();
+  });
+
+  it('Ctrl+Shift+Enter は管理者として実行に渡し、親フォルダは開かない', async () => {
+    const item = launcherItem('app', 'C:\\Tools\\tool.exe');
+    const { params, handleKeyDown } = setup([item]);
+
+    await handleKeyDown(keyEvent('Enter', { ctrlKey: true, shiftKey: true }));
+
+    expect(params.onRunAsAdmin).toHaveBeenCalledWith(item);
+    expect(openParentFolder).not.toHaveBeenCalled();
+    expect(params.handleExecuteItem).not.toHaveBeenCalled();
+  });
+
+  it('Ctrl+Shift+Enter は対象外の種類（セット）も渡す（知らせるのは呼び出し側）', async () => {
+    const group = { type: 'set', displayName: '朝のセット', entries: [] } as AppItem;
+    const { params, handleKeyDown } = setup([group]);
+
+    await handleKeyDown(keyEvent('Enter', { ctrlKey: true, shiftKey: true }));
+
+    expect(params.onRunAsAdmin).toHaveBeenCalledWith(group);
+    expect(params.handleExecuteItem).not.toHaveBeenCalled();
+    expect(showToastWindow).not.toHaveBeenCalled();
+  });
+
+  it('ウィンドウ検索の結果の Ctrl+Shift+Enter は、Enter と同じくウィンドウを前に出す', async () => {
+    const { params, handleKeyDown } = setup([notepad(100)], 'window');
+
+    await handleKeyDown(keyEvent('Enter', { ctrlKey: true, shiftKey: true }));
+
+    expect(params.onRunAsAdmin).not.toHaveBeenCalled();
+    expect(params.handleExecuteItem).toHaveBeenCalledWith(notepad(100));
   });
 
   it('ウィンドウ検索モードの Ctrl+D で閉じたウィンドウは、再取得を待たずに一覧から外す', async () => {

@@ -225,6 +225,9 @@ export const ja = {
       launchFailed: '「{{name}}」を開けませんでした: {{error}}',
       appNotFoundInPath: 'PATH にアプリが見つかりません',
       clipboardDataMissing: 'クリップボードのデータが見つかりません',
+      cannotRunAsAdmin: '「{{name}}」は管理者として実行できません（アプリだけ）',
+      fileNotFound: 'ファイルが見つかりません',
+      windowsError: 'Windows のエラー（コード {{code}}）',
     },
     itemActions: {
       targets: {
@@ -342,6 +345,7 @@ export const ja = {
     copyPath: '📋 パスをコピー',
     copyParentPath: '📋 親フォルダのパスをコピー',
     openParentFolder: '📂 親フォルダを開く',
+    runAsAdmin: '🛡️ 管理者として実行',
     copyShortcutPath: '📋 リンク先のパスをコピー',
     copyShortcutParentPath: '📋 リンク先の親フォルダのパスをコピー',
     openShortcutParentFolder: '📂 リンク先の親フォルダを開く',
@@ -1577,6 +1581,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       toggleWorkspace: 'ワークスペースの表示/非表示（メインウィンドウで）',
       open: '選択したアイテムを開く',
       openFolder: '選択したアイテムの親フォルダを開く',
+      runAsAdmin: '選択したアプリを管理者として実行',
       edit: '選択したアイテムを編集（通常の検索モードで）',
       select: 'アイテムを選択',
       history: '検索履歴をたどる',
