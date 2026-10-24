@@ -356,6 +356,7 @@ export const en: LocaleMessages = {
       createUncategorized: '➕ Put it in a new "Ungrouped" group',
     },
     delete: '🗑️ Delete…',
+    excludeFromDir: '🚫 Exclude from this folder import…',
     text: {
       undo: 'Undo',
       redo: 'Redo',
@@ -2341,6 +2342,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
+      dataFileTabsOffTitle: 'Stop showing tabs',
+      dataFileTabsOffConfirm:
+        'When this is off, the launcher shows only the items in the first tab, "{{name}}". Items in other tabs are kept, but you can\'t open them from the launcher. Turn it off?',
+      dataFileTabsOffButton: 'Turn off',
     },
     windowSize: {
       heading: 'Size:',

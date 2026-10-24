@@ -75,8 +75,6 @@ interface ItemEditFieldsProps {
   setIncludesWorkspace?: boolean;
   /** 編集中のアイテム自身の id（種類をセットに変えたとき、自分を行に選べないようにする） */
   selfId?: string;
-  /** ドロップしたファイルから登録するときはパスを書き換えさせない */
-  isPathReadOnly: boolean;
   iconFetchLoading: boolean;
   optionsOpen: boolean;
   onToggleOptions: () => void;
@@ -104,7 +102,6 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   allowFolderImport = true,
   setIncludesWorkspace = false,
   selfId,
-  isPathReadOnly,
   iconFetchLoading,
   optionsOpen,
   onToggleOptions,
@@ -252,8 +249,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           <input
             type="text"
             value={item.path}
-            readOnly={isPathReadOnly}
-            className={(errors?.path ? 'error' : isPathReadOnly ? 'readonly' : '') + flashClass}
+            className={(errors?.path ? 'error' : '') + flashClass}
             onChange={(e) => onFieldChange('path', e.target.value)}
             onBlur={() => onPathBlur()}
             placeholder={
@@ -262,13 +258,11 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
                 : t('register.pathPlaceholder')
             }
           />
-          {!isPathReadOnly && (
-            <PathPickerButton
-              mode={item.itemCategory === 'dir' ? 'folder' : 'any'}
-              currentPath={item.path}
-              onPick={handlePick}
-            />
-          )}
+          <PathPickerButton
+            mode={item.itemCategory === 'dir' ? 'folder' : 'any'}
+            currentPath={item.path}
+            onPick={handlePick}
+          />
           {/* フォルダ取込はアイコンを取らず変換もしない（いつも押せない）ので出さない */}
           {item.itemCategory !== 'dir' && (
             <IconFetchButton
@@ -278,7 +272,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
               itemType={item.type}
             />
           )}
-          {!isPathReadOnly && item.itemCategory !== 'dir' && (
+          {item.itemCategory !== 'dir' && (
             <ItemConverterMenu path={item.path} args={item.args} onConvert={handleConvert} />
           )}
           {errors?.path && <span className="error-message">{errors.path}</span>}

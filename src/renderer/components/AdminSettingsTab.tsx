@@ -137,6 +137,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               hotkeyValidation={hotkeyValidation}
               onHotkeyValidation={handleHotkeyValidation}
               onItemSearchHotkeyChange={handleItemSearchHotkeyChange}
+              showConfirm={showConfirm}
             />
           )}
 

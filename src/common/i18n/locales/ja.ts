@@ -358,6 +358,7 @@ export const ja = {
       createUncategorized: '➕ 「未分類」グループを作って入れる',
     },
     delete: '🗑️ 削除…',
+    excludeFromDir: '🚫 この取込から外す…',
     text: {
       undo: '元に戻す',
       redo: 'やり直し',
@@ -2356,6 +2357,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
+      dataFileTabsOffTitle: '複数タブの表示をやめる',
+      dataFileTabsOffConfirm:
+        'オフにすると、メインウィンドウには最初のタブ「{{name}}」のアイテムだけが出ます。ほかのタブのアイテムは消えませんが、メインウィンドウからは開けなくなります。オフにしますか？',
+      dataFileTabsOffButton: 'オフにする',
     },
     windowSize: {
       heading: '大きさ:',

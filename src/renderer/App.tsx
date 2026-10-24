@@ -18,6 +18,7 @@ import type {
 } from '@common/types';
 import { isWindowInfo, isClipboardItem, isSetItem, isLauncherItem } from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { PathUtils } from '@common/utils/pathUtils';
 import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
@@ -223,7 +224,6 @@ function App(): React.ReactElement {
   } = useIconFetcher({
     mainItems,
     setMainItems,
-    showDataFileTabs,
     activeTab,
     dataFileTabs,
     reloadIconFetchErrors: loadIconFetchErrors,
@@ -545,6 +545,25 @@ function App(): React.ReactElement {
         jsonItemId: jsonItemId ?? undefined,
       });
     },
+    [openEditWindow]
+  );
+
+  // 右クリック「この取込から外す…」: 元のフォルダ取込の編集画面を、除外フィルタにファイル名を足した状態で開く
+  useEffect(
+    () =>
+      window.electronAPI.onLauncherMenuExcludeFromDir((item) => {
+        if (!isLauncherItem(item) || !item.isDirExpanded || !item.expandedFromId) return;
+        const fileName = PathUtils.getFileName(item.path.replace(/[\\/]+$/, ''));
+        if (!fileName) return;
+        void openEditWindow(
+          {
+            ...item,
+            sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
+            jsonItemId: item.expandedFromId,
+          },
+          { addExcludeName: fileName }
+        );
+      }),
     [openEditWindow]
   );
 
