@@ -204,18 +204,6 @@ html:has(.workspace-window.background-transparent) {
   color: var(--text-primary);
 }
 
-.workspace-add-tab-btn {
-  min-width: 32px;
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-secondary);
-}
-
-.workspace-add-tab-btn:hover {
-  color: var(--color-primary);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
-}
-
 /* ==================== フィルタバー ==================== */
 
 .workspace-filter-bar {
@@ -475,6 +463,10 @@ html:has(.workspace-window.background-transparent) {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.6;
+}
+
+.workspace-empty .btn {
+  margin-top: var(--spacing-sm);
 }
 
 /* スクロールバーのスタイル */

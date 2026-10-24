@@ -92,6 +92,7 @@ export const ja = {
       quickAdd: '📄 アイテムを追加…',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
+      clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
     empty: {
       noMatch: '「{{query}}」に合うアイテムはありません',
@@ -348,6 +349,26 @@ export const ja = {
     showNote: '📝 メモを表示',
     addToWorkspace: '⭐ ワークスペースに追加',
     addCopyToWorkspace: '📄 ワークスペースにコピーを追加',
+    delete: '🗑️ 削除…',
+    text: {
+      undo: '元に戻す',
+      redo: 'やり直し',
+      cut: '切り取り',
+      copy: 'コピー',
+      paste: '貼り付け',
+      selectAll: 'すべて選択',
+    },
+    launcherBlank: {
+      registerFromClipboard: '📋 クリップボードのパス・URL から追加…',
+    },
+    workspace: {
+      addGroup: '➕ グループを追加',
+      addWorkspace: '➕ ワークスペースを追加',
+      paste: '📋 貼り付け',
+      expandAll: '🔽 すべて展開',
+      collapseAll: '🔼 すべて折りたたむ',
+      groupUncategorized: '📁 グループにまとめる',
+    },
     admin: {
       duplicate: '📋 複製',
       duplicateRows_one: '📋 複製（{{count}} 行）',
@@ -365,6 +386,7 @@ export const ja = {
       retarget: '🔁 別のアイテムを指す…',
       moveToMain: '🚀 メインウィンドウへ移して参照にする',
       moveToWorkspace: '📁 ワークスペースを移動',
+      moveToGroup: '📁 グループへ移動',
       remove: '🗑️ ワークスペースから削除',
     },
     workspaceGroup: {
@@ -380,6 +402,9 @@ export const ja = {
       addNew: '✏️ 新しく入力して追加…',
       rename: '✏️ グループ名を変更',
       changeColor: '🎨 色を変更',
+      duplicate: '📄 グループを複製',
+      collapseOthers: '🔼 ほかのグループを折りたたむ',
+      openAll: '▶ すべて開く',
       archive: '🗄️ グループをアーカイブ',
       delete: '🗑️ グループを削除',
     },
@@ -411,6 +436,8 @@ export const ja = {
     help: 'ヘルプ',
     restart: '再起動',
     quit: '終了',
+    showWorkspace: 'ワークスペースを表示',
+    itemManager: 'アイテム管理',
     devRestart: {
       title: '再起動（開発モード）',
       message: '開発モードでは自動再起動をサポートしていません',
@@ -472,6 +499,8 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove|archive   ワークスペースのグループ
   workspace archive list|restore           アーカイブしたグループ
+  open <id か表示名>                       メインウィンドウのアイテムを開く（画面で Enter を押したのと同じ）
+  show [main|workspace]                    メインウィンドウ（既定）かワークスペースを出す
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
   reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
   status                                   本体の版・設定フォルダなどを表示する
@@ -613,6 +642,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
+      cannotOpenDir:
+        'フォルダ取込の行は開けません（中に並ぶアイテムも CLI からは開けません）: {{name}}',
+      cannotOpen: 'このアイテムは開けません: {{name}}',
+      openFailed: '開けませんでした: {{name}}（{{error}}）',
+      unknownShowTarget: '出すものは main か workspace です: {{target}}',
       unknownLauncherNoun:
         '不明なコマンドです: launcher {{noun}}（launcher item・launcher set・launcher tab のみ）',
       missingSetNoun: 'launcher set の後に row を指定してください',
@@ -2060,6 +2094,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       expandAll: 'すべて展開',
       collapseAll: 'すべて折りたたむ',
       addGroup: 'グループを追加',
+      add: '追加',
       menu: '設定',
       openSettings: '⚙️ 設定',
       alignLeft: '⬅️ 左端に寄せる',
@@ -2077,7 +2112,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     tabs: {
       archive: 'アーカイブ',
-      add: '新しいワークスペースを追加',
       defaultName: 'ワークスペース {{number}}',
       deleteTitle: 'ワークスペースの削除',
       deleteConfirm:
@@ -2107,10 +2141,16 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       archiveConfirm: '「{{name}}」をアーカイブしてもよろしいですか？',
       archiveRestorable: 'アーカイブしたグループは後で復元できます。',
       archive: 'アーカイブ',
+      copyName: '{{name}} のコピー',
+      openAllTitle: 'すべて開く',
+      openAllConfirm: '「{{name}}」の {{count}} 件のアイテムを順に開きますか？',
+      openAll: '開く',
+      openAllEmpty: '「{{name}}」には開けるアイテムがありません',
     },
     empty: {
       title: 'ワークスペースは空です',
       hint: 'メインウィンドウのアイテムを右クリックして「ワークスペースに追加」を選択してください',
+      addGroup: '＋ グループを追加',
     },
     restoresPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
     restoredGroupName: '{{name}}（復元）',
@@ -2189,6 +2229,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_one: '{{count}} 件のアイテム',
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
+      titleUncategorized: '「未分類」に追加するアイテム',
+      addedToUncategorized: '「未分類」に追加しました',
       addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
     },
     linkPicker: {
@@ -2284,6 +2326,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       keyboardHints: '操作のヒントを表示',
       keyboardHintsDescription:
         'メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter で親フォルダを開くなど）を表示します。',
+      searchMemo: '検索でメモにも当てる',
+      searchMemoDescription:
+        'メインウィンドウの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',

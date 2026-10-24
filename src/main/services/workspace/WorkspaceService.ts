@@ -507,6 +507,67 @@ export class WorkspaceService {
     return { ...group, collapsed: false };
   }
 
+  /**
+   * グループを、サブグループとアイテムごと複製する（複製は元と同じ親の最後に入る）
+   *
+   * @param name 複製の名前（サブグループは元の名前のまま）
+   * @param duplicateClipboardData クリップボードアイテムの実データを写して新しい参照を返す（写せなければ null）。
+   *   元と同じ実データを指したままにすると、片方を消したときにもう片方が復元できなくなるため
+   */
+  public async duplicateGroup(
+    groupId: string,
+    name: string,
+    duplicateClipboardData: (dataFileRef: string) => string | null
+  ): Promise<WorkspaceGroupView> {
+    await this.initializeStore();
+    const groups = this.groupManager!.loadGroups();
+    const source = groups.find((g) => g.id === groupId);
+    if (!source) throw new Error(`Group not found: ${groupId}`);
+
+    const items = this.store!.get('items');
+    let nextOrder = items.length > 0 ? Math.max(...items.map((i) => i.order)) + 1 : 0;
+    const copies: WorkspaceItem[] = [];
+
+    const copyContents = (fromId: string, toId: string): void => {
+      const children = items.filter((i) => i.groupId === fromId).sort((a, b) => a.order - b.order);
+      for (const item of children) {
+        const copy = {
+          ...item,
+          id: this.store!.newId(),
+          addedAt: Date.now(),
+          order: nextOrder++,
+          groupId: toId,
+        } as WorkspaceItem;
+        if (copy.type === 'clipboard' && copy.dataFileRef) {
+          const newRef = duplicateClipboardData(copy.dataFileRef);
+          if (newRef) copy.dataFileRef = newRef;
+        }
+        copies.push(copy);
+      }
+      const subgroups = groups
+        .filter((g) => g.parentGroupId === fromId)
+        .sort((a, b) => a.order - b.order);
+      for (const sub of subgroups) {
+        const created = this.groupManager!.createGroup(sub.displayName, sub.color, toId);
+        copyContents(sub.id, created.id);
+      }
+    };
+
+    const created = this.groupManager!.createGroup(
+      name,
+      source.color,
+      source.parentGroupId,
+      source.workspaceId
+    );
+    copyContents(source.id, created.id);
+    if (copies.length > 0) this.store!.set('items', [...this.store!.get('items'), ...copies]);
+    logger.info(
+      { sourceId: groupId, newId: created.id, items: copies.length },
+      'Duplicated workspace group'
+    );
+    return { ...created, collapsed: false };
+  }
+
   public async updateGroup(id: string, updates: WorkspaceGroupUpdate): Promise<void> {
     await this.initializeStore();
     this.groupManager!.updateGroup(id, updates);

@@ -5,8 +5,8 @@ import { CliError, expectPositionals, parseArgs } from './cliArgs.js';
 import type { CliErrorCode } from './cliArgs.js';
 import { CLI_EXIT, cliResponse } from './cliProtocol.js';
 import type { CliRequest, CliResponse } from './cliProtocol.js';
-import { runLauncherItemCommand } from './cliLauncherCommands.js';
-import type { LauncherStore } from './cliLauncherCommands.js';
+import { findLauncherEntry, itemName, runLauncherItemCommand } from './cliLauncherCommands.js';
+import type { LauncherEntry, LauncherStore } from './cliLauncherCommands.js';
 import { runLauncherSetCommand } from './cliSetCommands.js';
 import { runLauncherTabCommand } from './cliTabCommands.js';
 import type { TabStore } from './cliTabCommands.js';
@@ -50,6 +50,10 @@ export interface CliContext {
   /** ワークスペースの item add --from（メイン画面のアイテムを写す） */
   launcherAppItem: WorkspaceCommandContext['launcherAppItem'];
   duplicateClipboardData: WorkspaceCommandContext['duplicateClipboardData'];
+  /** open: メインウィンドウのアイテムを、画面で Enter を押したのと同じように開く。開いたアイテムの種類を返す */
+  openLauncherEntry: (entry: LauncherEntry) => Promise<{ type: string }>;
+  /** show: メインウィンドウかワークスペースを出す */
+  show: (target: 'main' | 'workspace') => Promise<void>;
 }
 
 const EXIT_BY_CODE: Record<CliErrorCode, number> = {
@@ -185,6 +189,28 @@ async function dispatch(
         launcherAppItem: ctx.launcherAppItem,
         duplicateClipboardData: ctx.duplicateClipboardData,
       });
+    }
+
+    case 'open': {
+      if (wantsHelp) throw helpAsResult(mainI18n.t('cli.help.main'));
+      const parsed = parseArgs(rest, {});
+      const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+      const entry = await findLauncherEntry(key, ctx.launcher);
+      const opened = await ctx.openLauncherEntry(entry);
+      return {
+        opened: { id: entry.item.id, name: itemName(entry.item), type: opened.type },
+      };
+    }
+
+    case 'show': {
+      if (wantsHelp) throw helpAsResult(mainI18n.t('cli.help.main'));
+      const parsed = parseArgs(rest, {});
+      const target = parsed.positionals[0] ?? 'main';
+      if (parsed.positionals.length > 1 || (target !== 'main' && target !== 'workspace')) {
+        throw new CliError('usage', mainI18n.t('cli.errors.unknownShowTarget', { target }));
+      }
+      await ctx.show(target);
+      return { shown: target };
     }
 
     case 'settings': {
