@@ -16,6 +16,11 @@ import { showAdminWindowWithImportModal } from '../adminWindowManager.js';
 import { isReferenceableAppItem } from '../services/workspace/workspaceRefResolver.js';
 
 import {
+  buildWorkspaceTargetSubmenu,
+  loadWorkspaceTargets,
+  type WorkspaceTargetPick,
+} from './workspaceGroupPicker.js';
+import {
   appendPathMenuItems,
   createMenuItem,
   createSeparator,
@@ -124,24 +129,26 @@ function setupLauncherContextMenuHandler(): void {
         menu.append(createSeparator());
       }
 
-      menu.append(
-        createMenuItem(
-          t('menu.addToWorkspace'),
-          event.sender,
-          IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
-          item
-        )
+      // 足す先のグループはその場で選ぶ（未分類は無い。A3-157）
+      const { workspaces, groups } = await loadWorkspaceTargets();
+      const sendTo = (channel: string) => (pick: WorkspaceTargetPick) =>
+        event.sender.send(channel, { item, target: pick });
+      const addTo = buildWorkspaceTargetSubmenu(
+        t('menu.addToWorkspace'),
+        workspaces,
+        groups,
+        sendTo(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE)
       );
+      if (addTo) menu.append(addTo);
       // 既定の「ワークスペースに追加」は参照。参照できるアイテムにだけ、コピーで足す項目を並べる
       if (isReferenceableAppItem(item)) {
-        menu.append(
-          createMenuItem(
-            t('menu.addCopyToWorkspace'),
-            event.sender,
-            IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE,
-            item
-          )
+        const addCopyTo = buildWorkspaceTargetSubmenu(
+          t('menu.addCopyToWorkspace'),
+          workspaces,
+          groups,
+          sendTo(IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_COPY_TO_WORKSPACE)
         );
+        if (addCopyTo) menu.append(addCopyTo);
       }
 
       if (hasPathMenu) {
@@ -266,22 +273,26 @@ function setupWindowContextMenuHandler(): void {
 
       // ワークスペースへの登録（通常アイテムと同じ入口を用意する）。
       // 既定はタイトルとプロセス名でアクティブ化するだけ。位置の記録は明示的に選ばせる
-      menu.append(
-        createMenuItem(
-          t('menu.addToWorkspace'),
-          event.sender,
-          IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
-          { windowInfo, includePosition: false }
-        )
-      );
-      menu.append(
-        createMenuItem(
-          t('menu.window.addToWorkspaceWithPosition'),
-          event.sender,
-          IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
-          { windowInfo, includePosition: true }
-        )
-      );
+      // 足す先のグループはその場で選ぶ（未分類は無い。A3-157）
+      const { workspaces, groups } = await loadWorkspaceTargets();
+      const sendWindow = (includePosition: boolean) => (pick: WorkspaceTargetPick) =>
+        event.sender.send(IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE, {
+          windowInfo,
+          includePosition,
+          target: pick,
+        });
+      for (const [label, includePosition] of [
+        [t('menu.addToWorkspace'), false],
+        [t('menu.window.addToWorkspaceWithPosition'), true],
+      ] as const) {
+        const submenu = buildWorkspaceTargetSubmenu(
+          label,
+          workspaces,
+          groups,
+          sendWindow(includePosition)
+        );
+        if (submenu) menu.append(submenu);
+      }
       menu.append(createSeparator());
 
       const canMoveToDesktop = desktopInfo.supported && desktopInfo.desktopCount > 1;

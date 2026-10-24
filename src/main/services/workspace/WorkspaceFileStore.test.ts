@@ -555,6 +555,7 @@ describe('WorkspaceFileStore', () => {
       moveToActiveMonitorCenter: true,
       memo: '朝に使う',
       workspaceId: 'wsAAAAA1',
+      groupId: 'grAAAAA1',
       order: 2,
       addedAt: 1,
     };
@@ -585,6 +586,7 @@ describe('WorkspaceFileStore', () => {
         placement: { x: 10, y: 20 },
         memo: '朝に使う',
         workspaceId: 'wsAAAAA1',
+        groupId: 'grAAAAA1',
         order: 2,
         addedAt: 1,
       });

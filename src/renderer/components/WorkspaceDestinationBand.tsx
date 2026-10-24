@@ -2,43 +2,28 @@ import React from 'react';
 import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { WorkspaceGroupView } from '@common/types';
-import { parseWorkspaceAddTarget } from '@common/utils/workspaceAddTarget';
-
-/** 追加するときの追加先（ワークスペース名 › 親グループ › グループ。未分類に足すときはグループの代わりに「未分類」） */
+/** 追加するときの追加先（ワークスペース名 › 親グループ › グループ） */
 export interface WorkspaceDestination {
-  /** 追加先のグループ（未分類に足すときは無い） */
-  group?: WorkspaceGroupView;
+  group: WorkspaceGroupView;
   workspaceId: string;
   workspaceName?: string;
-  /** 帯に並べるグループの名前（サブグループなら親グループ、グループの順。未分類なら「未分類」だけ） */
+  /** 帯に並べるグループの名前（サブグループなら親グループ、グループの順） */
   groupPath: string[];
-  /** タイトル・トーストに出す追加先の名前（グループ名か「未分類」） */
+  /** タイトル・トーストに出す追加先の名前（グループ名） */
   label: string;
 }
 
 /**
  * 追加先を読む。見つからない（開くまでに削除されたなど）ときは null
  *
- * @param target グループの id か、未分類なら `ws:<ワークスペースの id>`（workspaceAddTarget）
+ * @param groupId 追加先のグループ（未分類は無いので、いつもグループ。A3-157）
  */
 export async function loadWorkspaceDestination(
-  target: string
+  groupId: string
 ): Promise<WorkspaceDestination | null> {
   const api = window.electronAPI.workspaceAPI;
   const [groups, workspaces] = await Promise.all([api.loadGroups(), api.loadWorkspaces()]);
-  const parsed = parseWorkspaceAddTarget(target);
-  if (parsed.kind === 'uncategorized') {
-    const workspace = workspaces.find((ws) => ws.id === parsed.workspaceId);
-    if (!workspace) return null;
-    const label = i18next.t('workspace.groups.uncategorized');
-    return {
-      workspaceId: workspace.id,
-      workspaceName: workspace.displayName,
-      groupPath: [label],
-      label,
-    };
-  }
-  const group = groups.find((g) => g.id === parsed.groupId);
+  const group = groups.find((g) => g.id === groupId);
   if (!group) return null;
   const parent = group.parentGroupId ? groups.find((g) => g.id === group.parentGroupId) : undefined;
   return {
@@ -52,33 +37,27 @@ export async function loadWorkspaceDestination(
 
 /** 追加先のグループを折りたたんでいたら開く（入ったアイテムが見えるように） */
 export async function expandDestinationGroup(destination: WorkspaceDestination): Promise<void> {
-  if (destination.group?.collapsed) {
+  if (destination.group.collapsed) {
     await window.electronAPI.workspaceAPI.setGroupsCollapsed([destination.group.id], false);
   }
 }
 
-/** 選ぶウィンドウのタイトル（「グループ「〇〇」に追加するアイテム」／「「未分類」に追加するアイテム」） */
+/** 選ぶウィンドウのタイトル（「グループ「〇〇」に追加するアイテム」） */
 export function destinationPickerTitle(destination: WorkspaceDestination): string {
-  return destination.group
-    ? i18next.t('workspace.picker.title', { group: destination.label })
-    : i18next.t('workspace.picker.titleUncategorized');
+  return i18next.t('workspace.picker.title', { group: destination.label });
 }
 
 /** 追加したときのトーストの文 */
 export function destinationAddedMessage(destination: WorkspaceDestination): string {
-  return destination.group
-    ? i18next.t('workspace.picker.addedToGroup', { group: destination.label })
-    : i18next.t('workspace.picker.addedToUncategorized');
+  return i18next.t('workspace.picker.addedToGroup', { group: destination.label });
 }
 
 /** 追加先に今あるアイテムか（「追加済み」の判定に使う） */
 export function isInDestination(
-  item: { groupId?: string; workspaceId: string },
+  item: { groupId?: string },
   destination: WorkspaceDestination
 ): boolean {
-  return destination.group
-    ? item.groupId === destination.group.id
-    : !item.groupId && item.workspaceId === destination.workspaceId;
+  return item.groupId === destination.group.id;
 }
 
 /**

@@ -496,9 +496,8 @@ html:has(.workspace-window.background-transparent) {
   transition: background-color 0.15s ease;
 }
 
-/* ネイティブファイルドラッグオーバー時のハイライト（グループ・未分類共通） */
-.workspace-group.drag-over,
-.workspace-uncategorized-section.drag-over {
+/* ネイティブファイルドラッグオーバー時のハイライト */
+.workspace-group.drag-over {
   outline: 3px dashed var(--color-primary);
   outline-offset: -3px;
   background-color: var(--color-primary-50);
@@ -728,11 +727,6 @@ html:has(.workspace-window.background-transparent) {
 .workspace-group-mixed-children > .workspace-item-card[data-drop-zone='after']::after {
   bottom: -2px;
   top: auto;
-}
-
-/* 未分類セクション */
-.workspace-uncategorized-section {
-  margin-top: var(--spacing-xs);
 }
 
 /* 実行履歴セクション */

@@ -352,18 +352,21 @@ describe('workspace item', () => {
     expect(ctx.changed).toHaveBeenCalledWith('CLI: ワークスペースに「メモ」を追加しました');
   });
 
-  it('--group "" で未分類へ、--workspace だけなら移った先の未分類へ移す', async () => {
-    await runWorkspaceCommand('item', 'update', ['議事録', '--group', ''], ctx);
-    expect(items.find((i) => i.id === 'It000001')?.groupId).toBeUndefined();
-    const r = (await runWorkspaceCommand(
-      'item',
-      'update',
-      ['設計', '--workspace', '私用'],
-      ctx
-    )) as {
-      item: Record<string, unknown>;
-    };
-    expect(r.item.location).toEqual(['私用']);
+  it('未分類は無いので、--group "" は使えず、グループのあるワークスペースへは --group が要る（A3-157）', async () => {
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'update', ['議事録', '--group', ''], ctx))).code
+    ).toBe('usage');
+    expect(
+      (await errorOf(runWorkspaceCommand('item', 'add', ['--name', 'x', '--path', 'C:\\x'], ctx)))
+        .code
+    ).toBe('usage');
+    expect(items.find((i) => i.id === 'It000001')?.groupId).toBe('GrA00001');
+  });
+
+  it('グループの無いワークスペースへは --workspace だけで移せる（入れるときに「未分類」グループが作られる）', async () => {
+    const moveItemToWorkspace = vi.spyOn(ctx.store, 'moveItemToWorkspace');
+    await runWorkspaceCommand('item', 'update', ['設計', '--workspace', '私用'], ctx);
+    expect(moveItemToWorkspace).toHaveBeenCalledWith('It000002', 'Ws000002', undefined);
   });
 
   it('本文の変更は今の内容に当て、変える前の内容も返す', async () => {
@@ -646,15 +649,17 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     const dry = (await runWorkspaceCommand(
       'item',
       'add',
-      ['--from', 'SetMorn1', '--dry-run'],
+      ['--from', 'SetMorn1', '--group', '案件A', '--dry-run'],
       ctx
     )) as Record<string, unknown>;
     expect(dry).toMatchObject({ dryRun: true, fellBackToCopy: true });
     expect((dry.item as Record<string, unknown>).type).not.toBe('ref');
-    const r = (await runWorkspaceCommand('item', 'add', ['--from', 'SetMorn1'], ctx)) as Record<
-      string,
-      unknown
-    >;
+    const r = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', 'SetMorn1', '--group', '案件A'],
+      ctx
+    )) as Record<string, unknown>;
     expect(addRef).not.toHaveBeenCalled();
     expect(r).toMatchObject({ fellBackToCopy: true, from: { id: 'SetMorn1' } });
   });
@@ -663,7 +668,7 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     const r = (await runWorkspaceCommand(
       'item',
       'add',
-      ['--from', 'SetMorn1', '--copy'],
+      ['--from', 'SetMorn1', '--copy', '--group', '案件A'],
       ctx
     )) as Record<string, unknown>;
     expect(r.fellBackToCopy).toBeUndefined();
@@ -673,7 +678,7 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     const r = (await runWorkspaceCommand(
       'item',
       'add',
-      ['--from', 'SetMorn1', '--dry-run'],
+      ['--from', 'SetMorn1', '--group', '案件A', '--dry-run'],
       ctx
     )) as { dryRun: boolean; item: Record<string, unknown> };
     expect(r.item).toMatchObject({
@@ -722,7 +727,7 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     const r = (await runWorkspaceCommand(
       'item',
       'add',
-      ['--from', 'SetMorn1', '--copy', '--name', '朝の準備', '--dry-run'],
+      ['--from', 'SetMorn1', '--copy', '--name', '朝の準備', '--group', '案件A', '--dry-run'],
       ctx
     )) as { dryRun: boolean; item: Record<string, unknown> };
     expect(r.dryRun).toBe(true);
@@ -734,7 +739,12 @@ describe('workspace item add --from（メインウィンドウのアイテムを
 
   it('--copy のクリップボードアイテムは実データを複製し、ワークスペース側に自分のファイルを持たせる', async () => {
     const addItem = vi.spyOn(ctx.store, 'addItem');
-    await runWorkspaceCommand('item', 'add', ['--from', 'スクショ', '--copy'], ctx);
+    await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--from', 'スクショ', '--copy', '--group', '案件A'],
+      ctx
+    );
     expect(ctx.duplicateClipboardData).toHaveBeenCalledWith('clipboard-data/Clip0001.json');
     expect(addItem).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -742,7 +752,7 @@ describe('workspace item add --from（メインウィンドウのアイテムを
         clipboardDataRef: 'clipboard-data/Clip0001-copy.json',
         formats: ['image'],
       }),
-      undefined,
+      'GrA00001',
       'Ws000001'
     );
   });

@@ -18,6 +18,8 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   danger?: boolean;
+  /** 本文の下に赤字で出す注意 */
+  warning?: string;
   showCheckbox?: boolean;
   checkboxLabel?: string;
   checkboxChecked?: boolean;
@@ -35,6 +37,7 @@ function ConfirmDialog({
   confirmText,
   cancelText,
   danger = false,
+  warning,
   showCheckbox = false,
   checkboxLabel = '',
   checkboxChecked = false,
@@ -77,6 +80,11 @@ function ConfirmDialog({
 
         <div className="confirm-body">
           <p>{message}</p>
+          {warning && (
+            <p className="confirm-warning" data-testid="confirm-dialog-warning">
+              {warning}
+            </p>
+          )}
           {showCheckbox && (
             <div className="confirm-checkbox-container">
               <label className="confirm-checkbox-label">

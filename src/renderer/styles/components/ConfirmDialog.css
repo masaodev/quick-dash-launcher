@@ -28,6 +28,13 @@
   white-space: pre-wrap;
 }
 
+/* 取り消せない影響の注意（例: 中のアイテムもすべて消えます） */
+.confirm-body .confirm-warning {
+  margin-top: var(--spacing-md);
+  color: var(--color-danger);
+  font-weight: var(--font-weight-semibold);
+}
+
 /* Danger mode styling */
 .confirm-dialog.confirm-danger .confirm-header h2 {
   color: var(--color-danger);

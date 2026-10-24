@@ -5,14 +5,12 @@ import { buildGroupTree, getMixedChildren, type GroupTreeNode } from '@common/ut
 export function useWorkspaceItemGroups(items: WorkspaceItem[], groups?: WorkspaceGroupView[]) {
   const itemsByGroup = useMemo(() => {
     const result: Record<string, WorkspaceItem[]> = {};
+    // どのアイテムもグループに入る（グループを持たないアイテムは読み込み時に「未分類」グループへ入る。A3-157）
     for (const item of items) {
-      const groupId = item.groupId || 'uncategorized';
-      (result[groupId] ??= []).push(item);
+      if (item.groupId) (result[item.groupId] ??= []).push(item);
     }
     return result;
   }, [items]);
-
-  const uncategorizedItems = itemsByGroup['uncategorized'] || [];
 
   const groupTree: GroupTreeNode<WorkspaceGroupView>[] = useMemo(
     () => (groups ? buildGroupTree(groups) : []),
@@ -29,5 +27,5 @@ export function useWorkspaceItemGroups(items: WorkspaceItem[], groups?: Workspac
     return result;
   }, [groups, itemsByGroup]);
 
-  return { itemsByGroup, uncategorizedItems, groupTree, mixedChildrenByGroup };
+  return { itemsByGroup, groupTree, mixedChildrenByGroup };
 }

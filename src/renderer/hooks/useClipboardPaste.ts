@@ -8,6 +8,7 @@ import { logError, logWarn } from '../utils/debug';
 import { classifyPastedText, makeClipboardDisplayName } from '../utils/pasteClassifier';
 
 import { useFileOperations } from './useFileOperations';
+import { useLatestRef } from './useLatestRef';
 
 /**
  * ワークスペースへの Ctrl+V 貼り付け
@@ -22,9 +23,12 @@ import { useFileOperations } from './useFileOperations';
 export function useClipboardPaste(
   onItemsAdded: () => void,
   activeGroupId?: string,
-  activeWorkspaceId?: string
+  activeWorkspaceId?: string,
+  /** 貼ってよいか（false なら何もしない。グループを選ばずに貼ったときに知らせる側で使う） */
+  canPaste?: () => boolean
 ) {
   const { extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely } = useFileOperations();
+  const canPasteRef = useLatestRef(canPaste);
 
   useEffect(() => {
     function isInputElement(target: EventTarget | null): boolean {
@@ -145,6 +149,7 @@ export function useClipboardPaste(
     const handlePaste = async (e: ClipboardEvent) => {
       if (isInputElement(e.target)) return;
       e.preventDefault();
+      if (canPasteRef.current && !canPasteRef.current()) return;
       const files = e.clipboardData?.files;
       try {
         // スクリーンショットのような、パスを持たない画像 File はパスが空になるので、ファイル以外として扱う
@@ -171,5 +176,6 @@ export function useClipboardPaste(
     fetchFaviconSafely,
     activeGroupId,
     activeWorkspaceId,
+    canPasteRef,
   ]);
 }
