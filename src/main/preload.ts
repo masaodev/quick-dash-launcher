@@ -163,9 +163,12 @@ const electronAPI: ElectronAPI = {
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: () => ipcRenderer.invoke(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS),
   // アプリインポートAPI
-  scanInstalledApps: () => ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS),
+  scanInstalledApps: (scanId) => ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS, scanId),
   onAppScanProgress: (callback) =>
-    createEventListener<number>(IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS, callback),
+    createEventListener<{ scanId: number; found: number }>(
+      IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS,
+      callback
+    ),
   // Settings API
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setMultipleSettings: (settings) =>

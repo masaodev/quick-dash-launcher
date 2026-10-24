@@ -91,9 +91,11 @@ const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({
     await scan();
   };
 
-  // 「フォルダを選択」で選んだら、押さなくても読む
+  // 「フォルダを選択」で選んだら、押さなくても読む。作られた時点の値では読まない
+  // （選んだあと種別を変えて戻すと、このパネルが作り直されて同じ値で始まる）
+  const mountedTokenRef = useRef(autoRunToken);
   useEffect(() => {
-    if (autoRunToken === 0 || path.trim() === '') return;
+    if (autoRunToken === mountedTokenRef.current || path.trim() === '') return;
     void scan();
     // 選んだときだけ読む（パス・条件の変化では読まない）ので、依存は autoRunToken だけ
   }, [autoRunToken]);
