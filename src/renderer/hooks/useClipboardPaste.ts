@@ -25,10 +25,13 @@ export function useClipboardPaste(
   activeGroupId?: string,
   activeWorkspaceId?: string,
   /** 貼ってよいか（false なら何もしない。グループを選ばずに貼ったときに知らせる側で使う） */
-  canPaste?: () => boolean
+  canPaste?: () => boolean,
+  /** 足せたときに知らせる（足せたアイテムの表示名。ワークスペースの中のトーストで知らせる側で使う） */
+  onAdded?: (displayNames: string[]) => void
 ) {
   const { extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely } = useFileOperations();
   const canPasteRef = useLatestRef(canPaste);
+  const onAddedRef = useLatestRef(onAdded);
 
   useEffect(() => {
     function isInputElement(target: EventTarget | null): boolean {
@@ -37,6 +40,10 @@ export function useClipboardPaste(
     }
 
     async function notifyAdded(displayName: string, path: string): Promise<void> {
+      if (onAddedRef.current) {
+        onAddedRef.current([displayName]);
+        return;
+      }
       try {
         await window.electronAPI.showToastWindow({
           displayName,
@@ -155,7 +162,14 @@ export function useClipboardPaste(
         // スクリーンショットのような、パスを持たない画像 File はパスが空になるので、ファイル以外として扱う
         const filePaths = files && files.length > 0 ? await extractFilePaths(files) : [];
         if (filePaths.length > 0) {
-          await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId, activeWorkspaceId);
+          const added = await addItemsFromFilePaths(
+            filePaths,
+            onItemsAdded,
+            activeGroupId,
+            activeWorkspaceId
+          );
+          // 以前はファイルの貼り付けだけ何も知らせていなかった
+          if (added.length > 0) onAddedRef.current?.(added.map((item) => item.displayName));
           return;
         }
       } catch (error) {
@@ -177,5 +191,6 @@ export function useClipboardPaste(
     activeGroupId,
     activeWorkspaceId,
     canPasteRef,
+    onAddedRef,
   ]);
 }

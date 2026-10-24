@@ -25,6 +25,7 @@ import {
 
 import { useWorkspaceItemGroups } from '../hooks/workspace';
 import { useLatestRef } from '../hooks/useLatestRef';
+import { useWorkspaceAddNotice } from '../hooks/useWorkspaceAddNotice';
 import { useItemActions } from '../hooks/useItemActions';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
@@ -123,6 +124,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 }) => {
   const { t } = useTranslation();
   const { copyToClipboard } = useItemActions();
+  // ドロップで足したものは、ワークスペースの中のトーストで知らせる（貼り付けと同じ）
+  const announceAdded = useWorkspaceAddNotice(data.groups, handlers.onToggleGroup);
   const { showSuccess, showError } = useToast();
   const { groups, items } = data;
   const {
@@ -148,6 +151,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   const {
     editingItemId,
     setEditingItemId,
+    activeGroupId,
     setActiveGroupId,
     activeWorkspaceId,
     visibleGroupIds,
@@ -672,13 +676,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       ctrlKey && !withPosition ? { copy: true } : undefined
     );
     // 型安全のためinチェックを使用（WindowInfo は来ない）
-    await window.electronAPI.showToastWindow({
-      displayName: 'displayName' in item ? item.displayName : '',
-      itemType: 'workspaceAdd',
-      path: 'path' in item ? item.path : undefined,
-      icon: 'icon' in item ? item.icon : undefined,
-      message: withPosition ? t('workspace.restoresPosition') : undefined,
-    });
+    announceAdded(
+      ['displayName' in item ? item.displayName : ''],
+      groupId,
+      withPosition ? t('workspace.restoresPosition') : undefined
+    );
   }
 
   const handleGroupDrop = (groupId: string) => async (e: React.DragEvent) => {
@@ -751,7 +753,6 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   const handleGroupToggle = (groupId: string) => {
     onToggleGroup(groupId);
-    setActiveGroupId(groupId);
   };
 
   /** 子ノードのマップ（renderGroupNode内でサブグループ再帰用） */
@@ -820,6 +821,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       <div
         key={node.group.id}
         className={`workspace-group workspace-group-depth-${node.depth}${dragOverGroupId === node.group.id ? ' drag-over' : ''}`}
+        // 見出しやグループの中のアイテムをクリックしたグループを貼り付け先にする（入れ子は内側が後に呼ばれて勝つ）
+        onClickCapture={() => setActiveGroupId(node.group.id)}
         onDragOver={handleGroupDragOver(node.group.id)}
         onDrop={handleGroupDrop(node.group.id)}
       >
@@ -828,6 +831,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           itemCount={groupItems.length}
           isEditing={editingGroupId === node.group.id}
           isWindowHandle={node.group.id === detachedRootGroupId}
+          isPasteTarget={!isArchiveMode && activeGroupId === node.group.id}
           depth={node.depth}
           draggedElement={draggedElement}
           canNest={

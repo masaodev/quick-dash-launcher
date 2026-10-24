@@ -14,6 +14,8 @@ interface WorkspaceGroupHeaderProps {
   isEditing: boolean;
   /** 切り離しウィンドウの一番上の見出し。掴んで動かすとウィンドウが動く（並べ替えのドラッグはしない） */
   isWindowHandle?: boolean;
+  /** Ctrl+V の貼り付け先（見出しに枠を付けて見せる） */
+  isPasteTarget?: boolean;
   depth: number;
   /** 現在ドラッグ中の要素情報（null=ドラッグなし） */
   draggedElement: { id: string; kind: 'item' | 'group' } | null;
@@ -34,6 +36,7 @@ function WorkspaceGroupHeader({
   itemCount,
   isEditing,
   isWindowHandle = false,
+  isPasteTarget = false,
   depth,
   draggedElement,
   canNest,
@@ -167,11 +170,13 @@ function WorkspaceGroupHeader({
 
   const depthClass = depth > 0 ? ` workspace-group-depth-${depth}` : '';
   const handleClass = isWindowHandle ? ' workspace-group-header-handle' : '';
+  const pasteTargetClass = isPasteTarget ? ' paste-target' : '';
 
   return (
     <div
-      className={`workspace-group-header${depthClass}${handleClass}`}
+      className={`workspace-group-header${depthClass}${handleClass}${pasteTargetClass}`}
       data-drop-zone={dropZone || undefined}
+      title={isPasteTarget ? t('workspace.pasteTarget') : undefined}
       onClick={() => onToggle(group.id)}
       draggable={!isEditing && !isWindowHandle}
       onPointerDown={handlePointerDown}

@@ -2169,6 +2169,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     restoresPosition: "When it's open, moves this window back to the recorded window position",
     dropOnGroup: 'Drop it on a group (items must be in a group)',
     chooseGroupToPaste: 'Click the header of the group to paste into, and then paste',
+    pasteTarget: 'Paste target (Ctrl+V adds items here)',
+    addNotice: {
+      toGroup: 'Added {{what}} to "{{group}}"',
+      added: 'Added {{what}}',
+      items_one: '{{count}} item',
+      items_other: '{{count}} items',
+    },
     restoredGroupName: '{{name}} (restored)',
     defaultWorkspaceName: 'Default',
     detached: {
