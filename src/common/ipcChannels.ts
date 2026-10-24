@@ -276,6 +276,7 @@ export const IPC_CHANNELS = {
   EVENT_LAUNCHER_MENU_SHOW_MEMO: 'launcher-menu-show-memo',
   /** 「削除…」（フォルダ取込で並んだアイテム・自動取込のアイテムには出さない） */
   EVENT_LAUNCHER_MENU_DELETE_ITEM: 'launcher-menu-delete-item',
+  EVENT_LAUNCHER_MENU_EXCLUDE_FROM_DIR: 'launcher-menu-exclude-from-dir',
   // コンテキストメニュー - メインウィンドウの一覧の余白
   SHOW_LAUNCHER_BLANK_CONTEXT_MENU: 'show-launcher-blank-context-menu',
   EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM: 'launcher-blank-menu-add-item',

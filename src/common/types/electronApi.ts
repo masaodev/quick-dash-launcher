@@ -512,6 +512,8 @@ export interface ElectronAPI {
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuShowMemo: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuDeleteItem: (callback: (item: AppItem) => void) => () => void;
+  /** フォルダ取込で並んだアイテムの右クリック「この取込から外す…」 */
+  onLauncherMenuExcludeFromDir: (callback: (item: AppItem) => void) => () => void;
   /** メインウィンドウの一覧の余白の右クリックメニュー */
   showLauncherBlankContextMenu: () => Promise<void>;
   onLauncherBlankMenuAddItem: (callback: () => void) => () => void;

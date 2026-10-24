@@ -177,6 +177,20 @@ function setupLauncherContextMenuHandler(): void {
         );
       }
 
+      // フォルダ取込で並んだアイテムは消せないので、元の取込の除外フィルタに足す入口を出す
+      //（保存はしない。除外フィルタに名前を足した状態で取込の編集画面を開き、見て保存してもらう。A3-158）
+      if (isLauncherItem(item) && item.isDirExpanded && item.expandedFromId) {
+        menu.append(createSeparator());
+        menu.append(
+          createMenuItem(
+            t('menu.excludeFromDir'),
+            event.sender,
+            IPC_CHANNELS.EVENT_LAUNCHER_MENU_EXCLUDE_FROM_DIR,
+            item
+          )
+        );
+      }
+
       popupMenu(menu, senderWindow, anchor);
     }
   );

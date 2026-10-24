@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 import type { RegisterItem, EditingAppItem, EditableJsonItem, LauncherItem } from '@common/types';
 import { isEditableJsonItem, isJsonLauncherItem } from '@common/types';
+import { appendExcludeName } from '@common/utils/dirExclude';
 
 import { useCustomIcon } from '../hooks/useCustomIcon';
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
@@ -32,6 +33,8 @@ interface RegisterModalProps {
   editingItem?: EditingAppItem | EditableJsonItem | null;
   /** 開いたときにこの種別へ切り替える（管理画面の種類プルダウンから、詳細編集でしか作れない種別を選んだとき） */
   initialCategory?: RegisterItem['itemCategory'];
+  /** フォルダ取込の編集で開いたとき、除外フィルタにこのファイル名を足した状態にする */
+  addExcludeName?: string;
   currentTab?: string; // 現在開いているタブ
   onDelete?: (item: EditingAppItem | EditableJsonItem) => void; // 削除ハンドラー
   /** 独立した子ウィンドウの中身として描く（オーバーレイなしでウィンドウいっぱいに広げる） */
@@ -60,6 +63,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   droppedPaths,
   editingItem,
   initialCategory,
+  addExcludeName,
   currentTab,
   onDelete,
   asPage = false,
@@ -117,8 +121,25 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
   }, [isOpen, initialCategory, loading, items.length]);
 
   useEffect(() => {
-    setOptionsSectionOpen(items.map(() => false));
+    // 除外フィルタに足して開いたときは、足したことが見えるようにオプションを開いておく
+    setOptionsSectionOpen(items.map((_, index) => index === 0 && !!addExcludeName));
   }, [items.length]);
+
+  // 「この取込から外す…」から開かれたときは、読み込みが済んでから除外フィルタにファイル名を足す（保存はしない）
+  const excludeApplied = useRef(false);
+  useEffect(() => {
+    if (!isOpen || !addExcludeName || loading || items.length === 0 || excludeApplied.current)
+      return;
+    const first = items[0];
+    if (first.itemCategory !== 'dir') return;
+    excludeApplied.current = true;
+    handleItemChange(0, 'dirOptions', {
+      ...first.dirOptions,
+      exclude: appendExcludeName(first.dirOptions?.exclude, addExcludeName),
+    });
+    setOptionsSectionOpen([true]);
+    // 読み込みの完了だけを契機にする
+  }, [isOpen, addExcludeName, loading, items.length]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -280,7 +301,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({
                       onTargetTabChange: (targetTab) =>
                         form.handleTargetTabChange(index, targetTab),
                     }}
-                    isPathReadOnly={!!droppedPaths && droppedPaths.length > 0}
                     iconFetchLoading={iconFetchLoading[index] || false}
                     optionsOpen={!!optionsSectionOpen[index]}
                     onToggleOptions={() => toggleOptionsSection(index)}

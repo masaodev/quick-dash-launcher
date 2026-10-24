@@ -159,6 +159,7 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
         editingItem={request.editingItem}
         currentTab={request.currentTab}
         initialCategory={request.initialCategory}
+        addExcludeName={request.addExcludeName}
         onDelete={canDelete ? handleDeleteRequest : undefined}
         notice={linkedCount > 0 ? t('workspace.ref.editBanner', { count: linkedCount }) : undefined}
       />

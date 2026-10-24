@@ -24,6 +24,8 @@ export interface RegisterWindowRequest {
   currentTab?: string;
   /** 開いたときにこの種別へ切り替える（管理画面の種類プルダウンから、詳細編集でしか作れない種別を選んだとき） */
   initialCategory?: RegisterItem['itemCategory'];
+  /** フォルダ取込の編集で開いたとき、除外フィルタにこのファイル名を足した状態にする（保存は利用者。A3-158） */
+  addExcludeName?: string;
   /**
    * 保存せず、フォームの内容を開き元へ返して閉じる（管理画面の詳細編集用）
    * 管理画面は返ってきた内容を未保存の編集状態に反映し、「変更を保存」で確定する
