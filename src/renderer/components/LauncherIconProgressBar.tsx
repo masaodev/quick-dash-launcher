@@ -130,13 +130,18 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
                 {t('common.details')}
               </Button>
             )}
-            <button
-              className="close-btn progress-close-btn"
+            {/* × だと分かりにくいので言葉のボタンにする。取得中に閉じても取得は裏で続く（A3-174） */}
+            <Button
+              variant="secondary"
+              size="sm"
+              className="progress-close-btn"
               onClick={onClose}
-              aria-label={t('common.close')}
+              title={
+                progress.isComplete ? undefined : t('launcher.iconProgress.closeWhileFetching')
+              }
             >
-              ×
-            </button>
+              {t('common.close')}
+            </Button>
           </div>
         </div>
 

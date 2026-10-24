@@ -350,10 +350,17 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleAddItem = () => addBlank('item');
   const handleAddFolder = () => addBlank('dir');
 
+  // 取り込んだブックマークのアイコンを、保存のあとにメインウィンドウで取る（取込画面のチェック。A3-174）
+  const fetchIconsAfterSaveRef = useRef(false);
+
   const runSave = async () => {
     const saved = await editing.saveChanges();
     if (saved) {
       showSuccess(t('itemManager.saved'));
+      if (fetchIconsAfterSaveRef.current) {
+        fetchIconsAfterSaveRef.current = false;
+        void window.electronAPI.requestFetchMissingIcons();
+      }
     }
   };
 
@@ -389,6 +396,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       },
       () => {
         editing.discardChanges();
+        fetchIconsAfterSaveRef.current = false;
         showInfo(t('itemManager.discarded'));
       }
     );
@@ -427,6 +435,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     toast: { showSuccess, showInfo, showWarning },
     pendingImportModal,
     onClearPendingImportModal,
+    onFetchIconsAfterSave: () => {
+      fetchIconsAfterSaveRef.current = true;
+    },
   });
 
   // CSV: 書き出しはすべてのタブ（未保存の変更も含めて今の一覧のまま）、取り込みは確かめてから未保存の変更にする

@@ -51,6 +51,9 @@ export const IPC_CHANNELS = {
   LOAD_CACHED_ICONS: 'load-cached-icons',
   FETCH_ICONS_COMBINED: 'fetch-icons-combined',
   ENSURE_ICONS: 'ensure-icons',
+  /** 管理ウィンドウなどから、メインウィンドウに未取得のアイコンの取得を頼む（ブックマーク取込の後。A3-174） */
+  REQUEST_FETCH_MISSING_ICONS: 'request-fetch-missing-icons',
+  EVENT_FETCH_MISSING_ICONS_REQUESTED: 'fetch-missing-icons-requested',
   GET_ICON_FETCH_ERRORS: 'get-icon-fetch-errors',
   SELECT_CUSTOM_ICON_FILE: 'select-custom-icon-file',
   SAVE_CUSTOM_ICON: 'save-custom-icon',

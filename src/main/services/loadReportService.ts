@@ -47,7 +47,7 @@ export interface LoadReport {
 }
 
 /**
- * 読み込みのきっかけ。explicit = 起動時・F5、full = 完全リフレッシュ、
+ * 読み込みのきっかけ。explicit = 起動時・F5、full = 「アイコンをすべて取り直す」、
  * internal = 変更通知・画面内の一覧取得
  */
 export type LoadTrigger = 'explicit' | 'full' | 'internal';

@@ -626,3 +626,19 @@
   border: var(--border-normal);
   border-radius: var(--border-radius);
 }
+
+/* 取り込んだ後にアイコンも取るか（表示名の欄の下。A3-174） */
+.bookmark-import-fetch-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.bookmark-import-fetch-icons-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}

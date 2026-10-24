@@ -82,10 +82,10 @@ export const ja = {
       titleWithReloadKey: '更新・取得（F5: データを再読み込み）',
       reloadData: '🔃 データを再読み込み',
       reloadDataWithKey: '🔃 データを再読み込み（F5）',
-      fetchIconsCurrentTab: '🎨 アイコン取得（現在のタブ）',
-      fetchIconsAllTabs: '🎨 アイコン取得（全タブ）',
       importBookmarks: '🔁 ブックマーク自動取込を実行',
-      reloadAll: '🔄 完全リフレッシュ',
+      refetchIcons: '🎨 アイコンをすべて取り直す',
+      refetchIconsTitle:
+        'データを読み直し、保存してあるアイコンを使わずに全部取り直します（前に取れなかったものも試します）',
     },
     registerMenu: {
       title: 'アイテムを追加',
@@ -143,13 +143,18 @@ export const ja = {
       showNote: 'メモを表示',
     },
     missingIcons: {
-      label: 'アイコン未取得:',
-      fetch: '取得',
+      label_one: '🎨 アイコンがまだ無いアイテムが {{count}} 件あります',
+      label_other: '🎨 アイコンがまだ無いアイテムが {{count}} 件あります',
+      hint: 'サイトや PC から 1 回だけ取りに行き、その後は保存したものを使います',
+      fetch: '取得する',
       fetchTooltip: 'アイコンを取得',
     },
     iconProgress: {
       complete: 'アイコン取得完了',
       busy: 'アイコンを取得しています。終わってからもう一度お試しください',
+      closeWhileFetching: '閉じても、取得は裏で続きます',
+      continuesInBackground: 'アイコンの取得は裏で続けます。終わったら知らせます',
+      finishedInBackground: 'アイコンの取得が終わりました',
       phase: 'フェーズ {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'ファビコン取得',
@@ -1463,6 +1468,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     autoNameWithWord: '{{base}}{{word}}',
   },
   bookmarkImportModal: {
+    fetchIcons: '取り込んだ後にアイコン（サイトのファビコン）も取得する',
+    fetchIconsNote: '「変更を保存」のあとに取りに行きます',
+    fetchIconsNoteRule: '取り込んだらすぐ取りに行きます',
     title: 'ブラウザのブックマークを取り込む',
     hint: '取り込みたいフォルダやブックマークにチェックを入れます。取り込んだ分は未保存の変更として追加され、「変更を保存」で確定します。',
     defaultName: 'ブックマーク',
@@ -1509,7 +1517,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     autoImportLinkNone: 'ブックマーク自動取込（ルールはまだありません）',
     ruleName: 'ルール名',
     ruleSummary:
-      '保存されるルール: {{source}} ・ {{folders}}。名前の条件や表示名は、あとで「ブックマーク自動取込」で足せます',
+      '保存されるルール: {{source}} ・ {{folders}}。名前の条件やフォルダ名の付け方は、あとで「ブックマーク自動取込」で足せます',
     ruleAllFolders: 'すべてのフォルダ（あとから増えたフォルダも）',
     ruleFolders: '{{folders}}（サブフォルダも）',
     allBookmarksRuleName: 'ブックマーク全件',

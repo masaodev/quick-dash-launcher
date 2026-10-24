@@ -79,10 +79,10 @@ export const en: LocaleMessages = {
       titleWithReloadKey: 'Reload and fetch (F5: reload data)',
       reloadData: '🔃 Reload data',
       reloadDataWithKey: '🔃 Reload data (F5)',
-      fetchIconsCurrentTab: '🎨 Fetch icons (current tab)',
-      fetchIconsAllTabs: '🎨 Fetch icons (all tabs)',
       importBookmarks: '🔁 Run bookmark auto-import',
-      reloadAll: '🔄 Full reload',
+      refetchIcons: '🎨 Fetch all icons again',
+      refetchIconsTitle:
+        "Reloads the data and fetches every icon again without the saved ones (also retries ones that couldn't be fetched)",
     },
     registerMenu: {
       title: 'Add item',
@@ -140,13 +140,19 @@ export const en: LocaleMessages = {
       showNote: 'Show note',
     },
     missingIcons: {
-      label: 'Icons not fetched:',
+      label_one: '🎨 {{count}} item has no icon yet',
+      label_other: '🎨 {{count}} items have no icon yet',
+      hint: 'Icons are fetched once from the site or your PC, then the saved ones are used',
       fetch: 'Fetch',
       fetchTooltip: 'Fetch icons',
     },
     iconProgress: {
       complete: 'Icons fetched',
       busy: 'Icons are being fetched. Try again when it finishes.',
+      closeWhileFetching: 'Closing keeps fetching in the background',
+      continuesInBackground:
+        "Icons keep being fetched in the background. You'll be notified when it's done",
+      finishedInBackground: 'Finished fetching icons',
       phase: 'Step {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'Fetching favicons',
@@ -1458,6 +1464,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     autoNameWithWord: '{{base}} {{word}}',
   },
   bookmarkImportModal: {
+    fetchIcons: 'Also fetch icons (site favicons) after importing',
+    fetchIconsNote: 'Fetched after you press "Save changes"',
+    fetchIconsNoteRule: 'Fetched right after importing',
     title: 'Import browser bookmarks',
     hint: 'Check the folders or bookmarks you want and import them. Imported bookmarks are added as unsaved changes; select "Save changes" to keep them.',
     defaultName: 'Bookmarks',
@@ -1506,7 +1515,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     autoImportLinkNone: 'Bookmark auto-import (no rules yet)',
     ruleName: 'Rule name',
     ruleSummary:
-      'Rule to save: {{source}} · {{folders}}. You can add name filters or display names later in Bookmark auto-import',
+      'Rule to save: {{source}} · {{folders}}. You can add name filters or folder names later in Bookmark auto-import',
     ruleAllFolders: 'All folders (including ones added later)',
     ruleFolders: '{{folders}} (with subfolders)',
     allBookmarksRuleName: 'All bookmarks',

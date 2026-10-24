@@ -87,7 +87,7 @@ export interface ElectronAPI {
     fileName: string
   ) => Promise<{ success: boolean; error?: string; disabledRules?: string[] }>;
   /**
-   * trigger 省略 = 起動時・F5（レポートを必ず書く）。'full' = 完全リフレッシュ（レポートを書き、パスの種類も確かめ直す）。
+   * trigger 省略 = 起動時・F5（レポートを必ず書く）。'full' = 「アイコンをすべて取り直す」（レポートを書き、パスの種類も確かめ直す）。
    * 'internal' = 変更通知・画面内の一覧取得
    */
   loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
@@ -116,6 +116,10 @@ export interface ElectronAPI {
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
+  /** メインウィンドウに、未取得のアイコンを全タブ分取るよう頼む（進捗バーはメインウィンドウに出る） */
+  requestFetchMissingIcons: () => Promise<void>;
+  /** メインウィンドウ用: ほかのウィンドウから未取得のアイコンの取得を頼まれた */
+  onFetchMissingIconsRequested: (callback: () => void) => () => void;
   // アイコン取得エラー記録を取得
   getIconFetchErrors: () => Promise<IconFetchErrorRecord[]>;
   // 進捗イベントリスナー

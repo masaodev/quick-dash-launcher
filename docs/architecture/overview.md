@@ -89,7 +89,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 
 設定フォルダのデータファイル（`datafiles/data*.json`）とワークスペースファイルは、QDL の外で変わる（古い版・同期ツール・手での修正）ことに備えて読み書きする。手での編集はサポートせず、AI からの変更は CLI（`services/cli/`）で受ける。各処理の仕様は[データファイル形式 5 章](file-formats/data-format.md#5-エラー処理とフォールバック)と[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。
 
-- **読み込み**: 起動時・メイン画面の F5・完全リフレッシュで、データファイルとワークスペースをまとめて読み直す（`services/data/dataFileLoader.ts` の `reloadConfigFiles`）。寛容パース（`common/utils/jsonParser.ts`）で、JSON 構文が壊れたファイルは「破損」として読まず、不正なアイテムはアイテム単位でスキップし、`id` の欠落・重複は採番する。採番・補正があれば 1 回だけ書き戻す
+- **読み込み**: 起動時・メイン画面の F5・🔄 の「アイコンをすべて取り直す」で、データファイルとワークスペースをまとめて読み直す（`services/data/dataFileLoader.ts` の `reloadConfigFiles`）。寛容パース（`common/utils/jsonParser.ts`）で、JSON 構文が壊れたファイルは「破損」として読まず、不正なアイテムはアイテム単位でスキップし、`id` の欠落・重複は採番する。採番・補正があれば 1 回だけ書き戻す
 - **変換**: JSON アイテムを表示用の `AppItem` に変換する（`services/data/jsonItemConverter.ts`）。フォルダ取込（`type: "dir"`）はフォルダを走査して展開し、`.lnk` はリンク先を解析する（`services/data/directoryScanner.ts`）。タブ単位で重複を除き、表示名でソートする。種別はパスから決めるが、見た目だけでは分からないもの（ドット入りのフォルダ名・拡張子の無いファイル）は `utils/folderPathProbe.ts` がディスクの状態と記録（`config/path-type-cache.json`）で補う（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
 - **保存**: QDL 自身の書き込みは `services/dataFileTracker.ts` の `writeDataFile()` を通し、書いた内容を記憶する。管理画面の一覧保存は読み込み時のハッシュと照合する楽観ロック付き（`editableItemsStore.ts`）。メイン画面からの登録・編集・削除と CLI の書き込みは、都度ディスクを読み直して ID で差し替える・消す（`dataItemWriter.ts`。IPC の `editHandlers.ts` は受け口だけ）。破損中のファイルへの保存・登録は拒否する。ID で探すときは破損ファイルを飛ばして他のファイルで続け、目当ての ID が破損ファイルにあるかもしれないときは何も書かずに止める
 - **外部変更**: ファイル監視はしない。読み込んだ内容が記憶と違えば QDL の外で編集されたとみなし、変更前の内容をスナップショット（`backup/*_pre-external/`。`backupEnabled` が true のとき）に残す。読み込み結果はレポートにまとめてメモリに持ち、CLI の `reload`・`check` が返す（`services/loadReportService.ts`）

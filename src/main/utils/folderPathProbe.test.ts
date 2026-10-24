@@ -207,7 +207,7 @@ describe('拡張子の無いファイルのメモ（読み込み時）', () => {
     expect(stat).toHaveBeenCalledTimes(2);
   });
 
-  it('完全リフレッシュ（rebuild）は拡張子の無いドライブ文字のパスをすべて確かめてメモを作り直す', async () => {
+  it('「アイコンをすべて取り直す」（rebuild）は拡張子の無いドライブ文字のパスをすべて確かめてメモを作り直す', async () => {
     useMemo(['C:\\old\\removed', 'C:\\work\\now-folder']);
     const stat = statOf(['C:\\work\\now-folder', 'C:\\work\\folder'], [HOSTS]);
     await beginLoadProbeSession('rebuild', { stat });
@@ -223,7 +223,7 @@ describe('拡張子の無いファイルのメモ（読み込み時）', () => {
     expect(saved).toEqual([HOSTS]);
   });
 
-  it('完全リフレッシュで時間切れのパスは、前のメモを残す', async () => {
+  it('「アイコンをすべて取り直す」で時間切れのパスは、前のメモを残す', async () => {
     useMemo(['Z:\\share\\README']);
     const options = { stat: hangingStat, timeoutMs: 10 };
     await beginLoadProbeSession('rebuild', options);
