@@ -1,7 +1,7 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import type { AppItem, WindowInfo } from '@common/types';
 
-import { filterItems, setSearchMemoAndPath } from './dataParser';
+import { filterItems, setSearchMemo } from './dataParser';
 
 function windowItem(title: string, processName?: string): WindowInfo {
   return { hwnd: 1, title, processName } as WindowInfo;
@@ -28,7 +28,7 @@ describe('filterItems（ウィンドウ検索モード）', () => {
   });
 });
 
-describe('filterItems（メモとパスにも当てる設定）', () => {
+describe('filterItems（メモにも当てる設定）', () => {
   const github = {
     id: 'g1',
     displayName: 'GitHub',
@@ -38,26 +38,30 @@ describe('filterItems（メモとパスにも当てる設定）', () => {
   } as AppItem;
   const notepad = { id: 'n1', displayName: 'メモ帳', path: 'notepad.exe', type: 'app' } as AppItem;
 
-  afterEach(() => setSearchMemoAndPath(false));
+  afterEach(() => setSearchMemo(false));
 
   it('既定（オフ）では表示名だけで探す', () => {
     expect(filterItems([github, notepad], 'masaodev')).toEqual([]);
     expect(filterItems([github, notepad], '仕事')).toEqual([]);
   });
 
-  it('オンにするとメモとパスにも当たり、表示名とまたがる AND も当たる', () => {
-    setSearchMemoAndPath(true);
-    expect(filterItems([github, notepad], 'masaodev')).toEqual([github]);
+  it('オンにするとメモにも当たり、表示名とまたがる AND も当たる', () => {
+    setSearchMemo(true);
     expect(filterItems([github, notepad], '仕事')).toEqual([github]);
     expect(filterItems([github, notepad], 'github 仕事')).toEqual([github]);
-    expect(filterItems([github, notepad], 'notepad')).toEqual([notepad]);
+  });
+
+  it('オンでもパス（URL を含む）には当てない', () => {
+    setSearchMemo(true);
+    expect(filterItems([github, notepad], 'masaodev')).toEqual([]);
+    expect(filterItems([github, notepad], 'notepad')).toEqual([]);
   });
 
   it('切り替えるとすぐに効く（前の結果を覚えたままにしない）', () => {
-    expect(filterItems([github], 'masaodev')).toEqual([]);
-    setSearchMemoAndPath(true);
-    expect(filterItems([github], 'masaodev')).toEqual([github]);
-    setSearchMemoAndPath(false);
-    expect(filterItems([github], 'masaodev')).toEqual([]);
+    expect(filterItems([github], '仕事')).toEqual([]);
+    setSearchMemo(true);
+    expect(filterItems([github], '仕事')).toEqual([github]);
+    setSearchMemo(false);
+    expect(filterItems([github], '仕事')).toEqual([]);
   });
 });

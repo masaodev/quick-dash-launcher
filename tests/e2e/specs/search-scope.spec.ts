@@ -5,7 +5,7 @@ import { TestUtils } from '../helpers/test-utils';
 
 /**
  * 検索の範囲（A3-152）
- * - メインウィンドウ: 設定「検索でメモとパスにも当てる」（既定オフ）
+ * - メインウィンドウ: 設定「検索でメモにも当てる」（既定オフ）
  * - ワークスペースの絞り込み: スペース区切りの AND。「すべて」では語がグループ名とアイテム名にまたがってよい
  */
 
@@ -20,7 +20,7 @@ async function getWorkspaceWindow(electronApp: ElectronApplication): Promise<Pag
 }
 
 test.describe('QuickDashLauncher - 検索の範囲', () => {
-  test('設定をオンにすると、メインウィンドウの検索がメモとパスにも当たる', async ({
+  test('設定をオンにすると、メインウィンドウの検索がメモにも当たる', async ({
     mainWindow,
     configHelper,
   }) => {
@@ -41,20 +41,18 @@ test.describe('QuickDashLauncher - 検索の範囲', () => {
       await expect(mainWindow.locator('.item')).toHaveCount(0);
     });
 
-    await test.step('オンにするとメモ・パスでも当たり、表示名とまたがる AND も当たる', async () => {
-      await mainWindow.evaluate(() =>
-        window.electronAPI.setMultipleSettings({ searchMemoAndPath: true })
-      );
+    await test.step('オンにするとメモでも当たり、表示名とまたがる AND も当たる。パスには当てない', async () => {
+      await mainWindow.evaluate(() => window.electronAPI.setMultipleSettings({ searchMemo: true }));
       await expect(mainWindow.locator('.item', { hasText: '社内ポータル' })).toBeVisible();
       await utils.searchFor('portal.example');
-      await expect(mainWindow.locator('.item')).toHaveCount(1);
+      await expect(mainWindow.locator('.item')).toHaveCount(0);
       await utils.searchFor('社内 勤怠');
       await expect(mainWindow.locator('.item', { hasText: '社内ポータル' })).toBeVisible();
     });
 
     await test.step('オフに戻すと表示名だけに戻る', async () => {
       await mainWindow.evaluate(() =>
-        window.electronAPI.setMultipleSettings({ searchMemoAndPath: false })
+        window.electronAPI.setMultipleSettings({ searchMemo: false })
       );
       await expect(mainWindow.locator('.item')).toHaveCount(0);
     });

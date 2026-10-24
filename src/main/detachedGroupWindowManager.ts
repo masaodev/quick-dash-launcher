@@ -23,6 +23,7 @@ import {
 import { computeMonitorAnchor, placeByMonitorAnchor } from './utils/monitorAnchor.js';
 import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
 import { notifyPinLevel } from './utils/pinMenu.js';
+import { suppressSystemContextMenu } from './utils/systemContextMenu.js';
 import { getMainWindowDisplay } from './utils/referenceDisplay.js';
 import { getRendererHtmlUrl, openChildWindow } from './services/childWindowService.js';
 
@@ -411,6 +412,7 @@ function setupDetachedWindow(
 ): void {
   win.setMenuBarVisibility(false);
   win.setMenu(null);
+  suppressSystemContextMenu(win);
 
   detachedWindows.set(groupId, win);
   detachedPinModes.set(groupId, pinMode);

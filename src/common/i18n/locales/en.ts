@@ -384,6 +384,7 @@ export const en: LocaleMessages = {
       retarget: '🔁 Link to another item…',
       moveToMain: '🚀 Move to the launcher and link to it',
       moveToWorkspace: '📁 Move to workspace',
+      moveToGroup: '📁 Move to group',
       remove: '🗑️ Remove from workspace',
     },
     workspaceGroup: {
@@ -399,6 +400,9 @@ export const en: LocaleMessages = {
       addNew: '✏️ Enter a new item…',
       rename: '✏️ Rename group',
       changeColor: '🎨 Change color',
+      duplicate: '📄 Duplicate group',
+      collapseOthers: '🔼 Collapse other groups',
+      openAll: '▶ Open all',
       archive: '🗄️ Archive group',
       delete: '🗑️ Delete group',
     },
@@ -2138,6 +2142,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       archiveConfirm: 'Archive "{{name}}"?',
       archiveRestorable: 'You can restore an archived group later.',
       archive: 'Archive',
+      copyName: '{{name}} copy',
+      openAllTitle: 'Open all',
+      openAllConfirm: 'Open the {{count}} items in "{{name}}" one after another?',
+      openAll: 'Open',
+      openAllEmpty: '"{{name}}" has no items to open',
     },
     empty: {
       title: 'This workspace is empty',
@@ -2305,9 +2314,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       keyboardHints: 'Show keyboard hints',
       keyboardHintsDescription:
         'Shows easy-to-miss keys at the bottom of the launcher (such as F2 to edit, or Shift+Enter to open the containing folder).',
-      searchMemoAndPath: 'Search notes and paths too',
-      searchMemoAndPathDescription:
-        'When you search in the launcher, also finds items whose note or path (including URLs) contains the words. When off, only display names are searched.',
+      searchMemo: 'Search notes too',
+      searchMemoDescription:
+        'When you search in the launcher, also finds items whose note contains the words. When off, only display names are searched.',
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',

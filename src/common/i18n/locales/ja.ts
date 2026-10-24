@@ -386,6 +386,7 @@ export const ja = {
       retarget: '🔁 別のアイテムを指す…',
       moveToMain: '🚀 メインウィンドウへ移して参照にする',
       moveToWorkspace: '📁 ワークスペースを移動',
+      moveToGroup: '📁 グループへ移動',
       remove: '🗑️ ワークスペースから削除',
     },
     workspaceGroup: {
@@ -401,6 +402,9 @@ export const ja = {
       addNew: '✏️ 新しく入力して追加…',
       rename: '✏️ グループ名を変更',
       changeColor: '🎨 色を変更',
+      duplicate: '📄 グループを複製',
+      collapseOthers: '🔼 ほかのグループを折りたたむ',
+      openAll: '▶ すべて開く',
       archive: '🗄️ グループをアーカイブ',
       delete: '🗑️ グループを削除',
     },
@@ -2137,6 +2141,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       archiveConfirm: '「{{name}}」をアーカイブしてもよろしいですか？',
       archiveRestorable: 'アーカイブしたグループは後で復元できます。',
       archive: 'アーカイブ',
+      copyName: '{{name}} のコピー',
+      openAllTitle: 'すべて開く',
+      openAllConfirm: '「{{name}}」の {{count}} 件のアイテムを順に開きますか？',
+      openAll: '開く',
+      openAllEmpty: '「{{name}}」には開けるアイテムがありません',
     },
     empty: {
       title: 'ワークスペースは空です',
@@ -2317,9 +2326,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       keyboardHints: '操作のヒントを表示',
       keyboardHintsDescription:
         'メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter で親フォルダを開くなど）を表示します。',
-      searchMemoAndPath: '検索でメモとパスにも当てる',
-      searchMemoAndPathDescription:
-        'メインウィンドウの検索で、表示名に加えてメモとパス（URL を含む）に入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
+      searchMemo: '検索でメモにも当てる',
+      searchMemoDescription:
+        'メインウィンドウの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
