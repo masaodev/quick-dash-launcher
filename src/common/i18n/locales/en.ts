@@ -140,6 +140,7 @@ export const en: LocaleMessages = {
     },
     iconProgress: {
       complete: 'Icons fetched',
+      busy: 'Icons are being fetched. Try again when it finishes.',
       phase: 'Step {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'Fetching favicons',
@@ -1434,7 +1435,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     namingOptions: 'Options (display name)',
     namingNone: 'Keep the bookmark names',
     prefix: 'Add before',
-    prefixPlaceholder: 'e.g. [bkm]',
+    prefixPlaceholder: 'e.g. [BookMark]',
     suffix: 'Add after',
     suffixPlaceholder: 'e.g.  (Chrome)',
     folderNameMode: 'Add folder name',

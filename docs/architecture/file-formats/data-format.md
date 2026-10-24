@@ -45,6 +45,8 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 | `icon-cache/custom/` | カスタムアイコン（手動設定） | 任意のファイル名 |
 | `icon-cache/extensions/` | ファイル拡張子のアイコン | `ext_{ext}_icon.png` |
 
+サブフォルダは起動時に作ります。起動中に消されても、アイコンを保存する直前に無ければ作り直します。
+
 ショートカットの `{name}` は `.lnk` を除いたファイル名です（リンク先が `.lnk` のときはそちらの名前。`src/main/utils/iconCacheKeys.ts`）。
 
 データファイルの `customIcon` フィールドは `icon-cache/custom/` 内のファイル名を指定します。

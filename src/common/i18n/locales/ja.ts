@@ -143,6 +143,7 @@ export const ja = {
     },
     iconProgress: {
       complete: 'アイコン取得完了',
+      busy: 'アイコンを取得しています。終わってからもう一度お試しください',
       phase: 'フェーズ {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'ファビコン取得',
@@ -1439,7 +1440,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     namingOptions: 'オプション設定（表示名）',
     namingNone: 'ブックマークの名前のまま',
     prefix: '頭に付ける文字',
-    prefixPlaceholder: '例: [bkm]',
+    prefixPlaceholder: '例: [BookMark]',
     suffix: '後ろに付ける文字',
     suffixPlaceholder: '例:  (Chrome)',
     folderNameMode: 'フォルダ名を付ける',

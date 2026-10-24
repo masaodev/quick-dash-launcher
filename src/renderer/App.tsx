@@ -98,8 +98,6 @@ function App(): React.ReactElement {
 
   // アイコン取得エラー記録
   const [iconFetchErrors, setIconFetchErrors] = useState<IconFetchErrorRecord[]>([]);
-  // 進捗バーを出さない裏の取得の最中か（その間は「アイコン未取得」を出さない）
-  const [isFetchingIconsSilently, setIsFetchingIconsSilently] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
@@ -221,12 +219,15 @@ function App(): React.ReactElement {
     handleFetchMissingIcons,
     handleFetchMissingIconsSilently,
     handleFetchMissingIconsCurrentTab,
+    isFetchingIcons,
+    isIconFetchBusy,
   } = useIconFetcher({
     mainItems,
     setMainItems,
     activeTab,
     dataFileTabs,
     reloadIconFetchErrors: loadIconFetchErrors,
+    onBusy: () => showWarning(t('launcher.iconProgress.busy')),
   });
 
   const { withLoading } = useGlobalLoading();
@@ -753,8 +754,7 @@ function App(): React.ReactElement {
       setIsFirstLaunch(false);
       // 初回のサンプルにはアイコンがまだ無いので、「取得」を押さなくても出るように取りに行く。
       // 頼まれた処理ではないので、進捗バーは出さない
-      setIsFetchingIconsSilently(true);
-      void handleFetchMissingIconsSilently().finally(() => setIsFetchingIconsSilently(false));
+      void handleFetchMissingIconsSilently();
       return true;
     } catch (error) {
       // 初回設定の間はダイアログを描かないので、知らせるのは初回設定画面に任せる
@@ -780,6 +780,11 @@ function App(): React.ReactElement {
   };
 
   const handleRefreshAllWrapper = async () => {
+    // 取得中は自動取込も流さない（取込だけ流れてアイコンを取り直さない、という半端を避ける）
+    if (isIconFetchBusy()) {
+      showWarning(t('launcher.iconProgress.busy'));
+      return;
+    }
     await window.electronAPI.bookmarkAutoImportAPI.executeAll();
     await handleRefreshAll(() => loadItems('full'));
   };
@@ -961,7 +966,8 @@ function App(): React.ReactElement {
         </div>
       )}
 
-      {!progressState.isActive && !isFetchingIconsSilently && missingIconCount > 0 && (
+      {/* 取得中は出さない（進捗バーを × で閉じても、取得が終わるまで）。出すと［取得］で二重に取る（A3-173） */}
+      {!progressState.isActive && !isFetchingIcons && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
       )}
 

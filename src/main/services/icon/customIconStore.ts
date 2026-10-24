@@ -44,7 +44,8 @@ export async function saveCustomIcon(
   const customIconFileName = `${hash}.png`;
   const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
 
-  // 画像はコピーして保存する（将来的にリサイズ処理を追加予定）
+  // 画像はコピーして保存する（将来的にリサイズ処理を追加予定）。保存先のフォルダが起動後に消されていても作り直す（A3-175）
+  FileUtils.ensureDirectory(path.dirname(customIconPath));
   await fs.promises.copyFile(sourceFilePath, customIconPath);
   iconLogger.info(`カスタムアイコンを保存: ${itemIdentifier} -> ${customIconFileName}`);
   return customIconFileName;

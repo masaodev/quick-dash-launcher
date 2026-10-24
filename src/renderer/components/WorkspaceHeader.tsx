@@ -117,7 +117,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         />
         <div className="workspace-settings-container" ref={settingsMenuRef}>
           <button
-            className={`action-btn workspace-control-btn ${isSettingsMenuOpen ? 'active' : ''}`}
+            className={`action-btn workspace-control-btn ${isSettingsMenuOpen ? 'toggle-on' : ''}`}
             onClick={toggleSettingsMenu}
             title={t('workspace.header.menu')}
           >
