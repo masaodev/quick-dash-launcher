@@ -43,6 +43,7 @@ import { useRegisterWindow } from './hooks/useRegisterWindow';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
 import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
+import { useSearchMemo } from './hooks/useSearchMemo';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -126,6 +127,8 @@ function App(): React.ReactElement {
   } = useDataFileTabs();
   activeTabRef.current = activeTab;
   const showKeyboardHints = useShowKeyboardHints();
+  // 検索でメモにも当てるか（変わったら一覧を絞り直す）
+  const searchMemo = useSearchMemo();
 
   // ワークスペースからドラッグされたアイテム。選んでいるタブ（の先頭のファイル）へ移し、ワークスペース側を参照にする
   // （結果はメインプロセスがトーストで知らせる）。参照はもうメインウィンドウにあるので、移さずに知らせる
@@ -444,7 +447,8 @@ function App(): React.ReactElement {
         ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
         : tabFilteredItems;
     return filterItems(itemsToFilter, searchQuery, searchMode);
-  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery]);
+    // searchMemo は filterItems の中で読む設定。変わったら絞り直す
+  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery, searchMemo]);
 
   // 検索で 0 件のとき、他のタブや通常の検索に合うものがあるか（一覧が空の案内に使う）
   const noMatchElsewhere = useMemo(
