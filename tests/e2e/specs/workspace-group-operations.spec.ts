@@ -152,6 +152,15 @@ test.describe('QuickDashLauncher - ワークスペースの操作', () => {
         .locator('.workspace-item-card', { hasText: 'メモ帳' })
         .click({ button: 'right' });
       await expect.poll(() => readMenuLabels(electronApp)).toContain('📁 グループへ移動');
+      // アプリには「管理者として実行」が出る（URL には出ない）
+      expect(await readMenuLabels(electronApp)).toContain('🛡️ 管理者として実行');
+
+      await captureMenuLabels(electronApp);
+      await workspaceWindow
+        .locator('.workspace-item-card', { hasText: 'サイトA' })
+        .click({ button: 'right' });
+      await expect.poll(() => readMenuLabels(electronApp)).toContain('📁 グループへ移動');
+      expect(await readMenuLabels(electronApp)).not.toContain('🛡️ 管理者として実行');
     });
 
     await test.step('グループを複製すると、サブグループとアイテムごと写り、クリップボードの実データは別になる', async () => {

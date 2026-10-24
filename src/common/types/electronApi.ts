@@ -94,6 +94,8 @@ export interface ElectronAPI {
   /** options.trial＝登録・編集フォームで試しに開く（起動の記録に数えない） */
   openItem: (item: LauncherItem, options?: LaunchOptions) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
+  /** 単一アイテムを管理者として実行する（UAC の確認が出る。対象はアプリだけ） */
+  runItemAsAdmin: (item: LauncherItem) => Promise<void>;
   /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
   executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
   openConfigFolder: () => Promise<void>;
@@ -507,6 +509,7 @@ export interface ElectronAPI {
   onLauncherMenuCopyPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenParentFolder: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuRunAsAdmin: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;

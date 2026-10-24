@@ -75,6 +75,7 @@ function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
       displayName: item.displayName,
       path: item.path,
       args: item.args,
+      ...(item.runAsAdmin === true && { runAsAdmin: true }),
       ...pickItemWindowSwitch(item),
       id: item.id,
     };

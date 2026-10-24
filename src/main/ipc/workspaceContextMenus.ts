@@ -11,8 +11,10 @@ import type {
   WorkspaceGroup,
 } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { openWorkspaceLinkCopies } from '../workspaceLinkWindowManager.js';
+import { openWorkspaceItemAsAdmin } from '../services/launch/adminItemLauncher.js';
 import {
   closeDetachedGroupWindow,
   createDetachedGroupWindow,
@@ -118,6 +120,15 @@ function setupWorkspaceContextMenuHandler(): void {
             IPC_CHANNELS.EVENT_WORKSPACE_MENU_SHOW_MEMO,
             item.id
           )
+        );
+      }
+      // アプリ（exe・.lnk・.bat/.cmd）だけ。ワークスペースにはキーが無いので、キーは添えない
+      if (item.type === 'item' && canRunAsAdmin({ type: item.launcherType, path: item.path })) {
+        menu.append(
+          new MenuItem({
+            label: t('menu.runAsAdmin'),
+            click: () => void openWorkspaceItemAsAdmin(item),
+          })
         );
       }
 

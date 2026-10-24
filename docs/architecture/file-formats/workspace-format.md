@@ -121,6 +121,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 
 - `type: item` は、ショートカット（.lnk）のリンク先 `originalPath` を持てる。実行時の起動種別（url/file/folder/app/customUri/windowSwitch）は `originalPath` があればそれ、なければ `path` から判定する。`path` は、ウィンドウ切り替えの `window` があれば空でもよい（パスの無い単一アイテム。起動種別は `windowSwitch`、[データファイル形式 3.1.5.7](data-format.md#3157-パスの無い単一アイテム)）。ドット入りのフォルダ名と拡張子の無いファイルの扱い（末尾の区切り文字・読み込み時のディスク確認・`path-type-cache.json`）はデータファイルと同じ（[データファイル形式 3.1.2](data-format.md#312-サポートされるパス種類)）
 - データファイルの `updatedAt`・`autoImportRuleId` は持たない
+- `type: item` の `runAsAdmin`（常に管理者として実行）はデータファイルと同じ。参照アイテムは持たず、指すメインウィンドウのアイテムの値に従う
 - `clipboard` は QDL が生成する。手で書かない
 - `set` の行の `itemId` は、ワークスペースのアイテムの id か、データファイルのアイテムの id を指す。実行時はワークスペースのアイテムを先に探す（`src/main/ipc/workspaceHandlers.ts`）。行が参照アイテムを指すときは、参照を解決した中身で開く
 - `type: item` のウィンドウ切り替え（`window`・`placement` など、[データファイル形式 3.1.5](data-format.md#315-ウィンドウ切り替えitemwindowswitch)）も、データファイルと同じ処理で実行する

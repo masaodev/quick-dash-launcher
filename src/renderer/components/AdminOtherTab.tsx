@@ -10,6 +10,7 @@ const FIXED_SHORTCUTS = [
   { keys: 'Ctrl+W', text: 'toggleWorkspace' },
   { keys: 'Enter', text: 'open' },
   { keys: 'Shift+Enter', text: 'openFolder' },
+  { keys: 'Ctrl+Shift+Enter', text: 'runAsAdmin' },
   { keys: 'F2', text: 'edit' },
   { keys: '↑/↓', text: 'select' },
   { keys: 'Ctrl+↑/↓', text: 'history' },

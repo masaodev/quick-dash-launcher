@@ -1,6 +1,7 @@
 import i18next from 'i18next';
 import type { RegisterItem, EditingAppItem } from '@common/types';
 import { itemWindowSwitchFields } from '@common/utils/itemWindowConversion';
+import { canSetRunAsAdmin } from '@common/utils/runAsAdmin';
 
 /**
  * 登録フォームの内容をデータファイルへ保存する
@@ -58,6 +59,8 @@ export async function saveRegisterItems(
         type: item.type,
         args: item.args,
         customIcon: item.customIcon,
+        // 種類をアプリ以外に変えたときは、隠れたチェックの値を残さない
+        ...(canSetRunAsAdmin(item.path) && item.runAsAdmin === true && { runAsAdmin: true }),
         ...itemWindowSwitchFields(item),
         memo: item.memo,
       },

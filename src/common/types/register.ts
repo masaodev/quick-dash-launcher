@@ -46,6 +46,8 @@ export interface RegisterItem extends ItemWindowSwitch {
   path: string;
   type: LauncherItem['type'];
   args?: string;
+  /** 常に管理者として実行する（単一アイテムのアプリだけ） */
+  runAsAdmin?: boolean;
   targetTab: string;
   targetFile?: string;
   folderProcessing?: 'folder' | 'expand';

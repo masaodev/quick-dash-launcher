@@ -11,6 +11,7 @@ export const IPC_CHANNELS = {
   // アイテム操作
   OPEN_ITEM: 'open-item',
   OPEN_PARENT_FOLDER: 'open-parent-folder',
+  RUN_ITEM_AS_ADMIN: 'run-item-as-admin',
   EXECUTE_SET: 'execute-set',
 
   // データ操作
@@ -270,6 +271,7 @@ export const IPC_CHANNELS = {
   EVENT_LAUNCHER_MENU_COPY_PATH: 'launcher-menu-copy-path',
   EVENT_LAUNCHER_MENU_COPY_PARENT_PATH: 'launcher-menu-copy-parent-path',
   EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER: 'launcher-menu-open-parent-folder',
+  EVENT_LAUNCHER_MENU_RUN_AS_ADMIN: 'launcher-menu-run-as-admin',
   EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH: 'launcher-menu-copy-shortcut-path',
   EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH: 'launcher-menu-copy-shortcut-parent-path',
   EVENT_LAUNCHER_MENU_OPEN_SHORTCUT_PARENT_FOLDER: 'launcher-menu-open-shortcut-parent-folder',

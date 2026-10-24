@@ -225,6 +225,9 @@ export const ja = {
       launchFailed: '「{{name}}」を開けませんでした: {{error}}',
       appNotFoundInPath: 'PATH にアプリが見つかりません',
       clipboardDataMissing: 'クリップボードのデータが見つかりません',
+      cannotRunAsAdmin: '「{{name}}」は管理者として実行できません（アプリだけ）',
+      fileNotFound: 'ファイルが見つかりません',
+      windowsError: 'Windows のエラー（コード {{code}}）',
     },
     itemActions: {
       targets: {
@@ -342,6 +345,7 @@ export const ja = {
     copyPath: '📋 パスをコピー',
     copyParentPath: '📋 親フォルダのパスをコピー',
     openParentFolder: '📂 親フォルダを開く',
+    runAsAdmin: '🛡️ 管理者として実行',
     copyShortcutPath: '📋 リンク先のパスをコピー',
     copyShortcutParentPath: '📋 リンク先の親フォルダのパスをコピー',
     openShortcutParentFolder: '📂 リンク先の親フォルダを開く',
@@ -641,6 +645,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       fieldMissing: 'キー {{key}} がありません（{{how}} で渡してください）',
       fieldInvalid: 'キー {{key}} の値が正しくありません（{{expected}} にしてください）',
       invalidContent: '内容が正しくありません: {{reason}}',
+      runAsAdminNotApp:
+        'runAsAdmin はアプリ（exe・.lnk・.bat/.cmd など）のアイテムだけに付けられます',
       unknownFields:
         '種類 {{type}} には無いキーです: {{fields}}（docs の設定ファイルの形式を確認してください）',
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
@@ -820,6 +826,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     run: {
       titleNotMatched: 'タイトルが合うウィンドウがありません（{{exe}} は開いています）',
       notOpen: '開いていないので動かしませんでした',
+      adminCancelled: '管理者としての実行を取りやめました',
       itemNotOpen: '開いていないので切り替えませんでした',
       couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
       desktopNotFound: 'デスクトップ {{number}} がありません。位置だけ合わせました',
@@ -1585,6 +1592,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       toggleWorkspace: 'ワークスペースの表示/非表示（メインウィンドウで）',
       open: '選択したアイテムを開く',
       openFolder: '選択したアイテムの親フォルダを開く',
+      runAsAdmin: '選択したアプリを管理者として実行',
       edit: '選択したアイテムを編集（通常の検索モードで）',
       select: 'アイテムを選択',
       history: '検索履歴をたどる',
@@ -1684,6 +1692,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     dirOptions: 'フォルダ取込のオプション',
     args: '引数',
     argsPlaceholder: 'コマンドライン引数（実行ファイルやアプリの場合のみ有効）',
+    runAsAdmin: '🛡️ 常に管理者として実行（開くたびに UAC の確認が出ます）',
+    runAsAdminSummary: '🛡️ 常に管理者として実行',
     clipboardFallbackName: 'クリップボード',
     note: 'メモ',
     notePlaceholder: '自由にメモを入力（任意）',
@@ -2268,7 +2278,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memoMove: 'メモをメインウィンドウへ移す',
       memoConflict: '⚠ メモが両方にあって違う（参照にするとコピーのメモは消えます）',
       settingsDiffer:
-        '⚠ ウィンドウ切り替え・アイコンがメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
+        '⚠ ウィンドウ切り替え・アイコン・管理者として実行がメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
       ambiguous_one: '⚠ 候補が {{count}} 件。指す先を選んでください',
       ambiguous_other: '⚠ 候補が {{count}} 件。指す先を選んでください',
       choose: '指す先を選ぶ…',

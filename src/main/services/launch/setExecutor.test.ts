@@ -119,6 +119,43 @@ function makeDeps(windows: { hwnd: bigint; title: string; processName: string }[
 const resolve = (id: string) => items[id];
 
 describe('executeSet', () => {
+  it('行は指すアイテムの「常に管理者として実行」を開くときに渡し、UAC で「いいえ」なら失敗にせず飛ばす', async () => {
+    const { deps } = makeDeps();
+    vi.mocked(deps.launch).mockResolvedValueOnce({ success: false, error: '', cancelled: true });
+    const admin: AppItem = {
+      id: 'admin1aa',
+      type: 'app',
+      displayName: '管理ツール',
+      path: 'C:/Tools/admin.exe',
+      runAsAdmin: true,
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: '管理者のセット',
+      entries: [{ itemId: 'admin1aa' }, { itemId: 'gmail1aa' }],
+    };
+    const result = await executeSet(
+      set,
+      (id) => (id === 'admin1aa' ? admin : items[id]),
+      deps,
+      logger
+    );
+    expect(deps.launch).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'C:/Tools/admin.exe', runAsAdmin: true }),
+      logger
+    );
+    expect(deps.launch).toHaveBeenCalledWith(
+      expect.not.objectContaining({ runAsAdmin: true }),
+      logger
+    );
+    expect(result.errorCount).toBe(0);
+    expect(result.entries.find((e) => e.index === 0)).toMatchObject({
+      success: true,
+      skipped: true,
+      adminCancelled: true,
+    });
+  });
+
   it('開けなかった行は、待たずにその理由で失敗にする（置き場所の有無によらない）', async () => {
     const { deps } = makeDeps();
     const set: SetItem = {
@@ -847,6 +884,19 @@ describe('executeLauncherItem（単一アイテムをセットの 1 行として
       errorCount: 0,
       cancelled: false,
       entries: [{ index: 0, name: 'Windows Terminal', success: true }],
+    });
+    expect(showToastWindow).not.toHaveBeenCalled();
+  });
+
+  it('管理者として実行で UAC の「いいえ」を押したときはトーストを出さない', async () => {
+    vi.mocked(showToastWindow).mockClear();
+    await notifyLauncherItemFailure(terminal, {
+      successCount: 1,
+      errorCount: 0,
+      cancelled: false,
+      entries: [
+        { index: 0, name: 'Windows Terminal', success: true, skipped: true, adminCancelled: true },
+      ],
     });
     expect(showToastWindow).not.toHaveBeenCalled();
   });

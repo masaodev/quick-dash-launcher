@@ -72,6 +72,8 @@ export function toLauncherItem(item: RegisterItem): LauncherItem | null {
         type: launcherTypeForPath(item.path, item.type),
         args: item.args,
         customIcon: item.customIcon,
+        // 「常に管理者として実行」を付けていれば、試すときも管理者として開く（対象外の種類なら本体が普通に開く）
+        ...(item.runAsAdmin === true && { runAsAdmin: true }),
         ...itemWindowSwitchFields(item),
       };
   }

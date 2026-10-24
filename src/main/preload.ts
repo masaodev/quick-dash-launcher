@@ -70,6 +70,7 @@ const electronAPI: ElectronAPI = {
   loadDataFiles: (trigger) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
   openItem: (item, options) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item, options),
   openParentFolder: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
+  runItemAsAdmin: (item) => ipcRenderer.invoke(IPC_CHANNELS.RUN_ITEM_AS_ADMIN, item),
   executeSet: (item, allItems) => ipcRenderer.invoke(IPC_CHANNELS.EXECUTE_SET, item, allItems),
   openConfigFolder: () => ipcRenderer.invoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url) => ipcRenderer.invoke(IPC_CHANNELS.FETCH_FAVICON, url),
@@ -408,6 +409,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH, callback),
   onLauncherMenuOpenParentFolder: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER, callback),
+  onLauncherMenuRunAsAdmin: (callback) =>
+    createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_RUN_AS_ADMIN, callback),
   onLauncherMenuCopyShortcutPath: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH, callback),
   onLauncherMenuCopyShortcutParentPath: (callback) =>

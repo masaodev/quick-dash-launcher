@@ -370,7 +370,7 @@ function validateRefItemBody(body: Record<string, unknown>): Record<string, unkn
 // ============================================================
 
 const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
-  item: ['path', 'args', 'originalPath', 'customIcon', ...ITEM_WINDOW_SWITCH_KEYS],
+  item: ['path', 'args', 'originalPath', 'customIcon', 'runAsAdmin', ...ITEM_WINDOW_SWITCH_KEYS],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
   set: ['entries', 'launchMode', 'customIcon'],
   ref: ['refItemId', 'lastKnownName'],

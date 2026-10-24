@@ -61,6 +61,8 @@
 | 変換 | convert | URL変換 | パス欄の「変換 ▾」で、パスを別の開き方の書き方（ブラウザの新しいウィンドウ・Office アプリなど）に書き換えること | `ItemConverterMenu` |
 | 起動 | open | 実行（アイテムを開く意味で） | アイテムを開くこと。セット・パスの無い単一アイテムも「起動」と呼ぶ | — |
 | 親フォルダを開く | open containing folder | 親フォルダーを開く、フォルダを開く（親の意味で） | アイテムのあるフォルダを開くこと | — |
+| 管理者として実行 | run as administrator | 管理者権限で実行、管理者で実行 | アプリを Windows の管理者権限で起動すること（UAC の確認が出る） | `canRunAsAdmin`・`launchItemAsAdmin` |
+| 常に管理者として実行 | always run as administrator | — | アイテムの設定。開くたびに管理者として実行する（アプリだけ） | `runAsAdmin` |
 | アイコン | icon | — | アイテムの横に出る絵 | — |
 | フォルダ | folder | フォルダー、ディレクトリ、directory | Windows のフォルダ | — |
 

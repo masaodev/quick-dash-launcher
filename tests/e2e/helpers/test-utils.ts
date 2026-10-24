@@ -454,6 +454,7 @@ type LauncherMenuAction =
   | 'copyPath'
   | 'copyParentPath'
   | 'openParentFolder'
+  | 'runAsAdmin'
   | 'addToWorkspace'
   | 'copyShortcutPath'
   | 'copyShortcutParentPath'
@@ -470,6 +471,7 @@ const LAUNCHER_MENU_CHANNELS: Record<LauncherMenuAction, string> = {
   copyPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PATH,
   copyParentPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_PARENT_PATH,
   openParentFolder: IPC_CHANNELS.EVENT_LAUNCHER_MENU_OPEN_PARENT_FOLDER,
+  runAsAdmin: IPC_CHANNELS.EVENT_LAUNCHER_MENU_RUN_AS_ADMIN,
   addToWorkspace: IPC_CHANNELS.EVENT_LAUNCHER_MENU_ADD_TO_WORKSPACE,
   copyShortcutPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PATH,
   copyShortcutParentPath: IPC_CHANNELS.EVENT_LAUNCHER_MENU_COPY_SHORTCUT_PARENT_PATH,

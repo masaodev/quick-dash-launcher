@@ -1,6 +1,7 @@
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { JsonLauncherItem, LauncherItem } from '@common/types';
 import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { pickRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { deleteItemsById, replaceItemById } from '../services/data/dataItemWriter.js';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
@@ -25,6 +26,7 @@ function convertLauncherItemToJsonItem(item: LauncherItem, existingId: string): 
     path: item.path,
     ...(item.args && { args: item.args }),
     ...(item.customIcon && { customIcon: item.customIcon }),
+    ...pickRunAsAdmin(item),
     ...pickItemWindowSwitch(item),
     ...(item.memo && { memo: item.memo }),
     ...(item.autoImportRuleId && { autoImportRuleId: item.autoImportRuleId }),
