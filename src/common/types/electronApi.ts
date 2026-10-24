@@ -521,6 +521,7 @@ export interface ElectronAPI {
   showLauncherBlankContextMenu: () => Promise<void>;
   onLauncherBlankMenuAddItem: (callback: () => void) => () => void;
   onLauncherBlankMenuRegisterFromClipboard: (callback: () => void) => () => void;
+  onLauncherBlankMenuAddFolderImport: (callback: () => void) => () => void;
   // WindowContextMenuイベントリスナー
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
   /** ウィンドウ検索結果の右クリック「ワークスペースに追加」（includePosition: 今の位置・サイズも記録） */

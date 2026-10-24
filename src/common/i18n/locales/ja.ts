@@ -92,6 +92,9 @@ export const ja = {
       quickAdd: '📄 アイテムを追加…',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
+      addFolderImport: '🗂️ フォルダの中身を並べる（フォルダ取込）',
+      addFolderImportTitle:
+        'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
       clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
     empty: {
@@ -108,6 +111,9 @@ export const ja = {
       switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
       add: '📄 アイテムを追加…',
+      importBookmarks: '🔖 ブックマークから',
+      importApps: '💻 アプリから',
+      importFolder: '🗂️ フォルダから',
     },
     workspaceButton: {
       open: 'ワークスペースを開く（Ctrl+W）',
@@ -1201,6 +1207,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     row: {
       sourceManual: '手動',
+      sourceAuto: '🔖 自動取込: {{rule}}',
       sourceAutoTitle: '自動取込ルール「{{rule}}」で取り込みました',
       linkExistsTitle: 'パスが見つかりました',
       linkUnknownTitle:

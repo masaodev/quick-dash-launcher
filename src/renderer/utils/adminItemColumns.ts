@@ -85,11 +85,11 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     defaultVisible: true,
     minWidth: 80,
   },
-  // 手動登録か、どの自動取込ルールで入ったか
+  // 手動登録か、どの自動取込ルールで入ったか（「🔖 自動取込: ルール名」の頭が読める幅。これより広げると既定の大きさの管理ウィンドウで横スクロールが出る。A3-178）
   {
     id: 'source',
     className: 'source-column',
-    defaultWidth: 100,
+    defaultWidth: 125,
     sortColumn: 'source',
     filterable: true,
     hideable: true,

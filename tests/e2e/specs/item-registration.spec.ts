@@ -254,6 +254,19 @@ test.describe('QuickDashLauncher - 登録画面の種別', () => {
     ]);
     await expect(kind.locator('option[value="window"]')).toHaveCount(0);
   });
+
+  test('➕ の「フォルダの中身を並べる」で、種別がフォルダ取込の登録画面が開く', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.getByTestId('register-menu-button').click();
+    await mainWindow.getByTestId('register-menu-folder-import').click();
+    const registerPage = await utils.waitForRegisterWindow(electronApp);
+    await expect(registerPage.locator('.register-kind select')).toHaveValue('dir');
+    await expect(registerPage.getByTestId('dir-preview')).toBeVisible();
+  });
 });
 
 /**

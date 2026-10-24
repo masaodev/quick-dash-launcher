@@ -245,6 +245,13 @@ function setupLauncherBlankContextMenuHandler(): void {
         click: () => void showAdminWindowWithImportModal('app'),
       })
     );
+    menu.append(
+      createMenuItem(
+        t('launcher.registerMenu.addFolderImport'),
+        event.sender,
+        IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT
+      )
+    );
 
     menu.popup({ window: senderWindow });
   });

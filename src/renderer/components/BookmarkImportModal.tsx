@@ -99,6 +99,9 @@ function BookmarkImportModal({
   const [duplicateHandling, setDuplicateHandling] = useState<DuplicateHandlingOption>('skip');
   const [asRule, setAsRule] = useState(false);
   const [ruleName, setRuleName] = useState('');
+  // 表示名の頭と後ろに付ける文字（自動取込のルールの「オプション設定（表示名）」と同じ。A3-176）
+  const [prefix, setPrefix] = useState('');
+  const [suffix, setSuffix] = useState('');
   const [busy, setBusy] = useState(false);
 
   const dest = useImportDestination({
@@ -346,8 +349,8 @@ function BookmarkImportModal({
           urlPattern: '',
           namePattern: '',
           targetFile: '',
-          prefix: '',
-          suffix: '',
+          prefix,
+          suffix,
           folderNameMode: 'none',
           createdAt: now,
           updatedAt: now,
@@ -355,7 +358,7 @@ function BookmarkImportModal({
         done = await onSaveAsRule(rule, dest.destination);
       } else {
         done = await onImport(
-          candidates,
+          candidates.map((c) => ({ ...c, displayName: `${prefix}${c.displayName}${suffix}` })),
           dest.destination.kind === 'existing' ? duplicateHandling : 'skip',
           dest.destination
         );
@@ -630,6 +633,27 @@ function BookmarkImportModal({
               )}
             </div>
           </div>
+        </div>
+
+        <div className="bookmark-import-naming" data-testid="bookmark-import-naming">
+          <label>
+            <span>{t('bookmarkRule.prefix')}</span>
+            <input
+              type="text"
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value)}
+              placeholder={t('bookmarkRule.prefixPlaceholder')}
+            />
+          </label>
+          <label>
+            <span>{t('bookmarkRule.suffix')}</span>
+            <input
+              type="text"
+              value={suffix}
+              onChange={(e) => setSuffix(e.target.value)}
+              placeholder={t('bookmarkRule.suffixPlaceholder')}
+            />
+          </label>
         </div>
 
         {duplicateCount > 0 && !asRule && (

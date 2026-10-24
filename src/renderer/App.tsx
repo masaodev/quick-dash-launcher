@@ -105,8 +105,13 @@ function App(): React.ReactElement {
     useSearchHistory();
   // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
   const activeTabRef = useRef<string | undefined>(undefined);
-  const { isRegisterWindowOpen, openRegisterWindow, openEditWindow, openWithDroppedPaths } =
-    useRegisterWindow(useCallback(() => activeTabRef.current, []));
+  const {
+    isRegisterWindowOpen,
+    openRegisterWindow,
+    openEditWindow,
+    openFolderImportWindow,
+    openWithDroppedPaths,
+  } = useRegisterWindow(useCallback(() => activeTabRef.current, []));
   const {
     handleCopyPath,
     handleCopyParentPath,
@@ -180,6 +185,7 @@ function App(): React.ReactElement {
   useEffect(() => {
     const cleanups = [
       window.electronAPI.onLauncherBlankMenuAddItem(() => void openRegisterWindow()),
+      window.electronAPI.onLauncherBlankMenuAddFolderImport(() => void openFolderImportWindow()),
       window.electronAPI.onLauncherBlankMenuRegisterFromClipboard(async () => {
         try {
           const { files, text } = await window.electronAPI.readClipboardForRegister();
@@ -200,7 +206,7 @@ function App(): React.ReactElement {
       }),
     ];
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [openRegisterWindow, openWithDroppedPaths, showWarning, t]);
+  }, [openRegisterWindow, openFolderImportWindow, openWithDroppedPaths, showWarning, t]);
 
   const { isDraggingOver, dragOverKind } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
@@ -856,6 +862,7 @@ function App(): React.ReactElement {
           onOpenItemManagement={handleOpenItemManagement}
           onToggleWorkspace={handleToggleWorkspace}
           onOpenRegisterModal={() => void openRegisterWindow()}
+          onOpenFolderImport={() => void openFolderImportWindow()}
           pinLevel={pinLevel}
           onPinLevelChange={setPinLevel}
           isWorkspaceOpen={isWorkspaceOpen}
@@ -915,6 +922,7 @@ function App(): React.ReactElement {
               : null
         }
         onAddItem={() => void openRegisterWindow()}
+        onAddFolderImport={() => void openFolderImportWindow()}
         onBlankContextMenu={
           searchMode === 'normal'
             ? () => void window.electronAPI.showLauncherBlankContextMenu()

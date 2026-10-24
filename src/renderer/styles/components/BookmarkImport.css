@@ -600,3 +600,29 @@
   width: auto;
   max-width: 220px;
 }
+
+/* 表示名の頭と後ろに付ける文字（一覧の下。重複時の処理・自動取込の帯と同じく区画の幅いっぱい。A3-176） */
+.bookmark-import-naming {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-md);
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.bookmark-import-naming label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.bookmark-import-naming input {
+  width: 140px;
+  height: var(--input-height-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: var(--font-family);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+}

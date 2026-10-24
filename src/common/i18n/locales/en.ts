@@ -89,6 +89,9 @@ export const en: LocaleMessages = {
       quickAdd: '📄 Add item…',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
+      addFolderImport: "🗂️ List a folder's contents (folder import)",
+      addFolderImportTitle:
+        'Adds an item (folder import) that lists the files in a folder each time you open it',
       clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",
     },
     empty: {
@@ -105,6 +108,9 @@ export const en: LocaleMessages = {
       switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
       add: '📄 Add item…',
+      importBookmarks: '🔖 From bookmarks',
+      importApps: '💻 From apps',
+      importFolder: '🗂️ From a folder',
     },
     workspaceButton: {
       open: 'Open the workspace (Ctrl+W)',
@@ -1195,6 +1201,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     row: {
       sourceManual: 'Manual',
+      sourceAuto: '🔖 Auto import: {{rule}}',
       sourceAutoTitle: 'Imported by the auto-import rule "{{rule}}"',
       linkExistsTitle: 'The path was found',
       linkUnknownTitle:

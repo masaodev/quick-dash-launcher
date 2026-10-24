@@ -19,6 +19,7 @@ interface ActionButtonsProps {
   onOpenItemManagement: () => void;
   onToggleWorkspace: () => void;
   onOpenRegisterModal: () => void;
+  onOpenFolderImport: () => void;
   pinLevel: PinLevel;
   /** ワークスペースが開いているか（⭐ ボタンを押し込んだ見た目にする） */
   isWorkspaceOpen: boolean;
@@ -36,6 +37,7 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   onOpenItemManagement,
   onToggleWorkspace,
   onOpenRegisterModal,
+  onOpenFolderImport,
   pinLevel,
   onPinLevelChange,
   isWorkspaceOpen,
@@ -55,7 +57,10 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
         onBookmarkAutoImport={onBookmarkAutoImport}
         onRefreshAll={onRefreshAll}
       />
-      <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
+      <LauncherRegisterDropdown
+        onOpenRegisterModal={onOpenRegisterModal}
+        onOpenFolderImport={onOpenFolderImport}
+      />
       <button
         className={`action-btn ${isWorkspaceOpen ? 'toggle-on' : ''}`}
         onClick={onToggleWorkspace}

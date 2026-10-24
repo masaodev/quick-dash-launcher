@@ -438,6 +438,8 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD,
       callback
     ),
+  onLauncherBlankMenuAddFolderImport: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT, callback),
   // WorkspaceTabContextMenu
   showWorkspaceTabContextMenu: (workspaceId, canDelete) =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_TAB_CONTEXT_MENU, workspaceId, canDelete),
