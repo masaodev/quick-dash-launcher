@@ -353,11 +353,18 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   // 取り込んだブックマークのアイコンを、保存のあとにメインウィンドウで取る（取込画面のチェック。A3-174）
   const fetchIconsAfterSaveRef = useRef(false);
 
+  // 未保存の変更が無くなったら（保存・破棄・閉じるときの「変更を捨てて閉じる」のどれでも）頼まない
+  useEffect(() => {
+    if (!hasUnsavedChanges) fetchIconsAfterSaveRef.current = false;
+  }, [hasUnsavedChanges]);
+
   const runSave = async () => {
+    // 保存すると未保存の変更が無くなり、上の effect が先に戻すことがあるので、保存の前に読んでおく
+    const fetchIcons = fetchIconsAfterSaveRef.current;
     const saved = await editing.saveChanges();
     if (saved) {
       showSuccess(t('itemManager.saved'));
-      if (fetchIconsAfterSaveRef.current) {
+      if (fetchIcons) {
         fetchIconsAfterSaveRef.current = false;
         void window.electronAPI.requestFetchMissingIcons();
       }
@@ -396,7 +403,6 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       },
       () => {
         editing.discardChanges();
-        fetchIconsAfterSaveRef.current = false;
         showInfo(t('itemManager.discarded'));
       }
     );

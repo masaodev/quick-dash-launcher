@@ -227,6 +227,7 @@ function App(): React.ReactElement {
     handleFetchMissingIconsSilently,
     handleFetchMissingIconsIn,
     isFetchingIcons,
+    isIconFetchBusy,
   } = useIconFetcher({
     mainItems,
     setMainItems,
@@ -249,8 +250,14 @@ function App(): React.ReactElement {
     showSuccess(t('launcher.iconProgress.finishedInBackground'));
   }, [isFetchingIcons]);
 
-  // ほかのウィンドウ（ブックマーク取込の後の管理ウィンドウ）から頼まれたら、読み直してから未取得のアイコンを取る
+  // ほかのウィンドウ（ブックマーク取込の後の管理ウィンドウ）から頼まれたら、読み直してから未取得のアイコンを取る。
+  // 別の取得の最中なら、それが終わってから取る（頼まれた分を落とさない）
+  const pendingFetchRequestRef = useRef(false);
   const fetchRequestedRef = useLatestRef(async () => {
+    if (isIconFetchBusy()) {
+      pendingFetchRequestRef.current = true;
+      return;
+    }
     const items = await loadItems('internal');
     await handleFetchMissingIconsIn(items);
   });
@@ -258,6 +265,11 @@ function App(): React.ReactElement {
     () => window.electronAPI.onFetchMissingIconsRequested(() => void fetchRequestedRef.current()),
     []
   );
+  useEffect(() => {
+    if (isFetchingIcons || !pendingFetchRequestRef.current) return;
+    pendingFetchRequestRef.current = false;
+    void fetchRequestedRef.current();
+  }, [isFetchingIcons]);
 
   const { withLoading } = useGlobalLoading();
 

@@ -24,7 +24,7 @@ type UseIconFetcherResult = {
   handleFetchMissingIconsSilently: () => Promise<void>;
   /**
    * 渡した一覧（読み直したばかりのデータ）の未取得アイコンを取る。ほかのウィンドウから頼まれたとき用。
-   * 取得中なら始めず、知らせもしない（頼んだ側は待っていない）
+   * 取得中なら始めず、知らせもしない（取得中に頼まれた分は、呼ぶ側が終わるのを待って呼び直す）
    */
   handleFetchMissingIconsIn: (items: AppItem[]) => Promise<void>;
   /** アイコンを取得している間 true（進捗バーを閉じても、取得が終わるまで true のまま） */
