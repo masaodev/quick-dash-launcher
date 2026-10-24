@@ -180,6 +180,77 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     expect(items.some((i) => i.displayName === 'https://example.net/nowhere')).toBe(false);
   });
 
+  test('貼り付け先のグループは見出しに枠で見え、閉じていれば開き、中のトーストでグループ名を添えて知らせる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('閉じた貼り付け先', undefined, undefined, workspace.id);
+      await api.createGroup('ほかのグループ', undefined, undefined, workspace.id);
+    });
+    const header = workspaceWindow.locator('.workspace-group-header', {
+      hasText: '閉じた貼り付け先',
+    });
+    // 1 回クリックすると閉じる。閉じても貼り付け先として選ばれ、枠が付く
+    await header.click();
+    await expect(header).toHaveClass(/paste-target/);
+    await expect(
+      workspaceWindow.locator('.workspace-group-header.paste-target', { hasText: 'ほかのグループ' })
+    ).toHaveCount(0);
+
+    await pasteText(electronApp, workspaceWindow, 'https://example.com/closed');
+    await expect(
+      workspaceWindow.getByText('https://example.com/closed を「閉じた貼り付け先」に追加しました')
+    ).toBeVisible({ timeout: 10000 });
+    // 閉じていたグループは開いて、入ったものが見える
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'https://example.com/closed' })
+    ).toBeVisible();
+  });
+
+  test('ワークスペースを切り替えると貼り付け先の選択が外れ、前のワークスペースのグループには入らない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('前のワークスペースの先', undefined, undefined, workspace.id);
+      const other = await api.createWorkspace('切り替え先');
+      await api.createGroup('切り替え先のグループ', undefined, undefined, other.id);
+    });
+    const header = workspaceWindow.locator('.workspace-group-header', {
+      hasText: '前のワークスペースの先',
+    });
+    await header.click();
+    await expect(header).toHaveClass(/paste-target/);
+
+    await workspaceWindow
+      .locator('.workspace-tab-bar .tab-button', { hasText: '切り替え先' })
+      .click();
+    await expect(
+      workspaceWindow.locator('.workspace-group-header', { hasText: '切り替え先のグループ' })
+    ).toBeVisible();
+    await expect(workspaceWindow.locator('.workspace-group-header.paste-target')).toHaveCount(0);
+
+    await pasteText(electronApp, workspaceWindow, 'https://example.com/elsewhere');
+    await expect(
+      workspaceWindow.getByText(
+        '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください'
+      )
+    ).toBeVisible();
+    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
+    expect(items.some((i) => i.displayName === 'https://example.com/elsewhere')).toBe(false);
+  });
+
   test('クリップボードアイテムの編集画面にはパス欄を出さず、名前を変えても中身の参照は保つ', async ({
     electronApp,
     mainWindow,

@@ -14,6 +14,7 @@ import WorkspaceHeader from './components/WorkspaceHeader';
 import PinButton from './components/PinButton';
 import WorkspaceTabBar from './components/WorkspaceTabBar';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
+import { useWorkspaceAddNotice } from './hooks/useWorkspaceAddNotice';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
 import { useLatestRef } from './hooks/useLatestRef';
@@ -95,11 +96,38 @@ const WorkspaceApp: React.FC = () => {
   const { showWarning } = useToast();
   // グループのあるワークスペースでは、足す先のグループを選ばせる（未分類は無い。A3-157）
   const activeWorkspaceHasGroups = groups.some((g) => g.workspaceId === activeWorkspaceId);
-  useClipboardPaste(loadAllDataWithLoading, activeGroupId, activeWorkspaceId, () => {
-    if (activeGroupId || !activeWorkspaceHasGroups) return true;
-    showWarning(t('workspace.chooseGroupToPaste'));
-    return false;
-  });
+  // 貼り付け先は、今のワークスペースで選んだグループだけ（見出しに枠を付けて見せる）。
+  // ほかのワークスペースで選んだもの・消えたグループは使わない（以前は選んでいないワークスペースのグループに入った）
+  const pasteGroupId =
+    activeGroupId && filteredGroups.some((g) => g.id === activeGroupId) ? activeGroupId : undefined;
+  useEffect(() => {
+    setActiveGroupId(undefined);
+  }, [activeWorkspaceId]);
+  const toggleGroup = async (groupId: string) => {
+    const newCollapsed = toggleGroupCollapsed(groupId);
+    if (detachedGroupId === null) {
+      try {
+        // 折りたたみは UI 状態（workspace-ui-state.json）として保存する
+        await window.electronAPI.workspaceAPI.setGroupsCollapsed([groupId], newCollapsed);
+      } catch (error) {
+        logError('Failed to persist group collapsed state:', error);
+      }
+    }
+    // detached モードの場合は useWorkspaceData 内で自動保存される
+  };
+  // 閉じたグループに足したら開いて見せる
+  const announceAdded = useWorkspaceAddNotice(filteredGroups, (id) => void toggleGroup(id));
+  useClipboardPaste(
+    loadAllDataWithLoading,
+    pasteGroupId,
+    activeWorkspaceId,
+    () => {
+      if (pasteGroupId || !activeWorkspaceHasGroups) return true;
+      showWarning(t('workspace.chooseGroupToPaste'));
+      return false;
+    },
+    (displayNames) => announceAdded(displayNames, pasteGroupId)
+  );
   const loadArchiveData = useCallback(async () => {
     try {
       const [groups, items] = await Promise.all([
@@ -376,13 +404,10 @@ const WorkspaceApp: React.FC = () => {
           activeWorkspaceId
         );
         // 足せたものだけ知らせる（足せなかったものは本体側がエラーのトーストで知らせる）
-        for (const item of added) {
-          await window.electronAPI.showToastWindow({
-            displayName: item.displayName,
-            itemType: 'workspaceAdd',
-            ...('path' in item && { path: item.path }),
-          });
-        }
+        announceAdded(
+          added.map((item) => item.displayName),
+          groupId
+        );
       } else if (e.dataTransfer) {
         const urlData =
           e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
@@ -391,17 +416,14 @@ const WorkspaceApp: React.FC = () => {
             .split('\n')
             .map((url) => url.trim())
             .filter((url) => url && url.startsWith('http'));
+          const addedUrls: string[] = [];
           for (const url of urls) {
-            if (!(await addUrlItem(url, () => {}, groupId, activeWorkspaceId))) continue;
-            await window.electronAPI.showToastWindow({
-              displayName: url,
-              itemType: 'workspaceAdd',
-              path: url,
-            });
+            if (await addUrlItem(url, () => {}, groupId, activeWorkspaceId)) addedUrls.push(url);
           }
           if (urls.length > 0) {
             loadAllDataWithLoading();
           }
+          announceAdded(addedUrls, groupId);
         }
       }
     } catch (error) {
@@ -461,18 +483,7 @@ const WorkspaceApp: React.FC = () => {
         logError('編集ウィンドウを開けませんでした:', error);
       });
     },
-    onToggleGroup: async (groupId: string) => {
-      const newCollapsed = toggleGroupCollapsed(groupId);
-      if (!isDetached) {
-        try {
-          // 折りたたみは UI 状態（workspace-ui-state.json）として保存する
-          await window.electronAPI.workspaceAPI.setGroupsCollapsed([groupId], newCollapsed);
-        } catch (error) {
-          logError('Failed to persist group collapsed state:', error);
-        }
-      }
-      // detached モードの場合は useWorkspaceData 内で自動保存される
-    },
+    onToggleGroup: toggleGroup,
     onUpdateGroup: actions.handleUpdateGroup,
     onDeleteGroup: handleDeleteGroup,
     onArchiveGroup: handleArchiveGroup,
@@ -514,7 +525,7 @@ const WorkspaceApp: React.FC = () => {
   const commonUi = {
     editingItemId: editingId,
     setEditingItemId: setEditingId,
-    activeGroupId,
+    activeGroupId: pasteGroupId,
     setActiveGroupId,
   };
 

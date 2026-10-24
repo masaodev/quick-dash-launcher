@@ -527,6 +527,12 @@ html:has(.workspace-window.background-transparent) {
   filter: brightness(1.05);
 }
 
+/* Ctrl+V の貼り付け先のグループ（どのグループの色の上でも見えるよう、黄色の枠にする） */
+.workspace-group-header.paste-target {
+  outline: 3px solid var(--color-warning);
+  outline-offset: -1px;
+}
+
 /* ドロップゾーンインジケーター: before/after 共通（位置ライン）- グループヘッダー・アイテムカード共通 */
 .workspace-group-header[data-drop-zone='before']::before,
 .workspace-group-header[data-drop-zone='after']::after,

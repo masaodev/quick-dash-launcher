@@ -2180,6 +2180,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     restoresPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
     dropOnGroup: 'グループの上に落としてください（グループの外には置けません）',
     chooseGroupToPaste: '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください',
+    pasteTarget: '貼り付け先（Ctrl+V でここに足します）',
+    addNotice: {
+      toGroup: '{{what}} を「{{group}}」に追加しました',
+      added: '{{what}} を追加しました',
+      items_one: '{{count}} 件のアイテム',
+      items_other: '{{count}} 件のアイテム',
+    },
     restoredGroupName: '{{name}}（復元）',
     defaultWorkspaceName: '既定',
     detached: {
