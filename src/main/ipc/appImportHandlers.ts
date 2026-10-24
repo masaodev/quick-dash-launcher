@@ -219,10 +219,11 @@ async function scanInstalledApps(onProgress?: (found: number) => void): Promise<
 }
 
 export function setupAppImportHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.SCAN_INSTALLED_APPS, (event) =>
+  // 途中経過には頼んだ側の番号を付ける（閉じてすぐ開き直すと、前のスキャンの件数が混ざるため）
+  ipcMain.handle(IPC_CHANNELS.SCAN_INSTALLED_APPS, (event, scanId: number = 0) =>
     scanInstalledApps((found) => {
       if (!event.sender.isDestroyed()) {
-        event.sender.send(IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS, found);
+        event.sender.send(IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS, { scanId, found });
       }
     })
   );

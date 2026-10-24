@@ -226,8 +226,10 @@ function AppImportModal({
 
     // モーダルを閉じたらスキャン結果の反映とアイコン取得ループを中断する
     const controller = new AbortController();
-    const unsubscribeProgress = window.electronAPI.onAppScanProgress((found) => {
-      if (!controller.signal.aborted) setScanFound(found);
+    // このスキャンの途中経過だけを受け取る（前に開いたときのスキャンがまだ走っていることがある）
+    const scanId = Date.now();
+    const unsubscribeProgress = window.electronAPI.onAppScanProgress((progress) => {
+      if (!controller.signal.aborted && progress.scanId === scanId) setScanFound(progress.found);
     });
     const scanApps = async () => {
       setScanFound(0);
@@ -235,7 +237,7 @@ function AppImportModal({
       // スキャンのたびに id が振り直されるので、選択は持ち越さない
       setSelectedIds(new Set());
       try {
-        const result = await window.electronAPI.scanInstalledApps();
+        const result = await window.electronAPI.scanInstalledApps(scanId);
         if (controller.signal.aborted) return;
         setApps(result.apps);
 

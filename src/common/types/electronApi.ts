@@ -249,9 +249,12 @@ export interface ElectronAPI {
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: () => Promise<BrowserInfo[]>;
   // アプリインポートAPI
-  scanInstalledApps: () => Promise<AppScanResult>;
+  /** @param scanId 途中経過をどのスキャンのものか見分けるための番号（途中経過にそのまま付いてくる） */
+  scanInstalledApps: (scanId?: number) => Promise<AppScanResult>;
   /** スキャンの途中経過（ここまでに見つけた件数）を受け取る。戻り値で購読をやめる */
-  onAppScanProgress: (callback: (found: number) => void) => () => void;
+  onAppScanProgress: (
+    callback: (progress: { scanId: number; found: number }) => void
+  ) => () => void;
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   openEditWindowWithTab: (tab: AdminTab) => Promise<void>;
