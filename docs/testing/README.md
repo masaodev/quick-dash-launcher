@@ -69,7 +69,7 @@ npx playwright test -g "新規アイテムを登録できる"                   
 - **流し直し**: 落ちたテストは CI で 2 回、手元で 1 回まで流し直す（`playwright.config.ts` の `retries`）。流し直して通ったものは flaky として結果に出る
 - **流し分け**: 全件は CI で流し、手元では原則流さない（手元の PC は普段使いの PC で、操作が入ると落ちることがあるため）
   - 作業中に直した所を確かめる・画面の見た目を目で確かめる → 手元で関係する spec だけ（`npx playwright test tests/e2e/specs/<名前>.spec.ts`）か、開発用インスタンスで開く
-  - 画面や動きに関わる PR → マージ前にそのブランチで CI の全件を手動で流し、通ってからマージする（迷ったら流す）
+  - PR のマージ前 → 変えた機能に関係する spec だけを手元で流す。全件はマージ前には流さない（時間がかかるため。全件は main へのマージ後の CI に任せる）
   - main へのマージ後 → CI が自動で全件を流す。落ちたら Artifacts の画像・トレースを見て、手元でその spec を再現して直す
   - リリースの前 → main の最新の E2E が通っていることを確かめる（[/release-version](../../.claude/commands/git-workflow/release-version.md) の事前要件）
 - **README のデモ GIF の撮影**: `npm run docs:demo-gif`（`tests/demo-gif/` がデモデータ（5 タブ。メインに案件・アプリも含めて約 130 件。中身は `demo-content-ja.ts`、書き出しは `demo-data.ts`）で起動して操作し、ffmpeg の画面キャプチャでメインウィンドウの範囲を録画する。`scripts/make-demo-gif.mjs` がそれを `docs/images/demo-main.gif` にする。英語の README 用は `npm run docs:demo-gif:en`（環境変数 `DEMO_LANG=en`。英語の画面と `demo-content-en.ts` のデータで撮り、`docs/images/demo-main-en.gif` にする）。撮影中はウィンドウが最前面に固定されるので、その範囲に他のウィンドウを重ねない。画面下の説明文（字幕）は既定では出さず、`DEMO_CAPTIONS=1` で出す。ffmpeg が要る。通常の E2E には含めない）
