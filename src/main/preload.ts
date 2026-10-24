@@ -164,6 +164,8 @@ const electronAPI: ElectronAPI = {
   detectInstalledBrowsers: () => ipcRenderer.invoke(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS),
   // アプリインポートAPI
   scanInstalledApps: () => ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS),
+  onAppScanProgress: (callback) =>
+    createEventListener<number>(IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS, callback),
   // Settings API
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setMultipleSettings: (settings) =>

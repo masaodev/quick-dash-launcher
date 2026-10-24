@@ -133,9 +133,12 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
     flashTimerRef.current = setTimeout(() => setConvertedFlash(false), 800);
   };
   // 選んだパスを入れ、パス欄を離れたときと同じく種別を決め直す
+  // フォルダ取込で「フォルダを選択」から選んだ回数（増えるとプレビューを読む。A3-183）
+  const [dirPickCount, setDirPickCount] = useState(0);
   const handlePick = (pickedPath: string) => {
     onFieldChange('path', pickedPath);
     onPathBlur(pickedPath);
+    if (item.itemCategory === 'dir') setDirPickCount((n) => n + 1);
   };
 
   // メモはあまり使わないので畳んでおく。開くかを選ぶまでは、メモが書いてあれば開く（編集でメモに気づけるように）
@@ -359,7 +362,11 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
       )}
 
       {item.itemCategory === 'dir' && (
-        <DirPreviewPanel path={item.path} dirOptions={item.dirOptions} />
+        <DirPreviewPanel
+          path={item.path}
+          dirOptions={item.dirOptions}
+          autoRunToken={dirPickCount}
+        />
       )}
 
       {item.itemCategory === 'item' && (

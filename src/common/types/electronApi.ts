@@ -246,6 +246,8 @@ export interface ElectronAPI {
   detectInstalledBrowsers: () => Promise<BrowserInfo[]>;
   // アプリインポートAPI
   scanInstalledApps: () => Promise<AppScanResult>;
+  /** スキャンの途中経過（ここまでに見つけた件数）を受け取る。戻り値で購読をやめる */
+  onAppScanProgress: (callback: (found: number) => void) => () => void;
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   openEditWindowWithTab: (tab: AdminTab) => Promise<void>;

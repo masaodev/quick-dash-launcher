@@ -64,6 +64,8 @@ export const IPC_CHANNELS = {
 
   // アプリインポート
   SCAN_INSTALLED_APPS: 'scan-installed-apps',
+  /** アプリのスキャンの途中経過（ここまでに見つけた件数） */
+  EVENT_APP_SCAN_PROGRESS: 'app-scan-progress',
 
   // ブックマーク自動取込
   BOOKMARK_AUTO_IMPORT_GET_SETTINGS: 'bookmark-auto-import:get-settings',
