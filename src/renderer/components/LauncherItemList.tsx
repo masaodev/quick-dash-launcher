@@ -359,6 +359,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   const handleContextMenu = async (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
     event.stopPropagation();
+    // Shift+F10・アプリケーションキーで出したとき（ページが起こしたイベント）は、行の位置に出す
+    const anchor = event.nativeEvent.isTrusted ? undefined : { x: event.clientX, y: event.clientY };
 
     const selection = latestRef.current.windowSelection;
     if (
@@ -368,7 +370,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       selection.isMarked(item.hwnd)
     ) {
       const desktopInfo = await window.electronAPI.getVirtualDesktopInfo();
-      window.electronAPI.showWindowsContextMenu(selection.markedCount, desktopInfo);
+      window.electronAPI.showWindowsContextMenu(selection.markedCount, desktopInfo, anchor);
       return;
     }
 
@@ -377,11 +379,11 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         window.electronAPI.getVirtualDesktopInfo(),
         window.electronAPI.isWindowPinned(item.hwnd),
       ]);
-      window.electronAPI.showWindowContextMenu(item, desktopInfo, isPinned);
+      window.electronAPI.showWindowContextMenu(item, desktopInfo, isPinned, anchor);
       return;
     }
 
-    window.electronAPI.showLauncherContextMenu(item);
+    window.electronAPI.showLauncherContextMenu(item, anchor);
   };
 
   return (

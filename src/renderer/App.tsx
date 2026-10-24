@@ -43,6 +43,7 @@ import { useRegisterWindow } from './hooks/useRegisterWindow';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
 import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
+import { useSearchMemo } from './hooks/useSearchMemo';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -126,6 +127,8 @@ function App(): React.ReactElement {
   } = useDataFileTabs();
   activeTabRef.current = activeTab;
   const showKeyboardHints = useShowKeyboardHints();
+  // 検索でメモにも当てるか（変わったら一覧を絞り直す）
+  const searchMemo = useSearchMemo();
 
   // ワークスペースからドラッグされたアイテム。選んでいるタブ（の先頭のファイル）へ移し、ワークスペース側を参照にする
   // （結果はメインプロセスがトーストで知らせる）。参照はもうメインウィンドウにあるので、移さずに知らせる
@@ -147,6 +150,31 @@ function App(): React.ReactElement {
   );
 
   const itemDelete = useLauncherItemDelete(showErrorAlert);
+
+  // Shift+F10・アプリケーションキーで検索欄にも右クリックのイベントが来る（マウスの右ボタンではない）。
+  // メインウィンドウでは行のメニューを出すので、そちらは止めて検索欄の文字のメニューを出さない
+  useEffect(() => {
+    const suppressKeyboardContextMenu = (e: MouseEvent) => {
+      if (e.isTrusted && e.button !== 2) e.preventDefault();
+    };
+    document.addEventListener('contextmenu', suppressKeyboardContextMenu, true);
+    return () => document.removeEventListener('contextmenu', suppressKeyboardContextMenu, true);
+  }, []);
+
+  // Shift+F10・アプリケーションキー: 選んでいる行に右クリックのイベントを起こし、行の左下にメニューを出す
+  const openRowContextMenu = useCallback((index: number) => {
+    const row = document.querySelector<HTMLElement>(`.item-row-wrapper[data-index="${index}"]`);
+    if (!row) return;
+    const rect = row.getBoundingClientRect();
+    row.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        clientX: rect.left + 24,
+        clientY: rect.bottom,
+      })
+    );
+  }, []);
 
   // 一覧の余白の右クリック（➕ と同じ追加の入口。ウィンドウ検索では出さない）
   useEffect(() => {
@@ -419,7 +447,8 @@ function App(): React.ReactElement {
         ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
         : tabFilteredItems;
     return filterItems(itemsToFilter, searchQuery, searchMode);
-  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery]);
+    // searchMemo は filterItems の中で読む設定。変わったら絞り直す
+  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery, searchMemo]);
 
   // 検索で 0 件のとき、他のタブや通常の検索に合うものがあるか（一覧が空の案内に使う）
   const noMatchElsewhere = useMemo(
@@ -517,6 +546,9 @@ function App(): React.ReactElement {
     canPinWindow,
     activeDesktopTab,
     setActiveDesktopTab,
+    onCopyPath: handleCopyPath,
+    onCopyParentPath: handleCopyParentPath,
+    onOpenContextMenu: openRowContextMenu,
   });
 
   // リストの行や余白（フォーカスを受け取らない要素）をクリックするとフォーカスが body に移り、

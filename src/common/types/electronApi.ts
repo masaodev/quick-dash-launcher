@@ -343,6 +343,8 @@ export interface ElectronAPI {
     remapRefs: (idMap: Record<string, string>) => Promise<{ success: boolean; count?: number }>;
     // グループ管理
     loadGroups: () => Promise<WorkspaceGroupView[]>;
+    /** グループをサブグループとアイテムごと複製する（複製は元と同じ親の最後に入る） */
+    duplicateGroup: (groupId: string, name: string) => Promise<WorkspaceGroupView>;
     createGroup: (
       name: string,
       color?: string,
@@ -448,7 +450,8 @@ export interface ElectronAPI {
   toggleWorkspaceWindow: () => Promise<void>;
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean) => Promise<void>;
-  showLauncherContextMenu: (item: AppItem) => Promise<void>;
+  /** anchor: キーで出したときの位置（ウィンドウの中の座標）。省略するとマウスの位置 */
+  showLauncherContextMenu: (item: AppItem, anchor?: { x: number; y: number }) => Promise<void>;
   showWorkspaceContextMenu: (
     item: WorkspaceItem,
     groups: WorkspaceGroup[],
@@ -482,7 +485,8 @@ export interface ElectronAPI {
   showWindowContextMenu: (
     windowInfo: WindowInfo,
     desktopInfo: VirtualDesktopInfo,
-    isPinned: boolean
+    isPinned: boolean,
+    anchor?: { x: number; y: number }
   ) => Promise<void>;
   // AdminItemManagerContextMenuイベントリスナー
   onAdminMenuDuplicateItems: (callback: () => void) => () => void;
@@ -511,7 +515,11 @@ export interface ElectronAPI {
     callback: (payload: { windowInfo: WindowInfo; includePosition: boolean }) => void
   ) => () => void;
   /** ウィンドウ検索で 2 つ以上を選んでいるときの右クリックメニュー */
-  showWindowsContextMenu: (count: number, desktopInfo: VirtualDesktopInfo) => Promise<void>;
+  showWindowsContextMenu: (
+    count: number,
+    desktopInfo: VirtualDesktopInfo,
+    anchor?: { x: number; y: number }
+  ) => Promise<void>;
   onWindowsMenuClose: (callback: () => void) => () => void;
   /** pin: true で固定、false で固定解除 */
   onWindowsMenuPin: (callback: (pin: boolean) => void) => () => void;
@@ -534,6 +542,7 @@ export interface ElectronAPI {
   onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuMoveToGroup: (callback: (itemId: string, groupId: string) => void) => () => void;
   onWorkspaceMenuMoveToWorkspace: (
     callback: (itemId: string, targetWorkspaceId: string) => void
   ) => () => void;
@@ -546,6 +555,9 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddFromMain: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddNew: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuOpenAll: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuDuplicate: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuCollapseOthers: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuMoveToWorkspace: (
     callback: (groupId: string, targetWorkspaceId: string) => void
   ) => () => void;

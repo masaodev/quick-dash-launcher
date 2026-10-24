@@ -21,6 +21,8 @@ import {
   createSeparator,
   getValidWindow,
   LAUNCHER_PATH_MENU_CHANNELS,
+  type MenuAnchor,
+  popupMenu,
   t,
 } from './contextMenuShared.js';
 
@@ -74,7 +76,7 @@ function setupAdminItemContextMenuHandler(): void {
 function setupLauncherContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU,
-    async (event, item: AppItem): Promise<void> => {
+    async (event, item: AppItem, anchor?: MenuAnchor): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
 
@@ -147,6 +149,11 @@ function setupLauncherContextMenuHandler(): void {
         appendPathMenuItems(menu, event.sender, LAUNCHER_PATH_MENU_CHANNELS, item, {
           hasParentFolder,
           isShortcut,
+          keys: {
+            copyPath: 'Ctrl+C',
+            copyParentPath: 'Ctrl+Shift+C',
+            openParentFolder: 'Shift+Enter',
+          },
         });
       }
 
@@ -163,7 +170,7 @@ function setupLauncherContextMenuHandler(): void {
         );
       }
 
-      menu.popup({ window: senderWindow });
+      popupMenu(menu, senderWindow, anchor);
     }
   );
 }
@@ -239,7 +246,8 @@ function setupWindowContextMenuHandler(): void {
       event,
       windowInfo: WindowInfo,
       desktopInfo: VirtualDesktopInfo,
-      isPinned: boolean
+      isPinned: boolean,
+      anchor?: MenuAnchor
     ): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
@@ -338,7 +346,7 @@ function setupWindowContextMenuHandler(): void {
         })
       );
 
-      menu.popup({ window: senderWindow });
+      popupMenu(menu, senderWindow, anchor);
     }
   );
 }
@@ -351,7 +359,12 @@ function setupWindowContextMenuHandler(): void {
 function setupWindowsContextMenuHandler(): void {
   ipcMain.handle(
     IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU,
-    async (event, count: number, desktopInfo: VirtualDesktopInfo): Promise<void> => {
+    async (
+      event,
+      count: number,
+      desktopInfo: VirtualDesktopInfo,
+      anchor?: MenuAnchor
+    ): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
 
@@ -406,7 +419,7 @@ function setupWindowsContextMenuHandler(): void {
         })
       );
 
-      menu.popup({ window: senderWindow });
+      popupMenu(menu, senderWindow, anchor);
     }
   );
 }

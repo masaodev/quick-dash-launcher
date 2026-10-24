@@ -289,6 +289,8 @@ const electronAPI: ElectronAPI = {
     remapRefs: (idMap) => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_REMAP_REFS, idMap),
     // グループ管理
     loadGroups: () => ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS),
+    duplicateGroup: (groupId, name) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WORKSPACE_DUPLICATE_GROUP, groupId, name),
     createGroup: (name, color, parentGroupId, workspaceId) =>
       ipcRenderer.invoke(
         IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
@@ -381,8 +383,8 @@ const electronAPI: ElectronAPI = {
   onAdminMenuDeleteItems: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_MENU_DELETE_ITEMS, callback),
   // LauncherContextMenu
-  showLauncherContextMenu: (item) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, item),
+  showLauncherContextMenu: (item, anchor) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU, item, anchor),
   onLauncherMenuEditItem: (callback) =>
     createEventListener<AppItem>(IPC_CHANNELS.EVENT_LAUNCHER_MENU_EDIT_ITEM, callback),
   onLauncherMenuAddToWorkspace: (callback) =>
@@ -447,8 +449,14 @@ const electronAPI: ElectronAPI = {
   onFileTabMenuRename: (callback) =>
     createEventListener<number>(IPC_CHANNELS.EVENT_FILE_TAB_MENU_RENAME, callback),
   // WindowContextMenu
-  showWindowContextMenu: (windowInfo, desktopInfo, isPinned) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU, windowInfo, desktopInfo, isPinned),
+  showWindowContextMenu: (windowInfo, desktopInfo, isPinned, anchor) =>
+    ipcRenderer.invoke(
+      IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
+      windowInfo,
+      desktopInfo,
+      isPinned,
+      anchor
+    ),
   onWindowMenuActivate: (callback) =>
     createEventListener<WindowInfo>(IPC_CHANNELS.EVENT_WINDOW_MENU_ACTIVATE, callback),
   onWindowMenuAddToWorkspace: (callback) =>
@@ -456,8 +464,8 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_WINDOW_MENU_ADD_TO_WORKSPACE,
       callback
     ),
-  showWindowsContextMenu: (count, desktopInfo) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo),
+  showWindowsContextMenu: (count, desktopInfo, anchor) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU, count, desktopInfo, anchor),
   onWindowsMenuClose: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WINDOWS_MENU_CLOSE, callback),
   onWindowsMenuPin: (callback) =>
@@ -504,6 +512,8 @@ const electronAPI: ElectronAPI = {
     ),
   onWorkspaceMenuRemoveItem: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_REMOVE_ITEM, callback),
+  onWorkspaceMenuMoveToGroup: (callback) =>
+    createEventListener2<string, string>(IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_GROUP, callback),
   onWorkspaceMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_MENU_MOVE_TO_WORKSPACE,
@@ -537,6 +547,12 @@ const electronAPI: ElectronAPI = {
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_FROM_MAIN, callback),
   onWorkspaceGroupMenuAddNew: (callback) =>
     createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_ADD_NEW, callback),
+  onWorkspaceGroupMenuOpenAll: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_OPEN_ALL, callback),
+  onWorkspaceGroupMenuDuplicate: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_DUPLICATE, callback),
+  onWorkspaceGroupMenuCollapseOthers: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_COLLAPSE_OTHERS, callback),
   onWorkspaceGroupMenuMoveToWorkspace: (callback) =>
     createEventListener2<string, string>(
       IPC_CHANNELS.EVENT_WORKSPACE_GROUP_MENU_MOVE_TO_WORKSPACE,

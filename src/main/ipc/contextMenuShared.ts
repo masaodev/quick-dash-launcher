@@ -24,9 +24,37 @@ export function createMenuItem(
   });
 }
 
+/**
+ * 右端にキーを添えたメニューアイテム（キーはページのキー処理で受けるので、ここでは表示するだけで登録しない）
+ */
+export function createMenuItemWithKey(
+  label: string,
+  accelerator: string | undefined,
+  sender: WebContents,
+  channel: string,
+  ...args: unknown[]
+): MenuItem {
+  return new MenuItem({
+    label,
+    ...(accelerator && { accelerator, registerAccelerator: false }),
+    click: () => sender.send(channel, ...args),
+  });
+}
+
 /** セパレーターを作成 */
 export function createSeparator(): MenuItem {
   return new MenuItem({ type: 'separator' });
+}
+
+/** メニューを出す位置（ウィンドウの中の座標）。省略するとマウスの位置 */
+export interface MenuAnchor {
+  x: number;
+  y: number;
+}
+
+/** メニューを出す（anchor があればその位置、無ければマウスの位置） */
+export function popupMenu(menu: Menu, window: BrowserWindow, anchor?: MenuAnchor): void {
+  menu.popup(anchor ? { window, x: Math.round(anchor.x), y: Math.round(anchor.y) } : { window });
 }
 
 /** イベントからウィンドウを取得（無効な場合はnull） */
@@ -54,13 +82,37 @@ export function appendPathMenuItems(
   sender: WebContents,
   channels: PathMenuChannels,
   arg: unknown,
-  options: { hasParentFolder: boolean; isShortcut: boolean }
+  options: {
+    hasParentFolder: boolean;
+    isShortcut: boolean;
+    /** 右端に添えるキー（メインウィンドウだけ。ワークスペースにはキーが無い） */
+    keys?: { copyPath: string; copyParentPath: string; openParentFolder: string };
+  }
 ): void {
-  menu.append(createMenuItem(t('menu.copyPath'), sender, channels.copyPath, arg));
+  const { keys } = options;
+  menu.append(
+    createMenuItemWithKey(t('menu.copyPath'), keys?.copyPath, sender, channels.copyPath, arg)
+  );
 
   if (options.hasParentFolder) {
-    menu.append(createMenuItem(t('menu.copyParentPath'), sender, channels.copyParentPath, arg));
-    menu.append(createMenuItem(t('menu.openParentFolder'), sender, channels.openParentFolder, arg));
+    menu.append(
+      createMenuItemWithKey(
+        t('menu.copyParentPath'),
+        keys?.copyParentPath,
+        sender,
+        channels.copyParentPath,
+        arg
+      )
+    );
+    menu.append(
+      createMenuItemWithKey(
+        t('menu.openParentFolder'),
+        keys?.openParentFolder,
+        sender,
+        channels.openParentFolder,
+        arg
+      )
+    );
   }
 
   if (options.isShortcut) {

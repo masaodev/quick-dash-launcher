@@ -63,6 +63,11 @@ const ColorPickerModal: React.FC<{
   );
 };
 
+/** 「すべて開く」で確かめてから開く件数 */
+const OPEN_ALL_CONFIRM_THRESHOLD = 5;
+/** 「すべて開く」で 1 件ずつあける間（ミリ秒） */
+const OPEN_ALL_INTERVAL_MS = 300;
+
 interface WorkspaceGroupedListProps {
   contentRef?: React.Ref<HTMLDivElement>;
   workspaces?: Workspace[];
@@ -88,6 +93,8 @@ interface WorkspaceGroupedListProps {
     onDetachGroup?: (groupId: string, screenX: number, screenY: number) => void;
     /** 余白・「未分類」の見出しの右クリック（未指定なら何も出さない。アーカイブ・切り離しウィンドウでは渡さない） */
     onBlankContextMenu?: (kind: 'blank' | 'uncategorized') => void;
+    /** グループの右クリック「ほかのグループを折りたたむ」（未指定なら何もしない。切り離しウィンドウでは出さない） */
+    onCollapseOtherGroups?: (groupId: string) => void;
     /** 空のワークスペースの［＋ グループを追加］（未指定ならボタンを出さない） */
     onAddGroup?: () => void;
   };
@@ -136,6 +143,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onDetachGroup,
     onBlankContextMenu,
     onAddGroup,
+    onCollapseOtherGroups,
   } = handlers;
   const {
     editingItemId,
@@ -216,6 +224,8 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onArchiveGroup,
     onDeleteGroup,
     onAddSubgroup,
+    onLaunch,
+    onCollapseOtherGroups,
     t,
   });
 
@@ -252,6 +262,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
         withItem((item) => handlePathOperation(item, 'open', 'parent', true))
       ),
       window.electronAPI.onWorkspaceMenuRemoveItem((itemId) => latest.current.onRemoveItem(itemId)),
+      window.electronAPI.onWorkspaceMenuMoveToGroup((itemId, groupId) =>
+        latest.current.onMoveItemToGroup(itemId, groupId)
+      ),
       window.electronAPI.onWorkspaceMenuMoveToWorkspace(async (itemId, targetWorkspaceId) => {
         try {
           await window.electronAPI.workspaceAPI.moveItemToWorkspace(itemId, targetWorkspaceId);
@@ -307,6 +320,19 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
           logError('Failed to open new item editor:', error);
         });
       }),
+      window.electronAPI.onWorkspaceGroupMenuOpenAll((groupId) => {
+        void openAllInGroup(groupId);
+      }),
+      window.electronAPI.onWorkspaceGroupMenuDuplicate((groupId) => {
+        const { groupsMap, t } = latest.current;
+        const name = groupsMap.get(groupId)?.displayName ?? '';
+        window.electronAPI.workspaceAPI
+          .duplicateGroup(groupId, t('workspace.groups.copyName', { name }))
+          .catch((error) => logError('Failed to duplicate group:', error));
+      }),
+      window.electronAPI.onWorkspaceGroupMenuCollapseOthers((groupId) =>
+        latest.current.onCollapseOtherGroups?.(groupId)
+      ),
       window.electronAPI.onWorkspaceGroupMenuMoveToWorkspace(async (groupId, targetWorkspaceId) => {
         try {
           await window.electronAPI.workspaceAPI.moveGroupToWorkspace(groupId, targetWorkspaceId);
@@ -318,6 +344,51 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
     return () => cleanups.forEach((cleanup) => cleanup());
   }, [latest]);
+
+  /**
+   * グループの右クリック「すべて開く」: グループのアイテムを、サブグループの中も含めて並び順に開く。
+   * 5 件以上なら確かめてから開く。元が見つからない参照は飛ばす
+   */
+  async function openAllInGroup(groupId: string): Promise<void> {
+    const { groups, groupsMap, itemsByGroup, onLaunch, t } = latest.current;
+    const collect = (id: string): WorkspaceItem[] => [
+      ...(itemsByGroup[id] || []),
+      ...groups
+        .filter((g) => g.parentGroupId === id)
+        .sort((a, b) => a.order - b.order)
+        .flatMap((g) => collect(g.id)),
+    ];
+    const targets = collect(groupId).filter((item) => item.type !== 'ref');
+    const name = groupsMap.get(groupId)?.displayName ?? '';
+    if (targets.length === 0) {
+      await window.electronAPI.showToastWindow({
+        type: 'info',
+        message: t('workspace.groups.openAllEmpty', { name }),
+      });
+      return;
+    }
+    if (targets.length >= OPEN_ALL_CONFIRM_THRESHOLD) {
+      const result = await window.electronAPI.workspaceAPI.openConfirm({
+        title: t('workspace.groups.openAllTitle'),
+        message: t('workspace.groups.openAllConfirm', { name, count: targets.length }),
+        confirmText: t('workspace.groups.openAll'),
+        cancelText: t('common.cancel'),
+      });
+      if (!result) return;
+    }
+    for (const [index, item] of targets.entries()) {
+      // 立て続けに開くとアプリの起動が重なって前後するので、少し間をあける
+      if (index > 0) await new Promise((resolve) => setTimeout(resolve, OPEN_ALL_INTERVAL_MS));
+      onLaunch(item);
+    }
+  }
+
+  /** Shift+クリックで親フォルダを開けるアイテムか（ファイル・フォルダ・アプリ） */
+  const hasParentFolder = (item: WorkspaceItem): boolean =>
+    item.type === 'item' &&
+    item.launcherType !== 'url' &&
+    item.launcherType !== 'customUri' &&
+    item.launcherType !== 'windowSwitch';
 
   /** グループヘッダーの dragEnd でウィンドウ外ドロップを検出（サブグループは切り離さない） */
   const handleGroupDragEndForDetach = (e: React.DragEvent, groupId: string) => {
@@ -705,6 +776,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       onDragOver={handleMixedDragOver}
       onDrop={(e, zone) => handleMixedDrop(item.id, 'item', groupId, zone)(e)}
       onContextMenu={handleContextMenu(item)}
+      onOpenParentFolder={
+        hasParentFolder(item)
+          ? (target) => void handlePathOperation(target, 'open', 'parent')
+          : undefined
+      }
     />
   );
 
