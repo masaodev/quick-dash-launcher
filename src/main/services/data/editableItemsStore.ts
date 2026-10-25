@@ -28,7 +28,7 @@ import {
   refineItemType,
   withFolderMarker,
 } from '../../utils/folderPathProbe.js';
-import { ClipboardService } from '../clipboardService.js';
+import { releaseClipboardData } from '../clipboardDataUsage.js';
 import {
   detectExternalChange,
   hashContent,
@@ -181,22 +181,21 @@ function assertNoExternalChange(
 }
 
 /**
- * 保存前のファイル内容から、保存後に残らないクリップボードアイテムの実データを消す
+ * 保存前のファイル内容にあった実データのうち、保存後にどこからも使われなくなったものを消す
  *
- * メイン画面の削除（deleteItemsById）と同じ後始末。編集画面は全件を書き戻すので、ここで差分を取る。
+ * メイン画面の削除（deleteItemsById）と同じ後始末。編集画面は全件を書き戻すので、消したアイテムも
+ * 本文を書き換えたアイテムも、保存前に指していた実データをまとめて渡し、使われているかを確かめて消す
  */
-async function deleteOrphanedClipboardData(
-  previousContents: Map<string, string>,
-  remainingIds: Set<string>
-): Promise<void> {
-  const clipboardService = ClipboardService.getInstance();
+function releaseReplacedClipboardData(
+  configFolder: string,
+  previousContents: Map<string, string>
+): void {
+  const previousRefs: string[] = [];
   for (const [fileName, content] of previousContents) {
     try {
       const parsed = parseJsonDataFileLenient(content);
       for (const item of parsed.data.items) {
-        if (isJsonClipboardItem(item) && !remainingIds.has(item.id)) {
-          await clipboardService.deleteClipboardData(item.dataFileRef);
-        }
+        if (isJsonClipboardItem(item)) previousRefs.push(item.dataFileRef);
       }
     } catch (error) {
       dataLogger.warn(
@@ -205,6 +204,7 @@ async function deleteOrphanedClipboardData(
       );
     }
   }
+  releaseClipboardData(configFolder, previousRefs);
 }
 
 /**
@@ -327,10 +327,7 @@ export async function saveEditableItems(
     fileHashes[fileName] = hashContent(content);
   }
 
-  if (previousContents.size > 0) {
-    const remainingIds = new Set(editableItems.map((item) => item.item.id));
-    await deleteOrphanedClipboardData(previousContents, remainingIds);
-  }
+  releaseReplacedClipboardData(configFolder, previousContents);
 
   dataLogger.info({ writtenFiles }, '編集画面のアイテムを保存しました');
   return { fileHashes, writtenFiles };

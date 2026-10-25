@@ -1,8 +1,18 @@
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import type { ClipboardContentSource } from '@common/types/clipboard';
 
+import { PathManager } from '../config/pathManager.js';
 import { ClipboardService } from '../services/clipboardService.js';
+import { findUnusedClipboardData } from '../services/clipboardDataUsage.js';
+import { mainI18n } from '../services/mainI18n.js';
 import { handleIpc } from '../utils/ipcWrapper';
+
+/** どのアイテムからも使われていない実データ（読めないファイルがあれば、消してよいかを決められないので例外） */
+function unusedClipboardDataOrThrow(): string[] {
+  const refs = findUnusedClipboardData(PathManager.getConfigFolder());
+  if (!refs) throw new Error(mainI18n.t('clipboardService.unusedDataUnreadable'));
+  return refs;
+}
 
 export function setupClipboardHandlers(): void {
   const service = ClipboardService.getInstance();
@@ -17,4 +27,13 @@ export function setupClipboardHandlers(): void {
   handleIpc(IPC_CHANNELS.CLIPBOARD_READ_CONTENT, (_e, source: ClipboardContentSource) =>
     service.readContent(source)
   );
+  handleIpc(IPC_CHANNELS.CLIPBOARD_COUNT_UNUSED_DATA, () => unusedClipboardDataOrThrow().length);
+  handleIpc(IPC_CHANNELS.CLIPBOARD_DELETE_UNUSED_DATA, async () => {
+    const refs = unusedClipboardDataOrThrow();
+    let deleted = 0;
+    for (const ref of refs) {
+      if (await service.deleteClipboardData(ref)) deleted++;
+    }
+    return deleted;
+  });
 }

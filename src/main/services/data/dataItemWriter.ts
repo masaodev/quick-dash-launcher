@@ -15,7 +15,7 @@ import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
 import { findSetNamesUsingItems } from '@common/utils/setUsage';
 
 import { PathManager } from '../../config/pathManager.js';
-import { ClipboardService } from '../clipboardService.js';
+import { releaseClipboardData } from '../clipboardDataUsage.js';
 import { mainI18n } from '../mainI18n.js';
 import { writeDataFile } from '../dataFileTracker.js';
 
@@ -65,6 +65,8 @@ function writeOrThrow(entry: DataFileEntry): void {
 /**
  * IDでアイテムを検索し、見つかったファイル上で新しい内容に差し替える
  *
+ * クリップボードアイテムの本文を書き換えて実データが変わったら、古い実データはどこからも使われていなければ消す
+ *
  * @param configFolder - 設定フォルダのパス
  * @param newItem - 差し替え後のアイテム（id で対象を特定する）
  * @throws アイテムが見つからない場合（破損ファイルにあるかもしれないときはその旨）、または書き込みに失敗した場合
@@ -75,8 +77,15 @@ export function replaceItemById(configFolder: string, newItem: JsonItem): void {
   for (const entry of files) {
     const itemIndex = entry.jsonData.items.findIndex((item) => item.id === newItem.id);
     if (itemIndex !== -1) {
+      const oldItem = entry.jsonData.items[itemIndex];
       entry.jsonData.items[itemIndex] = newItem;
       writeOrThrow(entry);
+      if (
+        isJsonClipboardItem(oldItem) &&
+        !(isJsonClipboardItem(newItem) && newItem.dataFileRef === oldItem.dataFileRef)
+      ) {
+        releaseClipboardData(configFolder, [oldItem.dataFileRef]);
+      }
       return;
     }
   }
@@ -88,7 +97,7 @@ export function replaceItemById(configFolder: string, newItem: JsonItem): void {
 }
 
 /**
- * ID で全データファイルからアイテムを消す（クリップボードアイテムは実データのファイルも消す）
+ * ID で全データファイルからアイテムを消す（クリップボードアイテムの実データは、どこからも使われなくなれば消す）
  *
  * 見つからない ID は無視する。ただし見つからない ID が破損ファイルにあるかもしれないときは、何も書かずに止める
  * （保存先を変える編集は「消してから同じ id で登録し直す」ので、消せていないと id が重複する）
@@ -118,7 +127,7 @@ export async function deleteItemsById(
     }
   }
 
-  const clipboardService = ClipboardService.getInstance();
+  const releasedDataRefs: string[] = [];
   for (const entry of targets) {
     for (const item of entry.jsonData.items) {
       if (
@@ -126,7 +135,7 @@ export async function deleteItemsById(
         isJsonClipboardItem(item) &&
         !keepDataRefs.has(item.dataFileRef)
       ) {
-        await clipboardService.deleteClipboardData(item.dataFileRef);
+        releasedDataRefs.push(item.dataFileRef);
       }
     }
     entry.jsonData = {
@@ -135,6 +144,7 @@ export async function deleteItemsById(
     };
     writeOrThrow(entry);
   }
+  releaseClipboardData(configFolder, releasedDataRefs);
 }
 
 /**

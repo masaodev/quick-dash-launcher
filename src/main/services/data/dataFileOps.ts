@@ -8,6 +8,7 @@ import { serializeJsonDataFile, createEmptyJsonDataFile } from '@common/utils/js
 import { DEFAULT_DATA_FILE } from '@common/types';
 
 import { SettingsService } from '../settingsService.js';
+import { clipboardDataRefsInFile, releaseClipboardData } from '../clipboardDataUsage.js';
 import { forgetDataFile, writeDataFile } from '../dataFileTracker.js';
 import { mainI18n } from '../mainI18n.js';
 import { notifyDataChanged } from '../../ipc/notifications.js';
@@ -76,8 +77,10 @@ export async function deleteDataFile(
   const filePath = path.join(configFolder, fileName);
 
   try {
+    const dataRefs = clipboardDataRefsInFile(filePath);
     await fs.promises.unlink(filePath);
     forgetDataFile(fileName);
+    releaseClipboardData(configFolder, dataRefs);
 
     // 削除されたファイルを targetFile に持つ自動取込ルールを無効化
     const settingsService = await SettingsService.getInstance();

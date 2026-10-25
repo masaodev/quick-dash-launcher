@@ -584,6 +584,8 @@ const electronAPI: ElectronAPI = {
     discardSession: (sessionId) => ipcInvoke(IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION, sessionId),
     saveText: (text) => ipcInvoke(IPC_CHANNELS.CLIPBOARD_SAVE_TEXT, text),
     readContent: (source) => ipcInvoke(IPC_CHANNELS.CLIPBOARD_READ_CONTENT, source),
+    countUnusedData: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_COUNT_UNUSED_DATA),
+    deleteUnusedData: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_DELETE_UNUSED_DATA),
   },
   // バックアップAPI
   backupAPI: {

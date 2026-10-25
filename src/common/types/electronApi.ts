@@ -637,6 +637,10 @@ export interface ElectronAPI {
     saveText: (text: string) => Promise<ClipboardCaptureResult>;
     /** 未確定のキャプチャか保存済みの実データから、テキストの全文と画像の縮小版を読む（読めなければ null） */
     readContent: (source: ClipboardContentSource) => Promise<ClipboardContent | null>;
+    /** どのアイテムからも使われていない実データの数（読めないファイルがあれば例外） */
+    countUnusedData: () => Promise<number>;
+    /** どのアイテムからも使われていない実データを消し、消した数を返す（読めないファイルがあれば例外） */
+    deleteUnusedData: () => Promise<number>;
   };
   // バックアップAPI
   backupAPI: {
