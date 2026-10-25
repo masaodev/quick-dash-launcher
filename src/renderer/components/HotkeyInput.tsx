@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../styles/components/HotkeyInput.css';
 
-import { Button } from './ui/Button';
+import { Button } from './ui';
 
 interface HotkeyInputProps {
   value: string;

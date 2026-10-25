@@ -24,11 +24,11 @@ import {
   buildBookmarkDisplayName,
   buildBookmarkFolderTree,
 } from '@common/utils/bookmarkRuleFilter';
+import { bookmarkFolderLabel } from '@common/utils/bookmarkFolderLabel';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import { useImportDestination, type ImportDestination } from '../hooks/useImportDestination';
 import { logError } from '../utils/debug';
-import { bookmarkFolderLabel } from '../utils/bookmarkFolderLabel';
 
 import { Button } from './ui';
 import ImportDestinationBand from './ImportDestinationBand';
@@ -127,7 +127,17 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
         setBrowsers(detected);
         // プロファイルは 1 つだけ選ぶ。保存されていたものが見つからなければ（「すべて」で保存した古いルールも）、
         // 最初のプロファイルにする
-        const browser = detected.find((b) => b.id === editingRule.browserId);
+        let browser = detected.find((b) => b.id === editingRule.browserId);
+        // 新しいルールで初期値のブラウザ（Chrome）が無い PC では、見つかった最初のブラウザにする
+        // （1 回だけの取込の画面と同じ。BR4）。保存済みのルールの取込元は勝手に変えない
+        const switchToInstalled = !rule && !browser?.installed;
+        if (switchToInstalled) {
+          browser = detected.find((b) => b.installed);
+          // プロファイルが見つからないブラウザでも、取込元はそのブラウザにしておく（下で決めるプロファイルは無い）
+          if (browser && browser.profiles.length === 0) {
+            updateRule({ browserId: browser.id, profileIds: [], folderPaths: [] });
+          }
+        }
         if (browser?.installed && browser.profiles.length > 0) {
           const found = editingRule.profileIds.find((id) =>
             browser.profiles.some((p) => p.id === id)
@@ -142,7 +152,12 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
               t('bookmarkRule.profilesNotFound', { profiles: rule.profileIds.join(', ') })
             );
           }
-          if (editingRule.profileIds.length !== 1 || editingRule.profileIds[0] !== resolved) {
+          if (switchToInstalled) {
+            updateRule({ browserId: browser.id, profileIds: [resolved], folderPaths: [] });
+          } else if (
+            editingRule.profileIds.length !== 1 ||
+            editingRule.profileIds[0] !== resolved
+          ) {
             // 別のプロファイルに替わるときは、フォルダの指定も外す（手で選び替えたときと同じ）
             updateRule(
               found ? { profileIds: [resolved] } : { profileIds: [resolved], folderPaths: [] }
@@ -204,9 +219,9 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
     () =>
       applyBookmarkRuleFilters(allBookmarks, editingRule).map((bookmark) => ({
         ...bookmark,
-        displayName: buildBookmarkDisplayName(bookmark, editingRule),
+        displayName: buildBookmarkDisplayName(bookmark, editingRule, t),
       })),
-    [allBookmarks, editingRule]
+    [allBookmarks, editingRule, t]
   );
 
   const folderLabel = (path: string) => bookmarkFolderLabel(path.split('/').pop() ?? path, t);

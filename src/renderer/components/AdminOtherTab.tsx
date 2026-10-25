@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppInfo } from '@common/types';
 
-import { Button } from './ui/Button';
+import { Button } from './ui';
 
 /** ショートカット一覧の固定のキー（説明は辞書の help.keys） */
 const FIXED_SHORTCUTS = [

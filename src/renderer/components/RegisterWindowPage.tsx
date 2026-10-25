@@ -64,13 +64,26 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       cancelled = true;
     };
   }, [editingId]);
-  /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち */
-  const pendingSave = useRef<Promise<void> | null>(null);
+  /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち。false＝保存に失敗した */
+  const pendingSave = useRef<Promise<boolean> | null>(null);
+  /** 次の close が「保存」のすぐ後の閉じる要求か（キャンセル・Esc なら false） */
+  const closingAfterSave = useRef(false);
 
   const close = useCallback(() => {
+    const afterSave = closingAfterSave.current;
+    closingAfterSave.current = false;
     const pending = pendingSave.current;
     if (pending) {
-      void pending.finally(() => window.close());
+      void pending.then((saved) => {
+        // 保存に失敗したら閉じずに残す（エラーを見せ、入力したままもう一度保存できるように。RM7）。
+        // キャンセル・Esc で閉じるときは、保存の結果によらず閉じる
+        if (saved || !afterSave) {
+          window.close();
+          return;
+        }
+        // 次の「保存」・キャンセルでは、この失敗を待たない
+        if (pendingSave.current === pending) pendingSave.current = null;
+      });
     } else {
       window.close();
     }
@@ -78,12 +91,20 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
 
   const handleRegister = useCallback(
     (items: RegisterItem[]) => {
+      closingAfterSave.current = true;
+      // 保存の途中にもう一度押されたら、新しく保存しない（二重に登録しない）。閉じるのは今の保存を待つ
+      if (pendingSave.current) return;
       if (request.returnToOpener) {
         pendingSave.current = window.electronAPI
           .returnMainChildWindowValue(requestId, { kind: 'register', items })
-          .catch((error) => {
-            logError('編集内容を管理画面へ返せませんでした:', error);
-          });
+          .then(
+            () => true,
+            (error) => {
+              // 返せなかったときは、残しても保存し直せないので、今までどおり閉じる
+              logError('編集内容を管理画面へ返せませんでした:', error);
+              return true;
+            }
+          );
         return;
       }
       const editingItem =
@@ -94,14 +115,13 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
         try {
           const action = await saveRegisterItems(items, editingItem);
           window.electronAPI.notifyMainChildWindowResult({ kind: 'register', action });
+          return true;
         } catch (error) {
           logError('アイテムの保存に失敗しました:', error);
           showError(t('register.saveFailed'));
-          throw error;
+          return false;
         }
       })();
-      // 失敗してもウィンドウは閉じる（エラーはログに残す。close 側の finally で閉じる）
-      pendingSave.current.catch(() => {});
     },
     [request.editingItem, request.returnToOpener, requestId, showError, t]
   );
@@ -127,9 +147,13 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       setDeleteTarget(null);
       pendingSave.current = window.electronAPI
         .returnMainChildWindowValue(requestId, { kind: 'delete' })
-        .catch((error) => {
-          logError('削除を管理画面へ返せませんでした:', error);
-        });
+        .then(
+          () => true,
+          (error) => {
+            logError('削除を管理画面へ返せませんでした:', error);
+            return true;
+          }
+        );
       close();
       return;
     }

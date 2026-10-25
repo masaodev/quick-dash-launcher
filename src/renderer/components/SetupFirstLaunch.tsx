@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import '../styles/components/SetupFirstLaunch.css';
 
 import { HotkeyInput } from './HotkeyInput';
-import { Button } from './ui/Button';
+import { Button } from './ui';
 
 interface HotkeyValidation {
   isValid: boolean;

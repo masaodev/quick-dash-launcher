@@ -14,6 +14,7 @@ import {
   importResultCounts,
   summarizeImportResults,
 } from '@common/utils/bookmarkImportUtils';
+import { bookmarkFolderLabel } from '@common/utils/bookmarkFolderLabel';
 
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import {
@@ -24,7 +25,6 @@ import {
 import type { ImportDestination } from '../hooks/useImportDestination';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
-import { bookmarkFolderLabel } from '../utils/bookmarkFolderLabel';
 
 import { Button } from './ui';
 import BookmarkAutoImportRuleModal from './BookmarkAutoImportRuleModal';

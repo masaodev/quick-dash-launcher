@@ -18,6 +18,12 @@
   min-width: 0;
 }
 
+/* 狭いウィンドウでもボタンの文字を折り返さない（折り返すのは左の説明のほう。A3-119） */
+.missing-icon-notice__fetch {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .missing-icon-notice__label {
   color: var(--text-secondary);
 }

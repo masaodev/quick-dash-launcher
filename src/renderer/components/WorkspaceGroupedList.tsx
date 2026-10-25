@@ -34,7 +34,7 @@ import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
 import ColorPicker from './ColorPicker';
 import MemoViewModal from './MemoViewModal';
-import { Button } from './ui/Button';
+import { Button } from './ui';
 
 /**
  * カラーピッカーモーダル専用コンポーネント

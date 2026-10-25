@@ -13,7 +13,7 @@ import type { NoMatchElsewhere } from '../utils/noMatchElsewhere';
 import { openAppImport, openBookmarkImport } from '../utils/importEntrances';
 
 import MemoViewModal from './MemoViewModal';
-import { Button } from './ui/Button';
+import { Button } from './ui';
 import '../styles/components/MemoViewModal.css';
 
 interface ItemListProps {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
+import { createI18n } from '../i18n';
 import type { BookmarkWithFolder } from '../types/bookmarkAutoImport';
 
 import {
@@ -80,30 +81,57 @@ describe('applyBookmarkRuleFilters', () => {
 });
 
 describe('buildBookmarkDisplayName', () => {
+  const t = createI18n('ja').t;
   const docs = bookmarks[1];
   it('フォルダ名付与のモード', () => {
-    expect(buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'none' })).toBe(
-      'GitHub Docs'
-    );
     expect(
-      buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'parent' })
+      buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'none' }, t)
+    ).toBe('GitHub Docs');
+    expect(
+      buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'parent' }, t)
     ).toBe('[Docs] GitHub Docs');
     expect(
-      buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'fullPath' })
-    ).toBe('[bookmark_bar/開発/Docs] GitHub Docs');
+      buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'fullPath' }, t)
+    ).toBe('[ブックマーク バー/開発/Docs] GitHub Docs');
     expect(
-      buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'relativePath' })
+      buildBookmarkDisplayName(docs, { prefix: '', suffix: '', folderNameMode: 'relativePath' }, t)
     ).toBe('[開発/Docs] GitHub Docs');
   });
 
   it('接頭辞・接尾辞はフォルダ名の外側に付く', () => {
     expect(
-      buildBookmarkDisplayName(docs, {
-        prefix: '[Chrome] ',
-        suffix: ' (自動)',
-        folderNameMode: 'parent',
-      })
+      buildBookmarkDisplayName(
+        docs,
+        {
+          prefix: '[Chrome] ',
+          suffix: ' (自動)',
+          folderNameMode: 'parent',
+        },
+        t
+      )
     ).toBe('[Chrome] [Docs] GitHub Docs (自動)');
+  });
+
+  it('一番上のフォルダは内部のキー（bookmark_bar など）ではなく画面の言葉で付ける', () => {
+    const google = bookmarks[2];
+    expect(
+      buildBookmarkDisplayName(google, { prefix: '', suffix: '', folderNameMode: 'parent' }, t)
+    ).toBe('[ブックマーク バー] Google');
+    expect(
+      buildBookmarkDisplayName(
+        bookmarks[3],
+        { prefix: '', suffix: '', folderNameMode: 'fullPath' },
+        createI18n('en').t
+      )
+    ).toBe('[Other bookmarks/読み物] ニュース');
+    // 下のフォルダは、内部のキーと同じ名前でも置き換えない
+    expect(
+      buildBookmarkDisplayName(
+        { displayName: 'メモ', url: 'https://example.com', folderPath: 'bookmark_bar/other' },
+        { prefix: '', suffix: '', folderNameMode: 'fullPath' },
+        t
+      )
+    ).toBe('[ブックマーク バー/other] メモ');
   });
 });
 

@@ -5,11 +5,15 @@
  * ファイルや IPC に依存しない純粋関数だけを置く
  */
 
+import type { TFunction } from 'i18next';
+
 import type {
   BookmarkAutoImportRule,
   BookmarkFolder,
   BookmarkWithFolder,
 } from '../types/bookmarkAutoImport';
+
+import { bookmarkFolderLabel } from './bookmarkFolderLabel';
 
 /** 絞り込みに使うルールの項目 */
 export type BookmarkRuleFilter = Pick<
@@ -71,24 +75,27 @@ export function applyBookmarkRuleFilters(
  */
 export function buildBookmarkDisplayName(
   bookmark: BookmarkWithFolder,
-  rule: BookmarkRuleNaming
+  rule: BookmarkRuleNaming,
+  t: TFunction
 ): string {
   let name = bookmark.displayName;
 
   if (rule.folderNameMode !== 'none' && bookmark.folderPath) {
+    // 一番上のフォルダはブラウザ内部のキー（bookmark_bar など）なので、画面と同じ言葉にする（BI5）。
+    // 下のフォルダは、利用者が同じ名前（other など）を付けていてもそのまま
+    const parts = bookmark.folderPath.split('/');
+    parts[0] = bookmarkFolderLabel(parts[0], t);
     let folderLabel = '';
     switch (rule.folderNameMode) {
       case 'parent':
-        folderLabel = bookmark.folderPath.split('/').pop() || '';
+        folderLabel = parts[parts.length - 1] || '';
         break;
       case 'fullPath':
-        folderLabel = bookmark.folderPath;
+        folderLabel = parts.join('/');
         break;
-      case 'relativePath': {
-        const parts = bookmark.folderPath.split('/');
+      case 'relativePath':
         folderLabel = parts.length > 1 ? parts.slice(1).join('/') : parts[0];
         break;
-      }
     }
     if (folderLabel) {
       name = `[${folderLabel}] ${name}`;

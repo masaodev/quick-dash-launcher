@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from './ui/Button';
+import { Button } from './ui';
 
 interface MissingIconNoticeProps {
   /** 未取得アイコン数 */
@@ -33,6 +33,7 @@ const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({ missingCount, onF
       <Button
         variant="secondary"
         size="sm"
+        className="missing-icon-notice__fetch"
         onClick={onFetchClick}
         title={t('launcher.missingIcons.fetchTooltip')}
       >
