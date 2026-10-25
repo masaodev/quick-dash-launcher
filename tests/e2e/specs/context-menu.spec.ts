@@ -200,26 +200,45 @@ $Shortcut.Save()
  * 管理ウィンドウのコンテキストメニューテスト
  */
 test.describe('QuickDashLauncher - 管理ウィンドウのコンテキストメニュー', () => {
-  test('管理ウィンドウへのIPC送信が正常に行われる', async ({ electronApp, mainWindow }) => {
+  test('右クリックメニューの「複製」で行が増え、「編集」で詳細編集が開く', async ({
+    electronApp,
+    mainWindow,
+  }) => {
     const utils = new TestUtils(mainWindow);
 
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
     await adminWindow.waitForLoadState('domcontentloaded');
 
     const menuHelper = new NativeMenuTestHelper(electronApp, adminWindow);
+    const adminUtils = new TestUtils(adminWindow);
 
-    await adminWindow.waitForSelector('.raw-item-row', { state: 'visible', timeout: 10000 });
+    // メニューの対象は右クリックで決まるので、右クリックしてからメニューの選択を送る。
+    // 本物のネイティブメニューは出さない
+    await electronApp.evaluate(({ Menu }) => {
+      Menu.prototype.popup = function () {};
+    });
 
-    const firstRow = adminWindow.locator('.raw-item-row').first();
-    const checkbox = firstRow.locator('input[type="checkbox"]');
-    await checkbox.click();
-    await expect(checkbox).toBeChecked();
+    const rows = adminWindow.locator('.raw-item-row');
+    await expect(rows.first()).toBeVisible({ timeout: 10000 });
+    const countBefore = await rows.count();
 
-    await menuHelper.simulateAdminMenu('duplicate');
-    await menuHelper.simulateAdminMenu('edit');
-    await adminWindow.waitForTimeout(100);
+    try {
+      await test.step('「複製」で右クリックした行のすぐ下に複製が入る', async () => {
+        await rows.first().click({ button: 'right' });
+        await menuHelper.simulateAdminMenu('duplicate');
+        await expect(rows).toHaveCount(countBefore + 1);
+      });
 
-    await adminWindow.close();
+      await test.step('「編集」で右クリックした行の詳細編集が開く', async () => {
+        await rows.first().click({ button: 'right' });
+        await menuHelper.simulateAdminMenu('edit');
+        const detailWindow = await adminUtils.waitForRegisterWindow(electronApp);
+        await expect(detailWindow.locator('.register-modal')).toBeVisible();
+        await adminUtils.pressEscapeToCloseRegisterModal();
+      });
+    } finally {
+      await adminWindow.close();
+    }
   });
 });
 

@@ -144,30 +144,22 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       await expect(newItem).toBeVisible();
     });
 
-    // 注: 引数入力テストはオプション設定の展開が必要なためスキップ
-    // await test.step('引数付きでアプリケーションアイテムを登録できる', async () => { ... });
-
     await test.step('登録したアイテムがdata.jsonに保存される', async () => {
-      await utils.openRegisterModal(electronApp);
-      await utils.fillRegisterForm({
-        name: 'テスト保存',
-        path: 'https://test-save.com',
-      });
-      await utils.clickRegisterButton();
-
-      expect(configHelper.hasItem('data.json', 'テスト保存', 'https://test-save.com')).toBe(true);
+      await expect
+        .poll(() => configHelper.hasItem('data.json', '新規Webサイト', 'https://example.com'))
+        .toBe(true);
+      await expect
+        .poll(() => configHelper.hasItem('data.json', 'マイアプリ', 'notepad.exe'))
+        .toBe(true);
     });
 
     await test.step('登録したアイテムがリロード後も表示される', async () => {
-      await utils.openRegisterModal(electronApp);
-      await utils.fillRegisterForm({
-        name: 'リロードテスト',
-        path: 'https://reload-test.com',
-      });
-      await utils.clickRegisterButton();
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
 
-      const item = mainWindow.locator('.item', { hasText: 'リロードテスト' });
-      await expect(item).toBeVisible();
+      await expect(mainWindow.locator('.item', { hasText: '新規Webサイト' })).toBeVisible();
+      await expect(mainWindow.locator('.item', { hasText: 'マイアプリ' })).toBeVisible();
+      await expect(mainWindow.locator('.item')).toHaveCount(countBefore + 2);
     });
   });
 
