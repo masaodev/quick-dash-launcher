@@ -332,7 +332,7 @@ export const jaContent: DemoContent = {
     search: 'db',
     refine: ' ec',
     minutes: '09-30',
-    chat: 'teams',
+    chat: 'tea 佐藤',
     otherTab: 'TypeS',
     captions: {
       intro: 'フォルダも資料も Web もアプリも、ここから開く',

@@ -328,7 +328,7 @@ export const enContent: DemoContent = {
     search: 'bas des',
     refine: ' scr',
     minutes: '09-30',
-    chat: 'chat',
+    chat: 'cha ale',
     otherTab: 'TypeS',
     captions: {
       intro: 'Open folders, files, websites, and apps from one place',

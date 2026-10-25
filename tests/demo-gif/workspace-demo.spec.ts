@@ -10,6 +10,8 @@ import { en } from '../../src/common/i18n/locales/en';
 import { ja } from '../../src/common/i18n/locales/ja';
 import { ConfigFileHelper } from '../e2e/helpers/config-file-helper';
 
+import { BACKDROP_MARGIN, showBackdrop } from './demo-backdrop';
+import type { Bounds } from './demo-backdrop';
 import { demoContent, demoLang, writeDemoData, writeDemoWorkspace } from './demo-data';
 import { OsMouse } from './os-mouse';
 import type { Point } from './os-mouse';
@@ -37,15 +39,6 @@ const DEMO_ROOT = path.join(os.tmpdir(), LANG === 'en' ? 'qdl-demo-en' : 'qdl-de
 const TYPE_DELAY_MS = 120;
 /** メインウィンドウとワークスペースの間の隙間（論理ピクセル） */
 const GAP = 40;
-/** 撮る範囲の周りの余白（論理ピクセル） */
-const MARGIN = 16;
-
-interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 /**
  * ページのタイトルでウィンドウを探す（ワークスペースは about:blank で開いてから中身を書き込むので、
@@ -137,13 +130,16 @@ test('ワークスペースのデモ', async () => {
     await targetHeader.waitFor({ state: 'visible' });
 
     // メインウィンドウをワークスペースの左隣に寄せ、両方を最前面に固定する
-    const wsBounds = await contentBounds(app, 'Workspace');
+    // ワークスペースを画面の右上の端から余白の分だけ離し、メインウィンドウをその左隣に寄せ、両方を最前面に固定する
     const scale = await app.evaluate(
-      ({ BrowserWindow, screen }, { ws, gap }) => {
+      ({ BrowserWindow, screen }, { gap, margin }) => {
+        const ws = BrowserWindow.getAllWindows().find((bw) => bw.getTitle() === 'Workspace');
         const w = BrowserWindow.getAllWindows().find((bw) => bw.getTitle() === 'QuickDashLauncher');
-        if (!w) throw new Error('メインウィンドウが見つかりません');
+        if (!ws || !w) throw new Error('ウィンドウが見つかりません');
+        const wsb = ws.getBounds();
+        ws.setPosition(wsb.x - margin, wsb.y + margin);
         const b = w.getBounds();
-        w.setPosition(ws.x - gap - b.width, ws.y + gap);
+        w.setPosition(wsb.x - margin - gap - b.width, wsb.y + margin + gap);
         w.show();
         for (const bw of BrowserWindow.getAllWindows()) {
           if (bw.isVisible()) bw.setAlwaysOnTop(true, 'screen-saver');
@@ -151,16 +147,16 @@ test('ワークスペースのデモ', async () => {
         w.focus();
         return screen.getPrimaryDisplay().scaleFactor;
       },
-      { ws: wsBounds, gap: GAP }
+      { gap: GAP, margin: BACKDROP_MARGIN }
     );
+    const wsBounds = await contentBounds(app, 'Workspace');
     const mainBounds = await contentBounds(app, 'QuickDashLauncher');
-    await input.focus();
 
-    // 撮る範囲: メインウィンドウの左からワークスペースの右まで、ワークスペースの上からメインウィンドウの下まで
-    const left = mainBounds.x - MARGIN;
-    const top = wsBounds.y;
-    const right = wsBounds.x + wsBounds.width;
-    const bottom = mainBounds.y + mainBounds.height + MARGIN;
+    // 撮る範囲: メインウィンドウの左からワークスペースの右まで、ワークスペースの上からメインウィンドウの下まで（周りに余白）
+    const left = mainBounds.x - BACKDROP_MARGIN;
+    const top = wsBounds.y - BACKDROP_MARGIN;
+    const right = wsBounds.x + wsBounds.width + BACKDROP_MARGIN;
+    const bottom = mainBounds.y + mainBounds.height + BACKDROP_MARGIN;
     const rect = {
       logicalWidth: right - left,
       x: Math.round(left * scale),
@@ -168,26 +164,10 @@ test('ワークスペースのデモ', async () => {
       width: Math.round((right - left) * scale),
       height: Math.round((bottom - top) * scale),
     };
-
-    // 撮る範囲の後ろに無地のウィンドウを敷く（デスクトップの壁紙や他のアプリを写さない）。
-    // 最前面には固定しない（後から開く切り離しウィンドウがこの上に出るように）
-    await app.evaluate(
-      ({ BrowserWindow }, b) => {
-        const backdrop = new BrowserWindow({
-          ...b,
-          frame: false,
-          resizable: false,
-          focusable: false,
-          skipTaskbar: true,
-          backgroundColor: '#e4e8ee',
-          show: false,
-        });
-        backdrop.show();
-        backdrop.moveTop();
-        const w = BrowserWindow.getAllWindows().find((bw) => bw.getTitle() === 'QuickDashLauncher');
-        w?.focus();
-      },
-      { x: left, y: top, width: right - left, height: bottom - top }
+    await showBackdrop(
+      app,
+      { x: left, y: top, width: right - left, height: bottom - top },
+      'QuickDashLauncher'
     );
     await input.focus();
 
