@@ -113,6 +113,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 2. フォルダ取込の展開や `.lnk` のリンク先の解決をし、タブ単位で重複を除いて並べる
 3. レンダラーが受け取ったアイテムを、入力に合わせて絞り込んで表示する
 4. 起動などの操作は IPC でメインプロセスに依頼する
+5. 開いたアイテムの日時と回数は `launchUsageService`（`src/main/services/launchUsageService.ts`）が `item-usage.json` に記録する。データファイルは書き換えない（[ファイル形式一覧](file-formats/README.md)）
 
 ### 編集モード（生データ編集）
 

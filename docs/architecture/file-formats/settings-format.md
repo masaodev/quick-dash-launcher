@@ -177,8 +177,8 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **workspaceOpacity** | number | 100 | ワークスペースウィンドウの不透明度（0-100%） |
-| **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウの背景のみを透過するか |
+| **workspaceOpacity** | number | 100 | ワークスペースウィンドウの不透明度（0-100%）。ワークスペースウィンドウ本体だけで、切り離しウィンドウには効かない |
+| **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウと切り離しウィンドウの背景だけを透過するか。`true` の間は `workspaceOpacity` を使わない |
 | **workspacePositionMode** | WorkspacePositionMode | "displayRight" | ワークスペースウィンドウの表示位置モード |
 | **workspaceTargetDisplayIndex** | number | -1 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり）。`-1`（既定）はメインウィンドウと同じディスプレイで、表示するたびにそのディスプレイの端へ移す（高さはそのディスプレイの作業領域に合わせる）。番号のディスプレイが接続されていなければプライマリに出す |
 | **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
@@ -250,7 +250,7 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 | **showKeyboardHints** | boolean | true | メインウィンドウの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
 | **searchMemo** | boolean | false | メインウィンドウの検索（通常モード）で、表示名に加えてメモにも当てるか（パスには当てない） |
 | **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「システム」にある「起動の記録を残す」 |
-| **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`lastLaunched`・`launchCount`・`updatedAt`。`link`・`launchCount` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`・`pathAndArgs`）の `widths` は使わない。画面の見出しの右クリックと見出しの右端のドラッグで変わり、設定画面にはない |
+| **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`lastLaunched`・`launchCount`・`updatedAt`。`memo`・`link`・`lastLaunched`・`launchCount` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`）の `widths` は使わない。`pathAndArgs` は `widths` が無ければ残りの幅を使う。画面の見出しの右クリックと見出しの右端のドラッグ・ダブルクリックで変わり、設定画面にはない |
 
 ---
 
