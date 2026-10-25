@@ -20,7 +20,7 @@ import {
   applyDetachedVisibilityOnAllDesktops,
 } from '../detachedGroupWindowManager.js';
 import { EnvConfig } from '../config/envConfig.js';
-import { LONG_TOAST_DURATION_MS, showToastWindow } from '../services/overlayWindowService.js';
+import { showToastWindow } from '../services/overlayWindowService.js';
 import { applyLanguageSetting, mainI18n } from '../services/i18nService.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
 import { handleIpc } from '../utils/ipcWrapper';
@@ -205,7 +205,6 @@ async function reapplyHotkey(
       current: current || mainI18n.t('hotkey.notSet'),
     }),
     type: 'error',
-    duration: LONG_TOAST_DURATION_MS,
   }).catch((error) => logger.error({ error }, 'ホットキー再登録トーストの表示に失敗'));
 }
 

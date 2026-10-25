@@ -21,6 +21,12 @@
   --color-info-hover: #1976d2;
   --color-info-light: #42a5f5;
 
+  /* 知らせ（トースト・セットの進み具合）の種類の色。白地の上の左の帯とアイコンに使う（docs/features/toast-notifications.md） */
+  --notify-success: #1e7e34;
+  --notify-error: #c62828;
+  --notify-warning: #b7791f;
+  --notify-info: #1565c0;
+
   --color-secondary: #6c757d;
   --color-secondary-hover: #5a6268;
 

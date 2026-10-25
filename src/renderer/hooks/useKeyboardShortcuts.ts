@@ -337,6 +337,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
             selectedItem.type === 'windowSwitch'
           ) {
             await window.electronAPI.showToastWindow({
+              type: 'warning',
               displayName: selectedItem.displayName,
               itemType: selectedItem.type,
               message: t('launcher.messages.noContainingFolder'),
@@ -351,12 +352,13 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
           await window.electronAPI.showToastWindow(
             selectedItem.type === 'set'
               ? {
-                  type: 'info',
+                  type: 'warning',
                   message: t('launcher.messages.noContainingFolderNamed', {
                     name: selectedItem.displayName,
                   }),
                 }
               : {
+                  type: 'warning',
                   displayName: selectedItem.displayName,
                   itemType: selectedItem.type,
                   message: t('launcher.messages.noContainingFolder'),

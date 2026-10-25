@@ -42,41 +42,18 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
       <Toaster
         position={position}
         toastOptions={{
-          // デフォルトの表示時間
-          duration: 3000,
-
-          // 成功トースト
-          success: {
-            duration: 2000,
-            style: {
-              background: 'var(--color-white)',
-              color: 'var(--text-muted)',
-            },
-            iconTheme: {
-              primary: 'var(--color-primary)',
-              secondary: 'var(--color-white)',
-            },
-          },
-
-          // エラートースト
-          error: {
-            duration: 4000,
-            style: {
-              background: 'var(--color-danger)',
-              color: 'var(--color-white)',
-            },
-            iconTheme: {
-              primary: 'var(--color-white)',
-              secondary: 'var(--color-danger)',
-            },
-          },
-
-          // 共通スタイル（ローディングトーストと統一）
+          // 表示時間は useToast が種類ごとに決める（src/common/constants.ts の toastDurationMs）
+          // 共通の形（独立トーストの overlay.html と同じ白地のカード）。種類の色は useToast が左の帯とアイコンで足す
           style: {
             fontFamily: 'var(--font-family)',
             fontSize: 'var(--font-size-xs)',
             padding: 'var(--spacing-xs) var(--spacing-sm)',
-            border: 'var(--border-normal)',
+            background: 'var(--color-white)',
+            color: 'var(--text-primary)',
+            // 種類の帯（borderLeft*）を足すので、変数入りの border の一括指定は使わない（ほかの辺が消える）
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: 'var(--color-gray-500)',
             borderRadius: 'var(--border-radius-sm)',
             boxShadow: 'var(--shadow)',
             maxWidth: '350px',

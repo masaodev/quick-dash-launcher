@@ -85,7 +85,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   onOpenAutoImportSettings,
 }) => {
   const { t } = useTranslation();
-  const { showSuccess, showInfo, showWarning } = useToast();
+  const { showSuccess, showInfo, showWarning, showError } = useToast();
 
   // データファイル名を取得（設定がない場合は物理ファイル名）
   const getFileLabel = (fileName: string): string => {
@@ -204,6 +204,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     confirm: confirmAsync,
     showSuccess,
     showWarning,
+    showError,
     countItems,
     dropFileItems: editing.dropFileItems,
     fileItemIds,
@@ -288,7 +289,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           checked: summary.checked,
           unknownNote,
         }),
-        { duration: 5000 }
+        { long: true }
       );
     }
   };
@@ -488,7 +489,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       );
       if (!savedPath) return;
       const key = hasUnsavedChanges ? 'itemCsv.exportedUnsaved' : 'itemCsv.exported';
-      showSuccess(t(key, { count: workingItems.length, path: savedPath }), { duration: 5000 });
+      showSuccess(t(key, { count: workingItems.length, path: savedPath }), { long: true });
     } catch (error) {
       showWarning(
         t('itemCsv.exportFailed', { error: error instanceof Error ? error.message : String(error) })
@@ -622,7 +623,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       const names = rebaseNotice.conflicts
         .map((c) => t('itemManager.quotedName', { name: c.displayName }))
         .join(t('common.listSeparator'));
-      showWarning(t('itemManager.rebaseConflicts', { names }), { duration: 10000 });
+      showWarning(t('itemManager.rebaseConflicts', { names }), { long: true });
     } else {
       showInfo(t('itemManager.rebaseApplied', { count: rebaseNotice.applied }));
     }

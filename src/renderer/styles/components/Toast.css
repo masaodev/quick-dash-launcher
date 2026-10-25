@@ -1,0 +1,36 @@
+/* 知らせの種類のアイコン（UI 内トースト・AlertDialog）。独立トースト（overlay.html）と同じ形にする */
+.toast-type-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--color-white);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.toast-type-icon.large {
+  width: 28px;
+  height: 28px;
+  font-size: var(--font-size-lg);
+}
+
+.toast-type-icon.success {
+  background: var(--notify-success);
+}
+
+.toast-type-icon.error {
+  background: var(--notify-error);
+}
+
+.toast-type-icon.warning {
+  background: var(--notify-warning);
+}
+
+.toast-type-icon.info {
+  background: var(--notify-info);
+}

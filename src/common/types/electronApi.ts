@@ -476,7 +476,7 @@ export interface ElectronAPI {
   waitForWindowsClosed: (hwnds: (number | bigint)[]) => Promise<void>;
   // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
   showToastWindow: (options: ToastOptions) => Promise<void>;
-  // トーストウィンドウ用イベントリスナー（toast.html用）
+  // 独立トーストのイベントリスナー（overlay.html 用）
   onShowToast: (callback: (data: ToastEventData) => void) => () => void;
   // ワークスペースウィンドウ制御API
   toggleWorkspaceWindow: () => Promise<void>;

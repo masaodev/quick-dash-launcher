@@ -38,6 +38,7 @@ interface UseAdminTabStructureProps {
   confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>;
   showSuccess: (message: string) => void;
   showWarning: (message: string) => void;
+  showError: (message: string) => void;
   /** データファイルのアイテム数（作業中の一覧）と、そのうち保存していない変更の数 */
   countItems: (fileName: string) => { total: number; unsaved: number };
   /** 消すデータファイルのアイテムを作業中の一覧から除く */
@@ -61,6 +62,7 @@ export function useAdminTabStructure({
   confirm,
   showSuccess,
   showWarning,
+  showError,
   countItems,
   dropFileItems,
   fileItemIds,
@@ -168,13 +170,13 @@ export function useAdminTabStructure({
       } catch (error) {
         logError('タブ構成の保存に失敗しました:', error);
         const message = ipcErrorMessage(error);
-        showWarning(t('itemManager.tabStructure.saveFailed', { error: message }));
+        showError(t('itemManager.tabStructure.saveFailed', { error: message }));
         return false;
       } finally {
         busyRef.current = false;
       }
     },
-    [onSaved, showSuccess, showWarning, dropFileItems, t]
+    [onSaved, showSuccess, showWarning, showError, dropFileItems, t]
   );
 
   /** タブ表示がオフなら、新しいタブを作るときに表示をオンにするかを聞く */

@@ -46,7 +46,7 @@ export function useRegisterForm(
   const { showWarning, showError } = useToast();
 
   const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
-    useModalInitializer();
+    useModalInitializer(showError);
 
   const clearErrorField = (index: number, field: string) => {
     setErrors((prev) => {

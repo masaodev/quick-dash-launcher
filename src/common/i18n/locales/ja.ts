@@ -235,7 +235,7 @@ export const ja = {
       windowAdded:
         '開いているときに、このウィンドウへ切り替えます（パスを入れると、開いていないときに開けます）',
       dataFilesCreateFailed: 'タブのデータファイルを作成できませんでした: {{files}}',
-      virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません。',
+      virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません',
       noContainingFolder: 'このアイテムには親フォルダがありません',
       noContainingFolderNamed: '「{{name}}」には親フォルダがありません',
       launchFailed: '「{{name}}」を開けませんでした: {{error}}',
@@ -1681,6 +1681,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       'AI エージェントにアイテムやワークスペースを変えさせるときは、ファイルを直接書かせずに CLI（qdl）を使わせてください（基本設定の「QuickDashLauncher CLI を使えるようにする」をオンにします）。',
     quit: '🚪 アプリを終了',
     quitConfirm: 'アプリを終了しますか？',
+    quitConfirmButton: '終了する',
   },
   register: {
     editTitle: 'アイテムの編集',

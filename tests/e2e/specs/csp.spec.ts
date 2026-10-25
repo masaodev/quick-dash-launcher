@@ -78,7 +78,8 @@ test.describe('QuickDashLauncher - CSP', () => {
         path: 'https://example.com/',
         // 壊れた画像。onerror の代わりの error の監視が既定のアイコンに差し替える
         icon: 'data:image/png;base64,AAAA',
-        duration: 5000,
+        type: 'success',
+        long: true,
       })
     );
 

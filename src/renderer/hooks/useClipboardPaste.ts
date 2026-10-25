@@ -46,6 +46,7 @@ export function useClipboardPaste(
       }
       try {
         await window.electronAPI.showToastWindow({
+          type: 'success',
           displayName,
           itemType: 'workspaceAdd',
           path,

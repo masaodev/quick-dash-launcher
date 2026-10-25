@@ -137,8 +137,8 @@ test.describe('QuickDashLauncher - セットの実行', () => {
   });
 });
 
-test.describe('QuickDashLauncher - 実行に失敗したときのエラーダイアログ', () => {
-  test('エラーのダイアログが出ているときの Enter はダイアログを閉じるだけで、アイテムを実行し直さない', async ({
+test.describe('QuickDashLauncher - 実行に失敗したときの知らせ', () => {
+  test('起動で思わぬ例外が起きたら、ダイアログではなくエラーの独立トーストで知らせる', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -146,29 +146,31 @@ test.describe('QuickDashLauncher - 実行に失敗したときのエラーダイ
     await utils.waitForPageLoad();
     await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
 
-    // アイテムを開く処理を「必ず失敗する」スタブに差し替え、呼ばれた回数を数える
+    // アイテムを開く処理を「必ず失敗する」スタブに差し替える
     await electronApp.evaluate(({ ipcMain }) => {
-      globalThis.__e2eOpenItemCalls = 0;
       ipcMain.removeHandler('open-item');
       ipcMain.handle('open-item', () => {
-        globalThis.__e2eOpenItemCalls = (globalThis.__e2eOpenItemCalls ?? 0) + 1;
         throw new Error('E2E の起動失敗');
       });
     });
-    const openItemCalls = () => electronApp.evaluate(() => globalThis.__e2eOpenItemCalls ?? 0);
 
     await utils.searchFor('GitHub');
     await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
     await mainWindow.keyboard.press('Enter');
 
-    const alertDialog = mainWindow.getByTestId('alert-dialog');
-    await expect(alertDialog).toBeVisible({ timeout: 5000 });
-    expect(await openItemCalls()).toBe(1);
-
-    await mainWindow.keyboard.press('Enter');
-
-    await expect(alertDialog).not.toBeVisible();
-    expect(await openItemCalls()).toBe(1);
+    await expect
+      .poll(
+        async () => {
+          for (const win of electronApp.windows()) {
+            if (win.isClosed() || (await win.locator('#toast.error').count()) === 0) continue;
+            return win.locator('#toast').innerText();
+          }
+          return '';
+        },
+        { timeout: 5000 }
+      )
+      .toContain('アイテムの起動に失敗しました');
+    await expect(mainWindow.getByTestId('alert-dialog')).toHaveCount(0);
   });
 });
 

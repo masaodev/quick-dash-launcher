@@ -33,7 +33,12 @@ function extractDefaultName(filePath: string, itemType: RegisterItem['type']): s
   return ext ? basename.slice(0, -ext.length) : basename;
 }
 
-export function useModalInitializer() {
+/**
+ * 登録・編集画面の最初のアイテムを作る
+ *
+ * @param onError 初期化に失敗したときに、画面に出す文言を受け取る（呼び出し側がトーストで知らせる）
+ */
+export function useModalInitializer(onError: (message: string) => void) {
   const initializeFromEditingItem = async (
     editingItem: EditingAppItem | EditableJsonItem,
     tabs: DataFileTab[],
@@ -52,7 +57,7 @@ export function useModalInitializer() {
       return [item];
     } catch (error) {
       logError('Error initializing from editing item:', error);
-      alert(i18next.t('register.errors.initEditFailed', { error: String(error) }));
+      onError(i18next.t('register.errors.initEditFailed', { error: String(error) }));
       return [];
     }
   };
@@ -101,7 +106,7 @@ export function useModalInitializer() {
       return newItems;
     } catch (error) {
       logError('Error initializing items:', error);
-      alert(i18next.t('register.errors.initFailed', { error: String(error) }));
+      onError(i18next.t('register.errors.initFailed', { error: String(error) }));
       return [];
     }
   };
