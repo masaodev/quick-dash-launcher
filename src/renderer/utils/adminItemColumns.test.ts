@@ -45,14 +45,25 @@ describe('columnWidthOf', () => {
     expect(columnWidthOf(column('name'), { visible: {}, widths: { name: 240 } })).toBe(240);
   });
 
-  it('幅を変えられない列は保存された幅を使わない。残りの幅を使う列は null', () => {
+  it('幅を変えられない列は保存された幅を使わない', () => {
     expect(columnWidthOf(column('icon'), { visible: {}, widths: { icon: 300 } })).toBe(32);
+  });
+
+  it('パスと引数の列は、幅を決めていなければ残りの幅（null）、決めていればその幅（A3-184）', () => {
+    expect(columnWidthOf(column('pathAndArgs'), { visible: {}, widths: {} })).toBeNull();
     expect(
       columnWidthOf(column('pathAndArgs'), { visible: {}, widths: { pathAndArgs: 300 } })
-    ).toBeNull();
+    ).toBe(300);
+    expect(columnWidthOf(column('pathAndArgs'), { visible: {}, widths: { pathAndArgs: 50 } })).toBe(
+      PATH_COLUMN_MIN_WIDTH
+    );
   });
 
   it('表の最小幅は、選択・操作の列とパスの最低幅に、ほかの列の幅を足したもの', () => {
     expect(tableMinWidthOf([100, null, 50])).toBe(40 + 64 + PATH_COLUMN_MIN_WIDTH + 150);
+  });
+
+  it('パスと引数の列の幅も決まっていれば、最低幅は足さずに全部の幅を足す', () => {
+    expect(tableMinWidthOf([100, 400, 50])).toBe(40 + 64 + 550);
   });
 });

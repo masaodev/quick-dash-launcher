@@ -37,6 +37,8 @@ interface UseAdminItemImportsOptions {
   /** メインウィンドウから開くよう頼まれた取込画面 */
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+  /** 管理ウィンドウを閉じるたびに増える数（開いている取込画面を閉じる合図） */
+  importModalCloseSignal: number;
   /** 未保存の変更として取り込んだブックマークのアイコンを、保存のあとに取りに行くよう覚えておく */
   onFetchIconsAfterSave: () => void;
 }
@@ -57,6 +59,7 @@ export function useAdminItemImports({
   toast,
   pendingImportModal,
   onClearPendingImportModal,
+  importModalCloseSignal,
   onFetchIconsAfterSave,
 }: UseAdminItemImportsOptions) {
   const { t } = useTranslation();
@@ -66,20 +69,38 @@ export function useAdminItemImports({
   const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
   const [isAppImportModalOpen, setIsAppImportModalOpen] = useState(false);
 
+  // 取込画面は 1 つだけ開く（もう一方が開いたまま後ろに残らないようにする。A3-187）
+  const openBookmarkModal = () => {
+    setIsAppImportModalOpen(false);
+    setIsBookmarkModalOpen(true);
+  };
+  const openAppImportModal = () => {
+    setIsBookmarkModalOpen(false);
+    setIsAppImportModalOpen(true);
+  };
+
   // メインウィンドウからのインポートモーダル表示リクエストを処理
   useEffect(() => {
     if (!pendingImportModal) return;
 
     switch (pendingImportModal) {
       case 'bookmark':
-        setIsBookmarkModalOpen(true);
+        openBookmarkModal();
         break;
       case 'app':
-        setIsAppImportModalOpen(true);
+        openAppImportModal();
         break;
     }
     onClearPendingImportModal();
   }, [pendingImportModal]);
+
+  // 管理ウィンドウを閉じたら、開いていた取込画面も閉じる（× は隠すだけなので、閉じないと次に開いたとき残っている。
+  // 選びかけていた内容は捨てる＝取込画面のキャンセルと同じ。A3-187）
+  useEffect(() => {
+    if (importModalCloseSignal === 0) return;
+    setIsBookmarkModalOpen(false);
+    setIsAppImportModalOpen(false);
+  }, [importModalCloseSignal]);
 
   /**
    * 取込画面の取込先を、実在のデータファイルにする。新しいタブ・ファイルならここで作る。
@@ -204,10 +225,10 @@ export function useAdminItemImports({
 
   return {
     isBookmarkModalOpen,
-    openBookmarkModal: () => setIsBookmarkModalOpen(true),
+    openBookmarkModal,
     closeBookmarkModal: () => setIsBookmarkModalOpen(false),
     isAppImportModalOpen,
-    openAppImportModal: () => setIsAppImportModalOpen(true),
+    openAppImportModal,
     closeAppImportModal: () => setIsAppImportModalOpen(false),
     handleBookmarkImport,
     handleBookmarkSaveAsRule,

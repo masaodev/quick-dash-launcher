@@ -87,9 +87,13 @@ export const ja = {
       refetchIconsTitle:
         'データを読み直し、保存してあるアイコンを使わずに全部取り直します（前に取れなかったものも試します）',
     },
+    searchHistoryClear: {
+      message: '検索履歴をすべて消しますか？元には戻せません。',
+      confirm: '消す',
+    },
     registerMenu: {
       title: 'アイテムを追加',
-      quickAdd: '📄 アイテムを追加…',
+      quickAdd: '📄 アイテムを追加',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
       addFolderImport: '🗂️ フォルダからアイテムを追加',
@@ -110,7 +114,7 @@ export const ja = {
       otherTabsHaveWindows: '他のタブに合うウィンドウがあります。',
       switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
-      add: '📄 アイテムを追加…',
+      add: '📄 アイテムを追加',
       importBookmarks: '🔖 ブックマークから',
       importApps: '💻 アプリから',
       importFolder: '🗂️ フォルダから',
@@ -380,7 +384,11 @@ export const ja = {
       selectAll: 'すべて選択',
     },
     launcherBlank: {
-      registerFromClipboard: '📋 クリップボードのパス・URL から追加…',
+      registerFromClipboard: '📋 クリップボードのパス・URL から追加',
+    },
+    searchHistory: {
+      title: '🕘 検索履歴',
+      clear: '🗑️ 検索履歴を消す',
     },
     workspace: {
       addGroup: '➕ グループを追加',
@@ -1205,7 +1213,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       launchCount: '起動回数',
       icon: 'アイコン',
       columnMenuHint:
-        '右クリックで列の表示を変えられます。見出しの右端をドラッグすると幅を変えられます',
+        '右クリックで列の表示を変えられます。見出しの右端をドラッグすると幅を変えられ、ダブルクリックすると中身に合わせます',
+      resizeHandleTitle: 'ドラッグで幅を変える・ダブルクリックで中身に合わせる',
       emptyFiltered: '条件に一致するアイテムがありません',
       empty:
         'このデータファイルにアイテムがありません。「＋ アイテムを追加」で追加できます。横の ▼ から、ブラウザのブックマークやインストール済みアプリも取り込めます',

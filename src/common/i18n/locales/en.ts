@@ -84,9 +84,13 @@ export const en: LocaleMessages = {
       refetchIconsTitle:
         "Reloads the data and fetches every icon again without the saved ones (also retries ones that couldn't be fetched)",
     },
+    searchHistoryClear: {
+      message: "Clear all search history? This can't be undone.",
+      confirm: 'Clear',
+    },
     registerMenu: {
       title: 'Add item',
-      quickAdd: '📄 Add item…',
+      quickAdd: '📄 Add item',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
       addFolderImport: '🗂️ Add items from a folder',
@@ -107,7 +111,7 @@ export const en: LocaleMessages = {
       otherTabsHaveWindows: 'Other tabs have matching windows.',
       switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
-      add: '📄 Add item…',
+      add: '📄 Add item',
       importBookmarks: '🔖 From bookmarks',
       importApps: '💻 From apps',
       importFolder: '🗂️ From a folder',
@@ -379,7 +383,11 @@ export const en: LocaleMessages = {
       selectAll: 'Select all',
     },
     launcherBlank: {
-      registerFromClipboard: '📋 Add from a path or URL on the clipboard…',
+      registerFromClipboard: '📋 Add from a path or URL on the clipboard',
+    },
+    searchHistory: {
+      title: '🕘 Search history',
+      clear: '🗑️ Clear search history',
     },
     workspace: {
       addGroup: '➕ Add group',
@@ -1200,7 +1208,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       launchCount: 'Times opened',
       icon: 'Icon',
       columnMenuHint:
-        'Right-click to choose columns. Drag the right edge of a header to resize it.',
+        'Right-click to choose columns. Drag the right edge of a header to resize it, or double-click it to fit the contents.',
+      resizeHandleTitle: 'Drag to resize. Double-click to fit the contents.',
       emptyFiltered: 'No items match',
       empty:
         'This data file has no items. Add one with "+ Add item", or use the ▼ next to it to import browser bookmarks or installed apps.',

@@ -19,6 +19,8 @@ interface AdminItemManagerTableHeadProps {
     id: AdminItemColumnId,
     th: HTMLTableCellElement | null
   ) => void;
+  /** 見出しの右端のつまみをダブルクリックしたとき（幅を中身に合わせる。A3-184） */
+  onAutoFit: (id: AdminItemColumnId) => void;
   /** 見出しの右クリック（列のメニューを開く） */
   onHeaderContextMenu: (e: React.MouseEvent) => void;
   /** 絞り込みがかかっている列（▾ を目立たせる） */
@@ -36,6 +38,7 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
   someSelected,
   onSelectAll,
   onResizeStart,
+  onAutoFit,
   onHeaderContextMenu,
   filteredColumns,
   onOpenFilter,
@@ -115,6 +118,11 @@ const AdminItemManagerTableHead: React.FC<AdminItemManagerTableHeadProps> = ({
             className="column-resize-handle"
             onMouseDown={(e) => onResizeStart(e, def.id, headerRefs.current.get(def.id) ?? null)}
             onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              onAutoFit(def.id);
+            }}
+            title={t('itemManager.table.resizeHandleTitle')}
           />
         )}
       </th>

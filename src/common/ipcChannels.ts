@@ -252,6 +252,8 @@ export const IPC_CHANNELS = {
   EVENT_SET_ACTIVE_TAB: 'set-active-tab',
   /** 管理ウィンドウの × が押された。未保存の確認はレンダラーが行い、閉じるなら HIDE_EDIT_WINDOW を呼ぶ */
   EVENT_ADMIN_CLOSE_REQUESTED: 'admin-close-requested',
+  /** 管理ウィンドウを隠した（× のほか Ctrl+E の切り替えなど、どの経路でも。開いている取込画面を閉じる。A3-187） */
+  EVENT_ADMIN_HIDDEN: 'admin-hidden',
   EVENT_OPEN_IMPORT_MODAL: 'open-import-modal',
   EVENT_ICON_PROGRESS_START: 'icon-progress-start',
   EVENT_ICON_PROGRESS_UPDATE: 'icon-progress-update',
@@ -289,6 +291,10 @@ export const IPC_CHANNELS = {
   EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM: 'launcher-blank-menu-add-item',
   EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD: 'launcher-blank-menu-register-from-clipboard',
   EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT: 'launcher-blank-menu-add-folder-import',
+  // コンテキストメニュー - メインウィンドウの検索欄（文字のメニュー＋検索履歴。A3-190）
+  SHOW_SEARCH_BOX_CONTEXT_MENU: 'show-search-box-context-menu',
+  EVENT_SEARCH_BOX_MENU_PICK_HISTORY: 'search-box-menu-pick-history',
+  EVENT_SEARCH_BOX_MENU_CLEAR_HISTORY: 'search-box-menu-clear-history',
 
   // コンテキストメニュー - Workspace
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',

@@ -277,6 +277,12 @@ html:has(.workspace-window.background-transparent) {
   padding: var(--spacing-xs);
 }
 
+/* 一覧の中身（高さの自動調整が測る要素）。最後のグループの下の余白がこの要素の外にはみ出すと、
+   測った高さに入らずスクロールバーが出るので、余白をこの要素の中に収める（A3-185） */
+.workspace-item-list-content {
+  display: flow-root;
+}
+
 /* アイテムカード（タブ風デザイン） */
 .workspace-item-card {
   padding: var(--spacing-xs) var(--spacing-sm);

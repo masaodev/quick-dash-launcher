@@ -198,6 +198,8 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await expect(empty).toContainText('「Reddit」に合うアイテムはこのタブにはありません');
       await expect(empty).toContainText('他のタブに合うアイテムがあります');
       await expect(empty.getByRole('button', { name: /アイテムを追加/ })).toHaveCount(0);
+      // 取込の入口も出さない（先に「タブを切り替える」を見てもらう。A3-189）
+      await expect(empty.getByTestId('no-match-imports')).toHaveCount(0);
       // タブは自動で切り替えない
       await expect(mainWindow.locator('.tab-button.active', { hasText: 'メイン' })).toBeVisible();
     });
@@ -207,6 +209,11 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       await expect(empty).toContainText('「どこにもない検索語」に合うアイテムはありません');
       await expect(empty).toContainText('Shift+Tab でウィンドウ検索に切り替えます');
       await expect(empty.getByRole('button', { name: /アイテムを追加/ })).toBeVisible();
+      // 空のタブと同じく、取込の入口も並べる（A3-189）
+      const imports = empty.getByTestId('no-match-imports');
+      await expect(imports.getByRole('button', { name: '🔖 ブックマークから' })).toBeVisible();
+      await expect(imports.getByRole('button', { name: '💻 アプリから' })).toBeVisible();
+      await expect(imports.getByRole('button', { name: '🗂️ フォルダから' })).toBeVisible();
       await expect(empty.getByRole('button', { name: 'タブを切り替える' })).toHaveCount(0);
     });
 
