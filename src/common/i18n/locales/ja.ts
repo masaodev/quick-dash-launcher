@@ -1005,6 +1005,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       anyTitle: 'タイトルを問わない',
       anyTitleHint: 'exe 名だけで探します（タイトルは問いません）',
       titleParts: 'タイトルの一部だけで探す',
+      wholeTitle: 'タイトル全体',
+      wholeTitleHint: 'タイトル全体が同じウィンドウだけを探します（版の番号まで同じもの）',
       revertTitle: '↺ 元に戻す',
       matchNone: '今合うウィンドウ: 0 件',
       matchOne: '今合うウィンドウ: 1 件（{{title}}）',

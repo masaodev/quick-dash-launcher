@@ -113,14 +113,18 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
     () => (value ? windows.filter((w) => matchesWindow(value, w)) : []),
     [value, windows]
   );
-  // 候補は開いたときのタイトルから作る。* を含む（もう一部だけにしてある）なら、今合う 1 つのウィンドウのタイトルから
-  const parts = useMemo(() => {
-    if (initialTitle && !/[*?]/.test(initialTitle)) return titleParts(initialTitle);
+  // 候補の元のタイトル。開いたときのタイトルから作る。* を含む（もう一部だけにしてある）なら、今合う 1 つのウィンドウのタイトルから
+  const sourceTitle = useMemo(() => {
+    if (initialTitle && !/[*?]/.test(initialTitle)) return initialTitle;
     // タイトルが空か、もう一部だけにしてある: 今合う 1 つのウィンドウのタイトルから作る
     const now = initial ? windows.filter((w) => matchesWindow(initial, w)) : [];
-    if (now.length === 1) return titleParts(now[0].title);
-    return initialTitle ? titleParts(initialTitle) : [];
+    if (now.length === 1) return now[0].title;
+    return initialTitle;
   }, [initialTitle, initial, windows]);
+  const parts = useMemo(() => (sourceTitle ? titleParts(sourceTitle) : []), [sourceTitle]);
+  // 「タイトル全体」は、* を含まない元のタイトルがあり、部品に分かれるときだけ出す（記録は一部一致なので、全体で探し直すため）
+  const wholeTitle =
+    parts.length > 0 && sourceTitle && !/[*?]/.test(sourceTitle) ? sourceTitle : undefined;
 
   const update = (patch: Partial<SetWindowMatch>) => {
     const next = { ...(value ?? {}), ...patch };
@@ -207,6 +211,16 @@ export const WindowMatchFields: React.FC<WindowMatchFieldsProps> = ({
                   {part}
                 </button>
               ))}
+              {wholeTitle && (
+                <button
+                  type="button"
+                  className="set-title-part"
+                  title={t('set.detail.wholeTitleHint')}
+                  onClick={() => update({ title: wholeTitle })}
+                >
+                  {t('set.detail.wholeTitle')}
+                </button>
+              )}
             </div>
           </div>
         )}

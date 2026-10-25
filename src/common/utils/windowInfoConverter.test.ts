@@ -21,11 +21,12 @@ const info: WindowInfo = {
 
 describe('windowInfoToPathlessItem', () => {
   it('既定は exe 名とタイトルだけのパスの無い単一アイテム（hwnd・位置・アイコン・exe のパスは持たない）', () => {
+    // タイトルはアプリ名を落とした一部一致（セットの行に記録するときと同じ）
     expect(windowInfoToPathlessItem(info)).toEqual({
       type: 'windowSwitch',
       displayName: '設計書.docx - Word',
       path: '',
-      window: { processName: 'WINWORD.EXE', title: '設計書.docx - Word' },
+      window: { processName: 'WINWORD.EXE', title: '*設計書.docx*' },
     });
   });
 
