@@ -135,6 +135,27 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
           .poll(() => configHelper.readSettings().adminItemColumns?.widths?.name ?? 0)
           .toBeGreaterThan(0);
       });
+
+      await test.step('パスと引数の列も合わせられ、余った幅はほかの列に配らない', async () => {
+        await doubleClickHandle('content-column');
+        await expect
+          .poll(() => configHelper.readSettings().adminItemColumns?.widths?.pathAndArgs ?? 0)
+          .toBeGreaterThanOrEqual(180);
+        // 選択の列は 40px のまま（表が 100% のままだと、余りが全部の列に配られて広がる）
+        const checkboxWidth = await adminWindow
+          .locator('thead th.checkbox-column')
+          .evaluate((th) => Math.round(th.getBoundingClientRect().width));
+        expect(checkboxWidth).toBe(40);
+        await expect
+          .poll(() =>
+            adminWindow.evaluate(() =>
+              Array.from(document.querySelectorAll<HTMLElement>('tbody td.content-column')).every(
+                (td) => td.scrollWidth <= td.clientWidth + 1
+              )
+            )
+          )
+          .toBe(true);
+      });
     } finally {
       await adminWindow.close();
     }

@@ -205,6 +205,10 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
     editableItems.length > 0 && editableItems.every((item) => selectedItems.has(getItemKey(item)));
   const someSelected = editableItems.some((item) => selectedItems.has(getItemKey(item)));
 
+  const columnWidths = columns.visibleColumns.map((c) => c.width);
+  const tableMinWidth = tableMinWidthOf(columnWidths);
+  const hasFlexibleColumn = columnWidths.some((w) => w === null);
+
   return (
     <div className="editable-raw-item-list" ref={listRef}>
       <table
@@ -212,7 +216,10 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
         className="raw-items-table"
         style={
           {
-            minWidth: tableMinWidthOf(columns.visibleColumns.map((c) => c.width)),
+            minWidth: tableMinWidth,
+            // パスと引数の列の幅も決めたときは、表を列の幅の合計ちょうどにする（100% のままだと、余った幅が
+            // 選択・アイコンの列まで全部の列に配られて広がる。余りは右の空白にする。A3-184）
+            ...(hasFlexibleColumn ? {} : { width: tableMinWidth }),
             '--checkbox-column-width': `${CHECKBOX_COLUMN_WIDTH}px`,
             '--actions-column-width': `${ACTIONS_COLUMN_WIDTH}px`,
           } as React.CSSProperties
