@@ -71,12 +71,19 @@ const WorkspaceApp: React.FC = () => {
     items,
     groups,
     workspaces,
-    activeWorkspaceId,
+    activeWorkspaceId: storedActiveWorkspaceId,
     setActiveWorkspaceId,
     loadAllDataWithLoading,
     toggleGroupCollapsed,
     setAllGroupsCollapsedLocal,
   } = useWorkspaceData(detachedGroupId);
+  // 切り離しウィンドウでは、切り離したグループのワークスペースを今のワークスペースとして扱う。覚えている値は
+  // 本体のワークスペース画面で選んだタブなので、本体で別のタブを選んだまま起動し直すと、貼り付け先・足す先が
+  // 切り離したグループと合わなくなる（Ctrl+V が「グループを選んでください」になる）
+  const detachedWorkspaceId = detachedGroupId
+    ? groups.find((g) => g.id === detachedGroupId)?.workspaceId
+    : undefined;
+  const activeWorkspaceId = detachedWorkspaceId ?? storedActiveWorkspaceId;
 
   // アクティブワークスペースでフィルタリング
   const filteredItems = useMemo(
@@ -457,8 +464,14 @@ const WorkspaceApp: React.FC = () => {
             .map((url) => url.trim())
             .filter((url) => url && url.startsWith('http'));
           const addedUrls: string[] = [];
+          // グループの無いワークスペースでは 1 件目で「未分類」グループができる。2 件目からはそこへ入れる
+          // （グループがあるのに指定が無いと足せない）
+          let targetGroupId = groupId;
           for (const url of urls) {
-            if (await addUrlItem(url, () => {}, groupId, activeWorkspaceId)) addedUrls.push(url);
+            const added = await addUrlItem(url, () => {}, targetGroupId, activeWorkspaceId);
+            if (!added) continue;
+            addedUrls.push(url);
+            targetGroupId ??= added.groupId;
           }
           if (urls.length > 0) {
             loadAllDataWithLoading();

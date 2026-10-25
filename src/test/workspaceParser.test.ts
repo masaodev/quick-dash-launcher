@@ -281,7 +281,7 @@ describe('workspaceParser: id の採番と参照の追随', () => {
     expect(result.issues.filter((i) => i.kind === 'normalized')).toHaveLength(4);
   });
 
-  it('不正なグループへの参照（groupId / parentGroupId）は外さず保つこと', () => {
+  it('不正なグループへの参照（groupId / parentGroupId）は外し、アイテムは「未分類」グループ、サブグループは最上位に出すこと（A3-200）', () => {
     const result = parseWorkspaceFileLenient(
       file({
         groups: [
@@ -292,10 +292,18 @@ describe('workspaceParser: id の採番と参照の追随', () => {
       }),
       createWorkspaceParseContext(NOW)
     );
+    // 不正なグループ自体は生のまま残す（書き戻しで消さない）
     expect(result.invalid.groups).toHaveLength(1);
-    expect(result.data.groups[0].parentGroupId).toBe('grAAAAA1');
-    expect(result.data.items[0].groupId).toBe('grAAAAA1');
-    expect(result.issues.filter((i) => i.kind === 'normalized')).toEqual([]);
+    expect(result.data.groups[0].parentGroupId).toBeUndefined();
+    // 残すと画面のどこにも出ないので、外して「未分類」グループに入れる
+    const placed = result.data.groups.find((g) => g.id === result.data.items[0].groupId);
+    expect(placed?.displayName).toBe('未分類');
+    expect(result.issues.filter((i) => i.kind === 'normalized').map((i) => i.reason)).toEqual(
+      expect.arrayContaining([
+        'parentGroupId "grAAAAA1" のグループが読み込めないため外しました',
+        'groupId "grAAAAA1" のグループが読み込めないため外しました',
+      ])
+    );
   });
 
   it('parentGroupId の循環と深さ超過は親を外して normalized にすること', () => {

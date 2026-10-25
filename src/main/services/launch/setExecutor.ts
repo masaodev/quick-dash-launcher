@@ -693,14 +693,16 @@ async function runSet(
   ): Promise<bigint | null> => {
     const deadline = waitSeconds * 1000;
     // ウィンドウを探す時間も数える（sleep の合計だけだと、ウィンドウが多いときに長く待ちすぎる）
-    const end = Date.now() + deadline;
+    const start = Date.now();
+    const end = start + deadline;
     let shownSeconds = -1;
     for (let elapsed = 0; elapsed < deadline && Date.now() < end; elapsed += SET_WINDOW_POLL_MS) {
       if (cancelled) return null;
       const found = findUnclaimed(config, exclude);
       if (found !== null) return found;
-      // 待っている秒数は、1 秒変わったときだけ送る
-      const seconds = Math.floor(elapsed / 1000);
+      // 待っている秒数は、1 秒変わったときだけ送る。打ち切りと同じく探す時間も数える
+      //（sleep の合計だけだと「12 / 30 秒」のまま打ち切られることがある）
+      const seconds = Math.floor(Math.max(elapsed, Date.now() - start) / 1000);
       if (seconds !== shownSeconds) {
         shownSeconds = seconds;
         update(

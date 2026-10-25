@@ -237,11 +237,16 @@ export async function createWindow(): Promise<BrowserWindow> {
 
   mainWindow.on('show', () => {
     windowShownAt = Date.now();
+    // 起動直後の自動表示（スプラッシュの後・初回設定）のように showMainWindowInternal を
+    // 通らない表示でも、表示中は描画の抑制を切る（A3-130）
+    setMainWindowRenderingKept(true);
   });
 
   // 隠したら描画の抑制を戻す（表示中だけ切る。A3-130）
   mainWindow.on('hide', () => setMainWindowRenderingKept(false));
   mainWindow.on('minimize', () => setMainWindowRenderingKept(false));
+  // 最小化から戻したとき（タスクバー・Alt+Tab）は show が来ないので、ここでも切る
+  mainWindow.on('restore', () => setMainWindowRenderingKept(true));
 
   // メイン・ワークスペース・切り離しウィンドウのどれのblurでも、フォーカスがQDLの外へ出たかを確認する
   // （ウィンドウ群の中での移動では隠さない）

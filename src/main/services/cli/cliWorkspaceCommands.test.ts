@@ -369,6 +369,21 @@ describe('workspace item', () => {
     expect(moveItemToWorkspace).toHaveBeenCalledWith('It000002', 'Ws000002', undefined);
   });
 
+  it('今いるワークスペースを --workspace で書いただけ（--group なし）なら、動かさずに更新する', async () => {
+    const moveItemToWorkspace = vi.spyOn(ctx.store, 'moveItemToWorkspace');
+    await runWorkspaceCommand(
+      'item',
+      'update',
+      ['議事録', '--workspace', '仕事', '--memo', 'x'],
+      ctx
+    );
+    expect(moveItemToWorkspace).not.toHaveBeenCalled();
+    expect(items.find((i) => i.id === 'It000001')).toMatchObject({
+      groupId: 'GrA00001',
+      memo: 'x',
+    });
+  });
+
   it('本文の変更は今の内容に当て、変える前の内容も返す', async () => {
     const r = (await runWorkspaceCommand(
       'item',

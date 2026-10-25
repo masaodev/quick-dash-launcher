@@ -617,7 +617,16 @@
       function reportContentHeight() {
         const container = document.getElementById('container');
         const list = document.getElementById('entryList');
-        const height = container.offsetHeight - list.clientHeight + list.scrollHeight;
+        // 枠いっぱい（100vh）に伸ばした一覧の scrollHeight は枠より小さくならず、行が少ないときに
+        // 縮まなくなるので、測るあいだだけ中身なりの高さに戻して測る（同じ処理の中なので画面には出ない）
+        // 測ると一覧のスクロールが先頭に戻るので、位置を覚えて戻す
+        const scrollTop = list.scrollTop;
+        container.style.height = 'auto';
+        list.style.flex = 'none';
+        const height = container.offsetHeight;
+        container.style.height = '';
+        list.style.flex = '';
+        list.scrollTop = scrollTop;
         if (Math.abs(height - lastSentHeight) <= 1) return;
         lastSentHeight = height;
         window.electronAPI.resizeLayoutProgressWindow(height);

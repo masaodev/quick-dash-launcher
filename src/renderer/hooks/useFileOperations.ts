@@ -61,19 +61,19 @@ export function useFileOperations() {
     onItemsAdded: () => void,
     groupId?: string,
     workspaceId?: string
-  ): Promise<boolean> => {
+  ): Promise<WorkspaceItem | null> => {
     try {
       const icon = await fetchFaviconSafely(url);
-      await window.electronAPI.workspaceAPI.addItem(
+      const added = await window.electronAPI.workspaceAPI.addItem(
         { displayName: url, path: url, type: 'url' as const, icon },
         groupId,
         workspaceId
       );
       onItemsAdded();
-      return true;
+      return added;
     } catch (error) {
       logError('Failed to add URL item:', error);
-      return false;
+      return null;
     }
   };
 

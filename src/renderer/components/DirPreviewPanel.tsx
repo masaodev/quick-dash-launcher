@@ -58,9 +58,10 @@ const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({
   );
 
   const scan = async () => {
-    // 前の走査が続いていればやめてから読む（「フォルダを選択」で別のフォルダを選び直したとき）
-    if (runningRef.current) await window.electronAPI.cancelDirPreview();
+    // 前の走査が続いていればやめてから読む（「フォルダを選択」で別のフォルダを選び直したとき）。
+    // 番号はやめる前に進め、やめた走査の結果（途中まで）を出さない
     const scanId = ++scanIdRef.current;
+    if (runningRef.current) await window.electronAPI.cancelDirPreview();
     const signature = scanSignature(path, dirOptions);
     setRunning(true);
     runningRef.current = true;

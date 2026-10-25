@@ -259,6 +259,24 @@ function resolvePlace(
 }
 
 /**
+ * update で動かす先を決める。--workspace・--group が無いか、今いるワークスペースを --workspace で書いただけ
+ * （--group なし）なら、今の場所のまま（グループのあるワークスペースで --group を求めない）
+ */
+function resolveUpdatePlace(
+  s: Snapshot,
+  current: { workspaceId: string; groupId?: string },
+  workspaceKey: string | undefined,
+  groupKey: string | undefined
+): { workspaceId: string; groupId?: string } {
+  const stay = { workspaceId: current.workspaceId, groupId: current.groupId };
+  if (groupKey === undefined) {
+    if (workspaceKey === undefined) return stay;
+    if (findWorkspace(workspaceKey, s).id === current.workspaceId) return stay;
+  }
+  return resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey);
+}
+
+/**
  * 同じ親の中で position 番目（0 始まり）に置く。グループの中はサブグループとアイテムが同じ並び（画面の表示と同じ）
  *
  * @param groupId 省いたら、アイテムが今入っているグループ（足したときに作られた「未分類」グループなど）
@@ -897,10 +915,7 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   validateAsDataItem({ ...merged, id: 'CliCheck' }, setKeys);
   if (text !== undefined && !dryRun) Object.assign(merged, ctx.clipboard.save(text));
 
-  const place =
-    groupKey !== undefined || workspaceKey !== undefined
-      ? resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey)
-      : { workspaceId: current.workspaceId, groupId: current.groupId };
+  const place = resolveUpdatePlace(s, current, workspaceKey, groupKey);
 
   const before = itemView(current, s);
   if (dryRun) {
@@ -969,10 +984,7 @@ async function updateRefItem(
       mainI18n.t('cli.errors.needChanges', { options: '--name --group --workspace --position' })
     );
   }
-  const place =
-    groupKey !== undefined || workspaceKey !== undefined
-      ? resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey)
-      : { workspaceId: current.workspaceId, groupId: current.groupId };
+  const place = resolveUpdatePlace(s, current, workspaceKey, groupKey);
 
   const before = itemView(current, s);
   if (optionFlag(parsed, 'dry-run')) {

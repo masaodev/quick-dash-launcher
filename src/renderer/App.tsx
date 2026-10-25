@@ -1020,10 +1020,17 @@ function App(): React.ReactElement {
         </div>
       )}
 
-      {/* 取得中は出さない（進捗バーを × で閉じても、取得が終わるまで）。出すと［取得］で二重に取る（A3-173） */}
-      {!progressState.isActive && !isFetchingIcons && missingIconCount > 0 && (
-        <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
-      )}
+      {/* 取得中は出さない（進捗バーを × で閉じても、取得が終わるまで）。出すと［取得］で二重に取る（A3-173）。
+          ウィンドウ検索モードではアイテムが並ばないので出さない */}
+      {searchMode === 'normal' &&
+        !progressState.isActive &&
+        !isFetchingIcons &&
+        missingIconCount > 0 && (
+          <MissingIconNotice
+            missingCount={missingIconCount}
+            onFetchClick={handleFetchMissingIcons}
+          />
+        )}
 
       {progressState.isActive && progressState.progress && (
         <LauncherIconProgressBar

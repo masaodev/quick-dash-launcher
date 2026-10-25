@@ -244,6 +244,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   } = listView;
   // 絞り込む前の件数（絞り込み中の「合計: 8 / 15 件」に使う）
   const fileItemCount = currentFileWorkingItems.length;
+  // 下の帯の「入力不備」は「合計」と同じく、開いているデータファイルの分だけ数える
+  const fileInvalidCount = useMemo(
+    () => currentFileWorkingItems.filter((item) => !item.meta.isValid).length,
+    [currentFileWorkingItems]
+  );
 
   const columns = useAdminItemColumns();
 
@@ -711,9 +716,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
               })
             : t('itemManager.status.total', { count: filteredItems.length })}
         </span>
-        {invalidCount > 0 && (
+        {fileInvalidCount > 0 && (
           <span className="invalid-count">
-            {t('itemManager.status.invalid', { count: invalidCount })}
+            {t('itemManager.status.invalid', { count: fileInvalidCount })}
           </span>
         )}
         {pathCheck.hasChecked && (
