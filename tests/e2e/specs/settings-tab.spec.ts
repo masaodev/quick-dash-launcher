@@ -34,14 +34,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
   }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
 
-    await test.step('初期状態を確認', async () => {});
-
-    await utils.wait(300);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
-
       await test.step('設定タブが表示されていることを確認', async () => {
         const settingsTab = adminWindow.locator('.settings-tab');
         await expect(settingsTab).toBeVisible();
@@ -71,7 +66,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         // ウィンドウメニューをクリック
         const windowMenu = adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' });
         await windowMenu.click();
-        await adminUtils.wait(200);
 
         // メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウ・その他の節
         for (const heading of [
@@ -91,7 +85,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         // バックアップメニューをクリック
         const backupMenu = adminWindow.locator('.menu-item', { hasText: 'バックアップ' });
         await backupMenu.click();
-        await adminUtils.wait(200);
 
         // バックアップセクション
         const backupSection = adminWindow
@@ -124,8 +117,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
-
       await test.step('基本設定カテゴリでホットキー入力フィールドの確認', async () => {
         // デフォルトで基本設定が選択されている
         const hotkeyInput = adminWindow.locator('.hotkey-input').first();
@@ -136,7 +127,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         // ウィンドウメニューをクリック
         const windowMenu = adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' });
         await windowMenu.click();
-        await adminUtils.wait(200);
 
         // 通常時の幅
         const widthInput = adminWindow.locator('#windowWidth');
@@ -181,8 +171,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
-
       await test.step('基本設定カテゴリで自動起動設定をON/OFFできる', async () => {
         // デフォルトで基本設定が選択されている
         const autoLaunchLabel = adminWindow.locator('label', {
@@ -202,7 +190,6 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         // バックアップメニューをクリック
         const backupMenu = adminWindow.locator('.menu-item', { hasText: 'バックアップ' });
         await backupMenu.click();
-        await adminUtils.wait(200);
 
         const backupLabel = adminWindow.locator('label', {
           hasText: 'バックアップ機能を有効にする',
@@ -215,9 +202,8 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         });
         await expect(backupRetentionLabel).toBeVisible();
 
-        // settings.jsonに保存されたことを確認
-        const settings = configHelper.readSettings();
-        expect(settings.backupEnabled).toBeDefined();
+        // settings.jsonに有効として保存されたことを確認
+        await expect.poll(() => configHelper.readSettings().backupEnabled).toBe(true);
       });
     } finally {
       await adminWindow.close();
@@ -271,12 +257,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
-
       await test.step('ウィンドウカテゴリに切り替え', async () => {
         const windowMenu = adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' });
         await windowMenu.click();
-        await adminUtils.wait(200);
       });
 
       await test.step('メインウィンドウの節が表示される', async () => {
@@ -294,35 +277,26 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
 
       await test.step('プライマリディスプレイの中央を選択できる', async () => {
         await positionSelect.selectOption('center');
-        await adminUtils.wait(200);
-
         await expect(positionSelect).toHaveValue('center');
 
         // settings.jsonに保存されたことを確認
-        const settings = configHelper.readSettings();
-        expect(settings.windowPositionMode).toBe('center');
+        await expect.poll(() => configHelper.readSettings().windowPositionMode).toBe('center');
       });
 
       await test.step('マウスカーソルの近くを選択できる', async () => {
         await positionSelect.selectOption('cursor');
-        await adminUtils.wait(200);
-
         await expect(positionSelect).toHaveValue('cursor');
 
         // settings.jsonに保存されたことを確認
-        const settings = configHelper.readSettings();
-        expect(settings.windowPositionMode).toBe('cursor');
+        await expect.poll(() => configHelper.readSettings().windowPositionMode).toBe('cursor');
       });
 
       await test.step('最後に置いた場所を選択できる', async () => {
         await positionSelect.selectOption('fixed');
-        await adminUtils.wait(200);
-
         await expect(positionSelect).toHaveValue('fixed');
 
         // settings.jsonに保存されたことを確認
-        const settings = configHelper.readSettings();
-        expect(settings.windowPositionMode).toBe('fixed');
+        await expect.poll(() => configHelper.readSettings().windowPositionMode).toBe('fixed');
       });
     } finally {
       await adminWindow.close();

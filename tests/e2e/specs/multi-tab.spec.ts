@@ -1,6 +1,10 @@
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
+declare global {
+  var __e2eOpenedItems: string[] | undefined;
+}
+
 test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   test.beforeEach(async ({ configHelper }) => {
     // マルチタブ機能を有効化
@@ -471,6 +475,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
   // ==================== 統合タブのキーボード操作テスト ====================
 
   test('統合タブで矢印キーにより選択が移動し、Enterキーで開ける', async ({
+    electronApp,
     mainWindow,
     configHelper,
   }) => {
@@ -539,19 +544,31 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
       expect(currentItemText).toBe(firstItemText);
     });
 
+    // 実際にアプリや URL を開かないよう、アイテムを開く IPC を差し替えて開いたアイテムの名前を記録する。
+    // 差し替えたハンドラはメインウィンドウを隠さないので、続けて操作できる
+    await electronApp.evaluate(({ ipcMain }) => {
+      globalThis.__e2eOpenedItems = [];
+      ipcMain.removeHandler('open-item');
+      ipcMain.handle('open-item', (_event, item: { displayName: string }) => {
+        globalThis.__e2eOpenedItems?.push(item.displayName);
+      });
+    });
+    const openedItems = () => electronApp.evaluate(() => globalThis.__e2eOpenedItems ?? []);
+
     await test.step('統合タブで矢印キーで選択したアイテムをEnterキーで開ける', async () => {
       // ↓キーで次のアイテムに移動
       await utils.sendShortcut('ArrowDown');
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
+      const selectedText = (await selectedItem.textContent()) ?? '';
 
-      // Enterキーを押す（実際にアプリやURLが開くが、テストでは開けないのでエラーにならないことのみ確認）
       await utils.sendShortcut('Enter');
 
-      // エラーダイアログが表示されていないことを確認
-      const alertDialog = mainWindow.locator('.alert-dialog');
-      await expect(alertDialog).not.toBeVisible();
+      // 選んでいたアイテムが開かれる
+      await expect.poll(openedItems).toHaveLength(1);
+      const [opened] = await openedItems();
+      expect(selectedText).toContain(opened);
     });
 
     await test.step('統合タブで複数回矢印キーを押して選択を移動し、Enterキーで開ける', async () => {
@@ -562,13 +579,15 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
 
       const selectedItem = mainWindow.locator('.item.selected');
       await expect(selectedItem).toBeVisible();
+      const selectedText = (await selectedItem.textContent()) ?? '';
 
-      // Enterキーを押してアイテムを開く
       await utils.sendShortcut('Enter');
 
-      // エラーダイアログが表示されていないことを確認
-      const alertDialog = mainWindow.locator('.alert-dialog');
-      await expect(alertDialog).not.toBeVisible();
+      // 移った先のアイテムが開かれ、前のアイテムとは別のものになる
+      await expect.poll(openedItems).toHaveLength(2);
+      const [first, second] = await openedItems();
+      expect(selectedText).toContain(second);
+      expect(second).not.toBe(first);
     });
   });
 });

@@ -41,7 +41,7 @@
 | **コンポーネント名** | `WorkspaceApp` |
 | **スタイル** | `src/renderer/styles/components/WorkspaceWindow.css` |
 | **子ウィンドウ** | アイテムの編集: `src/renderer/components/WorkspaceItemEditPage.tsx`（フォームは `WorkspaceItemEditModal`）。グループに追加するアイテム（メインウィンドウのアイテムから選ぶ）: `src/renderer/components/WorkspaceItemPickerPage.tsx`。新しく入力して追加: `src/renderer/components/WorkspaceNewItemPage.tsx`（どちらも [5.8.9](#589-グループを右クリックしてアイテムを追加)）。指すアイテムを選ぶ: `src/renderer/components/WorkspaceLinkPickerPage.tsx`（[5.20](#520-指すアイテムを選ぶ)）。メインウィンドウと同じアイテムを参照に変える: `src/renderer/components/WorkspaceLinkCopiesPage.tsx`（[5.21](#521-メインウィンドウと同じアイテムを参照に変える)） |
-| **表示条件** | メイン画面で`Ctrl+W`、メイン画面のヘッダーの ⭐ ボタン。トレイメニューの「ワークスペースを表示」。開いていて 📌 なしなら、メイン画面の表示時に一緒に出る |
+| **表示条件** | メイン画面で`Ctrl+W`、メイン画面のヘッダーの ⭐ ボタン。開いていて 📌 なしなら、メイン画面の表示時に一緒に出る |
 | **画面タイプ** | ウィンドウ（AlwaysOnTop切り替え可能、フレームレス） |
 | **サイズ** | 幅380px。高さは内容の高さに合わせて自動で変わる（画面の左端・右端に置く設定では、出すたびに作業領域いっぱいにしてから内容に合わせ直す）（最小150px、最大は画面の作業領域の高さ）。2px 以内の差は合わせ直さない（ループ防止）が、中身がはみ出して縦のスクロールバーが出ているときは、広げる分は小さくても合わせる。中身の高さには最後のグループの下の余白も含める（A3-185） |
 | **サイズ変更** | 8方向（4隅・4辺）のハンドルをドラッグしてリサイズできる。4隅は隣り合う2辺、4辺はその辺が動く（最小: 幅300px × 高さ400px） |

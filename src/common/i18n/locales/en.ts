@@ -458,12 +458,11 @@ export const en: LocaleMessages = {
   tray: {
     show: 'Show',
     showAtCenter: 'Show at screen center',
-    settings: 'Settings…',
+    settings: 'Settings',
     openSettingsFolder: 'Open settings folder',
     help: 'Help',
     restart: 'Restart',
     quit: 'Exit',
-    showWorkspace: 'Show workspace',
     itemManager: 'Item Manager',
     devRestart: {
       title: 'Restart (development mode)',
