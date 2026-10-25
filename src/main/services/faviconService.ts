@@ -57,8 +57,10 @@ export class FaviconService {
       if (faviconData) {
         // 表示に不要な大きさの画像は縮小してメモリ・IPC・ディスクの消費を抑える
         const optimized = this.resizeFavicon(faviconData);
-        // キャッシュに保存
-        fs.writeFileSync(faviconPath, optimized);
+        // キャッシュに保存（保存先のフォルダが起動後に消されていても作り直す。A3-175）
+        if (!FileUtils.writeBinaryFile(faviconPath, optimized)) {
+          faviconLogger.warn({ faviconPath }, 'ファビコンをキャッシュに保存できませんでした');
+        }
         return FileUtils.bufferToBase64DataUrl(optimized, 'image/png');
       }
 
@@ -86,7 +88,7 @@ export class FaviconService {
     }
     const optimized = this.resizeFavicon(cached);
     if (optimized.length < cached.length) {
-      fs.writeFileSync(faviconPath, optimized);
+      FileUtils.writeBinaryFile(faviconPath, optimized);
     }
     return FileUtils.bufferToBase64DataUrl(optimized, 'image/png');
   }

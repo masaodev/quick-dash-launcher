@@ -10,6 +10,7 @@ import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
 import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 import type { NoMatchElsewhere } from '../utils/noMatchElsewhere';
+import { openAppImport, openBookmarkImport } from '../utils/importEntrances';
 
 import MemoViewModal from './MemoViewModal';
 import { Button } from './ui/Button';
@@ -35,6 +36,8 @@ interface ItemListProps {
   emptyState?: LauncherEmptyState | null;
   /** 空のタブと、どこにも合わないときの案内の「アイテムを追加…」 */
   onAddItem?: () => void;
+  /** 空のタブの「🗂️ フォルダから」（登録画面をフォルダ取込の種別で開く）。指定があれば、ブックマーク・アプリの取込も並べる */
+  onAddFolderImport?: () => void;
   /** 一覧の余白（アイテムの無い所）の右クリック。未指定なら何も出さない */
   onBlankContextMenu?: () => void;
   /** 他のタブにあるときの案内の「Tab:タブを切り替える」（Tab キーと同じ動き） */
@@ -111,6 +114,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   nameOfItem,
   emptyState,
   onAddItem,
+  onAddFolderImport,
   onBlankContextMenu,
   onSwitchTab,
 }) => {
@@ -448,6 +452,35 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                   <Button variant="secondary" size="sm" onClick={onAddItem}>
                     {t('launcher.empty.add')}
                   </Button>
+                )}
+                {/* まとめて追加する入口も見せる（初めての人が、取込があることに気づけるように。A3-172） */}
+                {onAddFolderImport && (
+                  <div className="item-list-empty-imports" data-testid="empty-tab-imports">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={openBookmarkImport}
+                      title={t('launcher.registerMenu.addBookmarks')}
+                    >
+                      {t('launcher.empty.importBookmarks')}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={openAppImport}
+                      title={t('launcher.registerMenu.addApps')}
+                    >
+                      {t('launcher.empty.importApps')}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onAddFolderImport}
+                      title={t('launcher.registerMenu.addFolderImport')}
+                    >
+                      {t('launcher.empty.importFolder')}
+                    </Button>
+                  </div>
                 )}
               </>
             )}

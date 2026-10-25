@@ -339,4 +339,44 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
       await adminWindow.close();
     }
   });
+
+  test('頭に付ける文字・後ろに付ける文字を、取り込むアイテムの表示名に付ける', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await adminWindow.waitForLoadState('domcontentloaded');
+    await stubBrowsers(electronApp);
+    const modal = adminWindow.locator(IMPORT_MODAL);
+
+    try {
+      await chooseImportMenu(adminWindow, 'ブラウザのブックマークから追加');
+      await modal.waitFor({ state: 'visible', timeout: 10000 });
+      await expect(modal.locator('.bookmark-import-status')).toHaveText(/件のブックマーク/, {
+        timeout: 10000,
+      });
+      await modal
+        .locator('.bookmark-import-row.folder', { hasText: '読み物' })
+        .first()
+        .locator('input[type="checkbox"]')
+        .check();
+      // 取り込んだ後にアイコンも取るチェックは、既定でオン（保存のあとに取りに行く）
+      const fetchIcons = modal.getByTestId('bookmark-import-fetch-icons');
+      await expect(fetchIcons.locator('input')).toBeChecked();
+      await expect(fetchIcons).toContainText('「変更を保存」のあとに取りに行きます');
+      const naming = modal.getByTestId('bookmark-import-naming');
+      await expect(naming.getByPlaceholder('例: [BookMark]')).toBeVisible();
+      await naming.getByLabel('頭に付ける文字').fill('[BookMark]');
+      await naming.getByLabel('後ろに付ける文字').fill(' (Chrome)');
+      await modal.locator('.import-footer button', { hasText: '取り込む' }).click();
+      await expect(modal).toHaveCount(0, { timeout: 10000 });
+      await expect(
+        adminWindow.locator('.raw-item-row', { hasText: '[BookMark]Qiita (Chrome)' })
+      ).toBeVisible();
+    } finally {
+      await adminWindow.close();
+    }
+  });
 });

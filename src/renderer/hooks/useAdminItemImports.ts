@@ -15,6 +15,7 @@ import { formatImportCounts, importResultCounts } from '@common/utils/bookmarkIm
 import { checkDuplicates } from '@common/utils/duplicateDetector';
 
 import type { AppImportDestination } from '../components/AppImportModal';
+import type { BookmarkImportOptions } from '../components/BookmarkImportModal';
 
 import type { AdminItemEditing } from './useAdminItemEditing';
 import type { useAdminTabStructure } from './useAdminTabStructure';
@@ -36,6 +37,8 @@ interface UseAdminItemImportsOptions {
   /** メインウィンドウから開くよう頼まれた取込画面 */
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+  /** 未保存の変更として取り込んだブックマークのアイコンを、保存のあとに取りに行くよう覚えておく */
+  onFetchIconsAfterSave: () => void;
 }
 
 /**
@@ -54,6 +57,7 @@ export function useAdminItemImports({
   toast,
   pendingImportModal,
   onClearPendingImportModal,
+  onFetchIconsAfterSave,
 }: UseAdminItemImportsOptions) {
   const { t } = useTranslation();
   const { showSuccess, showInfo, showWarning } = toast;
@@ -98,7 +102,8 @@ export function useAdminItemImports({
   const handleBookmarkImport = async (
     bookmarks: SimpleBookmarkItem[],
     duplicateHandling: DuplicateHandlingOption,
-    destination: AppImportDestination
+    destination: AppImportDestination,
+    options: BookmarkImportOptions
   ): Promise<boolean> => {
     const target = await resolveImportTarget(destination);
     if (!target) return false;
@@ -109,6 +114,8 @@ export function useAdminItemImports({
         ? checkDuplicates(bookmarks, fileItems).newCount
         : bookmarks.length;
     editing.importBookmarks(bookmarks, duplicateHandling, target.fileName);
+    // まだデータファイルに無いので、保存してメインウィンドウが読み直してから取る
+    if (options.fetchIcons && addedCount > 0) onFetchIconsAfterSave();
     onShowTarget(target);
     showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
     return true;
@@ -120,7 +127,8 @@ export function useAdminItemImports({
    */
   const handleBookmarkSaveAsRule = async (
     draft: BookmarkAutoImportRule,
-    destination: AppImportDestination
+    destination: AppImportDestination,
+    options: BookmarkImportOptions
   ): Promise<boolean> => {
     const target = await resolveImportTarget(destination);
     if (!target) return false;
@@ -152,6 +160,8 @@ export function useAdminItemImports({
       };
     }
     if (result.success) {
+      // ルールはデータファイルへ直接書くので、すぐメインウィンドウに取ってもらう
+      if (options.fetchIcons) void window.electronAPI.requestFetchMissingIcons();
       const message = t('itemManager.ruleSavedAndRun', {
         name: rule.name,
         counts: formatImportCounts(importResultCounts(result), t),

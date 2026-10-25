@@ -270,12 +270,13 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
       return <span className="source-manual">{t('itemManager.row.sourceManual')}</span>;
     }
     const ruleName = autoImportRuleName ?? t('itemManager.row.unknownRule');
+    // 枠のある札にするとボタンに見えるので、何の名前か読める文字だけで出す（A3-178）
     return (
       <span
-        className="auto-import-label"
+        className="source-auto"
         title={t('itemManager.row.sourceAutoTitle', { rule: ruleName })}
       >
-        {ruleName}
+        {t('itemManager.row.sourceAuto', { rule: ruleName })}
       </span>
     );
   };

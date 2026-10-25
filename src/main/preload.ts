@@ -66,7 +66,7 @@ const electronAPI: ElectronAPI = {
   getDataFiles: () => ipcRenderer.invoke(IPC_CHANNELS.GET_DATA_FILES),
   createDataFile: (fileName) => ipcRenderer.invoke(IPC_CHANNELS.CREATE_DATA_FILE, fileName),
   deleteDataFile: (fileName) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_DATA_FILE, fileName),
-  // trigger: 'full' は完全リフレッシュ、'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
+  // trigger: 'full' は「アイコンをすべて取り直す」、'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
   loadDataFiles: (trigger) => ipcRenderer.invoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
   openItem: (item, options) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_ITEM, item, options),
   openParentFolder: (item) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
@@ -83,6 +83,9 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.FETCH_ICONS_COMBINED, urlItems, items, forceRefresh, silent),
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items) => ipcRenderer.invoke(IPC_CHANNELS.ENSURE_ICONS, items),
+  requestFetchMissingIcons: () => ipcRenderer.invoke(IPC_CHANNELS.REQUEST_FETCH_MISSING_ICONS),
+  onFetchMissingIconsRequested: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_FETCH_MISSING_ICONS_REQUESTED, callback),
   // アイコン取得エラー記録をクリア
   // アイコン取得エラー記録を取得
   getIconFetchErrors: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ICON_FETCH_ERRORS),
@@ -163,7 +166,12 @@ const electronAPI: ElectronAPI = {
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: () => ipcRenderer.invoke(IPC_CHANNELS.DETECT_INSTALLED_BROWSERS),
   // アプリインポートAPI
-  scanInstalledApps: () => ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS),
+  scanInstalledApps: (scanId) => ipcRenderer.invoke(IPC_CHANNELS.SCAN_INSTALLED_APPS, scanId),
+  onAppScanProgress: (callback) =>
+    createEventListener<{ scanId: number; found: number }>(
+      IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS,
+      callback
+    ),
   // Settings API
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setMultipleSettings: (settings) =>
@@ -438,6 +446,8 @@ const electronAPI: ElectronAPI = {
       IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD,
       callback
     ),
+  onLauncherBlankMenuAddFolderImport: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT, callback),
   // WorkspaceTabContextMenu
   showWorkspaceTabContextMenu: (workspaceId, canDelete) =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_TAB_CONTEXT_MENU, workspaceId, canDelete),

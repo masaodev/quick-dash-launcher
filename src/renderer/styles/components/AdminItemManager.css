@@ -1301,7 +1301,7 @@
   max-height: calc(100vh - 2 * var(--spacing-sm));
 }
 
-/* 取込元列（手動か、自動取込ルールの名前） */
+/* 取込元列（手動か、「🔖 自動取込: ルールの名前」） */
 .raw-items-table .source-column {
   width: 110px;
   font-family: inherit;
@@ -1314,6 +1314,10 @@
 
 .raw-items-table .source-column .source-manual {
   color: var(--text-muted);
+}
+
+.raw-items-table .source-column .source-auto {
+  color: var(--text-secondary);
 }
 
 /* リンク列（「リンク切れを確認」の結果） */

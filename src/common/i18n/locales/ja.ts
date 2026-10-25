@@ -82,16 +82,19 @@ export const ja = {
       titleWithReloadKey: '更新・取得（F5: データを再読み込み）',
       reloadData: '🔃 データを再読み込み',
       reloadDataWithKey: '🔃 データを再読み込み（F5）',
-      fetchIconsCurrentTab: '🎨 アイコン取得（現在のタブ）',
-      fetchIconsAllTabs: '🎨 アイコン取得（全タブ）',
       importBookmarks: '🔁 ブックマーク自動取込を実行',
-      reloadAll: '🔄 完全リフレッシュ',
+      refetchIcons: '🎨 アイコンをすべて取り直す',
+      refetchIconsTitle:
+        'データを読み直し、保存してあるアイコンを使わずに全部取り直します（前に取れなかったものも試します）',
     },
     registerMenu: {
       title: 'アイテムを追加',
       quickAdd: '📄 アイテムを追加…',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
+      addFolderImport: '🗂️ フォルダからアイテムを追加',
+      addFolderImportTitle:
+        'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
       clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
     empty: {
@@ -108,6 +111,9 @@ export const ja = {
       switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
       add: '📄 アイテムを追加…',
+      importBookmarks: '🔖 ブックマークから',
+      importApps: '💻 アプリから',
+      importFolder: '🗂️ フォルダから',
     },
     workspaceButton: {
       open: 'ワークスペースを開く（Ctrl+W）',
@@ -137,12 +143,18 @@ export const ja = {
       showNote: 'メモを表示',
     },
     missingIcons: {
-      label: 'アイコン未取得:',
-      fetch: '取得',
+      label_one: '🎨 アイコンがまだ無いアイテムが {{count}} 件あります',
+      label_other: '🎨 アイコンがまだ無いアイテムが {{count}} 件あります',
+      hint: 'サイトや PC から 1 回だけ取りに行き、その後は保存したものを使います',
+      fetch: '取得する',
       fetchTooltip: 'アイコンを取得',
     },
     iconProgress: {
       complete: 'アイコン取得完了',
+      busy: 'アイコンを取得しています。終わってからもう一度お試しください',
+      closeWhileFetching: '閉じても、取得は裏で続きます',
+      continuesInBackground: 'アイコンの取得は裏で続けます。終わったら知らせます',
+      finishedInBackground: 'アイコンの取得が終わりました',
       phase: 'フェーズ {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'ファビコン取得',
@@ -1200,6 +1212,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     row: {
       sourceManual: '手動',
+      sourceAuto: '🔖 自動取込: {{rule}}',
       sourceAutoTitle: '自動取込ルール「{{rule}}」で取り込みました',
       linkExistsTitle: 'パスが見つかりました',
       linkUnknownTitle:
@@ -1439,7 +1452,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     namingOptions: 'オプション設定（表示名）',
     namingNone: 'ブックマークの名前のまま',
     prefix: '頭に付ける文字',
-    prefixPlaceholder: '例: [bkm]',
+    prefixPlaceholder: '例: [BookMark]',
     suffix: '後ろに付ける文字',
     suffixPlaceholder: '例:  (Chrome)',
     folderNameMode: 'フォルダ名を付ける',
@@ -1455,6 +1468,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     autoNameWithWord: '{{base}}{{word}}',
   },
   bookmarkImportModal: {
+    fetchIcons: '取り込んだ後にアイコン（サイトのファビコン）も取得する',
+    fetchIconsNote: '「変更を保存」のあとに取りに行きます',
+    fetchIconsNoteRule: '取り込んだらすぐ取りに行きます',
     title: 'ブラウザのブックマークを取り込む',
     hint: '取り込みたいフォルダやブックマークにチェックを入れます。取り込んだ分は未保存の変更として追加され、「変更を保存」で確定します。',
     defaultName: 'ブックマーク',
@@ -1501,7 +1517,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     autoImportLinkNone: 'ブックマーク自動取込（ルールはまだありません）',
     ruleName: 'ルール名',
     ruleSummary:
-      '保存されるルール: {{source}} ・ {{folders}}。名前の条件や表示名は、あとで「ブックマーク自動取込」で足せます',
+      '保存されるルール: {{source}} ・ {{folders}}。名前の条件やフォルダ名の付け方は、あとで「ブックマーク自動取込」で足せます',
     ruleAllFolders: 'すべてのフォルダ（あとから増えたフォルダも）',
     ruleFolders: '{{folders}}（サブフォルダも）',
     allBookmarksRuleName: 'ブックマーク全件',
@@ -1555,6 +1571,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     title: 'インストール済みアプリを取り込む',
     hint: '使うアプリにチェックを入れて取り込みます。取り込んだアプリは未保存の変更として追加され、「変更を保存」で確定します。',
     scanning: 'スタートメニューをスキャン中…',
+    scanningTitle: '⏳ インストール済みアプリを探しています…（{{count}} 件）',
+    scanningDetail: 'スタートメニューのショートカットと、登録されているアプリを読んでいます',
     found_one: 'スタートメニューから {{count}} 件見つかりました',
     found_other: 'スタートメニューから {{count}} 件見つかりました',
     rescan: '再スキャン',
@@ -1885,8 +1903,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   /** 登録・編集画面のフォルダ取込の「取り込まれるもの」（プレビュー） */
   dirPreview: {
     title: '取り込まれるもの',
-    run: 'プレビュー',
-    runTitle: 'フォルダを読んで、取り込まれるものを確かめます',
+    run: 'プレビュー更新',
+    runTitle: 'フォルダを読み直して、取り込まれるものを確かめます',
     cancel: '中止',
     scanning: '数えています…',
     count_one: '{{count}} 件を取り込みます',
@@ -1897,13 +1915,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     more_other: 'ほか {{count}} 件',
     moreTruncated_one: 'ほか {{count}} 件以上',
     moreTruncated_other: 'ほか {{count}} 件以上',
-    idle: '「🔍 プレビュー」を押すと、取り込まれるものを確かめられます',
-    idleHint: 'フォルダを読むのは押したときだけです',
-    noPath: 'フォルダを選んでから「🔍 プレビュー」を押してください',
-    stale: '条件を変えました。「🔍 プレビュー」を押すと今の条件で数え直します',
+    idle: '「🔍 プレビュー更新」を押すと、取り込まれるものを確かめられます',
+    idleHint: 'フォルダを読むのは、「フォルダを選択」で選んだときと、押したときだけです',
+    noPath: '「フォルダを選択」でフォルダを選ぶと、取り込まれるものがここに並びます',
+    stale: '条件を変えました。「🔍 プレビュー更新」を押すと今の条件で数え直します',
     empty: '取り込めるものがありません',
     emptyFilter: 'ファイル名の条件 {{filter}} に合うものがありません',
-    emptyHint: '条件を見直して、もう一度「🔍 プレビュー」を押してください',
+    emptyHint: '条件を見直して、もう一度「🔍 プレビュー更新」を押してください',
     notFound:
       'フォルダが見つかりません（ネットワークのフォルダなら、つながっているか確かめてください）',
     notFolder: 'パスがフォルダではありません',

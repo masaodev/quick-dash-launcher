@@ -14,20 +14,15 @@
 
 .missing-icon-notice__content {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.missing-icon-notice__icon {
-  color: var(--color-warning);
-  font-size: var(--font-size-base);
+  flex-direction: column;
+  min-width: 0;
 }
 
 .missing-icon-notice__label {
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
-.missing-icon-notice__count {
-  font-weight: 500;
-  color: var(--text-secondary);
+.missing-icon-notice__hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
 }

@@ -170,6 +170,7 @@ test.describe('QuickDashLauncher - メインウィンドウの右クリックの
         .poll(() => readMenuLabels(electronApp))
         .toEqual([
           '📄 アイテムを追加…',
+          '🗂️ フォルダからアイテムを追加',
           '📋 クリップボードのパス・URL から追加…',
           '🔖 ブラウザのブックマークから追加',
           '💻 インストール済みアプリから追加',

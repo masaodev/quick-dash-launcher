@@ -53,6 +53,7 @@ import { useWindowOperations } from './hooks/useWindowOperations';
 import { useWindowMultiSelect } from './hooks/useWindowMultiSelect';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
+import { useLatestRef } from './hooks/useLatestRef';
 import { useAlertDialog } from './hooks/useDialogManager';
 import { useLauncherItemDelete } from './hooks/useLauncherItemDelete';
 import { classifyPastedText } from './utils/pasteClassifier';
@@ -98,8 +99,6 @@ function App(): React.ReactElement {
 
   // アイコン取得エラー記録
   const [iconFetchErrors, setIconFetchErrors] = useState<IconFetchErrorRecord[]>([]);
-  // 進捗バーを出さない裏の取得の最中か（その間は「アイコン未取得」を出さない）
-  const [isFetchingIconsSilently, setIsFetchingIconsSilently] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
@@ -107,8 +106,13 @@ function App(): React.ReactElement {
     useSearchHistory();
   // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
   const activeTabRef = useRef<string | undefined>(undefined);
-  const { isRegisterWindowOpen, openRegisterWindow, openEditWindow, openWithDroppedPaths } =
-    useRegisterWindow(useCallback(() => activeTabRef.current, []));
+  const {
+    isRegisterWindowOpen,
+    openRegisterWindow,
+    openEditWindow,
+    openFolderImportWindow,
+    openWithDroppedPaths,
+  } = useRegisterWindow(useCallback(() => activeTabRef.current, []));
   const {
     handleCopyPath,
     handleCopyParentPath,
@@ -117,7 +121,7 @@ function App(): React.ReactElement {
     handleOpenParentFolder,
     handleOpenShortcutParentFolder,
   } = useItemActions();
-  const { showSuccess, showWarning } = useToast();
+  const { showSuccess, showInfo, showWarning } = useToast();
 
   const {
     showDataFileTabs,
@@ -182,6 +186,7 @@ function App(): React.ReactElement {
   useEffect(() => {
     const cleanups = [
       window.electronAPI.onLauncherBlankMenuAddItem(() => void openRegisterWindow()),
+      window.electronAPI.onLauncherBlankMenuAddFolderImport(() => void openFolderImportWindow()),
       window.electronAPI.onLauncherBlankMenuRegisterFromClipboard(async () => {
         try {
           const { files, text } = await window.electronAPI.readClipboardForRegister();
@@ -202,7 +207,7 @@ function App(): React.ReactElement {
       }),
     ];
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [openRegisterWindow, openWithDroppedPaths, showWarning, t]);
+  }, [openRegisterWindow, openFolderImportWindow, openWithDroppedPaths, showWarning, t]);
 
   const { isDraggingOver, dragOverKind } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
@@ -220,14 +225,51 @@ function App(): React.ReactElement {
     handleRefreshAll,
     handleFetchMissingIcons,
     handleFetchMissingIconsSilently,
-    handleFetchMissingIconsCurrentTab,
+    handleFetchMissingIconsIn,
+    isFetchingIcons,
+    isIconFetchBusy,
   } = useIconFetcher({
     mainItems,
     setMainItems,
-    activeTab,
-    dataFileTabs,
     reloadIconFetchErrors: loadIconFetchErrors,
+    onBusy: () => showWarning(t('launcher.iconProgress.busy')),
   });
+
+  // 進捗バーを取得の途中で閉じたか。閉じても取得は続くので、終わったらトーストで知らせる（A3-174）
+  const closedWhileFetchingRef = useRef(false);
+  const handleCloseIconProgress = () => {
+    if (progressState.progress && !progressState.progress.isComplete) {
+      closedWhileFetchingRef.current = true;
+      showInfo(t('launcher.iconProgress.continuesInBackground'));
+    }
+    resetProgress();
+  };
+  useEffect(() => {
+    if (isFetchingIcons || !closedWhileFetchingRef.current) return;
+    closedWhileFetchingRef.current = false;
+    showSuccess(t('launcher.iconProgress.finishedInBackground'));
+  }, [isFetchingIcons]);
+
+  // ほかのウィンドウ（ブックマーク取込の後の管理ウィンドウ）から頼まれたら、読み直してから未取得のアイコンを取る。
+  // 別の取得の最中なら、それが終わってから取る（頼まれた分を落とさない）
+  const pendingFetchRequestRef = useRef(false);
+  const fetchRequestedRef = useLatestRef(async () => {
+    if (isIconFetchBusy()) {
+      pendingFetchRequestRef.current = true;
+      return;
+    }
+    const items = await loadItems('internal');
+    await handleFetchMissingIconsIn(items);
+  });
+  useEffect(
+    () => window.electronAPI.onFetchMissingIconsRequested(() => void fetchRequestedRef.current()),
+    []
+  );
+  useEffect(() => {
+    if (isFetchingIcons || !pendingFetchRequestRef.current) return;
+    pendingFetchRequestRef.current = false;
+    void fetchRequestedRef.current();
+  }, [isFetchingIcons]);
 
   const { withLoading } = useGlobalLoading();
 
@@ -274,7 +316,7 @@ function App(): React.ReactElement {
     setWindowList((prev) => prev.filter((w) => w.hwnd !== hwnd));
   }, []);
 
-  // trigger: 起動時と F5 は省略（explicit）。完全リフレッシュは 'full'（パスの種類も確かめ直す）。
+  // trigger: 起動時と F5 は省略（explicit）。🔄 の「アイコンをすべて取り直す」は 'full'（パスの種類も確かめ直す）。
   // アプリ内の操作に伴う再読込は 'internal'（先行の再読込があれば結果を共有する）
   const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
@@ -753,8 +795,7 @@ function App(): React.ReactElement {
       setIsFirstLaunch(false);
       // 初回のサンプルにはアイコンがまだ無いので、「取得」を押さなくても出るように取りに行く。
       // 頼まれた処理ではないので、進捗バーは出さない
-      setIsFetchingIconsSilently(true);
-      void handleFetchMissingIconsSilently().finally(() => setIsFetchingIconsSilently(false));
+      void handleFetchMissingIconsSilently();
       return true;
     } catch (error) {
       // 初回設定の間はダイアログを描かないので、知らせるのは初回設定画面に任せる
@@ -779,10 +820,10 @@ function App(): React.ReactElement {
     await loadItems('internal');
   };
 
-  const handleRefreshAllWrapper = async () => {
-    await window.electronAPI.bookmarkAutoImportAPI.executeAll();
-    await handleRefreshAll(() => loadItems('full'));
-  };
+  // 🔄「アイコンをすべて取り直す」: データを 'full' で読み直し（拡張子の無いパスの種類も確かめ直す）、
+  // 保存してあるアイコンを使わずに全部取り直す（前に失敗したものも試す）。
+  // 前の名前は「完全リフレッシュ」で、ブックマーク自動取込も流していた。それは「ブックマーク自動取込を実行」に任せる（A3-182）
+  const handleRefreshAllWrapper = () => handleRefreshAll(() => loadItems('full'));
 
   const handleTabRename = async (tabIndex: number, newName: string) => {
     const updatedTabs = dataFileTabs.map((tab, i) =>
@@ -843,14 +884,13 @@ function App(): React.ReactElement {
         <LauncherActionButtons
           searchMode={searchMode}
           onReload={handleReloadItems}
-          onFetchMissingIcons={handleFetchMissingIcons}
-          onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
           onBookmarkAutoImport={handleBookmarkAutoImport}
           onRefreshAll={handleRefreshAllWrapper}
           onOpenBasicSettings={handleOpenBasicSettings}
           onOpenItemManagement={handleOpenItemManagement}
           onToggleWorkspace={handleToggleWorkspace}
           onOpenRegisterModal={() => void openRegisterWindow()}
+          onOpenFolderImport={() => void openFolderImportWindow()}
           pinLevel={pinLevel}
           onPinLevelChange={setPinLevel}
           isWorkspaceOpen={isWorkspaceOpen}
@@ -910,6 +950,7 @@ function App(): React.ReactElement {
               : null
         }
         onAddItem={() => void openRegisterWindow()}
+        onAddFolderImport={() => void openFolderImportWindow()}
         onBlankContextMenu={
           searchMode === 'normal'
             ? () => void window.electronAPI.showLauncherBlankContextMenu()
@@ -961,12 +1002,16 @@ function App(): React.ReactElement {
         </div>
       )}
 
-      {!progressState.isActive && !isFetchingIconsSilently && missingIconCount > 0 && (
+      {/* 取得中は出さない（進捗バーを × で閉じても、取得が終わるまで）。出すと［取得］で二重に取る（A3-173） */}
+      {!progressState.isActive && !isFetchingIcons && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
       )}
 
       {progressState.isActive && progressState.progress && (
-        <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
+        <LauncherIconProgressBar
+          progress={progressState.progress}
+          onClose={handleCloseIconProgress}
+        />
       )}
 
       {showKeyboardHints && (
