@@ -1063,3 +1063,90 @@ describe('buildSetWindowConfig', () => {
     ).toMatchObject({ title: '*', processName: 'other.exe' });
   });
 });
+
+describe('進み具合の表示', () => {
+  it('行ごとに今していること・exe 名とデスクトップ・アイコンを送る', async () => {
+    const { deps } = makeDeps([{ hwnd: 1n, title: 'ai - Terminal', processName: 'wt.exe' }]);
+    const sent: LayoutExecutionProgress[] = [];
+    const loadIcons = vi.fn(async () => ({ 'C:/apps/Obsidian.exe': 'data:image/png;base64,AA' }));
+    deps.progress = {
+      show: vi.fn(async () => {}),
+      send: vi.fn((_event, progress) => {
+        sent.push(structuredClone(progress));
+      }),
+      onCancel: vi.fn(() => () => {}),
+      loadIcons,
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        { itemId: 'term1aaa', placement: { x: 0, y: 0 } },
+        {
+          open: { path: 'C:/apps/Obsidian.exe' },
+          window: { processName: 'Obsidian.exe' },
+          placement: { x: 0, y: 0, virtualDesktopNumber: 2 },
+        },
+        { window: { processName: 'sticky.exe' }, placement: { x: 0, y: 0 } },
+        { open: { path: 'C:/apps/slow.exe' }, placement: { x: 0, y: 0 }, waitSeconds: 2 },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+
+    expect(deps.progress.show).toHaveBeenCalledWith(4);
+    // アイコンを持たない行は、開くもののパスでキャッシュから引く（パスを書いた行・アイコンの無いアイテム）
+    expect(loadIcons).toHaveBeenCalledWith([
+      { type: 'app', path: 'wt.exe' },
+      { type: 'app', path: 'C:/apps/Obsidian.exe' },
+      { type: 'app', path: 'C:/apps/slow.exe' },
+    ]);
+    const first = sent[0].entries;
+    expect(first.map((e) => e.statusText)).toEqual(Array(4).fill('set.progress.queued'));
+    expect(first[1]).toMatchObject({
+      icon: 'data:image/png;base64,AA',
+      itemType: 'app',
+      detail: 'Obsidian.exeset.progress.separatorset.progress.desktop',
+    });
+    expect(first[2]).toMatchObject({ itemType: 'windowSwitch', detail: 'sticky.exe' });
+    expect(first[3].icon).toBeUndefined();
+
+    // 待っている間は秒数を 1 秒ごとに出す
+    const waiting = sent.filter((p) => p.entries[3].statusText === 'set.progress.waitingWindow');
+    expect(waiting).toHaveLength(2);
+
+    const last = sent[sent.length - 1].entries;
+    expect(last.map((e) => [e.status, e.statusText])).toEqual([
+      ['success', 'set.progress.placedExisting'],
+      ['success', 'set.progress.placed'],
+      ['skipped', 'set.progress.skipped'],
+      ['failed', 'set.progress.failed'],
+    ]);
+    expect(last[3].errorMessage).toBe('layout.timedOut');
+  });
+
+  it('位置の無い行は、開いていたか開いたかを出す', async () => {
+    const { deps } = makeDeps([{ hwnd: 1n, title: 'ai - Terminal', processName: 'wt.exe' }]);
+    const sent: LayoutExecutionProgress[] = [];
+    deps.progress = {
+      show: vi.fn(async () => {}),
+      send: vi.fn((_event, progress) => {
+        sent.push(structuredClone(progress));
+      }),
+      onCancel: vi.fn(() => () => {}),
+    };
+    const set: SetItem = {
+      type: 'set',
+      displayName: 'x',
+      entries: [
+        { itemId: 'term1aaa' },
+        { itemId: 'gmail1aa' },
+        // 位置のある行が 1 つあると進み具合を出す
+        { window: { processName: 'sticky.exe' }, placement: { x: 0, y: 0 } },
+      ],
+    };
+    await executeSet(set, resolve, deps, logger);
+    const last = sent[sent.length - 1].entries;
+    expect(last[0].statusText).toBe('set.progress.wasOpen');
+    expect(last[1].statusText).toBe('set.progress.opened');
+  });
+});

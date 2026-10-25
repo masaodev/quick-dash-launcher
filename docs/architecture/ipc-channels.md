@@ -32,7 +32,7 @@ const settings = await window.electronAPI.getSettings();
 | 種類 | メイン側 | レンダラー側 | 使う場面 |
 | --- | --- | --- | --- |
 | 呼び出し（要求→応答） | `ipcMain.handle` | `ipcRenderer.invoke` | 大半のチャンネル。戻り値または例外が `Promise` で返る |
-| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`window:set-escape-handled-by-page`・`layout-cancel`・`close-layout-progress-window`） |
+| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`window:set-escape-handled-by-page`・`layout-cancel`・`close-layout-progress-window`・`resize-layout-progress-window`） |
 | イベント（メイン→レンダラー） | `webContents.send` | `ipcRenderer.on` | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など） |
 
 - **エラーの返し方**: 失敗は例外として `invoke` 側に伝わる（`createSafeIpcHandler`（`src/main/utils/ipcWrapper.ts`）はログを出してから再スローする）。一部のチャンネルは `{ success: boolean, error?: string }` を返す。どちらの形かはハンドラーと `ElectronAPI` の型で確認する。**新しく足すハンドラーは例外で投げる**（返り値で失敗を返す形は増やさない）
@@ -240,7 +240,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 - **トースト**: `show-toast-window` で表示する。トーストはセットの進み具合と共用の 1 枚のオーバーレイウィンドウに出し（`src/main/services/overlayWindowService.ts`）、メインプロセスはそのウィンドウにだけ `show-toast` イベントを送る。セットの進み具合の表示中はトーストを出さない（実行が終わった後に残っている表示は、次のトーストで置き換える）。オプションは `ToastOptions`（`src/common/types/toast.ts`）を参照
 - **アイコン取得の進捗**: `icon-progress-start` / `icon-progress-update` / `icon-progress-complete`。データは `IconProgress`（`src/common/types/icon.ts`）
-- **セットの実行の進み具合**: 位置のある行が 1 つでもあるセットを実行したときに出す。`layout-progress-start` / `layout-progress-update` / `layout-progress-complete`（チャンネル名は旧ウィンドウ配置のまま）。中止は `layout-cancel`、表示を閉じるのは `close-layout-progress-window`（どちらも `send`）。実装は `src/main/services/launch/setExecutor.ts`
+- **セットの実行の進み具合**: 位置のある行が 1 つでもあるセットを実行したときに出す。`layout-progress-start` / `layout-progress-update` / `layout-progress-complete`（チャンネル名は旧ウィンドウ配置のまま）。中止は `layout-cancel`、表示を閉じるのは `close-layout-progress-window`、表示が測った中身の高さを伝えて高さを合わせるのは `resize-layout-progress-window`（どれも `send`）。実装は `src/main/services/launch/setExecutor.ts`
 
 ## 関連ドキュメント
 

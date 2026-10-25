@@ -83,7 +83,15 @@ const GROUP_DURATION = 3000;
 /** 警告など、読み終えるまで少し長く出しておくトーストの表示時間 */
 export const LONG_TOAST_DURATION_MS = 6000;
 const PROGRESS_WIDTH = 400;
-const PROGRESS_HEIGHT = 300;
+/** 進み具合の行 1 つ分の高さの目安（名前と、その下の exe 名の 2 段） */
+const PROGRESS_ROW_HEIGHT = 46;
+/** 進み具合の行以外の高さ（見出し・細い進捗バー・一覧の余白・足元） */
+const PROGRESS_FRAME_HEIGHT = 96;
+/** 進み具合で、スクロールせずに見せる行の数の上限 */
+const PROGRESS_MAX_ROWS = 8;
+const PROGRESS_MIN_HEIGHT = PROGRESS_FRAME_HEIGHT + PROGRESS_ROW_HEIGHT;
+const PROGRESS_MAX_HEIGHT = PROGRESS_FRAME_HEIGHT + PROGRESS_ROW_HEIGHT * PROGRESS_MAX_ROWS;
+const PROGRESS_MARGIN = 16;
 const IDLE_DESTROY_MS = 5 * 60 * 1000;
 
 type OverlayMode = 'toast' | 'progress';
@@ -129,17 +137,23 @@ function getToastPosition(): { x: number; y: number } {
   return { x, y };
 }
 
+/** 行の数から、進み具合の表示の高さを見積もる（表示が中身を測って直すまでの高さ） */
+export function estimateProgressHeight(entryCount: number): number {
+  const rows = Math.min(Math.max(entryCount, 1), PROGRESS_MAX_ROWS);
+  return PROGRESS_FRAME_HEIGHT + PROGRESS_ROW_HEIGHT * rows;
+}
+
 /**
- * マウスカーソルがある画面での表示位置を計算（進捗: 中央）
+ * マウスカーソルがある画面での表示位置を計算（進捗: 右下の隅。並べている最中のウィンドウに重ねない）
  */
-function getProgressPosition(): { x: number; y: number } {
+function getProgressPosition(height: number): { x: number; y: number } {
   const cursorPoint = screen.getCursorScreenPoint();
   const display = screen.getDisplayNearestPoint(cursorPoint);
   const { x: displayX, y: displayY } = display.workArea;
   const { width: screenWidth, height: screenHeight } = display.workAreaSize;
 
-  const x = displayX + Math.round((screenWidth - PROGRESS_WIDTH) / 2);
-  const y = displayY + Math.round((screenHeight - PROGRESS_HEIGHT) / 2);
+  const x = displayX + screenWidth - PROGRESS_WIDTH - PROGRESS_MARGIN;
+  const y = displayY + screenHeight - height - PROGRESS_MARGIN;
 
   return { x, y };
 }
@@ -241,12 +255,12 @@ function applyToastMode(win: BrowserWindow): void {
 /**
  * ウィンドウを進捗モードに構成する（操作可能・移動可能）
  */
-function applyProgressMode(win: BrowserWindow): void {
-  const { x, y } = getProgressPosition();
+function applyProgressMode(win: BrowserWindow, height: number): void {
+  const { x, y } = getProgressPosition(height);
   win.setIgnoreMouseEvents(false);
   win.setFocusable(true);
   win.setMovable(true);
-  applyBounds(win, PROGRESS_WIDTH, PROGRESS_HEIGHT, x, y);
+  applyBounds(win, PROGRESS_WIDTH, height, x, y);
   currentMode = 'progress';
   progressFinished = false;
 }
@@ -309,15 +323,17 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
 
 /**
  * レイアウト進捗ウィンドウを表示する
+ *
+ * @param entryCount 行の数（最初の高さの見積もりに使う。表示が中身を測って resizeLayoutProgressWindow で直す）
  */
-export async function showLayoutProgressWindow(): Promise<BrowserWindow> {
+export async function showLayoutProgressWindow(entryCount = 1): Promise<BrowserWindow> {
   // トースト表示中でも進捗を優先してウィンドウを切り替える
   clearToastHideTimeout();
   idleDestroyer.cancel();
 
   const win = await ensureWindow();
 
-  applyProgressMode(win);
+  applyProgressMode(win, estimateProgressHeight(entryCount));
   win.setAlwaysOnTop(true, 'pop-up-menu');
 
   if (!win.isVisible()) {
@@ -325,6 +341,22 @@ export async function showLayoutProgressWindow(): Promise<BrowserWindow> {
   }
 
   return win;
+}
+
+/**
+ * 進み具合の表示の高さを中身に合わせる（表示が測った高さ。上限を超える分は一覧をスクロールさせる）
+ *
+ * 下の端を動かさずに上へ伸び縮みさせる（右下の隅に出しているため。利用者が動かした後もその位置で）
+ */
+export function resizeLayoutProgressWindow(contentHeight: number): void {
+  if (!isWindowValid() || currentMode !== 'progress' || !Number.isFinite(contentHeight)) return;
+  const height = Math.min(
+    Math.max(Math.ceil(contentHeight), PROGRESS_MIN_HEIGHT),
+    PROGRESS_MAX_HEIGHT
+  );
+  const bounds = overlayWindow!.getBounds();
+  if (bounds.height === height) return;
+  applyBounds(overlayWindow!, bounds.width, height, bounds.x, bounds.y + bounds.height - height);
 }
 
 /**
