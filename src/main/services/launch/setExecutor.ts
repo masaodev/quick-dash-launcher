@@ -33,7 +33,11 @@ import {
   type ProgressEventType,
 } from '@common/ipcChannels';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
-import { ANY_WINDOW_TITLE, createTitleMatcher } from '@common/utils/windowTitle';
+import {
+  ANY_WINDOW_TITLE,
+  createTitleMatcher,
+  windowMatchEntryName,
+} from '@common/utils/windowTitle';
 import { isUnresolvedEntry } from '@common/utils/setWindowMatching';
 import { isPathlessItem, switchToWindowConfig } from '@common/utils/itemWindowConversion';
 import { fitPlacementToScreens, type ScreenArea } from '@common/utils/placementLabel';
@@ -222,12 +226,13 @@ export function resolveSetEntry(entry: SetEntry, resolve: SetItemResolver): Reso
       },
     };
   }
-  const title = entry.window?.title ?? entry.window?.processName ?? entry.label ?? '';
+  // 行の名前が無ければ、対象ウィンドウから作る（登録・編集画面の行の一覧と同じ名前）
+  const name = entry.label ?? windowMatchEntryName(entry.window);
   // 旧グループの名前でアイテムが見つからず、名前だけ残した行
   if (isUnresolvedEntry(entry)) {
-    return { name: title, error: mainI18n.t('set.errors.itemNotFound') };
+    return { name, error: mainI18n.t('set.errors.itemNotFound') };
   }
-  return { name: title };
+  return { name };
 }
 
 /**

@@ -298,9 +298,12 @@ describe('setEntryNames', () => {
 });
 
 describe('entryFromWindow', () => {
-  it('行の名前はウィンドウタイトルにする', () => {
+  it('行の名前はウィンドウタイトルから最後の部品（アプリ名と版）を落としたものにする', () => {
     const w = win({ executablePath: 'C:/Apps/Obsidian.exe' });
-    expect(entryFromWindow(w).label).toBe('TODOキャンパス - vault - Obsidian v1.9');
+    expect(entryFromWindow(w).label).toBe('TODOキャンパス - vault');
+    // 区切りが無ければタイトルのまま、空なら exe 名（拡張子なし）
+    expect(entryFromWindow(win({ title: '  Microsoft To Do ' })).label).toBe('Microsoft To Do');
+    expect(entryFromWindow(win({ title: '' })).label).toBe('Obsidian');
   });
 
   it('今の位置を持つ。最小化中のウィンドウは位置を持たない（座標が画面の外になる）', () => {
@@ -396,6 +399,17 @@ describe('仮想デスクトップの記録と表示', () => {
     expect(
       placementText({ placement: { ...entry.placement, virtualDesktopNumber: undefined } }, screens)
     ).not.toMatch(/2$/);
+  });
+
+  it('座標が無くデスクトップの番号だけの位置は「デスクトップ N」とだけ出す', () => {
+    expect(placementText({ placement: { virtualDesktopNumber: 2 } }, screens)).toBe(
+      i18next.t('set.placement.desktopOnly', { desktop: '2' })
+    );
+    expect(placementText({ placement: { virtualDesktopNumber: 2 } }, screens)).not.toContain(
+      i18next.t('set.placement.none')
+    );
+    // 番号も無ければ今までどおり「ウィンドウ位置なし」
+    expect(placementText({ placement: {} }, screens)).toBe(i18next.t('set.placement.none'));
   });
 
   it('全デスクトップに表示する行は、デスクトップの番号を添えない', () => {

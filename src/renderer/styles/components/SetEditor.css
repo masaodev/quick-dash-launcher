@@ -549,6 +549,11 @@
   color: var(--text-secondary);
 }
 
+/* ラベルを置かず、枠の幅いっぱいに置く欄（行の詳細の「名前」） */
+.set-detail-wide {
+  grid-column: 1 / -1;
+}
+
 /* 欄の下に補足・候補・ボタンを縦に重ねる列 */
 .set-field-col {
   display: flex;

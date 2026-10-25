@@ -961,6 +961,16 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     detail: {
       title: 'Row details: {{name}}',
+      name: 'Name',
+      nameAuto: 'Automatic: {{name}}',
+      nameNote:
+        'The name shown in the rows of the set and in the progress when it runs. Leave it empty to use the automatic name.',
+      namePathNote:
+        'The name shown in the rows of the set and in the progress when it runs. Leave it empty to use the last part of the path.',
+      nameReset: '↺ Automatic name',
+      nameFromItem: 'Display name of the item: {{name}}',
+      nameItemNote:
+        "A row that points to an item shows the item's display name (changes to the item apply to this set too).",
       open: 'What to open',
       openRef: 'The item "{{name}}" (changes to the item apply to this set too)',
       openOwn: 'A path written in this set',
@@ -1029,6 +1039,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       maximized: 'Maximized',
       onScreen: 'Screen {{screen}} · {{place}}',
       onDesktop: '{{place}} · Desktop {{desktop}}',
+      desktopOnly: 'Desktop {{desktop}}',
       onAllDesktops: '{{place}} · All desktops',
       region: '{{region}} {{width}}×{{height}}',
       shapes: {

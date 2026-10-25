@@ -33,6 +33,11 @@ import {
   type SetTargetKind,
 } from '@common/utils/setWindowMatching';
 import { desktopLabel } from '@common/utils/desktopLabel';
+import {
+  titleToEntryName,
+  WINDOW_TITLE_SEPARATOR,
+  windowMatchEntryName,
+} from '@common/utils/windowTitle';
 
 import { ITEM_TYPE_ICONS } from './itemTypeIcons';
 import { sortByTabOrder } from './tabOrder';
@@ -285,7 +290,7 @@ export function describeSetEntry(
     return { name: entry.label ?? '', kind: 'none', holding: 'ref', missing: true };
   }
   return {
-    name: entry.label ?? entry.window?.title ?? entry.window?.processName ?? '',
+    name: entry.label ?? windowMatchEntryName(entry.window),
     kind: 'none',
     holding: 'none',
     missing: false,
@@ -371,19 +376,26 @@ export function formatPlacementLabel(label: PlacementLabel): string {
   }
 }
 
-/** 行の置き場所の表示（置き場所が無ければ undefined。仮想デスクトップの番号があれば添える） */
+/**
+ * 行の置き場所の表示（置き場所が無ければ undefined。仮想デスクトップの番号があれば添える）
+ *
+ * 座標が無くデスクトップの番号だけの位置は「デスクトップ 2」とだけ出す
+ */
 export function placementText(
   entry: SetEntry,
   screens: readonly ScreenArea[],
   desktopNames?: Readonly<Record<number, string | undefined>>
 ): string | undefined {
   if (!entry.placement) return undefined;
-  const place = formatPlacementLabel(computePlacementLabel(entry.placement, screens));
+  const label = computePlacementLabel(entry.placement, screens);
+  const place = formatPlacementLabel(label);
   const desktop = entry.placement.virtualDesktopNumber;
   // 全デスクトップに表示するときは、どのデスクトップかは意味がないので出さない
-  return desktop === undefined || entry.pinToAllDesktops
-    ? place
-    : i18next.t('set.placement.onDesktop', { place, desktop: desktopLabel(desktop, desktopNames) });
+  if (desktop === undefined || entry.pinToAllDesktops) return place;
+  const desktopText = desktopLabel(desktop, desktopNames);
+  return label.kind === 'none'
+    ? i18next.t('set.placement.desktopOnly', { desktop: desktopText })
+    : i18next.t('set.placement.onDesktop', { place, desktop: desktopText });
 }
 
 /**
@@ -428,9 +440,9 @@ export function windowProcessLabel(window: WindowInfo): string | undefined {
   return window.processName?.replace(/\.exe$/i, '') || undefined;
 }
 
-/** 記録で足す行の名前（ウィンドウタイトル。タイトルが空なら exe 名） */
+/** 記録で足す行の名前（ウィンドウタイトルから最後の部品を落としたもの。タイトルが空なら exe 名） */
 export function windowDisplayName(window: WindowInfo): string {
-  return window.title.trim() || windowProcessLabel(window) || '';
+  return titleToEntryName(window.title) || windowProcessLabel(window) || '';
 }
 
 /**
@@ -459,7 +471,7 @@ export function isOwnWindow(window: WindowInfo): boolean {
 export function titleParts(title: string): string[] {
   const parts = title
     .replace(/[*?]/g, '')
-    .split(/\s+[-|—–]\s+/)
+    .split(WINDOW_TITLE_SEPARATOR)
     .map((part) => part.trim())
     .filter((part) => part !== '');
   return parts.length >= 2 ? [...new Set(parts)] : [];
@@ -524,7 +536,7 @@ export function setEntryNamesBy(
       if (name) return name;
       if (entry.label) return entry.label;
       if (entry.open) return lastSegment(entry.open.path);
-      return entry.window?.title ?? entry.window?.processName ?? '';
+      return windowMatchEntryName(entry.window);
     })
     .filter((name) => name !== '');
 }

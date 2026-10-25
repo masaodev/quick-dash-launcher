@@ -966,6 +966,16 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     detail: {
       title: '行の詳細: {{name}}',
+      name: '名前',
+      nameAuto: '自動: {{name}}',
+      nameNote:
+        'セットの行の一覧と、実行したときの進み具合に出る名前です。空にすると自動の名前に戻ります。',
+      namePathNote:
+        'セットの行の一覧と、実行したときの進み具合に出る名前です。空にするとパスの最後の部分になります。',
+      nameReset: '↺ 自動の名前',
+      nameFromItem: 'アイテムの名前: {{name}}',
+      nameItemNote:
+        'アイテムを指す行は、アイテムの名前を出します（アイテムを直すと、このセットにも効きます）。',
       open: '開くもの',
       openRef: 'アイテム「{{name}}」（アイテムを直すと、このセットにも効きます）',
       openOwn: 'このセットに書いたパス',
@@ -1034,6 +1044,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       maximized: '最大化',
       onScreen: '画面 {{screen}}・{{place}}',
       onDesktop: '{{place}}・デスクトップ {{desktop}}',
+      desktopOnly: 'デスクトップ {{desktop}}',
       onAllDesktops: '{{place}}・全デスクトップ',
       region: '{{region}} {{width}}×{{height}}',
       shapes: {
