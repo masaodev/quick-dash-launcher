@@ -207,6 +207,10 @@ describe('launchItem の結果', () => {
     await expect(
       launchItem({ type: 'app', path: 'C:/Tools/t.exe', args: '-x' }, logger)
     ).resolves.toEqual({ success: false, error: 'launcher.messages.fileNotFound' });
+    // ファイル名だけなら、引数なしのときと同じく「PATH にアプリが見つかりません」
+    await expect(
+      launchItem({ type: 'app', path: 'mytool.exe', args: '-x' }, logger)
+    ).resolves.toEqual({ success: false, error: 'launcher.messages.appNotFoundInPath' });
   });
 
   it('ファイル名だけのアプリが PATH に無ければ失敗にする', async () => {

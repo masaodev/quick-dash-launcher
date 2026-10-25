@@ -125,8 +125,14 @@ function spawnDetached(
     child.once('error', (error: Error & { code?: string }) => {
       logger.error({ error: error.message, ...logContext }, errorMessage);
       // 「spawn C:\a.exe ENOENT」のままでは伝わらないので、ファイルが無いときは言葉にする
+      //（ファイル名だけのものは、引数なしで開くときと同じく PATH に無いと言う）
+      if (error.code !== 'ENOENT') return resolve(error.message);
       resolve(
-        error.code === 'ENOENT' ? mainI18n.t('launcher.messages.fileNotFound') : error.message
+        mainI18n.t(
+          isBareFileName(command)
+            ? 'launcher.messages.appNotFoundInPath'
+            : 'launcher.messages.fileNotFound'
+        )
       );
     });
   });

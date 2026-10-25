@@ -269,9 +269,9 @@ function resolveUpdatePlace(
   groupKey: string | undefined
 ): { workspaceId: string; groupId?: string } {
   const stay = { workspaceId: current.workspaceId, groupId: current.groupId };
-  if (groupKey === undefined && workspaceKey === undefined) return stay;
-  if (groupKey === undefined && findWorkspace(workspaceKey!, s).id === current.workspaceId) {
-    return stay;
+  if (groupKey === undefined) {
+    if (workspaceKey === undefined) return stay;
+    if (findWorkspace(workspaceKey, s).id === current.workspaceId) return stay;
   }
   return resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey);
 }

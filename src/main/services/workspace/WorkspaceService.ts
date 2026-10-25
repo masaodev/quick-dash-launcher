@@ -298,6 +298,18 @@ export class WorkspaceService {
     return { groupId: created.id, workspaceId: targetWorkspaceId };
   }
 
+  /**
+   * 足す先のグループを先に決める（まとめて足すとき、ループの前に 1 回だけ呼ぶ）。
+   * グループの無いワークスペースなら「未分類」グループをここで作る
+   */
+  public async resolveAddPlacement(
+    groupId?: string,
+    workspaceId?: string
+  ): Promise<{ groupId: string; workspaceId: string }> {
+    await this.initializeStore();
+    return this.resolvePlacement(groupId, workspaceId);
+  }
+
   public async addItem(
     item: AppItem,
     groupId?: string,
