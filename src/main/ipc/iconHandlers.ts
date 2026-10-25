@@ -58,6 +58,14 @@ export function setupIconHandlers(
     ) => fetchIconsCombined(urlItems, items, folders, forceRefresh, silent ? null : getMainWindow())
   );
 
+  // ほかのウィンドウからの「未取得のアイコンを取って」をメインウィンドウへ渡す（取得はメインウィンドウが流す）
+  ipcMain.handle(IPC_CHANNELS.REQUEST_FETCH_MISSING_ICONS, () => {
+    const mainWindow = getMainWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.EVENT_FETCH_MISSING_ICONS_REQUESTED);
+    }
+  });
+
   // キャッシュ欠損の補完API（進捗通知なし）
   ipcMain.handle(IPC_CHANNELS.ENSURE_ICONS, (_event, items: IconItem[]) =>
     ensureIcons(items, folders)

@@ -362,6 +362,10 @@ test.describe('QuickDashLauncher - ブックマーク取込', () => {
         .first()
         .locator('input[type="checkbox"]')
         .check();
+      // 取り込んだ後にアイコンも取るチェックは、既定でオン（保存のあとに取りに行く）
+      const fetchIcons = modal.getByTestId('bookmark-import-fetch-icons');
+      await expect(fetchIcons.locator('input')).toBeChecked();
+      await expect(fetchIcons).toContainText('「変更を保存」のあとに取りに行きます');
       const naming = modal.getByTestId('bookmark-import-naming');
       await expect(naming.getByPlaceholder('例: [BookMark]')).toBeVisible();
       await naming.getByLabel('頭に付ける文字').fill('[BookMark]');

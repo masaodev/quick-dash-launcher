@@ -66,7 +66,7 @@ const settings = await window.electronAPI.getSettings();
 
 - パラメータ: `trigger?: 'explicit' | 'full' | 'internal'`（既定 `explicit`）
   - `explicit`: 起動時・F5
-  - `full`: メイン画面の「完全リフレッシュ」。`explicit` に加えて、ドライブ文字で始まる拡張子の無いパスもすべてディスクで確かめ直す（`explicit` で確かめ直すのは `path-type-cache.json` に載っているパスだけ）（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
+  - `full`: メイン画面の 🔄「🎨 アイコンをすべて取り直す」。`explicit` に加えて、ドライブ文字で始まる拡張子の無いパスもすべてディスクで確かめ直す（`explicit` で確かめ直すのは `path-type-cache.json` に載っているパスだけ）（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
   - `internal`: 変更通知を受けた再読み込み・画面内の一覧取得。先行する `internal` の読み込みがあれば結果を共有する
 - 処理内容: フォルダ取込の展開・`.lnk` の解析・タブ単位の重複排除のあと、ワークスペースも読み直す（内容が変わっていれば `workspace-changed` を送る）
 - 旧形式のアイテムがあれば、読み込みのときに変換して保存する。旧グループ・旧ウィンドウ配置はセットへ、単一アイテムの `windowConfig` はウィンドウ切り替えのキーへ、ウィンドウ操作（`type: "window"`）はパスの無い単一アイテムへ変える（[データファイル形式 3.3.6](file-formats/data-format.md#336-旧形式からの変換)・[3.4](file-formats/data-format.md#34-ウィンドウ操作廃止読み込み時に変換)）
