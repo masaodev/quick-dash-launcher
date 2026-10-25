@@ -1,6 +1,5 @@
 import * as path from 'path';
 
-import { ipcMain } from 'electron';
 import logger from '@common/logger';
 import type {
   AppItem,
@@ -49,6 +48,7 @@ import {
   linkToMainItem,
   previewLinkCopies,
 } from '../services/workspace/workspaceRefOperations.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 import { notifyWorkspaceChanged } from './notifications.js';
 import { moveItemToMain } from './workspaceRefMenu.js';
@@ -161,7 +161,7 @@ async function withWorkspaceChange<T = void>(
  * ワークスペース関連のIPCハンドラーを設定
  */
 export function setupWorkspaceHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS, () =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS, () =>
     withWorkspaceService(async (service) => {
       // 参照はメインウィンドウのアイテムの中身で埋めて渡す（まだデータファイルを読んでいなければ読む）
       await ensureMainItemIndex();
@@ -171,7 +171,7 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load workspace items')
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
     (
       _event,
@@ -211,7 +211,7 @@ export function setupWorkspaceHandlers(): void {
 
   // 編集フォームで新しく入力したもの（グループの右クリック「新しく入力して追加」）。クリップボードの中身は
   // 入力したときに作った実データのファイルをそのまま持たせる（ほかのアイテムと共有しないので複製しない）
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_CREATE_ITEM,
     (_event, body: WorkspaceItemUpdate, groupId?: string, workspaceId?: string) =>
       withWorkspaceService(
@@ -230,7 +230,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_ADD_ITEMS_FROM_PATHS,
     (_event, filePaths: string[], groupId?: string, workspaceId?: string) =>
       withWorkspaceService(
@@ -298,7 +298,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, (_event, id: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_REMOVE_ITEM, (_event, id: string) =>
     withWorkspaceChange(
       (service) => service.removeItem(id),
       'Removed item from workspace',
@@ -308,23 +308,21 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME,
-    (_event, id: string, displayName: string) =>
-      withWorkspaceChange(
-        // 参照でメインの表示名と同じ名前にしたかを見るので、メインのアイテムの表を先に用意する
-        async (service) => {
-          await ensureMainItemIndex();
-          await service.updateDisplayName(id, displayName);
-        },
-        'Updated workspace item display name',
-        'Failed to update workspace item display name',
-        { id, displayName },
-        { id }
-      )
+  handleIpc(IPC_CHANNELS.WORKSPACE_UPDATE_DISPLAY_NAME, (_event, id: string, displayName: string) =>
+    withWorkspaceChange(
+      // 参照でメインの表示名と同じ名前にしたかを見るので、メインのアイテムの表を先に用意する
+      async (service) => {
+        await ensureMainItemIndex();
+        await service.updateDisplayName(id, displayName);
+      },
+      'Updated workspace item display name',
+      'Failed to update workspace item display name',
+      { id, displayName },
+      { id }
+    )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_UPDATE_ITEM,
     (_event, id: string, updates: WorkspaceItemUpdate) =>
       withWorkspaceChange(
@@ -339,7 +337,7 @@ export function setupWorkspaceHandlers(): void {
   /**
    * ワークスペースアイテムを起動
    */
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_LAUNCH_ITEM,
     async (_event, requested: WorkspaceItem, options?: LaunchOptions) => {
       let item = requested;
@@ -469,7 +467,7 @@ export function setupWorkspaceHandlers(): void {
 
   // ==================== 参照アイテム ====================
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CONVERT_TO_COPY, (_event, id: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_CONVERT_TO_COPY, (_event, id: string) =>
     withWorkspaceChange(
       async () => ({ item: await convertRefToCopy(id) }),
       'Converted reference item to copy',
@@ -479,7 +477,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LINK_TO_MAIN, (_event, id: string, mainItemId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_LINK_TO_MAIN, (_event, id: string, mainItemId: string) =>
     withWorkspaceChange(
       async () => ({ item: await linkToMainItem(id, mainItemId) }),
       'Linked workspace item to launcher item',
@@ -490,21 +488,21 @@ export function setupWorkspaceHandlers(): void {
   );
 
   // メインウィンドウへのドロップ。結果は右クリックと同じくトーストで知らせる（ワークスペースの画面へもここで知らせる）
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, (_event, id: string, file?: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, (_event, id: string, file?: string) =>
     moveItemToMain(id, file)
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, (_event, id: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, (_event, id: string) =>
     withWorkspaceService(() => findLinkCandidates(id), 'Failed to find link candidates', { id })
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_PREVIEW_LINK_COPIES, (_event, workspaceId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_PREVIEW_LINK_COPIES, (_event, workspaceId: string) =>
     withWorkspaceService(() => previewLinkCopies(workspaceId), 'Failed to preview linking copies', {
       workspaceId,
     })
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES,
     (_event, ids: string[], choices?: Record<string, string>) =>
       withWorkspaceChange(
@@ -516,11 +514,11 @@ export function setupWorkspaceHandlers(): void {
   );
 
   // メインウィンドウのアイテムを指すワークスペースの参照の数（削除の確認・編集画面の帯に出す）
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_COUNT_REFS, (_event, itemIds: string[]) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_COUNT_REFS, (_event, itemIds: string[]) =>
     withWorkspaceService((service) => service.countRefs(itemIds), 'Failed to count references')
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REMAP_REFS, (_event, idMap: Record<string, string>) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_REMAP_REFS, (_event, idMap: Record<string, string>) =>
     withWorkspaceChange(
       async (service) => ({ count: await service.remapRefs(new Map(Object.entries(idMap))) }),
       'Remapped workspace references',
@@ -531,7 +529,7 @@ export function setupWorkspaceHandlers(): void {
 
   // ==================== ワークスペース（タブ）管理ハンドラー ====================
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_WORKSPACES, () =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_WORKSPACES, () =>
     withWorkspaceService(async (service) => {
       const workspaces = await service.loadWorkspaces();
       logger.info({ count: workspaces.length }, 'Loaded workspaces');
@@ -539,7 +537,7 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load workspaces')
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE, (_event, name: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE, (_event, name: string) =>
     withWorkspaceService(
       async (service) => {
         const workspace = await service.createWorkspace(name);
@@ -552,7 +550,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_RENAME_WORKSPACE, (_event, id: string, name: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_RENAME_WORKSPACE, (_event, id: string, name: string) =>
     withWorkspaceChange(
       (service) => service.renameWorkspace(id, name),
       'Renamed workspace',
@@ -562,7 +560,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, (_event, id: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, (_event, id: string) =>
     withWorkspaceChange(
       async (service) => {
         // 削除前に所属グループの切り離しウィンドウを閉じる（サブグループも所属に含まれるので、子孫は辿らない）
@@ -578,7 +576,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_REORDER_WORKSPACES, (_event, ids: string[]) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_REORDER_WORKSPACES, (_event, ids: string[]) =>
     withWorkspaceChange(
       (service) => service.reorderWorkspaces(ids),
       'Reordered workspaces',
@@ -589,7 +587,7 @@ export function setupWorkspaceHandlers(): void {
 
   // ==================== グループ管理ハンドラー ====================
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS, () =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS, () =>
     withWorkspaceService(async (service) => {
       const groups = await service.loadGroups();
       logger.info({ count: groups.length }, 'Loaded workspace groups');
@@ -597,7 +595,7 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load workspace groups')
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DUPLICATE_GROUP, (_event, groupId: string, name: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_DUPLICATE_GROUP, (_event, groupId: string, name: string) =>
     withWorkspaceService(
       async (service) => {
         const group = await service.duplicateGroup(groupId, name, (ref) =>
@@ -612,7 +610,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
     (_event, name: string, color?: string, parentGroupId?: string, workspaceId?: string) =>
       withWorkspaceService(
@@ -631,7 +629,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_UPDATE_GROUP,
     (_event, id: string, updates: WorkspaceGroupUpdate) =>
       withWorkspaceChange(
@@ -643,7 +641,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string) =>
     withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(id);
@@ -656,7 +654,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_REORDER_MIXED,
     (_event, parentGroupId: string | undefined, entries: MixedOrderEntry[]) =>
       withWorkspaceChange(
@@ -667,7 +665,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_SET_GROUPS_COLLAPSED,
     (_event, ids: string[], collapsed: boolean) =>
       withWorkspaceChange(
@@ -680,7 +678,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_DUPLICATE_ITEM,
     (_event, sourceItemId: string, targetGroupId?: string, insertOrder?: number) =>
       withWorkspaceChange(
@@ -695,19 +693,17 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP,
-    (_event, itemId: string, groupId: string) =>
-      withWorkspaceChange(
-        (service) => service.moveItemToGroup(itemId, groupId),
-        'Moved item to group',
-        'Failed to move item to group',
-        { itemId, groupId },
-        { itemId, groupId }
-      )
+  handleIpc(IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP, (_event, itemId: string, groupId: string) =>
+    withWorkspaceChange(
+      (service) => service.moveItemToGroup(itemId, groupId),
+      'Moved item to group',
+      'Failed to move item to group',
+      { itemId, groupId },
+      { itemId, groupId }
+    )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_PARENT,
     (_event, groupId: string, newParentGroupId?: string) =>
       withWorkspaceChange(
@@ -721,7 +717,7 @@ export function setupWorkspaceHandlers(): void {
 
   // ==================== ワークスペース間移動ハンドラー ====================
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_WORKSPACE,
     (_event, itemId: string, targetWorkspaceId: string, groupId?: string) =>
       withWorkspaceChange(
@@ -733,7 +729,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_MOVE_GROUP_TO_WORKSPACE,
     (_event, groupId: string, targetWorkspaceId: string) =>
       withWorkspaceChange(
@@ -747,7 +743,7 @@ export function setupWorkspaceHandlers(): void {
 
   // ==================== アーカイブ管理ハンドラー ====================
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, (_event, groupId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_ARCHIVE_GROUP, (_event, groupId: string) =>
     withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(groupId);
@@ -760,7 +756,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS, () =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS, () =>
     withWorkspaceService(async (service) => {
       const archivedGroups = await service.loadArchivedGroups();
       logger.info({ count: archivedGroups.length }, 'Loaded archived groups');
@@ -768,7 +764,7 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load archived groups')
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_ITEMS, () =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_ITEMS, () =>
     withWorkspaceService(async (service) => {
       await ensureMainItemIndex();
       const archivedItems = await service.loadResolvedArchivedItems();
@@ -777,7 +773,7 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load archived items')
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, (_event, groupId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, (_event, groupId: string) =>
     withWorkspaceChange(
       (service) => service.deleteArchivedGroup(groupId),
       'Deleted archived workspace group permanently',
@@ -789,7 +785,7 @@ export function setupWorkspaceHandlers(): void {
 
   // ==================== 切り離しウィンドウ状態ハンドラー ====================
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, (_event, rootGroupId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_DETACHED_STATE, (_event, rootGroupId: string) =>
     withWorkspaceService(
       (service) => service.loadDetachedWindowState(rootGroupId),
       'Failed to load detached window state',
@@ -797,7 +793,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_SAVE_DETACHED_COLLAPSED,
     (_event, rootGroupId: string, states: Record<string, boolean>) =>
       withWorkspaceService(

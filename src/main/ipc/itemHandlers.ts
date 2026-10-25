@@ -17,6 +17,7 @@ import { hideMainWindowOnExecute } from '../windowManager.js';
 import { executeSetItem, openLauncherItem } from '../services/launch/appItemLauncher.js';
 import { openLauncherItemAsAdmin } from '../services/launch/adminItemLauncher.js';
 import { mainI18n } from '../services/mainI18n.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 async function openParentFolder(item: LauncherItem): Promise<void> {
   itemLogger.info({ name: item.displayName, type: item.type, path: item.path }, '親フォルダを開く');
@@ -59,25 +60,22 @@ async function notifyParentFolder(item: LauncherItem, message: string): Promise<
 export function setupItemHandlers(): void {
   // 各実行ハンドラでは、起動処理の前にメインウィンドウを閉じる
   // （blur待ちにすると起動の遅いアプリでウィンドウが残り、Enter連打で多重起動するため）
-  ipcMain.handle(
-    IPC_CHANNELS.OPEN_ITEM,
-    async (_event, item: LauncherItem, options?: LaunchOptions) => {
-      hideMainWindowOnExecute();
-      await openLauncherItem(item, options);
-    }
-  );
+  handleIpc(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem, options?: LaunchOptions) => {
+    hideMainWindowOnExecute();
+    await openLauncherItem(item, options);
+  });
 
-  ipcMain.handle(IPC_CHANNELS.OPEN_PARENT_FOLDER, async (_event, item: LauncherItem) => {
+  handleIpc(IPC_CHANNELS.OPEN_PARENT_FOLDER, async (_event, item: LauncherItem) => {
     hideMainWindowOnExecute();
     await openParentFolder(item);
   });
 
-  ipcMain.handle(IPC_CHANNELS.RUN_ITEM_AS_ADMIN, async (_event, item: LauncherItem) => {
+  handleIpc(IPC_CHANNELS.RUN_ITEM_AS_ADMIN, async (_event, item: LauncherItem) => {
     hideMainWindowOnExecute();
     await openLauncherItemAsAdmin(item);
   });
 
-  ipcMain.handle(IPC_CHANNELS.EXECUTE_SET, async (_event, item: SetItem, allItems: AppItem[]) => {
+  handleIpc(IPC_CHANNELS.EXECUTE_SET, async (_event, item: SetItem, allItems: AppItem[]) => {
     hideMainWindowOnExecute();
     await executeSetItem(item, allItems);
   });

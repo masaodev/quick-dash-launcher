@@ -3,7 +3,7 @@
  *
  * 画面仕様: docs/screens/context-menu.md
  */
-import { ipcMain, screen, Menu, MenuItem, WebContents } from 'electron';
+import { screen, Menu, MenuItem, WebContents } from 'electron';
 import type {
   Workspace,
   WorkspaceBlankMenuKind,
@@ -21,6 +21,7 @@ import {
   getGroupIdByWebContentsId,
   hasDetachedGroupWindow,
 } from '../detachedGroupWindowManager.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 import {
   appendPathMenuItems,
@@ -63,13 +64,13 @@ function buildMoveToWorkspaceSubmenu(
 
 /** WorkspaceContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_WORKSPACE_CONTEXT_MENU,
     async (
       event,
       item: WorkspaceItem,
       groups: WorkspaceGroup[],
-      workspaces: Workspace[]
+      workspaces?: Workspace[]
     ): Promise<void> => {
       const senderWindow = getValidWindow(event);
       if (!senderWindow) return;
@@ -253,7 +254,7 @@ function buildDetachMenuItem(sender: WebContents, group: WorkspaceGroup): MenuIt
 
 /** WorkspaceGroupContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceGroupContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_WORKSPACE_GROUP_CONTEXT_MENU,
     async (
       event,
@@ -437,7 +438,7 @@ function setupWorkspaceGroupContextMenuHandler(): void {
 
 /** WorkspaceTabContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWorkspaceTabContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_WORKSPACE_TAB_CONTEXT_MENU,
     async (event, workspaceId: string, canDelete: boolean): Promise<void> => {
       const senderWindow = getValidWindow(event);
@@ -527,7 +528,7 @@ function appendCollapseMenuItems(menu: Menu, sender: WebContents, workspaceId: s
  * - tabBar（タブの並びの空いた所）: ワークスペースを追加
  */
 function setupWorkspaceBlankContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_WORKSPACE_BLANK_CONTEXT_MENU,
     async (
       event,

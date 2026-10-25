@@ -11,17 +11,21 @@
 | チャンネル名の定義 | `src/common/ipcChannels.ts` | `IPC_CHANNELS` オブジェクト（`as const`）と、チャンネル名の型 `IpcChannelName` |
 | レンダラー向け API | `src/main/preload.ts` | `contextBridge.exposeInMainWorld('electronAPI', electronAPI)` で `window.electronAPI` として公開 |
 | API の型 | `src/common/types/electronApi.ts` | `ElectronAPI`。preload の実装はこの型で注釈しているので、ずれは型チェックで検出される |
-| 受け口 | `src/main/ipc/*Handlers.ts` | 機能ごとに `ipcMain.handle` / `ipcMain.on` を登録する。登録は `src/main/ipc/index.ts` を起点に呼ぶ（ブックマーク・アプリ取込は `dataHandlers.ts` 経由。`window:child-written` は `childWindowService.ts` が登録） |
+| チャンネルと型の対応表 | `src/common/types/ipcInvokeMap.ts` | `IpcInvokeMap`。invoke のチャンネルごとに、引数と戻り値の型を `ElectronAPI` のメソッドから取る。preload の `ipcInvoke` とハンドラーの `handleIpc` がこの表で型付けされるので、片方だけ変えると型チェックで気づける |
+| 受け口 | `src/main/ipc/*Handlers.ts` | 機能ごとに `handleIpc`（`src/main/utils/ipcWrapper.ts`）/ `ipcMain.on` を登録する。登録は `src/main/ipc/index.ts` を起点に呼ぶ（ブックマーク・アプリ取込は `dataHandlers.ts` 経由。`window:child-written` は `childWindowService.ts` が登録） |
 | 全ウィンドウへの通知 | `src/main/ipc/notifications.ts` など | `webContents.send` でイベントを送る（`notifyDataChanged()`・`notifyWorkspaceChanged()`） |
 
-レンダラーは `ipcRenderer` を直接使わず、必ず `window.electronAPI` の関数を呼ぶ。新しいチャンネルを足すときは、`IPC_CHANNELS` への追加 → ハンドラーの登録 → `ElectronAPI` 型と preload への追加、の順で揃える。
+レンダラーは `ipcRenderer` を直接使わず、必ず `window.electronAPI` の関数を呼ぶ。新しいチャンネルを足すときは、`IPC_CHANNELS` への追加 → `ElectronAPI` 型への追加 → `IpcInvokeMap` への 1 行の追加 → ハンドラーの登録と preload への追加、の順で揃える。invoke の受け口は `ipcMain.handle` を直接使わずに `handleIpc`、preload は `ipcRenderer.invoke` を直接使わずに `ipcInvoke` を使う（対応表に無いチャンネルはどちらも型チェックで通らない）。
 
 ```typescript
 // src/main/ipc/settingsHandlers.ts（受け口）
-ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key?: keyof AppSettings) => { ... });
+handleIpc(IPC_CHANNELS.SETTINGS_GET, async () => { ... }); // 戻り値は AppSettings でないと通らない
 
 // src/main/preload.ts（公開）
-getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
+getSettings: () => ipcInvoke(IPC_CHANNELS.SETTINGS_GET),
+
+// src/common/types/ipcInvokeMap.ts（対応表）
+[IPC_CHANNELS.SETTINGS_GET]: ElectronAPI['getSettings'];
 
 // レンダラー
 const settings = await window.electronAPI.getSettings();
@@ -31,7 +35,7 @@ const settings = await window.electronAPI.getSettings();
 
 | 種類 | メイン側 | レンダラー側 | 使う場面 |
 | --- | --- | --- | --- |
-| 呼び出し（要求→応答） | `ipcMain.handle` | `ipcRenderer.invoke` | 大半のチャンネル。戻り値または例外が `Promise` で返る |
+| 呼び出し（要求→応答） | `handleIpc`（中で `ipcMain.handle`） | `ipcInvoke`（中で `ipcRenderer.invoke`） | 大半のチャンネル。戻り値または例外が `Promise` で返る |
 | 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`window:set-escape-handled-by-page`・`window:start-move`・`layout-cancel`・`close-layout-progress-window`・`resize-layout-progress-window`） |
 | イベント（メイン→レンダラー） | `webContents.send` | `ipcRenderer.on` | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など） |
 

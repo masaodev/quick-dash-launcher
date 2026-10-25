@@ -1,4 +1,3 @@
-import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import type {
   BookmarkAutoImportRule,
@@ -8,11 +7,12 @@ import type {
 import { SettingsService } from '../services/settingsService.js';
 import { BookmarkAutoImportService } from '../services/bookmarkAutoImportService.js';
 import { parseBrowserBookmarksWithFolders } from '../services/bookmarkReader.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 const autoImportService = new BookmarkAutoImportService();
 
 export function setupBookmarkAutoImportHandlers(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_SETTINGS,
     async (): Promise<BookmarkAutoImportSettings> => {
       const settingsService = await SettingsService.getInstance();
@@ -20,7 +20,7 @@ export function setupBookmarkAutoImportHandlers(): void {
     }
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_SAVE_SETTINGS,
     async (_event, settings: BookmarkAutoImportSettings): Promise<void> => {
       const settingsService = await SettingsService.getInstance();
@@ -28,22 +28,22 @@ export function setupBookmarkAutoImportHandlers(): void {
     }
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_EXECUTE_RULE,
     (_event, rule: BookmarkAutoImportRule) => autoImportService.executeRule(rule)
   );
 
-  ipcMain.handle(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_EXECUTE_ALL, () =>
+  handleIpc(IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_EXECUTE_ALL, () =>
     autoImportService.executeAllRules()
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_DELETE_RULE_ITEMS,
     (_event, ruleId: string, targetFile: string) =>
       autoImportService.deleteItemsByRuleId(ruleId, targetFile)
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.BOOKMARK_AUTO_IMPORT_GET_BOOKMARKS_WITH_FOLDERS,
     (_event, bookmarkPath: string) => parseBrowserBookmarksWithFolders(bookmarkPath)
   );

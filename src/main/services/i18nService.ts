@@ -1,7 +1,9 @@
-import { app, ipcMain } from 'electron';
+import { app } from 'electron';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { resolveLanguage, type AppLanguage } from '@common/i18n';
+
+import { handleIpc } from '../utils/ipcWrapper';
 
 import { SettingsService } from './settingsService.js';
 import { mainI18n } from './mainI18n.js';
@@ -42,5 +44,5 @@ export async function applyLanguageSetting(): Promise<AppLanguage> {
  * 応答では設定を読んで（まだ適用前でも）正しい言語を返す。
  */
 export function registerLanguageHandler(): void {
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_LANGUAGE, () => applyLanguageSetting());
+  handleIpc(IPC_CHANNELS.SETTINGS_GET_LANGUAGE, () => applyLanguageSetting());
 }

@@ -3,13 +3,14 @@ import * as fs from 'fs';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-import { ipcMain, shell } from 'electron';
+import { shell } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { dataLogger } from '@common/logger';
 import type { ScannedAppItem, AppScanResult, AppTargetType } from '@common/types/appImport';
 import { generateId } from '@common/utils/jsonParser';
 
 import { mainI18n } from '../services/mainI18n.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 const execFileAsync = promisify(execFile);
 
@@ -220,7 +221,7 @@ async function scanInstalledApps(onProgress?: (found: number) => void): Promise<
 
 export function setupAppImportHandlers(): void {
   // 途中経過には頼んだ側の番号を付ける（閉じてすぐ開き直すと、前のスキャンの件数が混ざるため）
-  ipcMain.handle(IPC_CHANNELS.SCAN_INSTALLED_APPS, (event, scanId: number = 0) =>
+  handleIpc(IPC_CHANNELS.SCAN_INSTALLED_APPS, (event, scanId: number = 0) =>
     scanInstalledApps((found) => {
       if (!event.sender.isDestroyed()) {
         event.sender.send(IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS, { scanId, found });

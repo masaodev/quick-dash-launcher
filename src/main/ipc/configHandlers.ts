@@ -1,11 +1,12 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import { app, ipcMain, shell } from 'electron';
+import { app, shell } from 'electron';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { getAppDistribution } from '../utils/appDistribution';
+import { handleIpc } from '../utils/ipcWrapper';
 
 const DEFAULT_APP_INFO = {
   name: 'quick-dash-launcher',
@@ -42,9 +43,11 @@ async function resolveExistingFolder(folderPath: unknown): Promise<string | null
 }
 
 export function setupConfigHandlers(configFolder: string): void {
-  ipcMain.handle(IPC_CHANNELS.OPEN_CONFIG_FOLDER, () => shell.openPath(configFolder));
+  handleIpc(IPC_CHANNELS.OPEN_CONFIG_FOLDER, async () => {
+    await shell.openPath(configFolder);
+  });
 
-  ipcMain.handle(IPC_CHANNELS.GET_APP_INFO, async () => {
+  handleIpc(IPC_CHANNELS.GET_APP_INFO, async () => {
     // バージョンはトレイ・設定ファイルの記録と同じく app.getVersion() から取る
     const version = app.getVersion();
     const packageJsonPath = path.join(__dirname, '../../package.json');
@@ -63,7 +66,7 @@ export function setupConfigHandlers(configFolder: string): void {
     };
   });
 
-  ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL_URL, async (_event, url: string) => {
+  handleIpc(IPC_CHANNELS.OPEN_EXTERNAL_URL, async (_event, url: string) => {
     if (!isAllowedExternalUrl(url)) {
       logger.warn({ url }, 'http・https 以外の URL は外部で開きません');
       return;
@@ -71,7 +74,7 @@ export function setupConfigHandlers(configFolder: string): void {
     await shell.openExternal(url);
   });
 
-  ipcMain.handle(IPC_CHANNELS.SHELL_OPEN_FOLDER, async (_event, folderPath: string) => {
+  handleIpc(IPC_CHANNELS.SHELL_OPEN_FOLDER, async (_event, folderPath: string) => {
     const folder = await resolveExistingFolder(folderPath);
     if (!folder) {
       logger.warn({ folderPath }, '存在するフォルダではないので開きません');
