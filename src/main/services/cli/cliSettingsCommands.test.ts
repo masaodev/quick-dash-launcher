@@ -29,7 +29,8 @@ beforeEach(() => {
     workspacePositionMode: 'displayRight',
     workspaceTargetDisplayIndex: 0,
     detachedPositionMode: 'saved',
-    windowPositionX: 0,
+    windowFixedPosition: null,
+    workspaceFixedPosition: null,
     showKeyboardHints: true,
   } as AppSettings;
   unavailable = new Set(['Ctrl+Shift+Esc']);
@@ -134,9 +135,32 @@ describe('settings set', () => {
     expect(store.save).not.toHaveBeenCalled();
   });
 
-  it('座標は負の数も受け付ける', async () => {
-    await run('set', 'windowPositionX', '-1920');
-    expect(settings.windowPositionX).toBe(-1920);
+  it('固定位置は「x,y」で受け付け、負の数も (0, 0) も使える', async () => {
+    await run('set', 'windowFixedPosition', '-1920,100');
+    expect(settings.windowFixedPosition).toEqual({ x: -1920, y: 100 });
+    expect(ctx.changed).toHaveBeenCalledWith(expect.stringContaining('-1920,100'));
+    await run('set', 'workspaceFixedPosition', '0, 0');
+    expect(settings.workspaceFixedPosition).toEqual({ x: 0, y: 0 });
+  });
+
+  it('固定位置は null で「まだ置いていない」に戻せる', async () => {
+    settings.windowFixedPosition = { x: 10, y: 20 };
+    await run('set', 'windowFixedPosition', 'null');
+    expect(settings.windowFixedPosition).toBeNull();
+  });
+
+  it('固定位置が今と同じなら保存しない', async () => {
+    settings.windowFixedPosition = { x: 10, y: 20 };
+    const result = await run('set', 'windowFixedPosition', '10,20');
+    expect(result).toMatchObject({ unchanged: true });
+    expect(store.save).not.toHaveBeenCalled();
+  });
+
+  it('固定位置の形が違えば invalid', async () => {
+    expect((await errorOf(run('set', 'windowFixedPosition', '100'))).code).toBe('invalid');
+    expect((await errorOf(run('set', 'windowFixedPosition', '1.5,2'))).code).toBe('invalid');
+    expect((await errorOf(run('set', 'windowFixedPosition', 'x,y'))).code).toBe('invalid');
+    expect(store.save).not.toHaveBeenCalled();
   });
 
   it('選択肢の外は invalid（古い primaryLeft も選ばせない）', async () => {

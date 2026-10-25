@@ -49,14 +49,12 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
     "datafiles/data.json": "メイン用データファイル"
   },
   "windowPositionMode": "cursorMonitorCenter",
-  "windowPositionX": 0,
-  "windowPositionY": 0,
+  "windowFixedPosition": null,
   "workspaceOpacity": 100,
   "workspaceBackgroundTransparent": false,
   "workspacePositionMode": "displayRight",
   "workspaceTargetDisplayIndex": -1,
-  "workspacePositionX": 0,
-  "workspacePositionY": 0,
+  "workspaceFixedPosition": null,
   "workspaceVisibleOnAllDesktops": true,
   "detachedVisibleOnAllDesktops": true,
   "showKeyboardHints": true,
@@ -161,8 +159,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **windowPositionMode** | WindowPositionMode | "cursorMonitorCenter" | ウィンドウ表示位置モード |
-| **windowPositionX** | number | 0 | 固定位置のX座標（windowPositionMode='fixed'時に使用） |
-| **windowPositionY** | number | 0 | 固定位置のY座標（windowPositionMode='fixed'時に使用） |
+| **windowFixedPosition** | `{ x: number, y: number }` \| null | null | 固定位置で最後に置いた場所（windowPositionMode='fixed'時に使用）。`null` はまだ置いていないことを表し、次に出すときに画面中央へ置いて保存する |
 
 #### 3.7.1. WindowPositionMode 値
 
@@ -173,6 +170,18 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **cursorMonitorCenter** | カーソルのモニター中央に表示 |
 | **fixed** | 固定位置に表示（手動で移動した位置を記憶） |
 
+#### 3.7.2. 削除した設定（固定位置の X・Y）
+
+固定位置の座標は、以前は `windowPositionX`・`windowPositionY`・`workspacePositionX`・`workspacePositionY` の 4 つのキーで持ち、(0, 0) を「まだ置いていない」の印に使っていた。そのため左上の (0, 0) に置くと、次に出すときに中央（ワークスペースは右上）へ戻っていた。今は `windowFixedPosition`・`workspaceFixedPosition` に `{ x, y }` か `null` で持つ。
+
+起動時に 1 回、古いキーを読み替えてから `settings.json` から消す（`planLegacyFixedPosition()`、`src/main/services/removedWindowSettings.ts`）。古いキーが残っていることが、まだ読み替えていない印になる。
+
+| 古い値 | 読み替え |
+| --- | --- |
+| (0, 0) | `null`（まだ置いていない）。以前の版では (0, 0) を保存しても次に出すときに置き直して上書きしていたので、残っている (0, 0) はまだ置いていない意味になる |
+| それ以外の数 | その座標を `{ x, y }` で引き継ぐ |
+| 数でない・片方しかない | `null` |
+
 ### 3.8. ワークスペース設定
 
 | フィールド | 型 | 既定値 | 説明 |
@@ -181,8 +190,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウと切り離しウィンドウの背景だけを透過するか。`true` の間は `workspaceOpacity` を使わない |
 | **workspacePositionMode** | WorkspacePositionMode | "displayRight" | ワークスペースウィンドウの表示位置モード |
 | **workspaceTargetDisplayIndex** | number | -1 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり）。`-1`（既定）はメインウィンドウと同じディスプレイで、表示するたびにそのディスプレイの端へ移す（高さはそのディスプレイの作業領域に合わせる）。番号のディスプレイが接続されていなければプライマリに出す |
-| **workspacePositionX** | number | 0 | 固定位置のX座標（workspacePositionMode='fixed'時に使用） |
-| **workspacePositionY** | number | 0 | 固定位置のY座標（workspacePositionMode='fixed'時に使用） |
+| **workspaceFixedPosition** | `{ x: number, y: number }` \| null | null | 固定位置で最後に置いた場所（workspacePositionMode='fixed'時に使用）。`null` はまだ置いていないことを表し、次に出すときにプライマリディスプレイの右上へ置いて保存する |
 | **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウをすべての仮想デスクトップに表示するか |
 | **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）をすべての仮想デスクトップに表示するか |
 | **detachedPositionMode** | DetachedPositionMode | "mainDisplay" | 切り離しウィンドウの表示位置モード（[3.8.2](#382-detachedpositionmode-値)） |

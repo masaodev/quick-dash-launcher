@@ -147,14 +147,14 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
 | メイン | `windowWidth`・`windowHeight` | 400〜2000・300〜1200 |
 | メイン | `windowPositionMode` | `center`・`cursor`・`cursorMonitorCenter`・`fixed` |
-| メイン | `windowPositionX`・`windowPositionY` | 整数（`fixed` のときの位置） |
+| メイン | `windowFixedPosition` | `x,y`（整数 2 つ。`fixed` のときの位置）か `null`（まだ置いていない） |
 | メイン | `windowSnapEnabled` | `true`・`false` |
 | 管理 | `editModeWidth`・`editModeHeight` | 800〜2000・600〜1200 |
 | ワークスペース | `workspaceOpacity` | 0〜100 |
 | ワークスペース | `workspacePositionMode` | `displayLeft`・`displayRight`・`fixed` |
 | ワークスペース | `workspaceTargetDisplayIndex` | 0 から、接続しているディスプレイの数 − 1 まで。`-1` はメインウィンドウと同じディスプレイ |
 | ワークスペース | `detachedPositionMode` | `mainDisplay`・`saved` |
-| ワークスペース | `workspacePositionX`・`workspacePositionY` | 整数（`fixed` のときの位置） |
+| ワークスペース | `workspaceFixedPosition` | `x,y`（整数 2 つ。`fixed` のときの位置）か `null`（まだ置いていない） |
 | ワークスペース | `workspaceBackgroundTransparent`・`workspaceVisibleOnAllDesktops`・`detachedVisibleOnAllDesktops` | `true`・`false` |
 | バックアップ | `backupEnabled`・`backupIncludeClipboard` | `true`・`false` |
 | バックアップ | `backupRetention` | 3〜50 |

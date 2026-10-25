@@ -624,12 +624,13 @@ Keys you can change:
   Hotkeys      hotkey itemSearchHotkey (checked before changing; "" turns off itemSearchHotkey)
   Launcher     windowWidth (400-2000) windowHeight (300-1200)
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
-               windowPositionX windowPositionY windowSnapEnabled
+               windowFixedPosition (x,y where it was placed in fixed mode; null = not yet)
+               windowSnapEnabled
   Manager      editModeWidth (800-2000) editModeHeight (600-1200)
   Workspace    workspaceOpacity (0-100) workspaceBackgroundTransparent
                workspacePositionMode (displayLeft / displayRight / fixed)
                workspaceTargetDisplayIndex (from 0; -1 is the display the launcher is on)
-               workspacePositionX workspacePositionY
+               workspaceFixedPosition (x,y in fixed mode, or null)
                workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops
                detachedPositionMode (mainDisplay / saved)
   Backup       backupEnabled backupRetention (3-50) backupIncludeClipboard
@@ -770,6 +771,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unknownSettingKey: 'There is no setting "{{key}}". Keys you can change: {{keys}}',
       settingReadOnly: '{{key}} cannot be changed from the CLI (read-only; change it in the app)',
       expectedInteger: 'an integer',
+      expectedFixedPosition: '"x,y" (two integers) or null',
       expectedRange: 'an integer from {{min}} to {{max}}',
       expectedDisplayIndex: 'an integer from 0 to {{max}}, or -1 (the display the launcher is on)',
       hotkeyInvalid: 'The hotkey "{{hotkey}}" cannot be used: {{reason}}',

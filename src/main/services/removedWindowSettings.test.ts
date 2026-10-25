@@ -3,7 +3,11 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('./settingsService.js', () => ({ SettingsService: {} }));
 vi.mock('./workspace/index.js', () => ({ WorkspaceService: {} }));
 
-import { planLegacyWorkspacePosition, planRemovedWindowSettings } from './removedWindowSettings';
+import {
+  planLegacyFixedPosition,
+  planLegacyWorkspacePosition,
+  planRemovedWindowSettings,
+} from './removedWindowSettings';
 
 describe('planRemovedWindowSettings', () => {
   it('既定のまま（自動表示オフ・一緒に隠すオン）なら何も読み替えない', () => {
@@ -43,5 +47,24 @@ describe('planLegacyWorkspacePosition', () => {
     expect(planLegacyWorkspacePosition('displayLeft')).toBeNull();
     expect(planLegacyWorkspacePosition('displayRight')).toBeNull();
     expect(planLegacyWorkspacePosition('fixed')).toBeNull();
+  });
+});
+
+describe('planLegacyFixedPosition', () => {
+  it('(0, 0) は「まだ置いていない」に読み替える', () => {
+    expect(planLegacyFixedPosition(0, 0)).toBeNull();
+  });
+
+  it('それ以外の座標はそのまま引き継ぐ（負の数・片方だけ 0 も）', () => {
+    expect(planLegacyFixedPosition(-1920, 100)).toEqual({ x: -1920, y: 100 });
+    expect(planLegacyFixedPosition(0, 300)).toEqual({ x: 0, y: 300 });
+    expect(planLegacyFixedPosition(1200, 0)).toEqual({ x: 1200, y: 0 });
+  });
+
+  it('数でない値・片方しかない値は「まだ置いていない」にする', () => {
+    expect(planLegacyFixedPosition(undefined, undefined)).toBeNull();
+    expect(planLegacyFixedPosition(100, undefined)).toBeNull();
+    expect(planLegacyFixedPosition('100', 50)).toBeNull();
+    expect(planLegacyFixedPosition(Number.NaN, 50)).toBeNull();
   });
 });

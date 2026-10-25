@@ -37,18 +37,11 @@ export const SETTINGS_RESET_KEYS: Record<
 > = {
   system: ['autoLaunch', 'cliEnabled', 'recordLaunchUsage'],
   display: ['showKeyboardHints', 'searchMemo'],
-  mainWindow: [
-    'windowPositionMode',
-    'windowPositionX',
-    'windowPositionY',
-    'windowWidth',
-    'windowHeight',
-  ],
+  mainWindow: ['windowPositionMode', 'windowFixedPosition', 'windowWidth', 'windowHeight'],
   workspaceWindow: [
     'workspacePositionMode',
     'workspaceTargetDisplayIndex',
-    'workspacePositionX',
-    'workspacePositionY',
+    'workspaceFixedPosition',
     'workspaceBackgroundTransparent',
     'workspaceOpacity',
     'workspaceVisibleOnAllDesktops',
@@ -65,10 +58,8 @@ export const SETTINGS_RESET_KEYS: Record<
  * 「既定値のままか」の判定に入れると、画面上は既定値なのに変えている扱いになるので外す。
  */
 const SAVED_POSITION_KEYS: ReadonlySet<keyof AppSettings> = new Set<keyof AppSettings>([
-  'windowPositionX',
-  'windowPositionY',
-  'workspacePositionX',
-  'workspacePositionY',
+  'windowFixedPosition',
+  'workspaceFixedPosition',
 ]);
 
 /** 枠の名前（見出しと同じ文言） */

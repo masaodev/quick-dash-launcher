@@ -38,8 +38,7 @@ const OPACITY_KEYS: ReadonlyArray<keyof AppSettings> = [
 const POSITION_KEYS: ReadonlyArray<keyof AppSettings> = [
   'workspacePositionMode',
   'workspaceTargetDisplayIndex',
-  'workspacePositionX',
-  'workspacePositionY',
+  'workspaceFixedPosition',
 ];
 
 /** 副作用（OS 登録・ウィンドウ状態）を持つ設定キー。ファイル再読込時に全部適用し直す */
