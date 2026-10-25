@@ -163,13 +163,16 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
       })),
     [entries]
   );
-  const hasPlacement = entries.some((entry) => hasPlacementRect(entry.placement));
+  /** 位置（デスクトップの番号だけでもよい）のある行があれば、番号と 📍 の列を出す */
+  const hasPlacement = entries.some((entry) => entry.placement);
+  /** 座標のある行があるときだけ、セット全体の図を出す（座標の無い行は図に描けない） */
+  const hasMap = entries.some((entry) => hasPlacementRect(entry.placement));
 
   return (
     <div className="form-group vertical-layout set-editor">
       <label>{t('set.editor.rows')}</label>
       {/* セット全体の図: 位置のある行を番号つきで 1 枚にまとめる */}
-      {hasPlacement && screens.length > 0 && (
+      {hasMap && screens.length > 0 && (
         <div className="set-editor-map">
           <SetPlacementMap
             ref={mapRef}
@@ -198,8 +201,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     : ''
                 }${view.missing ? ' missing' : ''}`}
                 draggable
-                onMouseEnter={hasPlacement ? () => mapRef.current?.highlight(index) : undefined}
-                onMouseLeave={hasPlacement ? () => mapRef.current?.highlight(null) : undefined}
+                onMouseEnter={hasMap ? () => mapRef.current?.highlight(index) : undefined}
+                onMouseLeave={hasMap ? () => mapRef.current?.highlight(null) : undefined}
                 onDragStart={(e) => {
                   // ドラッグ中は mouseleave が来ないので、ここで強調を外す
                   mapRef.current?.highlight(null);
@@ -260,7 +263,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     )
                   )}
                 </span>
-                {/* 図と位置の言葉は決まった幅の列に置き、行ごとに縦をそろえる（位置の無い行は空けておく） */}
+                {/* 図と位置の言葉は決まった幅の列に置き、行ごとに縦をそろえる（位置の無い行は空けておく。座標の無い行は図だけ空ける） */}
                 {hasPlacement && (
                   <>
                     <span className="set-row-map">

@@ -1029,6 +1029,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       maximized: 'Maximized',
       onScreen: 'Screen {{screen}} · {{place}}',
       onDesktop: '{{place}} · Desktop {{desktop}}',
+      desktopOnly: 'Desktop {{desktop}}',
       onAllDesktops: '{{place}} · All desktops',
       region: '{{region}} {{width}}×{{height}}',
       shapes: {

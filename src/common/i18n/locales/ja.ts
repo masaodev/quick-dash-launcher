@@ -1034,6 +1034,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       maximized: '最大化',
       onScreen: '画面 {{screen}}・{{place}}',
       onDesktop: '{{place}}・デスクトップ {{desktop}}',
+      desktopOnly: 'デスクトップ {{desktop}}',
       onAllDesktops: '{{place}}・全デスクトップ',
       region: '{{region}} {{width}}×{{height}}',
       shapes: {

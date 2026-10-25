@@ -398,6 +398,17 @@ describe('仮想デスクトップの記録と表示', () => {
     ).not.toMatch(/2$/);
   });
 
+  it('座標が無くデスクトップの番号だけの位置は「デスクトップ N」とだけ出す', () => {
+    expect(placementText({ placement: { virtualDesktopNumber: 2 } }, screens)).toBe(
+      i18next.t('set.placement.desktopOnly', { desktop: '2' })
+    );
+    expect(placementText({ placement: { virtualDesktopNumber: 2 } }, screens)).not.toContain(
+      i18next.t('set.placement.none')
+    );
+    // 番号も無ければ今までどおり「ウィンドウ位置なし」
+    expect(placementText({ placement: {} }, screens)).toBe(i18next.t('set.placement.none'));
+  });
+
   it('全デスクトップに表示する行は、デスクトップの番号を添えない', () => {
     const entry: SetEntry = {
       placement: { x: 960, y: 0, width: 960, height: 1040, virtualDesktopNumber: 2 },

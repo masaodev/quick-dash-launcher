@@ -15,6 +15,7 @@ import {
   catalogItemToEntry,
   describeSetEntry,
   entryOpensAsTab,
+  entryWindowMatch,
   SET_KIND_ICONS,
   usesItemSwitch,
   type SetCatalogItem,
@@ -266,7 +267,7 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
               idPrefix="set-detail"
               placement={draft.placement}
               pinToAllDesktops={draft.pinToAllDesktops}
-              match={draft.window}
+              match={entryWindowMatch(draft, view)}
               windows={windows}
               desktopCount={desktopCount}
               screens={screens}

@@ -371,19 +371,26 @@ export function formatPlacementLabel(label: PlacementLabel): string {
   }
 }
 
-/** 行の置き場所の表示（置き場所が無ければ undefined。仮想デスクトップの番号があれば添える） */
+/**
+ * 行の置き場所の表示（置き場所が無ければ undefined。仮想デスクトップの番号があれば添える）
+ *
+ * 座標が無くデスクトップの番号だけの位置は「デスクトップ 2」とだけ出す
+ */
 export function placementText(
   entry: SetEntry,
   screens: readonly ScreenArea[],
   desktopNames?: Readonly<Record<number, string | undefined>>
 ): string | undefined {
   if (!entry.placement) return undefined;
-  const place = formatPlacementLabel(computePlacementLabel(entry.placement, screens));
+  const label = computePlacementLabel(entry.placement, screens);
+  const place = formatPlacementLabel(label);
   const desktop = entry.placement.virtualDesktopNumber;
   // 全デスクトップに表示するときは、どのデスクトップかは意味がないので出さない
-  return desktop === undefined || entry.pinToAllDesktops
-    ? place
-    : i18next.t('set.placement.onDesktop', { place, desktop: desktopLabel(desktop, desktopNames) });
+  if (desktop === undefined || entry.pinToAllDesktops) return place;
+  const desktopText = desktopLabel(desktop, desktopNames);
+  return label.kind === 'none'
+    ? i18next.t('set.placement.desktopOnly', { desktop: desktopText })
+    : i18next.t('set.placement.onDesktop', { place, desktop: desktopText });
 }
 
 /**
