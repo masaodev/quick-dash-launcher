@@ -1170,7 +1170,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       autoImportSettingsTitle:
         'Set up rules to import browser bookmarks automatically, such as when the app starts',
       tools: 'Clean up',
-      toolsTitle: 'Check and tidy the list (check for broken links, remove duplicates)',
+      toolsTitle:
+        'Check and tidy the list (check for broken links, remove duplicates, delete unused clipboard contents)',
       checkMissing: 'Check for broken links',
       checkMissingDesc: "Finds items whose paths can't be found",
       checkingMissing: 'Checking…',
@@ -1179,6 +1180,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       dedupe: 'Remove duplicates',
       dedupeDesc: 'Keeps one of each item with the same type, name, and path',
       dedupeTitle: 'Deletes items with the same type, name, and path, keeping the first one',
+      cleanClipboardData: 'Delete unused clipboard contents',
+      cleanClipboardDataDesc: 'Deletes saved contents that no item uses',
     },
     columnFilter: {
       open: 'Filter and sort {{column}}',
@@ -1325,6 +1328,14 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       '{{file}} has {{count}} items with the same type, name, and path. Delete them, keeping the first one? (Save to keep this change.)',
     deduped_one: 'Deleted {{count}} duplicate',
     deduped_other: 'Deleted {{count}} duplicates',
+    noUnusedClipboardData: 'No saved clipboard contents are unused',
+    cleanClipboardDataNeedsSave: 'You have unsaved changes. Save them first.',
+    cleanClipboardDataConfirm_one:
+      '{{count}} saved clipboard content is not used by any item. Delete it? (It is deleted right away and cannot be undone.)',
+    cleanClipboardDataConfirm_other:
+      '{{count}} saved clipboard contents are not used by any item. Delete them? (They are deleted right away and cannot be undone.)',
+    cleanedClipboardData_one: 'Deleted {{count}} saved clipboard content',
+    cleanedClipboardData_other: 'Deleted {{count}} saved clipboard contents',
     deleteButton: 'Delete',
     imported_one: 'Added {{count}} item to {{file}} (save to keep this change)',
     imported_other: 'Added {{count}} items to {{file}} (save to keep this change)',
@@ -2058,6 +2069,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     imageTooLarge: 'The image is larger than the limit ({{max}} MB)',
     empty: 'The clipboard is empty',
     textEmpty: 'The text is empty',
+    unusedDataUnreadable:
+      "Some files (data files or the workspace) can't be read, so QDL can't tell which saved clipboard contents are in use",
     saveFailed: "Couldn't save the clipboard data: {{file}}",
     captureFailed: "Couldn't capture",
     sessionNotFound: "The session wasn't found",

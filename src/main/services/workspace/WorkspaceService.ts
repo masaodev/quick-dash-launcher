@@ -27,6 +27,7 @@ import { appItemToWorkspaceItemBody } from '@common/utils/workspaceConverters';
 
 import PathManager from '../../config/pathManager.js';
 import { BackupService } from '../backupService.js';
+import { releaseClipboardData } from '../clipboardDataUsage.js';
 import { SettingsService } from '../settingsService.js';
 import type { GroupNameResolver } from '../data/setMigration.js';
 import type { LoadReportFile } from '../loadReportService.js';
@@ -239,11 +240,13 @@ export class WorkspaceService {
     if (!workspaces.some((w) => w.id === id)) throw new Error(`Workspace not found: ${id}`);
 
     // 所属グループ・アイテムも削除（1 回の書き込み）
-    this.store!.update((main) => {
-      main.workspaces = main.workspaces.filter((w) => w.id !== id);
-      main.groups = main.groups.filter((g) => g.workspaceId !== id);
-      main.items = main.items.filter((i) => i.workspaceId !== id);
-    });
+    this.releasingClipboardData(() =>
+      this.store!.update((main) => {
+        main.workspaces = main.workspaces.filter((w) => w.id !== id);
+        main.groups = main.groups.filter((g) => g.workspaceId !== id);
+        main.items = main.items.filter((i) => i.workspaceId !== id);
+      })
+    );
     this.pruneUiState();
 
     logger.info({ id }, 'Deleted workspace with associated groups and items');
@@ -351,7 +354,7 @@ export class WorkspaceService {
 
   public async removeItem(id: string): Promise<void> {
     await this.initializeStore();
-    this.itemManager!.removeItem(id);
+    this.releasingClipboardData(() => this.itemManager!.removeItem(id));
   }
 
   public async updateDisplayName(id: string, displayName: string): Promise<void> {
@@ -487,7 +490,10 @@ export class WorkspaceService {
         : item.displayName !== main.displayName
           ? item.displayName
           : undefined;
-    const replaced = this.itemManager!.replaceWithRef(id, main.id, main.displayName, alias);
+    // コピーを参照にすると、コピーが持っていたクリップボードの実データは使われなくなる
+    const replaced = this.releasingClipboardData(() =>
+      this.itemManager!.replaceWithRef(id, main.id, main.displayName, alias)
+    );
     return resolveWorkspaceItem(replaced, getMainItemIndex());
   }
 
@@ -531,7 +537,8 @@ export class WorkspaceService {
     await this.initializeStore();
     const marked =
       update.type === 'item' ? { ...update, path: await withFolderMarker(update.path) } : update;
-    this.itemManager!.updateItem(id, marked);
+    // 本文を書き換えたクリップボードアイテムは、新しい実データを指す（古いものは使われなくなる）
+    this.releasingClipboardData(() => this.itemManager!.updateItem(id, marked));
   }
 
   // --- グループ管理 ---
@@ -627,7 +634,7 @@ export class WorkspaceService {
   public async deleteGroup(id: string): Promise<void> {
     await this.initializeStore();
     const items = this.itemManager!.loadItems();
-    this.groupManager!.deleteGroup(id, items);
+    this.releasingClipboardData(() => this.groupManager!.deleteGroup(id, items));
     this.pruneUiState();
   }
 
@@ -781,7 +788,7 @@ export class WorkspaceService {
 
   public async deleteArchivedGroup(groupId: string): Promise<void> {
     await this.initializeStore();
-    this.archiveManager!.deleteArchivedGroup(groupId);
+    this.releasingClipboardData(() => this.archiveManager!.deleteArchivedGroup(groupId));
     this.pruneUiState();
   }
 
@@ -841,6 +848,33 @@ export class WorkspaceService {
   public async loadOpenDetachedGroupIds(): Promise<string[]> {
     await this.initializeStore();
     return this.uiState!.listDetachedGroupIds();
+  }
+
+  /** ワークスペースとアーカイブのアイテムが指しているクリップボードの実データ */
+  private clipboardDataRefs(): Set<string> {
+    const refs = new Set<string>();
+    for (const item of [
+      ...this.itemManager!.loadItems(),
+      ...this.archiveManager!.getAllArchivedItems(),
+    ]) {
+      if (item.type === 'clipboard') refs.add(item.dataFileRef);
+    }
+    return refs;
+  }
+
+  /**
+   * 書き換えのあと、ワークスペースで使われなくなったクリップボードの実データを消す
+   * （メインウィンドウのアイテムが同じ実データを使っていれば消さない。A3-67）
+   */
+  private releasingClipboardData<T>(change: () => T): T {
+    const before = this.clipboardDataRefs();
+    const result = change();
+    const after = this.clipboardDataRefs();
+    releaseClipboardData(
+      PathManager.getConfigFolder(),
+      [...before].filter((ref) => !after.has(ref))
+    );
+    return result;
   }
 
   /** 存在しなくなったグループの UI 状態を捨てる */

@@ -383,6 +383,9 @@ export const IPC_CHANNELS = {
   // 登録画面の内容欄（書いたテキストの保存と、見せる中身＝全文・画像の縮小版の読み出し）
   CLIPBOARD_SAVE_TEXT: 'clipboard:save-text',
   CLIPBOARD_READ_CONTENT: 'clipboard:read-content',
+  /** どのアイテムからも使われていない、保存したクリップボードの中身（アイテム管理の「整理 ▼」） */
+  CLIPBOARD_COUNT_UNUSED_DATA: 'clipboard:count-unused-data',
+  CLIPBOARD_DELETE_UNUSED_DATA: 'clipboard:delete-unused-data',
 } as const;
 
 /**

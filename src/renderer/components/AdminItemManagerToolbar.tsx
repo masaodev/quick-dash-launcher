@@ -38,6 +38,8 @@ interface AdminItemManagerToolbarProps {
   checkingMissingPaths: boolean;
   /** 整理: 重複を削除 */
   onDedupe: () => void;
+  /** 整理: どのアイテムからも使われていない、保存したクリップボードの中身を削除 */
+  onCleanClipboardData: () => void;
   /** 整理: すべてのタブのアイテムを CSV に書き出す */
   onExportCsv: () => void;
 
@@ -207,6 +209,7 @@ const OrganizeDropdown: React.FC<AdminItemManagerToolbarProps> = ({
   onCheckMissingPaths,
   checkingMissingPaths,
   onDedupe,
+  onCleanClipboardData,
   onExportCsv,
 }) => {
   const { t } = useTranslation();
@@ -249,6 +252,18 @@ const OrganizeDropdown: React.FC<AdminItemManagerToolbarProps> = ({
           >
             {t('itemManager.header.dedupe')}
             <small className="dropdown-item-desc">{t('itemManager.header.dedupeDesc')}</small>
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={() => {
+              dropdown.close();
+              onCleanClipboardData();
+            }}
+          >
+            {t('itemManager.header.cleanClipboardData')}
+            <small className="dropdown-item-desc">
+              {t('itemManager.header.cleanClipboardDataDesc')}
+            </small>
           </button>
           <div className="dropdown-separator" />
           <button

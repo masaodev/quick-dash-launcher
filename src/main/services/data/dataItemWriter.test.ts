@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { JsonClipboardItem } from '@common/types';
 
 const tempRoot = vi.hoisted(() => ({ dir: '' }));
 
@@ -10,6 +11,8 @@ vi.mock('../../config/pathManager.js', () => ({
   PathManager: {
     getConfigFolder: () => tempRoot.dir,
     getDataFiles: () => ['datafiles/data.json', 'datafiles/data2.json'],
+    getWorkspaceFilePath: () => path.join(tempRoot.dir, 'workspace.json'),
+    getWorkspaceArchiveFilePath: () => path.join(tempRoot.dir, 'workspace-archive.json'),
   },
 }));
 
@@ -303,12 +306,12 @@ describe('dataItemWriter', () => {
       ).toThrow(/datafiles\/data\.json/);
     });
 
-    it('削除は、id がすべて見つかれば壊れたファイルを飛ばして行い、実データのファイルも消すこと', async () => {
+    it('削除は、id がすべて見つかれば壊れたファイルを飛ばして行い、実データは消さないこと（壊れたファイルが使っているかもしれない）', async () => {
       await deleteItemsById(tempRoot.dir, ['aaaaaaaa', 'cccccccc']);
 
       expect(readItems('datafiles/data2.json')).toHaveLength(0);
       expect(readRaw('datafiles/data.json')).toBe(CORRUPTED);
-      expect(deleteClipboardData).toHaveBeenCalledWith('clipboard-data/cccccccc.json');
+      expect(deleteClipboardData).not.toHaveBeenCalled();
     });
 
     it('残す実データの参照を渡すと、その実データは消さないこと（保存先を変える編集）', async () => {
@@ -326,6 +329,81 @@ describe('dataItemWriter', () => {
       );
 
       expect(readItems('datafiles/data2.json')).toHaveLength(2);
+      expect(deleteClipboardData).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('クリップボードの実データの後始末（A3-67）', () => {
+    const clipboardItem = (id: string, ref: string): JsonClipboardItem => ({
+      id,
+      type: 'clipboard',
+      displayName: id,
+      dataFileRef: ref,
+      savedAt: 1,
+      formats: ['text'],
+    });
+
+    beforeEach(() => {
+      writeFile(
+        'datafiles/data.json',
+        JSON.stringify({
+          version: '1.0',
+          items: [
+            clipboardItem('aaaaaaaa', 'clipboard-data/shared.json'),
+            clipboardItem('bbbbbbbb', 'clipboard-data/own.json'),
+          ],
+        })
+      );
+      deleteClipboardData.mockClear();
+    });
+
+    it('どこからも使われなくなった実データは消すこと', async () => {
+      await deleteItemsById(tempRoot.dir, ['bbbbbbbb']);
+
+      expect(deleteClipboardData).toHaveBeenCalledWith('clipboard-data/own.json');
+    });
+
+    it('ワークスペースのアイテムが同じ実データを使っていれば消さないこと（#464 より前に写したアイテム）', async () => {
+      writeFile(
+        'workspace.json',
+        JSON.stringify({ items: [clipboardItem('wwwwwwww', 'clipboard-data/shared.json')] })
+      );
+
+      await deleteItemsById(tempRoot.dir, ['aaaaaaaa']);
+
+      expect(deleteClipboardData).not.toHaveBeenCalled();
+    });
+
+    it('アーカイブのアイテムが同じ実データを使っていれば消さないこと', async () => {
+      writeFile(
+        'workspace-archive.json',
+        JSON.stringify({ items: [clipboardItem('wwwwwwww', 'clipboard-data/shared.json')] })
+      );
+
+      await deleteItemsById(tempRoot.dir, ['aaaaaaaa']);
+
+      expect(deleteClipboardData).not.toHaveBeenCalled();
+    });
+
+    it('ワークスペースが読めなければ消さないこと', async () => {
+      writeFile('workspace.json', '{ broken');
+
+      await deleteItemsById(tempRoot.dir, ['bbbbbbbb']);
+
+      expect(deleteClipboardData).not.toHaveBeenCalled();
+    });
+
+    it('本文を書き換えて実データが変わったら、古い実データを消すこと', () => {
+      replaceItemById(tempRoot.dir, clipboardItem('bbbbbbbb', 'clipboard-data/new.json'));
+
+      expect(deleteClipboardData).toHaveBeenCalledWith('clipboard-data/own.json');
+    });
+
+    it('実データが変わらない書き換えでは消さないこと', () => {
+      const renamed = clipboardItem('bbbbbbbb', 'clipboard-data/own.json');
+      renamed.displayName = 'renamed';
+      replaceItemById(tempRoot.dir, renamed);
+
       expect(deleteClipboardData).not.toHaveBeenCalled();
     });
   });

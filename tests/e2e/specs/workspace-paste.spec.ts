@@ -355,4 +355,35 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     if (after?.type !== 'clipboard') return;
     expect(after.dataFileRef).toBe(before.dataFileRef);
   });
+
+  test('貼ったクリップボードアイテムをワークスペースで消すと、実データのファイルも消える（A3-67）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await selectPasteGroup(workspaceWindow, '貼り付け先');
+
+    await pasteText(electronApp, workspaceWindow, 'すぐ消すメモ');
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'すぐ消すメモ' })
+    ).toBeVisible({ timeout: 10000 });
+    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
+    const added = items.find((item) => item.displayName === 'すぐ消すメモ');
+    expect(added?.type).toBe('clipboard');
+    if (added?.type !== 'clipboard') return;
+    const dataFile = path.join(configHelper.getConfigDir(), added.dataFileRef);
+    expect(fs.existsSync(dataFile)).toBe(true);
+
+    await workspaceWindow.evaluate(
+      (id) => window.electronAPI.workspaceAPI.removeItem(id),
+      added.id
+    );
+
+    // 以前はワークスペースで消しても実データが残り、どこからも使われないファイルが溜まっていた
+    await expect.poll(() => fs.existsSync(dataFile)).toBe(false);
+  });
 });

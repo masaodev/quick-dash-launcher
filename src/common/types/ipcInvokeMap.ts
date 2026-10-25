@@ -187,6 +187,8 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION]: ElectronAPI['clipboardAPI']['discardSession'];
   [IPC_CHANNELS.CLIPBOARD_SAVE_TEXT]: ElectronAPI['clipboardAPI']['saveText'];
   [IPC_CHANNELS.CLIPBOARD_READ_CONTENT]: ElectronAPI['clipboardAPI']['readContent'];
+  [IPC_CHANNELS.CLIPBOARD_COUNT_UNUSED_DATA]: ElectronAPI['clipboardAPI']['countUnusedData'];
+  [IPC_CHANNELS.CLIPBOARD_DELETE_UNUSED_DATA]: ElectronAPI['clipboardAPI']['deleteUnusedData'];
   [IPC_CHANNELS.BACKUP_LIST_SNAPSHOTS]: ElectronAPI['backupAPI']['listSnapshots'];
   [IPC_CHANNELS.BACKUP_RESTORE_SNAPSHOT]: ElectronAPI['backupAPI']['restoreSnapshot'];
   [IPC_CHANNELS.BACKUP_DELETE_SNAPSHOT]: ElectronAPI['backupAPI']['deleteSnapshot'];

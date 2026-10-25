@@ -1175,7 +1175,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       autoImportSettingsTitle:
         'ブラウザのブックマークを、ルールに従って起動時などに自動で取り込む設定',
       tools: '整理',
-      toolsTitle: '一覧の点検と片付け（リンク切れの確認、重複の削除）',
+      toolsTitle:
+        '一覧の点検と片付け（リンク切れの確認、重複の削除、使われていないクリップボードの中身の削除）',
       checkMissing: 'リンク切れを確認',
       checkMissingDesc: 'パスが見つからないアイテムを探します',
       checkingMissing: '確認中…',
@@ -1184,6 +1185,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       dedupe: '重複を削除',
       dedupeDesc: '種類・名前・パスが同じものを 1 件にまとめます',
       dedupeTitle: '種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します',
+      cleanClipboardData: '使われていないクリップボードの中身を削除',
+      cleanClipboardDataDesc: 'どのアイテムからも使われていない、保存した中身を消します',
     },
     columnFilter: {
       open: '{{column}} の絞り込みと並べ替え',
@@ -1328,6 +1331,14 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       '{{file}} に、種類・名前・パスが同じアイテムが {{count}} 件あります。先にある 1 件を残して削除しますか？（保存で確定）',
     deduped_one: '重複 {{count}} 件を削除しました',
     deduped_other: '重複 {{count}} 件を削除しました',
+    noUnusedClipboardData: '使われていない、保存したクリップボードの中身はありません',
+    cleanClipboardDataNeedsSave: '未保存の変更があります。保存してから実行してください',
+    cleanClipboardDataConfirm_one:
+      'どのアイテムからも使われていない、保存したクリップボードの中身が {{count}} 件あります。削除しますか？（すぐに消え、元に戻せません）',
+    cleanClipboardDataConfirm_other:
+      'どのアイテムからも使われていない、保存したクリップボードの中身が {{count}} 件あります。削除しますか？（すぐに消え、元に戻せません）',
+    cleanedClipboardData_one: '保存したクリップボードの中身 {{count}} 件を削除しました',
+    cleanedClipboardData_other: '保存したクリップボードの中身 {{count}} 件を削除しました',
     deleteButton: '削除',
     imported_one: '{{count}} 件を {{file}} に追加しました（保存で確定）',
     imported_other: '{{count}} 件を {{file}} に追加しました（保存で確定）',
@@ -2059,6 +2070,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     imageTooLarge: '画像サイズが上限（{{max}}MB）を超えています',
     empty: 'クリップボードが空です',
     textEmpty: 'テキストが空です',
+    unusedDataUnreadable:
+      '読めないファイル（データファイル・ワークスペース）があるため、保存したクリップボードの中身が使われているかを確かめられません',
     saveFailed: 'クリップボードデータの保存に失敗しました: {{file}}',
     captureFailed: 'キャプチャに失敗しました',
     sessionNotFound: 'セッションが見つかりません',

@@ -6,6 +6,7 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 import { findSetNamesUsingItems } from '@common/utils/setUsage';
 
 import { useToast } from '../hooks/useToast';
+import { useUnusedClipboardDataCleanup } from '../hooks/useUnusedClipboardDataCleanup';
 import { logError } from '../utils/debug';
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import { useAdminItemImports } from '../hooks/useAdminItemImports';
@@ -85,7 +86,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   onOpenAutoImportSettings,
 }) => {
   const { t } = useTranslation();
-  const { showSuccess, showInfo, showWarning } = useToast();
+  const { showSuccess, showInfo, showWarning, showError } = useToast();
 
   // データファイル名を取得（設定がない場合は物理ファイル名）
   const getFileLabel = (fileName: string): string => {
@@ -441,6 +442,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     );
   };
 
+  const handleCleanClipboardData = useUnusedClipboardDataCleanup({
+    hasUnsavedChanges,
+    openConfirmDialog,
+    toast: { showSuccess, showInfo, showError },
+  });
+
   const imports = useAdminItemImports({
     editing,
     dataFileTabs,
@@ -657,6 +664,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onCheckMissingPaths={() => void handleCheckMissingPaths()}
         checkingMissingPaths={pathCheck.checking}
         onDedupe={handleDedupe}
+        onCleanClipboardData={() => void handleCleanClipboardData()}
         selectedCount={visibleSelectedItems.length}
         onDeleteSelected={handleDeleteSelected}
         onDuplicateSelected={() => editing.duplicateItems(visibleSelectedItems)}
