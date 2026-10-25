@@ -9,6 +9,7 @@ import {
 } from '@common/utils/tabManager';
 
 import { logError } from '../utils/debug';
+import { ipcErrorMessage } from '../utils/ipcError';
 
 /** アイテム管理画面から変えるタブ構成の設定 */
 export type TabStructureSettings = Pick<
@@ -166,7 +167,7 @@ export function useAdminTabStructure({
         return true;
       } catch (error) {
         logError('タブ構成の保存に失敗しました:', error);
-        const message = error instanceof Error ? error.message : String(error);
+        const message = ipcErrorMessage(error);
         showWarning(t('itemManager.tabStructure.saveFailed', { error: message }));
         return false;
       } finally {

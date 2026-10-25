@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ToastItemType, WindowInfo } from '@common/types';
 
+import { ipcErrorMessage } from '../utils/ipcError';
+
 type Hwnd = WindowInfo['hwnd'];
 type OperationResult = { success: boolean; error?: string };
 
@@ -60,7 +62,7 @@ export function useWindowOperations({
       try {
         result = await fn(win);
       } catch (error) {
-        result = { success: false, error: error instanceof Error ? error.message : String(error) };
+        result = { success: false, error: ipcErrorMessage(error) };
       }
       if (result.success) {
         done.push(win);

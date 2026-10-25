@@ -241,7 +241,9 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
                 className={`desktop-tab${activeGroup === name ? ' active' : ''}`}
                 onClick={() => setGroup(name)}
               >
-                {name}
+                <span className="desktop-tab-label" title={name}>
+                  {name}
+                </span>
                 <span className="tab-count">
                   ({catalog.filter((item) => item.groupName === name).length})
                 </span>
