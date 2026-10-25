@@ -88,6 +88,7 @@ export function useWindowOperations({
     const { done, failed, firstError } = outcome;
     if (done.length === 0) {
       await window.electronAPI.showToastWindow({
+        type: 'error',
         displayName: displayNameOf(failed),
         itemType,
         message: t('launcher.windowActions.failedWithReason', {
@@ -105,6 +106,7 @@ export function useWindowOperations({
           })
         : successMessage;
     await window.electronAPI.showToastWindow({
+      type: failed.length > 0 ? 'warning' : 'success',
       displayName: displayNameOf(done),
       itemType,
       message,

@@ -41,10 +41,10 @@ export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 export interface ToastOptions {
   /** 補足メッセージ（リッチ形式のアクション文言として使用） */
   message?: string;
-  /** トーストの種類（旧形式フォールバック用、通常は不要） */
-  type?: NotificationType;
-  /** 表示時間（ミリ秒） */
-  duration?: number;
+  /** トーストの種類（色と表示時間が決まる。省かない） */
+  type: NotificationType;
+  /** 長めに出す（2 行以上・件数や名前の並び）。表示時間は src/common/constants.ts の toastDurationMs が決める */
+  long?: boolean;
   /** アイテムタイプ */
   itemType?: ToastItemType;
   /** 表示名 */

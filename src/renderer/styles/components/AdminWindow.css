@@ -236,12 +236,6 @@
   margin-left: 5px;
 }
 
-.validation-error {
-  color: var(--color-danger-alt);
-  font-size: var(--font-size-sm);
-  margin-top: var(--spacing-xs);
-}
-
 /* ウィンドウ表示位置選択 */
 .setting-description {
   font-size: var(--font-size-sm);

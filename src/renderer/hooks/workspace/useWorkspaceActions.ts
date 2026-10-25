@@ -39,6 +39,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
       const result = await api.launchItem(item);
       if (result.success) {
         await window.electronAPI.showToastWindow({
+          type: 'success',
           displayName: item.displayName,
           itemType: 'clipboard',
         });
@@ -48,6 +49,7 @@ export function useWorkspaceActions(onDataChanged: () => void) {
     // セットは行の名前を本体側で引いて知らせる（データファイルのアイテムはこの画面に無い）
     if (item.type !== 'set') {
       await window.electronAPI.showToastWindow({
+        type: 'success',
         displayName: item.displayName,
         itemType: toToastItemType(item),
         ...(item.type === 'item' && {

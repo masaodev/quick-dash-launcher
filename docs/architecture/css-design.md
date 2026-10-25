@@ -39,6 +39,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | 影・フォーカス・トランジション | `--shadow`、`--shadow-{sm\|lg\|xl}`、`--text-shadow-on-color`（色の上に載せる白い文字の縁取り）、`--focus-ring*`、`--transition-{fast\|normal\|slow\|width}` |
 | z-index と寸法 | `--z-{dropdown\|modal\|popover}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*`、画面ごとの寸法（例 `--set-row-*`、`--admin-status-bar-height`、`--workspace-tab-max-width`、`--minimap-*`） |
 | ワークスペースのグループ色トークン | `--group-color-{トークン}` |
+| 知らせの種類の色 | `--notify-{success\|error\|warning\|info}`（トースト・セットの進み具合で、白地の上の帯・印・文字に使う。`overlay.html` も読む） |
 | 検索モードの色（メインウィンドウ） | `--mode-{accent\|accent-solid\|tint\|surface\|marked}`（役割の名前。値はモードで変わる） |
 
 - `variables.css` に無い変数名（`--border-color`・`--text-color` など）は使わない。定義されていない変数は何も指定していないのと同じになり、枠や色が黙って消える（2026-10 に約 30 種類を既存の変数へ付け替えた）

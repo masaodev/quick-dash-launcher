@@ -186,7 +186,7 @@ describe('useKeyboardShortcuts', () => {
     expect(params.handleExecuteItem).not.toHaveBeenCalled();
     expect(openParentFolder).not.toHaveBeenCalled();
     expect(showToastWindow).toHaveBeenCalledWith({
-      type: 'info',
+      type: 'warning',
       message: '「朝のセット」には親フォルダがありません',
     });
   });
@@ -204,6 +204,7 @@ describe('useKeyboardShortcuts', () => {
 
     expect(params.handleExecuteItem).not.toHaveBeenCalled();
     expect(showToastWindow).toHaveBeenCalledWith({
+      type: 'warning',
       displayName: 'メール',
       itemType: 'windowSwitch',
       message: 'このアイテムには親フォルダがありません',
@@ -366,7 +367,7 @@ describe('useKeyboardShortcuts', () => {
     expect(pinWindow).not.toHaveBeenCalled();
     expect(showToastWindow).toHaveBeenCalledWith({
       type: 'warning',
-      message: 'この環境は仮想デスクトップに対応していません。',
+      message: 'この環境は仮想デスクトップに対応していません',
     });
   });
 
@@ -381,6 +382,7 @@ describe('useKeyboardShortcuts', () => {
     await press(keyEvent('p', { ctrlKey: true }));
 
     expect(showToastWindow).toHaveBeenCalledWith({
+      type: 'warning',
       displayName: '2 個のウィンドウ',
       itemType: 'windowPin',
       message: 'ウィンドウをすべてのデスクトップに表示しました（1 個は失敗）',
