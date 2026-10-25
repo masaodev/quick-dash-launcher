@@ -164,7 +164,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 **基本例:**
 詳細な形式仕様については上記リンク先を参照してください。JSON形式でアイテムを管理しています。
 
-**画面イメージの撮り直し:** 画面の見た目を変えたら `npm run docs:screenshots` で画面仕様の画像を撮り直す（[画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）。README のデモ GIF は `npm run docs:demo-gif`、README の「画面」の画面イメージ（登録画面・管理画面）は `npm run docs:readme-images` で撮り直す。英語の README（`README.md`）用は、それぞれ末尾に `:en` を付けたスクリプトで撮る（[テストガイド](../testing/README.md)）。
+**画面イメージの撮り直し:** 画面の見た目を変えたら `npm run docs:screenshots` で画面仕様の画像を撮り直す（[画面仕様書 執筆ガイドライン - 画面イメージ](../screens/WRITING-GUIDE.md#画面イメージ)）。README のデモ GIF は `npm run docs:demo-gif`（ワークスペースの章の GIF は `npm run docs:demo-gif-workspace`）、README の「画面」の画面イメージ（登録画面・管理画面）は `npm run docs:readme-images` で撮り直す。英語の README（`README.md`）用は、それぞれ末尾に `:en` を付けたスクリプトで撮る（[テストガイド](../testing/README.md)）。
 
 ### データ読み込みと重複排除
 

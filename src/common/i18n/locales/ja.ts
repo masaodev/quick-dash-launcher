@@ -2152,7 +2152,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '〇〇様\n\nお世話になっております。△△の□□です。\n\n打ち合わせの日程について、以下のいずれかでご都合はいかがでしょうか。\n\n・〇月〇日（〇）10:00〜11:00\n・〇月〇日（〇）14:00〜15:00\n\nご確認のほど、よろしくお願いいたします。',
       guide: {
         name: '📖 ワークスペースの使い方',
-        url: 'https://github.com/masaodev/quick-dash-launcher/blob/main/docs/features/workspace.md',
+        url: 'https://github.com/masaodev/quick-dash-launcher/blob/main/README.ja.md#%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9',
         memo: 'アイテムは、メインウィンドウのアイテムを右クリックして「ワークスペースに追加」、ファイルや URL をここへドラッグ、コピーした文やパスをここで Ctrl+V、のどれかで足せます。',
       },
     },

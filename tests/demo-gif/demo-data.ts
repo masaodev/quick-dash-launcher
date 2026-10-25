@@ -50,6 +50,15 @@ export interface DemoContent {
       string
     >;
   };
+  /** ワークスペースのデモ GIF（アイテムは parts の displayName で指す） */
+  workspace: {
+    /** 最初から入れておくグループ（color は色トークン） */
+    groups: { name: string; color: string; items: string[] }[];
+    /** メインウィンドウで打ち、先頭の候補をワークスペースへドラッグする言葉 */
+    search: string;
+    /** ドラッグで入れる先で、後で切り離すグループ（groups の添字） */
+    targetGroup: number;
+  };
   /** README の画面イメージで入力するもの */
   shots: {
     /** 登録画面（フォルダ取込）。folder は demoRoot からの相対パス */
@@ -130,4 +139,50 @@ export function writeDemoData(configDir: string, demoRoot: string, lang: DemoLan
     files.map(([name], i) => [`datafiles/${name}`, content.dataFileLabels[i]])
   );
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+}
+
+/**
+ * configDir の workspace.json を、ワークスペースのデモ GIF 用（content.workspace.groups）に書き換える
+ *
+ * ワークスペースは 1 つ（名前はメインタブと同じ）。アイテムはデモデータの同じ名前のアイテムのコピーで入れる
+ */
+export function writeDemoWorkspace(configDir: string, demoRoot: string, lang: DemoLang): void {
+  const content = demoContent(lang);
+  const parts = content.parts(demoRoot);
+  const all = [...parts.daily, ...parts.projectA, ...parts.projectB];
+  const createdAt = 1759449600000;
+  const workspaceId = 'WsDemo01';
+  const items = content.workspace.groups.flatMap((group, g) =>
+    group.items.map((name, i) => {
+      const found = all.find((it) => it.type === 'item' && it.displayName === name);
+      if (!found || found.type !== 'item') throw new Error(`デモデータに「${name}」がありません`);
+      return {
+        id: `ItDemo${g}${i}`,
+        type: 'item',
+        displayName: found.displayName,
+        path: found.path,
+        workspaceId,
+        groupId: `GrDemo0${g}`,
+        order: i,
+        addedAt: createdAt,
+      };
+    })
+  );
+  const workspace = {
+    version: '2.0',
+    workspaces: [{ id: workspaceId, displayName: content.tabs[0], order: 0, createdAt }],
+    groups: content.workspace.groups.map((group, g) => ({
+      id: `GrDemo0${g}`,
+      displayName: group.name,
+      color: group.color,
+      order: g,
+      createdAt,
+      workspaceId,
+    })),
+    items,
+  };
+  fs.writeFileSync(
+    path.join(configDir, 'workspace.json'),
+    JSON.stringify(workspace, null, 2) + '\n'
+  );
 }

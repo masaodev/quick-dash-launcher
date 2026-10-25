@@ -341,6 +341,27 @@ export const enContent: DemoContent = {
       otherTab: 'Press Tab to jump to matches in another tab',
     },
   },
+  workspace: {
+    groups: [
+      {
+        name: 'Daily',
+        color: 'primary',
+        items: ['Timesheet', 'Expenses', 'Outlook (web)', 'Chat: Alex (manager)'],
+      },
+      {
+        name: 'A: ERP Migration',
+        color: 'success',
+        items: ['A: Project folder', 'A: Issues (Jira)', 'Chat: A: ERP Migration team'],
+      },
+      {
+        name: 'B: Store Revamp',
+        color: 'warning',
+        items: ['B: Project folder', 'B: Figma designs', 'Chat: B: Store Revamp team'],
+      },
+    ],
+    search: 'basic design screen list',
+    targetGroup: 1,
+  },
   shots: {
     dir: {
       tab: 'A: ERP Migration',

@@ -345,6 +345,27 @@ export const jaContent: DemoContent = {
       otherTab: 'ほかのタブにあるものは、Tab で移る',
     },
   },
+  workspace: {
+    groups: [
+      {
+        name: '毎日使う',
+        color: 'primary',
+        items: ['勤怠システム', '経費精算', 'Outlook（Web）', 'チャット: 佐藤さん（上長）'],
+      },
+      {
+        name: 'A：基幹刷新Prj',
+        color: 'success',
+        items: ['A：案件フォルダ', 'A：課題管理（Backlog）', 'チャット: A：基幹刷新Prj チーム'],
+      },
+      {
+        name: 'B：EC改修Prj',
+        color: 'warning',
+        items: ['B：案件フォルダ', 'B：Figma デザイン', 'チャット: B：EC改修Prj チーム'],
+      },
+    ],
+    search: '基本設計 画面一覧',
+    targetGroup: 1,
+  },
   shots: {
     dir: {
       tab: 'A：基幹刷新Prj',
