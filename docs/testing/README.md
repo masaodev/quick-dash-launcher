@@ -161,6 +161,8 @@ test('管理ウィンドウのテスト', async ({ electronApp, mainWindow }, te
 });
 ```
 
+アプリの終了はフィクスチャが `app.quit()` で行います。テストの中で `electronApp.close()` を呼ばないでください。Playwright の `electronApp.close()` は、管理ウィンドウを一度でも開いたあとだと終了までに 5 秒ほど待つためです（2026-10-25 に計測。全件の 3 分の 1 のテストにこの待ちが乗っていました）。
+
 ### ConfigFileHelperの使用
 
 ```typescript

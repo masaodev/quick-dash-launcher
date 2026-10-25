@@ -104,10 +104,20 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
       console.warn('トレース停止中にエラーが発生しましたが、続行します:', error);
     }
 
-    // テスト完了後にアプリケーションを終了（まだ実行中の場合のみ）
+    // テスト完了後にアプリケーションを終了（まだ実行中の場合のみ）。
+    // electronApp.close() は管理ウィンドウを一度でも開くと、app.quit() を呼ぶまでに 5 秒ほど待つ
+    // （2026-10-25 A3-192 で計測。全件の 3 分の 1 のテストに乗っていた）。app.quit() を直接呼んで
+    // プロセスの終了を待ち、終わらなければ従来の close() に任せる
     try {
       if (!electronApp.process()?.killed) {
-        await electronApp.close();
+        const closed = new Promise<boolean>((resolve) => {
+          electronApp.once('close', () => resolve(true));
+          setTimeout(() => resolve(false), 10000);
+        });
+        await electronApp.evaluate(({ app }) => app.quit()).catch(() => {});
+        if (!(await closed)) {
+          await electronApp.close();
+        }
       }
     } catch (error) {
       console.warn('アプリケーション終了中にエラーが発生しましたが、続行します:', error);
