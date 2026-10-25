@@ -312,19 +312,16 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      const adminUtils = new TestUtils(adminWindow);
-
       await test.step('ウィンドウカテゴリでメインウィンドウとワークスペースウィンドウの設定を変える', async () => {
         await adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' }).click();
-        await adminUtils.wait(200);
 
         await adminWindow.locator('#windowPositionMode').selectOption('center');
         await adminWindow.locator('#workspacePositionMode').selectOption('displayLeft');
-        await adminUtils.wait(200);
 
-        const settings = configHelper.readSettings();
-        expect(settings.windowPositionMode).toBe('center');
-        expect(settings.workspacePositionMode).toBe('displayLeft');
+        await expect.poll(() => configHelper.readSettings().windowPositionMode).toBe('center');
+        await expect
+          .poll(() => configHelper.readSettings().workspacePositionMode)
+          .toBe('displayLeft');
       });
 
       await test.step('変えた枠だけに印が付き、ボタンが押せるようになる', async () => {
