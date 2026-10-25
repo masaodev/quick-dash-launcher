@@ -112,6 +112,25 @@ const AdminItemCsvImportModal: React.FC<AdminItemCsvImportModalProps> = ({
               </ul>
             </section>
           )}
+          {plan.ignored.length > 0 && (
+            <section className="csv-import-ignored" data-testid="csv-import-ignored">
+              <h3>{t('itemCsv.ignoredHeading', { count: plan.ignored.length })}</h3>
+              <p className="csv-import-ignored-note">{t('itemCsv.ignoredNote')}</p>
+              <ul>
+                {plan.ignored.map(({ line, name, columns }) => (
+                  <li key={line}>
+                    {t('itemCsv.ignoredLine', {
+                      line,
+                      name,
+                      columns: columns
+                        .map((column) => t(`itemCsv.columns.${column}`))
+                        .join(t('common.listSeparator')),
+                    })}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {plan.errors.length > 0 && (
             <section className="csv-import-errors">
               <h3>{t('itemCsv.errorsHeading', { count: plan.errors.length })}</h3>

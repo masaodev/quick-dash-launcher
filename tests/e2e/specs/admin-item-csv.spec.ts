@@ -49,12 +49,13 @@ test.describe('QuickDashLauncher - アイテム管理の CSV', () => {
         expect(text).toContain('Stack Overflow');
       });
 
-      await test.step('CSV を直す（GitHub の名前とメモを変え、新しい行を足す）', async () => {
+      await test.step('CSV を直す（GitHub の名前とメモを変え、取り込みでは変えない種別も書き換え、新しい行を足す）', async () => {
         const github = configHelper.getItemByDisplayName('data.json', 'GitHub')!;
         const lines = fs.readFileSync(csvPath, 'utf8').split('\r\n');
         const index = lines.findIndex((line) => line.startsWith(`${github.id},`));
         expect(index).toBeGreaterThan(0);
         const cells = lines[index].split(',');
+        cells[2] = 'dir';
         cells[3] = 'GitHub（CSV）';
         cells[6] = '"CSV で書いたメモ\r\n2 行目"';
         lines[index] = cells.join(',');
@@ -72,6 +73,9 @@ test.describe('QuickDashLauncher - アイテム管理の CSV', () => {
         );
         await expect(modal).toContainText('GitHub（CSV）');
         await expect(modal).toContainText('CSV で足した');
+        await expect(adminWindow.getByTestId('csv-import-ignored')).toContainText(
+          '「GitHub」: 種別（type）'
+        );
         await new TestUtils(adminWindow).attachScreenshot(testInfo, '取り込みの確認');
       });
 
@@ -93,6 +97,8 @@ test.describe('QuickDashLauncher - アイテム管理の CSV', () => {
         await expect
           .poll(() => configHelper.getItemByDisplayName('data.json', 'GitHub（CSV）')?.memo)
           .toBe('CSV で書いたメモ\n2 行目');
+        // 種別は取り込みでは変えない
+        expect(configHelper.getItemByDisplayName('data.json', 'GitHub（CSV）')?.type).toBe('item');
         expect(configHelper.getItemByDisplayName('data.json', 'CSV で足した')).toMatchObject({
           type: 'item',
           path: 'C:\\Windows\\notepad.exe',

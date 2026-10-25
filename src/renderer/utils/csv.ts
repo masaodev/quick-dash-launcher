@@ -12,13 +12,25 @@ export function stringifyCsv(rows: readonly (readonly string[])[]): string {
   return rows.map((row) => row.map(quote).join(',')).join('\r\n') + '\r\n';
 }
 
+export interface ParsedCsv {
+  rows: string[][];
+  /** 引用符が閉じないまま終わったとき、その引用符を開いた行の番号（1 始まり） */
+  unclosedQuoteRow?: number;
+}
+
 /** CSV を行の配列にする。先頭の BOM は除く。最後の改行の後の空行は捨てる */
 export function parseCsv(text: string): string[][] {
+  return parseCsvDetailed(text).rows;
+}
+
+/** parseCsv と同じに読み、引用符の閉じ忘れも返す（閉じ忘れると、その後ろが 1 つのセルに入ってしまう） */
+export function parseCsvDetailed(text: string): ParsedCsv {
   const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   const rows: string[][] = [];
   let row: string[] = [];
   let field = '';
   let inQuotes = false;
+  let quoteRow = 0;
 
   for (let i = 0; i < source.length; i++) {
     const ch = source[i];
@@ -37,6 +49,7 @@ export function parseCsv(text: string): string[][] {
     }
     if (ch === '"') {
       inQuotes = true;
+      quoteRow = rows.length + 1;
     } else if (ch === ',') {
       row.push(field);
       field = '';
@@ -54,5 +67,5 @@ export function parseCsv(text: string): string[][] {
     row.push(field);
     rows.push(row);
   }
-  return rows;
+  return inQuotes ? { rows, unclosedQuoteRow: quoteRow } : { rows };
 }

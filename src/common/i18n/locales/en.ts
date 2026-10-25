@@ -2049,8 +2049,23 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     additionsHeading: 'Added ({{count}})',
     errorsHeading: 'Rows not imported ({{count}})',
     errorLine: 'Line {{line}}: {{message}}',
+    ignoredHeading: "Values import doesn't change ({{count}} rows)",
+    ignoredNote:
+      'These values are dropped, and the other columns of each row are imported. Change the type and tab in the list.',
+    ignoredLine: 'Line {{line}} "{{name}}": {{columns}}',
+    columns: {
+      type: 'type',
+      dataFile: 'data file (dataFile)',
+      displayName: "name (this type doesn't have one)",
+      path: "path (this type doesn't have one)",
+      args: "arguments (this type doesn't have them)",
+    },
     errors: {
       noIdColumn: 'The header row has no id column (keep the header from the exported CSV)',
+      unclosedQuote:
+        'A quote (") that starts on this line is never closed, so nothing in the CSV is imported. Close the quote and import again.',
+      controlChars:
+        'The name, path, or arguments contain a line break, tab, or other control character',
       notFound: 'No item has the id "{{value}}"',
       duplicateId: 'The id "{{value}}" appears more than once (only the first row is imported)',
       nameRequired: 'The name is empty',
