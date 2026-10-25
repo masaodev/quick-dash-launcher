@@ -22,7 +22,6 @@ if (!testName) {
   console.log('  - multi-tab');
   console.log('  - settings');
   console.log('  - context-menu');
-  console.log('  - dialogs');
   console.log('  - set-item');
   console.log('  - item-execution');
   console.log('\nExample: npm run test:e2e:single first-launch');
@@ -38,7 +37,6 @@ const testMap = {
   'multi-tab': 'multi-tab.spec.ts',
   'settings': 'settings-tab.spec.ts',
   'context-menu': 'context-menu.spec.ts',
-  'dialogs': 'dialogs.spec.ts',
   'set-item': 'set-item.spec.ts',
   'item-execution': 'item-execution.spec.ts',
 };
