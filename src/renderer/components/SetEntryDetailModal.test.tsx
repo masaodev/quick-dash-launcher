@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SetEntry, WindowInfo } from '@common/types';
 
 import type { SetCatalogItem } from '../utils/setEditing';
@@ -84,5 +84,85 @@ describe('SetEntryDetailModal（📍 ウィンドウ位置を更新）', () => {
       itemId: 'todo1aaa',
       placement: { x: 960, y: 0, width: 960, height: 1040 },
     });
+  });
+});
+
+describe('SetEntryDetailModal（名前の枠）', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'electronAPI', {
+      configurable: true,
+      value: {
+        getAllWindowsAllDesktops: async () => [],
+        getVirtualDesktopInfo: async () => ({ supported: false, desktopCount: 0 }),
+      },
+    });
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(window, 'electronAPI');
+  });
+
+  async function renderDetail(entry: SetEntry) {
+    const onChange = vi.fn();
+    render(
+      <SetEntryDetailModal
+        entry={entry}
+        catalog={new Map([['todo1aaa', todo]])}
+        catalogList={[todo]}
+        screens={screens}
+        onClose={vi.fn()}
+        onChange={onChange}
+      />
+    );
+    await act(async () => {});
+    const input = screen.getByRole('textbox', { name: '名前' }) as HTMLInputElement;
+    const close = () => fireEvent.click(screen.getByRole('button', { name: '閉じる' }));
+    return { onChange, input, close };
+  }
+
+  const moveOnly: SetEntry = {
+    window: { processName: 'Obsidian.exe', title: 'TODOキャンパス - vault - Obsidian 1.14.4' },
+    placement: { x: 0, y: 0, width: 960, height: 1040 },
+  };
+
+  it('入れた名前は前後の空白を落として行の名前にし、見出しも変わる', async () => {
+    const { onChange, input, close } = await renderDetail(moveOnly);
+    expect(input.placeholder).toBe('自動: TODOキャンパス - vault');
+    fireEvent.change(input, { target: { value: '  TODO を見る ' } });
+    expect(screen.getByRole('heading', { name: '行の詳細: TODO を見る' })).toBeTruthy();
+    close();
+    expect(onChange).toHaveBeenCalledWith({ ...moveOnly, label: 'TODO を見る' });
+  });
+
+  it('空にして閉じると名前を持たせない。「↺ 自動の名前」は自動と違う名前のときだけ出て、押すと空にする', async () => {
+    const { onChange, input, close } = await renderDetail({
+      ...moveOnly,
+      label: 'TODOキャンパス - vault - Obsidian 1.14.4',
+    });
+    fireEvent.click(screen.getByRole('button', { name: '↺ 自動の名前' }));
+    expect(input.value).toBe('');
+    expect(screen.queryByRole('button', { name: '↺ 自動の名前' })).toBeNull();
+    fireEvent.change(input, { target: { value: 'TODOキャンパス - vault' } });
+    expect(screen.queryByRole('button', { name: '↺ 自動の名前' })).toBeNull();
+    fireEvent.change(input, { target: { value: '   ' } });
+    close();
+    const saved = onChange.mock.calls[0][0] as SetEntry;
+    expect(saved).toEqual(moveOnly);
+    expect('label' in saved).toBe(false);
+  });
+
+  it('パスの行は、空のときパスの最後の部分を自動の名前として出す', async () => {
+    const { input } = await renderDetail({ open: { path: 'C:\\tasks\\全体ビュー.md' } });
+    expect(input.placeholder).toBe('自動: 全体ビュー.md');
+    expect(screen.getByText(/空にするとパスの最後の部分になります/)).toBeTruthy();
+  });
+
+  it('アイテムを指す行は入力できず、アイテムの名前を出す（行の名前は触らない）', async () => {
+    const entry: SetEntry = { itemId: 'todo1aaa', label: '前の名前 ' };
+    const { onChange, input, close } = await renderDetail(entry);
+    expect(input.disabled).toBe(true);
+    expect(input.value).toBe('アイテムの名前: MS To Do');
+    close();
+    expect(onChange).toHaveBeenCalledWith(entry);
   });
 });
