@@ -44,7 +44,7 @@ describe('linkEntryToWindow', () => {
     const w = win({});
     expect(linkEntryToWindow(entry, w)).toEqual({
       ...entry,
-      window: { processName: 'Obsidian.exe', title: 'TODOキャンパス - vault - Obsidian v1.9' },
+      window: { processName: 'Obsidian.exe', title: '*TODOキャンパス - vault*' },
       placement: { x: 960, y: 0, width: 960, height: 1040 },
     });
   });
@@ -54,7 +54,7 @@ describe('linkEntryToWindow', () => {
     const before: SetEntry = { ...entry, placement: { x: 0, y: 0, width: 960, height: 1040 } };
     expect(linkEntryToWindow(before, w)).toEqual({
       ...before,
-      window: { processName: 'Obsidian.exe', title: 'TODOキャンパス - vault - Obsidian v1.9' },
+      window: { processName: 'Obsidian.exe', title: '*TODOキャンパス - vault*' },
     });
     expect(linkEntryToWindow(entry, w).placement).toBeUndefined();
   });
@@ -323,9 +323,10 @@ describe('entryFromWindow', () => {
     const entry = entryFromWindow(w);
     expect(entry.open).toBeUndefined();
     expect(entry.itemId).toBeUndefined();
+    // 対象ウィンドウはアプリ名と版を落とした一部一致（版が上がっても当たる）
     expect(entry.window).toEqual({
       processName: 'Obsidian.exe',
-      title: 'TODOキャンパス - vault - Obsidian v1.9',
+      title: '*TODOキャンパス - vault*',
     });
   });
 });

@@ -68,6 +68,19 @@ export function titleToEntryName(title: string): string {
 }
 
 /**
+ * 記録するウィンドウタイトルから、版が上がっても当たる一部一致の形を作る（例: `*一時メモ.txt*`）
+ *
+ * titleToEntryName と同じく最後の部品（多くはアプリ名と版）を落とし、残りを * で囲む。
+ * 元のタイトルの * と ? はワイルドカードと取り違えないよう除く（候補の titleParts と同じ扱い）。
+ * 区切りで 2 つ以上の部品に分かれないタイトルは undefined（タイトル全体で探す）
+ */
+export function titleToPartialPattern(title: string): string | undefined {
+  const plain = title.replace(/[*?]/g, '').trim();
+  const head = titleToEntryName(plain);
+  return head && head !== plain ? `*${head}*` : undefined;
+}
+
+/**
  * 対象ウィンドウから行の名前を作る（名前の無い、動かすだけの行の自動の名前）
  *
  * タイトルのワイルドカード（* と ?）を除いて titleToEntryName をかける。タイトルが無ければ exe 名

@@ -79,7 +79,7 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
       type: 'item',
       path: '',
       launcherType: 'windowSwitch',
-      window: { processName: 'WINWORD.EXE', title: '設計書.docx - Word' },
+      window: { processName: 'WINWORD.EXE', title: '*設計書.docx*' },
     });
     expect(plain).not.toHaveProperty('placement');
     expect(plain).not.toHaveProperty('hwnd');
@@ -88,7 +88,7 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
     expect(positioned).toMatchObject({
       type: 'item',
       path: '',
-      window: { processName: 'WINWORD.EXE', title: '位置つき - Word' },
+      window: { processName: 'WINWORD.EXE', title: '*位置つき*' },
       placement: { x: 100, y: 200, width: 800, height: 600 },
     });
   });

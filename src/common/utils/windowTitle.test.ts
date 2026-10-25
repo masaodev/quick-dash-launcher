@@ -1,6 +1,32 @@
 import { describe, it, expect } from 'vitest';
 
-import { titleToEntryName, windowMatchEntryName } from './windowTitle';
+import { titleToEntryName, titleToPartialPattern, windowMatchEntryName } from './windowTitle';
+
+describe('titleToPartialPattern（記録するタイトルの一部一致の形）', () => {
+  it('最後の部品を落とし、残りを * で囲む', () => {
+    expect(titleToPartialPattern('一時メモ.txt - サクラエディタ32bit 2.4.3.7173  ')).toBe(
+      '*一時メモ.txt*'
+    );
+    expect(titleToPartialPattern('TODOキャンパス - obsidian-pri - Obsidian 1.14.5')).toBe(
+      '*TODOキャンパス - obsidian-pri*'
+    );
+    // 名前の中の「 - 」は残し、落とすのは最後の部品だけ
+    expect(titleToPartialPattern('見積 - コピー.xlsx - Excel')).toBe('*見積 - コピー.xlsx*');
+    expect(titleToPartialPattern('ページ — Mozilla Firefox')).toBe('*ページ*');
+  });
+
+  it('元のタイトルの * と ? は除く（ワイルドカードと取り違えない）', () => {
+    expect(titleToPartialPattern('*memo.txt - メモ帳')).toBe('*memo.txt*');
+    expect(titleToPartialPattern('何? - Editor')).toBe('*何*');
+  });
+
+  it('区切りで分かれないタイトルは undefined（タイトル全体で探す）', () => {
+    expect(titleToPartialPattern('Microsoft To Do')).toBeUndefined();
+    expect(titleToPartialPattern('report-2026.txt-MyEditor 1.2')).toBeUndefined();
+    expect(titleToPartialPattern(' - Obsidian')).toBeUndefined();
+    expect(titleToPartialPattern('')).toBeUndefined();
+  });
+});
 
 describe('titleToEntryName（セットの行の自動の名前）', () => {
   it('区切りで 2 つ以上に分かれるタイトルは、最後の部品を落とす', () => {
