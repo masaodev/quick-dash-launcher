@@ -325,10 +325,10 @@ export const enContent: DemoContent = {
     apps: appItems(),
   }),
   demo: {
-    search: 'basic design',
-    refine: ' screen',
-    minutes: 'weekly 09-30',
-    chat: 'chat',
+    search: 'bas des',
+    refine: ' scr',
+    minutes: '09-30',
+    chat: 'cha ale',
     otherTab: 'TypeS',
     captions: {
       intro: 'Open folders, files, websites, and apps from one place',
@@ -336,10 +336,31 @@ export const enContent: DemoContent = {
       search: 'Type part of a name to narrow the list',
       refine: 'Add words separated by spaces to narrow it further',
       open: 'Select one and press Enter to open it',
-      minutes: 'Add a date to find meeting minutes right away',
+      minutes: 'Type a date to find meeting minutes right away',
       chat: 'Open Teams chats from here too',
       otherTab: 'Press Tab to jump to matches in another tab',
     },
+  },
+  workspace: {
+    groups: [
+      {
+        name: 'Daily',
+        color: 'primary',
+        items: ['Timesheet', 'Expenses', 'Outlook (web)', 'Chat: Alex (manager)'],
+      },
+      {
+        name: 'A: ERP Migration',
+        color: 'success',
+        items: ['A: Project folder', 'A: Issues (Jira)', 'Chat: A: ERP Migration team'],
+      },
+      {
+        name: 'B: Store Revamp',
+        color: 'warning',
+        items: ['B: Project folder', 'B: Figma designs', 'Chat: B: Store Revamp team'],
+      },
+    ],
+    search: 'wi c',
+    targetGroup: 1,
   },
   shots: {
     dir: {

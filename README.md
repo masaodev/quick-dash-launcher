@@ -19,6 +19,7 @@ Only what you've added shows up. A keyword can be any part of the name you gave 
 <p align="center">
   <a href="#installation">Installation</a> ·
   <a href="#screenshots">Screenshots</a> ·
+  <a href="#workspace">Workspace</a> ·
   <a href="docs/README.md">Documentation (Japanese)</a> ·
   <a href="https://github.com/masaodev/quick-dash-launcher/releases">Releases</a>
 </p>
@@ -34,6 +35,7 @@ Only what you've added shows up. A keyword can be any part of the name you gave 
 - **Open everything from one place**
   - Open apps, folders, files, and websites, plus links such as Teams chats, from the same window.
   - Save snippets of text or images and copy them back to the clipboard when you need them.
+  - Keep the things you use most in the [workspace](#workspace), a window that stays at the edge of your screen.
 - **Add what you use and organize it with tabs**
   - Add items one at a time with drag and drop, or import apps from the Start menu and your browser bookmarks in bulk.
   - Create whatever tabs you like, such as "Work," "Personal," or "Client A."
@@ -108,6 +110,24 @@ Set the type to **Folder import** to add all the files in a folder to the list.
 </p>
 
 <!-- Re-take the screenshots with `npm run docs:readme-images:en` (demo data: tests/demo-gif/demo-content-en.ts) -->
+
+---
+
+## Workspace
+
+The workspace is a separate window that keeps the things you use most at the edge of your screen. To open it, select ⭐ in the launcher or press `Ctrl+W`. Unlike the launcher, it stays visible while you work in other windows.
+
+<p align="center">
+  <img src="docs/images/demo-workspace-en.gif" alt="An item found by typing wi c in the launcher is dragged into a workspace group. The group is then dragged out of the workspace into a window of its own and collapsed by clicking its header." />
+</p>
+
+- **Add items**: Right-click an item in the launcher, or drag it to the workspace. You can also drag files and URLs, or copy a path or text and press `Ctrl+V` in the workspace.
+- **Organize with groups**: Sort items into color-coded groups, and create groups inside groups.
+- **Detach a group**: Drag a group out of the workspace to open it in a window of its own, and put it anywhere on your screen.
+
+For details, see [Workspace](docs/features/workspace.md) (Japanese).
+
+<!-- Re-record the demo GIF with `npm run docs:demo-gif-workspace:en` (the real mouse pointer moves while recording; demo data: workspace in tests/demo-gif/demo-content-en.ts) -->
 
 ---
 

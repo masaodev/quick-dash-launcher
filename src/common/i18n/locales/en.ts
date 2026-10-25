@@ -2148,8 +2148,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       templateText:
         'Hi [Name],\n\nCould we find a time to meet? Would either of these work for you?\n\n- [Date] 10:00-11:00\n- [Date] 14:00-15:00\n\nBest regards,\n[Your name]',
       guide: {
-        name: '📖 How to use the workspace (Japanese)',
-        url: 'https://github.com/masaodev/quick-dash-launcher/blob/main/docs/features/workspace.md',
+        name: '📖 How to use the workspace',
+        url: 'https://github.com/masaodev/quick-dash-launcher/blob/main/README.md#workspace',
         memo: 'To add items, right-click an item in the launcher and choose Add to workspace, drag a file or URL here, or copy text or a path and press Ctrl+V here.',
       },
     },

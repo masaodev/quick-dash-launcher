@@ -10,6 +10,7 @@ import { en } from '../../src/common/i18n/locales/en';
 import { ja } from '../../src/common/i18n/locales/ja';
 import { ConfigFileHelper } from '../e2e/helpers/config-file-helper';
 
+import { BACKDROP_MARGIN, showBackdrop } from './demo-backdrop';
 import { demoContent, demoLang, writeDemoData } from './demo-data';
 
 /**
@@ -17,8 +18,9 @@ import { demoContent, demoLang, writeDemoData } from './demo-data';
  *
  * デモデータ（5 タブ。メインに約 140 件）は demo-data.ts。案件フォルダは %TEMP%\qdl-demo\ に空のファイルで作る。
  * 環境変数 DEMO_LANG=en で英語の画面とデータで撮る（GIF は docs/images/demo-main-en.gif。既定は日本語で demo-main.gif）。
- * 録画は ffmpeg の gdigrab で、メインウィンドウの範囲だけを 30fps・劣化なしで撮る（Playwright の動画は
- * 圧縮の残像が出るため使わない）。撮影中はウィンドウを最前面に固定するので、その範囲に他の物を重ねないこと。
+ * 録画は ffmpeg の gdigrab で、メインウィンドウの周りに少し余白を足した範囲を 30fps・劣化なしで撮る（Playwright の動画は
+ * 圧縮の残像が出るため使わない）。余白には色付きの背景を敷く（demo-backdrop.ts）。
+ * 撮影中はウィンドウを最前面に固定するので、その範囲に他の物を重ねないこと。
  * 動画のどこから使うかを test-results/demo-gif/<main か main-en>/meta.json に書き、scripts/make-demo-gif.mjs がその範囲を
  * GIF にする。画面下の説明文（字幕）は既定では出さず、DEMO_CAPTIONS=1 のときだけ出す
  */
@@ -118,8 +120,8 @@ test('メインデモ', async () => {
     await clearSearch(win);
     await caption(win, CONTENT.demo.captions.intro);
 
-    // メインウィンドウを最前面に固定し、画面上の範囲（物理ピクセル）を求めて録画を始める
-    const rect = await app.evaluate(({ BrowserWindow, screen }) => {
+    // メインウィンドウを最前面に固定し、周りに余白を足した範囲を撮る。余白には色付きの背景を敷く
+    const { area, scale } = await app.evaluate(({ BrowserWindow, screen }, margin) => {
       const w = BrowserWindow.getAllWindows().find(
         (bw) => bw.isVisible() && bw.webContents.getURL().includes('index.html')
       );
@@ -127,15 +129,24 @@ test('メインデモ', async () => {
       w.setAlwaysOnTop(true, 'screen-saver');
       w.focus();
       const b = w.getContentBounds();
-      const scale = screen.getDisplayMatching(b).scaleFactor;
       return {
-        logicalWidth: b.width,
-        x: Math.round(b.x * scale),
-        y: Math.round(b.y * scale),
-        width: Math.round(b.width * scale),
-        height: Math.round(b.height * scale),
+        area: {
+          x: b.x - margin,
+          y: b.y - margin,
+          width: b.width + margin * 2,
+          height: b.height + margin * 2,
+        },
+        scale: screen.getDisplayMatching(b).scaleFactor,
       };
-    });
+    }, BACKDROP_MARGIN);
+    await showBackdrop(app, area, 'QuickDashLauncher');
+    const rect = {
+      logicalWidth: area.width,
+      x: Math.round(area.x * scale),
+      y: Math.round(area.y * scale),
+      width: Math.round(area.width * scale),
+      height: Math.round(area.height * scale),
+    };
     await input.focus();
     const videoFile = 'capture.mkv';
     const recordStart = Date.now();

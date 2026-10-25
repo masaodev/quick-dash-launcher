@@ -45,7 +45,7 @@ docs/
 | 登録種別の追加・変更、種別ごとにできることの変更 | features/item-categories.md（README.ja.md・README.md の「ほかにできること」も） |
 | キーボードショートカットの変更 | features/keyboard-shortcuts.md |
 | アイコン処理の変更 | features/icons.md |
-| ワークスペース機能の変更 | features/workspace.md、screens/workspace-window.md |
+| ワークスペース機能の変更 | features/workspace.md、screens/workspace-window.md。README の「ワークスペース」の章に関わる変更（追加・グループ・切り離しの操作や見た目）は、`npm run docs:demo-gif-workspace`（日本語）と `npm run docs:demo-gif-workspace:en`（英語）でデモ GIF を撮り直す（[テストガイド](testing/README.md)） |
 | 設定項目の追加・変更 | architecture/file-formats/settings-format.md、screens/admin-window.md |
 | データファイル（data.json）の形式変更 | architecture/file-formats/data-format.md |
 | workspace.json の形式変更 | architecture/file-formats/workspace-format.md |
