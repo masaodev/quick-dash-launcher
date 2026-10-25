@@ -122,9 +122,12 @@ function spawnDetached(
   child.unref();
   return new Promise((resolve) => {
     child.once('spawn', () => resolve(undefined));
-    child.once('error', (error) => {
+    child.once('error', (error: Error & { code?: string }) => {
       logger.error({ error: error.message, ...logContext }, errorMessage);
-      resolve(error.message);
+      // 「spawn C:\a.exe ENOENT」のままでは伝わらないので、ファイルが無いときは言葉にする
+      resolve(
+        error.code === 'ENOENT' ? mainI18n.t('launcher.messages.fileNotFound') : error.message
+      );
     });
   });
 }

@@ -200,6 +200,15 @@ describe('launchItem の結果', () => {
     ).resolves.toEqual({ success: false, error: 'spawn C:/Tools/t.exe ENOENT' });
   });
 
+  it('spawn の error がファイルの無いこと（ENOENT）なら、「ファイルが見つかりません」にする', async () => {
+    spawnState.spawnError = Object.assign(new Error('spawn C:/Tools/t.exe ENOENT'), {
+      code: 'ENOENT',
+    });
+    await expect(
+      launchItem({ type: 'app', path: 'C:/Tools/t.exe', args: '-x' }, logger)
+    ).resolves.toEqual({ success: false, error: 'launcher.messages.fileNotFound' });
+  });
+
   it('ファイル名だけのアプリが PATH に無ければ失敗にする', async () => {
     resolveFromPathMock.mockResolvedValue(null);
     await expect(launchItem({ type: 'app', path: 'nothing.exe' }, logger)).resolves.toEqual({
