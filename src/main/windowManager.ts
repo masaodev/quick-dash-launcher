@@ -354,16 +354,17 @@ async function updateTrayMenu(): Promise<void> {
       },
     },
     { type: 'separator' },
-    {
-      label: t('tray.itemManager'),
-      click: async () => {
-        await showAdminWindowWithTab('edit');
-      },
-    },
+    // 管理ウィンドウのタブと同じ順（設定・アイテム管理・ヘルプ）
     {
       label: t('tray.settings'),
       click: async () => {
         await showAdminWindowWithTab('settings');
+      },
+    },
+    {
+      label: t('tray.itemManager'),
+      click: async () => {
+        await showAdminWindowWithTab('edit');
       },
     },
     {
