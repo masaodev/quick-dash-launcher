@@ -66,16 +66,21 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
   }, [editingId]);
   /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち。false＝保存に失敗した */
   const pendingSave = useRef<Promise<boolean> | null>(null);
+  /** 次の close が「保存」のすぐ後の閉じる要求か（キャンセル・Esc なら false） */
+  const closingAfterSave = useRef(false);
 
   const close = useCallback(() => {
+    const afterSave = closingAfterSave.current;
+    closingAfterSave.current = false;
     const pending = pendingSave.current;
     if (pending) {
       void pending.then((saved) => {
-        if (saved) {
+        // 保存に失敗したら閉じずに残す（エラーを見せ、入力したままもう一度保存できるように。RM7）。
+        // キャンセル・Esc で閉じるときは、保存の結果によらず閉じる
+        if (saved || !afterSave) {
           window.close();
           return;
         }
-        // 保存に失敗したら閉じずに残す（エラーを見せ、入力したままもう一度保存できるように。RM7）。
         // 次の「保存」・キャンセルでは、この失敗を待たない
         if (pendingSave.current === pending) pendingSave.current = null;
       });
@@ -86,6 +91,9 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
 
   const handleRegister = useCallback(
     (items: RegisterItem[]) => {
+      closingAfterSave.current = true;
+      // 保存の途中にもう一度押されたら、新しく保存しない（二重に登録しない）。閉じるのは今の保存を待つ
+      if (pendingSave.current) return;
       if (request.returnToOpener) {
         pendingSave.current = window.electronAPI
           .returnMainChildWindowValue(requestId, { kind: 'register', items })

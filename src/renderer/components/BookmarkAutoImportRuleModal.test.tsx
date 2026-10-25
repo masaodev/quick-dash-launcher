@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { BrowserInfo } from '@common/types';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
 
@@ -19,6 +19,7 @@ function browser(id: 'chrome' | 'edge', installed: boolean): BrowserInfo {
 }
 
 function renderModal(browsers: BrowserInfo[], rule: BookmarkAutoImportRule | null = null) {
+  const onSave = vi.fn(async (_rule: BookmarkAutoImportRule, _destination: unknown) => true);
   Object.defineProperty(window, 'electronAPI', {
     configurable: true,
     value: {
@@ -31,10 +32,11 @@ function renderModal(browsers: BrowserInfo[], rule: BookmarkAutoImportRule | nul
       rule={rule}
       dataFileTabs={[{ name: 'メイン', files: ['datafiles/data.json'] }]}
       dataFileLabels={{}}
-      onSave={vi.fn(async () => true)}
+      onSave={onSave}
       onCancel={vi.fn()}
     />
   );
+  return { onSave };
 }
 
 beforeEach(() => {
@@ -52,6 +54,17 @@ describe('BookmarkAutoImportRuleModal の取込元', () => {
     await waitFor(() =>
       expect(getBookmarksWithFolders).toHaveBeenCalledWith('C:\\edge\\Default\\Bookmarks')
     );
+  });
+
+  it('Chrome が無く、見つかったブラウザにプロファイルが無くても、取込元はそのブラウザにする', async () => {
+    const { onSave } = renderModal([
+      browser('chrome', false),
+      { ...browser('edge', true), profiles: [] },
+    ]);
+    await screen.findByRole('option', { name: 'Microsoft Edge' });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0]).toMatchObject({ browserId: 'edge', profileIds: [] });
   });
 
   it('Chrome があれば、新しいルールの取込元は Chrome のまま', async () => {

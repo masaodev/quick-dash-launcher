@@ -36,6 +36,17 @@ describe('useDropdown のメニューの位置', () => {
     expect(screen.getByTestId('menu').style.transform).toBe('translateX(17px)');
   });
 
+  it('開いたままウィンドウが狭くなってはみ出したら、ずらし直す', () => {
+    stubMenuRect(100, 228);
+    render(<Dropdown />);
+    fireEvent.click(screen.getByRole('button', { name: '開く' }));
+    expect(screen.getByTestId('menu').style.transform).toBe('');
+
+    stubMenuRect(-20, 228);
+    fireEvent(window, new Event('resize'));
+    expect(screen.getByTestId('menu').style.transform).toBe('translateX(24px)');
+  });
+
   it('はみ出さないときは動かさない', () => {
     stubMenuRect(100, 228);
     render(<Dropdown />);

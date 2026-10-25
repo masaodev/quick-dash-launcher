@@ -284,6 +284,9 @@ export function useRegisterForm(
       return;
     }
 
+    // 保存に失敗して画面が残ったとき、保存し直しで同じクリップボードを二重に確定しないよう、
+    // 確定した後の中身（データの参照）にしておく（RM7）
+    setItems(finalItems);
     onRegister(finalItems);
     onClose();
   };

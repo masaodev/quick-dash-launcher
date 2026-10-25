@@ -131,7 +131,13 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
         // 新しいルールで初期値のブラウザ（Chrome）が無い PC では、見つかった最初のブラウザにする
         // （1 回だけの取込の画面と同じ。BR4）。保存済みのルールの取込元は勝手に変えない
         const switchToInstalled = !rule && !browser?.installed;
-        if (switchToInstalled) browser = detected.find((b) => b.installed);
+        if (switchToInstalled) {
+          browser = detected.find((b) => b.installed);
+          // プロファイルが見つからないブラウザでも、取込元はそのブラウザにしておく（下で決めるプロファイルは無い）
+          if (browser && browser.profiles.length === 0) {
+            updateRule({ browserId: browser.id, profileIds: [], folderPaths: [] });
+          }
+        }
         if (browser?.installed && browser.profiles.length > 0) {
           const found = editingRule.profileIds.find((id) =>
             browser.profiles.some((p) => p.id === id)
@@ -215,7 +221,7 @@ const BookmarkAutoImportRuleModal: React.FC<BookmarkAutoImportRuleModalProps> = 
         ...bookmark,
         displayName: buildBookmarkDisplayName(bookmark, editingRule, t),
       })),
-    [allBookmarks, editingRule]
+    [allBookmarks, editingRule, t]
   );
 
   const folderLabel = (path: string) => bookmarkFolderLabel(path.split('/').pop() ?? path, t);

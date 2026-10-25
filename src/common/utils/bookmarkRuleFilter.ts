@@ -81,8 +81,10 @@ export function buildBookmarkDisplayName(
   let name = bookmark.displayName;
 
   if (rule.folderNameMode !== 'none' && bookmark.folderPath) {
-    // 一番上のフォルダはブラウザ内部のキー（bookmark_bar など）なので、画面と同じ言葉にする（BI5）
-    const parts = bookmark.folderPath.split('/').map((part) => bookmarkFolderLabel(part, t));
+    // 一番上のフォルダはブラウザ内部のキー（bookmark_bar など）なので、画面と同じ言葉にする（BI5）。
+    // 下のフォルダは、利用者が同じ名前（other など）を付けていてもそのまま
+    const parts = bookmark.folderPath.split('/');
+    parts[0] = bookmarkFolderLabel(parts[0], t);
     let folderLabel = '';
     switch (rule.folderNameMode) {
       case 'parent':

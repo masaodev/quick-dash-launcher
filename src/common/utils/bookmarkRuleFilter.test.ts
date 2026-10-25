@@ -124,6 +124,14 @@ describe('buildBookmarkDisplayName', () => {
         createI18n('en').t
       )
     ).toBe('[Other bookmarks/読み物] ニュース');
+    // 下のフォルダは、内部のキーと同じ名前でも置き換えない
+    expect(
+      buildBookmarkDisplayName(
+        { displayName: 'メモ', url: 'https://example.com', folderPath: 'bookmark_bar/other' },
+        { prefix: '', suffix: '', folderNameMode: 'fullPath' },
+        t
+      )
+    ).toBe('[ブックマーク バー/other] メモ');
   });
 });
 
