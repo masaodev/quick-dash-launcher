@@ -442,3 +442,26 @@ test.describe('QuickDashLauncher - ヘルプタブのショートカット一覧
     await expect(shortcuts).not.toContainText('Ctrl+Alt+W');
   });
 });
+
+/**
+ * ヘルプタブの「アプリを終了」は、OS 標準の confirm ではなくアプリの確認ダイアログで聞く
+ */
+test.describe('QuickDashLauncher - ヘルプタブのアプリを終了', () => {
+  test('確認ダイアログを出し、キャンセルで閉じる（アプリは終了しない）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+    await adminWindow.locator('button', { hasText: '📖 ヘルプ' }).click();
+    await adminWindow.locator('.help-footer button', { hasText: 'アプリを終了' }).click();
+
+    const dialog = adminWindow.getByTestId('confirm-dialog');
+    await expect(dialog).toContainText('アプリを終了しますか？');
+    await expect(dialog.getByTestId('confirm-dialog-confirm-button')).toHaveText('終了する');
+
+    await dialog.getByTestId('confirm-dialog-cancel-button').click();
+    await expect(dialog).toHaveCount(0);
+    await expect(adminWindow.locator('.help-footer')).toBeVisible();
+  });
+});

@@ -188,6 +188,8 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'off',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // OS 標準の alert・confirm は見た目が浮くので、AlertDialog・ConfirmDialog・トーストを使う（docs/features/toast-notifications.md）
+      'no-alert': 'error',
     },
     settings: REACT_SETTINGS,
   },

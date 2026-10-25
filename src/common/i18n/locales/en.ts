@@ -1675,6 +1675,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       'When an AI agent changes your items or workspaces, have it use the CLI (qdl) instead of editing the files directly (turn on "Enable QuickDashLauncher CLI" in General).',
     quit: '🚪 Exit QuickDashLauncher',
     quitConfirm: 'Exit QuickDashLauncher?',
+    quitConfirmButton: 'Exit',
   },
   register: {
     editTitle: 'Edit item',

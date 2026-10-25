@@ -17,7 +17,7 @@ function editable(item: EditableJsonItem['item']): EditableJsonItem {
 describe('useModalInitializer の initializeFromEditingItem', () => {
   it('アイテム管理からセットを開くと、カスタムアイコンのプレビューを読む', async () => {
     const onLoadCustomIcon = vi.fn(async () => undefined);
-    const { initializeFromEditingItem } = useModalInitializer();
+    const { initializeFromEditingItem } = useModalInitializer(vi.fn());
 
     const [item] = await initializeFromEditingItem(
       editable({
@@ -37,7 +37,7 @@ describe('useModalInitializer の initializeFromEditingItem', () => {
 
   it('メイン画面からクリップボード・セットを開いても、カスタムアイコンのプレビューを読む', async () => {
     const onLoadCustomIcon = vi.fn(async () => undefined);
-    const { initializeFromEditingItem } = useModalInitializer();
+    const { initializeFromEditingItem } = useModalInitializer(vi.fn());
 
     await initializeFromEditingItem(
       {
@@ -72,7 +72,7 @@ describe('useModalInitializer の initializeFromEditingItem', () => {
 
   it('カスタムアイコンが無ければ読まない', async () => {
     const onLoadCustomIcon = vi.fn(async () => undefined);
-    const { initializeFromEditingItem } = useModalInitializer();
+    const { initializeFromEditingItem } = useModalInitializer(vi.fn());
 
     await initializeFromEditingItem(
       editable({

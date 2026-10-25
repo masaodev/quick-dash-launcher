@@ -1677,6 +1677,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       'AI エージェントにアイテムやワークスペースを変えさせるときは、ファイルを直接書かせずに CLI（qdl）を使わせてください（基本設定の「QuickDashLauncher CLI を使えるようにする」をオンにします）。',
     quit: '🚪 アプリを終了',
     quitConfirm: 'アプリを終了しますか？',
+    quitConfirmButton: '終了する',
   },
   register: {
     editTitle: 'アイテムの編集',

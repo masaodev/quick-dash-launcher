@@ -3,10 +3,13 @@ import { useState, useCallback } from 'react';
 
 import { logError } from '../utils/debug';
 
+import { useToast } from './useToast';
+
 /**
  * カスタムアイコンの選択、プレビュー、削除を管理するフック
  */
 export function useCustomIcon() {
+  const { showError } = useToast();
   const [customIconPreviews, setCustomIconPreviews] = useState<{ [index: number]: string }>({});
   const [filePickerState, setFilePickerState] = useState<{
     isOpen: boolean;
@@ -42,10 +45,10 @@ export function useCustomIcon() {
         }
       } catch (error) {
         logError('カスタムアイコン選択エラー:', error);
-        alert(i18next.t('register.errors.customIconSelectFailed', { error: String(error) }));
+        showError(i18next.t('register.errors.customIconSelectFailed', { error: String(error) }));
       }
     },
-    [filePickerState.itemIndex]
+    [filePickerState.itemIndex, showError]
   );
 
   const deleteCustomIcon = useCallback(
@@ -61,10 +64,10 @@ export function useCustomIcon() {
         });
       } catch (error) {
         logError('カスタムアイコン削除エラー:', error);
-        alert(i18next.t('register.errors.customIconDeleteFailed', { error: String(error) }));
+        showError(i18next.t('register.errors.customIconDeleteFailed', { error: String(error) }));
       }
     },
-    []
+    [showError]
   );
 
   const loadCustomIconPreview = useCallback(async (index: number, customIconFileName: string) => {

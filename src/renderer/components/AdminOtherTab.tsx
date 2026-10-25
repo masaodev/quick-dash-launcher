@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppInfo } from '@common/types';
 
+import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui';
 
 /** ショートカット一覧の固定のキー（説明は辞書の help.keys） */
@@ -23,6 +24,7 @@ const FIXED_SHORTCUTS = [
 const AdminOtherTab: React.FC = () => {
   const { t } = useTranslation();
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+  const [quitConfirmOpen, setQuitConfirmOpen] = useState(false);
   const [hotkeys, setHotkeys] = useState<{ launch: string; itemSearch: string }>({
     launch: '',
     itemSearch: '',
@@ -51,9 +53,7 @@ const AdminOtherTab: React.FC = () => {
   };
 
   const handleQuitApp = () => {
-    if (confirm(t('help.quitConfirm'))) {
-      window.electronAPI.quitApp();
-    }
+    setQuitConfirmOpen(true);
   };
 
   const handleOpenGitHub = () => {
@@ -136,6 +136,18 @@ const AdminOtherTab: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={quitConfirmOpen}
+        onClose={() => setQuitConfirmOpen(false)}
+        onConfirm={() => {
+          setQuitConfirmOpen(false);
+          window.electronAPI.quitApp();
+        }}
+        message={t('help.quitConfirm')}
+        confirmText={t('help.quitConfirmButton')}
+        danger
+      />
     </div>
   );
 };
