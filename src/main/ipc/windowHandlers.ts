@@ -71,6 +71,7 @@ import { getMainWindow, getTray, setEscapeHandledByPage } from '../windowManager
 import { isPinLevel, levelToPinMode, pinModeToLevel, showPinMenu } from '../utils/pinMenu.js';
 import { startWindowMove } from '../utils/nativeWindowControl.js';
 import { getHwnd } from '../utils/virtualDesktop/index.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 /** ピン留めの対象（送ってきたウィンドウ）ごとの読み書き */
 interface PinTarget {
@@ -126,11 +127,11 @@ export function setupWindowHandlers(
     return null;
   };
 
-  ipcMain.handle(IPC_CHANNELS.PIN_GET, (event): PinLevel => {
+  handleIpc(IPC_CHANNELS.PIN_GET, (event): PinLevel => {
     return resolvePinTarget(event.sender)?.get() ?? 0;
   });
 
-  ipcMain.handle(IPC_CHANNELS.PIN_SET, async (event, level: unknown): Promise<PinLevel> => {
+  handleIpc(IPC_CHANNELS.PIN_SET, async (event, level: unknown): Promise<PinLevel> => {
     const target = resolvePinTarget(event.sender);
     if (!target) return 0;
     if (isPinLevel(level)) {
@@ -139,7 +140,7 @@ export function setupWindowHandlers(
     return target.get();
   });
 
-  ipcMain.handle(IPC_CHANNELS.PIN_SHOW_MENU, async (event): Promise<PinLevel> => {
+  handleIpc(IPC_CHANNELS.PIN_SHOW_MENU, async (event): Promise<PinLevel> => {
     const target = resolvePinTarget(event.sender);
     if (!target) return 0;
     const current = target.get();
@@ -150,7 +151,7 @@ export function setupWindowHandlers(
     return target.get();
   });
 
-  ipcMain.handle(IPC_CHANNELS.QUIT_APP, () => {
+  handleIpc(IPC_CHANNELS.QUIT_APP, () => {
     const tray = getTray();
     if (tray) {
       tray.destroy();
@@ -158,38 +159,38 @@ export function setupWindowHandlers(
     app.quit();
   });
 
-  ipcMain.handle(IPC_CHANNELS.HIDE_EDIT_WINDOW, () => hideAdminWindow());
-  ipcMain.handle(IPC_CHANNELS.TOGGLE_EDIT_WINDOW, () => toggleAdminWindow());
+  handleIpc(IPC_CHANNELS.HIDE_EDIT_WINDOW, () => hideAdminWindow());
+  handleIpc(IPC_CHANNELS.TOGGLE_EDIT_WINDOW, () => toggleAdminWindow());
 
-  ipcMain.handle(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, async (_event, tab: AdminTab) =>
+  handleIpc(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, async (_event, tab: AdminTab) =>
     showAdminWindowWithTab(tab)
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL,
     async (_event, modal: 'bookmark' | 'app') => showAdminWindowWithImportModal(modal)
   );
 
-  ipcMain.handle(IPC_CHANNELS.GET_INITIAL_TAB, () => getInitialTab());
-  ipcMain.handle(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => getPendingImportModal());
+  handleIpc(IPC_CHANNELS.GET_INITIAL_TAB, () => getInitialTab());
+  handleIpc(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => getPendingImportModal());
 
-  ipcMain.handle(IPC_CHANNELS.COPY_TO_CLIPBOARD, async (_event, text: string) => {
+  handleIpc(IPC_CHANNELS.COPY_TO_CLIPBOARD, async (_event, text: string) => {
     await clipboard.writeText(text);
     return true;
   });
 
   // メインウィンドウの余白の右クリック「クリップボードのパス・URL から追加」。振り分けはレンダラーが行う
   // （この版の Electron では clipboard.readText は Promise を返すので待つ）
-  ipcMain.handle(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER, async () => ({
+  handleIpc(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER, async () => ({
     files: readClipboardFilePaths(),
     text: await clipboard.readText(),
   }));
 
   // メイン画面・管理画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）。閉じるまで待つ
-  ipcMain.handle(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, (event, request: MainChildWindowRequest) =>
+  handleIpc(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, (event, request: MainChildWindowRequest) =>
     openMainChildWindow(request, event.sender)
   );
-  ipcMain.handle(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, (_event, requestId: string) =>
+  handleIpc(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, (_event, requestId: string) =>
     getMainChildWindowRequest(requestId)
   );
   ipcMain.on(IPC_CHANNELS.WINDOW_SET_ESCAPE_HANDLED_BY_PAGE, (_event, handled: boolean) =>
@@ -204,67 +205,67 @@ export function setupWindowHandlers(
     IPC_CHANNELS.NOTIFY_MAIN_CHILD_WINDOW_RESULT,
     (_event, result: MainChildWindowResult) => relayMainChildWindowResult(result)
   );
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.RETURN_MAIN_CHILD_WINDOW_VALUE,
     (_event, requestId: string, value: MainChildWindowReturn) =>
       setMainChildWindowReturn(requestId, value)
   );
 
-  ipcMain.handle(IPC_CHANNELS.LOG_PERFORMANCE_TIMING, (_event, label: string, duration: number) => {
+  handleIpc(IPC_CHANNELS.LOG_PERFORMANCE_TIMING, (_event, label: string, duration: number) => {
     windowLogger.info(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
   });
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_IS_OPEN, () => isWorkspaceWindowOpen());
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
+  handleIpc(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
+  handleIpc(IPC_CHANNELS.WORKSPACE_IS_OPEN, () => isWorkspaceWindowOpen());
+  handleIpc(IPC_CHANNELS.WORKSPACE_HIDE_WINDOW, () => {
     hideWorkspaceWindow();
     return true;
   });
 
   // 編集画面の「試しに実行」は、編集画面を開いた元（ワークスペース本体または切り離しウィンドウ）を最前面にする
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP, (event) => {
+  handleIpc(IPC_CHANNELS.WORKSPACE_GET_ALWAYS_ON_TOP, (event) => {
     const groupId = getEditorOpenerGroupId(event.sender);
     return groupId ? getDetachedAlwaysOnTop(groupId) : getWorkspaceAlwaysOnTop();
   });
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP, (event) => {
+  handleIpc(IPC_CHANNELS.WORKSPACE_TOGGLE_ALWAYS_ON_TOP, (event) => {
     const groupId = getEditorOpenerGroupId(event.sender);
     return groupId ? toggleDetachedAlwaysOnTop(groupId) : toggleWorkspaceAlwaysOnTop();
   });
 
   // 編集は送信元（ワークスペース本体または切り離しウィンドウ）を親にした子ウィンドウで開く
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, (event, itemId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_EDITOR, (event, itemId: string) =>
     openWorkspaceItemEditor(event.sender, itemId)
   );
 
   // グループに追加するアイテムを選ぶウィンドウも、送信元を親にした子ウィンドウで開く
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_PICKER, (event, groupId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_OPEN_ITEM_PICKER, (event, groupId: string) =>
     openWorkspaceItemPicker(event.sender, groupId)
   );
   // 参照の指す先を選ぶウィンドウ・一括で参照に変えるウィンドウも、送信元を親にした子ウィンドウで開く
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_LINK_PICKER, (event, itemId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_OPEN_LINK_PICKER, (event, itemId: string) =>
     openWorkspaceLinkPicker(event.sender, itemId)
   );
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_LINK_COPIES, (event, workspaceId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_OPEN_LINK_COPIES, (event, workspaceId: string) =>
     openWorkspaceLinkCopies(event.sender, workspaceId)
   );
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_NEW_ITEM_EDITOR, (event, groupId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_OPEN_NEW_ITEM_EDITOR, (event, groupId: string) =>
     openWorkspaceNewItemEditor(event.sender, groupId)
   );
 
   // 確認（グループの削除・アーカイブ）も送信元を親にした子ウィンドウで開く。閉じるまで待つ
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_OPEN_CONFIRM, (event, request: ConfirmWindowRequest) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_OPEN_CONFIRM, (event, request: ConfirmWindowRequest) =>
     openWorkspaceConfirm(event.sender, request)
   );
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_GET_CONFIRM_REQUEST, (_event, requestId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_GET_CONFIRM_REQUEST, (_event, requestId: string) =>
     getWorkspaceConfirmRequest(requestId)
   );
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_RETURN_CONFIRM_RESULT,
     (_event, requestId: string, result: ConfirmWindowResult) =>
       setWorkspaceConfirmResult(requestId, result)
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_SET_HEIGHT, (_event, height: number) => {
+  handleIpc(IPC_CHANNELS.WORKSPACE_SET_HEIGHT, (_event, height: number) => {
     const workspace = getWorkspaceWindow();
     if (!workspace || workspace.isDestroyed()) return false;
 
@@ -276,7 +277,7 @@ export function setupWindowHandlers(
     return true;
   });
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_SET_POSITION_AND_SIZE,
     (_event, x: number, y: number, width: number, height: number) => {
       const workspace = getWorkspaceWindow();
@@ -294,38 +295,35 @@ export function setupWindowHandlers(
   );
 
   // 切り離しウィンドウ
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
     async (_event, groupId: string, cursorX?: number, cursorY?: number) => {
       return createDetachedGroupWindow(groupId, cursorX, cursorY);
     }
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
+  handleIpc(IPC_CHANNELS.WORKSPACE_CLOSE_DETACHED_GROUP, (_event, groupId: string) =>
     closeDetachedGroupWindow(groupId)
   );
 
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW,
-    (event, width: number, height: number) => {
-      const win = BrowserWindow.fromWebContents(event.sender);
-      if (!win || win.isDestroyed()) return false;
+  handleIpc(IPC_CHANNELS.WORKSPACE_RESIZE_CALLER_WINDOW, (event, width: number, height: number) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) return false;
 
-      const { x, y } = win.getBounds();
-      win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
-      rememberDetachedBoundsFromRenderer(win, { kind: 'autoFit' });
+    const { x, y } = win.getBounds();
+    win.setBounds({ x, y, width: Math.round(width), height: Math.round(height) });
+    rememberDetachedBoundsFromRenderer(win, { kind: 'autoFit' });
 
-      // 中身に合わせた大きさにした後、まだ初めての表示をしていなければ、フォーカスを奪わずに出す
-      // （隠れている切り離しウィンドウは、大きさを直すたびに出さない）
-      if (!win.isVisible() && (!isDetachedGroupWindow(win) || takeDetachedInitialShow(win))) {
-        showWithoutFocus(win);
-      }
-
-      return true;
+    // 中身に合わせた大きさにした後、まだ初めての表示をしていなければ、フォーカスを奪わずに出す
+    // （隠れている切り離しウィンドウは、大きさを直すたびに出さない）
+    if (!win.isVisible() && (!isDetachedGroupWindow(win) || takeDetachedInitialShow(win))) {
+      showWithoutFocus(win);
     }
-  );
 
-  ipcMain.handle(
+    return true;
+  });
+
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_SET_CALLER_BOUNDS,
     (event, x: number, y: number, width: number, height: number) => {
       const win = BrowserWindow.fromWebContents(event.sender);
@@ -348,7 +346,7 @@ export function setupWindowHandlers(
     }
   );
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.WORKSPACE_SET_POSITION_MODE,
     async (_event, mode: WorkspacePositionMode) => {
       const settingsService = await SettingsService.getInstance();

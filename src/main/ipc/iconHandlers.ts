@@ -1,4 +1,3 @@
-import { ipcMain } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { IconFetchErrorService } from '../services/iconFetchErrorService.js';
@@ -20,6 +19,7 @@ import {
   saveCustomIcon,
   selectCustomIconFile,
 } from '../services/icon/customIconStore.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 export function setupIconHandlers(
   faviconsFolder: string,
@@ -32,22 +32,20 @@ export function setupIconHandlers(
     extensions: extensionsFolder,
   };
 
-  ipcMain.handle(IPC_CHANNELS.FETCH_FAVICON, (_event, url: string) =>
-    fetchFavicon(url, faviconsFolder)
-  );
+  handleIpc(IPC_CHANNELS.FETCH_FAVICON, (_event, url: string) => fetchFavicon(url, faviconsFolder));
 
-  ipcMain.handle(IPC_CHANNELS.EXTRACT_ICON, (_event, filePath: string) =>
+  handleIpc(IPC_CHANNELS.EXTRACT_ICON, (_event, filePath: string) =>
     filePath.startsWith('shell:AppsFolder\\')
       ? extractUwpIcon(filePath, iconsFolder)
       : extractIcon(filePath, iconsFolder)
   );
 
-  ipcMain.handle(IPC_CHANNELS.LOAD_CACHED_ICONS, (_event, items: IconItem[]) =>
+  handleIpc(IPC_CHANNELS.LOAD_CACHED_ICONS, (_event, items: IconItem[]) =>
     loadCachedIcons(items, folders)
   );
 
   // 統合進捗API（進捗はメインウィンドウの進捗バーに表示する。silent なら進捗を送らない）
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.FETCH_ICONS_COMBINED,
     (
       _event,
@@ -59,7 +57,7 @@ export function setupIconHandlers(
   );
 
   // ほかのウィンドウからの「未取得のアイコンを取って」をメインウィンドウへ渡す（取得はメインウィンドウが流す）
-  ipcMain.handle(IPC_CHANNELS.REQUEST_FETCH_MISSING_ICONS, () => {
+  handleIpc(IPC_CHANNELS.REQUEST_FETCH_MISSING_ICONS, () => {
     const mainWindow = getMainWindow();
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send(IPC_CHANNELS.EVENT_FETCH_MISSING_ICONS_REQUESTED);
@@ -67,34 +65,32 @@ export function setupIconHandlers(
   });
 
   // キャッシュ欠損の補完API（進捗通知なし）
-  ipcMain.handle(IPC_CHANNELS.ENSURE_ICONS, (_event, items: IconItem[]) =>
-    ensureIcons(items, folders)
-  );
+  handleIpc(IPC_CHANNELS.ENSURE_ICONS, (_event, items: IconItem[]) => ensureIcons(items, folders));
 
   // アイコン取得エラー記録を取得
-  ipcMain.handle(IPC_CHANNELS.GET_ICON_FETCH_ERRORS, async () =>
+  handleIpc(IPC_CHANNELS.GET_ICON_FETCH_ERRORS, async () =>
     (await IconFetchErrorService.getInstance()).getAllErrors()
   );
 
   // カスタムアイコン関連のハンドラー
-  ipcMain.handle(IPC_CHANNELS.SELECT_CUSTOM_ICON_FILE, selectCustomIconFile);
+  handleIpc(IPC_CHANNELS.SELECT_CUSTOM_ICON_FILE, selectCustomIconFile);
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SAVE_CUSTOM_ICON,
     (_event, sourceFilePath: string, itemIdentifier: string) =>
       saveCustomIcon(sourceFilePath, itemIdentifier)
   );
 
-  ipcMain.handle(IPC_CHANNELS.DELETE_CUSTOM_ICON, (_event, customIconFileName: string) =>
+  handleIpc(IPC_CHANNELS.DELETE_CUSTOM_ICON, (_event, customIconFileName: string) =>
     deleteCustomIcon(customIconFileName)
   );
 
-  ipcMain.handle(IPC_CHANNELS.GET_CUSTOM_ICON, (_event, customIconFileName: string) =>
+  handleIpc(IPC_CHANNELS.GET_CUSTOM_ICON, (_event, customIconFileName: string) =>
     getCustomIcon(customIconFileName)
   );
 
   // IconService統合API
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.GET_ICON_FOR_ITEM,
     (
       _event,

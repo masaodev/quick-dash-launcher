@@ -4,7 +4,7 @@
  *
  * 画面仕様: docs/screens/context-menu.md
  */
-import { ipcMain, Menu, MenuItem } from 'electron';
+import { Menu, MenuItem } from 'electron';
 import type { AppItem, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { desktopLabel } from '@common/utils/desktopLabel';
@@ -15,6 +15,7 @@ import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 import { rerecordSetPositions } from '../services/launch/setRerecord.js';
 import { showAdminWindowWithImportModal } from '../adminWindowManager.js';
 import { isReferenceableAppItem } from '../services/workspace/workspaceRefResolver.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 import {
   buildWorkspaceTargetSubmenu,
@@ -35,7 +36,7 @@ import {
 
 /** AdminItemManagerContextMenu用のネイティブメニューハンドラーを設定 */
 function setupAdminItemContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_ADMIN_ITEM_CONTEXT_MENU,
     async (event, selectedCount: number, isSingleLine: boolean): Promise<void> => {
       const senderWindow = getValidWindow(event);
@@ -81,7 +82,7 @@ function setupAdminItemContextMenuHandler(): void {
 
 /** LauncherContextMenu用のネイティブメニューハンドラーを設定 */
 function setupLauncherContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_LAUNCHER_CONTEXT_MENU,
     async (event, item: AppItem, anchor?: MenuAnchor): Promise<void> => {
       const senderWindow = getValidWindow(event);
@@ -213,7 +214,7 @@ function setupLauncherContextMenuHandler(): void {
 
 /** メインウィンドウの一覧の余白（アイテムの無い所）の右クリックメニュー。➕ と同じ追加の入口を出す */
 function setupLauncherBlankContextMenuHandler(): void {
-  ipcMain.handle(IPC_CHANNELS.SHOW_LAUNCHER_BLANK_CONTEXT_MENU, async (event): Promise<void> => {
+  handleIpc(IPC_CHANNELS.SHOW_LAUNCHER_BLANK_CONTEXT_MENU, async (event): Promise<void> => {
     const senderWindow = getValidWindow(event);
     if (!senderWindow) return;
 
@@ -259,7 +260,7 @@ function setupLauncherBlankContextMenuHandler(): void {
 
 /** FileTabContextMenu用のネイティブメニューハンドラーを設定 */
 function setupFileTabContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_FILE_TAB_CONTEXT_MENU,
     async (event, tabIndex: number): Promise<void> => {
       const senderWindow = getValidWindow(event);
@@ -283,7 +284,7 @@ function setupFileTabContextMenuHandler(): void {
 
 /** WindowContextMenu用のネイティブメニューハンドラーを設定 */
 function setupWindowContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_WINDOW_CONTEXT_MENU,
     async (
       event,
@@ -404,7 +405,7 @@ function setupWindowContextMenuHandler(): void {
  * どのウィンドウに効かせるかはレンダラー側の選択で決める
  */
 function setupWindowsContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_WINDOWS_CONTEXT_MENU,
     async (
       event,

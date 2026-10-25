@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron';
+import { BrowserWindow } from 'electron';
 import type { WindowInfo, VirtualDesktopInfo } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
@@ -24,6 +24,7 @@ import {
 } from '../utils/virtualDesktop/index.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { getOverlayWindow } from '../services/overlayWindowService.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 type OperationResult = { success: boolean; error?: string };
 
@@ -71,12 +72,10 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
     }
   }
 
-  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS, (): WindowInfo[] => getWindowList(false));
-  ipcMain.handle(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS, (): WindowInfo[] =>
-    getWindowList(true)
-  );
+  handleIpc(IPC_CHANNELS.GET_ALL_WINDOWS, (): WindowInfo[] => getWindowList(false));
+  handleIpc(IPC_CHANNELS.GET_ALL_WINDOWS_ALL_DESKTOPS, (): WindowInfo[] => getWindowList(true));
 
-  ipcMain.handle(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, (): VirtualDesktopInfo => {
+  handleIpc(IPC_CHANNELS.GET_VIRTUAL_DESKTOP_INFO, (): VirtualDesktopInfo => {
     try {
       // DLL が読めないとデスクトップの番号も移動も扱えない（レジストリだけでは、件数 0 のタブが並ぶ）
       if (!isVirtualDesktopSupported() || !isDllLoaded()) {
@@ -94,7 +93,7 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.ACTIVATE_WINDOW, (_event, hwnd: number | bigint): OperationResult => {
+  handleIpc(IPC_CHANNELS.ACTIVATE_WINDOW, (_event, hwnd: number | bigint): OperationResult => {
     try {
       // 最大化中に SW_RESTORE を送ると最大化が解けるので、最小化中だけ戻す
       if (getWindowShowState(hwnd) === 'minimized') restoreWindow(hwnd);
@@ -115,21 +114,21 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
     }
   });
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.MOVE_WINDOW_TO_DESKTOP,
     (_event, hwnd: number | bigint, desktopNumber: number) =>
       safeWindowOperation(moveWindowToVirtualDesktop, 'move window to desktop')(hwnd, desktopNumber)
   );
 
-  ipcMain.handle(IPC_CHANNELS.PIN_WINDOW, (_event, hwnd: number | bigint) =>
+  handleIpc(IPC_CHANNELS.PIN_WINDOW, (_event, hwnd: number | bigint) =>
     safeWindowOperation(pinWindow, 'pin window')(hwnd)
   );
 
-  ipcMain.handle(IPC_CHANNELS.UNPIN_WINDOW, (_event, hwnd: number | bigint) =>
+  handleIpc(IPC_CHANNELS.UNPIN_WINDOW, (_event, hwnd: number | bigint) =>
     safeWindowOperation(unPinWindow, 'unpin window')(hwnd)
   );
 
-  ipcMain.handle(IPC_CHANNELS.IS_WINDOW_PINNED, (_event, hwnd: number | bigint): boolean => {
+  handleIpc(IPC_CHANNELS.IS_WINDOW_PINNED, (_event, hwnd: number | bigint): boolean => {
     try {
       return isPinnedWindow(hwnd);
     } catch (error) {
@@ -138,16 +137,13 @@ export function setupWindowSearchHandlers(getMainWindow: () => BrowserWindow | n
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.CLOSE_WINDOW, (_event, hwnd: number | bigint) =>
+  handleIpc(IPC_CHANNELS.CLOSE_WINDOW, (_event, hwnd: number | bigint) =>
     safeWindowOperation(closeWindow, 'close window')(hwnd)
   );
 
   // 閉じるよう頼んだだけなので、一覧を取り直す前に少し待つ（すぐ取り直すと閉じる前のウィンドウが戻ってくる）。
   // 「保存しますか」などで閉じなければ待つのをやめ、相手の処理を待って止まらないようにする
-  ipcMain.handle(
-    IPC_CHANNELS.WAIT_FOR_WINDOWS_CLOSED,
-    async (_event, hwnds: (number | bigint)[]) => {
-      await waitForWindowsGone(hwnds, CLOSE_WAIT_MS);
-    }
-  );
+  handleIpc(IPC_CHANNELS.WAIT_FOR_WINDOWS_CLOSED, async (_event, hwnds: (number | bigint)[]) => {
+    await waitForWindowsGone(hwnds, CLOSE_WAIT_MS);
+  });
 }

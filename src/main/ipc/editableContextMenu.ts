@@ -8,10 +8,12 @@
  *
  * 画面仕様: docs/screens/context-menu.md
  */
-import { app, BrowserWindow, ipcMain, Menu, webContents as allWebContents } from 'electron';
+import { app, BrowserWindow, Menu, webContents as allWebContents } from 'electron';
 import type { MenuItemConstructorOptions, WebContents } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import type { SearchBoxEditFlags } from '@common/types/electronApi';
+
+import { handleIpc } from '../utils/ipcWrapper';
 
 import { getValidWindow, t } from './contextMenuShared.js';
 
@@ -91,7 +93,7 @@ export function buildSearchBoxMenu(
 
 /** 検索欄の右クリックメニューを出す IPC（検索欄は画面側で右クリックを受け、履歴を添えて頼む） */
 export function setupSearchBoxContextMenuHandler(): void {
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SHOW_SEARCH_BOX_CONTEXT_MENU,
     async (event, flags: SearchBoxEditFlags, history: string[]): Promise<void> => {
       const senderWindow = getValidWindow(event);

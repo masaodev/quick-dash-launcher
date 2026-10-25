@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, screen } from 'electron';
+import { BrowserWindow, screen } from 'electron';
 import type { AppSettings, DisplayInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
 import logger from '@common/logger';
@@ -23,6 +23,7 @@ import { EnvConfig } from '../config/envConfig.js';
 import { LONG_TOAST_DURATION_MS, showToastWindow } from '../services/overlayWindowService.js';
 import { applyLanguageSetting, mainI18n } from '../services/i18nService.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
+import { handleIpc } from '../utils/ipcWrapper';
 
 export function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -256,7 +257,7 @@ export async function saveSettings(settings: Partial<AppSettings>): Promise<void
 }
 
 export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boolean) => void): void {
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH, async () => {
+  handleIpc(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH, async () => {
     const settingsService = await SettingsService.getInstance();
     const hotkey = await settingsService.get('hotkey');
     const isFirstLaunch = !hotkey || hotkey.trim() === '';
@@ -264,37 +265,27 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     return isFirstLaunch;
   });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, async (_event, key?: keyof AppSettings) => {
+  handleIpc(IPC_CHANNELS.SETTINGS_GET, async () => {
     const settingsService = await SettingsService.getInstance();
-    if (key) {
-      const value = await settingsService.get(key);
-      logger.info(`Settings get request: ${key} = ${value}`);
-      return value;
-    }
     const allSettings = await settingsService.getAll();
     logger.info('Settings get all request');
     return allSettings;
   });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DEFAULTS, () => SettingsService.getDefaults());
+  handleIpc(IPC_CHANNELS.SETTINGS_GET_DEFAULTS, () => SettingsService.getDefaults());
 
-  ipcMain.handle(
-    IPC_CHANNELS.SETTINGS_SET_MULTIPLE,
-    async (_event, settings: Partial<AppSettings>) => {
-      await saveSettings(settings);
+  handleIpc(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, async (_event, settings: Partial<AppSettings>) => {
+    await saveSettings(settings);
 
-      if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
-        setFirstLaunchMode(false);
-        logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
-      }
-
-      return true;
+    if (settings.hotkey && settings.hotkey.trim() !== '' && setFirstLaunchMode) {
+      setFirstLaunchMode(false);
+      logger.info('初回起動モードを解除しました（ホットキーが設定されたため）');
     }
-  );
+  });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_REAPPLY, () => reapplySettingsFromDisk());
+  handleIpc(IPC_CHANNELS.SETTINGS_REAPPLY, () => reapplySettingsFromDisk());
 
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SETTINGS_RESET,
     async (_event, keys?: Array<keyof AppSettings>): Promise<AppSettings> => {
       const settingsService = await SettingsService.getInstance();
@@ -319,36 +310,33 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, async (_event, hotkey: string) => {
+  handleIpc(IPC_CHANNELS.SETTINGS_VALIDATE_HOTKEY, async (_event, hotkey: string) => {
     const settingsService = await SettingsService.getInstance();
     const result = settingsService.validateHotkey(hotkey);
     logger.info(`Hotkey validation request: ${hotkey} = ${result.isValid}`);
     return result;
   });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
+  handleIpc(IPC_CHANNELS.SETTINGS_CHANGE_HOTKEY, async (_event, newHotkey: string) => {
     if (EnvConfig.disableGlobalHotkey) return saveHotkeyWithoutRegistering('hotkey', newHotkey);
     const success = await HotkeyService.getInstance().changeHotkey(newHotkey);
     logger.info(`Hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`);
     return success;
   });
 
-  ipcMain.handle(
-    IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY,
-    async (_event, newHotkey: string) => {
-      if (EnvConfig.disableGlobalHotkey) {
-        return saveHotkeyWithoutRegistering('itemSearchHotkey', newHotkey);
-      }
-      const success = await HotkeyService.getInstance().changeItemSearchHotkey(newHotkey);
-      logger.info(
-        `Item search hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`
-      );
-      return success;
+  handleIpc(IPC_CHANNELS.SETTINGS_CHANGE_ITEM_SEARCH_HOTKEY, async (_event, newHotkey: string) => {
+    if (EnvConfig.disableGlobalHotkey) {
+      return saveHotkeyWithoutRegistering('itemSearchHotkey', newHotkey);
     }
-  );
+    const success = await HotkeyService.getInstance().changeItemSearchHotkey(newHotkey);
+    logger.info(
+      `Item search hotkey change request: ${newHotkey} = ${success ? 'success' : 'failed'}`
+    );
+    return success;
+  });
 
   // 初回設定のホットキーの「次へ」で使う（初回設定を終えるまではウィンドウ検索のホットキーを登録しないため）
-  ipcMain.handle(
+  handleIpc(
     IPC_CHANNELS.SETTINGS_IS_ITEM_SEARCH_HOTKEY_AVAILABLE,
     (_event, hotkey: string): boolean => {
       if (EnvConfig.disableGlobalHotkey) return true;
@@ -356,15 +344,15 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     }
   );
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, (event, recording: boolean) => {
+  handleIpc(IPC_CHANNELS.SETTINGS_SET_HOTKEY_RECORDING, (event, recording: boolean) => {
     setHotkeyRecording(event.sender, recording);
   });
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS, () =>
+  handleIpc(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS, () =>
     AutoLaunchService.getInstance().getAutoLaunchStatus()
   );
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, () => {
+  handleIpc(IPC_CHANNELS.SETTINGS_GET_DISPLAYS, () => {
     const displays = screen.getAllDisplays();
     const primaryId = screen.getPrimaryDisplay().id;
 
@@ -386,7 +374,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   });
 
   // ウィンドウの座標（GetWindowRect）は物理ピクセルなので、画面の範囲も物理ピクセルに直して返す
-  ipcMain.handle(IPC_CHANNELS.GET_SCREEN_AREAS, (): ScreenArea[] =>
+  handleIpc(IPC_CHANNELS.GET_SCREEN_AREAS, (): ScreenArea[] =>
     screen.getAllDisplays().map((display) => ({
       bounds: screen.dipToScreenRect(null, display.bounds),
       workArea: screen.dipToScreenRect(null, display.workArea),

@@ -2,7 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import type { Server } from 'net';
 
-import { app, globalShortcut, ipcMain, session } from 'electron';
+import { app, globalShortcut, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
@@ -59,6 +59,7 @@ import { applyLanguageSetting, registerLanguageHandler } from './services/i18nSe
 import { installNavigationGuard } from './utils/navigationGuard.js';
 import { startFileLogging } from './services/fileLogging.js';
 import { LaunchUsageService } from './services/launchUsageService.js';
+import { handleIpc } from './utils/ipcWrapper';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -227,7 +228,7 @@ app.whenReady().then(async () => {
 
   // レンダラーの準備完了を待つPromise
   const rendererReadyPromise = new Promise<void>((resolve) => {
-    ipcMain.handle(IPC_CHANNELS.RENDERER_READY, () => resolve());
+    handleIpc(IPC_CHANNELS.RENDERER_READY, () => resolve());
   });
 
   // レンダラープロセスとの通信用IPCハンドラーを設定（ハンドラー登録のみなのでウィンドウ作成前に実行可能）
