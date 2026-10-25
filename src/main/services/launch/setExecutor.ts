@@ -58,7 +58,6 @@ import PathManager from '../../config/pathManager.js';
 import { loadCachedIcons, type IconItem } from '../icon/iconFetcher.js';
 import {
   getLayoutProgressWindow,
-  LONG_TOAST_DURATION_MS,
   markLayoutProgressFinished,
   showLayoutProgressWindow,
   showToastWindow,
@@ -820,7 +819,7 @@ export async function notifySetFailures(
       count: names.length,
       names: names.join(mainI18n.t('common.listSeparator')),
     })}`,
-    duration: LONG_TOAST_DURATION_MS,
+    long: true,
   });
 }
 
@@ -928,6 +927,6 @@ export async function notifyLauncherItemFailure(
     itemType: item.type,
     type: 'warning',
     message,
-    duration: LONG_TOAST_DURATION_MS,
+    long: true,
   });
 }

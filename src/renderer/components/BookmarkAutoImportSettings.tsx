@@ -101,6 +101,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     confirm: confirmAsync,
     showSuccess,
     showWarning,
+    showError,
     countItems: () => ({ total: 0, unsaved: 0 }),
     dropFileItems: () => undefined,
   });

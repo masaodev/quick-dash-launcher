@@ -71,6 +71,7 @@ const WorkspaceNewItemPage: React.FC<WorkspaceNewItemPageProps> = ({ groupId }) 
                 destination.workspaceId
               );
               await window.electronAPI.showToastWindow({
+                type: 'success',
                 itemType: 'workspaceAdd',
                 displayName: created.displayName,
                 message: destinationAddedMessage(destination),

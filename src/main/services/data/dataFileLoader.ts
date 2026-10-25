@@ -16,7 +16,7 @@ import { SettingsService } from '../settingsService.js';
 import { WorkspaceService } from '../workspace/WorkspaceService.js';
 import { PathManager } from '../../config/pathManager.js';
 import { mainI18n } from '../mainI18n.js';
-import { LONG_TOAST_DURATION_MS, showToastWindow } from '../overlayWindowService.js';
+import { showToastWindow } from '../overlayWindowService.js';
 import { BackupService } from '../backupService.js';
 import {
   detectExternalChange,
@@ -555,7 +555,6 @@ async function reloadConfigFilesInternal(
     showToastWindow({
       message: mainI18n.t('dataErrors.configLoadFailed', { files: corruptedFiles.join(', ') }),
       type: 'error',
-      duration: LONG_TOAST_DURATION_MS,
     }).catch((error) => {
       dataLogger.error({ error }, '破損警告トーストの表示に失敗しました');
     });
@@ -567,7 +566,7 @@ async function reloadConfigFilesInternal(
     showToastWindow({
       message: issueToast,
       type: 'warning',
-      duration: LONG_TOAST_DURATION_MS,
+      long: true,
     }).catch((error) => {
       dataLogger.error({ error }, '読込結果トーストの表示に失敗しました');
     });

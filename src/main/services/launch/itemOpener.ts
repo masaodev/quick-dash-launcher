@@ -8,7 +8,7 @@ import {
   type LaunchableItem,
   type LaunchResult,
 } from '../../utils/itemLauncher.js';
-import { LONG_TOAST_DURATION_MS, showToastWindow } from '../overlayWindowService.js';
+import { showToastWindow } from '../overlayWindowService.js';
 import { mainI18n } from '../mainI18n.js';
 
 import {
@@ -30,7 +30,6 @@ export async function notifyLaunchFailure(
       name: displayName ?? '',
       error: result.error,
     }),
-    duration: LONG_TOAST_DURATION_MS,
   }).catch((error) => itemLogger.error({ error }, '起動の失敗のトーストを出せませんでした'));
 }
 

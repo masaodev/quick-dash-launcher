@@ -23,7 +23,7 @@ import {
   WorkspaceReloadInProgressError,
   WorkspaceWriteError,
 } from '../services/workspace/index.js';
-import { LONG_TOAST_DURATION_MS, showToastWindow } from '../services/overlayWindowService.js';
+import { showToastWindow } from '../services/overlayWindowService.js';
 import PathManager from '../config/pathManager.js';
 import { getIconForItem } from '../services/iconService.js';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
@@ -111,7 +111,7 @@ async function withWorkspaceService<T>(
       showToastWindow({
         message: error.message,
         type: 'warning',
-        duration: LONG_TOAST_DURATION_MS,
+        long: true,
       }).catch(() => {});
     } else if (notifyFailure) {
       showToastWindow({
@@ -119,7 +119,6 @@ async function withWorkspaceService<T>(
           error: error instanceof Error ? error.message : String(error),
         }),
         type: 'error',
-        duration: LONG_TOAST_DURATION_MS,
       }).catch(() => {});
     }
     throw error;
@@ -286,7 +285,6 @@ export function setupWorkspaceHandlers(): void {
                 error: failed[0].error,
               }),
               type: 'error',
-              duration: LONG_TOAST_DURATION_MS,
             }).catch(() => {});
           }
 
@@ -411,6 +409,7 @@ export function setupWorkspaceHandlers(): void {
           // （実行中に押し直したときは何もしないので知らせない）
           if (!isSetRunning(item.id))
             await showToastWindow({
+              type: 'success',
               displayName: item.displayName,
               itemType: 'set',
               itemCount: item.entries.length,

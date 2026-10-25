@@ -207,6 +207,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
           copy ? { copy } : undefined
         );
         await window.electronAPI.showToastWindow({
+          type: 'success',
           displayName,
           itemType: 'workspaceAdd',
           ...(isLauncherItem(item) && { path: item.path }),
@@ -287,6 +288,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               target.workspaceId
             );
             await window.electronAPI.showToastWindow({
+              type: 'success',
               displayName: windowItem.displayName,
               itemType: 'workspaceAdd',
               icon: windowInfo.icon,

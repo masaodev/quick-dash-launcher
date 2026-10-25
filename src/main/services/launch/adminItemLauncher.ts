@@ -42,6 +42,7 @@ export async function openWorkspaceItemAsAdmin(requested: WorkspaceItem): Promis
     'ワークスペースのアイテムを管理者として起動中'
   );
   await showToastWindow({
+    type: 'success',
     displayName: item.displayName,
     itemType: item.launcherType,
     path: item.path,

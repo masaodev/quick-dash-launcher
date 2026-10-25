@@ -77,7 +77,7 @@ export function useDataFileTabs() {
         }),
         {
           id: 'data-file-create-error', // 設定の再適用のたびに重ねて出さない
-          duration: 10000,
+          long: true,
         }
       );
     }

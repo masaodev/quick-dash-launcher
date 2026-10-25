@@ -400,6 +400,7 @@ function App(): React.ReactElement {
         const restored = await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
         if (restored.success) {
           await window.electronAPI.showToastWindow({
+            type: 'success',
             displayName: item.displayName,
             itemType: 'clipboard',
           });
@@ -410,12 +411,12 @@ function App(): React.ReactElement {
               name: item.displayName,
               error: restored.error ?? '',
             }),
-            duration: 6000,
           });
         }
       } else if (isSetItem(item)) {
         // 置き場所のある行があれば、進み具合の表示が出る（トーストはその間は出ない）
         await window.electronAPI.showToastWindow({
+          type: 'success',
           displayName: item.displayName,
           itemType: 'set',
           itemCount: item.entries.length,
@@ -424,6 +425,7 @@ function App(): React.ReactElement {
         await window.electronAPI.executeSet(item, mainItems);
       } else if (isLauncherItem(item)) {
         await window.electronAPI.showToastWindow({
+          type: 'success',
           displayName: item.displayName,
           itemType: item.type,
           path: item.path,
@@ -444,9 +446,16 @@ function App(): React.ReactElement {
           const result = await window.electronAPI.activateWindowByHwnd(windowItem.hwnd);
 
           if (!result.success) {
-            showErrorAlert(t('launcher.messages.activateWindowFailed'));
+            // ほかのウィンドウ操作の失敗と同じく、独立トーストのエラーで知らせる
+            await window.electronAPI.showToastWindow({
+              type: 'error',
+              displayName: windowItem.title,
+              itemType: 'windowActivate',
+              message: t('launcher.messages.activateWindowFailed'),
+            });
           } else {
             await window.electronAPI.showToastWindow({
+              type: 'success',
               displayName: windowItem.title,
               itemType: 'windowActivate',
             });
@@ -466,11 +475,13 @@ function App(): React.ReactElement {
           }
         }
       } catch (error) {
-        showErrorAlert(
-          t('launcher.messages.openFailed', {
+        // 開けなかったときは、ほかの起動の失敗と同じく独立トーストのエラーで知らせる
+        await window.electronAPI.showToastWindow({
+          type: 'error',
+          message: t('launcher.messages.openFailed', {
             reason: ipcErrorMessage(error),
-          })
-        );
+          }),
+        });
       }
     },
     [searchMode, searchQuery, executeAppItem, addHistoryEntry, t]
@@ -490,6 +501,7 @@ function App(): React.ReactElement {
       const searchQueryForHistory = searchQuery.trim();
       try {
         await window.electronAPI.showToastWindow({
+          type: 'success',
           displayName: item.displayName,
           itemType: item.type,
           path: item.path,
@@ -502,11 +514,13 @@ function App(): React.ReactElement {
           });
         }
       } catch (error) {
-        showErrorAlert(
-          t('launcher.messages.openFailed', {
+        // 開けなかったときは、ほかの起動の失敗と同じく独立トーストのエラーで知らせる
+        await window.electronAPI.showToastWindow({
+          type: 'error',
+          message: t('launcher.messages.openFailed', {
             reason: ipcErrorMessage(error),
-          })
-        );
+          }),
+        });
       }
     },
     [searchQuery, addHistoryEntry, t]

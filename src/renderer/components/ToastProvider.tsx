@@ -42,11 +42,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
       <Toaster
         position={position}
         toastOptions={{
-          // デフォルトの表示時間
-          duration: 3000,
-          success: { duration: 2000 },
-          error: { duration: 4000 },
-
+          // 表示時間は useToast が種類ごとに決める（src/common/constants.ts の toastDurationMs）
           // 共通の形（独立トーストの overlay.html と同じ白地のカード）。種類の色は useToast が左の帯とアイコンで足す
           style: {
             fontFamily: 'var(--font-family)',
