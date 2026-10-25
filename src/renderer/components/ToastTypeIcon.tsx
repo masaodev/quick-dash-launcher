@@ -1,5 +1,5 @@
 /**
- * UI 内トーストの種類のアイコン（色の丸に記号）
+ * 知らせの種類のアイコン（色の丸に記号）。UI 内トーストと AlertDialog の見出しで使う
  *
  * 独立トースト（overlay.html）のシンプル形式と同じ記号・色にする
  *
@@ -18,9 +18,19 @@ const TYPE_GLYPHS: Record<NotificationType, string> = {
   info: 'i',
 };
 
-export function ToastTypeIcon({ type }: { type: NotificationType }): React.ReactElement {
+export function ToastTypeIcon({
+  type,
+  size = 'normal',
+}: {
+  type: NotificationType;
+  /** large は AlertDialog の見出し用 */
+  size?: 'normal' | 'large';
+}): React.ReactElement {
   return (
-    <span className={`toast-type-icon ${type}`} data-testid={`toast-type-icon-${type}`}>
+    <span
+      className={`toast-type-icon ${type}${size === 'large' ? ' large' : ''}`}
+      data-testid={`toast-type-icon-${type}`}
+    >
       {TYPE_GLYPHS[type]}
     </span>
   );

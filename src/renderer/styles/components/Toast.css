@@ -1,4 +1,4 @@
-/* UI 内トースト（react-hot-toast）の種類のアイコン。独立トースト（overlay.html）と同じ形にする */
+/* 知らせの種類のアイコン（UI 内トースト・AlertDialog）。独立トースト（overlay.html）と同じ形にする */
 .toast-type-icon {
   display: inline-flex;
   flex-shrink: 0;
@@ -11,6 +11,12 @@
   font-size: var(--font-size-sm);
   font-weight: 700;
   line-height: 1;
+}
+
+.toast-type-icon.large {
+  width: 28px;
+  height: 28px;
+  font-size: var(--font-size-lg);
 }
 
 .toast-type-icon.success {

@@ -13,11 +13,6 @@
   margin-bottom: var(--spacing-lg);
 }
 
-.alert-icon {
-  font-size: var(--font-size-2xl);
-  line-height: 1;
-}
-
 .alert-header h2 {
   margin: 0;
   font-size: var(--font-size-xl);
@@ -38,18 +33,19 @@
 }
 
 /* Type-specific styles */
+/* 見出しの色はトーストと同じ知らせの種類の色 */
 .alert-dialog.alert-error .alert-header h2 {
-  color: var(--color-danger);
+  color: var(--notify-error);
 }
 
 .alert-dialog.alert-warning .alert-header h2 {
-  color: var(--color-warning);
+  color: var(--notify-warning);
 }
 
 .alert-dialog.alert-success .alert-header h2 {
-  color: var(--color-success);
+  color: var(--notify-success);
 }
 
 .alert-dialog.alert-info .alert-header h2 {
-  color: var(--color-primary);
+  color: var(--notify-info);
 }

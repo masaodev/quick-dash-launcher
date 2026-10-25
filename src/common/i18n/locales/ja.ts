@@ -235,7 +235,7 @@ export const ja = {
       windowAdded:
         '開いているときに、このウィンドウへ切り替えます（パスを入れると、開いていないときに開けます）',
       dataFilesCreateFailed: 'タブのデータファイルを作成できませんでした: {{files}}',
-      virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません。',
+      virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません',
       noContainingFolder: 'このアイテムには親フォルダがありません',
       noContainingFolderNamed: '「{{name}}」には親フォルダがありません',
       launchFailed: '「{{name}}」を開けませんでした: {{error}}',
