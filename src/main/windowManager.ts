@@ -130,6 +130,17 @@ function hideMainWindowInternal(): void {
 }
 
 /**
+ * メインウィンドウの描画の抑制（backgroundThrottling）を切るか戻す
+ * Windows がメインウィンドウを他のウィンドウに隠れていると誤って判定したままになると、
+ * 表示したのに描き直しが止まり、打った文字がクリックするまで画面に出ない（A3-130）。
+ * 表示しているあいだだけ抑制を切り、ページを常に表示中の扱いにする。隠したら戻す
+ */
+function setMainWindowRenderingKept(kept: boolean): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.setBackgroundThrottling(!kept);
+}
+
+/**
  * 自動では隠さない状態か（ピン留め中・初回起動モード・モーダルモード）
  * フォーカス喪失・Escape・アイテム実行で隠すかどうかに使う
  */
@@ -227,6 +238,10 @@ export async function createWindow(): Promise<BrowserWindow> {
   mainWindow.on('show', () => {
     windowShownAt = Date.now();
   });
+
+  // 隠したら描画の抑制を戻す（表示中だけ切る。A3-130）
+  mainWindow.on('hide', () => setMainWindowRenderingKept(false));
+  mainWindow.on('minimize', () => setMainWindowRenderingKept(false));
 
   // メイン・ワークスペース・切り離しウィンドウのどれのblurでも、フォーカスがQDLの外へ出たかを確認する
   // （ウィンドウ群の中での移動では隠さない）
@@ -681,6 +696,9 @@ async function activateMainWindowWithFocus(): Promise<void> {
   // ワークスペース・切り離しウィンドウも一緒に出す（メインウィンドウのフォーカス前に実行）
   await toggleCompanionWindows(true);
 
+  // ピン留め中で表示したままでも、隠れている扱いで描画が止まっていることがある（A3-130）
+  setMainWindowRenderingKept(true);
+
   // メインウィンドウに確実にフォーカスを戻す
   mainWindow.focus();
   bringCompanionsToFront();
@@ -724,6 +742,8 @@ async function showMainWindowInternal(
   bringMainWindowToCurrentDesktop();
   // 📌 で残していて Win+D で最小化されたときは、isVisible() が false なのでこちらに来る。元の大きさに戻してから出す（A3-132）
   if (mainWindow.isMinimized()) mainWindow.restore();
+  // 表示中は描画の抑制を切る（隠れている扱いで描き直しが止まるのを防ぐ。A3-130）
+  setMainWindowRenderingKept(true);
   mainWindow.show();
   timer?.log('window-shown');
 
