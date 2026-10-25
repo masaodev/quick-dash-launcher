@@ -65,7 +65,8 @@ export interface WorkspaceParseContext {
   groupIds: Set<string>;
   /**
    * 検証を通らなかったグループの id（生のまま保持している要素）。
-   * これを指す参照は「存在しない」扱いにせず残す（グループを直せば元に戻るように）
+   * 保管庫では、これを指す参照を「存在しない」扱いにせず残す（グループを直せば元に戻るように）。
+   * workspace.json では外して「未分類」グループに出す（resolveRef）
    */
   invalidGroupIds: Set<string>;
   /** 既定ワークスペース id（order 最小）。main のパース後に確定 */
@@ -574,7 +575,13 @@ function resolveWorkspaceId(
   return ctx.defaultWorkspaceId;
 }
 
-/** 任意の参照（groupId / parentGroupId）を解決する。存在しなければ undefined（外す） */
+/**
+ * 任意の参照（groupId / parentGroupId）を解決する。存在しなければ undefined（外す）
+ *
+ * @param keepInvalidRefs 検証を通らなかったグループへの参照を外さずに残すか（保管庫は残す。直せば戻る）。
+ *   workspace.json では外す。残すと、そのアイテム・サブグループは画面のどこにも出なくなるため、
+ *   外して「未分類」グループ（サブグループは最上位）に出す（A3-200）
+ */
 function resolveRef(
   rawRef: unknown,
   known: Set<string>,
@@ -583,20 +590,28 @@ function resolveRef(
   section: Section,
   index: number,
   ctx: WorkspaceParseContext,
-  issues: IssueCollector
+  issues: IssueCollector,
+  keepInvalidRefs: boolean
 ): string | undefined {
   if (rawRef === undefined) return undefined;
   const mapped = mapRef(rawRef, ctx);
   if (mapped !== undefined && mapped !== selfId && known.has(mapped)) return mapped;
-  // 検証を通らなかったグループへの参照は外さない（直せば戻る。実行時は未分類として扱われる）
-  if (mapped !== undefined && mapped !== selfId && ctx.invalidGroupIds.has(mapped)) return mapped;
+  const isInvalidGroup =
+    mapped !== undefined && mapped !== selfId && ctx.invalidGroupIds.has(mapped);
+  if (isInvalidGroup && keepInvalidRefs) return mapped;
 
   issues.normalized(
     section,
     index,
     mapped === undefined
       ? issues.t('parseReasons.refNotString', { label })
-      : issues.t('parseReasons.refGroupNotFound', { label, id: mapped }),
+      : issues.t(
+          isInvalidGroup ? 'parseReasons.refGroupInvalid' : 'parseReasons.refGroupNotFound',
+          {
+            label,
+            id: mapped,
+          }
+        ),
     selfId
   );
   return undefined;
@@ -698,7 +713,8 @@ function resolveGroups<T extends JsonWorkspaceGroup>(
   parsedGroups: ParsedGroup<T>[],
   knownGroupIds: Set<string>,
   ctx: WorkspaceParseContext,
-  issues: IssueCollector
+  issues: IssueCollector,
+  keepInvalidRefs: boolean
 ): T[] {
   const groups = parsedGroups.map(({ group, rawWorkspaceId, rawParentGroupId, index }) => {
     group.workspaceId = resolveWorkspaceId(rawWorkspaceId, 'groups', index, group.id, ctx, issues);
@@ -710,7 +726,8 @@ function resolveGroups<T extends JsonWorkspaceGroup>(
       'groups',
       index,
       ctx,
-      issues
+      issues,
+      keepInvalidRefs
     );
     if (parentGroupId !== undefined) group.parentGroupId = parentGroupId;
     return orderGroupKeys(group);
@@ -732,7 +749,8 @@ function resolveItem<T extends JsonWorkspaceItem>(
   { item, rawWorkspaceId, rawGroupId, index }: ParsedItem<T>,
   knownGroupIds: Set<string>,
   ctx: WorkspaceParseContext,
-  issues: IssueCollector
+  issues: IssueCollector,
+  keepInvalidRefs: boolean
 ): T {
   item.workspaceId = resolveWorkspaceId(rawWorkspaceId, 'items', index, item.id, ctx, issues);
   const groupId = resolveRef(
@@ -743,7 +761,8 @@ function resolveItem<T extends JsonWorkspaceItem>(
     'items',
     index,
     ctx,
-    issues
+    issues,
+    keepInvalidRefs
   );
   if (groupId !== undefined) item.groupId = groupId;
   return orderWorkspaceItemKeys(item);
@@ -755,7 +774,7 @@ function resolveItem<T extends JsonWorkspaceItem>(
  * 未分類という専用の区画は無くし、どのアイテムも普通のグループに入る形にそろえる。
  * 作ったグループは、名前が「未分類」（作るときの表示言語）なだけの普通のグループで、改名も削除もできる。
  * 古い版で書いたファイルや、CLI・手編集でグループを外したアイテムも、読み込むたびにここで入れ直す。
- * 検証を通らなかったグループを指すアイテムは、直せば戻るのでそのままにする
+ * 検証を通らなかったグループを指していたアイテムも、参照を外してここで入れる（resolveRef）
  */
 function assignUngroupedItems<T extends JsonWorkspaceItem>(
   items: T[],
@@ -860,9 +879,9 @@ export function parseWorkspaceFileLenient(
   );
 
   // --- pass 2: 参照の解決 ---
-  const groups = resolveGroups(parsedGroups, ctx.groupIds, ctx, issues);
+  const groups = resolveGroups(parsedGroups, ctx.groupIds, ctx, issues, false);
   const items = assignUngroupedItems(
-    parsedItems.map((parsed) => resolveItem(parsed, ctx.groupIds, ctx, issues)),
+    parsedItems.map((parsed) => resolveItem(parsed, ctx.groupIds, ctx, issues, false)),
     groups,
     ctx,
     issues
@@ -967,7 +986,7 @@ export function parseWorkspaceArchiveFileLenient(
     }
   );
 
-  const groups = resolveGroups(parsedGroups, knownGroupIds, ctx, issues);
+  const groups = resolveGroups(parsedGroups, knownGroupIds, ctx, issues, true);
 
   const items: JsonArchivedWorkspaceItem[] = [];
   for (const parsed of parsedItems) {
@@ -986,7 +1005,7 @@ export function parseWorkspaceArchiveFileLenient(
       continue;
     }
     item.archivedGroupId = archivedGroupId;
-    items.push(resolveItem(parsed, knownGroupIds, ctx, issues));
+    items.push(resolveItem(parsed, knownGroupIds, ctx, issues, true));
   }
 
   if (invalid.groups.length + invalid.items.length > 0) {

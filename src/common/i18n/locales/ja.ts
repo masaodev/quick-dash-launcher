@@ -2176,6 +2176,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       'workspaceId "{{id}}" のワークスペースが無いため既定のワークスペースに移しました',
     refNotString: '{{label}} が文字列でないため外しました',
     refGroupNotFound: '{{label}} "{{id}}" のグループが無いため外しました',
+    refGroupInvalid: '{{label}} "{{id}}" のグループが読み込めないため外しました',
     parentCycle: 'parentGroupId が循環しているため親を外しました',
     parentTooDeep: 'parentGroupId の入れ子が {{max}} 段を超えるため親を外しました',
     defaultWorkspaceCreated: 'ワークスペースが 1 件も無いため既定のワークスペースを作りました',

@@ -98,7 +98,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | **order** | number | ✓* | 同じ親の中での並び順 |
 | **createdAt** | number | ✓* | 作成日時（ms） |
 | **workspaceId** | string | ✓ | 所属ワークスペース。存在しなければ既定ワークスペースへ寄せる（`normalized`） |
-| **parentGroupId** | string | - | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。循環・深さ超過で最上位へ移したときは issue に `code: "groupFlattened"` を付け、読み込みレポートの `summary.groupsFlattened` に数え、トーストで知らせ、ログにグループの ID を warn で残す。不正（`invalid`）なグループへの参照は残す |
+| **parentGroupId** | string | - | 親グループ（2 段まで）。存在しない・自分自身・循環・深さ超過（`MAX_GROUP_DEPTH`）なら外す（`normalized`）。循環・深さ超過で最上位へ移したときは issue に `code: "groupFlattened"` を付け、読み込みレポートの `summary.groupsFlattened` に数え、トーストで知らせ、ログにグループの ID を warn で残す。不正（`invalid`）なグループを指すときも外して最上位に出す（`workspace.json`。アーカイブでは残す） |
 
 折りたたみ状態（旧 `collapsed`）はここには無い（[4. workspace-ui-state.json](#4-workspace-ui-statejson)）。
 
@@ -113,7 +113,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は読み飛ばし、次に Q
 | **displayName** | string | ✓ | 表示名（参照アイテムでは任意。[2.6](#26-参照アイテムtype-ref)） |
 | **memo** | string | - | 自由記述（参照アイテムは持たない） |
 | **workspaceId** | string | ✓ | 所属ワークスペース |
-| **groupId** | string | - | 所属グループ。無い・存在しないグループを指すときは、`workspace.json` の読み込みでワークスペースごとの「未分類」という名前のグループ（作るときの表示言語。ワークスペースの最後に作る普通のグループ）を作って入れ、読み込みレポートに `normalized`（「グループに入っていないアイテム {N} 件を、グループ「未分類」に入れました」）を残す。省略できるのは古いファイル・手編集のためで、読み込み後はどのアイテムも持つ |
+| **groupId** | string | - | 所属グループ。無い・存在しないグループや不正（`invalid`）なグループを指すときは、`workspace.json` の読み込みでワークスペースごとの「未分類」という名前のグループ（作るときの表示言語。ワークスペースの最後に作る普通のグループ）を作って入れ、読み込みレポートに `normalized`（「グループに入っていないアイテム {N} 件を、グループ「未分類」に入れました」）を残す。省略できるのは古いファイル・手編集のためで、読み込み後はどのアイテムも持つ |
 | **order** | number | ✓* | 同じグループ内での並び順 |
 | **addedAt** | number | ✓* | 追加日時（ms） |
 

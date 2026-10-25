@@ -2175,6 +2175,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       'The workspace for workspaceId "{{id}}" doesn\'t exist, so it was moved to the default workspace',
     refNotString: '{{label}} was removed because it was not a string',
     refGroupNotFound: '{{label}} was removed because the group "{{id}}" doesn\'t exist',
+    refGroupInvalid: '{{label}} was removed because the group "{{id}}" couldn\'t be loaded',
     parentCycle: 'parentGroupId was removed because it was circular',
     parentTooDeep: 'parentGroupId was removed because the nesting was deeper than {{max}} levels',
     defaultWorkspaceCreated: 'There were no workspaces, so the default workspace was created',
