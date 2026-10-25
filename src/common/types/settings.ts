@@ -41,6 +41,12 @@ export type WorkspacePositionMode =
 /** workspaceTargetDisplayIndex で「メインウィンドウと同じディスプレイ」を指す値 */
 export const MAIN_WINDOW_DISPLAY_INDEX = -1;
 
+/** 固定位置で最後に置いた場所（ウィンドウの左上の画面座標） */
+export interface FixedPosition {
+  x: number;
+  y: number;
+}
+
 /**
  * 切り離しウィンドウの表示位置モード
  */
@@ -132,10 +138,8 @@ export interface AppSettings {
   dataFileLabels: Record<string, string>;
   /** ウィンドウ表示位置モード（デフォルト: 'cursorMonitorCenter'） */
   windowPositionMode: WindowPositionMode;
-  /** 固定位置のX座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
-  windowPositionX: number;
-  /** 固定位置のY座標（windowPositionMode='fixed'時に使用、デフォルト: 0） */
-  windowPositionY: number;
+  /** 固定位置で最後に置いた場所（windowPositionMode='fixed'時に使用。null＝まだ置いていない、デフォルト: null） */
+  windowFixedPosition: FixedPosition | null;
   /** ワークスペースウィンドウの不透明度（0-100%、デフォルト: 100） */
   workspaceOpacity: number;
   /** ワークスペースウィンドウ・切り離しウィンドウの背景だけを透明にする（デフォルト: false。オンの間は workspaceOpacity を使わない） */
@@ -144,10 +148,8 @@ export interface AppSettings {
   workspacePositionMode: WorkspacePositionMode;
   /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、-1＝メインウィンドウと同じディスプレイ、デフォルト: -1） */
   workspaceTargetDisplayIndex: number;
-  /** 固定位置のX座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
-  workspacePositionX: number;
-  /** 固定位置のY座標（workspacePositionMode='fixed'時に使用、デフォルト: 0） */
-  workspacePositionY: number;
+  /** 固定位置で最後に置いた場所（workspacePositionMode='fixed'時に使用。null＝まだ置いていない、デフォルト: null） */
+  workspaceFixedPosition: FixedPosition | null;
   /** ワークスペースウィンドウを全仮想デスクトップに表示（デフォルト: true） */
   workspaceVisibleOnAllDesktops: boolean;
   /** 切り離しウィンドウを全仮想デスクトップに表示（デフォルト: true） */

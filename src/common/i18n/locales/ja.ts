@@ -623,12 +623,13 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   ホットキー      hotkey itemSearchHotkey（登録できるか確かめてから変える。itemSearchHotkey は "" で無効）
   メイン          windowWidth（400〜2000）windowHeight（300〜1200）
                   windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
-                  windowPositionX windowPositionY windowSnapEnabled
+                  windowFixedPosition（固定位置で置いた場所。x,y か null＝まだ置いていない）
+                  windowSnapEnabled
   管理            editModeWidth（800〜2000）editModeHeight（600〜1200）
   ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent
                   workspacePositionMode（displayLeft / displayRight / fixed）
                   workspaceTargetDisplayIndex（0 始まり。-1 はメインウィンドウと同じディスプレイ）
-                  workspacePositionX workspacePositionY
+                  workspaceFixedPosition（固定位置で置いた場所。x,y か null）
                   workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops
                   detachedPositionMode（mainDisplay / saved）
   バックアップ    backupEnabled backupRetention（3〜50）backupIncludeClipboard
@@ -774,6 +775,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       unknownSettingKey: '設定に「{{key}}」はありません。変えられるキー: {{keys}}',
       settingReadOnly: '{{key}} は CLI からは変えられません（読むだけ。画面で変えてください）',
       expectedInteger: '整数',
+      expectedFixedPosition: '「x,y」（整数 2 つ）か null',
       expectedRange: '{{min}}〜{{max}} の整数',
       expectedDisplayIndex: '0〜{{max}} の整数、または -1（メインウィンドウと同じディスプレイ）',
       hotkeyInvalid: 'ホットキー「{{hotkey}}」は使えません: {{reason}}',

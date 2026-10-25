@@ -138,6 +138,7 @@ export type {
   WindowPositionMode,
   WorkspacePositionMode,
   DetachedPositionMode,
+  FixedPosition,
   DisplayInfo,
   AutoLaunchStatus,
   StoreAutoLaunchState,

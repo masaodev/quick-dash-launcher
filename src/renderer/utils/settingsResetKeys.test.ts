@@ -21,14 +21,12 @@ const defaults = {
   showKeyboardHints: true,
   searchMemo: false,
   windowPositionMode: 'cursorMonitorCenter',
-  windowPositionX: 0,
-  windowPositionY: 0,
+  windowFixedPosition: null,
   windowWidth: 600,
   windowHeight: 400,
   workspacePositionMode: 'displayRight',
   workspaceTargetDisplayIndex: -1,
-  workspacePositionX: 0,
-  workspacePositionY: 0,
+  workspaceFixedPosition: null,
   workspaceBackgroundTransparent: false,
   workspaceOpacity: 100,
   workspaceVisibleOnAllDesktops: true,
@@ -99,7 +97,11 @@ describe('isSectionAtDefault', () => {
   });
 
   it('覚えている座標だけが違うときは既定値のまま扱う（画面上は既定値なので）', () => {
-    const settings = { ...defaults, workspacePositionX: 1200, windowPositionY: 300 };
+    const settings = {
+      ...defaults,
+      workspaceFixedPosition: { x: 1200, y: 0 },
+      windowFixedPosition: { x: 0, y: 300 },
+    };
     expect(isSectionAtDefault('workspaceWindow', settings, defaults)).toBe(true);
     expect(isSectionAtDefault('mainWindow', settings, defaults)).toBe(true);
   });
@@ -153,8 +155,7 @@ describe('getSectionResetChanges', () => {
     const settings = {
       ...defaults,
       windowPositionMode: 'fixed',
-      windowPositionX: 100,
-      windowPositionY: 50,
+      windowFixedPosition: { x: 100, y: 50 },
     } as AppSettings;
     const { changes, forgetsSavedPosition } = getSectionResetChanges(
       t,

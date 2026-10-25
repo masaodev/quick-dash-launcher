@@ -618,27 +618,26 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
     }
 
     case 'fixed': {
-      const savedX = await settingsService.get('windowPositionX');
-      const savedY = await settingsService.get('windowPositionY');
+      const saved = await settingsService.get('windowFixedPosition');
 
-      // 初回（0,0）と、保存位置が画面外（モニターを外した後など）のときは中央に置き直す
-      const isFirstLaunch = savedX === 0 && savedY === 0;
-      if (isFirstLaunch || !isPositionOnScreen(savedX, savedY)) {
+      // まだ置いていないときと、保存位置が画面外（モニターを外した後など）のときは中央に置き直す
+      if (!saved || !isPositionOnScreen(saved.x, saved.y)) {
         mainWindow.center();
         // 中央配置後の位置を保存
         const bounds = mainWindow.getBounds();
-        await settingsService.set('windowPositionX', bounds.x);
-        await settingsService.set('windowPositionY', bounds.y);
-        if (isFirstLaunch) {
-          windowLogger.info('初回起動: ウィンドウを画面中央に配置し、位置を保存しました');
+        await settingsService.set('windowFixedPosition', { x: bounds.x, y: bounds.y });
+        if (!saved) {
+          windowLogger.info(
+            'まだ置いていないので、ウィンドウを画面中央に配置し、位置を保存しました'
+          );
         } else {
           windowLogger.warn(
-            `保存位置 (${savedX}, ${savedY}) が画面外のため、画面中央に配置し直しました`
+            `保存位置 (${saved.x}, ${saved.y}) が画面外のため、画面中央に配置し直しました`
           );
         }
       } else {
-        mainWindow.setPosition(savedX, savedY);
-        windowLogger.info(`ウィンドウを固定位置に配置しました: (${savedX}, ${savedY})`);
+        mainWindow.setPosition(saved.x, saved.y);
+        windowLogger.info(`ウィンドウを固定位置に配置しました: (${saved.x}, ${saved.y})`);
       }
       break;
     }
@@ -666,8 +665,7 @@ export async function saveWindowPosition(): Promise<void> {
   // fixedモードの場合のみ位置を保存
   if (positionMode === 'fixed') {
     const bounds = mainWindow.getBounds();
-    await settingsService.set('windowPositionX', bounds.x);
-    await settingsService.set('windowPositionY', bounds.y);
+    await settingsService.set('windowFixedPosition', { x: bounds.x, y: bounds.y });
     windowLogger.info(`ウィンドウ位置を保存しました: (${bounds.x}, ${bounds.y})`);
   }
 }

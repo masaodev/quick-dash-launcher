@@ -44,10 +44,11 @@ type Rule =
   | { kind: 'choice'; values: readonly string[] }
   | { kind: 'displayIndex' }
   | { kind: 'dataFile' }
-  | { kind: 'hotkey' };
+  | { kind: 'hotkey' }
+  | { kind: 'fixedPosition' };
 
 const BOOLEAN: Rule = { kind: 'boolean' };
-const COORDINATE: Rule = { kind: 'integer' };
+const FIXED_POSITION: Rule = { kind: 'fixedPosition' };
 
 /** CLI から変えられる項目と値の決まり（範囲は設定画面と同じ） */
 const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
@@ -65,8 +66,7 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
     kind: 'choice',
     values: ['center', 'cursor', 'cursorMonitorCenter', 'fixed'],
   },
-  windowPositionX: COORDINATE,
-  windowPositionY: COORDINATE,
+  windowFixedPosition: FIXED_POSITION,
   windowSnapEnabled: BOOLEAN,
   editModeWidth: { kind: 'integer', range: SETTING_NUMBER_RANGES.editModeWidth },
   editModeHeight: { kind: 'integer', range: SETTING_NUMBER_RANGES.editModeHeight },
@@ -75,8 +75,7 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   // primaryLeft・primaryRight は古い値なので、新しくは選ばせない
   workspacePositionMode: { kind: 'choice', values: ['displayLeft', 'displayRight', 'fixed'] },
   workspaceTargetDisplayIndex: { kind: 'displayIndex' },
-  workspacePositionX: COORDINATE,
-  workspacePositionY: COORDINATE,
+  workspaceFixedPosition: FIXED_POSITION,
   workspaceVisibleOnAllDesktops: BOOLEAN,
   detachedVisibleOnAllDesktops: BOOLEAN,
   detachedPositionMode: { kind: 'choice', values: ['saved', 'mainDisplay'] },
@@ -148,7 +147,8 @@ async function set(args: readonly string[], ctx: SettingsCommandContext): Promis
   const value = await parseValue(known, raw, rule, settings, ctx.store);
   const before = settings[known];
   const result = { key: known, before, after: value };
-  if (value === before) return { ...result, unchanged: true };
+  // 固定位置の座標は { x, y } なので、中身で比べる
+  if (JSON.stringify(value) === JSON.stringify(before)) return { ...result, unchanged: true };
   if (rule.kind === 'hotkey') checkHotkeyAvailable(known as HotkeyKey, value as string, ctx.store);
   if (dryRun) return { dryRun: true, ...result };
 
@@ -157,8 +157,18 @@ async function set(args: readonly string[], ctx: SettingsCommandContext): Promis
   } else {
     await ctx.store.save({ [known]: value });
   }
-  ctx.changed(mainI18n.t('cli.changed.settingUpdated', { key: known, value: String(value) }));
+  ctx.changed(
+    mainI18n.t('cli.changed.settingUpdated', { key: known, value: formatSettingValue(value) })
+  );
   return result;
+}
+
+/** トーストに出す値（固定位置の座標は「x,y」、まだ置いていないなら null） */
+function formatSettingValue(value: unknown): string {
+  if (value && typeof value === 'object' && 'x' in value && 'y' in value) {
+    return `${value.x},${value.y}`;
+  }
+  return String(value);
 }
 
 function invalid(key: string, expected: string): CliError {
@@ -201,6 +211,15 @@ async function parseValue(
       const n = /^\d+$/.test(text) ? Number(text) : NaN;
       if (n < count) return n;
       throw invalid(key, mainI18n.t('cli.errors.expectedDisplayIndex', { max: count - 1 }));
+    }
+    case 'fixedPosition': {
+      // null は「まだ置いていない」（次に出すときに中央・右端へ置き直す）
+      if (text === 'null') return null;
+      const match = /^(-?\d+)\s*,\s*(-?\d+)$/.exec(text);
+      const x = match ? Number(match[1]) : NaN;
+      const y = match ? Number(match[2]) : NaN;
+      if (Number.isSafeInteger(x) && Number.isSafeInteger(y)) return { x, y };
+      throw invalid(key, mainI18n.t('cli.errors.expectedFixedPosition'));
     }
     case 'dataFile': {
       // 起動したときに開くタブは、そのタブに入っているデータファイルで指す（画面と同じ）

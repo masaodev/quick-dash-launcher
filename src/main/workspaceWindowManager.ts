@@ -481,11 +481,10 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
     }
 
     case 'fixed': {
-      const savedX = await settingsService.get('workspacePositionX');
-      const savedY = await settingsService.get('workspacePositionY');
+      const saved = await settingsService.get('workspaceFixedPosition');
       const primaryWorkArea = screen.getPrimaryDisplay().workArea;
-      const isFirstLaunch = savedX === 0 && savedY === 0;
-      const needsFallback = !isFirstLaunch && !isPositionOnScreen(savedX, savedY);
+      const isFirstLaunch = saved === null;
+      const needsFallback = saved !== null && !isPositionOnScreen(saved.x, saved.y);
 
       if (isFirstLaunch || needsFallback) {
         if (needsFallback) {
@@ -499,14 +498,13 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
           height: clampedHeight,
         });
         const newBounds = workspaceWindow.getBounds();
-        await settingsService.set('workspacePositionX', newBounds.x);
-        await settingsService.set('workspacePositionY', newBounds.y);
+        await settingsService.set('workspaceFixedPosition', { x: newBounds.x, y: newBounds.y });
         if (isFirstLaunch) {
-          windowLogger.info('初回起動: ワークスペースを右端に配置');
+          windowLogger.info('まだ置いていないので、ワークスペースを右端に配置');
         }
       } else {
-        workspaceWindow.setPosition(savedX, savedY);
-        windowLogger.info(`ワークスペースを固定位置に配置: (${savedX}, ${savedY})`);
+        workspaceWindow.setPosition(saved.x, saved.y);
+        windowLogger.info(`ワークスペースを固定位置に配置: (${saved.x}, ${saved.y})`);
       }
       break;
     }
@@ -522,8 +520,7 @@ export async function saveWorkspacePosition(): Promise<void> {
 
   if (positionMode === 'fixed') {
     const bounds = workspaceWindow.getBounds();
-    await settingsService.set('workspacePositionX', bounds.x);
-    await settingsService.set('workspacePositionY', bounds.y);
+    await settingsService.set('workspaceFixedPosition', { x: bounds.x, y: bounds.y });
     windowLogger.info(`ワークスペース位置を保存: (${bounds.x}, ${bounds.y})`);
   }
 }
