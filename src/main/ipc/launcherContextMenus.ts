@@ -227,6 +227,13 @@ function setupLauncherBlankContextMenuHandler(): void {
     );
     menu.append(
       createMenuItem(
+        t('launcher.registerMenu.addFolderImport'),
+        event.sender,
+        IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT
+      )
+    );
+    menu.append(
+      createMenuItem(
         t('menu.launcherBlank.registerFromClipboard'),
         event.sender,
         IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD

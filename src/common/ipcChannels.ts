@@ -51,6 +51,9 @@ export const IPC_CHANNELS = {
   LOAD_CACHED_ICONS: 'load-cached-icons',
   FETCH_ICONS_COMBINED: 'fetch-icons-combined',
   ENSURE_ICONS: 'ensure-icons',
+  /** 管理ウィンドウなどから、メインウィンドウに未取得のアイコンの取得を頼む（ブックマーク取込の後。A3-174） */
+  REQUEST_FETCH_MISSING_ICONS: 'request-fetch-missing-icons',
+  EVENT_FETCH_MISSING_ICONS_REQUESTED: 'fetch-missing-icons-requested',
   GET_ICON_FETCH_ERRORS: 'get-icon-fetch-errors',
   SELECT_CUSTOM_ICON_FILE: 'select-custom-icon-file',
   SAVE_CUSTOM_ICON: 'save-custom-icon',
@@ -64,6 +67,8 @@ export const IPC_CHANNELS = {
 
   // アプリインポート
   SCAN_INSTALLED_APPS: 'scan-installed-apps',
+  /** アプリのスキャンの途中経過（ここまでに見つけた件数） */
+  EVENT_APP_SCAN_PROGRESS: 'app-scan-progress',
 
   // ブックマーク自動取込
   BOOKMARK_AUTO_IMPORT_GET_SETTINGS: 'bookmark-auto-import:get-settings',
@@ -283,6 +288,7 @@ export const IPC_CHANNELS = {
   SHOW_LAUNCHER_BLANK_CONTEXT_MENU: 'show-launcher-blank-context-menu',
   EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM: 'launcher-blank-menu-add-item',
   EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD: 'launcher-blank-menu-register-from-clipboard',
+  EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT: 'launcher-blank-menu-add-folder-import',
 
   // コンテキストメニュー - Workspace
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',

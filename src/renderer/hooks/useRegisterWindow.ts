@@ -6,7 +6,7 @@ import { logError } from '../utils/debug';
 /** 開くときに要求へ載せる内容（種別と今のタブはこのフックが付ける） */
 type RegisterWindowContent = Pick<
   RegisterWindowRequest,
-  'droppedPaths' | 'editingItem' | 'addExcludeName'
+  'droppedPaths' | 'editingItem' | 'addExcludeName' | 'initialCategory'
 >;
 
 /**
@@ -50,6 +50,12 @@ export function useRegisterWindow(getCurrentTab: () => string | undefined) {
     [open]
   );
 
+  /** 新規登録をフォルダ取込の種別で開く（➕ のメニュー・空のタブから。A3-180） */
+  const openFolderImportWindow = useCallback(
+    () => open({ droppedPaths: [], editingItem: null, initialCategory: 'dir' }),
+    [open]
+  );
+
   /** ドロップされたファイル・URL を初期値にして開く */
   const openWithDroppedPaths = useCallback(
     (paths: string[]) => open({ droppedPaths: paths, editingItem: null }),
@@ -60,6 +66,7 @@ export function useRegisterWindow(getCurrentTab: () => string | undefined) {
     isRegisterWindowOpen,
     openRegisterWindow,
     openEditWindow,
+    openFolderImportWindow,
     openWithDroppedPaths,
   };
 }

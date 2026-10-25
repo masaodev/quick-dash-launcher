@@ -11,14 +11,13 @@ interface ActionButtonsProps {
   /** 今の検索モード（🔄 メニューに F5 を添えるのは通常モードだけ） */
   searchMode: SearchMode;
   onReload: () => void;
-  onFetchMissingIcons: () => void;
-  onFetchMissingIconsCurrentTab: () => void;
   onBookmarkAutoImport: () => void;
   onRefreshAll: () => void;
   onOpenBasicSettings: () => void;
   onOpenItemManagement: () => void;
   onToggleWorkspace: () => void;
   onOpenRegisterModal: () => void;
+  onOpenFolderImport: () => void;
   pinLevel: PinLevel;
   /** ワークスペースが開いているか（⭐ ボタンを押し込んだ見た目にする） */
   isWorkspaceOpen: boolean;
@@ -28,14 +27,13 @@ interface ActionButtonsProps {
 const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   searchMode,
   onReload,
-  onFetchMissingIcons,
-  onFetchMissingIconsCurrentTab,
   onBookmarkAutoImport,
   onRefreshAll,
   onOpenBasicSettings,
   onOpenItemManagement,
   onToggleWorkspace,
   onOpenRegisterModal,
+  onOpenFolderImport,
   pinLevel,
   onPinLevelChange,
   isWorkspaceOpen,
@@ -50,12 +48,13 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       <LauncherRefreshActionsDropdown
         showReloadKey={searchMode === 'normal'}
         onReload={onReload}
-        onFetchMissingIcons={onFetchMissingIcons}
-        onFetchMissingIconsCurrentTab={onFetchMissingIconsCurrentTab}
         onBookmarkAutoImport={onBookmarkAutoImport}
         onRefreshAll={onRefreshAll}
       />
-      <LauncherRegisterDropdown onOpenRegisterModal={onOpenRegisterModal} />
+      <LauncherRegisterDropdown
+        onOpenRegisterModal={onOpenRegisterModal}
+        onOpenFolderImport={onOpenFolderImport}
+      />
       <button
         className={`action-btn ${isWorkspaceOpen ? 'toggle-on' : ''}`}
         onClick={onToggleWorkspace}

@@ -254,6 +254,19 @@ test.describe('QuickDashLauncher - 登録画面の種別', () => {
     ]);
     await expect(kind.locator('option[value="window"]')).toHaveCount(0);
   });
+
+  test('➕ の「フォルダからアイテムを追加」で、種別がフォルダ取込の登録画面が開く', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.getByTestId('register-menu-button').click();
+    await mainWindow.getByTestId('register-menu-folder-import').click();
+    const registerPage = await utils.waitForRegisterWindow(electronApp);
+    await expect(registerPage.locator('.register-kind select')).toHaveValue('dir');
+    await expect(registerPage.getByTestId('dir-preview')).toBeVisible();
+  });
 });
 
 /**
@@ -581,7 +594,7 @@ test.describe('QuickDashLauncher - パス欄の選択', () => {
 
 /**
  * フォルダ取込のプレビュー
- * - フォルダを読むのは「🔍 プレビュー」を押したときだけ
+ * - フォルダを読むのは「フォルダを選択」で選んだときと「🔍 プレビュー更新」を押したときだけ
  * - 頭・後ろに付ける文字はその場で反映し、階層などを変えたら数え直しを促す
  */
 test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => {
@@ -603,10 +616,11 @@ test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => 
     const preview = register.getByTestId('dir-preview');
     const runButton = preview.getByRole('button', { name: /プレビュー/ });
 
-    await test.step('パスが空なら押せず、入れても押すまでは読まない', async () => {
+    await test.step('パスが空なら押せず、手で入れても押すまでは読まない', async () => {
       await expect(runButton).toBeDisabled();
+      await expect(runButton).toHaveText('🔍 プレビュー更新');
       await register.locator('.path-input-group input').fill(folder);
-      await expect(preview).toContainText('「🔍 プレビュー」を押すと');
+      await expect(preview).toContainText('「🔍 プレビュー更新」を押すと');
       await expect(preview.locator('.dir-preview-item')).toHaveCount(0);
     });
 
@@ -637,6 +651,32 @@ test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => 
       await runButton.click();
       await expect(preview).toContainText('ファイル名の条件 *.zip に合うものがありません');
     });
+  });
+
+  test('「フォルダを選択」で選ぶと、押さなくてもプレビューが並ぶ', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const folder = path.join(configHelper.getConfigDir(), 'e2e-pick-preview');
+    fs.mkdirSync(folder, { recursive: true });
+    fs.writeFileSync(path.join(folder, 'a.txt'), '');
+    fs.writeFileSync(path.join(folder, 'b.txt'), '');
+
+    const register = await utils.openRegisterModal(electronApp);
+    await register.locator('.register-kind select').selectOption('dir');
+    const preview = register.getByTestId('dir-preview');
+    await expect(preview).toContainText('「フォルダを選択」でフォルダを選ぶと');
+
+    await stubOpenDialog(electronApp, folder);
+    await register
+      .locator('.path-input-group')
+      .getByRole('button', { name: 'フォルダを選択' })
+      .click();
+    await expect(preview.locator('.dir-preview-status')).toHaveText('2 件を取り込みます');
+    await expect(preview.locator('.dir-preview-name')).toHaveText(['a.txt', 'b.txt']);
   });
 });
 

@@ -235,3 +235,11 @@
 .item[draggable='true']:active {
   cursor: grabbing;
 }
+
+/* 空のタブの、まとめて追加する入口（ブックマーク・アプリ・フォルダ） */
+.item-list-empty-imports {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}

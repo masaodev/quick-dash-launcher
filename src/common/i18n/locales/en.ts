@@ -79,16 +79,19 @@ export const en: LocaleMessages = {
       titleWithReloadKey: 'Reload and fetch (F5: reload data)',
       reloadData: '🔃 Reload data',
       reloadDataWithKey: '🔃 Reload data (F5)',
-      fetchIconsCurrentTab: '🎨 Fetch icons (current tab)',
-      fetchIconsAllTabs: '🎨 Fetch icons (all tabs)',
       importBookmarks: '🔁 Run bookmark auto-import',
-      reloadAll: '🔄 Full reload',
+      refetchIcons: '🎨 Fetch all icons again',
+      refetchIconsTitle:
+        "Reloads the data and fetches every icon again without the saved ones (also retries ones that couldn't be fetched)",
     },
     registerMenu: {
       title: 'Add item',
       quickAdd: '📄 Add item…',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
+      addFolderImport: '🗂️ Add items from a folder',
+      addFolderImportTitle:
+        'Adds an item (folder import) that lists the files in a folder each time you open it',
       clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",
     },
     empty: {
@@ -105,6 +108,9 @@ export const en: LocaleMessages = {
       switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
       add: '📄 Add item…',
+      importBookmarks: '🔖 From bookmarks',
+      importApps: '💻 From apps',
+      importFolder: '🗂️ From a folder',
     },
     workspaceButton: {
       open: 'Open the workspace (Ctrl+W)',
@@ -134,13 +140,19 @@ export const en: LocaleMessages = {
       showNote: 'Show note',
     },
     missingIcons: {
-      label: 'Icons not fetched:',
+      label_one: '🎨 {{count}} item has no icon yet',
+      label_other: '🎨 {{count}} items have no icon yet',
+      hint: 'Icons are fetched once from the site or your PC, then the saved ones are used',
       fetch: 'Fetch',
       fetchTooltip: 'Fetch icons',
     },
     iconProgress: {
       complete: 'Icons fetched',
       busy: 'Icons are being fetched. Try again when it finishes.',
+      closeWhileFetching: 'Closing keeps fetching in the background',
+      continuesInBackground:
+        "Icons keep being fetched in the background. You'll be notified when it's done",
+      finishedInBackground: 'Finished fetching icons',
       phase: 'Step {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'Fetching favicons',
@@ -1195,6 +1207,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     row: {
       sourceManual: 'Manual',
+      sourceAuto: '🔖 Auto import: {{rule}}',
       sourceAutoTitle: 'Imported by the auto-import rule "{{rule}}"',
       linkExistsTitle: 'The path was found',
       linkUnknownTitle:
@@ -1451,6 +1464,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     autoNameWithWord: '{{base}} {{word}}',
   },
   bookmarkImportModal: {
+    fetchIcons: 'Also fetch icons (site favicons) after importing',
+    fetchIconsNote: 'Fetched after you press "Save changes"',
+    fetchIconsNoteRule: 'Fetched right after importing',
     title: 'Import browser bookmarks',
     hint: 'Check the folders or bookmarks you want and import them. Imported bookmarks are added as unsaved changes; select "Save changes" to keep them.',
     defaultName: 'Bookmarks',
@@ -1499,7 +1515,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     autoImportLinkNone: 'Bookmark auto-import (no rules yet)',
     ruleName: 'Rule name',
     ruleSummary:
-      'Rule to save: {{source}} · {{folders}}. You can add name filters or display names later in Bookmark auto-import',
+      'Rule to save: {{source}} · {{folders}}. You can add name filters or folder names later in Bookmark auto-import',
     ruleAllFolders: 'All folders (including ones added later)',
     ruleFolders: '{{folders}} (with subfolders)',
     allBookmarksRuleName: 'All bookmarks',
@@ -1553,6 +1569,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     title: 'Import installed apps',
     hint: 'Check the apps you want and import them. Imported apps are added as unsaved changes; select "Save changes" to keep them.',
     scanning: 'Scanning the Start menu…',
+    scanningTitle: '⏳ Looking for installed apps… ({{count}} found)',
+    scanningDetail: 'Reading Start menu shortcuts and registered apps',
     found_one: 'Found {{count}} app in the Start menu',
     found_other: 'Found {{count}} apps in the Start menu',
     rescan: 'Scan again',
@@ -1884,8 +1902,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   /** 登録・編集画面のフォルダ取込の「取り込まれるもの」（プレビュー） */
   dirPreview: {
     title: 'What gets imported',
-    run: 'Preview',
-    runTitle: 'Read the folder and see what will be imported',
+    run: 'Refresh preview',
+    runTitle: 'Read the folder again and see what will be imported',
     cancel: 'Stop',
     scanning: 'Counting…',
     count_one: '{{count}} item will be imported',
@@ -1896,13 +1914,14 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     more_other: '{{count}} more',
     moreTruncated_one: '{{count}}+ more',
     moreTruncated_other: '{{count}}+ more',
-    idle: 'Press "🔍 Preview" to see what will be imported',
-    idleHint: 'The folder is read only when you press it',
-    noPath: 'Choose a folder, then press "🔍 Preview"',
-    stale: 'The settings changed. Press "🔍 Preview" to count again with the current settings',
+    idle: 'Press "🔍 Refresh preview" to see what will be imported',
+    idleHint: 'The folder is read only when you pick it with "Choose folder" or press the button',
+    noPath: 'Pick a folder with "Choose folder" to list what will be imported here',
+    stale:
+      'The settings changed. Press "🔍 Refresh preview" to count again with the current settings',
     empty: 'Nothing to import',
     emptyFilter: 'Nothing matches the file name filter {{filter}}',
-    emptyHint: 'Check the settings and press "🔍 Preview" again',
+    emptyHint: 'Check the settings and press "🔍 Refresh preview" again',
     notFound: 'Folder not found (for a network folder, check that you are connected)',
     notFolder: 'The path is not a folder',
     timeout: 'Stopped because reading took more than {{seconds}} seconds',

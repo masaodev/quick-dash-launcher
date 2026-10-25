@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useDropdown } from '../hooks/useDropdown';
@@ -7,22 +7,36 @@ interface RefreshActionsDropdownProps {
   /** ツールチップと「データを再読み込み」に F5 を添える（F5 で再読み込みする通常モードだけ。ウィンドウ検索モードの F5 はウィンドウの取り直し） */
   showReloadKey: boolean;
   onReload: () => void;
-  onFetchMissingIcons: () => void;
-  onFetchMissingIconsCurrentTab: () => void;
   onBookmarkAutoImport: () => void;
+  /** アイコンをすべて取り直す */
   onRefreshAll: () => void;
 }
 
 const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
   showReloadKey,
   onReload,
-  onFetchMissingIcons,
-  onFetchMissingIconsCurrentTab,
   onBookmarkAutoImport,
   onRefreshAll,
 }) => {
   const { t } = useTranslation();
   const { isOpen, ref: dropdownRef, toggle, close } = useDropdown();
+  // 有効なブックマーク自動取込のルールがあるか（無ければ「ブックマーク自動取込を実行」を出さない。開くたびに確かめる）
+  const [hasAutoImportRules, setHasAutoImportRules] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    window.electronAPI.bookmarkAutoImportAPI
+      .getSettings()
+      .then((settings) => {
+        if (active) setHasAutoImportRules(settings.rules.some((rule) => rule.enabled));
+      })
+      .catch(() => {
+        if (active) setHasAutoImportRules(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
 
   const handleMenuItemClick = (action: () => void) => {
     action();
@@ -49,27 +63,21 @@ const LauncherRefreshActionsDropdown: React.FC<RefreshActionsDropdownProps> = ({
                 : 'launcher.refreshMenu.reloadData'
             )}
           </button>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onFetchMissingIconsCurrentTab)}
-          >
-            {t('launcher.refreshMenu.fetchIconsCurrentTab')}
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onFetchMissingIcons)}
-          >
-            {t('launcher.refreshMenu.fetchIconsAllTabs')}
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={() => handleMenuItemClick(onBookmarkAutoImport)}
-          >
-            {t('launcher.refreshMenu.importBookmarks')}
-          </button>
+          {hasAutoImportRules && (
+            <button
+              className="dropdown-item"
+              onClick={() => handleMenuItemClick(onBookmarkAutoImport)}
+            >
+              {t('launcher.refreshMenu.importBookmarks')}
+            </button>
+          )}
           <div className="dropdown-divider"></div>
-          <button className="dropdown-item" onClick={() => handleMenuItemClick(onRefreshAll)}>
-            {t('launcher.refreshMenu.reloadAll')}
+          <button
+            className="dropdown-item"
+            onClick={() => handleMenuItemClick(onRefreshAll)}
+            title={t('launcher.refreshMenu.refetchIconsTitle')}
+          >
+            {t('launcher.refreshMenu.refetchIcons')}
           </button>
         </div>
       )}
