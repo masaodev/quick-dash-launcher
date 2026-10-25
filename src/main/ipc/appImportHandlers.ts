@@ -131,7 +131,13 @@ async function scanStartApps(): Promise<ScannedAppItem[]> {
   }
 }
 
-async function scanInstalledApps(): Promise<AppScanResult> {
+/** ショートカットをこの件数読むごとに、途中経過を送り、イベントループに番を返す */
+const LNK_BATCH_SIZE = 10;
+
+/**
+ * @param onProgress ここまでに見つけた件数を受け取る（画面の「探しています…（N 件）」用）
+ */
+async function scanInstalledApps(onProgress?: (found: number) => void): Promise<AppScanResult> {
   const startTime = performance.now();
 
   // 登録アプリのスキャン（PowerShell）は待ち時間が長いため、ショートカットのスキャンと並行させる
@@ -159,7 +165,13 @@ async function scanInstalledApps(): Promise<AppScanResult> {
 
   const apps: ScannedAppItem[] = [];
 
-  for (const lnkPath of allLnkFiles) {
+  for (const [index, lnkPath] of allLnkFiles.entries()) {
+    // readShortcutLink は同期で 1 件数十 ms かかることがある。まとめて読むと、その間メインプロセスが止まり、
+    // 全部のウィンドウが固まったように見える（200 件で 2〜3 秒）。ときどき番を返して、画面の操作を通す（A3-179）
+    if (index > 0 && index % LNK_BATCH_SIZE === 0) {
+      onProgress?.(apps.length);
+      await new Promise((resolve) => setImmediate(resolve));
+    }
     const baseName = path.basename(lnkPath, '.lnk');
 
     try {
@@ -192,6 +204,7 @@ async function scanInstalledApps(): Promise<AppScanResult> {
   // 登録アプリをスキャンしてマージ
   const startApps = await startAppsPromise;
   apps.push(...startApps);
+  onProgress?.(apps.length);
 
   // 表示名でソート
   apps.sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
@@ -206,5 +219,12 @@ async function scanInstalledApps(): Promise<AppScanResult> {
 }
 
 export function setupAppImportHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.SCAN_INSTALLED_APPS, () => scanInstalledApps());
+  // 途中経過には頼んだ側の番号を付ける（閉じてすぐ開き直すと、前のスキャンの件数が混ざるため）
+  ipcMain.handle(IPC_CHANNELS.SCAN_INSTALLED_APPS, (event, scanId: number = 0) =>
+    scanInstalledApps((found) => {
+      if (!event.sender.isDestroyed()) {
+        event.sender.send(IPC_CHANNELS.EVENT_APP_SCAN_PROGRESS, { scanId, found });
+      }
+    })
+  );
 }

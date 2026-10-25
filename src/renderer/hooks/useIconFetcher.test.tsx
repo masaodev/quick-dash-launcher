@@ -44,8 +44,6 @@ function renderFetcher(onBusy: () => void) {
     useIconFetcher({
       mainItems: items,
       setMainItems: vi.fn(),
-      activeTab: 'datafiles/data.json',
-      dataFileTabs: [{ files: ['datafiles/data.json'], name: 'メイン' }],
       reloadIconFetchErrors: vi.fn().mockResolvedValue(undefined),
       onBusy,
     })
@@ -64,14 +62,13 @@ describe('useIconFetcher', () => {
     expect(result.current.isFetchingIcons).toBe(true);
     expect(result.current.isIconFetchBusy()).toBe(true);
 
-    // 進捗バーを閉じた後の［取得］・🔄 のメニュー・完全リフレッシュ
+    // 進捗バーを閉じた後の［取得］・🔄 の「アイコンをすべて取り直す」
     await act(async () => {
       await result.current.handleFetchMissingIcons();
-      await result.current.handleFetchMissingIconsCurrentTab();
       await result.current.handleRefreshAll(async () => items);
     });
     expect(fetchIconsCombined).toHaveBeenCalledTimes(1);
-    expect(onBusy).toHaveBeenCalledTimes(3);
+    expect(onBusy).toHaveBeenCalledTimes(2);
 
     await act(async () => {
       resolveFetch?.({ favicons: { 'https://example.com/': 'data:icon' }, icons: {} });
@@ -79,6 +76,26 @@ describe('useIconFetcher', () => {
     });
     expect(result.current.isFetchingIcons).toBe(false);
     expect(result.current.isIconFetchBusy()).toBe(false);
+  });
+
+  it('ほかのウィンドウから頼まれた取得が重なったときは、始めず知らせもしないこと', async () => {
+    const onBusy = vi.fn();
+    const { result } = renderFetcher(onBusy);
+
+    let first: Promise<void> = Promise.resolve();
+    act(() => {
+      first = result.current.handleFetchMissingIcons();
+    });
+    await act(async () => {
+      await result.current.handleFetchMissingIconsIn(items);
+    });
+    expect(onBusy).not.toHaveBeenCalled();
+    expect(fetchIconsCombined).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveFetch?.({ favicons: {}, icons: {} });
+      await first;
+    });
   });
 
   it('頼まれていない取得（silent）が重なったときは知らせないこと', async () => {

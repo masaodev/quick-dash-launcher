@@ -11,8 +11,6 @@ interface ActionButtonsProps {
   /** 今の検索モード（🔄 メニューに F5 を添えるのは通常モードだけ） */
   searchMode: SearchMode;
   onReload: () => void;
-  onFetchMissingIcons: () => void;
-  onFetchMissingIconsCurrentTab: () => void;
   onBookmarkAutoImport: () => void;
   onRefreshAll: () => void;
   onOpenBasicSettings: () => void;
@@ -29,8 +27,6 @@ interface ActionButtonsProps {
 const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
   searchMode,
   onReload,
-  onFetchMissingIcons,
-  onFetchMissingIconsCurrentTab,
   onBookmarkAutoImport,
   onRefreshAll,
   onOpenBasicSettings,
@@ -52,8 +48,6 @@ const LauncherActionButtons: React.FC<ActionButtonsProps> = ({
       <LauncherRefreshActionsDropdown
         showReloadKey={searchMode === 'normal'}
         onReload={onReload}
-        onFetchMissingIcons={onFetchMissingIcons}
-        onFetchMissingIconsCurrentTab={onFetchMissingIconsCurrentTab}
         onBookmarkAutoImport={onBookmarkAutoImport}
         onRefreshAll={onRefreshAll}
       />

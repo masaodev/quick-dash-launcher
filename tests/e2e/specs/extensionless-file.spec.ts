@@ -100,7 +100,7 @@ test.describe('QuickDashLauncher - 拡張子の無いファイル', () => {
     });
   });
 
-  test('直接書き足した拡張子の無いファイルは、完全リフレッシュでファイルと分かる', async ({
+  test('直接書き足した拡張子の無いファイルは、「アイコンをすべて取り直す」でファイルと分かる', async ({
     mainWindow,
     configHelper,
   }) => {
@@ -114,9 +114,9 @@ test.describe('QuickDashLauncher - 拡張子の無いファイル', () => {
       await expect(itemIcon(mainWindow, 'ライセンス')).toHaveText(FOLDER_ICON);
     });
 
-    await test.step('完全リフレッシュでディスクを確かめ、ファイルになる', async () => {
+    await test.step('「アイコンをすべて取り直す」でディスクを確かめ、ファイルになる', async () => {
       await mainWindow.locator('button[title^="更新・取得"]').click();
-      await mainWindow.locator('.dropdown-item', { hasText: '完全リフレッシュ' }).click();
+      await mainWindow.locator('.dropdown-item', { hasText: 'アイコンをすべて取り直す' }).click();
       await expect(itemIcon(mainWindow, 'ライセンス')).toHaveText(FILE_ICON);
       expect(readMemo(configHelper.getConfigDir())).toEqual([licensePath]);
     });

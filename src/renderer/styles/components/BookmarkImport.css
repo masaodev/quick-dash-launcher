@@ -94,11 +94,14 @@
   max-width: 960px;
   height: var(--modal-max-height);
   padding: var(--spacing-xl);
+  /* 管理ウィンドウが低いと、一覧の最低の高さと下の欄が収まらないので画面ごとスクロールする */
+  overflow-y: auto;
 }
 
 .bookmark-import-body {
   flex: 1;
-  min-height: 0;
+  /* 一覧の最低の高さ（.bookmark-import-list の min-height）より縮めない。縮めると下の欄が一覧に重なる */
+  min-height: auto;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -184,6 +187,12 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+/* 取込画面では、中身の高さを一覧の最低の高さに数えない（数えると、木を全部広げた高さまで縮まなくなる）。
+   ルールの画面の結果の一覧は中身の高さで伸びるので付けない */
+.bookmark-import-modal .bookmark-import-list-body {
+  contain: size;
 }
 
 .bookmark-import-row {
@@ -625,4 +634,20 @@
   font-family: var(--font-family);
   border: var(--border-normal);
   border-radius: var(--border-radius);
+}
+
+/* 取り込んだ後にアイコンも取るか（表示名の欄の下。A3-174） */
+.bookmark-import-fetch-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.bookmark-import-fetch-icons-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
 }

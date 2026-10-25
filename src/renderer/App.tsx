@@ -53,6 +53,7 @@ import { useWindowOperations } from './hooks/useWindowOperations';
 import { useWindowMultiSelect } from './hooks/useWindowMultiSelect';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
+import { useLatestRef } from './hooks/useLatestRef';
 import { useAlertDialog } from './hooks/useDialogManager';
 import { useLauncherItemDelete } from './hooks/useLauncherItemDelete';
 import { classifyPastedText } from './utils/pasteClassifier';
@@ -120,7 +121,7 @@ function App(): React.ReactElement {
     handleOpenParentFolder,
     handleOpenShortcutParentFolder,
   } = useItemActions();
-  const { showSuccess, showWarning } = useToast();
+  const { showSuccess, showInfo, showWarning } = useToast();
 
   const {
     showDataFileTabs,
@@ -224,17 +225,51 @@ function App(): React.ReactElement {
     handleRefreshAll,
     handleFetchMissingIcons,
     handleFetchMissingIconsSilently,
-    handleFetchMissingIconsCurrentTab,
+    handleFetchMissingIconsIn,
     isFetchingIcons,
     isIconFetchBusy,
   } = useIconFetcher({
     mainItems,
     setMainItems,
-    activeTab,
-    dataFileTabs,
     reloadIconFetchErrors: loadIconFetchErrors,
     onBusy: () => showWarning(t('launcher.iconProgress.busy')),
   });
+
+  // 進捗バーを取得の途中で閉じたか。閉じても取得は続くので、終わったらトーストで知らせる（A3-174）
+  const closedWhileFetchingRef = useRef(false);
+  const handleCloseIconProgress = () => {
+    if (progressState.progress && !progressState.progress.isComplete) {
+      closedWhileFetchingRef.current = true;
+      showInfo(t('launcher.iconProgress.continuesInBackground'));
+    }
+    resetProgress();
+  };
+  useEffect(() => {
+    if (isFetchingIcons || !closedWhileFetchingRef.current) return;
+    closedWhileFetchingRef.current = false;
+    showSuccess(t('launcher.iconProgress.finishedInBackground'));
+  }, [isFetchingIcons]);
+
+  // ほかのウィンドウ（ブックマーク取込の後の管理ウィンドウ）から頼まれたら、読み直してから未取得のアイコンを取る。
+  // 別の取得の最中なら、それが終わってから取る（頼まれた分を落とさない）
+  const pendingFetchRequestRef = useRef(false);
+  const fetchRequestedRef = useLatestRef(async () => {
+    if (isIconFetchBusy()) {
+      pendingFetchRequestRef.current = true;
+      return;
+    }
+    const items = await loadItems('internal');
+    await handleFetchMissingIconsIn(items);
+  });
+  useEffect(
+    () => window.electronAPI.onFetchMissingIconsRequested(() => void fetchRequestedRef.current()),
+    []
+  );
+  useEffect(() => {
+    if (isFetchingIcons || !pendingFetchRequestRef.current) return;
+    pendingFetchRequestRef.current = false;
+    void fetchRequestedRef.current();
+  }, [isFetchingIcons]);
 
   const { withLoading } = useGlobalLoading();
 
@@ -281,7 +316,7 @@ function App(): React.ReactElement {
     setWindowList((prev) => prev.filter((w) => w.hwnd !== hwnd));
   }, []);
 
-  // trigger: 起動時と F5 は省略（explicit）。完全リフレッシュは 'full'（パスの種類も確かめ直す）。
+  // trigger: 起動時と F5 は省略（explicit）。🔄 の「アイコンをすべて取り直す」は 'full'（パスの種類も確かめ直す）。
   // アプリ内の操作に伴う再読込は 'internal'（先行の再読込があれば結果を共有する）
   const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
@@ -785,15 +820,10 @@ function App(): React.ReactElement {
     await loadItems('internal');
   };
 
-  const handleRefreshAllWrapper = async () => {
-    // 取得中は自動取込も流さない（取込だけ流れてアイコンを取り直さない、という半端を避ける）
-    if (isIconFetchBusy()) {
-      showWarning(t('launcher.iconProgress.busy'));
-      return;
-    }
-    await window.electronAPI.bookmarkAutoImportAPI.executeAll();
-    await handleRefreshAll(() => loadItems('full'));
-  };
+  // 🔄「アイコンをすべて取り直す」: データを 'full' で読み直し（拡張子の無いパスの種類も確かめ直す）、
+  // 保存してあるアイコンを使わずに全部取り直す（前に失敗したものも試す）。
+  // 前の名前は「完全リフレッシュ」で、ブックマーク自動取込も流していた。それは「ブックマーク自動取込を実行」に任せる（A3-182）
+  const handleRefreshAllWrapper = () => handleRefreshAll(() => loadItems('full'));
 
   const handleTabRename = async (tabIndex: number, newName: string) => {
     const updatedTabs = dataFileTabs.map((tab, i) =>
@@ -854,8 +884,6 @@ function App(): React.ReactElement {
         <LauncherActionButtons
           searchMode={searchMode}
           onReload={handleReloadItems}
-          onFetchMissingIcons={handleFetchMissingIcons}
-          onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
           onBookmarkAutoImport={handleBookmarkAutoImport}
           onRefreshAll={handleRefreshAllWrapper}
           onOpenBasicSettings={handleOpenBasicSettings}
@@ -980,7 +1008,10 @@ function App(): React.ReactElement {
       )}
 
       {progressState.isActive && progressState.progress && (
-        <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
+        <LauncherIconProgressBar
+          progress={progressState.progress}
+          onClose={handleCloseIconProgress}
+        />
       )}
 
       {showKeyboardHints && (

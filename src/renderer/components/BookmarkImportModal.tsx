@@ -38,7 +38,7 @@ import ImportDestinationBand from './ImportDestinationBand';
  *
  * アプリ取込と同じく「一覧にチェックを入れて取り込む」。一覧はブラウザのフォルダの木で、フォルダのチェックで
  * 中身をまとめて選び、1 件ずつも選べる。フォルダごと選んだときだけ、フッターの「ブラウザと同期する」で
- * 自動取込のルールにできる（名前の条件や表示名のある細かいルールは、設定の「ルールを追加」で作る）
+ * 自動取込のルールにできる（名前の条件やフォルダ名の付け方のある細かいルールは、設定の「ルールを追加」で作る）
  */
 
 /** 取込元のプルダウンの値（ブラウザの ID か HTML ファイル） */
@@ -47,6 +47,12 @@ type SourceValue = 'chrome' | 'edge' | 'html';
 const NO_PROFILE = '';
 /** 検索の結果を一度に出す上限（それ以上は件数だけ出す） */
 const SEARCH_LIMIT = 300;
+
+/** 取り込むときの付け足し */
+export interface BookmarkImportOptions {
+  /** 取り込んだ後に、アイコン（サイトのファビコン）も取りに行く（A3-174） */
+  fetchIcons: boolean;
+}
 
 interface BookmarkImportModalProps {
   /** アイテム管理の作業中のアイテム（全ファイル分。登録済みの判定に使う） */
@@ -59,10 +65,15 @@ interface BookmarkImportModalProps {
   onImport: (
     bookmarks: SimpleBookmarkItem[],
     duplicateHandling: DuplicateHandlingOption,
-    destination: ImportDestination
+    destination: ImportDestination,
+    options: BookmarkImportOptions
   ) => Promise<boolean>;
   /** ブラウザと同期する（ルールとして保存してすぐ実行）。取込先のファイルを作れなかったら false */
-  onSaveAsRule: (rule: BookmarkAutoImportRule, destination: ImportDestination) => Promise<boolean>;
+  onSaveAsRule: (
+    rule: BookmarkAutoImportRule,
+    destination: ImportDestination,
+    options: BookmarkImportOptions
+  ) => Promise<boolean>;
   onCancel: () => void;
   /** 設定「ブックマーク自動取込」を開く（既存ルールの確認用。モーダルは閉じる） */
   onOpenAutoImportSettings?: () => void;
@@ -102,6 +113,8 @@ function BookmarkImportModal({
   // 表示名の頭と後ろに付ける文字（自動取込のルールの「オプション設定（表示名）」と同じ。A3-176）
   const [prefix, setPrefix] = useState('');
   const [suffix, setSuffix] = useState('');
+  // 取り込んだ後にアイコンも取りに行くか。完全に自動にはせず、ここで外せるようにする（サイトにまとめてアクセスするため）
+  const [fetchIcons, setFetchIcons] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const dest = useImportDestination({
@@ -355,12 +368,13 @@ function BookmarkImportModal({
           createdAt: now,
           updatedAt: now,
         };
-        done = await onSaveAsRule(rule, dest.destination);
+        done = await onSaveAsRule(rule, dest.destination, { fetchIcons });
       } else {
         done = await onImport(
           candidates.map((c) => ({ ...c, displayName: `${prefix}${c.displayName}${suffix}` })),
           dest.destination.kind === 'existing' ? duplicateHandling : 'skip',
-          dest.destination
+          dest.destination,
+          { fetchIcons }
         );
       }
       if (done) onCancel();
@@ -655,6 +669,20 @@ function BookmarkImportModal({
             />
           </label>
         </div>
+
+        <label className="bookmark-import-fetch-icons" data-testid="bookmark-import-fetch-icons">
+          <input
+            type="checkbox"
+            checked={fetchIcons}
+            onChange={(e) => setFetchIcons(e.target.checked)}
+          />
+          {t('bookmarkImportModal.fetchIcons')}
+          <span className="bookmark-import-fetch-icons-note">
+            {asRule
+              ? t('bookmarkImportModal.fetchIconsNoteRule')
+              : t('bookmarkImportModal.fetchIconsNote')}
+          </span>
+        </label>
 
         {duplicateCount > 0 && !asRule && (
           <DuplicateHandlingSection
