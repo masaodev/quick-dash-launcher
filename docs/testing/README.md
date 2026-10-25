@@ -164,6 +164,19 @@ test('管理ウィンドウのテスト', async ({ electronApp, mainWindow }, te
 
 アプリの終了はフィクスチャが `app.quit()` で行います。テストの中で `electronApp.close()` を呼ばないでください。Playwright の `electronApp.close()` は、管理ウィンドウを一度でも開いたあとだと終了までに 5 秒ほど待つためです（2026-10-25 に計測。全件の 3 分の 1 のテストにこの待ちが乗っていました）。
 
+### 待ち方
+
+- 画面やファイルが変わるのを待つときは、`waitForTimeout` で固定の時間を置かずに、`expect(locator)` か `expect.poll` で変わった結果を待ちます。`settings.json` やデータファイルへの保存は非同期なので、読む側も `expect.poll(() => configHelper.readSettings().<キー>)` で待ちます。
+- 何かが起きないこと（画面が移らない・ウィンドウが閉じない・メニューが後から出ない）を確かめるときだけ、`waitForTimeout` で少し待ってから確かめます。なぜ待つのかをコメントに書きます。
+
+### 実際に開かないようにする
+
+アイテムを開く操作（Enter・ダブルクリック・メニューの「開く」）では、本物のアプリや URL を開かないよう、メインプロセスの受け口を差し替えて、渡されたものを記録して確かめます。「エラーが出ない」だけでは確かめたことになりません。
+
+- アイテムを開く: `ipcMain` の `open-item` を差し替える（`multi-tab.spec.ts`・`item-execution.spec.ts`）
+- URL を開く: `shell.openExternal` を差し替える（`item-execution.spec.ts`）
+- ネイティブの右クリックメニュー: `Menu.prototype.popup` を差し替え、右クリックしてからメニューの選択を IPC で送る。メニューの対象は右クリックで決まるので、右クリックせずに IPC だけを送っても何も起きません（`context-menu.spec.ts`）
+
 ### ConfigFileHelperの使用
 
 ```typescript

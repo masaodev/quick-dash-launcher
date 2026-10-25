@@ -145,13 +145,6 @@ export class TestUtils {
   }
 
   /**
-   * 指定した時間待機
-   */
-  async wait(milliseconds: number): Promise<void> {
-    await this.page.waitForTimeout(milliseconds);
-  }
-
-  /**
    * メイン画面から開かれた登録・編集ウィンドウ（子ウィンドウ）を待つ
    *
    * 子ウィンドウは about:blank で開いてから中身を書き込むため、`.register-modal` が
@@ -310,32 +303,6 @@ export class TestUtils {
   }
 
   /**
-   * アイテムを右クリックして編集メニューを開く
-   */
-  async rightClickItem(itemName: string): Promise<void> {
-    const item = this.page.locator('.item', { hasText: itemName });
-    await item.click({ button: 'right' });
-  }
-
-  /**
-   * 右クリックメニューから編集を選択
-   */
-  async selectEditFromContextMenu(): Promise<void> {
-    const editMenuItem = this.page.locator('.context-menu-item', { hasText: '編集' }).first();
-    await editMenuItem.click();
-    await this.page.waitForSelector('.register-modal', { state: 'visible' });
-  }
-
-  /**
-   * アイテムを右クリックして編集モーダルを開く（統合メソッド）
-   */
-  async editItemByRightClick(itemName: string): Promise<void> {
-    await this.rightClickItem(itemName);
-    await this.wait(300);
-    await this.selectEditFromContextMenu();
-  }
-
-  /**
    * スクリーンショットを撮影してtestInfoに添付
    * @param testInfo テスト情報
    * @param name スクリーンショットの名前
@@ -360,7 +327,6 @@ export class TestUtils {
       .locator('.settings-dropdown')
       .locator('button', { hasText: '⚙' });
     await settingsButton.click();
-    await this.wait(200);
 
     // ドロップダウンから選択（表示言語によらないよう data-testid で選ぶ）
     const testId = tab === 'settings' ? 'settings-menu-settings' : 'settings-menu-item-manager';
@@ -408,43 +374,6 @@ export class TestUtils {
   async waitForEnabled(selector: string, timeout = 5000): Promise<void> {
     await this.page.waitForSelector(selector, { state: 'attached', timeout });
     await this.page.locator(selector).waitFor({ state: 'attached', timeout });
-  }
-
-  /**
-   * 保存完了を待機
-   * @param expectedText 保存されたアイテムの名前（オプション）
-   * @param timeout タイムアウト時間
-   */
-  async waitForSave(expectedText?: string, timeout = 5000): Promise<void> {
-    // IPC通信の最小限の待機
-    await this.wait(200);
-
-    if (expectedText) {
-      // 指定されたテキストを含むアイテムが表示されるまで待機
-      await this.page.waitForSelector(`.item:has-text("${expectedText}")`, {
-        state: 'visible',
-        timeout,
-      });
-    }
-  }
-
-  /**
-   * フォーム入力 + 送信を統合
-   * @param data フォームデータ
-   */
-  async fillAndSubmitRegisterForm(data: {
-    name?: string;
-    path?: string;
-    args?: string;
-    targetTab?: string;
-  }): Promise<void> {
-    await this.fillRegisterForm(data);
-    await this.clickRegisterButton();
-
-    // 保存完了を待機
-    if (data.name) {
-      await this.waitForSave(data.name);
-    }
   }
 }
 
