@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import type { EditableJsonItem } from '@common/types/editableItem';
+import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
 import type { LaunchUsageRecord } from '@common/types/launchUsage';
 
 import {
@@ -18,7 +18,11 @@ import {
   type SortState,
 } from '../utils/editableItemOperations';
 
-import { useAdminPathExistence, checkablePathOf } from './useAdminPathExistence';
+import {
+  useAdminPathExistence,
+  checkablePathOf,
+  checkableSetEntryPathOf,
+} from './useAdminPathExistence';
 
 interface UseAdminItemListViewOptions {
   /** 未保存の編集を含む全データファイルのアイテム */
@@ -66,12 +70,50 @@ export function useAdminItemListView({
   // リンク切れ（パスが実在しない）。ネットワークパスは応答に時間がかかることがあるので、
   // 自動では確認せず、「整理 ▼」の「リンク切れを確認」を押したときだけ確認する
   const pathCheck = useAdminPathExistence(baseVersion);
+  // セットの行が指すアイテムがまだあるか（どのデータファイルのアイテムでもよい）
+  const workingItemIds = useMemo(
+    () => new Set(workingItems.map((item) => item.item.id)),
+    [workingItems]
+  );
+  /**
+   * セットの行のうち、見つからない行の名前（A3-79 #8）。数えるのは、パスを直接書いて確かめたら無かった行と、
+   * 指すアイテムが一覧から消えた行。指すアイテムのパスが無いときは、そのアイテムの行に出るので数えない
+   */
+  const missingSetRowsOf = useCallback(
+    (item: EditableJsonItem): string[] => {
+      const jsonItem = item.item;
+      if (jsonItem.type !== 'set' || !pathCheck.hasChecked) return [];
+      return jsonItem.entries.flatMap((entry, index) => {
+        const entryPath = checkableSetEntryPathOf(entry);
+        const missing = entryPath
+          ? pathCheck.results.get(entryPath) === 'missing'
+          : !!entry.itemId && !workingItemIds.has(entry.itemId);
+        if (!missing) return [];
+        return [entry.label || entry.open?.path || `#${index + 1}`];
+      });
+    },
+    [pathCheck.hasChecked, pathCheck.results, workingItemIds]
+  );
   const linkStatusOf = useCallback(
-    (item: EditableJsonItem) => {
+    (item: EditableJsonItem): PathExistenceStatus | undefined => {
+      const jsonItem = item.item;
+      if (jsonItem.type === 'set') {
+        if (!pathCheck.hasChecked) return undefined;
+        if (missingSetRowsOf(item).length > 0) return 'missing';
+        const statuses = jsonItem.entries
+          .map(checkableSetEntryPathOf)
+          .map((entryPath) => (entryPath ? pathCheck.results.get(entryPath) : undefined));
+        if (statuses.includes('unknown')) return 'unknown';
+        // 確かめた行（ローカルパスの行か、登録済みのアイテムを指す行）があれば ✓。URL だけのセットは空のまま
+        const checkedAny =
+          statuses.some((status) => status !== undefined) ||
+          jsonItem.entries.some((entry) => !!entry.itemId);
+        return checkedAny ? 'exists' : undefined;
+      }
       const itemPath = checkablePathOf(item);
       return itemPath ? pathCheck.results.get(itemPath) : undefined;
     },
-    [pathCheck.results]
+    [pathCheck.hasChecked, pathCheck.results, missingSetRowsOf]
   );
   const missingIds = useMemo(() => {
     const ids = new Set<string>();
@@ -169,6 +211,7 @@ export function useAdminItemListView({
     setColumnFilter,
     pathCheck,
     linkStatusOf,
+    missingSetRowsOf,
     missingIds,
     filteredItems,
     orderedItems,

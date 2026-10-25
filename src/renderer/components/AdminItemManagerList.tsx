@@ -59,6 +59,8 @@ interface AdminItemManagerListProps {
   filterOptions: ColumnFilterOptions;
   /** 「リンク切れを確認」の結果（確認していない・対象外のパスは undefined） */
   linkStatusOf: (item: EditableJsonItem) => PathExistenceStatus | undefined;
+  /** セットの行のうち見つからない行の名前（セット以外・確認していなければ空） */
+  missingSetRowsOf: (item: EditableJsonItem) => string[];
   /** 起動の記録（記録が無ければ undefined） */
   usageOf: (item: EditableJsonItem) => LaunchUsageRecord | undefined;
   /** 追加直後に名前セルを編集状態にするアイテムの id */
@@ -95,6 +97,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   onFilterChange,
   filterOptions,
   linkStatusOf,
+  missingSetRowsOf,
   usageOf,
   autoEditItemId,
   onAutoEditHandled,
@@ -256,6 +259,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 isChanged={changedIds.has(itemKey)}
                 pathMissing={missingIds.has(itemKey)}
                 linkStatus={linkStatusOf(item)}
+                missingSetRows={missingSetRowsOf(item)}
                 lastLaunchedAt={usageOf(item)?.lastLaunchedAt}
                 launchCount={usageOf(item)?.count}
                 iconData={getAdminItemIcon(itemIcons, jsonItem)}

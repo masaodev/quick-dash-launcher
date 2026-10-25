@@ -1220,7 +1220,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       updatedAt: 'Updated',
       memo: 'Note',
       source: 'Source',
-      link: 'Link',
+      link: 'Path check',
       lastLaunched: 'Last opened',
       launchCount: 'Times opened',
       icon: 'Icon',
@@ -1255,6 +1255,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unknownRule: 'Unknown rule',
       pathMissing: '⚠ Not found',
       pathMissingTitle: "The path wasn't found (it might have been moved or deleted)",
+      setRowsMissing_one: '⚠ {{count}} row not found',
+      setRowsMissing_other: '⚠ {{count}} rows not found',
+      setRowsMissingTitle:
+        'Rows not found (the path is missing or the item was deleted):\n{{rows}}',
       dirPathPlaceholder: 'Enter a folder path',
       pathPlaceholder: 'Enter a path or URL',
       detailOnly: 'Edit {{type}} items in ✏️ Edit details (double-click to open)',
@@ -1286,7 +1290,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       someMissing_one: '{{count}} broken link ({{checked}} checked{{unknownNote}})',
       someMissing_other: '{{count}} broken links ({{checked}} checked{{unknownNote}})',
       statusTitle:
-        'To see only these, use ▾ on the Link column. Paths that do not respond (such as network paths) are not counted as broken.',
+        'To see only these, use ▾ on the Path check column. Paths that do not respond (such as network paths) are not counted as broken.',
     },
     movedTo: 'Moved "{{name}}" to {{file}} (save to keep this change)',
     saved: 'Changes saved',
@@ -1683,6 +1687,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     itemIdNotFound: "The item ID wasn't found",
     deleteFailed: "Couldn't delete the item.",
     deleteConfirm: 'Delete "{{name}}"?',
+    setUsageWarning:
+      "It's used in the set {{sets}}. If you delete it, that row of the set can't open anymore (the row stays).",
+    setUsageMore: '{{names}} and {{count}} more',
     targetTab: 'Tab',
     targetFile: 'Data file',
     type: 'Type',

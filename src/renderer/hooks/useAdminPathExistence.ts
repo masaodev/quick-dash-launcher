@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
+import type { SetEntry } from '@common/types/launcher';
 import { isPathExistenceCheckable } from '@common/utils/pathExistence';
 
 /** 存在確認の対象になるパス（単一アイテムとフォルダ取込のローカルパス） */
@@ -8,6 +9,24 @@ export function checkablePathOf(item: EditableJsonItem): string | null {
   if (jsonItem.type !== 'item' && jsonItem.type !== 'dir') return null;
   const itemPath = jsonItem.path || '';
   return isPathExistenceCheckable(itemPath) ? itemPath : null;
+}
+
+/** セットの行のうち、パスを直接書いた行の確認できるパス（登録済みのアイテムを指す行は、そのアイテムの行で確かめる。A3-79 #8） */
+export function checkableSetEntryPathOf(entry: SetEntry): string | null {
+  const entryPath = entry.open?.path || '';
+  return isPathExistenceCheckable(entryPath) ? entryPath : null;
+}
+
+/** 存在確認の対象になるパスをすべて（セットは行ごと） */
+function checkablePathsOf(item: EditableJsonItem): string[] {
+  const jsonItem = item.item;
+  if (jsonItem.type === 'set') {
+    return jsonItem.entries
+      .map(checkableSetEntryPathOf)
+      .filter((entryPath): entryPath is string => entryPath !== null);
+  }
+  const itemPath = checkablePathOf(item);
+  return itemPath ? [itemPath] : [];
 }
 
 export interface PathCheckSummary {
@@ -40,8 +59,7 @@ export function useAdminPathExistence(refreshKey: number) {
   const runCheck = useCallback(async (items: EditableJsonItem[]): Promise<PathCheckSummary> => {
     const paths = new Set<string>();
     for (const item of items) {
-      const itemPath = checkablePathOf(item);
-      if (itemPath) paths.add(itemPath);
+      for (const itemPath of checkablePathsOf(item)) paths.add(itemPath);
     }
 
     setChecking(true);

@@ -3,7 +3,11 @@ import { JsonLauncherItem, LauncherItem } from '@common/types';
 import { pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { pickRunAsAdmin } from '@common/utils/runAsAdmin';
 
-import { deleteItemsById, replaceItemById } from '../services/data/dataItemWriter.js';
+import {
+  deleteItemsById,
+  findSetNamesUsingItemIds,
+  replaceItemById,
+} from '../services/data/dataItemWriter.js';
 import { createSafeIpcHandler } from '../utils/ipcWrapper';
 import { withFolderMarker } from '../utils/folderPathProbe.js';
 
@@ -75,5 +79,11 @@ export function registerEditHandlers(configFolder: string): void {
       return { success: true };
     },
     'アイテムの削除（IDベース）'
+  );
+
+  createSafeIpcHandler(
+    IPC_CHANNELS.FIND_SETS_USING_ITEMS,
+    async (ids: string[]) => findSetNamesUsingItemIds(configFolder, ids),
+    'アイテムを使っているセットの検索'
   );
 }

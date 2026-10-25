@@ -118,6 +118,7 @@ export const IPC_CHANNELS = {
   UPDATE_DIR_ITEM_BY_ID: 'update-dir-item-by-id',
   UPDATE_SET_ITEM_BY_ID: 'update-set-item-by-id',
   DELETE_ITEMS_BY_ID: 'delete-items-by-id',
+  FIND_SETS_USING_ITEMS: 'find-sets-using-items',
 
   // 設定
   SETTINGS_IS_FIRST_LAUNCH: 'settings:is-first-launch',

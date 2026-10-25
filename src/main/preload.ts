@@ -154,6 +154,7 @@ const electronAPI: ElectronAPI = {
   updateItemById: (request) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_ITEM_BY_ID, request),
   deleteItemsById: (requests, options) =>
     ipcRenderer.invoke(IPC_CHANNELS.DELETE_ITEMS_BY_ID, requests, options),
+  findSetsUsingItems: (ids) => ipcRenderer.invoke(IPC_CHANNELS.FIND_SETS_USING_ITEMS, ids),
   // EditableJsonItem API
   loadEditableItems: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_EDITABLE_ITEMS),
   saveEditableItems: (editableItems, expectedHashes) =>

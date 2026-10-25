@@ -238,6 +238,8 @@ export interface ElectronAPI {
     requests: { id: string }[],
     options?: { keepClipboardDataRefs?: string[] }
   ) => Promise<{ success: boolean }>;
+  /** 指定のアイテムを行で指しているセットの名前（すべてのデータファイルから。消す前に知らせる） */
+  findSetsUsingItems: (ids: string[]) => Promise<string[]>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   /**

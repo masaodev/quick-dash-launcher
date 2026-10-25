@@ -12,6 +12,7 @@ import { DEFAULT_DATA_FILE, isJsonClipboardItem } from '@common/types';
 import type { JsonDataFile, JsonItem, JsonDirOptions, SetItemFields } from '@common/types';
 import type { RegisterItem } from '@common/types/register';
 import { convertRegisterItemToJsonItem } from '@common/utils/dataConverters';
+import { findSetNamesUsingItems } from '@common/utils/setUsage';
 
 import { PathManager } from '../../config/pathManager.js';
 import { ClipboardService } from '../clipboardService.js';
@@ -134,6 +135,17 @@ export async function deleteItemsById(
     };
     writeOrThrow(entry);
   }
+}
+
+/**
+ * 指定のアイテムを行で指しているセットの名前（すべてのデータファイルから。消す前に知らせるため。A3-79 #6）
+ */
+export function findSetNamesUsingItemIds(configFolder: string, ids: string[]): string[] {
+  const { files } = readDataFilesForSearch(configFolder);
+  return findSetNamesUsingItems(
+    files.flatMap((entry) => entry.jsonData.items),
+    ids
+  );
 }
 
 /**
