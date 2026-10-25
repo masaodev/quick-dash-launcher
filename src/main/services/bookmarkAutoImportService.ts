@@ -146,7 +146,7 @@ export class BookmarkAutoImportService {
         rule.id,
         allBookmarks.map((bookmark) => ({
           url: bookmark.url,
-          displayName: buildBookmarkDisplayName(bookmark, rule),
+          displayName: buildBookmarkDisplayName(bookmark, rule, mainI18n.t),
         })),
         Date.now(),
         generateId

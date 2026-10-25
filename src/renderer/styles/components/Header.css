@@ -55,6 +55,13 @@
   box-sizing: border-box;
 }
 
+/* 空のとき（クリアボタンが無いとき）は右の余白を詰め、狭いウィンドウでもプレースホルダーを収める。
+   それでも収まらなければ「…」で切る（A3-119） */
+.search-box:placeholder-shown {
+  padding-right: var(--spacing-md);
+  text-overflow: ellipsis;
+}
+
 .search-box:focus {
   border-color: var(--mode-accent);
   box-shadow: 0 0 0 1px var(--mode-accent);

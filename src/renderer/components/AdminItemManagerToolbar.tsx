@@ -9,7 +9,7 @@ import {
   type FilterableColumnId,
 } from '../utils/adminItemFilters';
 
-import { Button } from './ui/Button';
+import { Button } from './ui';
 
 interface AdminItemManagerToolbarProps {
   /** 追加: ボタン本体と「▼」の「一覧に行を追加」 */

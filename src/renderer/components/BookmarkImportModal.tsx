@@ -17,6 +17,7 @@ import type {
 import { buildBookmarkFolderTree } from '@common/utils/bookmarkRuleFilter';
 import { selectionAsRule } from '@common/utils/bookmarkSelection';
 import { checkDuplicates } from '@common/utils/duplicateDetector';
+import { bookmarkFolderLabel } from '@common/utils/bookmarkFolderLabel';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
 import {
@@ -25,7 +26,6 @@ import {
   type ImportDestination,
 } from '../hooks/useImportDestination';
 import { logError } from '../utils/debug';
-import { bookmarkFolderLabel } from '../utils/bookmarkFolderLabel';
 import { toggleInSet } from '../utils/setUtils';
 
 import { Button } from './ui';

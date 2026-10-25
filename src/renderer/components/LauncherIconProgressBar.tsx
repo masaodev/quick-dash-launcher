@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconProgress } from '@common/types';
 
-import { Button } from './ui/Button';
+import { Button } from './ui';
 import '../styles/components/LauncherIconProgress.css';
 
 interface IconProgressBarProps {

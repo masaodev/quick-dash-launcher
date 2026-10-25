@@ -64,13 +64,21 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       cancelled = true;
     };
   }, [editingId]);
-  /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち */
-  const pendingSave = useRef<Promise<void> | null>(null);
+  /** 保存中に閉じる要求が来ても、保存が終わってから閉じるための待ち。false＝保存に失敗した */
+  const pendingSave = useRef<Promise<boolean> | null>(null);
 
   const close = useCallback(() => {
     const pending = pendingSave.current;
     if (pending) {
-      void pending.finally(() => window.close());
+      void pending.then((saved) => {
+        if (saved) {
+          window.close();
+          return;
+        }
+        // 保存に失敗したら閉じずに残す（エラーを見せ、入力したままもう一度保存できるように。RM7）。
+        // 次の「保存」・キャンセルでは、この失敗を待たない
+        if (pendingSave.current === pending) pendingSave.current = null;
+      });
     } else {
       window.close();
     }
@@ -81,9 +89,14 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       if (request.returnToOpener) {
         pendingSave.current = window.electronAPI
           .returnMainChildWindowValue(requestId, { kind: 'register', items })
-          .catch((error) => {
-            logError('編集内容を管理画面へ返せませんでした:', error);
-          });
+          .then(
+            () => true,
+            (error) => {
+              // 返せなかったときは、残しても保存し直せないので、今までどおり閉じる
+              logError('編集内容を管理画面へ返せませんでした:', error);
+              return true;
+            }
+          );
         return;
       }
       const editingItem =
@@ -94,14 +107,13 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
         try {
           const action = await saveRegisterItems(items, editingItem);
           window.electronAPI.notifyMainChildWindowResult({ kind: 'register', action });
+          return true;
         } catch (error) {
           logError('アイテムの保存に失敗しました:', error);
           showError(t('register.saveFailed'));
-          throw error;
+          return false;
         }
       })();
-      // 失敗してもウィンドウは閉じる（エラーはログに残す。close 側の finally で閉じる）
-      pendingSave.current.catch(() => {});
     },
     [request.editingItem, request.returnToOpener, requestId, showError, t]
   );
@@ -127,9 +139,13 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       setDeleteTarget(null);
       pendingSave.current = window.electronAPI
         .returnMainChildWindowValue(requestId, { kind: 'delete' })
-        .catch((error) => {
-          logError('削除を管理画面へ返せませんでした:', error);
-        });
+        .then(
+          () => true,
+          (error) => {
+            logError('削除を管理画面へ返せませんでした:', error);
+            return true;
+          }
+        );
       close();
       return;
     }
