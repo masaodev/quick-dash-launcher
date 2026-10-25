@@ -237,6 +237,9 @@ export function setupWorkspaceHandlers(): void {
         async (service) => {
           const addedItems: WorkspaceItem[] = [];
           const failed: { name: string; error: string }[] = [];
+          // グループの無いワークスペースでは 1 件目で「未分類」グループができる。2 件目からはそこへ入れる
+          // （グループがあるのに指定が無いと WorkspaceGroupRequiredError になる）
+          let targetGroupId = groupId;
 
           for (const filePath of filePaths) {
             try {
@@ -244,8 +247,13 @@ export function setupWorkspaceHandlers(): void {
               const markedPath = await withFolderMarker(filePath);
               const itemType = detectItemTypeSync(markedPath);
               await getIconForItem(markedPath, itemType);
-              const addedItem = await service.addItemFromPath(markedPath, groupId, workspaceId);
+              const addedItem = await service.addItemFromPath(
+                markedPath,
+                targetGroupId,
+                workspaceId
+              );
               addedItems.push(addedItem);
+              targetGroupId ??= addedItem.groupId;
               logger.info(
                 { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
                 'Added item from path to workspace'
