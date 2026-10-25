@@ -178,6 +178,7 @@ const electronAPI: ElectronAPI = {
     ),
   // Settings API
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
+  getDefaultSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DEFAULTS),
   setMultipleSettings: (settings) =>
     ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET_MULTIPLE, settings),
   resetSettings: (keys) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_RESET, keys),

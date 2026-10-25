@@ -33,7 +33,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "windowHeight": 400,
   "editModeWidth": 1200,
   "editModeHeight": 1000,
-  "autoLaunch": false,
+  "autoLaunch": true,
   "cliEnabled": false,
   "backupEnabled": true,
   "backupRetention": 10,
@@ -119,10 +119,10 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **autoLaunch** | boolean | false | Windows起動時にアプリを自動起動するか |
+| **autoLaunch** | boolean | true | Windows起動時にアプリを自動起動するか（2026-10 に既定を true にし、初回設定画面のチェックの既定と合わせた。それより前に初回起動した人の設定ファイルには false が書き込まれているので変わらない） |
 | **cliEnabled** | boolean | false | QuickDashLauncher CLI（`qdl` コマンド）を PATH から使えるようにするか |
 
-OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない。
+OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない。初回起動の間（初回設定画面を終えるまで）は、起動時に OS へ反映しない。初回設定画面で選んだ値を保存したときに反映する。
 
 ショートカット（`QuickDashLauncher.lnk`）はインスタンスを区別しない 1 つだけなので、パッケージ版でも `APP_INSTANCE` を付けて起動したインスタンスは自動起動の登録に触らず、この設定は効きません（試験用のインスタンスの設定で、本番のショートカットを作り直したり消したりしないため）。`cliEnabled` も、PATH と `qdl.exe` のコピー先がインスタンスを区別しない 1 つだけなので、同じく `APP_INSTANCE` 付きの起動とパッケージ化されていない起動では効きません。
 

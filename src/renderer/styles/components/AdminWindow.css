@@ -255,19 +255,28 @@
   gap: 10px;
 }
 
-/* カテゴリ末尾の「既定値に戻す」。戻る範囲がそのカテゴリだと分かる位置に置く */
-.settings-reset-section {
+/* 枠の見出しと、右端の「既定値に戻す」。戻る範囲がその枠だと分かる位置に置く */
+.settings-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-lg);
-  border-color: var(--color-danger);
+  margin-bottom: 15px;
 }
 
-.settings-reset-description {
-  color: var(--text-muted);
-  font-size: var(--font-size-sm);
-  line-height: 1.6;
+.settings-section .settings-section-header h3 {
+  margin: 0;
+}
+
+/* 既定値から変えている枠の印（見出しの後ろの ●） */
+.settings-changed-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: var(--spacing-sm);
+  border-radius: 50%;
+  background-color: var(--color-warning);
+  vertical-align: middle;
 }
 
 .settings-reset-button {

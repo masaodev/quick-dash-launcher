@@ -145,11 +145,15 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(editHeightInput).toBeVisible();
       });
 
-      await test.step('既定値に戻すボタンの確認（カテゴリの末尾にある）', async () => {
-        const resetButton = adminWindow.locator('button.settings-reset-button', {
-          hasText: 'ウィンドウを既定値に戻す',
-        });
-        await expect(resetButton).toBeVisible();
+      await test.step('既定値に戻すボタンの確認（枠ごとの見出しの右にあり、既定値のままなら押せない）', async () => {
+        for (const section of ['mainWindow', 'workspaceWindow', 'detachedWindow', 'windowOther']) {
+          await expect(adminWindow.getByTestId(`settings-reset-${section}`)).toBeVisible();
+        }
+        // base テンプレートはメインウィンドウ・切り離しウィンドウを既定値のままにしている
+        // （ワークスペースのディスプレイと管理ウィンドウの高さは既定値と違う）
+        await expect(adminWindow.getByTestId('settings-reset-mainWindow')).toBeDisabled();
+        await expect(adminWindow.getByTestId('settings-reset-detachedWindow')).toBeDisabled();
+        await expect(adminWindow.getByTestId('settings-reset-windowOther')).toBeEnabled();
       });
     } finally {
       await adminWindow.close();
@@ -293,6 +297,68 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
 
         // settings.jsonに保存されたことを確認
         await expect.poll(() => configHelper.readSettings().windowPositionMode).toBe('fixed');
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  test('既定値に戻すは、その枠の設定だけを戻す', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, _testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+
+    try {
+      await test.step('ウィンドウカテゴリでメインウィンドウとワークスペースウィンドウの設定を変える', async () => {
+        await adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' }).click();
+
+        await adminWindow.locator('#windowPositionMode').selectOption('center');
+        await adminWindow.locator('#workspacePositionMode').selectOption('displayLeft');
+
+        await expect.poll(() => configHelper.readSettings().windowPositionMode).toBe('center');
+        await expect
+          .poll(() => configHelper.readSettings().workspacePositionMode)
+          .toBe('displayLeft');
+      });
+
+      await test.step('変えた枠だけに印が付き、ボタンが押せるようになる', async () => {
+        await expect(adminWindow.getByTestId('settings-changed-mainWindow')).toBeVisible();
+        await expect(adminWindow.getByTestId('settings-changed-workspaceWindow')).toBeVisible();
+        await expect(adminWindow.getByTestId('settings-changed-detachedWindow')).toHaveCount(0);
+        await expect(adminWindow.getByTestId('settings-reset-workspaceWindow')).toBeEnabled();
+        await expect(adminWindow.getByTestId('settings-reset-detachedWindow')).toBeDisabled();
+      });
+
+      await test.step('確認ダイアログに、変わる設定が「今 → 既定値」で出る', async () => {
+        await adminWindow.getByTestId('settings-reset-workspaceWindow').click();
+
+        const dialog = adminWindow.getByTestId('confirm-dialog');
+        await expect(dialog).toBeVisible();
+        await expect(dialog).toContainText('「ワークスペースウィンドウ」を既定値に戻す');
+        const details = adminWindow.getByTestId('confirm-dialog-details');
+        await expect(details).toContainText('表示する場所');
+        await expect(details).toContainText('左端');
+        await expect(details).toContainText('右端（既定）');
+        // 既定値と同じ設定（不透明度など）は出さない
+        await expect(details).not.toContainText('不透明度');
+      });
+
+      await test.step('戻すと、ワークスペースウィンドウだけが既定値になり、メインウィンドウは残る', async () => {
+        await adminWindow.getByTestId('confirm-dialog-confirm-button').click();
+        await expect(adminWindow.getByTestId('confirm-dialog')).toHaveCount(0);
+
+        await expect(adminWindow.locator('#workspacePositionMode')).toHaveValue('displayRight');
+        await expect(adminWindow.locator('#windowPositionMode')).toHaveValue('center');
+        await expect(adminWindow.getByTestId('settings-changed-workspaceWindow')).toHaveCount(0);
+        await expect(adminWindow.getByTestId('settings-reset-workspaceWindow')).toBeDisabled();
+        await expect(adminWindow.getByTestId('settings-changed-mainWindow')).toBeVisible();
+
+        const settings = configHelper.readSettings();
+        expect(settings.workspacePositionMode).toBe('displayRight');
+        expect(settings.windowPositionMode).toBe('center');
       });
     } finally {
       await adminWindow.close();

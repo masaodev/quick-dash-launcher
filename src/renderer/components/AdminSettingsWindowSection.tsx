@@ -8,6 +8,7 @@ import AdminSettingsWindowMain from './AdminSettingsWindowMain';
 import AdminSettingsWindowWorkspace from './AdminSettingsWindowWorkspace';
 import AdminSettingsWindowDetached from './AdminSettingsWindowDetached';
 import AdminSettingsWindowOther from './AdminSettingsWindowOther';
+import type { SectionResetProps } from './SettingsSectionHeader';
 
 interface AdminSettingsWindowSectionProps {
   editedSettings: AppSettings;
@@ -15,6 +16,7 @@ interface AdminSettingsWindowSectionProps {
   handleSettingChange: HandleSettingChange;
   handleNumberInputChange: <K extends keyof AppSettings>(key: K, value: string) => void;
   handleNumberInputBlur: () => Promise<void>;
+  sectionReset: SectionResetProps;
 }
 
 /**
@@ -28,6 +30,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
   handleSettingChange,
   handleNumberInputChange,
   handleNumberInputBlur,
+  sectionReset,
 }) => {
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
 
@@ -43,7 +46,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
     loadDisplays();
   }, []);
 
-  const common = { editedSettings, isLoading, handleSettingChange };
+  const common = { editedSettings, isLoading, handleSettingChange, sectionReset };
   const numberInput = { handleNumberInputChange, handleNumberInputBlur };
 
   return (

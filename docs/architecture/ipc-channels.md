@@ -120,13 +120,21 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - 戻り値: `true`
 - 処理内容: 保存後、変更されたキーに応じて副作用（自動起動・CLI（`qdl` コマンド）の PATH への追加と除去・ワークスペースの不透明度と表示位置・全デスクトップ表示・ウィンドウスナップ）を適用し、`settings-changed` を全ウィンドウに送る。`hotkey` が設定されたら初回起動モードを解除する
 
+### `settings:get-defaults`
+
+設定の既定値を返す。
+
+- パラメータ: なし
+- 戻り値: `AppSettings`（`SettingsService` の既定値の写し）
+- 処理内容: 設定画面が、枠ごとに「既定値のままか」と、既定値に戻すと何が変わるかを出すのに使う
+
 ### `settings:reset`
 
 設定を既定値に戻す。
 
-- パラメータ: `keys?: Array<keyof AppSettings>`（省略時は全項目。指定時は設定画面のカテゴリ単位など一部だけ戻す）
+- パラメータ: `keys?: Array<keyof AppSettings>`（省略時は全項目。指定時は設定画面の枠単位など一部だけ戻す）
 - 戻り値: 戻した後の `AppSettings`
-- 処理内容: 副作用とホットキー登録を適用し直し、`settings-changed` を送る
+- 処理内容: 副作用とホットキー登録を適用し直し、`settings-changed` を送る。ホットキーを無効にして起動しているとき（`DISABLE_GLOBAL_HOTKEY=1`）は、ホットキー登録の適用し直しを行わない
 
 ### `settings:get-language`
 

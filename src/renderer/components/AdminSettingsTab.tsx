@@ -4,7 +4,7 @@ import type { AppSettings } from '@common/types';
 
 import { useDialogManager } from '../hooks/useDialogManager';
 import { useSettingsManager } from '../hooks/useSettingsManager';
-import { isResettableCategory, type SettingsCategory } from '../utils/settingsResetKeys';
+import type { SettingsCategory } from '../utils/settingsResetKeys';
 import { logError } from '../utils/debug';
 import type { TabStructureSettings } from '../hooks/useAdminTabStructure';
 
@@ -14,7 +14,7 @@ import BookmarkAutoImportSettings from './BookmarkAutoImportSettings';
 import AdminSettingsBasicSection from './AdminSettingsBasicSection';
 import AdminSettingsWindowSection from './AdminSettingsWindowSection';
 import AdminSettingsBackupSection from './AdminSettingsBackupSection';
-import AdminSettingsResetSection from './AdminSettingsResetSection';
+import type { SectionResetProps } from './SettingsSectionHeader';
 
 const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   'basic',
@@ -53,6 +53,15 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
   useEffect(() => {
     setEditedSettings(settings);
   }, [settings]);
+
+  // 既定値（各枠の「既定値のままか」と、戻すと何が変わるかに使う）
+  const [defaultSettings, setDefaultSettings] = useState<AppSettings | null>(null);
+  useEffect(() => {
+    window.electronAPI
+      .getDefaultSettings()
+      .then(setDefaultSettings)
+      .catch((error) => logError('設定の既定値の取得に失敗しました:', error));
+  }, []);
 
   // カスタムフック: ダイアログ管理
   const {
@@ -105,7 +114,10 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
     showAlert,
     showConfirm,
     showToast: toast.success,
+    defaultSettings,
   });
+
+  const sectionReset: SectionResetProps = { defaults: defaultSettings, onReset: handleReset };
 
   return (
     <div className="settings-tab">
@@ -138,6 +150,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               onHotkeyValidation={handleHotkeyValidation}
               onItemSearchHotkeyChange={handleItemSearchHotkeyChange}
               showConfirm={showConfirm}
+              sectionReset={sectionReset}
             />
           )}
 
@@ -148,6 +161,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               handleSettingChange={handleSettingChange}
               handleNumberInputChange={handleNumberInputChange}
               handleNumberInputBlur={handleNumberInputBlur}
+              sectionReset={sectionReset}
             />
           )}
 
@@ -158,6 +172,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               handleSettingChange={handleSettingChange}
               handleNumberInputChange={handleNumberInputChange}
               handleNumberInputBlur={handleNumberInputBlur}
+              sectionReset={sectionReset}
             />
           )}
 
@@ -175,14 +190,6 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
                 onTabStructureSaved={onTabStructureSaved}
               />
             </div>
-          )}
-
-          {isResettableCategory(selectedCategory) && (
-            <AdminSettingsResetSection
-              category={selectedCategory}
-              isLoading={isLoading}
-              onReset={handleReset}
-            />
           )}
         </div>
       </div>
@@ -203,6 +210,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
         confirmText={confirmDialog.confirmText}
         cancelText={confirmDialog.cancelText}
         danger={confirmDialog.danger}
+        details={confirmDialog.details}
       />
     </div>
   );

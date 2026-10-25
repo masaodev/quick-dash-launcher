@@ -209,6 +209,8 @@ export interface ElectronAPI {
   quitApp: () => Promise<void>;
   getAllWindows: () => Promise<WindowInfo[]>;
   getSettings: () => Promise<AppSettings>;
+  /** 設定の既定値（設定画面で「既定値のままか」と、戻すと何が変わるかを出すのに使う） */
+  getDefaultSettings: () => Promise<AppSettings>;
   setMultipleSettings: (settings: Partial<AppSettings>) => Promise<void>;
   /**
    * 設定を既定値に戻す。keys を渡すとその項目だけ、省略すると全項目。
