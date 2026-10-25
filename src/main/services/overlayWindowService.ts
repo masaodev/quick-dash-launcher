@@ -91,7 +91,6 @@ const PROGRESS_FRAME_HEIGHT = 96;
 const PROGRESS_MAX_ROWS = 8;
 const PROGRESS_MIN_HEIGHT = PROGRESS_FRAME_HEIGHT + PROGRESS_ROW_HEIGHT;
 const PROGRESS_MAX_HEIGHT = PROGRESS_FRAME_HEIGHT + PROGRESS_ROW_HEIGHT * PROGRESS_MAX_ROWS;
-const PROGRESS_MARGIN = 16;
 const IDLE_DESTROY_MS = 5 * 60 * 1000;
 
 type OverlayMode = 'toast' | 'progress';
@@ -144,7 +143,7 @@ export function estimateProgressHeight(entryCount: number): number {
 }
 
 /**
- * マウスカーソルがある画面での表示位置を計算（進捗: 右下の隅。並べている最中のウィンドウに重ねない）
+ * マウスカーソルがある画面での表示位置を計算（進捗: 中央）
  */
 function getProgressPosition(height: number): { x: number; y: number } {
   const cursorPoint = screen.getCursorScreenPoint();
@@ -152,8 +151,8 @@ function getProgressPosition(height: number): { x: number; y: number } {
   const { x: displayX, y: displayY } = display.workArea;
   const { width: screenWidth, height: screenHeight } = display.workAreaSize;
 
-  const x = displayX + screenWidth - PROGRESS_WIDTH - PROGRESS_MARGIN;
-  const y = displayY + screenHeight - height - PROGRESS_MARGIN;
+  const x = displayX + Math.round((screenWidth - PROGRESS_WIDTH) / 2);
+  const y = displayY + Math.round((screenHeight - height) / 2);
 
   return { x, y };
 }
@@ -346,7 +345,7 @@ export async function showLayoutProgressWindow(entryCount = 1): Promise<BrowserW
 /**
  * 進み具合の表示の高さを中身に合わせる（表示が測った高さ。上限を超える分は一覧をスクロールさせる）
  *
- * 下の端を動かさずに上へ伸び縮みさせる（右下の隅に出しているため。利用者が動かした後もその位置で）
+ * 上下の真ん中を動かさずに伸び縮みさせる（画面の中央に出しているため。利用者が動かした後もその位置で）
  */
 export function resizeLayoutProgressWindow(contentHeight: number): void {
   if (!isWindowValid() || currentMode !== 'progress' || !Number.isFinite(contentHeight)) return;
@@ -356,7 +355,8 @@ export function resizeLayoutProgressWindow(contentHeight: number): void {
   );
   const bounds = overlayWindow!.getBounds();
   if (bounds.height === height) return;
-  applyBounds(overlayWindow!, bounds.width, height, bounds.x, bounds.y + bounds.height - height);
+  const y = bounds.y + Math.round((bounds.height - height) / 2);
+  applyBounds(overlayWindow!, bounds.width, height, bounds.x, y);
 }
 
 /**
