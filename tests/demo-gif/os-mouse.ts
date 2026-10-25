@@ -106,6 +106,13 @@ export class OsMouse {
     await this.send('up');
   }
 
+  /** 今の位置でクリックする */
+  async click(): Promise<void> {
+    await this.down();
+    await new Promise((r) => setTimeout(r, 80));
+    await this.up();
+  }
+
   /** from で押して to で離す。ドラッグが始まるよう、押した直後に少しずつ動かす */
   async drag(from: Point, to: Point, durationMs: number): Promise<void> {
     await this.moveTo(from);

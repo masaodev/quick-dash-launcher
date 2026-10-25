@@ -20,6 +20,7 @@ import type { Point } from './os-mouse';
  * 1. メインウィンドウで打った候補を、ワークスペースのグループへドラッグして入れる
  * 2. メインウィンドウを閉じても、ワークスペースは残る
  * 3. グループをワークスペースの外へドラッグして、切り離しウィンドウにする
+ * 4. 切り離しウィンドウの見出しをクリックして畳む（ウィンドウが縮む）
  *
  * データは demo-data.ts（メインデモと同じ）と、content.workspace のグループ。DEMO_LANG=en で英語。
  * ウィンドウをまたぐドラッグは Playwright のマウスでは起こせないので、OS のマウスを動かす（os-mouse.ts）。
@@ -268,6 +269,18 @@ test('ワークスペースのデモ', async () => {
       1200
     );
     await main.waitForTimeout(400);
+    await mouse.glideTo(restPoint, 500);
+    await main.waitForTimeout(1200);
+
+    // 4. 切り離しウィンドウの見出しをクリックして畳むと、ウィンドウが見出しだけの大きさに縮む
+    const detachedTitle = `${groupName} - QuickDashLauncher`;
+    const detached = await findWindow(app, detachedTitle);
+    const collapseIcon = detached.locator('.workspace-group-collapse-icon').first();
+    const icon = await screenPoint(collapseIcon, await contentBounds(app, detachedTitle), scale);
+    await mouse.glideTo(icon, 600);
+    await main.waitForTimeout(300);
+    await mouse.click();
+    await main.waitForTimeout(300);
     await mouse.glideTo(restPoint, 500);
     await main.waitForTimeout(2000);
 
