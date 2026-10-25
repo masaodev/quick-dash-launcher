@@ -3,7 +3,7 @@ import type { EditableJsonItem } from '@common/types/editableItem';
 import { generateUniqueId } from '@common/utils/jsonParser';
 
 import { withEditedMemo } from './adminItemDisplay';
-import { parseCsv, stringifyCsv } from './csv';
+import { parseCsvDetailed, stringifyCsv } from './csv';
 import { refreshEditableItem, reorderItemNumbers, toEditableItem } from './editableItemOperations';
 
 /**
@@ -85,6 +85,8 @@ export function itemsToCsv(items: EditableJsonItem[], files: readonly string[]):
 
 export type CsvImportErrorCode =
   | 'noIdColumn'
+  | 'unclosedQuote'
+  | 'controlChars'
   | 'notFound'
   | 'duplicateId'
   | 'nameRequired'
@@ -100,18 +102,41 @@ export interface CsvImportError {
   value?: string;
 }
 
+/** 取り込みでは変えない列（書き換えても捨てる） */
+export type CsvIgnoredColumn = 'type' | 'dataFile' | 'displayName' | 'path' | 'args';
+
+/** 取り込みでは変えない値が書かれていた行（ほかの列は取り込む） */
+export interface CsvIgnoredValues {
+  /** CSV の行番号（見出しが 1 行目） */
+  line: number;
+  /** 行の名前（名前が無ければパス） */
+  name: string;
+  columns: CsvIgnoredColumn[];
+}
+
 export interface CsvImportPlan {
   updates: Array<{ before: EditableJsonItem; after: JsonItem }>;
   additions: Array<{ dataFile: string; item: JsonItem }>;
   unchangedCount: number;
   errors: CsvImportError[];
+  ignored: CsvIgnoredValues[];
 }
 
 /** id の無い行で足せる種類（ほかの種類は CSV の列だけでは作れない） */
 const ADDABLE_TYPES = new Set(['', 'item', 'dir']);
 
+/** 名前・パス・引数に入れない文字（改行・タブなどの制御文字。画面からは入れられない） */
+// eslint-disable-next-line no-control-regex -- 制御文字そのものを探す
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
 function sameItem(a: JsonItem, b: JsonItem): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/** 確認の画面に出す行の名前（名前が無い種別はパス） */
+function itemLabel(item: JsonItem): string {
+  if ('displayName' in item && item.displayName) return item.displayName;
+  return 'path' in item && item.path ? item.path : item.id;
 }
 
 /**
@@ -120,6 +145,10 @@ function sameItem(a: JsonItem, b: JsonItem): boolean {
  * - id が一致する行は名前・パス・引数・メモを CSV の値にする（CSV に無い列は変えない）。種類・データファイル・更新日は変えない
  * - id が空の行は新しいアイテムとして足す。データファイルが空なら defaultFile に入れる
  * - CSV に無いアイテムは消さない
+ * - 見出しより列が少ない行は、足りない列を変えない（行末のカンマが消えた行で、引数・メモを消さないため）
+ * - 引用符が閉じないまま終わった CSV は何も取り込まない（後ろの行が 1 つのセルに入ってしまうため）
+ * - 名前・パス・引数を改行・タブなどの制御文字を含む値に変える行は取り込まない
+ * - 変えない列（種別・データファイル、種別に無い名前・パス・引数）に書かれた値は捨て、ignored で知らせる
  *
  * @param knownFiles 足す先にできるデータファイル
  */
@@ -129,8 +158,18 @@ export function planCsvImport(
   knownFiles: readonly string[],
   defaultFile: string
 ): CsvImportPlan {
-  const plan: CsvImportPlan = { updates: [], additions: [], unchangedCount: 0, errors: [] };
-  const rows = parseCsv(text);
+  const plan: CsvImportPlan = {
+    updates: [],
+    additions: [],
+    unchangedCount: 0,
+    errors: [],
+    ignored: [],
+  };
+  const { rows, unclosedQuoteRow } = parseCsvDetailed(text);
+  if (unclosedQuoteRow !== undefined) {
+    plan.errors.push({ line: unclosedQuoteRow, code: 'unclosedQuote' });
+    return plan;
+  }
   const header = (rows[0] ?? []).map((name) => name.trim());
   const indexOf = (column: CsvColumn) => header.indexOf(column);
   if (indexOf('id') === -1) {
@@ -146,16 +185,21 @@ export function planCsvImport(
   rows.slice(1).forEach((cells, index) => {
     const line = index + 2;
     if (cells.every((cell) => cell.trim() === '')) return;
-    /** その列が CSV にあれば値、無ければ undefined（変えない） */
+    /** その列が CSV にあれば値、無ければ undefined（変えない）。行がその列まで届いていなければ変えない */
     const get = (column: CsvColumn): string | undefined => {
       const i = indexOf(column);
-      return i === -1 ? undefined : unprotectFormula(cells[i] ?? '');
+      return i === -1 || i >= cells.length ? undefined : unprotectFormula(cells[i]);
     };
     const id = (get('id') ?? '').trim();
+    const type = get('type')?.trim();
+    const dataFileCell = get('dataFile')?.trim();
     const name = get('displayName')?.trim();
     const itemPath = get('path')?.trim();
     const args = get('args')?.trim();
     const memo = get('memo');
+    /** 制御文字を含む値に変えようとしているか（今の値と同じなら問わない） */
+    const hasControlChars = (value: string | undefined, current?: string) =>
+      value !== undefined && value !== current && CONTROL_CHARS.test(value);
 
     if (id) {
       if (seen.has(id)) {
@@ -168,7 +212,27 @@ export function planCsvImport(
         plan.errors.push({ line, code: 'notFound', value: id });
         return;
       }
-      let after: JsonItem = before.item;
+      const current = before.item;
+      const hasName = 'displayName' in current;
+      const hasPath = current.type === 'item' || current.type === 'dir';
+      const hasArgs = current.type === 'item';
+      if (
+        ('displayName' in current && hasControlChars(name, current.displayName)) ||
+        ((current.type === 'item' || current.type === 'dir') &&
+          hasControlChars(itemPath, current.path)) ||
+        (current.type === 'item' && hasControlChars(args, current.args ?? ''))
+      ) {
+        plan.errors.push({ line, code: 'controlChars' });
+        return;
+      }
+      const ignoredColumns: CsvIgnoredColumn[] = [];
+      if (type && type !== current.type) ignoredColumns.push('type');
+      if (dataFileCell && dataFileCell !== before.meta.sourceFile) ignoredColumns.push('dataFile');
+      if (name && !hasName) ignoredColumns.push('displayName');
+      if (itemPath && !hasPath) ignoredColumns.push('path');
+      if (args && !hasArgs) ignoredColumns.push('args');
+
+      let after: JsonItem = current;
       if (name !== undefined && 'displayName' in after) {
         if (!name) {
           plan.errors.push({ line, code: 'nameRequired' });
@@ -195,17 +259,20 @@ export function planCsvImport(
         }
       }
       if (memo !== undefined) after = withEditedMemo(after, memo);
+      if (ignoredColumns.length > 0) {
+        plan.ignored.push({ line, name: itemLabel(current), columns: ignoredColumns });
+      }
       if (sameItem(after, before.item)) plan.unchangedCount++;
       else plan.updates.push({ before, after });
       return;
     }
 
-    const type = (get('type') ?? '').trim();
-    if (!ADDABLE_TYPES.has(type)) {
-      plan.errors.push({ line, code: 'typeNotAddable', value: type });
+    const newType = type ?? '';
+    if (!ADDABLE_TYPES.has(newType)) {
+      plan.errors.push({ line, code: 'typeNotAddable', value: newType });
       return;
     }
-    const dataFile = (get('dataFile') ?? '').trim() || defaultFile;
+    const dataFile = dataFileCell || defaultFile;
     if (!files.has(dataFile)) {
       plan.errors.push({ line, code: 'unknownDataFile', value: dataFile });
       return;
@@ -214,11 +281,26 @@ export function planCsvImport(
       plan.errors.push({ line, code: 'pathRequired' });
       return;
     }
+    if (
+      hasControlChars(itemPath) ||
+      (newType !== 'dir' && (hasControlChars(name) || hasControlChars(args)))
+    ) {
+      plan.errors.push({ line, code: 'controlChars' });
+      return;
+    }
+    if (newType === 'dir') {
+      const ignoredColumns: CsvIgnoredColumn[] = [];
+      if (name) ignoredColumns.push('displayName');
+      if (args) ignoredColumns.push('args');
+      if (ignoredColumns.length > 0) {
+        plan.ignored.push({ line, name: itemPath, columns: ignoredColumns });
+      }
+    }
     const newId = generateUniqueId(usedIds);
     usedIds.add(newId);
     const base = { id: newId, updatedAt: Date.now() };
     let item: JsonItem;
-    if (type === 'dir') {
+    if (newType === 'dir') {
       item = { ...base, type: 'dir', path: itemPath };
     } else {
       if (!name) {

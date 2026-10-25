@@ -2052,8 +2052,22 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     additionsHeading: '追加（{{count}} 件）',
     errorsHeading: '取り込まない行（{{count}} 件）',
     errorLine: '{{line}} 行目: {{message}}',
+    ignoredHeading: '取り込みでは変えない値（{{count}} 行）',
+    ignoredNote:
+      'これらの列の値は捨て、行のほかの列は取り込みます。種別とタブは一覧で変えてください',
+    ignoredLine: '{{line}} 行目「{{name}}」: {{columns}}',
+    columns: {
+      type: '種別（type）',
+      dataFile: 'データファイル（dataFile）',
+      displayName: '名前（この種別には無い）',
+      path: 'パス（この種別には無い）',
+      args: '引数（この種別には無い）',
+    },
     errors: {
       noIdColumn: '見出しの行に id の列がありません（書き出した CSV の見出しを残してください）',
+      unclosedQuote:
+        'この行で始まった引用符（"）が閉じていないため、CSV 全体を取り込みません。引用符を閉じてから取り込み直してください',
+      controlChars: '名前・パス・引数に改行やタブなどの制御文字があります',
       notFound: 'id「{{value}}」のアイテムが見つかりません',
       duplicateId: 'id「{{value}}」が CSV の中で重なっています（最初の行だけ取り込みます）',
       nameRequired: '名前が空です',

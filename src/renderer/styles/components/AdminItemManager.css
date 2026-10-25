@@ -1469,6 +1469,12 @@
   color: var(--text-warning);
 }
 
+.csv-import-modal .csv-import-ignored-note {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
 .csv-import-modal .csv-import-note {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
