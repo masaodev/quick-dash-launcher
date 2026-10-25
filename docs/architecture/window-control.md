@@ -79,6 +79,7 @@
   - モーダルモード
   - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
   - ウィンドウ検索で選択中、または閉じる確認の帯を表示中（Esc をページに渡し、選択の解除・確認の取り消しに使う。レンダラーが `window:set-escape-handled-by-page` で知らせる。ページの読み直し（`did-start-loading`）・ページが落ちたとき（`render-process-gone`）は戻す）
+  - Escape でメインウィンドウを隠すときは、📌 なしのワークスペース・切り離しウィンドウも一緒に隠す（`toggleCompanionWindows(false)`）
   - **実装場所**: `src/main/windowManager.ts`（`createWindow()` 内の `before-input-event`）
 - **システムトレイ**: クリック（ダブルクリックも）でウィンドウ表示（ホットキーと同じ）、右クリックでメニュー表示
 - **二重起動**: 同じ userData で動いている本体があるときに 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がメインウィンドウを表示する（`src/main/main.ts` の `second-instance` から `showMainWindow()`）。2 つ目が CLI（`qdl.exe`）から `--launched-by-cli` 付きで起動されたものなら表示しない。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は二重起動の防止の対象外
@@ -234,7 +235,7 @@
 - 要求（何を表示するか。登録ならドロップしたパス・編集対象・今のタブ）はメインプロセスが requestId で預かり、子ウィンドウは `window.name`（`main-child:<requestId>`）から requestId を取り出して `window:get-main-child-request` で受け取る
 - 位置はメインウィンドウと同じディスプレイの作業領域の中央、サイズは登録 850x900・アイコン取得結果 760x700 を作業領域で切り詰める（`utils/mainChildWindowSpec.ts`・`utils/editorWindowBounds.ts`）。**メインウィンドウのサイズ・位置は変えない**
 - 親に対してモーダル（`parent` + `modal: true`）。閉じると破棄
-- ワークスペースのアイテムをメインウィンドウへドロップしたときは、子ウィンドウを開かない。ドラッグ元が dataTransfer の型 `workspaceItem`（`WORKSPACE_ITEM_DRAG_TYPE`）に載せたアイテムの JSON を、メインウィンドウがファイル・URL より先に読み、`workspace:move-to-main` で今のタブへ移す（[ワークスペース機能 - メインウィンドウへ移す](../features/workspace.md#メインウィンドウへ移す)）
+- ワークスペースのアイテムをメインウィンドウへドロップしたときは、子ウィンドウを開かない。ドラッグ元が dataTransfer の型 `workspaceItem`（`WORKSPACE_ITEM_DRAG_TYPE`）に載せたアイテムの JSON を、メインウィンドウがファイル・URL より先に読み、`workspace:move-to-main` で今のタブへ移す（`moveWorkspaceItemToMain()`、`src/main/services/workspace/workspaceRefOperations.ts`）。参照と、元のアイテムが見つからない参照は、メインウィンドウが送らずに警告のトーストを出す（`src/renderer/App.tsx`）
 - 開いている間はメインウィンドウを**モーダルモード**にする（`windowManager.setModalMode(true)`）: フォーカスアウト・Escape・ホットキー・アイテム実行で隠れず、最前面に固定。閉じたら戻す
 - 保存は子ウィンドウが `register-items` / `update-*-by-id` / `delete-items-by-id` で行い、メイン画面は `data-changed` で読み直す。結果（登録・更新・削除）は `window:notify-main-child-result` → `window:main-child-result` でメイン画面に中継され、メイン画面がトーストを出す
 - 子ウィンドウはメインのレンダラーから `window.open` で開く（レンダラープロセス共有、[システム概要](overview.md#ウィンドウとレンダラープロセスの対応)）。開き元が使えないときは `index.html?childRequestId=` で直接生成する
@@ -321,6 +322,11 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 `detachedPositionMode` が `saved` なら、最後に置いた場所に出す。`mainDisplay`（既定）なら、メインウィンドウと一緒に出すときに、ピン留めしていない切り離しウィンドウを、メインウィンドウと同じディスプレイ（`getMainWindowDisplay()`）の同じ位置へ移してから出す（`showAllDetachedGroupWindows({ placeOnMainWindowDisplay })`、`src/main/detachedGroupWindowManager.ts`）。アプリを起動して前回のウィンドウを開き直すときも同じ。
 
 起動したときは直前の状態に戻す（`restoreWindowsOnStartup()`、`src/main/workspaceWindowManager.ts`）。開いていて 📌 ありのワークスペースはすぐに出す。× で閉じていない切り離しウィンドウは開き直し、📌 ありのものはすぐに出し、なしのものは隠したまま作る（`startHiddenUnlessPinned`。最初のホットキーでメインと一緒に出る）。切り離しウィンドウは、中身に合わせて大きさを決めた後に 1 回だけ初めての表示をする（`takeDetachedInitialShow()`）。隠れているときに大きさが変わっても出さない。
+
+- 記録にあるグループのうち、サブグループ（切り離した後でサブグループにしたものなど）と、もう無いグループは開き直さず、`workspace-ui-state.json` から記録を消す（サブグループは切り離さないため）
+- 復元より先にホットキーでメインウィンドウを出していたときは、復元が終わったところで、隠したまま作った 📌 なしのウィンドウもメインと一緒に出す（`syncCompanionWindowsWithMain()`、`src/main/windowManager.ts`）。次のホットキーまで隠れたままにしないため
+
+切り離しウィンドウは枠がないので、グループの見出しを掴むとレンダラーが `window:start-move` を送り、メインプロセスが `WM_SYSCOMMAND`（`SC_MOVE` に `HTCAPTION` を足した値）を送って、タイトルバーを掴んだときと同じ移動を始める（`startWindowMove()`、`src/main/utils/nativeWindowControl.ts`）。Windows が動かすので、画面端への吸着と `moved` イベントも同じに働く。掴む所のダブルクリックで最大化しないよう、`maximizable: false` で作る。
 
 位置は「載っているディスプレイの作業領域に対する位置」（`MonitorAnchor`）として覚える。計算は純粋関数（`src/main/utils/monitorAnchor.ts`）。
 

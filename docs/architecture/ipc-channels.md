@@ -32,7 +32,7 @@ const settings = await window.electronAPI.getSettings();
 | 種類 | メイン側 | レンダラー側 | 使う場面 |
 | --- | --- | --- | --- |
 | 呼び出し（要求→応答） | `ipcMain.handle` | `ipcRenderer.invoke` | 大半のチャンネル。戻り値または例外が `Promise` で返る |
-| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`window:set-escape-handled-by-page`・`layout-cancel`・`close-layout-progress-window`・`resize-layout-progress-window`） |
+| 一方向の通知（レンダラー→メイン） | `ipcMain.on` | `ipcRenderer.send` | 応答を待たない合図（`window:child-written`・`window:notify-main-child-result`・`window:set-escape-handled-by-page`・`window:start-move`・`layout-cancel`・`close-layout-progress-window`・`resize-layout-progress-window`） |
 | イベント（メイン→レンダラー） | `webContents.send` | `ipcRenderer.on` | 状態変化の通知（`data-changed`・`settings-changed`・`workspace-changed`・進捗など） |
 
 - **エラーの返し方**: 失敗は例外として `invoke` 側に伝わる（`createSafeIpcHandler`（`src/main/utils/ipcWrapper.ts`）はログを出してから再スローする）。一部のチャンネルは `{ success: boolean, error?: string }` を返す。どちらの形かはハンドラーと `ElectronAPI` の型で確認する。**新しく足すハンドラーは例外で投げる**（返り値で失敗を返す形は増やさない）

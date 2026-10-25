@@ -30,7 +30,7 @@
   color: var(--text-muted);
 }
 
-/* 「Tab:タブを切り替える」（検索欄の下の「F5:データを再読み込み」と同じ見た目） */
+/* 一覧が空のときの案内に添える「Tab:タブを切り替える」（改行させずに並べる） */
 .item-list-empty-key-hint {
   margin-left: var(--spacing-xs);
   white-space: nowrap;
