@@ -43,6 +43,8 @@ export function useSearchBoxContextMenu({
   }, []);
 
   const handleContextMenu = useCallback((e: MouseEvent<HTMLInputElement>) => {
+    // Shift+F10・アプリケーションキーで来たものは App.tsx が止めて行のメニューを出すので、ここでは出さない
+    if (e.defaultPrevented) return;
     e.preventDefault();
     const input = e.currentTarget;
     const hasSelection = input.selectionStart !== input.selectionEnd;
