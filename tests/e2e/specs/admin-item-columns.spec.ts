@@ -1,8 +1,22 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import type { Page } from '@playwright/test';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
+
+/** 既定では隠している列（メモ・最終起動など。A3-195）を、見出しの右クリックの列のメニューで出す */
+async function showColumns(adminWindow: Page, labels: string[]): Promise<void> {
+  await adminWindow.locator('th.name-column').click({ button: 'right' });
+  const menu = adminWindow.getByTestId('admin-column-menu');
+  await expect(menu).toBeVisible();
+  for (const label of labels) {
+    await menu.getByRole('menuitemcheckbox', { name: new RegExp(label) }).click();
+  }
+  await adminWindow.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+}
 
 /**
  * アイテム管理の一覧の列（表示・幅の保存）
@@ -21,6 +35,13 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    await test.step('既定では、メモ・パスの確認・最終起動・起動回数の列を出さない（A3-195）', async () => {
+      await expect(adminWindow.locator('th.name-column')).toBeVisible();
+      for (const column of ['memo', 'link', 'last-launched', 'launch-count']) {
+        await expect(adminWindow.locator(`th.${column}-column`)).toHaveCount(0);
+      }
+    });
 
     await test.step('更新日の列を隠す', async () => {
       await expect(adminWindow.locator('th.updated-at-column')).toBeVisible();
@@ -97,6 +118,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
   }) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await showColumns(adminWindow, ['メモ']);
 
     /** 見出しの右端のつまみをダブルクリックする（つまみの右半分は隣の見出しに重なるので、左寄りを押す） */
     const doubleClickHandle = async (columnClass: string) => {
@@ -168,6 +190,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await showColumns(adminWindow, ['メモ']);
 
     try {
       const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
@@ -220,6 +243,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
   }, testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await showColumns(adminWindow, ['メモ']);
     const rows = adminWindow.locator('.raw-item-row');
     const filterMenu = adminWindow.getByTestId('admin-column-filter');
     const chips = adminWindow.getByTestId('item-filter-chips');
@@ -334,6 +358,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
         ?.show();
     });
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await showColumns(adminWindow, ['最終起動']);
     try {
       await test.step('最終起動の列に日時が出て、起動回数の列を出すと 2 回', async () => {
         const github = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });

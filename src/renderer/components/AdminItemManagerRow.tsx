@@ -35,6 +35,8 @@ export interface AdminItemManagerRowProps {
   pathMissing: boolean;
   /** 「リンク切れを確認」の結果（確認していない・対象外なら undefined） */
   linkStatus?: PathExistenceStatus;
+  /** セットの行のうち見つからない行の名前（A3-79 #8。セット以外は空） */
+  missingSetRows?: string[];
   /** 最後に起動した日時と回数（記録が無ければ undefined） */
   lastLaunchedAt?: number;
   launchCount?: number;
@@ -84,6 +86,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   autoImportRuleName,
   pathMissing,
   linkStatus,
+  missingSetRows = [],
   lastLaunchedAt,
   launchCount,
   editingColumn,
@@ -201,13 +204,28 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     );
   };
 
+  /** セットの見つからない行の印（「⚠ N 行見つかりません」。どの行かはツールチップ） */
+  const renderSetRowsMissingLabel = () => (
+    <span
+      className="missing-path-label"
+      title={t('itemManager.row.setRowsMissingTitle', { rows: missingSetRows.join('\n') })}
+    >
+      {t('itemManager.row.setRowsMissing', { count: missingSetRows.length })}
+    </span>
+  );
+
   const renderPathCell = () => {
     const text = describePathAndArgs(jsonItem);
+    // パスの確認の列を隠しているときは、パスの列の先頭に同じ印を付ける（セットは行の数と名前）
     const missingBadge =
       pathMissing && !showsLinkColumn ? (
-        <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
-          {t('itemManager.row.pathMissing')}
-        </span>
+        missingSetRows.length > 0 ? (
+          renderSetRowsMissingLabel()
+        ) : (
+          <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
+            {t('itemManager.row.pathMissing')}
+          </span>
+        )
       ) : null;
 
     if (editingColumn === 'path') {
@@ -282,6 +300,9 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   };
 
   const renderLinkCell = () => {
+    if (linkStatus === 'missing' && missingSetRows.length > 0) {
+      return renderSetRowsMissingLabel();
+    }
     if (linkStatus === 'missing') {
       return (
         <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>

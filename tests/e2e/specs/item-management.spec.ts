@@ -797,7 +797,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== リンク切れ確認テスト ====================
 
-  test('「整理 ▼」の「リンク切れを確認」でリンクの列に印が付き、リンクの列の ▾ で絞り込める', async ({
+  test('「整理 ▼」の「リンク切れを確認」でパスの確認の列に印が付き、その列の ▾ で絞り込める', async ({
     electronApp,
     mainWindow,
   }, _testInfo) => {
@@ -809,7 +809,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
       adminWindow.locator('.organize-dropdown .dropdown-item', { hasText: text });
 
     try {
-      await test.step('確認するまでは印も件数もリンクの列も出ない', async () => {
+      await test.step('確認するまでは印も件数もパスの確認の列も出ない', async () => {
         await adminWindow.locator('button', { hasText: 'アイテムを追加' }).click();
         const firstRow = adminWindow.locator('.raw-item-row').first();
         await firstRow.locator('.name-column .edit-input').fill('壊れたリンク');
@@ -824,7 +824,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(adminWindow.locator('th.link-column')).toHaveCount(0);
       });
 
-      await test.step('「リンク切れを確認」でリンクの列が出て、存在しないパスに印が付く（URL・shell:・コマンド名は対象外）', async () => {
+      await test.step('「リンク切れを確認」でパスの確認の列が出て、存在しないパスに印が付く（URL・shell:・コマンド名は対象外）', async () => {
         await openOrganize();
         await organizeItem('リンク切れを確認').click();
         const firstRow = adminWindow.locator('.raw-item-row').first();
@@ -836,7 +836,7 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await expect(adminWindow.locator('.edit-mode-status .missing-count')).toContainText('1 件');
       });
 
-      await test.step('リンクの列の ▾ で「見つからない」に絞り込み、条件の ✕ で全件に戻る', async () => {
+      await test.step('パスの確認の列の ▾ で「見つからない」に絞り込み、条件の ✕ で全件に戻る', async () => {
         await adminWindow.locator('th.link-column .column-filter-button').click();
         const menu = adminWindow.getByTestId('admin-column-filter');
         await menu.getByRole('menuitemradio', { name: '⚠ 見つからない' }).click();
@@ -848,9 +848,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await adminWindow.keyboard.press('Escape');
 
         const chips = adminWindow.getByTestId('item-filter-chips');
-        await expect(chips).toContainText('リンク: ⚠ 見つからない');
+        await expect(chips).toContainText('パスの確認: ⚠ 見つからない');
         await chips
-          .getByRole('button', { name: '「リンク: ⚠ 見つからない」の絞り込みを外す' })
+          .getByRole('button', { name: '「パスの確認: ⚠ 見つからない」の絞り込みを外す' })
           .click();
         await expect(chips).toHaveCount(0);
         await expect
@@ -864,6 +864,51 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await row.locator('.content-column .edit-input').fill('C:\\Windows');
         await row.locator('.content-column .edit-input').press('Enter');
         await expect(row.locator('.missing-path-label')).toHaveCount(0);
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  test('セットの行も「リンク切れを確認」で確かめ、セットが使うアイテムを消すときは知らせる（A3-79 #6・#8）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const github = configHelper.getItemByDisplayName('data.json', 'GitHub');
+    expect(github).toBeTruthy();
+    configHelper.addItemToFile('data.json', {
+      id: 'st000001',
+      type: 'set',
+      displayName: '朝の準備',
+      entries: [
+        { itemId: github!.id },
+        { itemId: 'gone0001', label: '消えたアイテム' },
+        { open: { path: 'C:\\qdl-e2e\\not-exist\\old.xlsx' }, label: '古い資料' },
+      ],
+    });
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    try {
+      await test.step('セットは、パスが無い行と指すアイテムが消えた行を「⚠ 2 行見つかりません」と出す', async () => {
+        await adminWindow.locator('.organize-dropdown .dropdown-trigger-btn').click();
+        await adminWindow
+          .locator('.organize-dropdown .dropdown-item', { hasText: 'リンク切れを確認' })
+          .click();
+        const setRow = adminWindow.locator('.raw-item-row', { hasText: '朝の準備' });
+        const label = setRow.locator('.link-column .missing-path-label');
+        await expect(label).toHaveText('⚠ 2 行見つかりません', { timeout: 15000 });
+        await expect(label).toHaveAttribute('title', /消えたアイテム\n古い資料/);
+      });
+
+      await test.step('セットが使うアイテムを消す確認に、そのセットの名前を出す（消しはしない）', async () => {
+        const githubRow = adminWindow.locator('.raw-item-row', { hasText: 'GitHub' });
+        await githubRow.locator('button.delete-button').click();
+        const dialog = adminWindow.getByTestId('confirm-dialog');
+        await expect(dialog).toContainText('セット「朝の準備」で使っています');
+        await adminWindow.getByTestId('confirm-dialog-cancel-button').click();
+        await expect(dialog).toHaveCount(0);
       });
     } finally {
       await adminWindow.close();

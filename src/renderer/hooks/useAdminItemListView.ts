@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import type { EditableJsonItem } from '@common/types/editableItem';
+import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
 import type { LaunchUsageRecord } from '@common/types/launchUsage';
 
 import {
@@ -18,7 +18,11 @@ import {
   type SortState,
 } from '../utils/editableItemOperations';
 
-import { useAdminPathExistence, checkablePathOf } from './useAdminPathExistence';
+import {
+  useAdminPathExistence,
+  evaluateItemPathCheck,
+  type ItemPathCheck,
+} from './useAdminPathExistence';
 
 interface UseAdminItemListViewOptions {
   /** 未保存の編集を含む全データファイルのアイテム */
@@ -66,20 +70,43 @@ export function useAdminItemListView({
   // リンク切れ（パスが実在しない）。ネットワークパスは応答に時間がかかることがあるので、
   // 自動では確認せず、「整理 ▼」の「リンク切れを確認」を押したときだけ確認する
   const pathCheck = useAdminPathExistence(baseVersion);
+  // セットの行が指すアイテムがまだあるか（どのデータファイルのアイテムでもよい）
+  const workingItemIds = useMemo(
+    () => new Set(workingItems.map((item) => item.item.id)),
+    [workingItems]
+  );
+  // 確認したアイテム（表示中のデータファイル）ごとの結果。行の描画・絞り込み・件数で何度も引くので、1 度だけ作る
+  const pathChecks = useMemo(() => {
+    const map = new Map<string, ItemPathCheck>();
+    if (!pathCheck.hasChecked) return map;
+    for (const item of workingItems) {
+      if (!pathCheck.checkedIds.has(item.item.id)) continue;
+      map.set(getItemKey(item), evaluateItemPathCheck(item, pathCheck.results, workingItemIds));
+    }
+    return map;
+  }, [workingItems, workingItemIds, pathCheck.hasChecked, pathCheck.checkedIds, pathCheck.results]);
   const linkStatusOf = useCallback(
-    (item: EditableJsonItem) => {
-      const itemPath = checkablePathOf(item);
-      return itemPath ? pathCheck.results.get(itemPath) : undefined;
-    },
-    [pathCheck.results]
+    (item: EditableJsonItem): PathExistenceStatus | undefined =>
+      pathChecks.get(getItemKey(item))?.status,
+    [pathChecks]
+  );
+  /** セットの行のうち見つからない行の名前（A3-79 #8。セット以外・確認していなければ空） */
+  const missingSetRowsOf = useCallback(
+    (item: EditableJsonItem): string[] => pathChecks.get(getItemKey(item))?.missingSetRows ?? [],
+    [pathChecks]
   );
   const missingIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const item of workingItems) {
-      if (linkStatusOf(item) === 'missing') ids.add(getItemKey(item));
+    for (const [key, check] of pathChecks) {
+      if (check.status === 'missing') ids.add(key);
     }
     return ids;
-  }, [workingItems, linkStatusOf]);
+  }, [pathChecks]);
+  /** 「リンク切れを確認」を実行する（表示中のデータファイルのアイテムを確かめる） */
+  const runPathCheck = useCallback(
+    (items: EditableJsonItem[]) => pathCheck.runCheck(items, workingItemIds),
+    [pathCheck, workingItemIds]
+  );
 
   // 読み込み・保存で確認の結果が捨てられたら、リンクの絞り込みも解く
   useEffect(() => {
@@ -169,7 +196,9 @@ export function useAdminItemListView({
     setColumnFilter,
     pathCheck,
     linkStatusOf,
+    missingSetRowsOf,
     missingIds,
+    runPathCheck,
     filteredItems,
     orderedItems,
     visibleSelectedItems,

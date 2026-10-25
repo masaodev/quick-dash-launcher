@@ -11,6 +11,7 @@ import { isEditableJsonItem, isEditingLauncherItem } from '@common/types';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 import { saveRegisterItems } from '../utils/registerItemSave';
+import { setUsageWarning } from '../utils/setUsageWarning';
 
 import ConfirmDialog from './ConfirmDialog';
 import RegisterModal from './RegisterModal';
@@ -59,6 +60,25 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
       })
       .catch((error) => {
         logError('ワークスペースの参照の数を読めませんでした:', error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [editingId]);
+  // 編集するアイテムを行で指しているセット（削除の確認に出す。A3-79 #6）
+  const [usingSetNames, setUsingSetNames] = useState<string[]>([]);
+  useEffect(() => {
+    // 前のアイテムの結果を残さない
+    setUsingSetNames([]);
+    if (!editingId) return;
+    let cancelled = false;
+    window.electronAPI
+      .findSetsUsingItems([editingId])
+      .then((names) => {
+        if (!cancelled) setUsingSetNames(names);
+      })
+      .catch((error) => {
+        logError('アイテムを使っているセットを読めませんでした:', error);
       });
     return () => {
       cancelled = true;
@@ -198,6 +218,7 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
                 ...(linkedCount > 0
                   ? [t('workspace.ref.deleteWarning', { count: linkedCount })]
                   : []),
+                ...(setUsageWarning(usingSetNames, t) ?? []),
               ].join('\n')
             : ''
         }

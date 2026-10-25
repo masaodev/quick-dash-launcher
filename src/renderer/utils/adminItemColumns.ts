@@ -77,6 +77,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     defaultVisible: true,
     minWidth: 180,
   },
+  // メモ・最終起動は使う人が限られるので既定では隠す（A3-195。列を一度でも変えた人の表示は変わらない）
   {
     id: 'memo',
     className: 'memo-column',
@@ -84,7 +85,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     sortColumn: 'memo',
     filterable: true,
     hideable: true,
-    defaultVisible: true,
+    defaultVisible: false,
     minWidth: 80,
   },
   // 手動登録か、どの自動取込ルールで入ったか（全文はツールチップ。A3-178）。既定の大きさの管理ウィンドウで、
@@ -99,7 +100,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     defaultVisible: true,
     minWidth: 70,
   },
-  // 「リンク切れを確認」の結果。確認するまでは空なので既定では隠し、確認したときに出す
+  // 「パスの確認」の列。「リンク切れを確認」の結果で、確認するまでは空なので既定では隠し、確認したときに出す
   {
     id: 'link',
     className: 'link-column',
@@ -109,7 +110,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     defaultVisible: false,
     minWidth: 60,
   },
-  // 起動の記録（item-usage.json）。回数は既定では隠す
+  // 起動の記録（item-usage.json）。最終起動・回数とも既定では隠す
   {
     id: 'lastLaunched',
     className: 'last-launched-column',
@@ -117,7 +118,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     sortColumn: 'lastLaunched',
     filterable: true,
     hideable: true,
-    defaultVisible: true,
+    defaultVisible: false,
     minWidth: 80,
   },
   {

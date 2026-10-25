@@ -3,6 +3,7 @@ import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_DATA_FILE, DataFileTab, type JsonItem, type RegisterItem } from '@common/types';
 import type { EditableJsonItem } from '@common/types/editableItem';
+import { findSetNamesUsingItems } from '@common/utils/setUsage';
 
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
@@ -15,6 +16,7 @@ import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdm
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
 import { itemsToCsv, planCsvImport, type CsvImportPlan } from '../utils/itemCsv';
+import { setUsageWarning } from '../utils/setUsageWarning';
 
 import AdminItemManagerList from './AdminItemManagerList';
 import AdminItemManagerTabBar from './AdminItemManagerTabBar';
@@ -232,7 +234,9 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     setColumnFilter,
     pathCheck,
     linkStatusOf,
+    missingSetRowsOf,
     missingIds,
+    runPathCheck,
     filteredItems,
     orderedItems,
     visibleSelectedItems,
@@ -253,12 +257,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   );
 
   const handleCheckMissingPaths = async () => {
-    const summary = await pathCheck.runCheck(currentFileWorkingItems);
-    // 結果はリンクの列に出すので、隠していたら出す（既定では隠している）
-    if (summary.checked > 0 && !columns.visibleColumns.some((c) => c.def.id === 'link')) {
+    // 件数はアイテムの数（セットは 1 件）。ステータスバーの「リンク切れ: N 件」と同じ数え方（A3-79 #8）
+    const summary = await runPathCheck(currentFileWorkingItems);
+    // 結果はパスの確認の列に出すので、隠していたら出す（既定では隠している）
+    const found = summary.checked > 0;
+    if (found && !columns.visibleColumns.some((c) => c.def.id === 'link')) {
       columns.setColumnVisible('link', true);
     }
-    if (summary.checked === 0) {
+    if (!found) {
       showInfo(t('itemManager.missingCheck.nothingToCheck'));
       return;
     }
@@ -517,7 +523,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     );
   };
 
+  // 削除の確認で、今の（未保存の編集を含む）アイテムを読むための参照
+  const workingItemsRef = useRef(workingItems);
+  workingItemsRef.current = workingItems;
+
   /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
+
   const handleRequestDelete = useCallback(
     async (items: EditableJsonItem[]) => {
       if (items.length === 0) return;
@@ -541,6 +552,15 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         .catch(() => ({}) as Record<string, number>);
       const refCount = Object.values(refCounts).reduce((sum, n) => sum + n, 0);
       if (refCount > 0) notes.push(t('workspace.ref.deleteWarning', { count: refCount }));
+      // セットの行が指していれば、その行が開けなくなることを添える（未保存の編集を含めて見る。A3-79 #6）
+      const setWarning = setUsageWarning(
+        findSetNamesUsingItems(
+          workingItemsRef.current.map((item) => item.item),
+          items.map((item) => item.item.id)
+        ),
+        t
+      );
+      if (setWarning) notes.push(setWarning);
       const message = `${question}\n\n${notes.join('\n')}`;
       openConfirmDialog({ message, confirmText: t('itemManager.deleteButton'), danger: true }, () =>
         editing.deleteItems(items)
@@ -662,6 +682,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           onFilterChange={setColumnFilter}
           filterOptions={filterOptions}
           linkStatusOf={linkStatusOf}
+          missingSetRowsOf={missingSetRowsOf}
           usageOf={launchUsage.usageOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}

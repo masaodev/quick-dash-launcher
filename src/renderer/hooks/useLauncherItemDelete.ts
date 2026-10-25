@@ -5,12 +5,15 @@ import { isWindowInfo } from '@common/types/guards';
 import { getDeletableItemId } from '@common/utils/launcherItemDelete';
 
 import { logError } from '../utils/debug';
+import { setUsageWarning } from '../utils/setUsageWarning';
 
 interface DeleteTarget {
   id: string;
   name: string;
   /** このアイテムを参照しているワークスペースのアイテムの数 */
   linkedCount: number;
+  /** このアイテムを行で指しているセットの名前（A3-79 #6） */
+  setNames: string[];
 }
 
 /**
@@ -30,14 +33,20 @@ export function useLauncherItemDelete(onError: (message: string) => void) {
       const id = getDeletableItemId(item);
       if (!id || isWindowInfo(item)) return;
       const name = item.displayName;
-      window.electronAPI.workspaceAPI
+      const linkedCount = window.electronAPI.workspaceAPI
         .countRefs([id])
         .then((counts) => counts[id] ?? 0)
         .catch((error) => {
           logError('ワークスペースの参照の数を読めませんでした:', error);
           return 0;
-        })
-        .then((linkedCount) => setTarget({ id, name, linkedCount }));
+        });
+      const setNames = window.electronAPI.findSetsUsingItems([id]).catch((error) => {
+        logError('アイテムを使っているセットを読めませんでした:', error);
+        return [] as string[];
+      });
+      void Promise.all([linkedCount, setNames]).then(([count, names]) =>
+        setTarget({ id, name, linkedCount: count, setNames: names })
+      );
     });
   }, []);
 
@@ -68,6 +77,7 @@ export function useLauncherItemDelete(onError: (message: string) => void) {
           ...(target.linkedCount > 0
             ? [t('workspace.ref.deleteWarning', { count: target.linkedCount })]
             : []),
+          ...(setUsageWarning(target.setNames, t) ?? []),
         ].join('\n'),
         onConfirm: () => void confirm(),
         onClose: cancel,
