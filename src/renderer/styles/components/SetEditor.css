@@ -336,12 +336,9 @@
   font-size: var(--font-size-base);
 }
 
-/* タブの絞り込みは、ウィンドウを選ぶ画面の .desktop-tabs をそのまま使う */
+/* タブの絞り込みは、ウィンドウを選ぶ画面の .desktop-tabs をそのまま使う（折り返しもそちら） */
 .set-tabs {
   margin-bottom: 0;
-  /* タブが多いときは、横にはみ出さずに折り返す */
-  flex-wrap: wrap;
-  row-gap: var(--spacing-xs);
 }
 
 .set-picker-list,

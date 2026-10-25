@@ -247,7 +247,9 @@ const SetAddWindowsModal: React.FC<SetAddWindowsModalProps> = ({
                 className={`desktop-tab${tab === id ? ' active' : ''}`}
                 onClick={() => setTab(id)}
               >
-                {tabLabel(id)}
+                <span className="desktop-tab-label" title={tabLabel(id)}>
+                  {tabLabel(id)}
+                </span>
                 <span className="tab-count">({tabCount(id)})</span>
               </button>
             ))}

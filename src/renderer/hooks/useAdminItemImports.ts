@@ -16,6 +16,7 @@ import { checkDuplicates } from '@common/utils/duplicateDetector';
 
 import type { AppImportDestination } from '../components/AppImportModal';
 import type { BookmarkImportOptions } from '../components/BookmarkImportModal';
+import { ipcErrorMessage } from '../utils/ipcError';
 
 import type { AdminItemEditing } from './useAdminItemEditing';
 import type { useAdminTabStructure } from './useAdminTabStructure';
@@ -161,7 +162,7 @@ export function useAdminItemImports({
       onShowTarget(target);
       showWarning(
         t('itemManager.ruleSaveFailed', {
-          error: error instanceof Error ? error.message : String(error),
+          error: ipcErrorMessage(error),
         })
       );
       return false;
@@ -176,7 +177,7 @@ export function useAdminItemImports({
         success: false,
         importedCount: 0,
         deletedCount: 0,
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorMessage: ipcErrorMessage(error),
         executedAt: Date.now(),
       };
     }

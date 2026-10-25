@@ -58,6 +58,7 @@ import { useLatestRef } from './hooks/useLatestRef';
 import { useAlertDialog } from './hooks/useDialogManager';
 import { useLauncherItemDelete } from './hooks/useLauncherItemDelete';
 import { classifyPastedText } from './utils/pasteClassifier';
+import { ipcErrorMessage } from './utils/ipcError';
 
 /** ウィンドウ検索の既定のデスクトップのタブ: 今のデスクトップ（分からなければ「すべて」） */
 function defaultDesktopTab(info: Pick<VirtualDesktopInfo, 'supported' | 'currentDesktop'>): number {
@@ -467,7 +468,7 @@ function App(): React.ReactElement {
       } catch (error) {
         showErrorAlert(
           t('launcher.messages.openFailed', {
-            reason: error instanceof Error ? error.message : String(error),
+            reason: ipcErrorMessage(error),
           })
         );
       }
@@ -503,7 +504,7 @@ function App(): React.ReactElement {
       } catch (error) {
         showErrorAlert(
           t('launcher.messages.openFailed', {
-            reason: error instanceof Error ? error.message : String(error),
+            reason: ipcErrorMessage(error),
           })
         );
       }

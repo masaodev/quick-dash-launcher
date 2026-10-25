@@ -1452,6 +1452,8 @@
   margin: 0;
   padding-left: var(--spacing-lg);
   font-size: var(--font-size-sm);
+  /* 空白の無い長い名前・パスも折り返す（横スクロールを出さない） */
+  overflow-wrap: anywhere;
 }
 
 .csv-import-modal .csv-import-change {

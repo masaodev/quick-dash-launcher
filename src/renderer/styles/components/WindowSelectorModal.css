@@ -52,7 +52,10 @@
 /* 仮想デスクトップタブ */
 .desktop-tabs {
   display: flex;
+  /* タブが多い・名前が長いときは、横にはみ出さずに折り返す（はみ出すと押せないタブが出る） */
+  flex-wrap: wrap;
   gap: 2px;
+  row-gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
   padding-bottom: var(--spacing-sm);
   border-bottom: var(--border-light);
@@ -73,6 +76,15 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* 1 つで幅に収まらない長い名前は「…」で切る（全文はツールチップ） */
+.desktop-tab-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .desktop-tab:hover {
@@ -169,6 +181,16 @@
 
 .window-details span {
   white-space: nowrap;
+}
+
+.window-title.untitled {
+  color: var(--text-secondary);
+}
+
+.window-note {
+  margin-top: var(--spacing-xs);
+  color: var(--text-warning);
+  font-size: var(--font-size-sm);
 }
 
 .window-process {

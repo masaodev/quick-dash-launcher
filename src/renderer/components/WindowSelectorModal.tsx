@@ -9,6 +9,7 @@ import { desktopLabel } from '@common/utils/desktopLabel';
 
 import '../styles/components/WindowSelectorModal.css';
 import { logError } from '../utils/debug';
+import { windowProcessLabel } from '../utils/setEditing';
 import { getCountClass } from '../utils/tabUtils';
 
 import { Button } from './ui';
@@ -245,7 +246,9 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
                     className={`desktop-tab ${countClass} ${activeTab === tab.id ? 'active' : ''}`}
                     onClick={() => setActiveTab(tab.id)}
                   >
-                    {tab.label}
+                    <span className="desktop-tab-label" title={tab.label}>
+                      {tab.label}
+                    </span>
                     <span className={`tab-count ${countClass}`}>({tab.count})</span>
                   </button>
                 );
@@ -294,7 +297,10 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
                       </div>
                     )}
                     <div className="window-info">
-                      <div className="window-title">{win.title}</div>
+                      {/* タイトルの無いウィンドウは exe 名を出す（ウィンドウを追加の画面と同じ） */}
+                      <div className={`window-title${win.title ? '' : ' untitled'}`}>
+                        {win.title || windowProcessLabel(win)}
+                      </div>
                       <div className="window-details">
                         <span className="window-position">
                           {t('windowPicker.position', { x: win.x, y: win.y })}
@@ -320,6 +326,9 @@ const WindowSelectorModal: React.FC<WindowSelectorModalProps> = ({ isOpen, onClo
                             </span>
                           )}
                       </div>
+                      {win.isElevated && (
+                        <div className="window-note">{t('set.update.elevatedNote')}</div>
+                      )}
                     </div>
                   </div>
                 ))
