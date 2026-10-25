@@ -168,6 +168,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
         }
         const single = items.length === 1 ? items[0] : undefined;
         await window.electronAPI.showToastWindow({
+          type: 'success',
           itemType: 'workspaceAdd',
           displayName: single
             ? single.displayName

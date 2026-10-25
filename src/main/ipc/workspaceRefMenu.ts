@@ -5,7 +5,7 @@ import type { WorkspaceItem } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { mainI18n } from '../services/mainI18n.js';
-import { LONG_TOAST_DURATION_MS, showToastWindow } from '../services/overlayWindowService.js';
+import { showToastWindow } from '../services/overlayWindowService.js';
 import { SettingsService } from '../services/settingsService.js';
 import {
   convertRefToCopy,
@@ -59,7 +59,6 @@ async function convertToCopy(item: WorkspaceItem): Promise<void> {
         error: error instanceof Error ? error.message : String(error),
       }),
       type: 'error',
-      duration: LONG_TOAST_DURATION_MS,
     });
   }
 }
@@ -93,7 +92,6 @@ export async function moveItemToMain(id: string, file?: string): Promise<boolean
         error: error instanceof Error ? error.message : String(error),
       }),
       type: 'error',
-      duration: LONG_TOAST_DURATION_MS,
     });
     return false;
   }

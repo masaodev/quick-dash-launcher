@@ -92,3 +92,26 @@ export const WORKSPACE_ITEM_DRAG_TYPE = 'workspaceItem';
 export function isIconFetchTarget(type: string): boolean {
   return type === 'url' || type === 'app' || type === 'file' || type === 'customUri';
 }
+
+/**
+ * トーストの種類ごとの表示時間（ミリ秒）。独立トースト・UI 内トーストで共通
+ *
+ * 呼び出し側で数値を指定せず、文が長いものだけ `long` を付ける（docs/features/toast-notifications.md）
+ */
+export const TOAST_DURATION_MS = {
+  success: 2500,
+  info: 3000,
+  warning: 4000,
+  error: 6000,
+} as const;
+
+/** 長めのトースト（2 行以上・件数や名前の並び）で、種類の表示時間に足す時間（ミリ秒） */
+export const TOAST_LONG_EXTRA_MS = 3000;
+
+/** トーストの表示時間（ミリ秒）を種類と長さから決める */
+export function toastDurationMs(
+  type: keyof typeof TOAST_DURATION_MS,
+  long: boolean = false
+): number {
+  return TOAST_DURATION_MS[type] + (long ? TOAST_LONG_EXTRA_MS : 0);
+}

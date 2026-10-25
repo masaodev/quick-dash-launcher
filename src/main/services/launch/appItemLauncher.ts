@@ -64,14 +64,13 @@ export async function launchAppItem(item: AppItem, allItems: AppItem[]): Promise
     const restored = await ClipboardService.getInstance().restoreClipboard(item.clipboardDataRef);
     await showToastWindow(
       restored.success
-        ? { displayName: item.displayName, itemType: 'clipboard' }
+        ? { type: 'success', displayName: item.displayName, itemType: 'clipboard' }
         : {
             type: 'error',
             message: mainI18n.t('launcher.messages.launchFailed', {
               name: item.displayName,
               error: restored.error ?? '',
             }),
-            duration: 6000,
           }
     );
     if (!restored.success) throw new Error(restored.error ?? 'restore failed');
@@ -79,6 +78,7 @@ export async function launchAppItem(item: AppItem, allItems: AppItem[]): Promise
   }
   if (isSetItem(item)) {
     await showToastWindow({
+      type: 'success',
       displayName: item.displayName,
       itemType: 'set',
       itemCount: item.entries.length,
@@ -87,7 +87,12 @@ export async function launchAppItem(item: AppItem, allItems: AppItem[]): Promise
     return;
   }
   if (isLauncherItem(item)) {
-    await showToastWindow({ displayName: item.displayName, itemType: item.type, path: item.path });
+    await showToastWindow({
+      type: 'success',
+      displayName: item.displayName,
+      itemType: item.type,
+      path: item.path,
+    });
     await openLauncherItem(item);
   }
 }

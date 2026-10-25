@@ -15,6 +15,7 @@ import { BrowserWindow, screen } from 'electron';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import type { ToastItemType, ToastOptions } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { toastDurationMs } from '@common/constants';
 import { windowLogger } from '@common/logger';
 
 import { WindowIdleDestroyer } from '../utils/windowIdleDestroyer.js';
@@ -78,10 +79,6 @@ function buildToastText(options: ToastOptions): ToastText {
 const TOAST_WIDTH = 400;
 const TOAST_HEIGHT = 100;
 const TOAST_MARGIN = 16;
-const DEFAULT_DURATION = 2500;
-const GROUP_DURATION = 3000;
-/** 警告など、読み終えるまで少し長く出しておくトーストの表示時間 */
-export const LONG_TOAST_DURATION_MS = 6000;
 const PROGRESS_WIDTH = 400;
 /** 進み具合の行 1 つ分の高さの目安（名前と、その下の exe 名の 2 段） */
 const PROGRESS_ROW_HEIGHT = 46;
@@ -283,10 +280,8 @@ export async function showToastWindow(options: ToastOptions): Promise<void> {
     return;
   }
 
-  // セットの起動時は表示時間を長め（3秒）に設定
-  const duration =
-    options.duration ?? (options.itemType === 'set' ? GROUP_DURATION : DEFAULT_DURATION);
-  const type = options.type ?? 'success';
+  const { type } = options;
+  const duration = toastDurationMs(type, options.long);
 
   clearToastHideTimeout();
   idleDestroyer.cancel();

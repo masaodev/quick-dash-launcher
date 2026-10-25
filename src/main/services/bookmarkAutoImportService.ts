@@ -84,10 +84,11 @@ export class BookmarkAutoImportService {
         const counts = formatImportCounts(summary, t);
         const message = withImportNotes(counts, totalManualDuplicates, hasError, t);
         await showToastWindow({
+          type: hasError ? 'warning' : 'info',
           itemType: 'bookmarkImport',
           displayName: t('bookmarkImport.title'),
           message,
-          duration: totalManualDuplicates > 0 ? 5000 : 3000,
+          long: totalManualDuplicates > 0,
         });
       }
 

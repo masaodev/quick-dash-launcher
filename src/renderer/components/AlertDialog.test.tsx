@@ -17,7 +17,7 @@ describe('AlertDialog', () => {
     expect(dialog.classList.contains('alert-error')).toBe(true);
     expect(dialog.querySelector('.alert-body p')?.textContent).toBe('保存できませんでした');
     expect(screen.getByRole('heading').textContent).toBe('エラー');
-    expect(dialog.querySelector('.alert-icon')?.textContent).toBe('❌');
+    expect(screen.getByTestId('toast-type-icon-error').textContent).toBe('✕');
 
     rerender(<AlertDialog isOpen onClose={vi.fn()} message="本文" />);
     expect(screen.getByRole('heading').textContent).toBe('お知らせ');

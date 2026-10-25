@@ -56,19 +56,24 @@ function ConfirmDialog({
 }: ConfirmDialogProps): React.ReactElement | null {
   const { t } = useTranslation();
 
+  // Enter・Esc は AlertDialog と同じく capture 段階で受けて止める。後ろの画面のキー処理
+  //（メイン画面で Enter がアイテムを実行する・Esc が画面を閉じるなど）に漏らさない
   useEffect(() => {
     if (!isOpen) return;
 
     function handleKeyDown(e: KeyboardEvent): void {
+      if (e.key !== 'Escape' && e.key !== 'Enter') return;
+      e.preventDefault();
+      e.stopPropagation();
       if (e.key === 'Escape') {
         onClose();
-      } else if (e.key === 'Enter') {
+      } else {
         onConfirm();
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, onClose, onConfirm]);
 
   if (!isOpen) return null;

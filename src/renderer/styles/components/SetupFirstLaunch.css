@@ -235,12 +235,6 @@
   color: var(--text-muted);
 }
 
-.validation-error {
-  margin-top: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--color-danger);
-}
-
 /* 自動起動設定セクション */
 .auto-launch-setup-section {
   margin-bottom: var(--spacing-lg);
