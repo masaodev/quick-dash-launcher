@@ -92,9 +92,16 @@ export function replaceItemById(configFolder: string, newItem: JsonItem): void {
  * 見つからない ID は無視する。ただし見つからない ID が破損ファイルにあるかもしれないときは、何も書かずに止める
  * （保存先を変える編集は「消してから同じ id で登録し直す」ので、消せていないと id が重複する）
  *
+ * @param options.keepClipboardDataRefs - 消さずに残す実データの参照（保存先を変える編集で、登録し直すアイテムが
+ *   同じ実データを使い続けるとき。渡さないと、登録し直したアイテムの実データが無くなる）
  * @throws 破損ファイルのせいで消せたか分からない場合、または書き込みに失敗した場合
  */
-export async function deleteItemsById(configFolder: string, ids: string[]): Promise<void> {
+export async function deleteItemsById(
+  configFolder: string,
+  ids: string[],
+  options: { keepClipboardDataRefs?: readonly string[] } = {}
+): Promise<void> {
+  const keepDataRefs = new Set(options.keepClipboardDataRefs ?? []);
   const idsToDelete = new Set(ids);
   const { files, corrupted } = readDataFilesForSearch(configFolder);
   const targets = files.filter((entry) =>
@@ -113,7 +120,11 @@ export async function deleteItemsById(configFolder: string, ids: string[]): Prom
   const clipboardService = ClipboardService.getInstance();
   for (const entry of targets) {
     for (const item of entry.jsonData.items) {
-      if (idsToDelete.has(item.id) && isJsonClipboardItem(item)) {
+      if (
+        idsToDelete.has(item.id) &&
+        isJsonClipboardItem(item) &&
+        !keepDataRefs.has(item.dataFileRef)
+      ) {
         await clipboardService.deleteClipboardData(item.dataFileRef);
       }
     }

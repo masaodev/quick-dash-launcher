@@ -189,3 +189,17 @@ export interface WorkspaceLinkCopiesPreview {
   /** パスで比べられないコピー（クリップボード・セット・パスの無い単一アイテム）の数 */
   notMatchable: number;
 }
+
+/**
+ * ワークスペースの余白・見出し・＋ のメニューの種類
+ * - blank: 余白の右クリック
+ * - add: ヘッダーの ＋
+ * - tabBar: タブの並びの空いた所の右クリック
+ */
+/** ワークスペースへ足す先（右クリックでその場で選んだもの。groupId が無いのはグループの無いワークスペース） */
+export interface WorkspaceTarget {
+  workspaceId?: string;
+  groupId?: string;
+}
+
+export type WorkspaceBlankMenuKind = 'blank' | 'add' | 'tabBar';

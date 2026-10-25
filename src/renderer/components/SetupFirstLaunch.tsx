@@ -22,7 +22,8 @@ interface FirstLaunchSettings {
 }
 
 interface FirstLaunchSetupProps {
-  onComplete: (settings: FirstLaunchSettings) => void;
+  /** 保存できたら true。false なら画面に知らせて、もう一度押せるように戻す */
+  onComplete: (settings: FirstLaunchSettings) => Promise<boolean>;
 }
 
 type SetupStep = 'welcome' | 'hotkey' | 'try';
@@ -67,10 +68,13 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     isValid: true,
   });
   const [hotkeyInUse, setHotkeyInUse] = useState(false);
+  const [itemSearchHotkeyInUse, setItemSearchHotkeyInUse] = useState(false);
+  const [showMoreHotkeys, setShowMoreHotkeys] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [hotkeyPressed, setHotkeyPressed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [autoLaunch, setAutoLaunch] = useState(true);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const isValid = hotkeyValidation.isValid && itemSearchHotkeyValidation.isValid;
 
@@ -86,6 +90,11 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     setHotkeyInUse(false);
   };
 
+  const handleItemSearchHotkeyChange = (newHotkey: string) => {
+    setItemSearchHotkey(newHotkey);
+    setItemSearchHotkeyInUse(false);
+  };
+
   // 先にキーを登録してみて、ほかのアプリが使っていたら先へ進まない
   const handleHotkeyNext = async () => {
     if (!isValid) return;
@@ -96,16 +105,31 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
         setHotkeyInUse(true);
         return;
       }
+      // ウィンドウ検索のキーも、ほかのアプリが使っていたら閉じた欄を開いて知らせる（登録は「使いはじめる」まで待つ）
+      if (
+        itemSearchHotkey &&
+        !(await window.electronAPI.isItemSearchHotkeyAvailable(itemSearchHotkey))
+      ) {
+        setItemSearchHotkeyInUse(true);
+        setShowMoreHotkeys(true);
+        return;
+      }
       setStep('try');
     } finally {
       setIsRegistering(false);
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!isValid) return;
     setIsLoading(true);
-    onComplete({ hotkey, autoLaunch, itemSearchHotkey });
+    setSaveFailed(false);
+    const saved = await onComplete({ hotkey, autoLaunch, itemSearchHotkey });
+    // 保存できたら画面ごと切り替わるので、戻すのは失敗したときだけ
+    if (!saved) {
+      setIsLoading(false);
+      setSaveFailed(true);
+    }
   };
 
   const currentIndex = STEPS.indexOf(step);
@@ -181,7 +205,11 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               <p className="hotkey-hint">{t('firstLaunch.hotkeyHint')}</p>
             </div>
 
-            <details className="first-launch-more">
+            <details
+              className="first-launch-more"
+              open={showMoreHotkeys}
+              onToggle={(e) => setShowMoreHotkeys(e.currentTarget.open)}
+            >
               <summary>{t('firstLaunch.windowSearchHotkeySummary')}</summary>
               <div className="hotkey-setup-section item-search-hotkey-section">
                 <p className="section-description">
@@ -189,7 +217,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
                 </p>
                 <HotkeyInput
                   value={itemSearchHotkey}
-                  onChange={setItemSearchHotkey}
+                  onChange={handleItemSearchHotkeyChange}
                   onValidationChange={(valid, reason) =>
                     setItemSearchHotkeyValidation({ isValid: valid, reason })
                   }
@@ -201,6 +229,9 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
                 />
                 {!itemSearchHotkeyValidation.isValid && (
                   <div className="validation-error">{itemSearchHotkeyValidation.reason}</div>
+                )}
+                {itemSearchHotkeyInUse && (
+                  <div className="validation-error">{t('firstLaunch.windowSearchHotkeyInUse')}</div>
                 )}
               </div>
             </details>
@@ -258,6 +289,12 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               </label>
               <p className="auto-launch-hint">{t('firstLaunch.autoLaunchHint')}</p>
             </div>
+
+            {saveFailed && (
+              <p className="validation-error first-launch-center" role="alert">
+                {t('firstLaunch.saveFailed')}
+              </p>
+            )}
 
             <div className="first-launch-actions first-launch-actions-split">
               <Button

@@ -336,10 +336,15 @@ export class WorkspaceItemManager {
     }
   }
 
+  /**
+   * @param duplicateClipboardData クリップボードアイテムの実データを写して新しい参照を返す（失敗は null）。
+   *   元と同じ実データを指したままにすると、片方を消したときにもう片方が復元できなくなるため（グループの複製と同じ）
+   */
   public duplicateItem(
     sourceItemId: string,
     targetGroupId?: string,
-    insertOrder?: number
+    insertOrder?: number,
+    duplicateClipboardData?: (dataFileRef: string) => string | null
   ): WorkspaceItem {
     try {
       const items = this.loadItems();
@@ -369,6 +374,14 @@ export class WorkspaceItemManager {
         order,
         groupId: targetGroupId !== undefined ? targetGroupId : sourceItem.groupId,
       };
+      if (
+        duplicatedItem.type === 'clipboard' &&
+        duplicatedItem.dataFileRef &&
+        duplicateClipboardData
+      ) {
+        const newRef = duplicateClipboardData(duplicatedItem.dataFileRef);
+        if (newRef) duplicatedItem.dataFileRef = newRef;
+      }
 
       items.push(duplicatedItem);
       this.store.set('items', items);
@@ -384,7 +397,7 @@ export class WorkspaceItemManager {
     }
   }
 
-  public moveItemToGroup(itemId: string, groupId?: string, groups?: { id: string }[]): void {
+  public moveItemToGroup(itemId: string, groupId: string, groups?: { id: string }[]): void {
     try {
       const items = this.loadItems();
       const item = items.find((i) => i.id === itemId);
@@ -394,13 +407,12 @@ export class WorkspaceItemManager {
         throw new Error(`Item not found: ${itemId}`);
       }
 
-      if (groupId && groups && !groups.some((g) => g.id === groupId)) {
+      if (groups && !groups.some((g) => g.id === groupId)) {
         logger.warn({ groupId }, 'Group not found in workspace');
         throw new Error(`Group not found: ${groupId}`);
       }
 
-      if (groupId === undefined) delete item.groupId;
-      else item.groupId = groupId;
+      item.groupId = groupId;
 
       this.store.set('items', items);
       logger.info({ itemId, groupId }, 'Moved item to group');

@@ -9,13 +9,13 @@ import { shell } from 'electron';
 import { iconLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { PathUtils } from '@common/utils/pathUtils';
-import extractFileIcon from 'extract-file-icon';
 
 import PathManager from '../../config/pathManager.js';
 import { extractExtensionFromUri } from '../../utils/iconCacheKeys.js';
 import { isBareFileName, resolveFromPath } from '../../utils/pathResolver.js';
 
 import { cacheAndConvertIcon, expandEnvironmentVariables } from './iconFileCache.js';
+import { extractFileIconInWorker } from './fileIconWorker.js';
 import { extractUwpIconByUriScheme } from './uwpIconExtractor.js';
 
 const execFileAsync = promisify(execFile);
@@ -56,7 +56,10 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 
         try {
           if (expandedIconPath.toLowerCase().endsWith('.ico')) {
-            const result = cacheAndConvertIcon(extractFileIcon(expandedIconPath, 32), lnkIconPath);
+            const result = cacheAndConvertIcon(
+              await extractFileIconInWorker(expandedIconPath, 32),
+              lnkIconPath
+            );
             if (result) {
               iconLogger.info(
                 `カスタムアイコンファイルからアイコンを抽出成功: ${expandedIconPath}`
@@ -77,7 +80,10 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
 
     // 2. フォールバック：.lnkファイル自体からアイコンを抽出を試行
     iconLogger.info(`ショートカットファイル自体からアイコン抽出を開始: ${lnkPath}`);
-    const shortcutIcon = cacheAndConvertIcon(extractFileIcon(lnkPath, 32), lnkIconPath);
+    const shortcutIcon = cacheAndConvertIcon(
+      await extractFileIconInWorker(lnkPath, 32),
+      lnkIconPath
+    );
     if (shortcutIcon) {
       iconLogger.info(`ショートカットファイルからアイコンを抽出成功: ${lnkPath}`);
       return shortcutIcon;
@@ -178,7 +184,7 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
       return cachedIcon;
     }
 
-    const result = cacheAndConvertIcon(extractFileIcon(actualFilePath, 32), iconPath);
+    const result = cacheAndConvertIcon(await extractFileIconInWorker(actualFilePath, 32), iconPath);
     if (!result) {
       iconLogger.warn(`アイコンが抽出できませんでした: ${filePath}`);
     }
@@ -206,7 +212,7 @@ export async function extractCustomUriIcon(
 
     const handlerPath = await getUriSchemeHandler(scheme);
     if (handlerPath) {
-      return cacheAndConvertIcon(extractFileIcon(handlerPath, 32), iconPath);
+      return cacheAndConvertIcon(await extractFileIconInWorker(handlerPath, 32), iconPath);
     }
 
     // レジストリから実行ファイルを解決できないスキームはUWPアプリの可能性がある
@@ -252,7 +258,7 @@ export async function extractFileIconByExtension(
     const tempFilePath = createTempFileForExtension(extensionName);
 
     try {
-      return cacheAndConvertIcon(extractFileIcon(tempFilePath, 32), iconPath);
+      return cacheAndConvertIcon(await extractFileIconInWorker(tempFilePath, 32), iconPath);
     } finally {
       if (fs.existsSync(tempFilePath)) {
         fs.unlinkSync(tempFilePath);

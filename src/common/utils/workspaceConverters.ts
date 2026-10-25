@@ -22,7 +22,7 @@ import type {
 } from '../types';
 import { isClipboardItem, isSetItem, isWindowInfo } from '../types/guards';
 import type { SetEntry } from '../types/launcher';
-import type { RegisterItem, RegisterSetEntry } from '../types/register';
+import type { RegisterItem } from '../types/register';
 
 import { windowInfoToPathlessItem } from './windowInfoConverter';
 import {
@@ -32,6 +32,7 @@ import {
   itemWindowSwitchFields,
   pickItemWindowSwitch,
 } from './itemWindowConversion.js';
+import { canSetRunAsAdmin, pickRunAsAdmin } from './runAsAdmin.js';
 
 /** undefined の値を持つキーを落とす（ファイルに `"args": undefined` のような穴を残さないため） */
 function compact<T extends object>(obj: T): T {
@@ -50,6 +51,7 @@ function launcherBody(item: LauncherItem): WorkspaceItemUpdate {
     args: item.args,
     originalPath: item.originalPath,
     customIcon: item.customIcon,
+    ...pickRunAsAdmin(item),
     ...pickItemWindowSwitch(item),
     memo: item.memo,
   });
@@ -135,6 +137,7 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
         path: item.path,
         type: item.launcherType,
         args: item.args,
+        ...pickRunAsAdmin(item),
         icon: item.icon,
         targetTab: '',
         customIcon: item.customIcon,
@@ -165,12 +168,12 @@ export function workspaceItemToRegisterItem(item: WorkspaceItem): RegisterItem {
 function expandWorkspaceEntry(
   entry: SetEntry,
   item: Extract<WorkspaceItem, { type: 'item' }>
-): RegisterSetEntry | undefined {
+): SetEntry | undefined {
   const pathless = isPathlessItem(item);
   // 開くものも対象ウィンドウも無いアイテムは、置き換えても何もしない行になるので、そのまま残す
   if (!pathless && !item.path.trim()) return undefined;
   const { itemId: _itemId, ...rest } = entry;
-  const result: RegisterSetEntry = { ...rest, expandedFrom: item.displayName };
+  const result: SetEntry = { ...rest };
   if (!pathless)
     result.open = item.args ? { path: item.path, args: item.args } : { path: item.path };
   result.label ??= item.displayName;
@@ -187,17 +190,17 @@ function expandWorkspaceEntry(
 }
 
 /**
- * ワークスペースのセットの行を、メインウィンドウのセットの行にする（メインウィンドウへ登録するとき）
+ * ワークスペースのセットの行を、メインウィンドウのセットの行にする（メインウィンドウへ移すとき）
  *
  * メインウィンドウのセットは行の itemId をデータファイルのアイテムからしか探さないので、ワークスペースの
  * アイテムを指す行はそのままでは「アイテムが見つかりません」になる。そうした行は、指す先のパス・引数を
- * 行に書いた行に置き換え、expandedFrom に元のアイテムの名前を付ける。ワークスペースで開くときと同じく
+ * 行に書いた行に置き換える。ワークスペースで開くときと同じく
  * ワークスペースのアイテムを先に探すので、データファイルのアイテムを指す行は id のまま残る
  */
 export function expandWorkspaceSetEntries(
   entries: readonly SetEntry[],
   workspaceItems: readonly WorkspaceItem[]
-): RegisterSetEntry[] {
+): SetEntry[] {
   const byId = new Map<string, WorkspaceItem>();
   for (const item of workspaceItems) byId.set(item.id, item);
   return entries.map((entry) => {
@@ -207,11 +210,6 @@ export function expandWorkspaceSetEntries(
     const expanded = item?.type === 'item' ? expandWorkspaceEntry(entry, item) : undefined;
     return expanded ?? { ...entry };
   });
-}
-
-/** 画面の中だけで使う印を除いて、保存する行にする */
-export function toSavedSetEntries(entries: readonly RegisterSetEntry[]): SetEntry[] {
-  return entries.map(({ expandedFrom: _expandedFrom, ...entry }) => entry);
 }
 
 /**
@@ -238,7 +236,7 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
       return compact({
         type: 'set',
         displayName: registerItem.displayName,
-        entries: toSavedSetEntries(registerItem.setEntries ?? []),
+        entries: (registerItem.setEntries ?? []).map((entry) => ({ ...entry })),
         launchMode: registerItem.setLaunchMode,
         customIcon: registerItem.customIcon,
         memo,
@@ -250,6 +248,7 @@ export function registerItemToWorkspaceItemUpdate(registerItem: RegisterItem): W
         path: registerItem.path,
         args: registerItem.args || undefined,
         customIcon: registerItem.customIcon,
+        ...(canSetRunAsAdmin(registerItem.path) && pickRunAsAdmin(registerItem)),
         ...itemWindowSwitchFields(registerItem),
         memo,
       });

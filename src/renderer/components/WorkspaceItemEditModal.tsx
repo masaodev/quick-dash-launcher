@@ -237,7 +237,6 @@ const WorkspaceItemEditModal: React.FC<WorkspaceItemEditModalProps> = ({
                   typeLocked={!create}
                   allowFolderImport={false}
                   setIncludesWorkspace
-                  isPathReadOnly={false}
                   iconFetchLoading={iconFetchLoading}
                   optionsOpen={optionsOpen}
                   onToggleOptions={() => setOptionsOpen((open) => !open)}

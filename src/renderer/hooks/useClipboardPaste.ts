@@ -8,6 +8,7 @@ import { logError, logWarn } from '../utils/debug';
 import { classifyPastedText, makeClipboardDisplayName } from '../utils/pasteClassifier';
 
 import { useFileOperations } from './useFileOperations';
+import { useLatestRef } from './useLatestRef';
 
 /**
  * ワークスペースへの Ctrl+V 貼り付け
@@ -22,9 +23,15 @@ import { useFileOperations } from './useFileOperations';
 export function useClipboardPaste(
   onItemsAdded: () => void,
   activeGroupId?: string,
-  activeWorkspaceId?: string
+  activeWorkspaceId?: string,
+  /** 貼ってよいか（false なら何もしない。グループを選ばずに貼ったときに知らせる側で使う） */
+  canPaste?: () => boolean,
+  /** 足せたときに知らせる（足せたアイテムの表示名。ワークスペースの中のトーストで知らせる側で使う） */
+  onAdded?: (displayNames: string[]) => void
 ) {
   const { extractFilePaths, addItemsFromFilePaths, fetchFaviconSafely } = useFileOperations();
+  const canPasteRef = useLatestRef(canPaste);
+  const onAddedRef = useLatestRef(onAdded);
 
   useEffect(() => {
     function isInputElement(target: EventTarget | null): boolean {
@@ -33,6 +40,10 @@ export function useClipboardPaste(
     }
 
     async function notifyAdded(displayName: string, path: string): Promise<void> {
+      if (onAddedRef.current) {
+        onAddedRef.current([displayName]);
+        return;
+      }
       try {
         await window.electronAPI.showToastWindow({
           displayName,
@@ -92,15 +103,16 @@ export function useClipboardPaste(
         preview: result.preview,
         formats: result.formats ?? [],
       };
-      await window.electronAPI.workspaceAPI.addItem(item, activeGroupId, activeWorkspaceId);
+      // 取り込んだ実データはこのアイテムだけが使うので、複製させない
+      await window.electronAPI.workspaceAPI.addItem(item, activeGroupId, activeWorkspaceId, {
+        freshClipboardData: true,
+      });
       await notifyAdded(displayName, result.preview ?? '');
       onItemsAdded();
     }
 
-    const handleKeyDown = async (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.key !== 'v') return;
-      if (isInputElement(e.target)) return;
-
+    /** ファイル以外（URL・パス・テキスト・画像）の貼り付け */
+    async function pasteNonFile(): Promise<void> {
       try {
         const state = await window.electronAPI.clipboardAPI.checkCurrent();
         if (!state.hasContent) return;
@@ -137,27 +149,38 @@ export function useClipboardPaste(
       } catch (error) {
         logError('Failed to add item from clipboard paste:', error);
       }
-    };
+    }
 
+    // Ctrl+V も右クリックの「貼り付け」（webContents.paste）も paste イベントになるので、ここ 1 か所で振り分ける
+    //（以前は Ctrl+V の keydown で振り分けており、右クリックの「貼り付け」ではファイルしか足せなかった）
     const handlePaste = async (e: ClipboardEvent) => {
       if (isInputElement(e.target)) return;
-      if (!e.clipboardData?.files || e.clipboardData.files.length === 0) return;
-
       e.preventDefault();
+      if (canPasteRef.current && !canPasteRef.current()) return;
+      const files = e.clipboardData?.files;
       try {
-        // スクリーンショットのような、パスを持たない画像 File は空になり何も追加されない
-        //（その場合は keydown 側がクリップボードアイテムにしている）
-        const filePaths = await extractFilePaths(e.clipboardData.files);
-        await addItemsFromFilePaths(filePaths, onItemsAdded, activeGroupId, activeWorkspaceId);
+        // スクリーンショットのような、パスを持たない画像 File はパスが空になるので、ファイル以外として扱う
+        const filePaths = files && files.length > 0 ? await extractFilePaths(files) : [];
+        if (filePaths.length > 0) {
+          const added = await addItemsFromFilePaths(
+            filePaths,
+            onItemsAdded,
+            activeGroupId,
+            activeWorkspaceId
+          );
+          // 以前はファイルの貼り付けだけ何も知らせていなかった
+          if (added.length > 0) onAddedRef.current?.(added.map((item) => item.displayName));
+          return;
+        }
       } catch (error) {
         logError('Failed to add items from file paste:', error);
+        return;
       }
+      await pasteNonFile();
     };
 
-    document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('paste', handlePaste);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
   }, [
@@ -167,5 +190,7 @@ export function useClipboardPaste(
     fetchFaviconSafely,
     activeGroupId,
     activeWorkspaceId,
+    canPasteRef,
+    onAddedRef,
   ]);
 }

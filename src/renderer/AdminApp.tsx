@@ -32,6 +32,8 @@ const AdminApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingImportModal, setPendingImportModal] = useState<'bookmark' | 'app' | null>(null);
+  // 管理ウィンドウが隠れるたびに増やし、開いている取込画面を閉じさせる（A3-187）
+  const [importModalCloseSignal, setImportModalCloseSignal] = useState(0);
   // 設定タブで開いているカテゴリ。アイテム管理（手動取込）から「ブックマーク自動取込」を直接開けるよう、ここで持つ
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('basic');
   const { alertDialog, showAlert, closeAlert } = useAlertDialog();
@@ -73,6 +75,10 @@ const AdminApp: React.FC = () => {
         window.electronAPI.hideEditWindow();
       }
     });
+    // × のほか Ctrl+E の切り替えなど、どの経路で隠れても取込画面を閉じる（A3-187）
+    const unsubscribeHidden = window.electronAPI.onAdminHidden(() =>
+      setImportModalCloseSignal((n) => n + 1)
+    );
 
     return () => {
       unsubscribeSetActiveTab?.();
@@ -80,6 +86,7 @@ const AdminApp: React.FC = () => {
       unsubscribeData?.();
       unsubscribeWindow?.();
       unsubscribeClose?.();
+      unsubscribeHidden?.();
     };
   }, []);
 
@@ -215,6 +222,7 @@ const AdminApp: React.FC = () => {
         dataFileLabels={dataFileLabels}
         pendingImportModal={pendingImportModal}
         onClearPendingImportModal={() => setPendingImportModal(null)}
+        importModalCloseSignal={importModalCloseSignal}
         settingsCategory={settingsCategory}
         onSettingsCategoryChange={setSettingsCategory}
         onOpenSettingsCategory={openSettingsCategory}

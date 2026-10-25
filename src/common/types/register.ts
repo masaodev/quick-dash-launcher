@@ -35,12 +35,6 @@ export interface DirPreviewResult {
 /** 登録・編集画面のパス欄の「選択」で選ぶもの */
 export type ItemPathPickKind = 'file' | 'folder';
 
-/** 登録・編集画面のセットの行。保存する行に、画面の中だけで使う印を足したもの */
-export interface RegisterSetEntry extends SetEntry {
-  /** ワークスペースのアイテム（この表示名）を、行に書いたパスに置き換えた行（画面の中だけで使い、保存しない） */
-  expandedFrom?: string;
-}
-
 /**
  * RegisterModalで使用されるアイテム型
  *
@@ -52,6 +46,8 @@ export interface RegisterItem extends ItemWindowSwitch {
   path: string;
   type: LauncherItem['type'];
   args?: string;
+  /** 常に管理者として実行する（単一アイテムのアプリだけ） */
+  runAsAdmin?: boolean;
   targetTab: string;
   targetFile?: string;
   folderProcessing?: 'folder' | 'expand';
@@ -79,7 +75,7 @@ export interface RegisterItem extends ItemWindowSwitch {
   /** 保存済みの参照の実データが見つからない（画面の中だけで使い、保存しない） */
   clipboardDataMissing?: boolean;
   /** セットの行（set専用） */
-  setEntries?: RegisterSetEntry[];
+  setEntries?: SetEntry[];
   /** セットの開き方（set専用） */
   setLaunchMode?: SetLaunchMode;
   /** 登録し直すときに引き継ぐ id（保存先のファイルを変えた編集。セットの行が id で指しているので変えない） */

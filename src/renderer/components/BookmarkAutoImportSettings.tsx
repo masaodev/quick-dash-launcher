@@ -8,7 +8,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BrowserInfo, DataFileTab } from '@common/types';
 import type { BookmarkAutoImportRule } from '@common/types/bookmarkAutoImport';
-import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import {
+  formatImportCounts,
+  formatImportSummary,
+  importResultCounts,
+  summarizeImportResults,
+} from '@common/utils/bookmarkImportUtils';
 
 import { useBookmarkAutoImport } from '../hooks/useBookmarkAutoImport';
 import {
@@ -178,8 +183,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
       if (result.success) {
         const message = t('bookmarkAutoImport.ruleResult', {
           name: rule.name,
-          imported: result.importedCount,
-          deleted: result.deletedCount,
+          counts: formatImportCounts(importResultCounts(result), t),
         });
         if (result.manualDuplicateCount) {
           showWarning(
@@ -225,8 +229,7 @@ const BookmarkAutoImportSettings: React.FC<BookmarkAutoImportSettingsProps> = ({
     if (rule.lastResult?.success) {
       const counts = {
         date: dateStr,
-        imported: rule.lastResult.importedCount,
-        deleted: rule.lastResult.deletedCount,
+        counts: formatImportCounts(importResultCounts(rule.lastResult), t),
       };
       return rule.lastResult.manualDuplicateCount
         ? t('bookmarkAutoImport.lastResultWithDuplicates', {

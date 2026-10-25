@@ -59,7 +59,8 @@ export const ja = {
       cancel: 'キャンセル',
     },
     dropToAdd: 'ファイル / URLをドロップして登録',
-    dropWorkspaceItemToAdd: 'ドロップしてメインウィンドウに登録',
+    dropWorkspaceItemToMove:
+      'ドロップしてメインウィンドウへ移す（ワークスペースのアイテムは参照になります）',
     dropPathUnavailable:
       'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。',
     hints: {
@@ -81,16 +82,24 @@ export const ja = {
       titleWithReloadKey: '更新・取得（F5: データを再読み込み）',
       reloadData: '🔃 データを再読み込み',
       reloadDataWithKey: '🔃 データを再読み込み（F5）',
-      fetchIconsCurrentTab: '🎨 アイコン取得（現在のタブ）',
-      fetchIconsAllTabs: '🎨 アイコン取得（全タブ）',
       importBookmarks: '🔁 ブックマーク自動取込を実行',
-      reloadAll: '🔄 完全リフレッシュ',
+      refetchIcons: '🎨 アイコンをすべて取り直す',
+      refetchIconsTitle:
+        'データを読み直し、保存してあるアイコンを使わずに全部取り直します（前に取れなかったものも試します）',
+    },
+    searchHistoryClear: {
+      message: '検索履歴をすべて消しますか？元には戻せません。',
+      confirm: '消す',
     },
     registerMenu: {
       title: 'アイテムを追加',
-      quickAdd: '📄 アイテムを追加…',
+      quickAdd: '📄 アイテムを追加',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
+      addFolderImport: '🗂️ フォルダからアイテムを追加',
+      addFolderImportTitle:
+        'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
+      clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
     empty: {
       noMatch: '「{{query}}」に合うアイテムはありません',
@@ -105,7 +114,10 @@ export const ja = {
       otherTabsHaveWindows: '他のタブに合うウィンドウがあります。',
       switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
-      add: '📄 アイテムを追加…',
+      add: '📄 アイテムを追加',
+      importBookmarks: '🔖 ブックマークから',
+      importApps: '💻 アプリから',
+      importFolder: '🗂️ フォルダから',
     },
     workspaceButton: {
       open: 'ワークスペースを開く（Ctrl+W）',
@@ -135,12 +147,18 @@ export const ja = {
       showNote: 'メモを表示',
     },
     missingIcons: {
-      label: 'アイコン未取得:',
-      fetch: '取得',
+      label_one: '🎨 アイコンがまだ無いアイテムが {{count}} 件あります',
+      label_other: '🎨 アイコンがまだ無いアイテムが {{count}} 件あります',
+      hint: 'サイトや PC から 1 回だけ取りに行き、その後は保存したものを使います',
+      fetch: '取得する',
       fetchTooltip: 'アイコンを取得',
     },
     iconProgress: {
       complete: 'アイコン取得完了',
+      busy: 'アイコンを取得しています。終わってからもう一度お試しください',
+      closeWhileFetching: '閉じても、取得は裏で続きます',
+      continuesInBackground: 'アイコンの取得は裏で続けます。終わったら知らせます',
+      finishedInBackground: 'アイコンの取得が終わりました',
       phase: 'フェーズ {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'ファビコン取得',
@@ -223,6 +241,9 @@ export const ja = {
       launchFailed: '「{{name}}」を開けませんでした: {{error}}',
       appNotFoundInPath: 'PATH にアプリが見つかりません',
       clipboardDataMissing: 'クリップボードのデータが見つかりません',
+      cannotRunAsAdmin: '「{{name}}」は管理者として実行できません（アプリだけ）',
+      fileNotFound: 'ファイルが見つかりません',
+      windowsError: 'Windows のエラー（コード {{code}}）',
     },
     itemActions: {
       targets: {
@@ -261,12 +282,14 @@ export const ja = {
     },
   },
   bookmarkImport: {
-    summary: 'ブックマーク取込: {{imported}} 件登録、{{deleted}} 件削除',
+    summary: 'ブックマーク取込: {{counts}}',
     withManualDuplicates: '{{message}}、手動分と重複 {{count}} 件',
     withPartlyFailed: '{{message}}（一部エラー）',
     title: 'ブックマーク取込',
-    added: '{{count}} 件登録',
-    addedAndDeleted: '{{added}} 件登録、{{deleted}} 件削除',
+    countAdded: '{{count}} 件追加',
+    countUpdated: '{{count}} 件更新',
+    countDeleted: '{{count}} 件削除',
+    noChange: '変更なし',
     browserNotFound: 'ブラウザ {{browser}} が見つからないか、対象プロファイルがありません',
     failed: 'ブックマーク自動取込でエラーが発生しました',
     dataFileCorrupted: 'データファイルが破損している可能性があるため取込を中止しました: {{file}}',
@@ -297,6 +320,8 @@ export const ja = {
     windowSearchHotkeySummary: '開いているウィンドウを探すキーも決める（あとからでも決められます）',
     windowSearchHotkeyDescription: '開いているウィンドウを名前で探して、切り替えます。',
     windowSearchHotkeyNone: '使わない',
+    windowSearchHotkeyInUse:
+      'このキーはほかのアプリか起動ホットキーが使っています。別のキーを選ぶか「使わない」を押してください。',
     notSet: '未設定',
     tryTitle: '準備ができました',
     tryDescription: '試しに、決めたキーを押してみてください。',
@@ -311,7 +336,7 @@ export const ja = {
     autoLaunchHint: '起動していないと、キーを押しても出ません。',
     changeLater: 'どれもあとから「設定」で変えられます',
     complete: '使いはじめる',
-    saveFailed: '設定の保存に失敗しました。',
+    saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
     defaultTabName: 'メイン',
   },
   hotkeyInput: {
@@ -336,6 +361,7 @@ export const ja = {
     copyPath: '📋 パスをコピー',
     copyParentPath: '📋 親フォルダのパスをコピー',
     openParentFolder: '📂 親フォルダを開く',
+    runAsAdmin: '🛡️ 管理者として実行',
     copyShortcutPath: '📋 リンク先のパスをコピー',
     copyShortcutParentPath: '📋 リンク先の親フォルダのパスをコピー',
     openShortcutParentFolder: '📂 リンク先の親フォルダを開く',
@@ -343,6 +369,34 @@ export const ja = {
     showNote: '📝 メモを表示',
     addToWorkspace: '⭐ ワークスペースに追加',
     addCopyToWorkspace: '📄 ワークスペースにコピーを追加',
+    groupPicker: {
+      createGroup: '➕ 新しいグループを作って入れる',
+      createUncategorized: '➕ 「未分類」グループを作って入れる',
+    },
+    delete: '🗑️ 削除…',
+    excludeFromDir: '🚫 この取込から外す…',
+    text: {
+      undo: '元に戻す',
+      redo: 'やり直し',
+      cut: '切り取り',
+      copy: 'コピー',
+      paste: '貼り付け',
+      selectAll: 'すべて選択',
+    },
+    launcherBlank: {
+      registerFromClipboard: '📋 クリップボードのパス・URL から追加',
+    },
+    searchHistory: {
+      title: '🕘 検索履歴',
+      clear: '🗑️ 検索履歴を消す',
+    },
+    workspace: {
+      addGroup: '➕ グループを追加',
+      addWorkspace: '➕ ワークスペースを追加',
+      paste: '📋 貼り付け',
+      expandAll: '🔽 すべて展開',
+      collapseAll: '🔼 すべて折りたたむ',
+    },
     admin: {
       duplicate: '📋 複製',
       duplicateRows_one: '📋 複製（{{count}} 行）',
@@ -358,10 +412,9 @@ export const ja = {
       renameAlias: '🏷️ 表示名を変更（ワークスペースだけ）',
       convertToCopy: '📄 コピーにする（メインウィンドウと切り離す）',
       retarget: '🔁 別のアイテムを指す…',
-      linkToMain: '🔗 メインウィンドウのアイテムを参照する…',
-      registerToMain: '🚀 メインウィンドウに登録',
+      moveToMain: '🚀 メインウィンドウへ移して参照にする',
       moveToWorkspace: '📁 ワークスペースを移動',
-      removeFromGroup: '📤 グループから外す',
+      moveToGroup: '📁 グループへ移動',
       remove: '🗑️ ワークスペースから削除',
     },
     workspaceGroup: {
@@ -377,6 +430,9 @@ export const ja = {
       addNew: '✏️ 新しく入力して追加…',
       rename: '✏️ グループ名を変更',
       changeColor: '🎨 色を変更',
+      duplicate: '📄 グループを複製',
+      collapseOthers: '🔼 ほかのグループを折りたたむ',
+      openAll: '▶ すべて開く',
       archive: '🗄️ グループをアーカイブ',
       delete: '🗑️ グループを削除',
     },
@@ -408,6 +464,8 @@ export const ja = {
     help: 'ヘルプ',
     restart: '再起動',
     quit: '終了',
+    showWorkspace: 'ワークスペースを表示',
+    itemManager: 'アイテム管理',
     devRestart: {
       title: '再起動（開発モード）',
       message: '開発モードでは自動再起動をサポートしていません',
@@ -469,6 +527,8 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove|archive   ワークスペースのグループ
   workspace archive list|restore           アーカイブしたグループ
+  open <id か表示名>                       メインウィンドウのアイテムを開く（画面で Enter を押したのと同じ）
+  show [main|workspace]                    メインウィンドウ（既定）かワークスペースを出す
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
   reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
   status                                   本体の版・設定フォルダなどを表示する
@@ -524,17 +584,20 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace update <id か名前>            変更（--name --position --dry-run）
   qdl workspace remove <id か名前>            空のワークスペースを削除（--dry-run）
   qdl workspace item list                     アイテムの一覧（--workspace --group --grep --with-text）
-  qdl workspace item add                      追加（--name・--path は必須。--args --memo --group
+  qdl workspace item add                      追加（--name・--path と、グループのあるワークスペースなら --group も必須。--args --memo
                                               --workspace --position <0 始まり> --set key=value --dry-run。
                                               --type clipboard なら --path の代わりに --text | --text-file）
   qdl workspace item add --from <id か表示名>  メインウィンドウのアイテムを参照で追加（--copy ならコピー。
                                               --name（参照ならワークスペースでの表示名）--group --workspace
                                               --position --dry-run）
   qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
-                                              --group <グループ>（"" で未分類へ）--workspace --position --dry-run）
+                                              --group <グループ> --workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace item convert <id か表示名>    参照とコピーを行き来する（--to copy | ref は必須。ref なら --from <指す先>。
                                               省略時はパスと引数が同じメインウィンドウのアイテム、--dry-run）
+  qdl workspace item move-to-main <id か表示名>
+                                              コピーをメインウィンドウへ移し、参照に変える（--file | --tab
+                                              <移す先>。省略時は既定のデータファイル、--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
   qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
   qdl workspace group update <id か名前>      変更（--name --color --parent <親>（"" で最上位へ）--dry-run）
@@ -602,11 +665,18 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       fieldMissing: 'キー {{key}} がありません（{{how}} で渡してください）',
       fieldInvalid: 'キー {{key}} の値が正しくありません（{{expected}} にしてください）',
       invalidContent: '内容が正しくありません: {{reason}}',
+      runAsAdminNotApp:
+        'runAsAdmin はアプリ（exe・.lnk・.bat/.cmd など）のアイテムだけに付けられます',
       unknownFields:
         '種類 {{type}} には無いキーです: {{fields}}（docs の設定ファイルの形式を確認してください）',
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
+      cannotOpenDir:
+        'フォルダ取込の行は開けません（中に並ぶアイテムも CLI からは開けません）: {{name}}',
+      cannotOpen: 'このアイテムは開けません: {{name}}',
+      openFailed: '開けませんでした: {{name}}（{{error}}）',
+      unknownShowTarget: '出すものは main か workspace です: {{target}}',
       unknownLauncherNoun:
         '不明なコマンドです: launcher {{noun}}（launcher item・launcher set・launcher tab のみ）',
       missingSetNoun: 'launcher set の後に row を指定してください',
@@ -617,6 +687,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '参照アイテムの中身はメインウィンドウのアイテムのものです（--{{option}} は使えません）。中身は qdl launcher item update {{id}} で直してください',
       convertTo: '--to には copy か ref を指定してください（{{to}}）',
       notRef: '参照アイテムではありません',
+      alreadyInMain: '参照アイテムはもうメインウィンドウにあります（移せるのはコピーだけです）',
       refMissing: '元のアイテムが見つからないので、コピーにできません',
       noLinkCandidate:
         'パスと引数が同じメインウィンドウのアイテムが {{count}} 件です。--from で指す先を指定してください',
@@ -671,6 +742,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       needChanges: '変えるものを指定してください（{{options}}）',
       noPath: '種類 {{type}} は --path を持ちません',
       noWorkspace: 'ワークスペースがありません',
+      groupRequired:
+        'ワークスペース「{{workspace}}」にはグループがあるので、--group で入れるグループを指定してください',
+      groupEmpty:
+        '--group "" は使えません（未分類は無くなりました）。入れるグループを指定してください',
       badColor: '--color が正しくありません: {{color}}（qdl workspace --help で一覧）',
       emptyName: '--name が空です',
       groupNotEmpty:
@@ -771,6 +846,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     run: {
       titleNotMatched: 'タイトルが合うウィンドウがありません（{{exe}} は開いています）',
       notOpen: '開いていないので動かしませんでした',
+      adminCancelled: '管理者としての実行を取りやめました',
       itemNotOpen: '開いていないので切り替えませんでした',
       couldNotMove: 'ウィンドウを動かせませんでした（管理者権限で動くウィンドウなど）',
       desktopNotFound: 'デスクトップ {{number}} がありません。位置だけ合わせました',
@@ -784,7 +860,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     picker: {
       title: 'セットに追加するアイテム',
-      search: '名前で検索（すべてのタブ）',
+      search: '名前で検索',
       all: 'すべて',
       sameGroup: 'このセットと同じタブ',
       others: 'ほかのタブ',
@@ -812,9 +888,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       parallel: '同時に開く',
       moveOnly: 'ウィンドウを動かすだけ',
       missing: 'アイテムが見つかりません',
-      expanded: 'パスに置き換えました',
-      expandedHint:
-        'ワークスペースのアイテム「{{name}}」を、このセットに書いたパスに置き換えました（メインウィンドウのセットはワークスペースのアイテムを指せないため）。元のアイテムを直しても、このセットには効きません',
       moveUp: '上へ',
       moveDown: '下へ',
       remove: '行を削除',
@@ -1140,13 +1213,15 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       launchCount: '起動回数',
       icon: 'アイコン',
       columnMenuHint:
-        '右クリックで列の表示を変えられます。見出しの右端をドラッグすると幅を変えられます',
+        '右クリックで列の表示を変えられます。見出しの右端をドラッグすると幅を変えられ、ダブルクリックすると中身に合わせます',
+      resizeHandleTitle: 'ドラッグで幅を変える・ダブルクリックで中身に合わせる',
       emptyFiltered: '条件に一致するアイテムがありません',
       empty:
         'このデータファイルにアイテムがありません。「＋ アイテムを追加」で追加できます。横の ▼ から、ブラウザのブックマークやインストール済みアプリも取り込めます',
     },
     row: {
       sourceManual: '手動',
+      sourceAuto: '🔖 自動取込: {{rule}}',
       sourceAutoTitle: '自動取込ルール「{{rule}}」で取り込みました',
       linkExistsTitle: 'パスが見つかりました',
       linkUnknownTitle:
@@ -1221,7 +1296,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     deleteButton: '削除',
     imported_one: '{{count}} 件を {{file}} に追加しました（保存で確定）',
     imported_other: '{{count}} 件を {{file}} に追加しました（保存で確定）',
-    ruleSavedAndRun: 'ルール「{{name}}」を保存して実行しました: {{count}} 件登録',
+    ruleSavedAndRun: 'ルール「{{name}}」を保存して実行しました: {{counts}}',
     ruleManualDuplicates: '{{message}}（手動で登録済みの URL と {{count}} 件重複しています）',
     ruleSaveFailed: 'ルールを保存できませんでした: {{error}}',
     ruleRunFailed: 'ルール「{{name}}」を保存しましたが実行に失敗しました: {{error}}',
@@ -1339,7 +1414,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     loadFailed: 'ブックマークの読み込みに失敗しました',
     newTitle: 'ブックマークの取込ルールを追加',
     editTitle: 'ブックマークの取込ルールを編集',
-    hint: '条件に合うブックマークを、起動時などに取込先へ入れ直します。ブラウザ側で足したり消したりした分が反映されます。',
+    hint: '条件に合うブックマークを、起動時などに取込先と突き合わせます。ブラウザ側で足したり消したり、名前を変えたりした分が反映されます。',
     name: 'ルール名',
     namePlaceholder: '{{name}}（空なら条件から自動で付けます）',
     source: '取込元',
@@ -1386,7 +1461,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     namingOptions: 'オプション設定（表示名）',
     namingNone: 'ブックマークの名前のまま',
     prefix: '頭に付ける文字',
-    prefixPlaceholder: '例: [bkm]',
+    prefixPlaceholder: '例: [BookMark]',
     suffix: '後ろに付ける文字',
     suffixPlaceholder: '例:  (Chrome)',
     folderNameMode: 'フォルダ名を付ける',
@@ -1402,6 +1477,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     autoNameWithWord: '{{base}}{{word}}',
   },
   bookmarkImportModal: {
+    fetchIcons: '取り込んだ後にアイコン（サイトのファビコン）も取得する',
+    fetchIconsNote: '「変更を保存」のあとに取りに行きます',
+    fetchIconsNoteRule: '取り込んだらすぐ取りに行きます',
     title: 'ブラウザのブックマークを取り込む',
     hint: '取り込みたいフォルダやブックマークにチェックを入れます。取り込んだ分は未保存の変更として追加され、「変更を保存」で確定します。',
     defaultName: 'ブックマーク',
@@ -1448,7 +1526,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     autoImportLinkNone: 'ブックマーク自動取込（ルールはまだありません）',
     ruleName: 'ルール名',
     ruleSummary:
-      '保存されるルール: {{source}} ・ {{folders}}。名前の条件や表示名は、あとで「ブックマーク自動取込」で足せます',
+      '保存されるルール: {{source}} ・ {{folders}}。名前の条件やフォルダ名の付け方は、あとで「ブックマーク自動取込」で足せます',
     ruleAllFolders: 'すべてのフォルダ（あとから増えたフォルダも）',
     ruleFolders: '{{folders}}（サブフォルダも）',
     allBookmarksRuleName: 'ブックマーク全件',
@@ -1460,13 +1538,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   bookmarkAutoImport: {
     settingsSaveFailed: '自動取込の設定を保存できませんでした: {{error}}',
     ruleDeleteFailed: 'ルールを削除できませんでした: {{error}}',
-    ruleResult: 'ブックマーク取込（{{name}}）: {{imported}} 件登録、{{deleted}} 件削除',
+    ruleResult: 'ブックマーク取込（{{name}}）: {{counts}}',
     manualDuplicates: '{{message}}（手動で登録済みの URL と {{count}} 件重複しています）',
     ruleError: 'ブックマーク取込（{{name}}）: エラー - {{error}}',
     neverRun: '未実行',
-    lastResult: '{{date}} - {{imported}} 件登録、{{deleted}} 件削除',
-    lastResultWithDuplicates:
-      '{{date}} - {{imported}} 件登録、{{deleted}} 件削除、手動分と重複 {{count}} 件',
+    lastResult: '{{date}} - {{counts}}',
+    lastResultWithDuplicates: '{{date}} - {{counts}}、手動分と重複 {{count}} 件',
     lastError: '{{date}} - エラー: {{error}}',
     loading: '読み込み中…',
     autoRunOnStartup: '起動時に自動実行する',
@@ -1503,6 +1580,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     title: 'インストール済みアプリを取り込む',
     hint: '使うアプリにチェックを入れて取り込みます。取り込んだアプリは未保存の変更として追加され、「変更を保存」で確定します。',
     scanning: 'スタートメニューをスキャン中…',
+    scanningTitle: '⏳ インストール済みアプリを探しています…（{{count}} 件）',
+    scanningDetail: 'スタートメニューのショートカットと、登録されているアプリを読んでいます',
     found_one: 'スタートメニューから {{count}} 件見つかりました',
     found_other: 'スタートメニューから {{count}} 件見つかりました',
     rescan: '再スキャン',
@@ -1540,6 +1619,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       toggleWorkspace: 'ワークスペースの表示/非表示（メインウィンドウで）',
       open: '選択したアイテムを開く',
       openFolder: '選択したアイテムの親フォルダを開く',
+      runAsAdmin: '選択したアプリを管理者として実行',
       edit: '選択したアイテムを編集（通常の検索モードで）',
       select: 'アイテムを選択',
       history: '検索履歴をたどる',
@@ -1573,7 +1653,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     iconResultTitle: 'アイコン取得結果',
     notFound: '表示する内容が見つかりません。',
     autoImportWarning:
-      'このアイテムはブックマーク自動取込で管理されています。編集しても、次回の自動取込実行時に上書きされます。',
+      'このアイテムはブックマーク自動取込で管理されています。表示名と URL は、次回の自動取込実行時にブックマークの内容で上書きされます。',
     loading: 'アイテム情報を読み込み中…',
     tryRun: '⚡ 試しに実行',
     tryRunSaveFirst: 'まだ保存していない中身は試せません。保存すると試せます',
@@ -1639,6 +1719,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     dirOptions: 'フォルダ取込のオプション',
     args: '引数',
     argsPlaceholder: 'コマンドライン引数（実行ファイルやアプリの場合のみ有効）',
+    runAsAdmin: '🛡️ 常に管理者として実行（開くたびに UAC の確認が出ます）',
+    runAsAdminSummary: '🛡️ 常に管理者として実行',
     clipboardFallbackName: 'クリップボード',
     note: 'メモ',
     notePlaceholder: '自由にメモを入力（任意）',
@@ -1830,8 +1912,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   /** 登録・編集画面のフォルダ取込の「取り込まれるもの」（プレビュー） */
   dirPreview: {
     title: '取り込まれるもの',
-    run: 'プレビュー',
-    runTitle: 'フォルダを読んで、取り込まれるものを確かめます',
+    run: 'プレビュー更新',
+    runTitle: 'フォルダを読み直して、取り込まれるものを確かめます',
     cancel: '中止',
     scanning: '数えています…',
     count_one: '{{count}} 件を取り込みます',
@@ -1842,13 +1924,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     more_other: 'ほか {{count}} 件',
     moreTruncated_one: 'ほか {{count}} 件以上',
     moreTruncated_other: 'ほか {{count}} 件以上',
-    idle: '「🔍 プレビュー」を押すと、取り込まれるものを確かめられます',
-    idleHint: 'フォルダを読むのは押したときだけです',
-    noPath: 'フォルダを選んでから「🔍 プレビュー」を押してください',
-    stale: '条件を変えました。「🔍 プレビュー」を押すと今の条件で数え直します',
+    idle: '「🔍 プレビュー更新」を押すと、取り込まれるものを確かめられます',
+    idleHint: 'フォルダを読むのは、「フォルダを選択」で選んだときと、押したときだけです',
+    noPath: '「フォルダを選択」でフォルダを選ぶと、取り込まれるものがここに並びます',
+    stale: '条件を変えました。「🔍 プレビュー更新」を押すと今の条件で数え直します',
     empty: '取り込めるものがありません',
     emptyFilter: 'ファイル名の条件 {{filter}} に合うものがありません',
-    emptyHint: '条件を見直して、もう一度「🔍 プレビュー」を押してください',
+    emptyHint: '条件を見直して、もう一度「🔍 プレビュー更新」を押してください',
     notFound:
       'フォルダが見つかりません（ネットワークのフォルダなら、つながっているか確かめてください）',
     notFolder: 'パスがフォルダではありません',
@@ -1902,6 +1984,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     externalSummary: '外部編集されたデータ: {{parts}}',
   },
   workspaceErrors: {
+    groupRequired:
+      'どのグループに入れるかを選んでください（グループがあるワークスペースでは、グループを指定して足します）',
     externalChange:
       '{{file}} が QDL の外で変更されています。メインウィンドウで F5 を押して再読み込みしてから操作してください',
     writeFailed: '{{file}} の書き込みに失敗しました。ディスクの空き容量や権限を確認してください',
@@ -2037,6 +2121,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     parentCycle: 'parentGroupId が循環しているため親を外しました',
     parentTooDeep: 'parentGroupId の入れ子が {{max}} 段を超えるため親を外しました',
     defaultWorkspaceCreated: 'ワークスペースが 1 件も無いため既定のワークスペースを作りました',
+    ungroupedItemsGrouped:
+      'グループに入っていないアイテム {{count}} 件を、グループ「{{name}}」に入れました',
     archivedGroupNotFound:
       'archivedGroupId "{{id}}" のアーカイブグループが無いため読み込みから外しました',
   },
@@ -2057,6 +2143,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       expandAll: 'すべて展開',
       collapseAll: 'すべて折りたたむ',
       addGroup: 'グループを追加',
+      add: '追加',
       menu: '設定',
       openSettings: '⚙️ 設定',
       alignLeft: '⬅️ 左端に寄せる',
@@ -2074,7 +2161,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     tabs: {
       archive: 'アーカイブ',
-      add: '新しいワークスペースを追加',
       defaultName: 'ワークスペース {{number}}',
       deleteTitle: 'ワークスペースの削除',
       deleteConfirm:
@@ -2085,6 +2171,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       itemCount_one: '{{count}} 件',
       itemCount_other: '{{count}} 件',
       uncategorized: '未分類',
+      copiedAsText: '「{{name}}」をテキストでコピーしました',
+      copyAsTextFailed: '「{{name}}」をテキストでコピーできませんでした',
       defaultName: 'グループ {{number}}',
       defaultSubgroupName: 'サブグループ {{number}}',
       contents: 'このグループには{{items}}が含まれています。',
@@ -2095,7 +2183,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       contentSubgroups_other: 'サブグループ {{count}} 件',
       deleteTitle: 'グループの削除',
       deleteConfirm: '「{{name}}」を削除してもよろしいですか？',
-      deleteItems: 'グループ内のアイテムも削除する',
+      deleteWithContentsWarning:
+        '中に入っているものもすべて消えます。残したいときは、削除せずに「アーカイブ」を使ってください。',
       deleteFromArchiveTitle: 'アーカイブから削除',
       deleteFromArchiveConfirm: '「{{name}}」をアーカイブから完全に削除してもよろしいですか？',
       deleteFromArchiveIrreversible: 'アイテムごと削除され、元に戻せません。',
@@ -2104,12 +2193,27 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       archiveConfirm: '「{{name}}」をアーカイブしてもよろしいですか？',
       archiveRestorable: 'アーカイブしたグループは後で復元できます。',
       archive: 'アーカイブ',
+      copyName: '{{name}} のコピー',
+      openAllTitle: 'すべて開く',
+      openAllConfirm: '「{{name}}」の {{count}} 件のアイテムを順に開きますか？',
+      openAll: '開く',
+      openAllEmpty: '「{{name}}」には開けるアイテムがありません',
     },
     empty: {
       title: 'ワークスペースは空です',
       hint: 'メインウィンドウのアイテムを右クリックして「ワークスペースに追加」を選択してください',
+      addGroup: '＋ グループを追加',
     },
     restoresPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
+    dropOnGroup: 'グループの上に落としてください（グループの外には置けません）',
+    chooseGroupToPaste: '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください',
+    pasteTarget: '貼り付け先（Ctrl+V でここに足します）',
+    addNotice: {
+      toGroup: '{{what}} を「{{group}}」に追加しました',
+      added: '{{what}} を追加しました',
+      items_one: '{{count}} 件のアイテム',
+      items_other: '{{count}} 件のアイテム',
+    },
     restoredGroupName: '{{name}}（復元）',
     defaultWorkspaceName: '既定',
     detached: {
@@ -2149,8 +2253,16 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       editBanner_other:
         '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
       editMainNotFound: 'メインウィンドウのアイテムが見つかりません',
-      cannotRegisterMissing:
-        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウに登録できません',
+      cannotMoveMissing:
+        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウへ移せません',
+      movedToMain:
+        '「{{name}}」をメインウィンドウの「{{tab}}」タブへ移し、ワークスペースのアイテムは参照にしました',
+      movedToMainNoTab:
+        '「{{name}}」をメインウィンドウへ移し、ワークスペースのアイテムは参照にしました',
+      linkedToSameInMain:
+        'メインウィンドウの「{{tab}}」タブに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
+      linkedToSameInMainNoTab:
+        'メインウィンドウに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
       deleteWarning_one:
         'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
       deleteWarning_other:
@@ -2179,7 +2291,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
       addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
-      addFailed: 'アイテムを追加できませんでした',
     },
     linkPicker: {
       windowTitle: '指すアイテムを選ぶ',
@@ -2190,7 +2301,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       others: 'ほかのアイテム',
       current: '今の指す先',
       notFound: 'ワークスペースのアイテムが見つかりません（削除された可能性があります）。',
-      failed: '参照にできませんでした',
     },
     linkCopies: {
       title: 'メインウィンドウと同じアイテムを参照に変える',
@@ -2202,11 +2312,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memoMove: 'メモをメインウィンドウへ移す',
       memoConflict: '⚠ メモが両方にあって違う（参照にするとコピーのメモは消えます）',
       settingsDiffer:
-        '⚠ ウィンドウ切り替え・アイコンがメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
-      ambiguous_one:
-        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
-      ambiguous_other:
-        '⚠ 候補が {{count}} 件（右クリックの「メインウィンドウのアイテムを参照する」で選びます）',
+        '⚠ ウィンドウ切り替え・アイコン・管理者として実行がメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
+      ambiguous_one: '⚠ 候補が {{count}} 件。指す先を選んでください',
+      ambiguous_other: '⚠ 候補が {{count}} 件。指す先を選んでください',
+      choose: '指す先を選ぶ…',
+      chooseLabel: '「{{name}}」が指すメインウィンドウのアイテム',
       notMatchable_one:
         'クリップボード・セット・パスの無い単一アイテム {{count}} 件は、パスで比べられないので対象外です。',
       notMatchable_other:
@@ -2216,7 +2326,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       apply_other: '{{count}} 件を参照に変える',
       done_one: '{{count}} 件を参照に変えました',
       done_other: '{{count}} 件を参照に変えました',
-      failed: '参照に変えられませんでした',
       notFound: 'ワークスペースが見つかりません（削除された可能性があります）。',
     },
   },
@@ -2276,9 +2385,16 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       keyboardHints: '操作のヒントを表示',
       keyboardHintsDescription:
         'メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter で親フォルダを開くなど）を表示します。',
+      searchMemo: '検索でメモにも当てる',
+      searchMemoDescription:
+        'メインウィンドウの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
+      dataFileTabsOffTitle: '複数タブの表示をやめる',
+      dataFileTabsOffConfirm:
+        'オフにすると、メインウィンドウには最初のタブ「{{name}}」のアイテムだけが出ます。ほかのタブのアイテムは消えませんが、メインウィンドウからは開けなくなります。オフにしますか？',
+      dataFileTabsOffButton: 'オフにする',
     },
     windowSize: {
       heading: '大きさ:',

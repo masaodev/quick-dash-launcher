@@ -80,7 +80,7 @@
   - ピン留めモードが`alwaysOnTop`または`stayVisible`の場合
   - ウィンドウ検索で選択中、または閉じる確認の帯を表示中（Esc をページに渡し、選択の解除・確認の取り消しに使う。レンダラーが `window:set-escape-handled-by-page` で知らせる。ページの読み直し（`did-start-loading`）・ページが落ちたとき（`render-process-gone`）は戻す）
   - **実装場所**: `src/main/windowManager.ts`（`createWindow()` 内の `before-input-event`）
-- **システムトレイ**: ダブルクリックでウィンドウ表示（ホットキーと同じ）、右クリックでメニュー表示
+- **システムトレイ**: クリック（ダブルクリックも）でウィンドウ表示（ホットキーと同じ）、右クリックでメニュー表示
 - **二重起動**: 同じ userData で動いている本体があるときに 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がメインウィンドウを表示する（`src/main/main.ts` の `second-instance` から `showMainWindow()`）。2 つ目が CLI（`qdl.exe`）から `--launched-by-cli` 付きで起動されたものなら表示しない。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は二重起動の防止の対象外
 
 ### ウィンドウ非表示時の処理フロー
@@ -187,15 +187,17 @@
 1. **バージョン情報**: `QuickDashLauncher vX.X.X` - 現在のバージョンを動的に表示（選択不可）
 2. **表示**: メインウィンドウを表示（設定されているホットキーも表示）
 3. **画面中央に表示**: 設定に関係なく強制的に画面中央に表示
-4. **設定…**: 管理ウィンドウの設定タブを開く
-5. **設定フォルダを開く**: 設定フォルダをエクスプローラーで開く
-6. **ヘルプ**: GitHubリポジトリをブラウザで開く
-7. **再起動**: アプリケーションを再起動
+4. **ワークスペースを表示**: ワークスペースウィンドウを開く（メイン画面の `Ctrl+W`・⭐ ボタンで開くのと同じく「開いている」状態にする。`showWorkspaceWindow()`）
+5. **アイテム管理**: 管理ウィンドウのアイテム管理タブを開く
+6. **設定…**: 管理ウィンドウの設定タブを開く
+7. **設定フォルダを開く**: 設定フォルダをエクスプローラーで開く
+8. **ヘルプ**: GitHubリポジトリをブラウザで開く
+9. **再起動**: アプリケーションを再起動
    - **開発モード**: 警告ダイアログを表示（自動再起動非対応、手動で`npm run dev`を実行する必要がある）
    - **本番モード**: 通常の再起動を実行
-8. **終了**: アプリケーションを終了
+10. **終了**: アプリケーションを終了
 
-トレイアイコンをダブルクリックすると、メインウィンドウを表示する。「表示」と同じく、ホットキーと同じ処理を通す（`showMainWindow()`。設定の位置に置き、ワークスペース・切り離しウィンドウも一緒に出す）。
+トレイアイコンをクリック（シングルクリック・ダブルクリックのどちらでも）すると、メインウィンドウを表示する。「表示」と同じく、ホットキーと同じ処理を通す（`showMainWindow()`。設定の位置に置き、ワークスペース・切り離しウィンドウも一緒に出す）。
 
 ## IPC通信フロー
 
@@ -224,16 +226,15 @@
 
 ## メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
 
-メイン画面の「アイテムの登録・編集」（➕「アイテムを追加…」 / 右クリック「編集」/ ドラッグ&ドロップ / ワークスペースのアイテムの「メインウィンドウに登録」）と「アイコン取得結果」（進捗バーの詳細）は、メインウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.38 以降）。
+メイン画面の「アイテムの登録・編集」（➕「アイテムを追加」 / 右クリック「編集」/ ドラッグ&ドロップ / ワークスペースの参照アイテムの右クリック「✏️ 編集（メインウィンドウのアイテム）」）と「アイコン取得結果」（進捗バーの詳細）は、メインウィンドウの中のモーダルではなく、独立した子ウィンドウで開きます（v0.7.38 以降）。
 
 - **実装場所**: `src/main/mainChildWindowManager.ts`（メインプロセス。生成・表示・破棄はワークスペースの編集ウィンドウと共通の `src/main/utils/modalChildWindows.ts`）、`src/renderer/components/MainChildPage.tsx`・`RegisterWindowPage.tsx`（レンダラー）
 - IPC `window:open-main-child`（要求 `MainChildWindowRequest`）を受け、メインウィンドウを親にした子ウィンドウを開く。子ウィンドウが閉じるまで解決しない
-- 要求（何を表示するか。登録ならドロップしたパス・編集対象・新規登録の初期値にするアイテム（`prefillItems`）・今のタブ）はメインプロセスが requestId で預かり、子ウィンドウは `window.name`（`main-child:<requestId>`）から requestId を取り出して `window:get-main-child-request` で受け取る
+- ワークスペースの参照アイテムの右クリック「✏️ 編集（メインウィンドウのアイテム）」は、メインプロセスが指す先のメインウィンドウのアイテムを探し、メインウィンドウを出してから `launcher-menu-edit-item` イベントを送る。メインウィンドウの右クリック「編集」と同じ経路で、メインウィンドウを親にした編集ウィンドウが開く（`editLinkedMainItem`、`src/main/ipc/workspaceRefMenu.ts`）。指す先が見つからなければ開かず、警告のトースト「メインウィンドウのアイテムが見つかりません」を出す
+- 要求（何を表示するか。登録ならドロップしたパス・編集対象・今のタブ）はメインプロセスが requestId で預かり、子ウィンドウは `window.name`（`main-child:<requestId>`）から requestId を取り出して `window:get-main-child-request` で受け取る
 - 位置はメインウィンドウと同じディスプレイの作業領域の中央、サイズは登録 850x900・アイコン取得結果 760x700 を作業領域で切り詰める（`utils/mainChildWindowSpec.ts`・`utils/editorWindowBounds.ts`）。**メインウィンドウのサイズ・位置は変えない**
 - 親に対してモーダル（`parent` + `modal: true`）。閉じると破棄
-- ワークスペースのアイテムをメインウィンドウに登録するときは、メインウィンドウのレンダラーが要求を出す。経路は次の 2 つで、どちらもアイテムを `prefillItems` に変換して `window:open-main-child` を呼ぶ（`src/renderer/hooks/useRegisterWindow.ts`）
-  - ドラッグ&ドロップ: ドラッグ元が dataTransfer の型 `workspaceItem`（`WORKSPACE_ITEM_DRAG_TYPE`）に載せたアイテムの JSON を、メインウィンドウがファイル・URL より先に読む
-  - 右クリックの「メインウィンドウに登録」: メインプロセスが `showMainWindow()` でメインウィンドウを出してから、`workspace-menu-register-to-main` イベントでアイテムを送る（登録画面はメインウィンドウを親にするため）
+- ワークスペースのアイテムをメインウィンドウへドロップしたときは、子ウィンドウを開かない。ドラッグ元が dataTransfer の型 `workspaceItem`（`WORKSPACE_ITEM_DRAG_TYPE`）に載せたアイテムの JSON を、メインウィンドウがファイル・URL より先に読み、`workspace:move-to-main` で今のタブへ移す（[ワークスペース機能 - メインウィンドウへ移す](../features/workspace.md#メインウィンドウへ移す)）
 - 開いている間はメインウィンドウを**モーダルモード**にする（`windowManager.setModalMode(true)`）: フォーカスアウト・Escape・ホットキー・アイテム実行で隠れず、最前面に固定。閉じたら戻す
 - 保存は子ウィンドウが `register-items` / `update-*-by-id` / `delete-items-by-id` で行い、メイン画面は `data-changed` で読み直す。結果（登録・更新・削除）は `window:notify-main-child-result` → `window:main-child-result` でメイン画面に中継され、メイン画面がトーストを出す
 - 子ウィンドウはメインのレンダラーから `window.open` で開く（レンダラープロセス共有、[システム概要](overview.md#ウィンドウとレンダラープロセスの対応)）。開き元が使えないときは `index.html?childRequestId=` で直接生成する
@@ -310,6 +311,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 表示するたびに `setWorkspacePosition()` で `workspacePositionMode` に従って置き直す。
 
 - **ディスプレイの左端・右端**（`displayLeft`・`displayRight`）: `workspaceTargetDisplayIndex` のディスプレイの作業領域の端に、作業領域の高さで置く。`-1`（`MAIN_WINDOW_DISPLAY_INDEX`。既定）はメインウィンドウと同じディスプレイ（`getMainWindowDisplay()`、`src/main/utils/referenceDisplay.ts`。メインウィンドウの bounds が載っているディスプレイ）で、メインウィンドウと一緒に出すたびにメイン側のディスプレイへ移る。メインウィンドウの表示位置がどのモードでも、メインと同じディスプレイになる
+  - 作業領域の高さで置いたあと、ワークスペースのレンダラーに `workspace-refit-height` を送り、高さを中身に合わせ直させる。レンダラーは中身の高さが変わらないと合わせ直さないので、送らないと作業領域いっぱいの高さのまま下に余白が残る（`useWorkspaceAutoFit`。切り離しウィンドウは合わせ直さない）
 - ワークスペースの ⚙️ メニューの「左端に寄せる」「右端に寄せる」は、`workspacePositionMode` を `displayLeft`・`displayRight` にし、配置先をマウスカーソルのあるディスプレイの番号にする。ただし `-1` のときは `-1` のまま残す。メニューは今のモードに ✓ を付ける（`primaryLeft`・`primaryRight` も左端・右端として扱う）
 - **固定位置**（`fixed`。設定画面ではワークスペースウィンドウの節の「表示する場所」の「最後に置いた場所」）: 最後に動かした位置。まだ動かしていないとき・保存した位置が画面外のときは、プライマリディスプレイの作業領域の右上に置く（タスクバーが左・上にあっても作業領域の端に合わせる）
 - 拡大率の違うディスプレイへ移すとサイズがずれることがあるので、当てたサイズとずれていればもう一度当てる（`setBoundsAcrossDisplays()`、`src/main/utils/screenPosition.ts`）
@@ -350,7 +352,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 **実装場所**: `src/main/workspaceConfirmWindowManager.ts`（`openWorkspaceConfirm`）、`src/renderer/components/WorkspaceConfirmPage.tsx`（中身。`ConfirmDialog` をページとして描く）
 
-- IPC `workspace:open-confirm`（要求 `ConfirmWindowRequest`: タイトル・文面・ボタン名・`danger`・チェックボックス）を受け、送信元を親にしたモーダルな子ウィンドウを同じディスプレイの中央に開く（520x320 を作業領域で切り詰める）。**開き元のウィンドウのサイズ・位置は変えない**
+- IPC `workspace:open-confirm`（要求 `ConfirmWindowRequest`: タイトル・文面・ボタン名・`danger`・本文の下に赤字で出す `warning`・チェックボックス）を受け、送信元を親にしたモーダルな子ウィンドウを同じディスプレイの中央に開く（520x320 を作業領域で切り詰める）。**開き元のウィンドウのサイズ・位置は変えない**
 - ワークスペースのレンダラーから `window.open` で開く。`window.name` は `workspace-confirm:<requestId>` で、要求は `workspace:get-confirm-request` で受け取る（フォールバック時は URL クエリ `confirmRequestId`）
 - 確定したら `workspace:return-confirm-result` で結果（チェックボックスの状態）を預けて閉じる。`workspace:open-confirm` は閉じたときに結果を返す。キャンセル・Escape・閉じたときは `null`
 - 切り離しウィンドウから開いたとき、フォーカスが子ウィンドウへ移っても「メインと連動して隠す」で切り離しウィンドウが隠れないようにしている（アイテムの編集ウィンドウも同じ）
@@ -374,7 +376,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 | ウィンドウ | 開く操作 | `window.name`（フォールバックの URL クエリ） | 中身 |
 | --- | --- | --- | --- |
-| 指すアイテムを選ぶ | アイテムの右クリック「🔁 別のアイテムを指す…」「🔗 メインウィンドウのアイテムを参照する…」 | `workspace-link-picker:<itemId>`（`linkItemId`） | `WorkspaceLinkPickerPage.tsx`（`SetItemPickerModal` を 1 つだけ選ぶ形で描く）。選んだら `workspace:link-to-main` |
+| 指すアイテムを選ぶ | 参照の右クリック「🔁 別のアイテムを指す…」 | `workspace-link-picker:<itemId>`（`linkItemId`） | `WorkspaceLinkPickerPage.tsx`（`SetItemPickerModal` を 1 つだけ選ぶ形で描く）。選んだら `workspace:link-to-main` |
 | メインウィンドウと同じアイテムを参照に変える | ワークスペースのタブの右クリック | `workspace-link-copies:<workspaceId>`（`linkCopiesWorkspaceId`） | `WorkspaceLinkCopiesPage.tsx`。一覧は `workspace:preview-link-copies`、確定は `workspace:apply-link-copies` |
 
 ## ウィンドウ位置・サイズ制御

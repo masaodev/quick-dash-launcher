@@ -66,7 +66,8 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     defaultVisible: true,
     minWidth: 100,
   },
-  // 残りの幅を使う列なので、幅は変えない（ほかの列を広げると狭くなる）
+  // 既定は残りの幅を使う列（既定の幅は持たない）。境目のドラッグ・ダブルクリックで幅を決めると、その幅にする
+  // （「列の表示と幅を既定に戻す」で残りの幅に戻る。A3-184）。最小幅は PATH_COLUMN_MIN_WIDTH と同じ
   {
     id: 'pathAndArgs',
     className: 'content-column',
@@ -74,6 +75,7 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     filterable: true,
     hideable: false,
     defaultVisible: true,
+    minWidth: 180,
   },
   {
     id: 'memo',
@@ -85,11 +87,12 @@ export const ADMIN_ITEM_COLUMNS: readonly AdminItemColumnDef[] = [
     defaultVisible: true,
     minWidth: 80,
   },
-  // 手動登録か、どの自動取込ルールで入ったか
+  // 手動登録か、どの自動取込ルールで入ったか（全文はツールチップ。A3-178）。既定の大きさの管理ウィンドウで、
+  // アイテムが多く縦のスクロールバーが出ても横スクロールが出ない幅（パスと引数の列は 180px ほどより縮まない）
   {
     id: 'source',
     className: 'source-column',
-    defaultWidth: 100,
+    defaultWidth: 115,
     sortColumn: 'source',
     filterable: true,
     hideable: true,
@@ -180,9 +183,10 @@ export function columnWidthOf(
   column: AdminItemColumnDef,
   setting: AdminItemColumnsSetting
 ): number | null {
-  if (column.defaultWidth === undefined) return null;
   const width = column.minWidth === undefined ? undefined : setting.widths[column.id];
-  return width === undefined ? column.defaultWidth : Math.max(column.minWidth ?? 0, width);
+  // 既定の幅を持たない列（パスと引数）は、幅を決めていなければ残りの幅を使う（null）
+  if (width === undefined) return column.defaultWidth ?? null;
+  return Math.max(column.minWidth ?? 0, width);
 }
 
 /**
@@ -195,11 +199,15 @@ const FIXED_COLUMNS_WIDTH = CHECKBOX_COLUMN_WIDTH + ACTIONS_COLUMN_WIDTH;
 /** パスと引数の列に残す最低の幅（px）。足りなければ一覧を横にスクロールする */
 export const PATH_COLUMN_MIN_WIDTH = 180;
 
-/** 一覧の表の最小幅（列が多くてもパスと引数の列が潰れないように） */
+/**
+ * 一覧の表の最小幅（列が多くてもパスと引数の列が潰れないように）。
+ * 幅の決まっていない列（null。パスと引数）があれば、その分に最低の幅を足す
+ */
 export function tableMinWidthOf(widths: Array<number | null>): number {
+  const hasFlexibleColumn = widths.some((w) => w === null);
   return (
     FIXED_COLUMNS_WIDTH +
-    PATH_COLUMN_MIN_WIDTH +
+    (hasFlexibleColumn ? PATH_COLUMN_MIN_WIDTH : 0) +
     widths.reduce<number>((sum, w) => sum + (w ?? 0), 0)
   );
 }

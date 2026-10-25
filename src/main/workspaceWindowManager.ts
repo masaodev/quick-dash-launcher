@@ -24,6 +24,7 @@ import {
 import { restoreDetachedWindows } from './detachedGroupWindowManager.js';
 import { WorkspaceService } from './services/workspace/index.js';
 import { notifyPinLevel } from './utils/pinMenu.js';
+import { suppressSystemContextMenu } from './utils/systemContextMenu.js';
 import {
   getRendererHtmlUrl,
   openChildWindow,
@@ -167,6 +168,7 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
 
   workspaceWindow.setMenuBarVisibility(false);
   workspaceWindow.setMenu(null);
+  suppressSystemContextMenu(workspaceWindow);
   workspaceWindow.setIgnoreMouseEvents(false);
 
   // 切り離しウィンドウはこのレンダラーから window.open で開く

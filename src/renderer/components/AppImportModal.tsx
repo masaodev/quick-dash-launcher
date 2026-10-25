@@ -78,6 +78,8 @@ function AppImportModal({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  // スキャン中に見つけた件数（「探しています…（N 件）」。A3-179）
+  const [scanFound, setScanFound] = useState(0);
   // 再スキャンのたびに増やし、スキャンの effect を走らせ直す
   const [scanCount, setScanCount] = useState(0);
   // アイコンはrefのMapに蓄積し、バッチごとにバージョン更新で再描画する
@@ -224,12 +226,18 @@ function AppImportModal({
 
     // モーダルを閉じたらスキャン結果の反映とアイコン取得ループを中断する
     const controller = new AbortController();
+    // このスキャンの途中経過だけを受け取る（前に開いたときのスキャンがまだ走っていることがある）
+    const scanId = Date.now();
+    const unsubscribeProgress = window.electronAPI.onAppScanProgress((progress) => {
+      if (!controller.signal.aborted && progress.scanId === scanId) setScanFound(progress.found);
+    });
     const scanApps = async () => {
+      setScanFound(0);
       setLoading(true);
       // スキャンのたびに id が振り直されるので、選択は持ち越さない
       setSelectedIds(new Set());
       try {
-        const result = await window.electronAPI.scanInstalledApps();
+        const result = await window.electronAPI.scanInstalledApps(scanId);
         if (controller.signal.aborted) return;
         setApps(result.apps);
 
@@ -249,30 +257,30 @@ function AppImportModal({
     };
     scanApps();
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      unsubscribeProgress();
+    };
   }, [isOpen, scanCount]);
 
   // バックグラウンドでアイコンを非同期取得
+  // アイコンの抽出はメインプロセスで同期に走る（1 件で 1 秒を超えることもある）。まとめて頼むと続けて走り、
+  // その間すべてのウィンドウが固まるので、1 件ずつ頼んで間に画面の操作を通す（A3-179）。描き直しは数件ごと
   const fetchIcons = async (appList: ScannedAppItem[], signal: AbortSignal) => {
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < appList.length; i += BATCH_SIZE) {
+    const REDRAW_EVERY = 5;
+    for (const [index, app] of appList.entries()) {
       if (signal.aborted) return;
-      const batch = appList.slice(i, i + BATCH_SIZE);
-      const results = await Promise.all(
-        batch.map(async (app) => {
-          try {
-            const icon = await window.electronAPI.extractIcon(app.shortcutPath);
-            return { path: app.shortcutPath, icon };
-          } catch {
-            return { path: app.shortcutPath, icon: null };
-          }
-        })
-      );
-      if (signal.aborted) return;
-      for (const { path: p, icon } of results) {
-        iconsRef.current.set(p, icon);
+      let icon: string | null = null;
+      try {
+        icon = await window.electronAPI.extractIcon(app.shortcutPath);
+      } catch {
+        icon = null;
       }
-      setIconVersion((v) => v + 1);
+      if (signal.aborted) return;
+      iconsRef.current.set(app.shortcutPath, icon);
+      if ((index + 1) % REDRAW_EVERY === 0 || index === appList.length - 1) {
+        setIconVersion((v) => v + 1);
+      }
     }
   };
 
@@ -543,6 +551,14 @@ function AppImportModal({
                 <VirtualSpacerRow height={paddingBottom} colSpan={4} />
               </tbody>
             </table>
+            {loading && (
+              <div className="app-list-scanning" data-testid="app-import-scanning" role="status">
+                <div className="app-list-scanning-title">
+                  {t('appImport.scanningTitle', { count: scanFound })}
+                </div>
+                <div className="app-list-scanning-detail">{t('appImport.scanningDetail')}</div>
+              </div>
+            )}
             {!loading && apps.length > 0 && visibleApps.length === 0 && (
               <div className="app-list-empty">{t('appImport.noMatches')}</div>
             )}

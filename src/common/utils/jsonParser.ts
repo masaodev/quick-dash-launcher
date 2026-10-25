@@ -475,6 +475,7 @@ export function validateJsonLauncherItem(obj: Record<string, unknown>): JsonLaun
   validateOptionalString(obj, item, 'memo');
   validateOptionalString(obj, item, 'autoImportRuleId');
   validateTypedFields(obj, item, ['updatedAt'], 'number');
+  validateTypedFields(obj, item, ['runAsAdmin'], 'boolean');
 
   // 旧形式の windowConfig は、その場で新しいキーに直す（移行が保留になった間や、古い CLI の --set でも動きを変えない）
   const source =

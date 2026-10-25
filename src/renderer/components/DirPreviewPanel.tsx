@@ -1,7 +1,8 @@
 /**
  * 登録・編集画面のフォルダ取込の「取り込まれるもの」（プレビュー）
  *
- * フォルダを読むのは「🔍 プレビュー」を押したときだけ（ネットワークのフォルダで勝手に重くしない）。
+ * フォルダを読むのは「フォルダを選択」で選んだときと「🔍 プレビュー更新」を押したときだけ（A3-183）。
+ * パス欄に手で打っている途中では読まない（ネットワークのフォルダで勝手に重くしない）。
  * パス・階層・種類・条件を変えたら結果を薄くして数え直しを促し、頭・後ろに付ける文字だけはその場で反映する
  */
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,8 @@ const SHOWN_ITEMS = 100;
 interface DirPreviewPanelProps {
   path: string;
   dirOptions: JsonDirOptions | undefined;
+  /** 増えるたびに、その時点のパスで読む（「フォルダを選択」で選んだとき）。0 なら読まない */
+  autoRunToken?: number;
 }
 
 /** 走査し直しが要る条件（頭・後ろに付ける文字は含めない） */
@@ -32,13 +35,19 @@ function scanSignature(path: string, options: JsonDirOptions | undefined): strin
   ]);
 }
 
-const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({ path, dirOptions }) => {
+const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({
+  path,
+  dirOptions,
+  autoRunToken = 0,
+}) => {
   const { t } = useTranslation();
   const [result, setResult] = useState<DirPreviewResult | null>(null);
   const [scannedWith, setScannedWith] = useState('');
   const [scannedFilter, setScannedFilter] = useState('');
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false);
+  // 走査の通し番号。読み直しで前の走査をやめたとき、前の結果（「やめました」）で上書きしないため
+  const scanIdRef = useRef(0);
 
   // 走査中に画面を閉じた・種別を変えたときは、裏の走査もやめる
   useEffect(
@@ -48,28 +57,48 @@ const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({ path, dirOptions }) =
     []
   );
 
-  const run = async () => {
-    if (running) {
-      await window.electronAPI.cancelDirPreview();
-      return;
-    }
+  const scan = async () => {
+    // 前の走査が続いていればやめてから読む（「フォルダを選択」で別のフォルダを選び直したとき）
+    if (runningRef.current) await window.electronAPI.cancelDirPreview();
+    const scanId = ++scanIdRef.current;
     const signature = scanSignature(path, dirOptions);
     setRunning(true);
     runningRef.current = true;
     try {
       const next = await window.electronAPI.previewDirItems(path.trim(), dirOptions ?? {});
+      if (scanId !== scanIdRef.current) return;
       setResult(next);
       setScannedWith(signature);
       setScannedFilter(dirOptions?.filter ?? '');
     } catch (error) {
+      if (scanId !== scanIdRef.current) return;
       setResult(null);
       setScannedWith('');
       logError('フォルダ取込のプレビューに失敗', error);
     } finally {
-      setRunning(false);
-      runningRef.current = false;
+      if (scanId === scanIdRef.current) {
+        setRunning(false);
+        runningRef.current = false;
+      }
     }
   };
+
+  const run = async () => {
+    if (running) {
+      await window.electronAPI.cancelDirPreview();
+      return;
+    }
+    await scan();
+  };
+
+  // 「フォルダを選択」で選んだら、押さなくても読む。作られた時点の値では読まない
+  // （選んだあと種別を変えて戻すと、このパネルが作り直されて同じ値で始まる）
+  const mountedTokenRef = useRef(autoRunToken);
+  useEffect(() => {
+    if (autoRunToken === mountedTokenRef.current || path.trim() === '') return;
+    void scan();
+    // 選んだときだけ読む（パス・条件の変化では読まない）ので、依存は autoRunToken だけ
+  }, [autoRunToken]);
 
   const hasPath = path.trim() !== '';
   const isStale = !!result && !running && scannedWith !== scanSignature(path, dirOptions);

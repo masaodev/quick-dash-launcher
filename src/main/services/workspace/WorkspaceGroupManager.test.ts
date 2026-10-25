@@ -117,31 +117,20 @@ describe('WorkspaceGroupManager', () => {
   });
 
   describe('deleteGroup', () => {
-    it('子孫グループも消し、deleteItems=false なら配下のアイテムは未分類に残ること', () => {
+    it('子孫グループと、その中のアイテムも消すこと（未分類へ移す先は無い。A3-157）', () => {
       const parent = manager.createGroup('親');
       const child = manager.createGroup('子', undefined, parent.id);
       const other = manager.createGroup('別');
-      const inChild = addItem('c', child.id);
+      addItem('p', parent.id);
+      addItem('c', child.id);
       const inOther = addItem('o', other.id);
 
       const spy = vi.spyOn(FileUtils, 'safeWriteTextFile');
-      const remaining = manager.deleteGroup(parent.id, false, items.loadItems());
+      const remaining = manager.deleteGroup(parent.id, items.loadItems());
 
       expect(spy).toHaveBeenCalledTimes(1);
       expect(readGroups().map((g) => g.id)).toEqual([other.id]);
-      expect(remaining.find((i) => i.id === inChild.id)).not.toHaveProperty('groupId');
-      expect(remaining.find((i) => i.id === inOther.id)?.groupId).toBe(other.id);
-      expect(test.readMain().items).toHaveLength(2);
-    });
-
-    it('deleteItems=true なら子孫配下のアイテムも消えること', () => {
-      const parent = manager.createGroup('親');
-      const child = manager.createGroup('子', undefined, parent.id);
-      addItem('c', child.id);
-      const free = addItem('free');
-
-      const remaining = manager.deleteGroup(parent.id, true, items.loadItems());
-      expect(remaining.map((i) => i.id)).toEqual([free.id]);
+      expect(remaining.map((i) => i.id)).toEqual([inOther.id]);
       expect(test.readMain().items).toHaveLength(1);
     });
 
@@ -149,7 +138,7 @@ describe('WorkspaceGroupManager', () => {
       const free = addItem('free');
       const spy = vi.spyOn(FileUtils, 'safeWriteTextFile');
       const before = items.loadItems();
-      expect(manager.deleteGroup('missing1', true, before)).toBe(before);
+      expect(manager.deleteGroup('missing1', before)).toBe(before);
       expect(spy).not.toHaveBeenCalled();
       expect(items.loadItems().map((i) => i.id)).toEqual([free.id]);
     });

@@ -66,7 +66,7 @@ const CHECK_DATA_REF = 'clipboard-data/CliCheck.json';
 /** CLI で足せる・変えられる種類（クリップボードはテキストだけ） */
 const ADDABLE_TYPES = [...EDITABLE_TYPES, 'clipboard'] as const;
 
-function itemName(item: JsonItem): string {
+export function itemName(item: JsonItem): string {
   return 'displayName' in item && item.displayName
     ? item.displayName
     : 'path' in item
@@ -98,8 +98,9 @@ export function launcherCandidate(entry: LauncherEntry, tabs: DataFileTab[]): Cl
   };
 }
 
-async function resolveTargetFile(
-  ctx: LauncherCommandContext,
+/** --file・--tab から書き込む先のデータファイルを決める（どちらも無ければ既定のデータファイル） */
+export async function resolveTargetFile(
+  ctx: Pick<LauncherCommandContext, 'store'>,
   file: string | undefined,
   tab: string | undefined
 ): Promise<string> {

@@ -1,5 +1,5 @@
 /**
- * 画面: 指すアイテムを選ぶ（ワークスペースのアイテムの右クリック「別のアイテムを指す」「メインウィンドウのアイテムを参照する」）
+ * 画面: 指すアイテムを選ぶ（ワークスペースの参照の右クリック「別のアイテムを指す」）
  * 画面仕様: docs/screens/workspace-window.md#520-指すアイテムを選ぶ
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -10,6 +10,7 @@ import { isReferenceableAppItem, type ReferenceableAppItem } from '@common/utils
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
+import { sortByTabOrder } from '../utils/tabOrder';
 
 import SetItemPickerModal from './SetItemPickerModal';
 import { Button } from './ui';
@@ -74,7 +75,12 @@ const WorkspaceLinkPickerPage: React.FC<WorkspaceLinkPickerPageProps> = ({ itemI
           file ??
           '';
         const candidateIds = new Set(candidates.map((c) => c.itemId));
-        const rows: SetCatalogItem[] = allItems.filter(isLinkable).map((item) => ({
+        const linkable = sortByTabOrder(
+          allItems.filter(isLinkable),
+          settings.dataFileTabs,
+          (item) => item.sourceFile
+        );
+        const rows: SetCatalogItem[] = linkable.map((item) => ({
           key: item.id,
           id: item.id,
           displayName: item.displayName,
@@ -150,6 +156,8 @@ const WorkspaceLinkPickerPage: React.FC<WorkspaceLinkPickerPageProps> = ({ itemI
       asPage
       isOpen
       single
+      // 同じパスのアイテムはタブをまたいで先に並べるので、そのときだけ「すべて」のタブを出す
+      allTab={hasCandidates}
       catalog={catalog}
       addedKeys={currentKeys}
       addedLabel={t('workspace.linkPicker.current')}

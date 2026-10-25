@@ -58,7 +58,7 @@ export const en: LocaleMessages = {
       cancel: 'Cancel',
     },
     dropToAdd: 'Drop a file or URL to add it',
-    dropWorkspaceItemToAdd: 'Drop to add it to the launcher',
+    dropWorkspaceItemToMove: 'Drop to move it to the launcher (the workspace item becomes a link)',
     dropPathUnavailable: "Couldn't get the file path.\nDrag the file directly from File Explorer.",
     hints: {
       closeMarked: 'Close {{count}}',
@@ -79,16 +79,24 @@ export const en: LocaleMessages = {
       titleWithReloadKey: 'Reload and fetch (F5: reload data)',
       reloadData: '🔃 Reload data',
       reloadDataWithKey: '🔃 Reload data (F5)',
-      fetchIconsCurrentTab: '🎨 Fetch icons (current tab)',
-      fetchIconsAllTabs: '🎨 Fetch icons (all tabs)',
       importBookmarks: '🔁 Run bookmark auto-import',
-      reloadAll: '🔄 Full reload',
+      refetchIcons: '🎨 Fetch all icons again',
+      refetchIconsTitle:
+        "Reloads the data and fetches every icon again without the saved ones (also retries ones that couldn't be fetched)",
+    },
+    searchHistoryClear: {
+      message: "Clear all search history? This can't be undone.",
+      confirm: 'Clear',
     },
     registerMenu: {
       title: 'Add item',
-      quickAdd: '📄 Add item…',
+      quickAdd: '📄 Add item',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
+      addFolderImport: '🗂️ Add items from a folder',
+      addFolderImportTitle:
+        'Adds an item (folder import) that lists the files in a folder each time you open it',
+      clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",
     },
     empty: {
       noMatch: 'No items match "{{query}}"',
@@ -103,7 +111,10 @@ export const en: LocaleMessages = {
       otherTabsHaveWindows: 'Other tabs have matching windows.',
       switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
-      add: '📄 Add item…',
+      add: '📄 Add item',
+      importBookmarks: '🔖 From bookmarks',
+      importApps: '💻 From apps',
+      importFolder: '🗂️ From a folder',
     },
     workspaceButton: {
       open: 'Open the workspace (Ctrl+W)',
@@ -133,12 +144,19 @@ export const en: LocaleMessages = {
       showNote: 'Show note',
     },
     missingIcons: {
-      label: 'Icons not fetched:',
+      label_one: '🎨 {{count}} item has no icon yet',
+      label_other: '🎨 {{count}} items have no icon yet',
+      hint: 'Icons are fetched once from the site or your PC, then the saved ones are used',
       fetch: 'Fetch',
       fetchTooltip: 'Fetch icons',
     },
     iconProgress: {
       complete: 'Icons fetched',
+      busy: 'Icons are being fetched. Try again when it finishes.',
+      closeWhileFetching: 'Closing keeps fetching in the background',
+      continuesInBackground:
+        "Icons keep being fetched in the background. You'll be notified when it's done",
+      finishedInBackground: 'Finished fetching icons',
       phase: 'Step {{current}}/{{total}}: {{name}}',
       phaseNames: {
         favicon: 'Fetching favicons',
@@ -221,6 +239,9 @@ export const en: LocaleMessages = {
       launchFailed: 'Couldn\'t open "{{name}}": {{error}}',
       appNotFoundInPath: "Couldn't find the app in PATH",
       clipboardDataMissing: "Couldn't find the clipboard data",
+      cannotRunAsAdmin: '"{{name}}" can\'t be run as administrator (apps only)',
+      fileNotFound: "Couldn't find the file",
+      windowsError: 'Windows error (code {{code}})',
     },
     itemActions: {
       targets: {
@@ -259,12 +280,14 @@ export const en: LocaleMessages = {
     },
   },
   bookmarkImport: {
-    summary: 'Bookmark import: {{imported}} added, {{deleted}} removed',
+    summary: 'Bookmark import: {{counts}}',
     withManualDuplicates: '{{message}}, {{count}} already added manually',
     withPartlyFailed: '{{message}} (some errors)',
     title: 'Bookmark import',
-    added: '{{count}} added',
-    addedAndDeleted: '{{added}} added, {{deleted}} removed',
+    countAdded: '{{count}} added',
+    countUpdated: '{{count}} updated',
+    countDeleted: '{{count}} removed',
+    noChange: 'no changes',
     browserNotFound: "Couldn't find the browser {{browser}} or the selected profiles",
     failed: 'An error occurred during automatic bookmark import',
     dataFileCorrupted: 'Stopped the import because the data file may be corrupted: {{file}}',
@@ -296,6 +319,8 @@ export const en: LocaleMessages = {
     windowSearchHotkeySummary: 'Also set a hotkey for finding open windows (you can do this later)',
     windowSearchHotkeyDescription: 'Find an open window by name and switch to it.',
     windowSearchHotkeyNone: "Don't use",
+    windowSearchHotkeyInUse:
+      'Another app or the launch hotkey is already using these keys. Choose different keys or click "Don\'t use".',
     notSet: 'Not set',
     tryTitle: "You're all set",
     tryDescription: 'Try pressing the hotkey you chose.',
@@ -310,7 +335,7 @@ export const en: LocaleMessages = {
     autoLaunchHint: "If it isn't running, the hotkey won't bring it up.",
     changeLater: 'You can change all of this later in Settings.',
     complete: 'Get started',
-    saveFailed: "Couldn't save the settings.",
+    saveFailed: 'Couldn\'t save the settings. Click "Get started" again.',
     defaultTabName: 'Main',
   },
   hotkeyInput: {
@@ -335,6 +360,7 @@ export const en: LocaleMessages = {
     copyPath: '📋 Copy path',
     copyParentPath: '📋 Copy containing folder path',
     openParentFolder: '📂 Open containing folder',
+    runAsAdmin: '🛡️ Run as administrator',
     copyShortcutPath: '📋 Copy shortcut path',
     copyShortcutParentPath: "📋 Copy shortcut's containing folder path",
     openShortcutParentFolder: "📂 Open shortcut's containing folder",
@@ -342,6 +368,34 @@ export const en: LocaleMessages = {
     showNote: '📝 Show note',
     addToWorkspace: '⭐ Add to workspace',
     addCopyToWorkspace: '📄 Add a copy to workspace',
+    groupPicker: {
+      createGroup: '➕ Put it in a new group',
+      createUncategorized: '➕ Put it in a new "Ungrouped" group',
+    },
+    delete: '🗑️ Delete…',
+    excludeFromDir: '🚫 Exclude from this folder import…',
+    text: {
+      undo: 'Undo',
+      redo: 'Redo',
+      cut: 'Cut',
+      copy: 'Copy',
+      paste: 'Paste',
+      selectAll: 'Select all',
+    },
+    launcherBlank: {
+      registerFromClipboard: '📋 Add from a path or URL on the clipboard',
+    },
+    searchHistory: {
+      title: '🕘 Search history',
+      clear: '🗑️ Clear search history',
+    },
+    workspace: {
+      addGroup: '➕ Add group',
+      addWorkspace: '➕ Add workspace',
+      paste: '📋 Paste',
+      expandAll: '🔽 Expand all',
+      collapseAll: '🔼 Collapse all',
+    },
     admin: {
       duplicate: '📋 Duplicate',
       duplicateRows_one: '📋 Duplicate ({{count}} row)',
@@ -357,10 +411,9 @@ export const en: LocaleMessages = {
       renameAlias: '🏷️ Rename (workspace only)',
       convertToCopy: '📄 Make a copy (unlink from the launcher)',
       retarget: '🔁 Link to another item…',
-      linkToMain: '🔗 Link to a launcher item…',
-      registerToMain: '🚀 Add to the launcher',
+      moveToMain: '🚀 Move to the launcher and link to it',
       moveToWorkspace: '📁 Move to workspace',
-      removeFromGroup: '📤 Remove from group',
+      moveToGroup: '📁 Move to group',
       remove: '🗑️ Remove from workspace',
     },
     workspaceGroup: {
@@ -376,6 +429,9 @@ export const en: LocaleMessages = {
       addNew: '✏️ Enter a new item…',
       rename: '✏️ Rename group',
       changeColor: '🎨 Change color',
+      duplicate: '📄 Duplicate group',
+      collapseOthers: '🔼 Collapse other groups',
+      openAll: '▶ Open all',
       archive: '🗄️ Archive group',
       delete: '🗑️ Delete group',
     },
@@ -407,6 +463,8 @@ export const en: LocaleMessages = {
     help: 'Help',
     restart: 'Restart',
     quit: 'Exit',
+    showWorkspace: 'Show workspace',
+    itemManager: 'Item Manager',
     devRestart: {
       title: 'Restart (development mode)',
       message: "Automatic restart isn't supported in development mode",
@@ -468,6 +526,8 @@ Commands:
   workspace item list|add|update|remove    Items in workspaces (qdl workspace --help)
   workspace group list|add|update|remove|archive   Groups in workspaces
   workspace archive list|restore           Archived groups
+  open <id or name>                        Open an item in the launcher (same as pressing Enter)
+  show [main|workspace]                    Show the launcher (default) or the workspace
   check                                    Show the result of the last load (invalid entries, new IDs, outside changes) without reloading
   reload                                   Reload the settings files (same as F5 in the launcher)
   status                                   Show the app version, the settings folder, and more
@@ -523,18 +583,21 @@ Works with workspaces (workspace.json).
   qdl workspace update <id or name>           Change a workspace (--name --position --dry-run)
   qdl workspace remove <id or name>           Delete an empty workspace (--dry-run)
   qdl workspace item list                     List items (--workspace --group --grep --with-text)
-  qdl workspace item add                      Add an item (--name and --path are required. --args --memo --group
+  qdl workspace item add                      Add an item (--name, --path, and --group in a workspace with groups are required. --args --memo
                                               --workspace --position <0-based> --set key=value --dry-run.
                                               With --type clipboard, --text | --text-file instead of --path)
   qdl workspace item add --from <id or name>  Add a launcher item as a link (--copy adds a copy.
                                               --name (the workspace name for a link) --group --workspace
                                               --position --dry-run)
   qdl workspace item update <id or name>      Change an item (--name --path --args --memo --text --text-file --set --unset,
-                                              --group <group> ("" for ungrouped) --workspace --position --dry-run)
+                                              --group <group> --workspace --position --dry-run)
   qdl workspace item remove <id or name>      Delete an item (--dry-run)
   qdl workspace item convert <id or name>     Switch between a link and a copy (--to copy | ref is required. For ref,
                                               --from <target>; defaults to the launcher item with the same path and
                                               arguments. --dry-run)
+  qdl workspace item move-to-main <id or name>
+                                              Move a copy to the launcher and link to it (--file | --tab
+                                              <destination>; defaults to the default data file. --dry-run)
   qdl workspace group list                    List groups (--workspace --grep)
   qdl workspace group add                     Add a group (--name is required. --color --parent --workspace --dry-run)
   qdl workspace group update <id or name>     Change a group (--name --color --parent <parent> ("" for top level) --dry-run)
@@ -602,12 +665,18 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unsetProtected: "--unset can't remove {{key}}",
       fieldMissing: '{{key}} is missing (pass it with {{how}})',
       fieldInvalid: '{{key}} has an invalid value (use {{expected}})',
+      runAsAdminNotApp: 'runAsAdmin can only be set on apps (exe, .lnk, .bat/.cmd, and so on)',
       invalidContent: 'The content is invalid: {{reason}}',
       unknownFields:
         'Fields not allowed for type {{type}}: {{fields}} (see the settings file format in the docs)',
       notFound: 'Couldn\'t find the {{what}} "{{key}}" (use the id or the exact display name)',
       ambiguous: '{{count}} matches for the {{what}} "{{key}}". Use the id',
       unknownCommand: 'Unknown command: {{command}}',
+      cannotOpenDir:
+        "Folder import rows and the items listed from them can't be opened from the CLI: {{name}}",
+      cannotOpen: "This item can't be opened: {{name}}",
+      openFailed: "Couldn't open {{name}} ({{error}})",
+      unknownShowTarget: 'Show main or workspace: {{target}}',
       unknownLauncherNoun:
         'Unknown command: launcher {{noun}} (only launcher item, launcher set, and launcher tab)',
       missingSetNoun: 'Specify row after launcher set',
@@ -618,6 +687,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         "A linked item's content comes from the launcher item (--{{option}} can't be used). Change it with qdl launcher item update {{id}}",
       convertTo: 'Set --to to copy or ref ({{to}})',
       notRef: 'The item is not linked to a launcher item',
+      alreadyInMain: 'A linked item is already in the launcher (only copies can be moved)',
       refMissing: "The original item was not found, so it can't be made a copy",
       noLinkCandidate:
         'Found {{count}} launcher items with the same path and arguments. Choose one with --from',
@@ -670,6 +740,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       needChanges: 'Specify what to change ({{options}})',
       noPath: "Type {{type}} doesn't have --path",
       noWorkspace: 'There are no workspaces',
+      groupRequired:
+        'The workspace "{{workspace}}" has groups, so use --group to choose the group to put it in',
+      groupEmpty: '--group "" is not supported (there is no Ungrouped anymore). Choose a group',
       badColor: '--color is invalid: {{color}} (see qdl workspace --help for the list)',
       emptyName: '--name is empty',
       groupNotEmpty:
@@ -767,6 +840,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     run: {
       titleNotMatched: 'No window with a matching title ({{exe}} is open)',
       notOpen: "Not open, so it wasn't moved",
+      adminCancelled: 'Running as administrator was canceled',
       itemNotOpen: "Not open, so it didn't switch",
       couldNotMove: "Couldn't move the window (for example, it runs as administrator)",
       desktopNotFound: 'Desktop {{number}} does not exist. Only the position was applied',
@@ -781,7 +855,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     picker: {
       title: 'Items to add to the set',
-      search: 'Search by name (all tabs)',
+      search: 'Search by name',
       all: 'All',
       sameGroup: 'Same tab as this set',
       others: 'Other tabs',
@@ -809,9 +883,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       parallel: 'All at once',
       moveOnly: 'Moves a window only',
       missing: "Couldn't find the item",
-      expanded: 'Replaced with a path',
-      expandedHint:
-        'Replaced the workspace item "{{name}}" with a path written in this set, because sets in the launcher can\'t point to workspace items. Changes to the original item won\'t apply to this set',
       moveUp: 'Move up',
       moveDown: 'Move down',
       remove: 'Remove row',
@@ -1137,13 +1208,15 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       launchCount: 'Times opened',
       icon: 'Icon',
       columnMenuHint:
-        'Right-click to choose columns. Drag the right edge of a header to resize it.',
+        'Right-click to choose columns. Drag the right edge of a header to resize it, or double-click it to fit the contents.',
+      resizeHandleTitle: 'Drag to resize. Double-click to fit the contents.',
       emptyFiltered: 'No items match',
       empty:
         'This data file has no items. Add one with "+ Add item", or use the ▼ next to it to import browser bookmarks or installed apps.',
     },
     row: {
       sourceManual: 'Manual',
+      sourceAuto: '🔖 Auto import: {{rule}}',
       sourceAutoTitle: 'Imported by the auto-import rule "{{rule}}"',
       linkExistsTitle: 'The path was found',
       linkUnknownTitle:
@@ -1219,7 +1292,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     deleteButton: 'Delete',
     imported_one: 'Added {{count}} item to {{file}} (save to keep this change)',
     imported_other: 'Added {{count}} items to {{file}} (save to keep this change)',
-    ruleSavedAndRun: 'Saved and ran the rule "{{name}}": {{count}} added',
+    ruleSavedAndRun: 'Saved and ran the rule "{{name}}": {{counts}}',
     ruleManualDuplicates: '{{message}} ({{count}} also match URLs you added yourself)',
     ruleSaveFailed: "Couldn't save the rule: {{error}}",
     ruleRunFailed: 'Saved the rule "{{name}}", but it failed to run: {{error}}',
@@ -1338,7 +1411,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     loadFailed: "Couldn't load the bookmarks",
     newTitle: 'Add a bookmark import rule',
     editTitle: 'Edit bookmark import rule',
-    hint: 'Bookmarks that match are imported into the destination again at startup and other times, so changes made in the browser are reflected.',
+    hint: 'Bookmarks that match are compared with the destination at startup and other times, so bookmarks you add, remove, or rename in the browser are reflected.',
     name: 'Rule name:',
     namePlaceholder: '{{name}} (named from the conditions if left blank)',
     source: 'Source:',
@@ -1384,7 +1457,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     namingOptions: 'Options (display name)',
     namingNone: 'Keep the bookmark names',
     prefix: 'Add before',
-    prefixPlaceholder: 'e.g. [bkm]',
+    prefixPlaceholder: 'e.g. [BookMark]',
     suffix: 'Add after',
     suffixPlaceholder: 'e.g.  (Chrome)',
     folderNameMode: 'Add folder name',
@@ -1400,6 +1473,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     autoNameWithWord: '{{base}} {{word}}',
   },
   bookmarkImportModal: {
+    fetchIcons: 'Also fetch icons (site favicons) after importing',
+    fetchIconsNote: 'Fetched after you press "Save changes"',
+    fetchIconsNoteRule: 'Fetched right after importing',
     title: 'Import browser bookmarks',
     hint: 'Check the folders or bookmarks you want and import them. Imported bookmarks are added as unsaved changes; select "Save changes" to keep them.',
     defaultName: 'Bookmarks',
@@ -1448,7 +1524,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     autoImportLinkNone: 'Bookmark auto-import (no rules yet)',
     ruleName: 'Rule name',
     ruleSummary:
-      'Rule to save: {{source}} · {{folders}}. You can add name filters or display names later in Bookmark auto-import',
+      'Rule to save: {{source}} · {{folders}}. You can add name filters or folder names later in Bookmark auto-import',
     ruleAllFolders: 'All folders (including ones added later)',
     ruleFolders: '{{folders}} (with subfolders)',
     allBookmarksRuleName: 'All bookmarks',
@@ -1460,13 +1536,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   bookmarkAutoImport: {
     settingsSaveFailed: "Couldn't save the auto-import settings: {{error}}",
     ruleDeleteFailed: "Couldn't delete the rule: {{error}}",
-    ruleResult: 'Bookmark import ({{name}}): {{imported}} added, {{deleted}} removed',
+    ruleResult: 'Bookmark import ({{name}}): {{counts}}',
     manualDuplicates: '{{message}} ({{count}} also match URLs you added yourself)',
     ruleError: 'Bookmark import ({{name}}): error - {{error}}',
     neverRun: 'Never run',
-    lastResult: '{{date}} - {{imported}} added, {{deleted}} removed',
-    lastResultWithDuplicates:
-      '{{date}} - {{imported}} added, {{deleted}} removed, {{count}} also added manually',
+    lastResult: '{{date}} - {{counts}}',
+    lastResultWithDuplicates: '{{date}} - {{counts}}, {{count}} also added manually',
     lastError: '{{date}} - error: {{error}}',
     loading: 'Loading…',
     autoRunOnStartup: 'Run when the app starts',
@@ -1503,6 +1578,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     title: 'Import installed apps',
     hint: 'Check the apps you want and import them. Imported apps are added as unsaved changes; select "Save changes" to keep them.',
     scanning: 'Scanning the Start menu…',
+    scanningTitle: '⏳ Looking for installed apps… ({{count}} found)',
+    scanningDetail: 'Reading Start menu shortcuts and registered apps',
     found_one: 'Found {{count}} app in the Start menu',
     found_other: 'Found {{count}} apps in the Start menu',
     rescan: 'Scan again',
@@ -1540,6 +1617,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       toggleWorkspace: 'Show or hide the workspace (in the launcher)',
       open: 'Open the selected item',
       openFolder: "Open the selected item's containing folder",
+      runAsAdmin: 'Run the selected app as administrator',
       edit: 'Edit the selected item (in normal search mode)',
       select: 'Select an item',
       history: 'Browse search history',
@@ -1573,7 +1651,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     iconResultTitle: 'Icon fetch results',
     notFound: 'Nothing to show.',
     autoImportWarning:
-      'This item is managed by bookmark auto-import. Your edits will be overwritten the next time auto-import runs.',
+      'This item is managed by bookmark auto-import. The next time auto-import runs, its name and URL will be replaced with those of the bookmark.',
     loading: 'Loading item…',
     tryRun: '⚡ Try it',
     tryRunSaveFirst: 'Unsaved content cannot be tried. Save first to try it.',
@@ -1639,6 +1717,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     dirOptions: 'Folder import options',
     args: 'Arguments',
     argsPlaceholder: 'Command-line arguments (for executables and apps only)',
+    runAsAdmin: '🛡️ Always run as administrator (asks for UAC confirmation each time)',
+    runAsAdminSummary: '🛡️ Always run as administrator',
     clipboardFallbackName: 'Clipboard',
     note: 'Note',
     notePlaceholder: 'Add a note (optional)',
@@ -1831,8 +1911,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   /** 登録・編集画面のフォルダ取込の「取り込まれるもの」（プレビュー） */
   dirPreview: {
     title: 'What gets imported',
-    run: 'Preview',
-    runTitle: 'Read the folder and see what will be imported',
+    run: 'Refresh preview',
+    runTitle: 'Read the folder again and see what will be imported',
     cancel: 'Stop',
     scanning: 'Counting…',
     count_one: '{{count}} item will be imported',
@@ -1843,13 +1923,14 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     more_other: '{{count}} more',
     moreTruncated_one: '{{count}}+ more',
     moreTruncated_other: '{{count}}+ more',
-    idle: 'Press "🔍 Preview" to see what will be imported',
-    idleHint: 'The folder is read only when you press it',
-    noPath: 'Choose a folder, then press "🔍 Preview"',
-    stale: 'The settings changed. Press "🔍 Preview" to count again with the current settings',
+    idle: 'Press "🔍 Refresh preview" to see what will be imported',
+    idleHint: 'The folder is read only when you pick it with "Choose folder" or press the button',
+    noPath: 'Pick a folder with "Choose folder" to list what will be imported here',
+    stale:
+      'The settings changed. Press "🔍 Refresh preview" to count again with the current settings',
     empty: 'Nothing to import',
     emptyFilter: 'Nothing matches the file name filter {{filter}}',
-    emptyHint: 'Check the settings and press "🔍 Preview" again',
+    emptyHint: 'Check the settings and press "🔍 Refresh preview" again',
     notFound: 'Folder not found (for a network folder, check that you are connected)',
     notFolder: 'The path is not a folder',
     timeout: 'Stopped because reading took more than {{seconds}} seconds',
@@ -1902,6 +1983,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     externalSummary: 'Data edited outside QDL: {{parts}}',
   },
   workspaceErrors: {
+    groupRequired:
+      'Choose a group to put it in (in a workspace that has groups, items are added to a group).',
     externalChange:
       '{{file}} was changed outside QDL. Press F5 in the launcher to reload, and then try again.',
     writeFailed: "Couldn't write {{file}}. Check the free disk space and permissions.",
@@ -2039,6 +2122,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     parentCycle: 'parentGroupId was removed because it was circular',
     parentTooDeep: 'parentGroupId was removed because the nesting was deeper than {{max}} levels',
     defaultWorkspaceCreated: 'There were no workspaces, so the default workspace was created',
+    ungroupedItemsGrouped: 'Put {{count}} items that were not in a group into the group "{{name}}"',
     archivedGroupNotFound:
       'Excluded from loading because the archived group "{{id}}" for archivedGroupId doesn\'t exist',
   },
@@ -2059,6 +2143,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       expandAll: 'Expand all',
       collapseAll: 'Collapse all',
       addGroup: 'Add group',
+      add: 'Add',
       menu: 'Settings',
       openSettings: '⚙️ Settings',
       alignLeft: '⬅️ Move to left edge',
@@ -2076,7 +2161,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     tabs: {
       archive: 'Archive',
-      add: 'Add workspace',
       defaultName: 'Workspace {{number}}',
       deleteTitle: 'Delete workspace',
       deleteConfirm:
@@ -2087,6 +2171,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       itemCount_one: '{{count}}',
       itemCount_other: '{{count}}',
       uncategorized: 'Ungrouped',
+      copiedAsText: 'Copied "{{name}}" as text',
+      copyAsTextFailed: 'Couldn\'t copy "{{name}}" as text',
       defaultName: 'Group {{number}}',
       defaultSubgroupName: 'Subgroup {{number}}',
       contents: 'This group contains {{items}}.',
@@ -2097,7 +2183,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       contentSubgroups_other: '{{count}} subgroups',
       deleteTitle: 'Delete group',
       deleteConfirm: 'Delete "{{name}}"?',
-      deleteItems: 'Also delete the items in the group',
+      deleteWithContentsWarning:
+        'Everything in it is deleted too. To keep it, use Archive instead of deleting.',
       deleteFromArchiveTitle: 'Delete from archive',
       deleteFromArchiveConfirm: 'Permanently delete "{{name}}" from the archive?',
       deleteFromArchiveIrreversible: "Its items are deleted too, and this can't be undone.",
@@ -2106,12 +2193,27 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       archiveConfirm: 'Archive "{{name}}"?',
       archiveRestorable: 'You can restore an archived group later.',
       archive: 'Archive',
+      copyName: '{{name}} copy',
+      openAllTitle: 'Open all',
+      openAllConfirm: 'Open the {{count}} items in "{{name}}" one after another?',
+      openAll: 'Open',
+      openAllEmpty: '"{{name}}" has no items to open',
     },
     empty: {
       title: 'This workspace is empty',
       hint: 'Right-click an item in the launcher and select "Add to workspace".',
+      addGroup: '+ Add group',
     },
     restoresPosition: "When it's open, moves this window back to the recorded window position",
+    dropOnGroup: 'Drop it on a group (items must be in a group)',
+    chooseGroupToPaste: 'Click the header of the group to paste into, and then paste',
+    pasteTarget: 'Paste target (Ctrl+V adds items here)',
+    addNotice: {
+      toGroup: 'Added {{what}} to "{{group}}"',
+      added: 'Added {{what}}',
+      items_one: '{{count}} item',
+      items_other: '{{count}} items',
+    },
     restoredGroupName: '{{name}} (restored)',
     defaultWorkspaceName: 'Default',
     detached: {
@@ -2150,8 +2252,15 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       editBanner_other:
         '🔗 You are editing a launcher item. The change also shows in {{count}} linked items in the workspace',
       editMainNotFound: 'The launcher item was not found',
-      cannotRegisterMissing:
-        'Can\'t add "{{name}}" to the launcher because the original item was not found',
+      cannotMoveMissing:
+        'Can\'t move "{{name}}" to the launcher because the original item was not found',
+      movedToMain:
+        'Moved "{{name}}" to the "{{tab}}" tab of the launcher and linked the workspace item to it',
+      movedToMainNoTab: 'Moved "{{name}}" to the launcher and linked the workspace item to it',
+      linkedToSameInMain:
+        'The "{{tab}}" tab already had the same item, so "{{name}}" now links to it',
+      linkedToSameInMainNoTab:
+        'The launcher already had the same item, so "{{name}}" now links to it',
       deleteWarning_one:
         '{{count}} workspace item links to this. If you delete it, that link shows "The original item was not found".',
       deleteWarning_other:
@@ -2180,7 +2289,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addedItems_other: '{{count}} items',
       addedToGroup: 'Added to "{{group}}"',
       addAsCopy: 'Add as copies (not linked to the launcher)',
-      addFailed: "Couldn't add the items",
     },
     linkPicker: {
       windowTitle: 'Choose the item to link to',
@@ -2191,7 +2299,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       others: 'Other items',
       current: 'Currently linked',
       notFound: 'The workspace item was not found. It may have been deleted.',
-      failed: "Couldn't link the item",
     },
     linkCopies: {
       title: 'Link copies to matching launcher items',
@@ -2203,9 +2310,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       memoMove: 'Move the note to the launcher',
       memoConflict: '⚠ Both have different notes (the copy note will be removed)',
       settingsDiffer:
-        '⚠ Window switching or icon differs from the launcher item (the launcher settings will be used)',
-      ambiguous_one: '⚠ {{count}} candidate (right-click and select "Link to a launcher item")',
-      ambiguous_other: '⚠ {{count}} candidates (right-click and select "Link to a launcher item")',
+        '⚠ Window switching, icon, or run as administrator differs from the launcher item (the launcher settings will be used)',
+      ambiguous_one: '⚠ {{count}} candidate. Choose which one to link to',
+      ambiguous_other: '⚠ {{count}} candidates. Choose which one to link to',
+      choose: 'Choose the item to link to…',
+      chooseLabel: 'Launcher item that "{{name}}" links to',
       notMatchable_one:
         "{{count}} clipboard item, set, or item without a path can't be compared by path, so it isn't included.",
       notMatchable_other:
@@ -2215,7 +2324,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       apply_other: 'Link {{count}} items',
       done_one: 'Linked {{count}} item',
       done_other: 'Linked {{count}} items',
-      failed: "Couldn't link the copies",
       notFound: 'The workspace was not found. It may have been deleted.',
     },
   },
@@ -2264,9 +2372,16 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       keyboardHints: 'Show keyboard hints',
       keyboardHintsDescription:
         'Shows easy-to-miss keys at the bottom of the launcher (such as F2 to edit, or Shift+Enter to open the containing folder).',
+      searchMemo: 'Search notes too',
+      searchMemoDescription:
+        'When you search in the launcher, also finds items whose note contains the words. When off, only display names are searched.',
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
+      dataFileTabsOffTitle: 'Stop showing tabs',
+      dataFileTabsOffConfirm:
+        'When this is off, the launcher shows only the items in the first tab, "{{name}}". Items in other tabs are kept, but you can\'t open them from the launcher. Turn it off?',
+      dataFileTabsOffButton: 'Turn off',
     },
     windowSize: {
       heading: 'Size:',

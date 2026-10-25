@@ -254,6 +254,19 @@ test.describe('QuickDashLauncher - 登録画面の種別', () => {
     ]);
     await expect(kind.locator('option[value="window"]')).toHaveCount(0);
   });
+
+  test('➕ の「フォルダからアイテムを追加」で、種別がフォルダ取込の登録画面が開く', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.getByTestId('register-menu-button').click();
+    await mainWindow.getByTestId('register-menu-folder-import').click();
+    const registerPage = await utils.waitForRegisterWindow(electronApp);
+    await expect(registerPage.locator('.register-kind select')).toHaveValue('dir');
+    await expect(registerPage.getByTestId('dir-preview')).toBeVisible();
+  });
 });
 
 /**
@@ -456,13 +469,49 @@ test.describe('QuickDashLauncher - メモの折りたたみ', () => {
     await utils.waitForPageLoad();
     const register = await utils.openRegisterModal(electronApp);
     await register.locator('.register-kind select').selectOption('dir');
-    const summary = register.getByTestId('dir-options-summary');
+    const summary = register.getByTestId('options-summary');
     await expect(summary).toHaveText('このフォルダのみ');
 
     await register.locator('.options-toggle', { hasText: 'フォルダ取込のオプション' }).click();
     await register.locator('.dir-options select').first().selectOption('2');
     await register.locator('.dir-options select').nth(1).selectOption('file');
     await expect(summary).toHaveText('2 階層・ファイルのみ');
+  });
+
+  test('アプリには「常に管理者として実行」を付けられ、保存すると runAsAdmin が書かれる（URL には出ない）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const register = await utils.openRegisterModal(electronApp);
+    const check = register.getByRole('checkbox', { name: /常に管理者として実行/ });
+    const openOptions = () =>
+      register.locator('.options-toggle', { hasText: 'オプション設定（引数・アイコン）' }).click();
+
+    await test.step('URL には出ない', async () => {
+      await utils.fillRegisterForm({ name: 'E2E管理者サイト', path: 'https://example.com/' });
+      await openOptions();
+      await expect(register.locator('.options-content')).toBeVisible();
+      await expect(check).toHaveCount(0);
+    });
+
+    await test.step('exe に変えると出て、付けると見出しの横にも出る', async () => {
+      await utils.fillRegisterForm({
+        name: 'E2E管理者ツール',
+        path: 'C:\\Windows\\System32\\cmd.exe',
+      });
+      await check.check();
+      await expect(register.getByTestId('options-summary')).toHaveText('🛡️ 常に管理者として実行');
+      await utils.clickRegisterButton();
+      await expect
+        .poll(() => {
+          const saved = configHelper.getItemByDisplayName('data.json', 'E2E管理者ツール');
+          return saved && 'runAsAdmin' in saved ? saved.runAsAdmin : undefined;
+        })
+        .toBe(true);
+    });
   });
 });
 
@@ -545,7 +594,7 @@ test.describe('QuickDashLauncher - パス欄の選択', () => {
 
 /**
  * フォルダ取込のプレビュー
- * - フォルダを読むのは「🔍 プレビュー」を押したときだけ
+ * - フォルダを読むのは「フォルダを選択」で選んだときと「🔍 プレビュー更新」を押したときだけ
  * - 頭・後ろに付ける文字はその場で反映し、階層などを変えたら数え直しを促す
  */
 test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => {
@@ -567,10 +616,11 @@ test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => 
     const preview = register.getByTestId('dir-preview');
     const runButton = preview.getByRole('button', { name: /プレビュー/ });
 
-    await test.step('パスが空なら押せず、入れても押すまでは読まない', async () => {
+    await test.step('パスが空なら押せず、手で入れても押すまでは読まない', async () => {
       await expect(runButton).toBeDisabled();
+      await expect(runButton).toHaveText('🔍 プレビュー更新');
       await register.locator('.path-input-group input').fill(folder);
-      await expect(preview).toContainText('「🔍 プレビュー」を押すと');
+      await expect(preview).toContainText('「🔍 プレビュー更新」を押すと');
       await expect(preview.locator('.dir-preview-item')).toHaveCount(0);
     });
 
@@ -601,6 +651,32 @@ test.describe('QuickDashLauncher - フォルダ取込のプレビュー', () => 
       await runButton.click();
       await expect(preview).toContainText('ファイル名の条件 *.zip に合うものがありません');
     });
+  });
+
+  test('「フォルダを選択」で選ぶと、押さなくてもプレビューが並ぶ', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const folder = path.join(configHelper.getConfigDir(), 'e2e-pick-preview');
+    fs.mkdirSync(folder, { recursive: true });
+    fs.writeFileSync(path.join(folder, 'a.txt'), '');
+    fs.writeFileSync(path.join(folder, 'b.txt'), '');
+
+    const register = await utils.openRegisterModal(electronApp);
+    await register.locator('.register-kind select').selectOption('dir');
+    const preview = register.getByTestId('dir-preview');
+    await expect(preview).toContainText('「フォルダを選択」でフォルダを選ぶと');
+
+    await stubOpenDialog(electronApp, folder);
+    await register
+      .locator('.path-input-group')
+      .getByRole('button', { name: 'フォルダを選択' })
+      .click();
+    await expect(preview.locator('.dir-preview-status')).toHaveText('2 件を取り込みます');
+    await expect(preview.locator('.dir-preview-name')).toHaveText(['a.txt', 'b.txt']);
   });
 });
 
@@ -670,5 +746,73 @@ test.describe('QuickDashLauncher - パスの無い単一アイテム', () => {
       await expect(editor.getByText(note)).toBeVisible();
       await utils.clickCancelButton();
     });
+  });
+});
+
+/**
+ * クリップボードアイテムの保存先（タブ）を変える編集
+ * - 中身を変えずに保存先だけ変えても、実データ（clipboard-data のファイル）は消えずに使い続ける
+ */
+test.describe('QuickDashLauncher - クリップボードアイテムの保存先を変える', () => {
+  test.use({ configTemplate: 'with-tabs' });
+
+  test('保存先のタブを変えても、実データが残る', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+    await utils.waitForPageLoad();
+
+    const saved = await mainWindow.evaluate(() =>
+      window.electronAPI.clipboardAPI.saveText('タブを移す本文')
+    );
+    expect(saved.success).toBe(true);
+    const dataFileRef = saved.dataFileRef!;
+    await mainWindow.evaluate(
+      (ref) =>
+        window.electronAPI.registerItems([
+          {
+            displayName: '移すクリップボード',
+            path: '',
+            type: 'clipboard',
+            targetTab: 'datafiles/data.json',
+            itemCategory: 'clipboard',
+            clipboardDataRef: ref,
+            clipboardFormats: ['text'],
+            clipboardPreview: 'タブを移す本文',
+            clipboardSavedAt: Date.now(),
+          },
+        ]),
+      dataFileRef
+    );
+    const target = await mainWindow.evaluate(async () => {
+      const items = await window.electronAPI.loadDataFiles('internal');
+      return items.find((i) => 'displayName' in i && i.displayName === '移すクリップボード');
+    });
+    expect(target).toBeDefined();
+
+    await menuHelper.simulateLauncherMenu('edit', target as unknown as Record<string, unknown>);
+    const editor = await utils.waitForRegisterWindow(electronApp);
+    // 最初の select が保存先のタブ
+    await editor.locator('.register-modal select').first().selectOption({ label: 'サブ1' });
+    await editor.locator('.modal-actions button', { hasText: '保存' }).click();
+
+    await expect
+      .poll(
+        () =>
+          configHelper
+            .readDataFile('data2.json')
+            .items.find((i) => 'displayName' in i && i.displayName === '移すクリップボード'),
+        { timeout: 10000 }
+      )
+      .toMatchObject({ type: 'clipboard', dataFileRef });
+    expect(
+      configHelper
+        .readDataFile('data.json')
+        .items.some((i) => 'displayName' in i && i.displayName === '移すクリップボード')
+    ).toBe(false);
+    expect(fs.existsSync(path.join(configHelper.getConfigDir(), dataFileRef))).toBe(true);
   });
 });

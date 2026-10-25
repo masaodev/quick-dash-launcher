@@ -155,20 +155,8 @@
   transform: scale(0.95);
 }
 
-/* 押している状態（フィルタ・設定メニューを開いている） */
-.action-btn.active {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
-}
-
-.action-btn.active:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
 /*
- * オン・オフを切り替えるボタン（⭐・📌）のオン
+ * オン・オフを切り替えるボタン（⭐・📌・ワークスペースの 🔍）のオンと、メニュー（➕・🔄・⚙）を開いている間
  * 絵文字は色を変えられないので、背景は濃く塗らず、薄い青にしてへこませる
  */
 .action-btn.toggle-on {

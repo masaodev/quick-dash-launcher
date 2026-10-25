@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { isLauncherItem, isWindowInfo, isSetItem, isClipboardItem } from '@common/types/guards';
-import { LauncherItem, AppItem, WindowInfo } from '@common/types';
+import { LauncherItem, AppItem, WindowInfo, type WorkspaceTarget } from '@common/types';
 import { windowInfoToPathlessItem } from '@common/utils/windowInfoConverter';
 import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
@@ -10,6 +10,7 @@ import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
 import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 import type { NoMatchElsewhere } from '../utils/noMatchElsewhere';
+import { openAppImport, openBookmarkImport } from '../utils/importEntrances';
 
 import MemoViewModal from './MemoViewModal';
 import { Button } from './ui/Button';
@@ -23,6 +24,8 @@ interface ItemListProps {
   onCopyPath?: (item: LauncherItem) => void;
   onCopyParentPath?: (item: LauncherItem) => void;
   onOpenParentFolder?: (item: LauncherItem) => void;
+  /** 右クリックの「管理者として実行」 */
+  onRunAsAdmin?: (item: LauncherItem) => void;
   onCopyShortcutPath?: (item: LauncherItem) => void;
   onCopyShortcutParentPath?: (item: LauncherItem) => void;
   onOpenShortcutParentFolder?: (item: LauncherItem) => void;
@@ -31,8 +34,12 @@ interface ItemListProps {
   onCloseWindow?: (win: WindowInfo) => Promise<void>;
   /** 一覧が空のときの案内（検索で 0 件／空のタブ）。null なら何も出さない */
   emptyState?: LauncherEmptyState | null;
-  /** 空のタブと、どこにも合わないときの案内の「アイテムを追加…」 */
+  /** 空のタブと、どこにも合わないときの案内の「アイテムを追加」 */
   onAddItem?: () => void;
+  /** 空のタブの「🗂️ フォルダから」（登録画面をフォルダ取込の種別で開く）。指定があれば、ブックマーク・アプリの取込も並べる */
+  onAddFolderImport?: () => void;
+  /** 一覧の余白（アイテムの無い所）の右クリック。未指定なら何も出さない */
+  onBlankContextMenu?: () => void;
   /** 他のタブにあるときの案内の「Tab:タブを切り替える」（Tab キーと同じ動き） */
   onSwitchTab?: () => void;
   /** 右クリックの固定・固定解除（pin: true で固定） */
@@ -95,6 +102,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onCopyPath,
   onCopyParentPath,
   onOpenParentFolder,
+  onRunAsAdmin,
   onCopyShortcutPath,
   onCopyShortcutParentPath,
   onOpenShortcutParentFolder,
@@ -106,6 +114,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   nameOfItem,
   emptyState,
   onAddItem,
+  onAddFolderImport,
+  onBlankContextMenu,
   onSwitchTab,
 }) => {
   const { t } = useTranslation();
@@ -152,6 +162,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onCopyPath,
     onCopyParentPath,
     onOpenParentFolder,
+    onRunAsAdmin,
     onCopyShortcutPath,
     onCopyShortcutParentPath,
     onOpenShortcutParentFolder,
@@ -167,6 +178,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     onCopyPath,
     onCopyParentPath,
     onOpenParentFolder,
+    onRunAsAdmin,
     onCopyShortcutPath,
     onCopyShortcutParentPath,
     onOpenShortcutParentFolder,
@@ -183,15 +195,15 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     });
 
     // 「ワークスペースに追加」は参照（参照できないものはコピー）、「ワークスペースにコピーを追加」はコピー
-    const addToWorkspace = async (item: AppItem, copy: boolean) => {
+    const addToWorkspace = async (item: AppItem, target: WorkspaceTarget, copy: boolean) => {
       // どの種類でも結果を知らせる。パスは LauncherItem だけ、アイコンは持っていれば添える
       //（ウィンドウ検索の結果は別のイベント onWindowMenuAddToWorkspace で来るが、型の上では来うる）
       const displayName = isWindowInfo(item) ? item.title : item.displayName;
       try {
         await window.electronAPI.workspaceAPI.addItem(
           item,
-          undefined,
-          undefined,
+          target.groupId,
+          target.workspaceId,
           copy ? { copy } : undefined
         );
         await window.electronAPI.showToastWindow({
@@ -205,12 +217,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         logError('ワークスペースへの追加に失敗しました:', error);
       }
     };
-    const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace((item) => {
-      void addToWorkspace(item, false);
-    });
+    const cleanupAddToWorkspace = window.electronAPI.onLauncherMenuAddToWorkspace(
+      ({ item, target }) => {
+        void addToWorkspace(item, target, false);
+      }
+    );
     const cleanupAddCopyToWorkspace = window.electronAPI.onLauncherMenuAddCopyToWorkspace(
-      (item) => {
-        void addToWorkspace(item, true);
+      ({ item, target }) => {
+        void addToWorkspace(item, target, true);
       }
     );
 
@@ -218,6 +232,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       | 'onCopyPath'
       | 'onCopyParentPath'
       | 'onOpenParentFolder'
+      | 'onRunAsAdmin'
       | 'onCopyShortcutPath'
       | 'onCopyShortcutParentPath'
       | 'onOpenShortcutParentFolder';
@@ -249,6 +264,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       window.electronAPI.onLauncherMenuOpenParentFolder(
         createLauncherItemHandler('onOpenParentFolder')
       ),
+      window.electronAPI.onLauncherMenuRunAsAdmin(createLauncherItemHandler('onRunAsAdmin')),
       window.electronAPI.onLauncherMenuCopyShortcutPath(
         createLauncherItemHandler('onCopyShortcutPath')
       ),
@@ -260,24 +276,30 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       ),
       window.electronAPI.onLauncherMenuShowMemo(openMemoModal),
       window.electronAPI.onWindowMenuActivate((item) => latestRef.current.onItemExecute(item)),
-      window.electronAPI.onWindowMenuAddToWorkspace(async ({ windowInfo, includePosition }) => {
-        // 開いているウィンドウへ切り替えるだけのパスの無い単一アイテム（exe のパスは使わない）
-        const windowItem = windowInfoToPathlessItem(windowInfo, { includePosition });
-        try {
-          await window.electronAPI.workspaceAPI.addItem(windowItem);
-          await window.electronAPI.showToastWindow({
-            displayName: windowItem.displayName,
-            itemType: 'workspaceAdd',
-            icon: windowInfo.icon,
-            message: includePosition
-              ? t('launcher.messages.windowAddedWithPosition')
-              : t('launcher.messages.windowAdded'),
-          });
-        } catch (error) {
-          // 失敗は本体側がエラーのトーストで知らせる
-          logError('ウィンドウのワークスペースへの追加に失敗しました:', error);
+      window.electronAPI.onWindowMenuAddToWorkspace(
+        async ({ windowInfo, includePosition, target }) => {
+          // 開いているウィンドウへ切り替えるだけのパスの無い単一アイテム（exe のパスは使わない）
+          const windowItem = windowInfoToPathlessItem(windowInfo, { includePosition });
+          try {
+            await window.electronAPI.workspaceAPI.addItem(
+              windowItem,
+              target.groupId,
+              target.workspaceId
+            );
+            await window.electronAPI.showToastWindow({
+              displayName: windowItem.displayName,
+              itemType: 'workspaceAdd',
+              icon: windowInfo.icon,
+              message: includePosition
+                ? t('launcher.messages.windowAddedWithPosition')
+                : t('launcher.messages.windowAdded'),
+            });
+          } catch (error) {
+            // 失敗は本体側がエラーのトーストで知らせる
+            logError('ウィンドウのワークスペースへの追加に失敗しました:', error);
+          }
         }
-      }),
+      ),
       window.electronAPI.onWindowMenuClose((windowInfo) => {
         void latestRef.current.onCloseWindow?.(windowInfo);
       }),
@@ -356,6 +378,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   const handleContextMenu = async (event: React.MouseEvent, item: AppItem) => {
     event.preventDefault();
     event.stopPropagation();
+    // Shift+F10・アプリケーションキーで出したとき（ページが起こしたイベント）は、行の位置に出す
+    const anchor = event.nativeEvent.isTrusted ? undefined : { x: event.clientX, y: event.clientY };
 
     const selection = latestRef.current.windowSelection;
     if (
@@ -365,7 +389,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       selection.isMarked(item.hwnd)
     ) {
       const desktopInfo = await window.electronAPI.getVirtualDesktopInfo();
-      window.electronAPI.showWindowsContextMenu(selection.markedCount, desktopInfo);
+      window.electronAPI.showWindowsContextMenu(selection.markedCount, desktopInfo, anchor);
       return;
     }
 
@@ -374,16 +398,56 @@ const LauncherItemList: React.FC<ItemListProps> = ({
         window.electronAPI.getVirtualDesktopInfo(),
         window.electronAPI.isWindowPinned(item.hwnd),
       ]);
-      window.electronAPI.showWindowContextMenu(item, desktopInfo, isPinned);
+      window.electronAPI.showWindowContextMenu(item, desktopInfo, isPinned, anchor);
       return;
     }
 
-    window.electronAPI.showLauncherContextMenu(item);
+    window.electronAPI.showLauncherContextMenu(item, anchor);
   };
+
+  /** まとめて追加する入口（ブックマーク・アプリ・フォルダ取込）。空のタブと、検索でどこにも合わないときに出す */
+  const renderImportButtons = (testId: string) =>
+    onAddFolderImport && (
+      <div className="item-list-empty-imports" data-testid={testId}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={openBookmarkImport}
+          title={t('launcher.registerMenu.addBookmarks')}
+        >
+          {t('launcher.empty.importBookmarks')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={openAppImport}
+          title={t('launcher.registerMenu.addApps')}
+        >
+          {t('launcher.empty.importApps')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onAddFolderImport}
+          title={t('launcher.registerMenu.addFolderImport')}
+        >
+          {t('launcher.empty.importFolder')}
+        </Button>
+      </div>
+    );
 
   return (
     <>
-      <div className="item-list" ref={listRef}>
+      <div
+        className="item-list"
+        ref={listRef}
+        onContextMenu={(e) => {
+          // アイテムの行は行の右クリックが受ける（stopPropagation 済み）。ここに来るのは余白・空のときの案内
+          if (!onBlankContextMenu) return;
+          e.preventDefault();
+          onBlankContextMenu();
+        }}
+      >
         {items.length === 0 && emptyState && (
           <div className="item-list-empty" role="status">
             {emptyState.kind === 'noMatch' ? (
@@ -405,11 +469,17 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                     </span>
                   )}
                 </p>
-                {/* 通常の検索でどこにも合わないときは、そのまま登録へ進めるようにする */}
-                {!emptyState.windowMode && emptyState.elsewhere === null && onAddItem && (
-                  <Button variant="secondary" size="sm" onClick={onAddItem}>
-                    {t('launcher.empty.add')}
-                  </Button>
+                {/* 通常の検索でどこにも合わないときは、そのまま登録・取込へ進めるようにする
+                    （ほかのタブに合うときは「タブを切り替える」を先に見てもらうので出さない。A3-189） */}
+                {!emptyState.windowMode && emptyState.elsewhere === null && (
+                  <>
+                    {onAddItem && (
+                      <Button variant="secondary" size="sm" onClick={onAddItem}>
+                        {t('launcher.empty.add')}
+                      </Button>
+                    )}
+                    {renderImportButtons('no-match-imports')}
+                  </>
                 )}
               </>
             ) : (
@@ -420,6 +490,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                     {t('launcher.empty.add')}
                   </Button>
                 )}
+                {/* まとめて追加する入口も見せる（初めての人が、取込があることに気づけるように。A3-172） */}
+                {renderImportButtons('empty-tab-imports')}
               </>
             )}
           </div>

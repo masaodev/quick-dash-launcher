@@ -452,7 +452,7 @@ export function getLastLoadReport(): LoadReport | null {
 }
 
 /**
- * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5・完全リフレッシュ）
+ * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5・「アイコンをすべて取り直す」）
  *
  * データファイルとワークスペースの読み込み結果を 1 つのレポートにまとめ、
  * 外部変更があれば変更前スナップショットを 1 つ作る。ワークスペースの内容が変わっていれば
@@ -482,7 +482,7 @@ async function reloadConfigFilesInternal(
   configFolder: string,
   trigger: LoadTrigger
 ): Promise<AppItem[]> {
-  // 起動時・F5・完全リフレッシュはディスクの今の状態で判定し直す
+  // 起動時・F5・「アイコンをすべて取り直す」はディスクの今の状態で判定し直す
   // （アプリ内の変更に伴う再読込では覚えた結果を使う）
   await beginLoadProbeSession(LOAD_PROBE_MODES[trigger]);
   let data: Awaited<ReturnType<typeof loadDataFilesWithReport>>;

@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PinLevel, WorkspaceItem, WorkspaceGroupView } from '@common/types';
-import { getDescendantGroupIds } from '@common/utils/groupTreeUtils';
+import { getAncestorGroupIds, getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 import { DETACHED_WINDOW_NAME_PREFIX } from '@common/constants';
 
 import WorkspaceFilterBar from './components/WorkspaceFilterBar';
@@ -14,9 +14,11 @@ import WorkspaceHeader from './components/WorkspaceHeader';
 import PinButton from './components/PinButton';
 import WorkspaceTabBar from './components/WorkspaceTabBar';
 import { useClipboardPaste } from './hooks/useClipboardPaste';
-import { useCollapsibleSections } from './hooks/useCollapsibleSections';
+import { useWorkspaceAddNotice } from './hooks/useWorkspaceAddNotice';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useNativeDragDrop } from './hooks/useNativeDragDrop';
+import { useLatestRef } from './hooks/useLatestRef';
+import { useToast } from './hooks/useToast';
 import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
 import {
   useWorkspaceActions,
@@ -91,10 +93,81 @@ const WorkspaceApp: React.FC = () => {
   });
 
   const { extractFilePaths, addItemsFromFilePaths, addUrlItem } = useFileOperations();
-  useClipboardPaste(loadAllDataWithLoading, activeGroupId, activeWorkspaceId);
-  const { collapsed, toggleSection, expandAll, collapseAll } = useCollapsibleSections({
-    uncategorized: false,
-  });
+  const { showWarning } = useToast();
+  // グループのあるワークスペースでは、足す先のグループを選ばせる（未分類は無い。A3-157）
+  const activeWorkspaceHasGroups = groups.some((g) => g.workspaceId === activeWorkspaceId);
+  // 貼り付け先は、今のワークスペースで選んだグループだけ（見出しに枠を付けて見せる）。
+  // ほかのワークスペースで選んだもの・消えたグループは使わない（以前は選んでいないワークスペースのグループに入った）
+  const pasteGroupId =
+    activeGroupId && filteredGroups.some((g) => g.id === activeGroupId) ? activeGroupId : undefined;
+  useEffect(() => {
+    setActiveGroupId(undefined);
+  }, [activeWorkspaceId]);
+  // 貼り付け先の枠は前面のウィンドウにだけ出す（Ctrl+V が効くのは前面のウィンドウだけ。本体と切り離しウィンドウの
+  // 両方に枠が出て、どこに貼り付くか分からなかった。A3-186）。選んだグループは覚えておき、戻ってきたら枠を戻す
+  const [isWindowFocused, setIsWindowFocused] = useState(() => document.hasFocus());
+  useEffect(() => {
+    const handleFocus = () => setIsWindowFocused(true);
+    const handleBlur = () => setIsWindowFocused(false);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
+  // グループの外（余白・タブの並びなど）を左クリックしたら、貼り付け先を外す。外すとグループのあるワークスペースでは
+  // Ctrl+V で貼り付けない（グループを選ぶよう知らせる）。ボタン・入力欄・ダイアログ・ウィンドウの縁では外さない
+  // （右クリックの「貼り付け」は左クリックを伴わないので、選んだグループに貼れる。A3-186）
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target instanceof Element ? e.target : null;
+      if (
+        !target ||
+        target.closest(
+          '.workspace-group, button, a, label, input, textarea, select, [role="dialog"], [role="menu"], .workspace-resize-handle'
+        )
+      ) {
+        return;
+      }
+      // スクロールバーを掴んだときは外さない（押した所が、要素のスクロールバーを除いた幅・高さより外）
+      if (
+        target instanceof HTMLElement &&
+        (e.offsetX >= target.clientWidth || e.offsetY >= target.clientHeight)
+      ) {
+        return;
+      }
+      setActiveGroupId(undefined);
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, []);
+  const toggleGroup = async (groupId: string) => {
+    const newCollapsed = toggleGroupCollapsed(groupId);
+    if (detachedGroupId === null) {
+      try {
+        // 折りたたみは UI 状態（workspace-ui-state.json）として保存する
+        await window.electronAPI.workspaceAPI.setGroupsCollapsed([groupId], newCollapsed);
+      } catch (error) {
+        logError('Failed to persist group collapsed state:', error);
+      }
+    }
+    // detached モードの場合は useWorkspaceData 内で自動保存される
+  };
+  // 閉じたグループに足したら開いて見せる
+  const announceAdded = useWorkspaceAddNotice(filteredGroups, (id) => void toggleGroup(id));
+  useClipboardPaste(
+    loadAllDataWithLoading,
+    pasteGroupId,
+    activeWorkspaceId,
+    () => {
+      if (pasteGroupId || !activeWorkspaceHasGroups) return true;
+      showWarning(t('workspace.chooseGroupToPaste'));
+      return false;
+    },
+    (displayNames) => announceAdded(displayNames, pasteGroupId)
+  );
   const loadArchiveData = useCallback(async () => {
     try {
       const [groups, items] = await Promise.all([
@@ -219,7 +292,7 @@ const WorkspaceApp: React.FC = () => {
       const { itemCount, subgroupCount } = getGroupStats(groupId);
       // アーカイブからの削除は元に戻せないので、空でも必ず確認する
       if (!isArchiveMode && itemCount === 0 && subgroupCount === 0) {
-        await actions.handleDeleteGroup(groupId, false);
+        await actions.handleDeleteGroup(groupId);
         return;
       }
       const name = getGroupName(groupId);
@@ -230,19 +303,18 @@ const WorkspaceApp: React.FC = () => {
         message: isArchiveMode
           ? `${t('workspace.groups.deleteFromArchiveConfirm', { name })}\n\n${describeContents(itemCount, subgroupCount)}\n${t('workspace.groups.deleteFromArchiveIrreversible')}`
           : `${t('workspace.groups.deleteConfirm', { name })}\n\n${describeContents(itemCount, subgroupCount)}`,
+        // 中身ごと消える（未分類へ移す先は無い。A3-157）。件数を目立たせ、残したいときのアーカイブを案内する
+        warning: isArchiveMode ? undefined : t('workspace.groups.deleteWithContentsWarning'),
         confirmText: t('workspace.groups.delete'),
         cancelText: t('common.cancel'),
         danger: true,
-        checkbox: isArchiveMode
-          ? undefined
-          : { label: t('workspace.groups.deleteItems'), checked: false },
       });
       if (!result) return;
       if (isArchiveMode) {
         await window.electronAPI.workspaceAPI.deleteArchivedGroup(groupId);
         await loadArchiveData();
       } else {
-        await actions.handleDeleteGroup(groupId, result.checkboxChecked);
+        await actions.handleDeleteGroup(groupId);
       }
     } catch (error) {
       logError('Failed to delete workspace group:', error);
@@ -287,12 +359,79 @@ const WorkspaceApp: React.FC = () => {
         }
       }
     }
-    if (collapsed) {
-      collapseAll();
-    } else {
-      expandAll();
-    }
   };
+
+  /** グループを追加する（選んでいないタブなら、そのタブに切り替えてから） */
+  const addGroupTo = (workspaceId: string) => {
+    if (workspaceId !== activeWorkspaceId) {
+      setActiveWorkspaceId(workspaceId);
+    }
+    setIsArchiveMode(false);
+    const count = groups.filter((g) => g.workspaceId === workspaceId).length;
+    actions.handleAddGroup(count, undefined, workspaceId);
+  };
+
+  const addWorkspace = () => {
+    actions.handleCreateWorkspace(
+      t('workspace.tabs.defaultName', { number: workspaces.length + 1 })
+    );
+  };
+
+  /** タブの右クリックの「すべて展開／折りたたむ」。選んでいないタブなら、そのタブに切り替えてから */
+  const setAllCollapsedIn = async (workspaceId: string, collapsed: boolean) => {
+    if (workspaceId === activeWorkspaceId && !isArchiveMode) {
+      await setAllGroupsCollapsed(collapsed);
+      return;
+    }
+    setActiveWorkspaceId(workspaceId);
+    setIsArchiveMode(false);
+    const ids = groups
+      .filter((g) => g.workspaceId === workspaceId && g.collapsed !== collapsed)
+      .map((g) => g.id);
+    try {
+      if (ids.length > 0) await window.electronAPI.workspaceAPI.setGroupsCollapsed(ids, collapsed);
+    } catch (error) {
+      logError(`Failed to ${collapsed ? 'collapse' : 'expand'} all groups:`, error);
+    }
+    loadAllDataWithLoading();
+  };
+
+  /** グループの右クリック「ほかのグループを折りたたむ」: そのグループ（と親）だけを開き、ほかを折りたたむ */
+  const collapseOtherGroups = async (groupId: string) => {
+    const keep = new Set([groupId, ...getAncestorGroupIds(groupId, displayGroups)]);
+    const toCollapse = displayGroups
+      .filter((g) => !keep.has(g.id) && !g.collapsed)
+      .map((g) => g.id);
+    const toExpand = displayGroups.filter((g) => keep.has(g.id) && g.collapsed).map((g) => g.id);
+    try {
+      if (toCollapse.length > 0) {
+        await window.electronAPI.workspaceAPI.setGroupsCollapsed(toCollapse, true);
+      }
+      if (toExpand.length > 0)
+        await window.electronAPI.workspaceAPI.setGroupsCollapsed(toExpand, false);
+    } catch (error) {
+      logError('Failed to collapse other groups:', error);
+    }
+    loadAllDataWithLoading();
+  };
+
+  // タブ・余白の右クリックと、ヘッダーの ＋ のメニューで選ばれたもの（切り離しウィンドウでは出さない）
+  const menuActions = useLatestRef({
+    addGroupTo,
+    addWorkspace,
+    setAllCollapsedIn,
+  });
+  useEffect(() => {
+    if (isDetached) return;
+    const cleanups = [
+      window.electronAPI.onWorkspaceMenuAddGroup((id) => menuActions.current.addGroupTo(id)),
+      window.electronAPI.onWorkspaceMenuAddWorkspace(() => menuActions.current.addWorkspace()),
+      window.electronAPI.onWorkspaceMenuSetAllCollapsed(
+        (id, collapsed) => void menuActions.current.setAllCollapsedIn(id, collapsed)
+      ),
+    ];
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [isDetached, menuActions]);
 
   const handleNativeFileDrop = async (e: React.DragEvent, groupId?: string) => {
     try {
@@ -305,13 +444,10 @@ const WorkspaceApp: React.FC = () => {
           activeWorkspaceId
         );
         // 足せたものだけ知らせる（足せなかったものは本体側がエラーのトーストで知らせる）
-        for (const item of added) {
-          await window.electronAPI.showToastWindow({
-            displayName: item.displayName,
-            itemType: 'workspaceAdd',
-            ...('path' in item && { path: item.path }),
-          });
-        }
+        announceAdded(
+          added.map((item) => item.displayName),
+          groupId
+        );
       } else if (e.dataTransfer) {
         const urlData =
           e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
@@ -320,17 +456,14 @@ const WorkspaceApp: React.FC = () => {
             .split('\n')
             .map((url) => url.trim())
             .filter((url) => url && url.startsWith('http'));
+          const addedUrls: string[] = [];
           for (const url of urls) {
-            if (!(await addUrlItem(url, () => {}, groupId, activeWorkspaceId))) continue;
-            await window.electronAPI.showToastWindow({
-              displayName: url,
-              itemType: 'workspaceAdd',
-              path: url,
-            });
+            if (await addUrlItem(url, () => {}, groupId, activeWorkspaceId)) addedUrls.push(url);
           }
           if (urls.length > 0) {
             loadAllDataWithLoading();
           }
+          announceAdded(addedUrls, groupId);
         }
       }
     } catch (error) {
@@ -338,8 +471,15 @@ const WorkspaceApp: React.FC = () => {
     }
   };
 
-  // グループレベルで処理されなかったドロップのフォールバック（グループ未指定）
-  useNativeDragDrop(handleNativeFileDrop);
+  // グループレベルで処理されなかったドロップのフォールバック（グループ未指定）。
+  // グループのあるワークスペースでは、グループの外には足さずに知らせる（未分類は無い。A3-157）
+  useNativeDragDrop(async (e) => {
+    if (activeWorkspaceHasGroups) {
+      showWarning(t('workspace.dropOnGroup'));
+      return;
+    }
+    await handleNativeFileDrop(e);
+  });
 
   const handleDetachGroup = (groupId: string, screenX: number, screenY: number) => {
     window.electronAPI.workspaceAPI.detachGroup(groupId, screenX, screenY);
@@ -383,18 +523,7 @@ const WorkspaceApp: React.FC = () => {
         logError('編集ウィンドウを開けませんでした:', error);
       });
     },
-    onToggleGroup: async (groupId: string) => {
-      const newCollapsed = toggleGroupCollapsed(groupId);
-      if (!isDetached) {
-        try {
-          // 折りたたみは UI 状態（workspace-ui-state.json）として保存する
-          await window.electronAPI.workspaceAPI.setGroupsCollapsed([groupId], newCollapsed);
-        } catch (error) {
-          logError('Failed to persist group collapsed state:', error);
-        }
-      }
-      // detached モードの場合は useWorkspaceData 内で自動保存される
-    },
+    onToggleGroup: toggleGroup,
     onUpdateGroup: actions.handleUpdateGroup,
     onDeleteGroup: handleDeleteGroup,
     onArchiveGroup: handleArchiveGroup,
@@ -436,9 +565,8 @@ const WorkspaceApp: React.FC = () => {
   const commonUi = {
     editingItemId: editingId,
     setEditingItemId: setEditingId,
-    uncategorizedCollapsed: collapsed.uncategorized || false,
-    onToggleUncategorized: () => toggleSection('uncategorized'),
-    activeGroupId,
+    // 枠を出すのは前面のウィンドウだけ（A3-186）
+    activeGroupId: isWindowFocused ? pasteGroupId : undefined,
     setActiveGroupId,
   };
 
@@ -467,7 +595,6 @@ const WorkspaceApp: React.FC = () => {
             ...commonUi,
             activeWorkspaceId,
             visibleGroupIds: detachedVisibleGroupIds,
-            showUncategorized: false,
             detachedRootGroupId: detachedGroupId,
           }}
         />
@@ -497,8 +624,8 @@ const WorkspaceApp: React.FC = () => {
         }}
         onExpandAll={() => setAllGroupsCollapsed(false)}
         onCollapseAll={() => setAllGroupsCollapsed(true)}
-        onAddGroup={() =>
-          actions.handleAddGroup(displayGroups.length, undefined, activeWorkspaceId)
+        onAddMenu={(anchor) =>
+          void window.electronAPI.showWorkspaceBlankContextMenu(activeWorkspaceId, 'add', anchor)
         }
         pinLevel={pinLevel}
         onPinLevelChange={setPinLevel}
@@ -511,7 +638,6 @@ const WorkspaceApp: React.FC = () => {
           setActiveWorkspaceId(id);
           setIsArchiveMode(false);
         }}
-        onCreateWorkspace={actions.handleCreateWorkspace}
         onRenameWorkspace={actions.handleRenameWorkspace}
         onDeleteWorkspace={actions.handleDeleteWorkspace}
         onReorderWorkspaces={actions.handleReorderWorkspaces}
@@ -538,6 +664,12 @@ const WorkspaceApp: React.FC = () => {
         handlers={{
           ...commonHandlers,
           onDetachGroup: isArchiveMode ? undefined : handleDetachGroup,
+          onBlankContextMenu: isArchiveMode
+            ? undefined
+            : () =>
+                void window.electronAPI.showWorkspaceBlankContextMenu(activeWorkspaceId, 'blank'),
+          onAddGroup: isArchiveMode ? undefined : () => addGroupTo(activeWorkspaceId),
+          onCollapseOtherGroups: isArchiveMode ? undefined : collapseOtherGroups,
         }}
         ui={{
           ...commonUi,
@@ -545,7 +677,6 @@ const WorkspaceApp: React.FC = () => {
           activeWorkspaceId,
           visibleGroupIds: filterResult.visibleGroupIds,
           itemVisibility: filterResult.itemVisibility,
-          showUncategorized: filterResult.showUncategorized,
         }}
       />
       {resizeHandles}

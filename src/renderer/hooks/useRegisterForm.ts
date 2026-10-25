@@ -43,7 +43,6 @@ export function useRegisterForm(
   isOpen: boolean,
   editingItem: EditingAppItem | EditableJsonItem | null | undefined,
   droppedPaths: string[],
-  prefillItems: RegisterItem[] | undefined,
   currentTab: string | undefined,
   loadCustomIconPreview: (index: number, customIconFileName: string) => Promise<void>,
   onClose: () => void,
@@ -60,12 +59,8 @@ export function useRegisterForm(
   const [iconFetchLoading, setIconFetchLoading] = useState<boolean[]>([]);
   const { showWarning, showError } = useToast();
 
-  const {
-    initializeFromEditingItem,
-    initializeFromDroppedPaths,
-    initializeFromPrefillItems,
-    createEmptyTemplateItem,
-  } = useModalInitializer();
+  const { initializeFromEditingItem, initializeFromDroppedPaths, createEmptyTemplateItem } =
+    useModalInitializer();
 
   const clearErrorField = (index: number, field: string) => {
     setErrors((prev) => {
@@ -152,15 +147,6 @@ export function useRegisterForm(
           settings.dataFileTabs,
           loadCustomIconPreview
         );
-      } else if (prefillItems && prefillItems.length > 0) {
-        debugInfo('RegisterModal opened with prefill items:', prefillItems);
-        setLoading(true);
-        newItems = await initializeFromPrefillItems(
-          prefillItems,
-          currentTab,
-          settings.dataFileTabs,
-          loadCustomIconPreview
-        );
       } else if (droppedPaths && droppedPaths.length > 0) {
         debugInfo('RegisterModal opened with paths:', droppedPaths);
         setLoading(true);
@@ -184,7 +170,7 @@ export function useRegisterForm(
       setLoading(false);
     };
     loadAvailableTabsAndInitialize();
-  }, [isOpen, droppedPaths, prefillItems, editingItem, currentTab]);
+  }, [isOpen, droppedPaths, editingItem, currentTab]);
 
   const handleItemChange = async (
     index: number,
@@ -232,23 +218,30 @@ export function useRegisterForm(
     }
 
     const newType = await detectItemType(item.path);
-    const newItems = [...items];
-    newItems[index] = { ...item, type: newType };
+    const cachedIcon =
+      newType === 'folder'
+        ? undefined
+        : (await loadCachedIconsForItems([{ ...item, type: newType }]))[item.path];
 
-    if (newType === 'folder') {
-      newItems[index].folderProcessing ??= 'folder';
-      newItems[index].dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
-    } else {
-      delete newItems[index].folderProcessing;
-      delete newItems[index].dirOptions;
-
-      const cachedIcons = await loadCachedIconsForItems([newItems[index]]);
-      if (cachedIcons[item.path]) {
-        newItems[index].icon = cachedIcons[item.path];
+    // 待っている間に変わったほかの欄（パス欄を離れてすぐ押したチェックなど）を戻さないよう、今の内容に当てる
+    setItems((prev) => {
+      const next = [...prev];
+      const current: RegisterItem = {
+        ...prev[index],
+        ...(pickedPath !== undefined && { path: pickedPath }),
+        type: newType,
+      };
+      if (newType === 'folder') {
+        current.folderProcessing ??= 'folder';
+        current.dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
+      } else {
+        delete current.folderProcessing;
+        delete current.dirOptions;
+        if (cachedIcon) current.icon = cachedIcon;
       }
-    }
-
-    setItems(newItems);
+      next[index] = current;
+      return next;
+    });
   };
 
   const validateAndRegister = async () => {

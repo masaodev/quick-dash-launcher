@@ -53,9 +53,16 @@ export interface BookmarkAutoImportRule {
 export interface BookmarkAutoImportResult {
   /** 成功したかどうか */
   success: boolean;
-  /** 登録件数 */
+  /** ルールに合ったブックマークの件数（取込後にこのルールのアイテムが何件あるか） */
   importedCount: number;
-  /** 削除件数（前回分のクリア） */
+  /**
+   * 前回の取込になく、新しく足した件数。
+   * 差分で取り込むようになる前の版が保存した lastResult には無い（そのときは importedCount を足した件数とみなす）
+   */
+  addedCount?: number;
+  /** 表示名が変わって書き換えた件数（addedCount と同じく前の版の lastResult には無い） */
+  updatedCount?: number;
+  /** ブックマークから消えたので削除した件数 */
   deletedCount: number;
   /**
    * 取り込んだ URL のうち、同じデータファイルに手動（ルール外）で登録済みのものの件数。

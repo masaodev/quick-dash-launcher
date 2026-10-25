@@ -40,7 +40,7 @@ import {
 } from './cliShared.js';
 import type { ClipboardTextStore } from './cliShared.js';
 import { checkCliSetEntries } from './cliSetCommands.js';
-import { findLauncherEntry, launcherCandidate } from './cliLauncherCommands.js';
+import { findLauncherEntry, launcherCandidate, resolveTargetFile } from './cliLauncherCommands.js';
 import type { LauncherEntry, LauncherStore } from './cliLauncherCommands.js';
 
 /**
@@ -59,6 +59,8 @@ export interface WorkspaceStore {
   /** アイテム（参照はメインウィンドウのアイテムの中身で埋めたもの） */
   loadItems(): Promise<WorkspaceItem[]>;
   addItem(item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem>;
+  /** メインウィンドウのアイテム（id）を参照できるか（今のデータファイルにあり、フォルダ取込で展開したものでない） */
+  canRef(itemId: string): Promise<boolean>;
   /** メインウィンドウのアイテム（id）を指す参照を足す。参照できなければ undefined */
   addRef(
     itemId: string,
@@ -69,14 +71,23 @@ export interface WorkspaceStore {
   updateDisplayName(id: string, displayName: string): Promise<void>;
   /** 参照をコピーにする */
   convertToCopy(id: string): Promise<WorkspaceItem>;
+  /**
+   * コピーをメインウィンドウのデータファイルへ移し、参照に変える（画面の「メインウィンドウへ移して参照にする」と同じ）。
+   * reused は、移す先に同じアイテムがあり、新しく作らずにそれを指したとき
+   */
+  moveToMain(
+    id: string,
+    file: string
+  ): Promise<{ item: WorkspaceItem; file: string; tabName?: string; reused: boolean }>;
   /** アイテムをメインウィンドウのアイテムの参照にする（コピー → 参照・指し直し） */
   linkToMain(id: string, mainItemId: string): Promise<WorkspaceItem>;
   /** コピーと同じパス・引数のメインウィンドウのアイテム（id） */
   findLinkCandidates(id: string): Promise<string[]>;
   updateItem(id: string, update: WorkspaceItemUpdate): Promise<void>;
   removeItem(id: string): Promise<void>;
-  moveItemToGroup(itemId: string, groupId?: string): Promise<void>;
-  moveItemToWorkspace(itemId: string, workspaceId: string): Promise<void>;
+  moveItemToGroup(itemId: string, groupId: string): Promise<void>;
+  /** groupId を省けるのは、移す先にグループが無いとき（「未分類」グループを作る） */
+  moveItemToWorkspace(itemId: string, workspaceId: string, groupId?: string): Promise<void>;
   reorderMixed(parentGroupId: string | undefined, entries: MixedOrderEntry[]): Promise<void>;
   createGroup(
     name: string,
@@ -85,7 +96,8 @@ export interface WorkspaceStore {
     workspaceId?: string
   ): Promise<WorkspaceGroupView>;
   updateGroup(id: string, updates: WorkspaceGroupUpdate): Promise<void>;
-  deleteGroup(id: string, deleteItems: boolean): Promise<void>;
+  /** サブグループと中のアイテムごと消す */
+  deleteGroup(id: string): Promise<void>;
   /** 子孫のサブグループとアイテムごとアーカイブへ移す */
   archiveGroup(id: string): Promise<void>;
   loadArchivedGroups(): Promise<ArchivedWorkspaceGroup[]>;
@@ -221,32 +233,45 @@ function defaultWorkspace(s: Snapshot): Workspace {
 
 /**
  * --workspace と --group から置き場を決める。グループを指定したらそのワークスペースに従う
+ *
+ * 未分類は無いので、グループのあるワークスペースでは --group が要る。
+ * グループが 1 つも無いワークスペースだけ groupId を返さず、足すときに「未分類」グループが作られる（A3-157）
  */
 function resolvePlace(
   s: Snapshot,
   workspaceKey: string | undefined,
   groupKey: string | undefined
 ): { workspaceId: string; groupId?: string } {
+  if (groupKey === '') throw new CliError('usage', mainI18n.t('cli.errors.groupEmpty'));
   const workspace = workspaceKey ? findWorkspace(workspaceKey, s) : undefined;
-  if (groupKey === undefined || groupKey === '') {
-    return { workspaceId: (workspace ?? defaultWorkspace(s)).id };
+  if (groupKey === undefined) {
+    const target = workspace ?? defaultWorkspace(s);
+    if (s.groups.some((g) => g.workspaceId === target.id)) {
+      throw new CliError(
+        'usage',
+        mainI18n.t('cli.errors.groupRequired', { workspace: target.displayName })
+      );
+    }
+    return { workspaceId: target.id };
   }
   const group = findGroup(groupKey, s, workspace?.id);
   return { workspaceId: group.workspaceId, groupId: group.id };
 }
 
 /**
- * 同じ親の中で position 番目（0 始まり）に置く。グループの中はサブグループとアイテムが同じ並びで、
- * 未分類（グループ外）はアイテムだけの並び（画面の表示と同じ）
+ * 同じ親の中で position 番目（0 始まり）に置く。グループの中はサブグループとアイテムが同じ並び（画面の表示と同じ）
+ *
+ * @param groupId 省いたら、アイテムが今入っているグループ（足したときに作られた「未分類」グループなど）
  */
 async function placeAt(
   store: WorkspaceStore,
   itemId: string,
   workspaceId: string,
-  groupId: string | undefined,
+  placeGroupId: string | undefined,
   position: number
 ): Promise<void> {
   const s = await snapshot(store);
+  const groupId = placeGroupId ?? s.items.find((i) => i.id === itemId)?.groupId;
   const siblings: Array<MixedOrderEntry & { order: number }> = [
     ...s.items
       .filter((i) => i.workspaceId === workspaceId && i.groupId === groupId && i.id !== itemId)
@@ -299,6 +324,8 @@ export async function runWorkspaceCommand(
         return removeItem(args, ctx);
       case 'convert':
         return convertItem(args, ctx);
+      case 'move-to-main':
+        return moveItemToMain(args, ctx);
     }
   }
   if (noun === 'group') {
@@ -638,9 +665,12 @@ async function addFromLauncher(
 
   const s = await snapshot(ctx.store);
   const place = resolvePlace(s, optionString(parsed, 'workspace'), optionString(parsed, 'group'));
-  // 参照（既定）。id を持つアイテムなら参照で足す
+  // 参照（既定）。参照できるアイテムなら参照で足す。参照できなければ、画面と同じくコピーで足し、
+  // 結果に fellBackToCopy を付けて知らせる（--dry-run も同じ形を返す）
   const mainId = entry.item.id;
-  if (!copy && mainId) {
+  const refable = !copy && !!mainId && (await ctx.store.canRef(mainId));
+  let fellBackToCopy = !copy && !refable;
+  if (refable && mainId) {
     const location = [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)];
     if (dryRun) {
       return {
@@ -666,7 +696,10 @@ async function addFromLauncher(
       ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
       return { ...itemView(item, after), from: source };
     }
+    // 調べてから足すまでの間に参照できなくなった
+    fellBackToCopy = true;
   }
+  const fellBack = fellBackToCopy ? { fellBackToCopy: true } : {};
   if (dryRun) {
     return {
       dryRun: true,
@@ -676,6 +709,7 @@ async function addFromLauncher(
         location: [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)],
       },
       from: source,
+      ...fellBack,
     };
   }
 
@@ -691,7 +725,7 @@ async function addFromLauncher(
   const after = await snapshot(ctx.store);
   const item = after.items.find((i) => i.id === added.id) ?? added;
   ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
-  return { ...itemView(item, after), from: source };
+  return { ...itemView(item, after), from: source, ...fellBack };
 }
 
 /**
@@ -867,10 +901,6 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
     groupKey !== undefined || workspaceKey !== undefined
       ? resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey)
       : { workspaceId: current.workspaceId, groupId: current.groupId };
-  if (workspaceKey !== undefined && groupKey === undefined) {
-    // ワークスペースだけ変えたら、移った先では未分類になる
-    place.groupId = undefined;
-  }
 
   const before = itemView(current, s);
   if (dryRun) {
@@ -886,9 +916,9 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
   }
 
   if (changesBody) await ctx.store.updateItem(id, merged as unknown as WorkspaceItemUpdate);
-  if (place.workspaceId !== current.workspaceId)
-    await ctx.store.moveItemToWorkspace(id, place.workspaceId);
-  if (place.groupId !== (place.workspaceId !== current.workspaceId ? undefined : current.groupId)) {
+  if (place.workspaceId !== current.workspaceId) {
+    await ctx.store.moveItemToWorkspace(id, place.workspaceId, place.groupId);
+  } else if (place.groupId !== undefined && place.groupId !== current.groupId) {
     await ctx.store.moveItemToGroup(id, place.groupId);
   }
   if (position !== undefined)
@@ -943,7 +973,6 @@ async function updateRefItem(
     groupKey !== undefined || workspaceKey !== undefined
       ? resolvePlace(s, workspaceKey ?? (groupKey ? undefined : current.workspaceId), groupKey)
       : { workspaceId: current.workspaceId, groupId: current.groupId };
-  if (workspaceKey !== undefined && groupKey === undefined) place.groupId = undefined;
 
   const before = itemView(current, s);
   if (optionFlag(parsed, 'dry-run')) {
@@ -961,9 +990,9 @@ async function updateRefItem(
   }
   const id = current.id;
   if (name !== undefined) await ctx.store.updateDisplayName(id, name);
-  if (place.workspaceId !== current.workspaceId)
-    await ctx.store.moveItemToWorkspace(id, place.workspaceId);
-  if (place.groupId !== (place.workspaceId !== current.workspaceId ? undefined : current.groupId)) {
+  if (place.workspaceId !== current.workspaceId) {
+    await ctx.store.moveItemToWorkspace(id, place.workspaceId, place.groupId);
+  } else if (place.groupId !== undefined && place.groupId !== current.groupId) {
     await ctx.store.moveItemToGroup(id, place.groupId);
   }
   if (position !== undefined)
@@ -1030,6 +1059,48 @@ async function convertItem(
   const item = after.items.find((i) => i.id === current.id) ?? linked;
   ctx.changed(mainI18n.t('workspace.ref.linked', { name: item.displayName }));
   return { before, item: itemView(item, after) };
+}
+
+/**
+ * コピーをメインウィンドウへ移し、ワークスペース側を参照に変える（画面の「🚀 メインウィンドウへ移して参照にする」と同じ）。
+ * 移す先は --file か --tab（無ければ既定のデータファイル）。参照・元が見つからない参照は conflict
+ */
+async function moveItemToMain(
+  args: readonly string[],
+  ctx: WorkspaceCommandContext
+): Promise<unknown> {
+  const parsed = parseArgs(args, { values: ['file', 'tab'], flags: ['dry-run'] });
+  const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
+  const dryRun = optionFlag(parsed, 'dry-run');
+  if (!dryRun) await ctx.syncBeforeWrite();
+  const file = await resolveTargetFile(
+    { store: ctx.launcher },
+    optionString(parsed, 'file'),
+    optionString(parsed, 'tab')
+  );
+  const s = await snapshot(ctx.store);
+  const current = findItem(key, s);
+  if (current.type === 'ref' || current.ref) {
+    throw new CliError('conflict', mainI18n.t('cli.errors.alreadyInMain'));
+  }
+  const before = itemView(current, s);
+  if (dryRun) return { dryRun: true, before, file };
+
+  const result = await ctx.store.moveToMain(current.id, file);
+  const after = await snapshot(ctx.store);
+  const item = after.items.find((i) => i.id === current.id) ?? result.item;
+  const name = item.displayName;
+  const tab = result.tabName;
+  ctx.changed(
+    result.reused
+      ? tab !== undefined
+        ? mainI18n.t('workspace.ref.linkedToSameInMain', { name, tab })
+        : mainI18n.t('workspace.ref.linkedToSameInMainNoTab', { name })
+      : tab !== undefined
+        ? mainI18n.t('workspace.ref.movedToMain', { name, tab })
+        : mainI18n.t('workspace.ref.movedToMainNoTab', { name })
+  );
+  return { before, item: itemView(item, after), file: result.file, reused: result.reused };
 }
 
 async function removeItem(args: readonly string[], ctx: WorkspaceCommandContext): Promise<unknown> {
@@ -1171,7 +1242,7 @@ async function removeGroup(
   }
   if (dryRun) return { dryRun: true, removed: view };
   await ctx.beforeGroupRemoved(group.id);
-  await ctx.store.deleteGroup(group.id, false);
+  await ctx.store.deleteGroup(group.id);
   ctx.changed(mainI18n.t('cli.changed.groupRemoved', { name: group.displayName }));
   return { removed: view };
 }

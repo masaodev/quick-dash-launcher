@@ -11,7 +11,8 @@ interface WorkspaceHeaderProps {
   onToggleFilter: () => void;
   onExpandAll: () => void;
   onCollapseAll: () => void;
-  onAddGroup: () => void;
+  /** ＋（グループ・アイテム・ワークスペースを追加するメニュー）。anchor はボタンの左下の位置 */
+  onAddMenu: (anchor: { x: number; y: number }) => void;
   pinLevel: PinLevel;
   onPinLevelChange: (level: PinLevel) => void;
   onClose: () => void;
@@ -22,7 +23,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   onToggleFilter,
   onExpandAll,
   onCollapseAll,
-  onAddGroup,
+  onAddMenu,
   pinLevel,
   onPinLevelChange,
   onClose,
@@ -77,7 +78,8 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
       <h1>{t('workspace.title')}</h1>
       <div className="workspace-header-controls">
         <button
-          className={`action-btn workspace-control-btn ${isFilterVisible ? 'active' : ''}`}
+          className={`action-btn workspace-control-btn ${isFilterVisible ? 'toggle-on' : ''}`}
+          aria-pressed={isFilterVisible}
           onClick={onToggleFilter}
           title={t('workspace.header.filter')}
         >
@@ -99,8 +101,12 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         </button>
         <button
           className="action-btn workspace-control-btn"
-          onClick={onAddGroup}
-          title={t('workspace.header.addGroup')}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            onAddMenu({ x: rect.left, y: rect.bottom });
+          }}
+          title={t('workspace.header.add')}
+          data-testid="workspace-add-menu-button"
         >
           ➕
         </button>
@@ -111,7 +117,7 @@ const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
         />
         <div className="workspace-settings-container" ref={settingsMenuRef}>
           <button
-            className={`action-btn workspace-control-btn ${isSettingsMenuOpen ? 'active' : ''}`}
+            className={`action-btn workspace-control-btn ${isSettingsMenuOpen ? 'toggle-on' : ''}`}
             onClick={toggleSettingsMenu}
             title={t('workspace.header.menu')}
           >

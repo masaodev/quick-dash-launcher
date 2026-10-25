@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_DATA_FILE, AppItem, AppSettings, DataFileTab } from '@common/types';
 import { isWindowInfo } from '@common/types/guards';
 
 import { debugLog, logError } from '../utils/debug';
+import { getActiveTabFiles } from '../utils/tabFiles';
 
 import { useToast } from './useToast';
 
@@ -40,6 +41,8 @@ function resolveActiveTab(files: string[], preferredTab: string): string {
  */
 export function useDataFileTabs() {
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
+  /** 前に読んだ「複数タブを表示」（切り替わったかを見るため） */
+  const lastShowDataFileTabs = useRef<boolean | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>(DEFAULT_DATA_FILE);
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
   const [dataFileLabels, setDataFileLabels] = useState<Record<string, string>>({});
@@ -84,6 +87,7 @@ export function useDataFileTabs() {
     settings: AppSettings,
     options: { resetToDefault?: boolean } = {}
   ): Promise<void> {
+    lastShowDataFileTabs.current = settings.showDataFileTabs;
     setShowDataFileTabs(settings.showDataFileTabs);
     setDataFileTabs(settings.dataFileTabs || []);
     setDataFileLabels(settings.dataFileLabels || {});
@@ -134,7 +138,11 @@ export function useDataFileTabs() {
       debugLog('設定変更通知を受信、タブ設定を再読み込みします');
       try {
         const settings = await window.electronAPI.getSettings();
-        await applySettings(settings);
+        // 「複数タブを表示」を切り替えたら最初のタブに戻す（オフにしたのに、見ていたタブの中身が残らないように）
+        const tabsToggled =
+          lastShowDataFileTabs.current !== undefined &&
+          lastShowDataFileTabs.current !== settings.showDataFileTabs;
+        await applySettings(settings, { resetToDefault: tabsToggled });
       } catch (error) {
         logError('設定の再読み込みに失敗しました:', error);
       }
@@ -148,19 +156,12 @@ export function useDataFileTabs() {
 
   const getTabFilteredItems = useCallback(
     (mainItems: AppItem[]): AppItem[] => {
-      const activeTabConfig = showDataFileTabs
-        ? dataFileTabs.find((tab) => tab.files.includes(activeTab))
-        : undefined;
-
-      if (activeTabConfig) {
-        return mainItems.filter(
-          (item) => !isWindowInfo(item) && activeTabConfig.files.includes(item.sourceFile || '')
-        );
-      }
-
-      return mainItems.filter((item) => !isWindowInfo(item) && item.sourceFile === activeTab);
+      const files = getActiveTabFiles(dataFileTabs, activeTab);
+      return mainItems.filter(
+        (item) => !isWindowInfo(item) && files.includes(item.sourceFile || '')
+      );
     },
-    [showDataFileTabs, dataFileTabs, activeTab]
+    [dataFileTabs, activeTab]
   );
 
   return {

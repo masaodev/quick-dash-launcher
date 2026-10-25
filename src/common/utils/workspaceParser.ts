@@ -370,7 +370,7 @@ function validateRefItemBody(body: Record<string, unknown>): Record<string, unkn
 // ============================================================
 
 const ITEM_TYPE_KEYS: Record<JsonWorkspaceItem['type'], string[]> = {
-  item: ['path', 'args', 'originalPath', 'customIcon', ...ITEM_WINDOW_SWITCH_KEYS],
+  item: ['path', 'args', 'originalPath', 'customIcon', 'runAsAdmin', ...ITEM_WINDOW_SWITCH_KEYS],
   clipboard: ['dataFileRef', 'savedAt', 'preview', 'formats', 'customIcon'],
   set: ['entries', 'launchMode', 'customIcon'],
   ref: ['refItemId', 'lastKnownName'],
@@ -749,6 +749,61 @@ function resolveItem<T extends JsonWorkspaceItem>(
   return orderWorkspaceItemKeys(item);
 }
 
+/**
+ * グループを持たないアイテムを、ワークスペースごとの「未分類」グループに入れる（A3-157）
+ *
+ * 未分類という専用の区画は無くし、どのアイテムも普通のグループに入る形にそろえる。
+ * 作ったグループは、名前が「未分類」（作るときの表示言語）なだけの普通のグループで、改名も削除もできる。
+ * 古い版で書いたファイルや、CLI・手編集でグループを外したアイテムも、読み込むたびにここで入れ直す。
+ * 検証を通らなかったグループを指すアイテムは、直せば戻るのでそのままにする
+ */
+function assignUngroupedItems<T extends JsonWorkspaceItem>(
+  items: T[],
+  groups: JsonWorkspaceGroup[],
+  ctx: WorkspaceParseContext,
+  issues: IssueCollector
+): T[] {
+  const created = new Map<string, JsonWorkspaceGroup>();
+  const moved = new Map<string, number>();
+  const result = items.map((item) => {
+    if (item.groupId !== undefined) return item;
+    let group = created.get(item.workspaceId);
+    if (!group) {
+      const id = generateUniqueId(ctx.reservedIds);
+      ctx.reservedIds.add(id);
+      ctx.groupIds.add(id);
+      const topLevelOrders = groups
+        .filter((g) => g.workspaceId === item.workspaceId && g.parentGroupId === undefined)
+        .map((g) => g.order);
+      group = orderGroupKeys({
+        id,
+        displayName: ctx.t('workspace.groups.uncategorized'),
+        color: getDefaultGroupColor(topLevelOrders.length),
+        order: topLevelOrders.length > 0 ? Math.max(...topLevelOrders) + 1 : 0,
+        createdAt: ctx.now,
+        workspaceId: item.workspaceId,
+      } as JsonWorkspaceGroup);
+      created.set(item.workspaceId, group);
+      groups.push(group);
+    }
+    moved.set(group.id, (moved.get(group.id) ?? 0) + 1);
+    // キーの並びを保つ（groupId は workspaceId の後ろ）
+    return orderWorkspaceItemKeys({ ...item, groupId: group.id });
+  });
+  for (const [groupId, count] of moved) {
+    issues.normalized(
+      'items',
+      -1,
+      issues.t('parseReasons.ungroupedItemsGrouped', {
+        count,
+        name: ctx.t('workspace.groups.uncategorized'),
+      }),
+      groupId
+    );
+  }
+  return result;
+}
+
 // ============================================================
 // workspace.json
 // ============================================================
@@ -806,7 +861,12 @@ export function parseWorkspaceFileLenient(
 
   // --- pass 2: 参照の解決 ---
   const groups = resolveGroups(parsedGroups, ctx.groupIds, ctx, issues);
-  const items = parsedItems.map((parsed) => resolveItem(parsed, ctx.groupIds, ctx, issues));
+  const items = assignUngroupedItems(
+    parsedItems.map((parsed) => resolveItem(parsed, ctx.groupIds, ctx, issues)),
+    groups,
+    ctx,
+    issues
+  );
 
   if (invalid.workspaces.length + invalid.groups.length + invalid.items.length > 0) {
     // 不正な要素は書き戻し時に末尾へ寄るので内容が変わる

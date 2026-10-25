@@ -11,6 +11,7 @@ import type { WorkspaceItemCreate } from '../hooks/workspace/useWorkspaceItemEdi
 
 import WorkspaceItemEditModal from './WorkspaceItemEditModal';
 import WorkspaceDestinationBand, {
+  destinationAddedMessage,
   expandDestinationGroup,
   loadWorkspaceDestination,
   type WorkspaceDestination,
@@ -63,17 +64,16 @@ const WorkspaceNewItemPage: React.FC<WorkspaceNewItemPageProps> = ({ groupId }) 
       destination
         ? {
             onAdd: async (body: WorkspaceItemUpdate) => {
-              const { group } = destination;
               await expandDestinationGroup(destination);
               const created = await window.electronAPI.workspaceAPI.createItem(
                 body,
-                group.id,
-                group.workspaceId
+                destination.group?.id,
+                destination.workspaceId
               );
               await window.electronAPI.showToastWindow({
                 itemType: 'workspaceAdd',
                 displayName: created.displayName,
-                message: t('workspace.picker.addedToGroup', { group: group.displayName }),
+                message: destinationAddedMessage(destination),
                 ...(created.type === 'item' && { path: created.path }),
               });
             },

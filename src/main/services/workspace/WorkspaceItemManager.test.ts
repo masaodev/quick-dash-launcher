@@ -218,6 +218,30 @@ describe('WorkspaceItemManager', () => {
       });
     });
 
+    it('duplicateItem はクリップボードアイテムの実データを写し、元と同じファイルを指さないこと', () => {
+      const added = manager.addItem({ displayName: 'a', path: 'C:\\a.exe', type: 'app' });
+      manager.updateItem(added.id, {
+        type: 'clipboard',
+        displayName: 'メモ',
+        dataFileRef: 'clipboard-data/a.json',
+        savedAt: 1,
+        formats: ['text'],
+      });
+      const copied: string[] = [];
+      const dup = manager.duplicateItem(added.id, undefined, undefined, (ref) => {
+        copied.push(ref);
+        return 'clipboard-data/b.json';
+      });
+      expect(copied).toEqual(['clipboard-data/a.json']);
+      expect(readItems().find((i) => i.id === dup.id)).toMatchObject({
+        type: 'clipboard',
+        dataFileRef: 'clipboard-data/b.json',
+      });
+      expect(readItems().find((i) => i.id === added.id)).toMatchObject({
+        dataFileRef: 'clipboard-data/a.json',
+      });
+    });
+
     it('updateRefs で指す先を付け替えられること', () => {
       manager.addRef('Old00001', 'x');
       const changed = manager.updateRefs((item) => {

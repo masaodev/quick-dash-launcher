@@ -10,7 +10,6 @@ import {
   describeWorkspaceItem,
   expandWorkspaceSetEntries,
   registerItemToWorkspaceItemUpdate,
-  toSavedSetEntries,
   toToastItemType,
   workspaceItemToRegisterItem,
 } from '@common/utils/workspaceConverters';
@@ -258,18 +257,9 @@ describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
     });
     expect(update).toEqual({ type: 'item', displayName: 'クリップ', path: 'C:\\a.exe' });
   });
-
-  it('registerItemToWorkspaceItemUpdate はセットの行の画面用の印を保存しないこと', () => {
-    const update = registerItemToWorkspaceItemUpdate({
-      ...workspaceItemToRegisterItem(groupItem),
-      setEntries: [{ open: { path: 'C:\\b.exe' }, expandedFrom: 'B' }],
-    });
-    expect(update).toMatchObject({ entries: [{ open: { path: 'C:\\b.exe' } }] });
-    expect(JSON.stringify(update)).not.toContain('expandedFrom');
-  });
 });
 
-describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンドウへ登録するセットの行）', () => {
+describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンドウへ移すセットの行）', () => {
   const wsItem = (id: string, fields: Partial<WorkspaceItem>): WorkspaceItem =>
     ({ ...meta, id, type: 'item', launcherType: 'app', ...fields }) as WorkspaceItem;
   const terminal = wsItem('wsTerm01', {
@@ -288,7 +278,7 @@ describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンド
   });
   const workspaceItems = [terminal, memo, pathless, withSwitch, groupItem, clipboardItem];
 
-  it('ワークスペースのアイテムを指す行を、パスを書いた行にして印を付けること（行の位置などは残す）', () => {
+  it('ワークスペースのアイテムを指す行を、パスを書いた行にすること（行の位置などは残す）', () => {
     const placement = { x: 10, y: 0, width: 500, height: 400, virtualDesktopNumber: 1 };
     const [row] = expandWorkspaceSetEntries(
       [
@@ -306,7 +296,6 @@ describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンド
       label: '✳ Claude Code',
       window: { processName: 'WindowsTerminal.exe', title: '*' },
       placement,
-      expandedFrom: 'ターミナル',
     });
   });
 
@@ -315,7 +304,6 @@ describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンド
     expect(row).toEqual({
       open: { path: 'C:\\work\\対応一覧.md' },
       label: '対応一覧.md',
-      expandedFrom: '対応一覧.md',
     });
   });
 
@@ -345,7 +333,6 @@ describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンド
       placement: { x: 0, y: 0, width: 800, height: 600 },
       pinToAllDesktops: true,
       activateWindow: true,
-      expandedFrom: 'エディタ',
     });
   });
 
@@ -355,7 +342,6 @@ describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンド
       label: 'Chrome',
       window: { processName: 'chrome.exe', title: '*Chrome' },
       placement: { x: 1, y: 2, width: 3, height: 4 },
-      expandedFrom: 'Chrome',
     });
   });
 
@@ -366,7 +352,6 @@ describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンド
       label: 'Chrome',
       window: { processName: 'chrome.exe', title: '*Chrome' },
       placement,
-      expandedFrom: 'Chrome',
     });
     expect(row).not.toHaveProperty('open');
   });
@@ -380,15 +365,7 @@ describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンド
       open: { path: 'C:\\editor.exe' },
       label: 'エディタ',
       window: { title: '*Editor*' },
-      expandedFrom: 'エディタ',
     });
-  });
-
-  it('toSavedSetEntries は画面用の印だけを除くこと', () => {
-    const [expanded] = expandWorkspaceSetEntries([{ itemId: 'wsMemo01' }], workspaceItems);
-    expect(toSavedSetEntries([expanded])).toEqual([
-      { open: { path: 'C:\\work\\対応一覧.md' }, label: '対応一覧.md' },
-    ]);
   });
 });
 

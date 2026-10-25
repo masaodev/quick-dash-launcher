@@ -41,6 +41,14 @@ export interface UseKeyboardShortcutsParams {
   canPinWindow: boolean;
   activeDesktopTab: number;
   setActiveDesktopTab: React.Dispatch<React.SetStateAction<number>>;
+  /** Ctrl+C: 選んでいるアイテムのパスをコピー（検索欄で文字を選んでいるときは文字のコピーのまま） */
+  onCopyPath?: (item: LauncherItem) => void | Promise<void>;
+  /** Ctrl+Shift+C: 選んでいるアイテムの親フォルダのパスをコピー */
+  onCopyParentPath?: (item: LauncherItem) => void | Promise<void>;
+  /** Shift+F10・アプリケーションキー: 選んでいる行の右クリックメニューを出す */
+  onOpenContextMenu?: (index: number) => void;
+  /** Ctrl+Shift+Enter: 選んでいるアイテムを管理者として実行（対象外の種類は呼び出し側で知らせる） */
+  onRunAsAdmin?: (item: AppItem) => void | Promise<void>;
 }
 
 export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
@@ -75,6 +83,10 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     canPinWindow,
     activeDesktopTab,
     setActiveDesktopTab,
+    onCopyPath,
+    onCopyParentPath,
+    onOpenContextMenu,
+    onRunAsAdmin,
   } = params;
 
   function buildDesktopTabIds(): number[] {
@@ -281,12 +293,42 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
 
     const selectedItem = filteredItems[selectedIndex];
 
+    // Shift+F10・アプリケーションキー: 選んでいる行の右クリックメニュー（検索欄の文字のメニューは出さない）
+    if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (selectedItem) onOpenContextMenu?.(selectedIndex);
+      return;
+    }
+
+    // Ctrl+C: パスをコピー、Ctrl+Shift+C: 親フォルダのパスをコピー（通常検索のとき）。
+    // 検索欄で文字を選んでいるときの Ctrl+C は、今までどおり文字のコピー
+    if (searchMode === 'normal' && e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'c') {
+      const input = e.target as Partial<HTMLInputElement>;
+      const hasTextSelection =
+        typeof input.selectionStart === 'number' && input.selectionStart !== input.selectionEnd;
+      if (!e.shiftKey && hasTextSelection) return;
+      if (!selectedItem || !isLauncherItem(selectedItem) || selectedItem.type === 'windowSwitch') {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.shiftKey) await onCopyParentPath?.(selectedItem);
+      else await onCopyPath?.(selectedItem);
+      return;
+    }
+
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
         e.stopPropagation();
         // 押しっぱなしのキーリピートでは実行しない（多重起動や、失敗のダイアログを閉じた直後の実行し直しを防ぐ）
         if (e.repeat || !selectedItem) return;
+        // Ctrl+Shift+Enter: 管理者として実行（ウィンドウ検索の行は Enter と同じく前面に出す）
+        if (e.ctrlKey && e.shiftKey && !isWindowInfo(selectedItem)) {
+          await onRunAsAdmin?.(selectedItem);
+          return;
+        }
         if (e.shiftKey && isLauncherItem(selectedItem)) {
           // URL・カスタム URI・パスの無い単一アイテムには親フォルダが無い。押しても無反応だと故障に見えるので知らせる
           if (

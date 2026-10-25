@@ -1,17 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Workspace } from '@common/types';
 
 import { useTabBarScroll } from '../hooks/useTabBarScroll';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
 
-import ConfirmDialog from './ConfirmDialog';
-
 interface WorkspaceTabBarProps {
   workspaces: Workspace[];
   activeWorkspaceId: string;
   onTabClick: (workspaceId: string) => void;
-  onCreateWorkspace: (name: string) => void;
   onRenameWorkspace: (id: string, name: string) => void;
   onDeleteWorkspace: (id: string) => void;
   onReorderWorkspaces?: (ids: string[]) => void;
@@ -23,7 +20,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   workspaces,
   activeWorkspaceId,
   onTabClick,
-  onCreateWorkspace,
   onRenameWorkspace,
   onDeleteWorkspace,
   onReorderWorkspaces,
@@ -33,7 +29,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
   const { t } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragSourceId = useRef<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,6 +67,22 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     }
   }, [editingId]);
 
+  // ワークスペースの削除の確認は、ほかの確認と同じく別の小さなウィンドウで出す
+  //（画面の中に出すと、高さが中身に合わせて低いときに切れる。A3-163）
+  const confirmDelete = useCallback(
+    async (ws: Workspace) => {
+      const result = await window.electronAPI.workspaceAPI.openConfirm({
+        title: t('workspace.tabs.deleteTitle'),
+        message: t('workspace.tabs.deleteConfirm', { name: ws.displayName }),
+        confirmText: t('workspace.tabs.delete'),
+        cancelText: t('common.cancel'),
+        danger: true,
+      });
+      if (result) onDeleteWorkspace(ws.id);
+    },
+    [onDeleteWorkspace, t]
+  );
+
   // Electronネイティブメニューからのイベントリスナー
   useEffect(() => {
     const cleanups = [
@@ -83,12 +94,13 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
         }
       }),
       window.electronAPI.onWorkspaceTabMenuDelete((workspaceId) => {
-        setDeleteConfirmId(workspaceId);
+        const ws = workspaces.find((w) => w.id === workspaceId);
+        if (ws) void confirmDelete(ws);
       }),
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [workspaces]);
+  }, [workspaces, confirmDelete]);
 
   const handleDoubleClick = (ws: Workspace) => {
     setEditName(ws.displayName);
@@ -121,18 +133,6 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     e.preventDefault();
     const canDelete = workspaces.length > 1;
     window.electronAPI.showWorkspaceTabContextMenu(ws.id, canDelete);
-  };
-
-  const handleAddWorkspace = () => {
-    const name = t('workspace.tabs.defaultName', { number: workspaces.length + 1 });
-    onCreateWorkspace(name);
-  };
-
-  const handleConfirmDelete = () => {
-    if (deleteConfirmId) {
-      onDeleteWorkspace(deleteConfirmId);
-      setDeleteConfirmId(null);
-    }
   };
 
   // D&D handlers
@@ -177,11 +177,16 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
     setDragOverId(null);
   };
 
-  const deleteTargetWs = deleteConfirmId ? workspaces.find((w) => w.id === deleteConfirmId) : null;
+  // タブの無い所の右クリック（タブの上はそれぞれのタブのメニュー）
+  const handleBlankContextMenu = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.tab-button, input')) return;
+    e.preventDefault();
+    void window.electronAPI.showWorkspaceBlankContextMenu(activeWorkspaceId, 'tabBar');
+  };
 
   return (
     <>
-      <div className="tab-bar workspace-tab-bar">
+      <div className="tab-bar workspace-tab-bar" onContextMenu={handleBlankContextMenu}>
         <div
           className={`workspace-tab-scroll${overflow.left ? ' fade-left' : ''}${overflow.right ? ' fade-right' : ''}`}
           ref={tabBarRef}
@@ -233,25 +238,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({
             🗄️
           </button>
         )}
-        <button
-          className="tab-button workspace-add-tab-btn"
-          onClick={handleAddWorkspace}
-          title={t('workspace.tabs.add')}
-        >
-          +
-        </button>
       </div>
-      <ConfirmDialog
-        isOpen={deleteConfirmId !== null && deleteTargetWs !== null}
-        onClose={() => setDeleteConfirmId(null)}
-        onConfirm={handleConfirmDelete}
-        title={t('workspace.tabs.deleteTitle')}
-        message={t('workspace.tabs.deleteConfirm', { name: deleteTargetWs?.displayName ?? '' })}
-        confirmText={t('workspace.tabs.delete')}
-        cancelText={t('common.cancel')}
-
-        danger={true}
-      />
     </>
   );
 };

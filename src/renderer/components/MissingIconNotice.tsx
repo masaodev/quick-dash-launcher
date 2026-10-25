@@ -23,12 +23,12 @@ const MissingIconNotice: React.FC<MissingIconNoticeProps> = ({ missingCount, onF
 
   return (
     <div className="missing-icon-notice">
+      {/* 何の処理か・何度もかかるのかが分かるように、1 回だけ取りに行くことも書く（A3-174） */}
       <div className="missing-icon-notice__content">
-        <span className="missing-icon-notice__icon">⚠</span>
-        <span className="missing-icon-notice__label">{t('launcher.missingIcons.label')}</span>
-        <span className="missing-icon-notice__count">
-          {t('common.itemCount', { count: missingCount })}
+        <span className="missing-icon-notice__label">
+          {t('launcher.missingIcons.label', { count: missingCount })}
         </span>
+        <span className="missing-icon-notice__hint">{t('launcher.missingIcons.hint')}</span>
       </div>
       <Button
         variant="secondary"

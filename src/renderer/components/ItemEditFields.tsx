@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { ClipboardFormat, DataFileTab, RegisterItem, SetEntry } from '@common/types';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { isPathlessItem } from '@common/utils/itemWindowConversion';
+import { canSetRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { debugLog } from '../utils/debug';
 import { describeDirOptionsShort } from '../utils/editableItemOperations';
@@ -74,8 +75,6 @@ interface ItemEditFieldsProps {
   setIncludesWorkspace?: boolean;
   /** 編集中のアイテム自身の id（種類をセットに変えたとき、自分を行に選べないようにする） */
   selfId?: string;
-  /** ドロップしたファイルから登録するときはパスを書き換えさせない */
-  isPathReadOnly: boolean;
   iconFetchLoading: boolean;
   optionsOpen: boolean;
   onToggleOptions: () => void;
@@ -103,7 +102,6 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
   allowFolderImport = true,
   setIncludesWorkspace = false,
   selfId,
-  isPathReadOnly,
   iconFetchLoading,
   optionsOpen,
   onToggleOptions,
@@ -135,17 +133,26 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
     flashTimerRef.current = setTimeout(() => setConvertedFlash(false), 800);
   };
   // 選んだパスを入れ、パス欄を離れたときと同じく種別を決め直す
+  // フォルダ取込で「フォルダを選択」から選んだ回数（増えるとプレビューを読む。A3-183）
+  const [dirPickCount, setDirPickCount] = useState(0);
   const handlePick = (pickedPath: string) => {
     onFieldChange('path', pickedPath);
     onPathBlur(pickedPath);
+    if (item.itemCategory === 'dir') setDirPickCount((n) => n + 1);
   };
 
   // メモはあまり使わないので畳んでおく。開くかを選ぶまでは、メモが書いてあれば開く（編集でメモに気づけるように）
   const [memoOpenChoice, setMemoOpenChoice] = useState<boolean | null>(null);
   const memoOpen = memoOpenChoice ?? !!item.memo?.trim();
   const memoFirstLine = item.memo?.trim().split(/\r?\n/)[0] ?? '';
-  const dirOptionsSummary =
-    item.itemCategory === 'dir' && item.dirOptions ? describeDirOptionsShort(item.dirOptions) : '';
+  // 「常に管理者として実行」はアプリ（exe・.lnk・.bat/.cmd など）の単一アイテムだけ
+  const canRunAsAdmin = item.itemCategory === 'item' && canSetRunAsAdmin(item.path);
+  const optionsSummary =
+    item.itemCategory === 'dir' && item.dirOptions
+      ? describeDirOptionsShort(item.dirOptions)
+      : canRunAsAdmin && item.runAsAdmin
+        ? t('register.runAsAdminSummary')
+        : '';
 
   const flashClass = convertedFlash ? ' item-converted-flash' : '';
   const selectedTab = placement?.availableTabs.find((tab) => tab.files.includes(item.targetTab));
@@ -245,8 +252,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
           <input
             type="text"
             value={item.path}
-            readOnly={isPathReadOnly}
-            className={(errors?.path ? 'error' : isPathReadOnly ? 'readonly' : '') + flashClass}
+            className={(errors?.path ? 'error' : '') + flashClass}
             onChange={(e) => onFieldChange('path', e.target.value)}
             onBlur={() => onPathBlur()}
             placeholder={
@@ -255,13 +261,11 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
                 : t('register.pathPlaceholder')
             }
           />
-          {!isPathReadOnly && (
-            <PathPickerButton
-              mode={item.itemCategory === 'dir' ? 'folder' : 'any'}
-              currentPath={item.path}
-              onPick={handlePick}
-            />
-          )}
+          <PathPickerButton
+            mode={item.itemCategory === 'dir' ? 'folder' : 'any'}
+            currentPath={item.path}
+            onPick={handlePick}
+          />
           {/* フォルダ取込はアイコンを取らず変換もしない（いつも押せない）ので出さない */}
           {item.itemCategory !== 'dir' && (
             <IconFetchButton
@@ -271,7 +275,7 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
               itemType={item.type}
             />
           )}
-          {!isPathReadOnly && item.itemCategory !== 'dir' && (
+          {item.itemCategory !== 'dir' && (
             <ItemConverterMenu path={item.path} args={item.args} onConvert={handleConvert} />
           )}
           {errors?.path && <span className="error-message">{errors.path}</span>}
@@ -306,10 +310,10 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
             <span>
               {item.itemCategory === 'item' ? t('register.itemOptions') : t('register.dirOptions')}
             </span>
-            {/* たたんでいても、今効いているフォルダ取込の設定が分かるように見出しの横に出す */}
-            {dirOptionsSummary && (
-              <span className="options-toggle-summary" data-testid="dir-options-summary">
-                {dirOptionsSummary}
+            {/* たたんでいても、今効いているフォルダ取込の設定・管理者として実行が分かるように見出しの横に出す */}
+            {optionsSummary && (
+              <span className="options-toggle-summary" data-testid="options-summary">
+                {optionsSummary}
               </span>
             )}
           </button>
@@ -328,6 +332,20 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
                       placeholder={t('register.argsPlaceholder')}
                     />
                   </div>
+                  {canRunAsAdmin && (
+                    <div className="form-group">
+                      <label className="register-check">
+                        <input
+                          type="checkbox"
+                          checked={item.runAsAdmin === true}
+                          onChange={(e) =>
+                            onUpdate({ runAsAdmin: e.target.checked ? true : undefined })
+                          }
+                        />
+                        {t('register.runAsAdmin')}
+                      </label>
+                    </div>
+                  )}
                   {customIconEditor}
                 </>
               )}
@@ -344,7 +362,11 @@ const ItemEditFields: React.FC<ItemEditFieldsProps> = ({
       )}
 
       {item.itemCategory === 'dir' && (
-        <DirPreviewPanel path={item.path} dirOptions={item.dirOptions} />
+        <DirPreviewPanel
+          path={item.path}
+          dirOptions={item.dirOptions}
+          autoRunToken={dirPickCount}
+        />
       )}
 
       {item.itemCategory === 'item' && (

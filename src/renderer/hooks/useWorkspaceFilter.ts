@@ -2,18 +2,26 @@ import { useMemo } from 'react';
 import type { WorkspaceGroup, WorkspaceItem } from '@common/types';
 import { getAncestorGroupIds, getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
+import { parseKeywords } from '../utils/dataParser';
+
 export type FilterScope = 'all' | 'group' | 'item';
 
 interface FilterResult {
   visibleGroupIds: Set<string> | null;
   itemVisibility: Map<string, boolean> | null;
-  showUncategorized: boolean;
 }
 
-/** アイテムの名前が絞り込みの文字を含むか（参照はメインウィンドウの表示名でも当てる） */
-function matchesItemName(item: WorkspaceItem, lower: string): boolean {
-  if (item.displayName.toLowerCase().includes(lower)) return true;
-  return !!item.ref?.mainDisplayName?.toLowerCase().includes(lower);
+/** 文がすべての語を含むか（メインウィンドウの検索と同じく、スペース区切りの AND） */
+function includesAll(text: string, keywords: readonly string[]): boolean {
+  const lower = text.toLowerCase();
+  return keywords.every((keyword) => lower.includes(keyword));
+}
+
+/** アイテムの名前の文（参照はメインウィンドウの表示名も足す） */
+function itemNameText(item: WorkspaceItem): string {
+  return item.ref?.mainDisplayName
+    ? `${item.displayName}\n${item.ref.mainDisplayName}`
+    : item.displayName;
 }
 
 export function useWorkspaceFilter(
@@ -24,13 +32,20 @@ export function useWorkspaceFilter(
 ): FilterResult {
   return useMemo(() => {
     if (!filterText.trim()) {
-      return { visibleGroupIds: null, itemVisibility: null, showUncategorized: true };
+      return { visibleGroupIds: null, itemVisibility: null };
     }
 
-    const lower = filterText.toLowerCase();
+    const keywords = parseKeywords(filterText);
+    const groupNameById = new Map(groups.map((g) => [g.id, g.displayName]));
+    /** アイテムが入っているグループと、その親のグループの名前（「すべて」で語をグループ名とアイテム名にまたがって当てる） */
+    const groupPathText = (groupId: string | undefined): string =>
+      groupId
+        ? [groupId, ...getAncestorGroupIds(groupId, groups)]
+            .map((id) => groupNameById.get(id) ?? '')
+            .join('\n')
+        : '';
     const visibleGroupIds = new Set<string>();
     const itemVisibility = new Map<string, boolean>();
-    let showUncategorized = false;
 
     /** グループIDとその全祖先をvisibleGroupIdsに追加 */
     function addGroupWithAncestors(groupId: string): void {
@@ -41,7 +56,7 @@ export function useWorkspaceFilter(
     }
 
     const matchedGroupIds = new Set(
-      groups.filter((g) => g.displayName.toLowerCase().includes(lower)).map((g) => g.id)
+      groups.filter((g) => includesAll(g.displayName, keywords)).map((g) => g.id)
     );
 
     // グループがマッチした場合、その子孫と祖先も表示対象にする
@@ -65,31 +80,25 @@ export function useWorkspaceFilter(
 
       case 'item':
         for (const item of items) {
-          const matches = matchesItemName(item, lower);
+          const matches = includesAll(itemNameText(item), keywords);
           itemVisibility.set(item.id, matches);
-          if (matches) {
-            if (item.groupId) {
-              addGroupWithAncestors(item.groupId);
-            } else {
-              showUncategorized = true;
-            }
-          }
+          if (matches && item.groupId) addGroupWithAncestors(item.groupId);
         }
         break;
 
       case 'all':
       default:
         for (const item of items) {
-          const itemMatches = matchesItemName(item, lower);
+          // 語はアイテム名とグループ名（親を含む）にまたがって当ててよい（例: 「株 xlsm」）
+          const itemMatches = includesAll(
+            `${itemNameText(item)}\n${groupPathText(item.groupId)}`,
+            keywords
+          );
           const groupMatches = !!(item.groupId && expandedGroupIds.has(item.groupId));
 
           if (itemMatches || groupMatches) {
             itemVisibility.set(item.id, true);
-            if (item.groupId) {
-              addGroupWithAncestors(item.groupId);
-            } else if (itemMatches) {
-              showUncategorized = true;
-            }
+            if (item.groupId) addGroupWithAncestors(item.groupId);
           } else {
             itemVisibility.set(item.id, false);
           }
@@ -101,7 +110,6 @@ export function useWorkspaceFilter(
     return {
       visibleGroupIds: visibleGroupIds.size > 0 ? visibleGroupIds : null,
       itemVisibility,
-      showUncategorized,
     };
   }, [groups, items, filterText, filterScope]);
 }

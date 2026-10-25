@@ -39,6 +39,7 @@ import {
 } from '../services/launch/setExecutor.js';
 import { notifyLaunchFailure, openSingleItem } from '../services/launch/itemOpener.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
+import { ClipboardService } from '../services/clipboardService.js';
 import {
   addAppItemToWorkspace,
   applyLinkCopies,
@@ -50,6 +51,7 @@ import {
 } from '../services/workspace/workspaceRefOperations.js';
 
 import { notifyWorkspaceChanged } from './notifications.js';
+import { moveItemToMain } from './workspaceRefMenu.js';
 
 /**
  * 指定グループとその子孫の切り離しウィンドウをすべて閉じる
@@ -73,6 +75,7 @@ function workspaceItemToLaunchable(item: WorkspaceItem): AppItem | undefined {
       displayName: item.displayName,
       path: item.path,
       args: item.args,
+      ...(item.runAsAdmin === true && { runAsAdmin: true }),
       ...pickItemWindowSwitch(item),
       id: item.id,
     };
@@ -170,7 +173,13 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
-    (_event, item: AppItem, groupId?: string, workspaceId?: string, options?: { copy?: boolean }) =>
+    (
+      _event,
+      item: AppItem,
+      groupId?: string,
+      workspaceId?: string,
+      options?: { copy?: boolean; freshClipboardData?: boolean }
+    ) =>
       withWorkspaceService(
         async () => {
           // 既定はメインウィンドウのアイテムの参照。参照できないもの・copy の指定はコピー（クリップボードは実データを複製）
@@ -465,6 +474,11 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
+  // メインウィンドウへのドロップ。結果は右クリックと同じくトーストで知らせる（ワークスペースの画面へもここで知らせる）
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, (_event, id: string, file?: string) =>
+    moveItemToMain(id, file)
+  );
+
   ipcMain.handle(IPC_CHANNELS.WORKSPACE_FIND_LINK_CANDIDATES, (_event, id: string) =>
     withWorkspaceService(() => findLinkCandidates(id), 'Failed to find link candidates', { id })
   );
@@ -475,13 +489,15 @@ export function setupWorkspaceHandlers(): void {
     })
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES, (_event, ids: string[]) =>
-    withWorkspaceChange(
-      async () => ({ count: await applyLinkCopies(ids) }),
-      'Linked workspace copies to launcher items',
-      'Failed to link workspace copies',
-      { count: ids.length }
-    )
+  ipcMain.handle(
+    IPC_CHANNELS.WORKSPACE_APPLY_LINK_COPIES,
+    (_event, ids: string[], choices?: Record<string, string>) =>
+      withWorkspaceChange(
+        async () => ({ count: await applyLinkCopies(ids, choices) }),
+        'Linked workspace copies to launcher items',
+        'Failed to link workspace copies',
+        { count: ids.length }
+      )
   );
 
   // メインウィンドウのアイテムを指すワークスペースの参照の数（削除の確認・編集画面の帯に出す）
@@ -566,6 +582,21 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load workspace groups')
   );
 
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DUPLICATE_GROUP, (_event, groupId: string, name: string) =>
+    withWorkspaceService(
+      async (service) => {
+        const group = await service.duplicateGroup(groupId, name, (ref) =>
+          ClipboardService.getInstance().duplicateClipboardData(ref)
+        );
+        notifyWorkspaceChanged();
+        return group;
+      },
+      'Failed to duplicate workspace group',
+      { groupId },
+      true
+    )
+  );
+
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_CREATE_GROUP,
     (_event, name: string, color?: string, parentGroupId?: string, workspaceId?: string) =>
@@ -597,15 +628,15 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string, deleteItems: boolean) =>
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_DELETE_GROUP, (_event, id: string) =>
     withWorkspaceChange(
       async (service) => {
         await closeDetachedWindowsForGroup(id);
-        await service.deleteGroup(id, deleteItems);
+        await service.deleteGroup(id);
       },
       'Deleted workspace group',
       'Failed to delete workspace group',
-      { id, deleteItems },
+      { id },
       { id }
     )
   );
@@ -638,7 +669,10 @@ export function setupWorkspaceHandlers(): void {
     IPC_CHANNELS.WORKSPACE_DUPLICATE_ITEM,
     (_event, sourceItemId: string, targetGroupId?: string, insertOrder?: number) =>
       withWorkspaceChange(
-        (service) => service.duplicateItem(sourceItemId, targetGroupId, insertOrder),
+        (service) =>
+          service.duplicateItem(sourceItemId, targetGroupId, insertOrder, (ref) =>
+            ClipboardService.getInstance().duplicateClipboardData(ref)
+          ),
         'Duplicated workspace item',
         'Failed to duplicate workspace item',
         { sourceItemId, targetGroupId, insertOrder },
@@ -648,7 +682,7 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_GROUP,
-    (_event, itemId: string, groupId?: string) =>
+    (_event, itemId: string, groupId: string) =>
       withWorkspaceChange(
         (service) => service.moveItemToGroup(itemId, groupId),
         'Moved item to group',
@@ -674,13 +708,13 @@ export function setupWorkspaceHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.WORKSPACE_MOVE_ITEM_TO_WORKSPACE,
-    (_event, itemId: string, targetWorkspaceId: string) =>
+    (_event, itemId: string, targetWorkspaceId: string, groupId?: string) =>
       withWorkspaceChange(
-        (service) => service.moveItemToWorkspace(itemId, targetWorkspaceId),
+        (service) => service.moveItemToWorkspace(itemId, targetWorkspaceId, groupId),
         'Moved item to workspace',
         'Failed to move item to workspace',
-        { itemId, targetWorkspaceId },
-        { itemId, targetWorkspaceId }
+        { itemId, targetWorkspaceId, groupId },
+        { itemId, targetWorkspaceId, groupId }
       )
   );
 

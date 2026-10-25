@@ -50,6 +50,8 @@ export type {
   MixedChild,
   MixedOrderEntry,
   GroupDropZone,
+  WorkspaceBlankMenuKind,
+  WorkspaceTarget,
 } from './workspace';
 
 // ワークスペース設定ファイル（ファイル形式 2.0）の型・定数
@@ -189,7 +191,6 @@ export type {
   DirPreviewStatus,
   ItemPathPickKind,
   RegisterItem,
-  RegisterSetEntry,
 } from './register';
 
 // 編集用アイテムの型と関数

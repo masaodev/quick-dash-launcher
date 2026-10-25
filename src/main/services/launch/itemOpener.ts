@@ -2,7 +2,12 @@ import type { Logger } from 'pino';
 import { itemLogger } from '@common/logger';
 import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
-import { launchItem, type LaunchResult } from '../../utils/itemLauncher.js';
+import {
+  launchItem,
+  launchItemAsAdmin,
+  type LaunchableItem,
+  type LaunchResult,
+} from '../../utils/itemLauncher.js';
 import { LONG_TOAST_DURATION_MS, showToastWindow } from '../overlayWindowService.js';
 import { mainI18n } from '../mainI18n.js';
 
@@ -17,7 +22,8 @@ export async function notifyLaunchFailure(
   displayName: string | undefined,
   result: LaunchResult
 ): Promise<void> {
-  if (result.success) return;
+  // UAC で「いいえ」を押したときは知らせない
+  if (result.success || result.cancelled) return;
   await showToastWindow({
     type: 'error',
     message: mainI18n.t('launcher.messages.launchFailed', {
@@ -47,9 +53,34 @@ export async function openSingleItem(
   }
 
   const result = await launchItem(
-    { type: item.type, path: item.path, args: item.args, displayName: item.displayName },
+    {
+      type: item.type,
+      path: item.path,
+      args: item.args,
+      displayName: item.displayName,
+      runAsAdmin: item.runAsAdmin,
+    },
     logger
   );
   await notifyLaunchFailure(item.displayName, result);
   return result.success;
+}
+
+/**
+ * 単一アイテムを管理者として開く（メイン画面・ワークスペースで共通。対象かどうかは呼び出し側で確かめる）
+ *
+ * UAC で「いいえ」を押したときは何も知らせない。それ以外の失敗は普通に開けなかったときと同じトーストで知らせる。
+ * ウィンドウ切り替えは使わない（管理者で開いたウィンドウは、権限の低い QuickDashLauncher から動かせない）
+ *
+ * @returns 開けたか
+ */
+export async function openSingleItemAsAdmin(
+  item: Pick<LaunchableItem, 'path' | 'args' | 'displayName'>,
+  logger: Logger = itemLogger
+): Promise<boolean> {
+  const result = await launchItemAsAdmin(item, logger);
+  if (result.status === 'failed') {
+    await notifyLaunchFailure(item.displayName, { success: false, error: result.error });
+  }
+  return result.status === 'launched';
 }

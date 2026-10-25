@@ -1,16 +1,23 @@
 import React from 'react';
+import i18next from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { WorkspaceGroupView } from '@common/types';
-
-/** グループに追加するときの追加先（ワークスペース名 › 親グループ › グループ） */
+/** 追加するときの追加先（ワークスペース名 › 親グループ › グループ） */
 export interface WorkspaceDestination {
   group: WorkspaceGroupView;
+  workspaceId: string;
   workspaceName?: string;
   /** 帯に並べるグループの名前（サブグループなら親グループ、グループの順） */
   groupPath: string[];
+  /** タイトル・トーストに出す追加先の名前（グループ名） */
+  label: string;
 }
 
-/** 追加先のグループを読む。見つからない（開くまでに削除されたなど）ときは null */
+/**
+ * 追加先を読む。見つからない（開くまでに削除されたなど）ときは null
+ *
+ * @param groupId 追加先のグループ（未分類は無いので、いつもグループ。A3-157）
+ */
 export async function loadWorkspaceDestination(
   groupId: string
 ): Promise<WorkspaceDestination | null> {
@@ -21,8 +28,10 @@ export async function loadWorkspaceDestination(
   const parent = group.parentGroupId ? groups.find((g) => g.id === group.parentGroupId) : undefined;
   return {
     group,
+    workspaceId: group.workspaceId,
     workspaceName: workspaces.find((ws) => ws.id === group.workspaceId)?.displayName,
     groupPath: [...(parent ? [parent.displayName] : []), group.displayName],
+    label: group.displayName,
   };
 }
 
@@ -31,6 +40,24 @@ export async function expandDestinationGroup(destination: WorkspaceDestination):
   if (destination.group.collapsed) {
     await window.electronAPI.workspaceAPI.setGroupsCollapsed([destination.group.id], false);
   }
+}
+
+/** 選ぶウィンドウのタイトル（「グループ「〇〇」に追加するアイテム」） */
+export function destinationPickerTitle(destination: WorkspaceDestination): string {
+  return i18next.t('workspace.picker.title', { group: destination.label });
+}
+
+/** 追加したときのトーストの文 */
+export function destinationAddedMessage(destination: WorkspaceDestination): string {
+  return i18next.t('workspace.picker.addedToGroup', { group: destination.label });
+}
+
+/** 追加先に今あるアイテムか（「追加済み」の判定に使う） */
+export function isInDestination(
+  item: { groupId?: string },
+  destination: WorkspaceDestination
+): boolean {
+  return item.groupId === destination.group.id;
 }
 
 /**

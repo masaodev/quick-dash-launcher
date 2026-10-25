@@ -18,6 +18,8 @@ import type {
 } from '@common/types';
 import { isWindowInfo, isClipboardItem, isSetItem, isLauncherItem } from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
+import { PathUtils } from '@common/utils/pathUtils';
+import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import LauncherSearchBox from './components/LauncherSearchBox';
 import LauncherHintBar from './components/LauncherHintBar';
@@ -30,6 +32,7 @@ import LauncherItemCountDisplay from './components/LauncherItemCountDisplay';
 import MissingIconNotice from './components/MissingIconNotice';
 import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
+import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { findNoMatchElsewhere } from './utils/noMatchElsewhere';
@@ -38,10 +41,12 @@ import { indexById, setEntryNames } from './utils/setEditing';
 import { loadItemIcons } from './utils/customIcons';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
+import { useSearchBoxContextMenu } from './hooks/useSearchBoxContextMenu';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
 import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
+import { useSearchMemo } from './hooks/useSearchMemo';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -49,7 +54,10 @@ import { useWindowOperations } from './hooks/useWindowOperations';
 import { useWindowMultiSelect } from './hooks/useWindowMultiSelect';
 import { useGlobalLoading } from './hooks/useGlobalLoading';
 import { useToast } from './hooks/useToast';
+import { useLatestRef } from './hooks/useLatestRef';
 import { useAlertDialog } from './hooks/useDialogManager';
+import { useLauncherItemDelete } from './hooks/useLauncherItemDelete';
+import { classifyPastedText } from './utils/pasteClassifier';
 
 /** ウィンドウ検索の既定のデスクトップのタブ: 今のデスクトップ（分からなければ「すべて」） */
 function defaultDesktopTab(info: Pick<VirtualDesktopInfo, 'supported' | 'currentDesktop'>): number {
@@ -95,16 +103,22 @@ function App(): React.ReactElement {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
-  const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
-    useSearchHistory();
+  const {
+    historyState,
+    navigateToPrevious,
+    navigateToNext,
+    resetNavigation,
+    addHistoryEntry,
+    clearHistory,
+  } = useSearchHistory();
   // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
   const activeTabRef = useRef<string | undefined>(undefined);
   const {
     isRegisterWindowOpen,
     openRegisterWindow,
     openEditWindow,
+    openFolderImportWindow,
     openWithDroppedPaths,
-    openWithWorkspaceItem,
   } = useRegisterWindow(useCallback(() => activeTabRef.current, []));
   const {
     handleCopyPath,
@@ -114,7 +128,7 @@ function App(): React.ReactElement {
     handleOpenParentFolder,
     handleOpenShortcutParentFolder,
   } = useItemActions();
-  const { showSuccess, showWarning } = useToast();
+  const { showSuccess, showInfo, showWarning } = useToast();
 
   const {
     showDataFileTabs,
@@ -126,22 +140,81 @@ function App(): React.ReactElement {
   } = useDataFileTabs();
   activeTabRef.current = activeTab;
   const showKeyboardHints = useShowKeyboardHints();
+  // 検索でメモにも当てるか（変わったら一覧を絞り直す）
+  const searchMemo = useSearchMemo();
 
-  // ワークスペースからドラッグされたアイテム。参照はもうメインウィンドウにあるので、登録画面を開かずに知らせる
+  // ワークスペースからドラッグされたアイテム。選んでいるタブ（の先頭のファイル）へ移し、ワークスペース側を参照にする
+  // （結果はメインプロセスがトーストで知らせる）。参照はもうメインウィンドウにあるので、移さずに知らせる
   const handleWorkspaceItemDropped = useCallback(
     (item: WorkspaceItem) => {
       if (item.type === 'ref') {
-        showWarning(t('workspace.ref.cannotRegisterMissing', { name: item.displayName }));
+        showWarning(t('workspace.ref.cannotMoveMissing', { name: item.displayName }));
         return;
       }
       if (item.ref) {
         showWarning(t('workspace.ref.alreadyInMain', { name: item.displayName }));
         return;
       }
-      void openWithWorkspaceItem(item);
+      window.electronAPI.workspaceAPI
+        .moveToMain(item.id, activeTabRef.current || undefined)
+        .catch((error) => logError('メインウィンドウへ移せませんでした:', error));
     },
-    [openWithWorkspaceItem, showWarning, t]
+    [showWarning, t]
   );
+
+  const itemDelete = useLauncherItemDelete(showErrorAlert);
+
+  // Shift+F10・アプリケーションキーで検索欄にも右クリックのイベントが来る（マウスの右ボタンではない）。
+  // メインウィンドウでは行のメニューを出すので、そちらは止めて検索欄の文字のメニューを出さない
+  useEffect(() => {
+    const suppressKeyboardContextMenu = (e: MouseEvent) => {
+      if (e.isTrusted && e.button !== 2) e.preventDefault();
+    };
+    document.addEventListener('contextmenu', suppressKeyboardContextMenu, true);
+    return () => document.removeEventListener('contextmenu', suppressKeyboardContextMenu, true);
+  }, []);
+
+  // Shift+F10・アプリケーションキー: 選んでいる行に右クリックのイベントを起こし、行の左下にメニューを出す
+  const openRowContextMenu = useCallback((index: number) => {
+    const row = document.querySelector<HTMLElement>(`.item-row-wrapper[data-index="${index}"]`);
+    if (!row) return;
+    const rect = row.getBoundingClientRect();
+    row.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        clientX: rect.left + 24,
+        clientY: rect.bottom,
+      })
+    );
+  }, []);
+
+  // 一覧の余白の右クリック（➕ と同じ追加の入口。ウィンドウ検索では出さない）
+  useEffect(() => {
+    const cleanups = [
+      window.electronAPI.onLauncherBlankMenuAddItem(() => void openRegisterWindow()),
+      window.electronAPI.onLauncherBlankMenuAddFolderImport(() => void openFolderImportWindow()),
+      window.electronAPI.onLauncherBlankMenuRegisterFromClipboard(async () => {
+        try {
+          const { files, text } = await window.electronAPI.readClipboardForRegister();
+          if (files.length > 0) {
+            void openWithDroppedPaths(files);
+            return;
+          }
+          // ファイル・フォルダ・URL の形をしているものだけ（ただの文字列は登録の初期値にしない）
+          const pasted = classifyPastedText(text);
+          if (pasted && pasted.kind !== 'text') {
+            void openWithDroppedPaths([pasted.value]);
+            return;
+          }
+          showWarning(t('launcher.registerMenu.clipboardEmpty'));
+        } catch (error) {
+          logError('クリップボードを読めませんでした:', error);
+        }
+      }),
+    ];
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [openRegisterWindow, openFolderImportWindow, openWithDroppedPaths, showWarning, t]);
 
   const { isDraggingOver, dragOverKind } = useDragAndDrop(
     (paths: string[]) => openWithDroppedPaths(paths),
@@ -159,15 +232,51 @@ function App(): React.ReactElement {
     handleRefreshAll,
     handleFetchMissingIcons,
     handleFetchMissingIconsSilently,
-    handleFetchMissingIconsCurrentTab,
+    handleFetchMissingIconsIn,
+    isFetchingIcons,
+    isIconFetchBusy,
   } = useIconFetcher({
     mainItems,
     setMainItems,
-    showDataFileTabs,
-    activeTab,
-    dataFileTabs,
     reloadIconFetchErrors: loadIconFetchErrors,
+    onBusy: () => showWarning(t('launcher.iconProgress.busy')),
   });
+
+  // 進捗バーを取得の途中で閉じたか。閉じても取得は続くので、終わったらトーストで知らせる（A3-174）
+  const closedWhileFetchingRef = useRef(false);
+  const handleCloseIconProgress = () => {
+    if (progressState.progress && !progressState.progress.isComplete) {
+      closedWhileFetchingRef.current = true;
+      showInfo(t('launcher.iconProgress.continuesInBackground'));
+    }
+    resetProgress();
+  };
+  useEffect(() => {
+    if (isFetchingIcons || !closedWhileFetchingRef.current) return;
+    closedWhileFetchingRef.current = false;
+    showSuccess(t('launcher.iconProgress.finishedInBackground'));
+  }, [isFetchingIcons]);
+
+  // ほかのウィンドウ（ブックマーク取込の後の管理ウィンドウ）から頼まれたら、読み直してから未取得のアイコンを取る。
+  // 別の取得の最中なら、それが終わってから取る（頼まれた分を落とさない）
+  const pendingFetchRequestRef = useRef(false);
+  const fetchRequestedRef = useLatestRef(async () => {
+    if (isIconFetchBusy()) {
+      pendingFetchRequestRef.current = true;
+      return;
+    }
+    const items = await loadItems('internal');
+    await handleFetchMissingIconsIn(items);
+  });
+  useEffect(
+    () => window.electronAPI.onFetchMissingIconsRequested(() => void fetchRequestedRef.current()),
+    []
+  );
+  useEffect(() => {
+    if (isFetchingIcons || !pendingFetchRequestRef.current) return;
+    pendingFetchRequestRef.current = false;
+    void fetchRequestedRef.current();
+  }, [isFetchingIcons]);
 
   const { withLoading } = useGlobalLoading();
 
@@ -214,7 +323,7 @@ function App(): React.ReactElement {
     setWindowList((prev) => prev.filter((w) => w.hwnd !== hwnd));
   }, []);
 
-  // trigger: 起動時と F5 は省略（explicit）。完全リフレッシュは 'full'（パスの種類も確かめ直す）。
+  // trigger: 起動時と F5 は省略（explicit）。🔄 の「アイコンをすべて取り直す」は 'full'（パスの種類も確かめ直す）。
   // アプリ内の操作に伴う再読込は 'internal'（先行の再読込があれば結果を共有する）
   const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
@@ -366,6 +475,42 @@ function App(): React.ReactElement {
     [searchMode, searchQuery, executeAppItem, addHistoryEntry, t]
   );
 
+  // 管理者として実行（右クリック・Ctrl+Shift+Enter）。対象はアプリだけで、ほかの種類は実行せずに知らせる
+  const handleRunAsAdmin = useCallback(
+    async (item: AppItem) => {
+      if (isWindowInfo(item)) return;
+      if (!isLauncherItem(item) || !canRunAsAdmin(item)) {
+        await window.electronAPI.showToastWindow({
+          type: 'info',
+          message: t('launcher.messages.cannotRunAsAdmin', { name: item.displayName }),
+        });
+        return;
+      }
+      const searchQueryForHistory = searchQuery.trim();
+      try {
+        await window.electronAPI.showToastWindow({
+          displayName: item.displayName,
+          itemType: item.type,
+          path: item.path,
+          icon: item.icon,
+        });
+        await window.electronAPI.runItemAsAdmin(item);
+        if (searchQueryForHistory) {
+          addHistoryEntry(searchQueryForHistory).catch((error) => {
+            logError('検索履歴の追加に失敗しました:', error);
+          });
+        }
+      } catch (error) {
+        showErrorAlert(
+          t('launcher.messages.openFailed', {
+            reason: error instanceof Error ? error.message : String(error),
+          })
+        );
+      }
+    },
+    [searchQuery, addHistoryEntry, t]
+  );
+
   const tabFilteredItems = useMemo(
     () => getTabFilteredItems(mainItems),
     [getTabFilteredItems, mainItems]
@@ -388,7 +533,8 @@ function App(): React.ReactElement {
         ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
         : tabFilteredItems;
     return filterItems(itemsToFilter, searchQuery, searchMode);
-  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery]);
+    // searchMemo は filterItems の中で読む設定。変わったら絞り直す
+  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery, searchMemo]);
 
   // 検索で 0 件のとき、他のタブや通常の検索に合うものがあるか（一覧が空の案内に使う）
   const noMatchElsewhere = useMemo(
@@ -451,6 +597,25 @@ function App(): React.ReactElement {
     [openEditWindow]
   );
 
+  // 右クリック「この取込から外す…」: 元のフォルダ取込の編集画面を、除外フィルタにファイル名を足した状態で開く
+  useEffect(
+    () =>
+      window.electronAPI.onLauncherMenuExcludeFromDir((item) => {
+        if (!isLauncherItem(item) || !item.isDirExpanded || !item.expandedFromId) return;
+        const fileName = PathUtils.getFileName(item.path.replace(/[\\/]+$/, ''));
+        if (!fileName) return;
+        void openEditWindow(
+          {
+            ...item,
+            sourceFile: item.sourceFile || DEFAULT_DATA_FILE,
+            jsonItemId: item.expandedFromId,
+          },
+          { addExcludeName: fileName }
+        );
+      }),
+    [openEditWindow]
+  );
+
   const windowOps = useWindowOperations({ removeWindowFromList, refreshWindowsKeepingSelection });
   const windowSelection = useWindowMultiSelect({ searchMode, filteredItems, selectedIndex });
   const markedCount = windowSelection.markedWindows.length;
@@ -486,13 +651,22 @@ function App(): React.ReactElement {
     canPinWindow,
     activeDesktopTab,
     setActiveDesktopTab,
+    onCopyPath: handleCopyPath,
+    onCopyParentPath: handleCopyParentPath,
+    onOpenContextMenu: openRowContextMenu,
+    onRunAsAdmin: handleRunAsAdmin,
   });
 
   // リストの行や余白（フォーカスを受け取らない要素）をクリックするとフォーカスが body に移り、
   // .app の onKeyDown にキーが届かなくなる。body に来たキーは検索欄にフォーカスを戻してから処理する
   //（文字キーも検索欄に入る）
-  const handleKeyDownRef = useRef(handleKeyDown);
-  handleKeyDownRef.current = handleKeyDown;
+  // 削除の確認を出している間は、Enter・Esc などを確認ダイアログだけが受ける（一覧のアイテムを開かない）
+  const handleAppKeyDown = useCallback(
+    (e: React.KeyboardEvent) => (itemDelete.isOpen ? undefined : handleKeyDown(e)),
+    [handleKeyDown, itemDelete.isOpen]
+  );
+  const handleKeyDownRef = useRef(handleAppKeyDown);
+  handleKeyDownRef.current = handleAppKeyDown;
   useEffect(() => {
     const handleBodyKeyDown = (e: KeyboardEvent) => {
       if (e.target !== document.body || !searchInputRef.current) return;
@@ -581,13 +755,6 @@ function App(): React.ReactElement {
       showSuccess(t(messageKeys[result.action]));
     });
 
-    // ワークスペースの右クリック「メインウィンドウに登録」（メインプロセスがこの画面を出してから送ってくる）
-    const cleanupRegisterWorkspaceItem = window.electronAPI.onRegisterWorkspaceItemToMain(
-      (item) => {
-        void openWithWorkspaceItem(item);
-      }
-    );
-
     return () => {
       cleanupWindowShown();
       cleanupWindowShownItemSearch();
@@ -596,7 +763,6 @@ function App(): React.ReactElement {
       cleanupWorkspaceOpenChanged();
       cleanupPinChanged();
       cleanupChildResult();
-      cleanupRegisterWorkspaceItem();
     };
   }, []);
 
@@ -605,6 +771,16 @@ function App(): React.ReactElement {
     setSelectedIndex(0);
     resetNavigation();
   };
+
+  // 検索欄の右クリック（文字のメニューと「検索履歴 ▸」。A3-190）
+  const searchBoxMenu = useSearchBoxContextMenu({
+    historyEntries: historyState.entries,
+    onPickHistory: (query) => {
+      handleSearch(query);
+      searchInputRef.current?.focus();
+    },
+    clearHistory,
+  });
 
   const handleOpenBasicSettings = async () => {
     await window.electronAPI.openEditWindowWithTab('settings');
@@ -622,7 +798,7 @@ function App(): React.ReactElement {
     hotkey: string;
     autoLaunch: boolean;
     itemSearchHotkey: string;
-  }) => {
+  }): Promise<boolean> => {
     try {
       await window.electronAPI.setMultipleSettings({
         hotkey: settings.hotkey,
@@ -637,9 +813,11 @@ function App(): React.ReactElement {
       // 初回のサンプルにはアイコンがまだ無いので、「取得」を押さなくても出るように取りに行く。
       // 頼まれた処理ではないので、進捗バーは出さない
       void handleFetchMissingIconsSilently();
+      return true;
     } catch (error) {
+      // 初回設定の間はダイアログを描かないので、知らせるのは初回設定画面に任せる
       logError('初回設定の保存に失敗しました:', error);
-      showErrorAlert(t('firstLaunch.saveFailed'));
+      return false;
     }
   };
 
@@ -659,10 +837,10 @@ function App(): React.ReactElement {
     await loadItems('internal');
   };
 
-  const handleRefreshAllWrapper = async () => {
-    await window.electronAPI.bookmarkAutoImportAPI.executeAll();
-    await handleRefreshAll(() => loadItems('full'));
-  };
+  // 🔄「アイコンをすべて取り直す」: データを 'full' で読み直し（拡張子の無いパスの種類も確かめ直す）、
+  // 保存してあるアイコンを使わずに全部取り直す（前に失敗したものも試す）。
+  // 前の名前は「完全リフレッシュ」で、ブックマーク自動取込も流していた。それは「ブックマーク自動取込を実行」に任せる（A3-182）
+  const handleRefreshAllWrapper = () => handleRefreshAll(() => loadItems('full'));
 
   const handleTabRename = async (tabIndex: number, newName: string) => {
     const updatedTabs = dataFileTabs.map((tab, i) =>
@@ -709,28 +887,28 @@ function App(): React.ReactElement {
   return (
     <div
       className={`app search-mode-${searchMode} ${isDraggingOver ? 'dragging-over' : ''}`}
-      onKeyDown={handleKeyDown}
+      onKeyDown={handleAppKeyDown}
     >
       <div className="header">
         <LauncherSearchBox
           ref={searchInputRef}
           value={searchQuery}
           onChange={handleSearch}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleAppKeyDown}
+          onContextMenu={searchBoxMenu.handleContextMenu}
           searchMode={searchMode}
           onToggleSearchMode={handleToggleSearchMode}
         />
         <LauncherActionButtons
           searchMode={searchMode}
           onReload={handleReloadItems}
-          onFetchMissingIcons={handleFetchMissingIcons}
-          onFetchMissingIconsCurrentTab={handleFetchMissingIconsCurrentTab}
           onBookmarkAutoImport={handleBookmarkAutoImport}
           onRefreshAll={handleRefreshAllWrapper}
           onOpenBasicSettings={handleOpenBasicSettings}
           onOpenItemManagement={handleOpenItemManagement}
           onToggleWorkspace={handleToggleWorkspace}
           onOpenRegisterModal={() => void openRegisterWindow()}
+          onOpenFolderImport={() => void openFolderImportWindow()}
           pinLevel={pinLevel}
           onPinLevelChange={setPinLevel}
           isWorkspaceOpen={isWorkspaceOpen}
@@ -790,6 +968,12 @@ function App(): React.ReactElement {
               : null
         }
         onAddItem={() => void openRegisterWindow()}
+        onAddFolderImport={() => void openFolderImportWindow()}
+        onBlankContextMenu={
+          searchMode === 'normal'
+            ? () => void window.electronAPI.showLauncherBlankContextMenu()
+            : undefined
+        }
         onSwitchTab={() => {
           switchToNextTab();
           searchInputRef.current?.focus();
@@ -800,6 +984,7 @@ function App(): React.ReactElement {
         onCopyPath={handleCopyPath}
         onCopyParentPath={handleCopyParentPath}
         onOpenParentFolder={handleOpenParentFolder}
+        onRunAsAdmin={(item) => void handleRunAsAdmin(item)}
         onCopyShortcutPath={handleCopyShortcutPath}
         onCopyShortcutParentPath={handleCopyShortcutParentPath}
         onOpenShortcutParentFolder={handleOpenShortcutParentFolder}
@@ -835,12 +1020,16 @@ function App(): React.ReactElement {
         </div>
       )}
 
-      {!progressState.isActive && missingIconCount > 0 && (
+      {/* 取得中は出さない（進捗バーを × で閉じても、取得が終わるまで）。出すと［取得］で二重に取る（A3-173） */}
+      {!progressState.isActive && !isFetchingIcons && missingIconCount > 0 && (
         <MissingIconNotice missingCount={missingIconCount} onFetchClick={handleFetchMissingIcons} />
       )}
 
       {progressState.isActive && progressState.progress && (
-        <LauncherIconProgressBar progress={progressState.progress} onClose={resetProgress} />
+        <LauncherIconProgressBar
+          progress={progressState.progress}
+          onClose={handleCloseIconProgress}
+        />
       )}
 
       {showKeyboardHints && (
@@ -859,11 +1048,29 @@ function App(): React.ReactElement {
         <div className="drag-overlay">
           <div className="drag-message">
             {dragOverKind === 'workspaceItem'
-              ? t('launcher.dropWorkspaceItemToAdd')
+              ? t('launcher.dropWorkspaceItemToMove')
               : t('launcher.dropToAdd')}
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={itemDelete.dialog !== null}
+        onClose={itemDelete.dialog?.onClose ?? (() => {})}
+        onConfirm={itemDelete.dialog?.onConfirm ?? (() => {})}
+        message={itemDelete.dialog?.message ?? ''}
+        confirmText={t('register.delete')}
+        danger
+      />
+
+      <ConfirmDialog
+        isOpen={searchBoxMenu.isClearConfirmOpen}
+        onClose={searchBoxMenu.cancelClear}
+        onConfirm={() => void searchBoxMenu.confirmClear()}
+        message={t('launcher.searchHistoryClear.message')}
+        confirmText={t('launcher.searchHistoryClear.confirm')}
+        danger
+      />
 
       <AlertDialog
         isOpen={alertDialog.isOpen}

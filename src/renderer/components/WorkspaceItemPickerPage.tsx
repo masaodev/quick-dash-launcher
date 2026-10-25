@@ -10,10 +10,14 @@ import { samePathKey } from '@common/utils/workspaceRefs';
 
 import { logError } from '../utils/debug';
 import type { SetCatalogItem } from '../utils/setEditing';
+import { sortByTabOrder } from '../utils/tabOrder';
 
 import SetItemPickerModal from './SetItemPickerModal';
 import WorkspaceDestinationBand, {
+  destinationAddedMessage,
+  destinationPickerTitle,
   expandDestinationGroup,
+  isInDestination,
   loadWorkspaceDestination,
   type WorkspaceDestination,
 } from './WorkspaceDestinationBand';
@@ -90,7 +94,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
           return;
         }
         setDestination(found);
-        document.title = t('workspace.picker.title', { group: found.group.displayName });
+        document.title = destinationPickerTitle(found);
 
         const launchers = allItems.filter((item): item is LauncherItem => isLauncherItem(item));
         const icons: Record<string, string> = await window.electronAPI
@@ -102,7 +106,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
           file ??
           '';
 
-        const groupItems = workspaceItems.filter((item) => item.groupId === groupId);
+        const groupItems = workspaceItems.filter((item) => isInDestination(item, found));
         const inGroup = new Set(
           groupItems.map(workspaceItemKey).filter((key): key is string => key !== null)
         );
@@ -129,7 +133,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
         });
         if (cancelled) return;
         setAddedKeys(added);
-        setEntries(list);
+        setEntries(sortByTabOrder(list, settings.dataFileTabs, (entry) => entry.item.sourceFile));
       } catch (error) {
         logError('グループに追加できるアイテムの読み込みに失敗しました:', error);
         if (!cancelled) setNotFound(true);
@@ -151,15 +155,14 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
       if (!destination || rows.length === 0) return;
       const byKey = new Map(entries.map((entry) => [entry.row.key, entry.item]));
       const items = rows.flatMap((row) => byKey.get(row.key) ?? []);
-      const { group } = destination;
       setBusy(true);
       try {
         await expandDestinationGroup(destination);
         for (const item of items) {
           await window.electronAPI.workspaceAPI.addItem(
             item,
-            group.id,
-            group.workspaceId,
+            destination.group?.id,
+            destination.workspaceId,
             asCopy ? { copy: true } : undefined
           );
         }
@@ -169,7 +172,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
           displayName: single
             ? single.displayName
             : t('workspace.picker.addedItems', { count: items.length }),
-          message: t('workspace.picker.addedToGroup', { group: group.displayName }),
+          message: destinationAddedMessage(destination),
           ...(single && isLauncherItem(single) && { path: single.path }),
           ...(single && 'icon' in single && single.icon && { icon: single.icon }),
         });
@@ -204,7 +207,7 @@ const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ group
       isOpen
       catalog={catalog}
       addedKeys={addedKeys}
-      title={t('workspace.picker.title', { group: destination.group.displayName })}
+      title={destinationPickerTitle(destination)}
       banner={<WorkspaceDestinationBand destination={destination} />}
       busy={busy}
       onClose={close}

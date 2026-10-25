@@ -36,6 +36,7 @@ import type {
   WorkspaceGroup,
   WorkspaceGroupUpdate,
   WorkspaceGroupView,
+  WorkspaceTarget,
   DetachedWindowState,
   ArchivedWorkspaceGroup,
   ArchivedWorkspaceItem,
@@ -72,7 +73,18 @@ import type {
   ConfirmWindowRequest,
   ConfirmWindowResult,
   AdminTab,
+  WorkspaceBlankMenuKind,
 } from './index';
+
+/** 検索欄の右クリックの文字のメニューで押せる操作（Electron の editFlags と同じ名前） */
+export interface SearchBoxEditFlags {
+  canUndo: boolean;
+  canRedo: boolean;
+  canCut: boolean;
+  canCopy: boolean;
+  canPaste: boolean;
+  canSelectAll: boolean;
+}
 
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
@@ -85,13 +97,15 @@ export interface ElectronAPI {
     fileName: string
   ) => Promise<{ success: boolean; error?: string; disabledRules?: string[] }>;
   /**
-   * trigger 省略 = 起動時・F5（レポートを必ず書く）。'full' = 完全リフレッシュ（レポートを書き、パスの種類も確かめ直す）。
+   * trigger 省略 = 起動時・F5（レポートを必ず書く）。'full' = 「アイコンをすべて取り直す」（レポートを書き、パスの種類も確かめ直す）。
    * 'internal' = 変更通知・画面内の一覧取得
    */
   loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
   /** options.trial＝登録・編集フォームで試しに開く（起動の記録に数えない） */
   openItem: (item: LauncherItem, options?: LaunchOptions) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
+  /** 単一アイテムを管理者として実行する（UAC の確認が出る。対象はアプリだけ） */
+  runItemAsAdmin: (item: LauncherItem) => Promise<void>;
   /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
   executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
   openConfigFolder: () => Promise<void>;
@@ -112,6 +126,10 @@ export interface ElectronAPI {
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
+  /** メインウィンドウに、未取得のアイコンを全タブ分取るよう頼む（進捗バーはメインウィンドウに出る） */
+  requestFetchMissingIcons: () => Promise<void>;
+  /** メインウィンドウ用: ほかのウィンドウから未取得のアイコンの取得を頼まれた */
+  onFetchMissingIconsRequested: (callback: () => void) => () => void;
   // アイコン取得エラー記録を取得
   getIconFetchErrors: () => Promise<IconFetchErrorRecord[]>;
   // 進捗イベントリスナー
@@ -133,6 +151,8 @@ export interface ElectronAPI {
   onSetActiveTab: (callback: (tab: AdminTab) => void) => () => void;
   /** 管理ウィンドウの × が押されたとき。閉じてよければ hideEditWindow を呼ぶ */
   onAdminCloseRequested: (callback: () => void) => () => void;
+  /** 管理ウィンドウが隠れたとき（どの経路でも） */
+  onAdminHidden: (callback: () => void) => () => void;
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
@@ -199,6 +219,8 @@ export interface ElectronAPI {
   validateHotkey: (hotkey: string) => Promise<{ isValid: boolean; reason?: string }>;
   changeHotkey: (newHotkey: string) => Promise<boolean>;
   changeItemSearchHotkey: (newHotkey: string) => Promise<boolean>;
+  /** ウィンドウ検索のホットキーに使えるか（ほかのアプリ・起動ホットキーと重ならないか）を、登録せずに確かめる */
+  isItemSearchHotkeyAvailable: (hotkey: string) => Promise<boolean>;
   /** ホットキー入力欄の録画の開始・終了を伝える（録画中は QDL のホットキーとウィンドウメニューを止める） */
   setHotkeyRecording: (recording: boolean) => Promise<void>;
   getDisplays: () => Promise<DisplayInfo[]>;
@@ -210,7 +232,11 @@ export interface ElectronAPI {
   getLanguage: () => Promise<AppLanguage>;
   isFirstLaunch: () => Promise<boolean>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
-  deleteItemsById: (requests: { id: string }[]) => Promise<{ success: boolean }>;
+  /** keepClipboardDataRefs＝消さずに残すクリップボードの実データ（保存先を変える編集で、同じ実データを使い続けるとき） */
+  deleteItemsById: (
+    requests: { id: string }[],
+    options?: { keepClipboardDataRefs?: string[] }
+  ) => Promise<{ success: boolean }>;
   // EditableJsonItem API
   loadEditableItems: () => Promise<LoadEditableItemsResult>;
   /**
@@ -235,7 +261,12 @@ export interface ElectronAPI {
   // ブラウザブックマーク直接インポートAPI
   detectInstalledBrowsers: () => Promise<BrowserInfo[]>;
   // アプリインポートAPI
-  scanInstalledApps: () => Promise<AppScanResult>;
+  /** @param scanId 途中経過をどのスキャンのものか見分けるための番号（途中経過にそのまま付いてくる） */
+  scanInstalledApps: (scanId?: number) => Promise<AppScanResult>;
+  /** スキャンの途中経過（ここまでに見つけた件数）を受け取る。戻り値で購読をやめる */
+  onAppScanProgress: (
+    callback: (progress: { scanId: number; found: number }) => void
+  ) => () => void;
   hideEditWindow: () => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   openEditWindowWithTab: (tab: AdminTab) => Promise<void>;
@@ -243,6 +274,8 @@ export interface ElectronAPI {
   getInitialTab: () => Promise<AdminTab>;
   getPendingImportModal: () => Promise<'bookmark' | 'app' | null>;
   copyToClipboard: (text: string) => Promise<boolean>;
+  /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
+  readClipboardForRegister: () => Promise<{ files: string[]; text: string }>;
   /**
    * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
    * 開き元（メイン画面・管理画面）は動かさない。子ウィンドウが閉じたら、子が返した内容
@@ -292,7 +325,7 @@ export interface ElectronAPI {
       item: AppItem,
       groupId?: string,
       workspaceId?: string,
-      options?: { copy?: boolean }
+      options?: { copy?: boolean; freshClipboardData?: boolean }
     ) => Promise<WorkspaceItem>;
     /** 中身（編集フォームで新しく入力したもの）からアイテムを作る */
     createItem: (
@@ -317,18 +350,25 @@ export interface ElectronAPI {
       id: string,
       mainItemId: string
     ) => Promise<{ success: boolean; item?: WorkspaceItem }>;
+    /** アイテム（コピー）をメインウィンドウのデータファイルへ移し、参照に変える（結果はトーストで知らせる） */
+    moveToMain: (id: string, file?: string) => Promise<boolean>;
     /** コピーの指す先の候補（パスと引数が同じメインウィンドウのアイテム） */
     findLinkCandidates: (id: string) => Promise<WorkspaceLinkCandidate[]>;
     /** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
     previewLinkCopies: (workspaceId: string) => Promise<WorkspaceLinkCopiesPreview>;
-    /** 一覧で選んだコピーを参照に変える */
-    applyLinkCopies: (ids: string[]) => Promise<{ success: boolean; count?: number }>;
+    /** 一覧で選んだコピーを参照に変える（choices＝候補が 2 件以上のコピーで選んだ指す先。コピーの id → メインウィンドウのアイテムの id） */
+    applyLinkCopies: (
+      ids: string[],
+      choices?: Record<string, string>
+    ) => Promise<{ success: boolean; count?: number }>;
     /** メインウィンドウのアイテムの id ごとの、ワークスペースの参照の数（0 件は返さない） */
     countRefs: (itemIds: string[]) => Promise<Record<string, number>>;
     /** 参照の指す先を付け替える（消した id → 残す id。アイテム管理の「重複を統合」を保存したとき） */
     remapRefs: (idMap: Record<string, string>) => Promise<{ success: boolean; count?: number }>;
     // グループ管理
     loadGroups: () => Promise<WorkspaceGroupView[]>;
+    /** グループをサブグループとアイテムごと複製する（複製は元と同じ親の最後に入る） */
+    duplicateGroup: (groupId: string, name: string) => Promise<WorkspaceGroupView>;
     createGroup: (
       name: string,
       color?: string,
@@ -336,7 +376,8 @@ export interface ElectronAPI {
       workspaceId?: string
     ) => Promise<WorkspaceGroupView>;
     updateGroup: (id: string, updates: WorkspaceGroupUpdate) => Promise<{ success: boolean }>;
-    deleteGroup: (id: string, deleteItems: boolean) => Promise<{ success: boolean }>;
+    /** グループを、サブグループと中のアイテムごと消す */
+    deleteGroup: (id: string) => Promise<{ success: boolean }>;
     reorderMixed: (
       parentGroupId: string | undefined,
       entries: MixedOrderEntry[]
@@ -346,14 +387,16 @@ export interface ElectronAPI {
       targetGroupId?: string,
       insertOrder?: number
     ) => Promise<{ success: boolean }>;
-    moveItemToGroup: (itemId: string, groupId?: string) => Promise<{ success: boolean }>;
+    moveItemToGroup: (itemId: string, groupId: string) => Promise<{ success: boolean }>;
     moveGroupToParent: (
       groupId: string,
       newParentGroupId?: string
     ) => Promise<{ success: boolean }>;
+    /** 別のワークスペースのグループへ移す（groupId を省けるのは、移す先にグループが無いときだけ） */
     moveItemToWorkspace: (
       itemId: string,
-      targetWorkspaceId: string
+      targetWorkspaceId: string,
+      groupId?: string
     ) => Promise<{ success: boolean }>;
     moveGroupToWorkspace: (
       groupId: string,
@@ -434,7 +477,8 @@ export interface ElectronAPI {
   toggleWorkspaceWindow: () => Promise<void>;
   // コンテキストメニュー表示API
   showAdminItemContextMenu: (selectedCount: number, isSingleLine: boolean) => Promise<void>;
-  showLauncherContextMenu: (item: AppItem) => Promise<void>;
+  /** anchor: キーで出したときの位置（ウィンドウの中の座標）。省略するとマウスの位置 */
+  showLauncherContextMenu: (item: AppItem, anchor?: { x: number; y: number }) => Promise<void>;
   showWorkspaceContextMenu: (
     item: WorkspaceItem,
     groups: WorkspaceGroup[],
@@ -450,13 +494,25 @@ export interface ElectronAPI {
   showWorkspaceTabContextMenu: (workspaceId: string, canDelete: boolean) => Promise<void>;
   onWorkspaceTabMenuRename: (callback: (workspaceId: string) => void) => () => void;
   onWorkspaceTabMenuDelete: (callback: (workspaceId: string) => void) => () => void;
+  /** ワークスペースの余白・「未分類」の見出しの右クリックと、ヘッダーの ＋ のメニュー（anchor は画面内の座標） */
+  showWorkspaceBlankContextMenu: (
+    workspaceId: string,
+    kind: WorkspaceBlankMenuKind,
+    anchor?: { x: number; y: number }
+  ) => Promise<void>;
+  onWorkspaceMenuAddGroup: (callback: (workspaceId: string) => void) => () => void;
+  onWorkspaceMenuAddWorkspace: (callback: () => void) => () => void;
+  onWorkspaceMenuSetAllCollapsed: (
+    callback: (workspaceId: string, collapsed: boolean) => void
+  ) => () => void;
   // FileTabContextMenu
   showFileTabContextMenu: (tabIndex: number) => Promise<void>;
   onFileTabMenuRename: (callback: (tabIndex: number) => void) => () => void;
   showWindowContextMenu: (
     windowInfo: WindowInfo,
     desktopInfo: VirtualDesktopInfo,
-    isPinned: boolean
+    isPinned: boolean,
+    anchor?: { x: number; y: number }
   ) => Promise<void>;
   // AdminItemManagerContextMenuイベントリスナー
   onAdminMenuDuplicateItems: (callback: () => void) => () => void;
@@ -464,23 +520,54 @@ export interface ElectronAPI {
   onAdminMenuDeleteItems: (callback: () => void) => () => void;
   // LauncherContextMenuイベントリスナー
   onLauncherMenuEditItem: (callback: (item: AppItem) => void) => () => void;
-  onLauncherMenuAddToWorkspace: (callback: (item: AppItem) => void) => () => void;
-  onLauncherMenuAddCopyToWorkspace: (callback: (item: AppItem) => void) => () => void;
+  /** 「ワークスペースに追加 ▸」で足す先のグループを選んだ（target はその場で選んだ置き場） */
+  onLauncherMenuAddToWorkspace: (
+    callback: (payload: { item: AppItem; target: WorkspaceTarget }) => void
+  ) => () => void;
+  onLauncherMenuAddCopyToWorkspace: (
+    callback: (payload: { item: AppItem; target: WorkspaceTarget }) => void
+  ) => () => void;
   onLauncherMenuCopyPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenParentFolder: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuRunAsAdmin: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyShortcutPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuCopyShortcutParentPath: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuOpenShortcutParentFolder: (callback: (item: AppItem) => void) => () => void;
   onLauncherMenuShowMemo: (callback: (item: AppItem) => void) => () => void;
+  onLauncherMenuDeleteItem: (callback: (item: AppItem) => void) => () => void;
+  /** フォルダ取込で並んだアイテムの右クリック「この取込から外す…」 */
+  onLauncherMenuExcludeFromDir: (callback: (item: AppItem) => void) => () => void;
+  /** メインウィンドウの一覧の余白の右クリックメニュー */
+  showLauncherBlankContextMenu: () => Promise<void>;
+  onLauncherBlankMenuAddItem: (callback: () => void) => () => void;
+  onLauncherBlankMenuRegisterFromClipboard: (callback: () => void) => () => void;
+  onLauncherBlankMenuAddFolderImport: (callback: () => void) => () => void;
+  /**
+   * メインウィンドウの検索欄の右クリックメニュー（文字のメニューの下に「検索履歴 ▸」）。
+   * 文字のメニューの押せる・押せないは画面側で決めて渡す（画面側で右クリックを受けるため）
+   */
+  showSearchBoxContextMenu: (flags: SearchBoxEditFlags, history: string[]) => Promise<void>;
+  /** 「検索履歴 ▸」で選んだ検索語 */
+  onSearchBoxMenuPickHistory: (callback: (query: string) => void) => () => void;
+  /** 「検索履歴を消す」（消す前に画面側で確かめる） */
+  onSearchBoxMenuClearHistory: (callback: () => void) => () => void;
   // WindowContextMenuイベントリスナー
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
   /** ウィンドウ検索結果の右クリック「ワークスペースに追加」（includePosition: 今の位置・サイズも記録） */
   onWindowMenuAddToWorkspace: (
-    callback: (payload: { windowInfo: WindowInfo; includePosition: boolean }) => void
+    callback: (payload: {
+      windowInfo: WindowInfo;
+      includePosition: boolean;
+      target: WorkspaceTarget;
+    }) => void
   ) => () => void;
   /** ウィンドウ検索で 2 つ以上を選んでいるときの右クリックメニュー */
-  showWindowsContextMenu: (count: number, desktopInfo: VirtualDesktopInfo) => Promise<void>;
+  showWindowsContextMenu: (
+    count: number,
+    desktopInfo: VirtualDesktopInfo,
+    anchor?: { x: number; y: number }
+  ) => Promise<void>;
   onWindowsMenuClose: (callback: () => void) => () => void;
   /** pin: true で固定、false で固定解除 */
   onWindowsMenuPin: (callback: (pin: boolean) => void) => () => void;
@@ -495,8 +582,6 @@ export interface ElectronAPI {
   // WorkspaceContextMenuイベントリスナー
   onWorkspaceMenuRenameItem: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuEditItem: (callback: (itemId: string) => void) => () => void;
-  /** ワークスペースの「メインウィンドウに登録」（メインウィンドウで受ける） */
-  onRegisterWorkspaceItemToMain: (callback: (item: WorkspaceItem) => void) => () => void;
   onWorkspaceMenuShowMemo: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyParentPath: (callback: (itemId: string) => void) => () => void;
@@ -504,10 +589,11 @@ export interface ElectronAPI {
   onWorkspaceMenuCopyShortcutPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuCopyShortcutParentPath: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuOpenShortcutParentFolder: (callback: (itemId: string) => void) => () => void;
-  onWorkspaceMenuRemoveFromGroup: (callback: (itemId: string) => void) => () => void;
   onWorkspaceMenuRemoveItem: (callback: (itemId: string) => void) => () => void;
+  onWorkspaceMenuMoveToGroup: (callback: (itemId: string, groupId: string) => void) => () => void;
+  /** アイテムを別のワークスペースのグループへ移す（groupId が無いのは、移す先にグループが無いとき） */
   onWorkspaceMenuMoveToWorkspace: (
-    callback: (itemId: string, targetWorkspaceId: string) => void
+    callback: (itemId: string, targetWorkspaceId: string, groupId?: string) => void
   ) => () => void;
   // WorkspaceGroupContextMenuイベントリスナー
   onWorkspaceGroupMenuRename: (callback: (groupId: string) => void) => () => void;
@@ -518,6 +604,9 @@ export interface ElectronAPI {
   onWorkspaceGroupMenuAddSubgroup: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddFromMain: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuAddNew: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuOpenAll: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuDuplicate: (callback: (groupId: string) => void) => () => void;
+  onWorkspaceGroupMenuCollapseOthers: (callback: (groupId: string) => void) => () => void;
   onWorkspaceGroupMenuMoveToWorkspace: (
     callback: (groupId: string, targetWorkspaceId: string) => void
   ) => () => void;
@@ -539,8 +628,6 @@ export interface ElectronAPI {
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;
     discardSession: (sessionId: string) => Promise<boolean>;
-    /** 実データのファイルを複製し、新しい参照を返す（読めなければ null） */
-    duplicateData: (dataFileRef: string) => Promise<string | null>;
     /** 登録画面で書いたテキストを、テキストだけの実データとして保存する */
     saveText: (text: string) => Promise<ClipboardCaptureResult>;
     /** 未確定のキャプチャか保存済みの実データから、テキストの全文と画像の縮小版を読む（読めなければ null） */

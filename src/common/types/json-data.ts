@@ -76,6 +76,8 @@ export interface JsonLauncherItem extends JsonItemBase, ItemWindowSwitch {
   args?: string;
   /** カスタムアイコンファイル名（オプション） */
   customIcon?: string;
+  /** 常に管理者として実行する（アプリだけ。省略時 false。true のときだけ書く） */
+  runAsAdmin?: boolean;
   /** 自動取込ルールのID（このフィールドがあるアイテムは自動管理対象） */
   autoImportRuleId?: string;
 }

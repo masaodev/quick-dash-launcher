@@ -13,7 +13,7 @@ import PathManager from '../config/pathManager.js';
  * メモに無いパスは今までどおりフォルダとして扱う。
  *
  * Windows のパスは大文字・小文字を区別しないので、照合も区別しない（保存は最初に覚えた表記のまま）。
- * 書き換えるのは folderPathProbe（登録・編集・起動・F5・完全リフレッシュ）だけ。
+ * 書き換えるのは folderPathProbe（登録・編集・起動・F5・「アイコンをすべて取り直す」）だけ。
  */
 
 export interface MemoStorage {

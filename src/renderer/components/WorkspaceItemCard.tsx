@@ -22,6 +22,8 @@ interface WorkspaceItemCardProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, dropZone?: ItemDropZone) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
+  /** Shift+クリック: 親フォルダを開く（親フォルダを持つアイテムだけ渡す） */
+  onOpenParentFolder?: (item: WorkspaceItem) => void;
   /** id からワークスペースのアイテムの名前を引く（セットのツールチップに行の名前を出す） */
   nameOfItem?: (itemId: string) => string | undefined;
 }
@@ -39,6 +41,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   onDragOver,
   onDrop,
   onContextMenu,
+  onOpenParentFolder,
   nameOfItem,
 }) => {
   const { t, i18n } = useTranslation();
@@ -82,10 +85,14 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
     onDrop(e, currentDropZone ?? undefined);
   }
 
-  const handleClick = () => {
-    if (!isEditing) {
-      onLaunch(item);
+  const handleClick = (e: React.MouseEvent) => {
+    if (isEditing) return;
+    // Shift+クリックは親フォルダを開く（メインウィンドウの Shift+Enter と同じ。親フォルダの無いものは普通に開く）
+    if (e.shiftKey && onOpenParentFolder) {
+      onOpenParentFolder(item);
+      return;
     }
+    onLaunch(item);
   };
 
   const handleRemoveClick = (e: React.MouseEvent) => {
@@ -118,7 +125,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   const getTooltipText = (): string => {
     const lines: string[] = [];
-    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カード自体には印を付けない）
+    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カードには右下の矢印だけ）
     if (item.type === 'ref') {
       lines.push(
         t('workspace.ref.tooltipMissing', {
@@ -201,6 +208,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
           <div className="workspace-item-name">{item.displayName}</div>
         )}
       </div>
+      {item.ref?.status === 'ok' && <span className="workspace-item-ref-mark" aria-hidden="true" />}
       <button
         className="workspace-item-delete-btn"
         onClick={handleRemoveClick}

@@ -4,7 +4,7 @@
  * 事前登録されたルールに基づいてブラウザのブックマークを
  * データファイルに自動インポートする
  *
- * 同期方式: 該当ルールのアイテムを全削除→一括再登録
+ * 同期方式: ルールのアイテムを URL で突き合わせ、差分だけ追加・更新・削除する（bookmarkRuleSync）
  */
 
 import * as path from 'path';
@@ -17,7 +17,13 @@ import {
   parseJsonDataFileLenient,
   serializeJsonDataFile,
 } from '@common/utils/jsonParser';
-import { summarizeImportResults, withImportNotes } from '@common/utils/bookmarkImportUtils';
+import {
+  formatImportCounts,
+  hasImportChanges,
+  summarizeImportResults,
+  withImportNotes,
+} from '@common/utils/bookmarkImportUtils';
+import { syncBookmarkRuleItems } from '@common/utils/bookmarkRuleSync';
 import {
   applyBookmarkRuleFilters,
   buildBookmarkDisplayName,
@@ -69,16 +75,13 @@ export class BookmarkAutoImportService {
       );
 
       const results = await this.executeRules(enabledRules);
-      const { totalImported, totalDeleted, totalManualDuplicates, hasError } =
-        summarizeImportResults(results);
+      const summary = summarizeImportResults(results);
+      const { totalManualDuplicates, hasError } = summary;
 
-      // トースト通知
-      if (totalImported > 0 || totalDeleted > 0) {
+      // トースト通知（起動のたびに「変更なし」を出さない。変わったときとエラーのときだけ）
+      if (hasImportChanges(summary) || hasError) {
         const t = mainI18n.t.bind(mainI18n);
-        const counts =
-          totalDeleted > 0
-            ? t('bookmarkImport.addedAndDeleted', { added: totalImported, deleted: totalDeleted })
-            : t('bookmarkImport.added', { count: totalImported });
+        const counts = formatImportCounts(summary, t);
         const message = withImportNotes(counts, totalManualDuplicates, hasError, t);
         await showToastWindow({
           itemType: 'bookmarkImport',
@@ -88,10 +91,7 @@ export class BookmarkAutoImportService {
         });
       }
 
-      logger.info(
-        { totalImported, totalDeleted, totalManualDuplicates, hasError },
-        'ブックマーク自動取込: 起動時実行が完了しました'
-      );
+      logger.info(summary, 'ブックマーク自動取込: 起動時実行が完了しました');
     } catch (error) {
       logger.error({ error }, 'ブックマーク自動取込: 起動時実行でエラーが発生しました');
     }
@@ -136,45 +136,35 @@ export class BookmarkAutoImportService {
       const dataFilePath = this.getDataFilePath(rule.targetFile);
       const jsonData = this.loadDataFile(dataFilePath);
 
-      // 同じ URL のものは前回の id を引き継ぐ（セットの行が id で指しているので、取込のたびに切らない）
-      const previousIds = new Map<string, string[]>();
-      for (const item of jsonData.items) {
-        if (item.type !== 'item' || item.autoImportRuleId !== rule.id) continue;
-        previousIds.set(item.path, [...(previousIds.get(item.path) ?? []), item.id]);
-      }
-
-      // autoImportRuleId === rule.id のアイテムを全削除
-      const deletedCount = this.removeItemsByRuleId(jsonData, rule.id);
-
       // 手動（ルール外）で登録済みの URL と重なる件数。入れ替えはしないが知らせる
-      const manualDuplicateCount = this.countManualDuplicates(jsonData, allBookmarks);
+      const manualDuplicateCount = this.countManualDuplicates(jsonData, allBookmarks, rule.id);
 
-      // 新しいアイテムを作成して追加
-      const now = Date.now();
-      for (const bookmark of allBookmarks) {
-        const displayName = buildBookmarkDisplayName(bookmark, rule);
-        const newItem: JsonLauncherItem = {
-          id: previousIds.get(bookmark.url)?.shift() ?? generateId(),
-          type: 'item',
-          displayName,
-          path: bookmark.url,
-          autoImportRuleId: rule.id,
-          updatedAt: now,
-        };
-        jsonData.items.push(newItem);
+      // 前回の取込と URL で突き合わせ、差分だけ書き換える。残すアイテムは id・メモ・アイコンなどを保つ
+      // （セットの行が id で指しているので、取込のたびに切らない）
+      const { items, counts } = syncBookmarkRuleItems(
+        jsonData.items,
+        rule.id,
+        allBookmarks.map((bookmark) => ({
+          url: bookmark.url,
+          displayName: buildBookmarkDisplayName(bookmark, rule),
+        })),
+        Date.now(),
+        generateId
+      );
+
+      // 変わったときだけ保存して画面に知らせる
+      if (counts.added > 0 || counts.updated > 0 || counts.deleted > 0) {
+        jsonData.items = items;
+        writeDataFile(dataFilePath, serializeJsonDataFile(jsonData));
+        notifyDataChanged();
       }
-
-      // データファイルの保存
-      const content = serializeJsonDataFile(jsonData);
-      writeDataFile(dataFilePath, content);
-
-      // UI更新通知
-      notifyDataChanged();
 
       const result: BookmarkAutoImportResult = {
         success: true,
         importedCount: allBookmarks.length,
-        deletedCount,
+        addedCount: counts.added,
+        updatedCount: counts.updated,
+        deletedCount: counts.deleted,
         ...(manualDuplicateCount > 0 && { manualDuplicateCount }),
         executedAt: startTime,
       };
@@ -187,7 +177,7 @@ export class BookmarkAutoImportService {
           ruleId: rule.id,
           ruleName: rule.name,
           importedCount: allBookmarks.length,
-          deletedCount,
+          ...counts,
           manualDuplicateCount,
         },
         'ブックマーク自動取込: ルール実行完了'
@@ -324,10 +314,14 @@ export class BookmarkAutoImportService {
    * ルールは自分が入れた分しか入れ替えないので、同じ URL が手動分と二重になりうる。
    * ここでは消さずに件数だけ返し、結果で知らせる（手動分を勝手に消さない）
    */
-  private countManualDuplicates(jsonData: JsonDataFile, bookmarks: BookmarkWithFolder[]): number {
+  private countManualDuplicates(
+    jsonData: JsonDataFile,
+    bookmarks: BookmarkWithFolder[],
+    ruleId: string
+  ): number {
     const existingUrls = new Set<string>();
     for (const item of jsonData.items) {
-      if (item.type !== 'item') continue;
+      if (item.type !== 'item' || item.autoImportRuleId === ruleId) continue;
       const launcher = item as JsonLauncherItem;
       if (launcher.path) existingUrls.add(normalizeUrl(launcher.path));
     }

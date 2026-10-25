@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import type { RegisterSetEntry, SetEntry, SetLaunchMode } from '@common/types';
+import type { SetEntry, SetLaunchMode } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
 import { hasPlacementRect } from '@common/utils/placementMap';
 
@@ -26,9 +26,9 @@ import PlacementMinimap, { SetPlacementMap, type SetPlacementMapHandle } from '.
 import { Button } from './ui';
 
 interface SetEntriesEditorProps {
-  entries: RegisterSetEntry[];
+  entries: SetEntry[];
   launchMode?: SetLaunchMode;
-  onChange: (patch: { setEntries?: RegisterSetEntry[]; setLaunchMode?: SetLaunchMode }) => void;
+  onChange: (patch: { setEntries?: SetEntry[]; setLaunchMode?: SetLaunchMode }) => void;
   /** セットを置くデータファイル（同じタブのアイテムを先に並べる）。ワークスペースなら undefined */
   currentFile?: string;
   /** ワークスペースのアイテムも選べるようにする（ワークスペースのセット） */
@@ -54,6 +54,8 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
 }) => {
   const { t } = useTranslation();
   const [catalog, setCatalog] = useState<SetCatalogItem[]>([]);
+  /** catalog を読み終えたか（読む前は、アイテムを指す行を「見つからない」と出さない） */
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
   /** 行が自分で持つパスのアイコン（アイテムを指す行は catalog のアイコンを使う） */
   const [ownIcons, setOwnIcons] = useState<ReadonlyMap<string, string>>(new Map());
   const [screens, setScreens] = useState<ScreenArea[]>([]);
@@ -72,9 +74,11 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
   useEffect(() => {
     let cancelled = false;
     loadSetCatalog(currentFile, includeWorkspace)
-      .then(
-        (items) => !cancelled && setCatalog(items.filter((item) => item.id !== selfId || !selfId))
-      )
+      .then((items) => {
+        if (cancelled) return;
+        setCatalog(items.filter((item) => item.id !== selfId || !selfId));
+        setCatalogLoaded(true);
+      })
       .catch((e) => logError('セットに追加できるアイテムを読めませんでした:', e));
     window.electronAPI
       .getScreenAreas()
@@ -114,6 +118,13 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     return map;
   }, [catalog]);
 
+  /** 行の表示。catalog を読む前は、アイテムを指す行を見つからない扱いにしない（開いた直後に一瞬「存在しないアイテム」と出ないように） */
+  const describe = (entry: SetEntry, icons?: ReadonlyMap<string, string>): SetEntryView => {
+    const view = describeSetEntry(entry, catalogById, icons);
+    if (catalogLoaded || !view.missing || !entry.itemId) return view;
+    return { ...view, name: entry.label ?? '', missing: false };
+  };
+
   const addedKeys = useMemo(() => {
     const keys = new Set<string>();
     for (const entry of entries) {
@@ -134,7 +145,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
     return view.path ?? '';
   };
 
-  const setEntries = (next: RegisterSetEntry[]) => onChange({ setEntries: next });
+  const setEntries = (next: SetEntry[]) => onChange({ setEntries: next });
   const move = (from: number, to: number) => {
     if (to < 0 || to >= entries.length || from === to) return;
     const next = [...entries];
@@ -174,7 +185,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
           <div className="set-empty">{t('set.editor.empty')}</div>
         ) : (
           entries.map((entry, index) => {
-            const view = describeSetEntry(entry, catalogById, ownIcons);
+            const view = describe(entry, ownIcons);
             const place = placementText(entry, screens, desktopNames);
             return (
               <div
@@ -233,15 +244,6 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
                     </span>
                     {view.missing && (
                       <span className="set-chip set-chip-danger">{t('set.editor.missing')}</span>
-                    )}
-                    {/* メインウィンドウへ登録するときに、ワークスペースのアイテムをパスに置き換えた行 */}
-                    {entry.expandedFrom && (
-                      <span
-                        className="set-chip set-chip-open"
-                        title={t('set.editor.expandedHint', { name: entry.expandedFrom })}
-                      >
-                        {t('set.editor.expanded')}
-                      </span>
                     )}
                   </span>
                   {/* 2 段目はその行が開くもの。動かすだけの行は、印と動かすウィンドウの exe 名 */}
@@ -369,7 +371,7 @@ const SetEntriesEditor: React.FC<SetEntriesEditorProps> = ({
         </li>
         {/* 動かすだけの行があるときだけ、閉じていると動かないことと、開くものの足し方を添える */}
         {entries.some((entry) => {
-          const view = describeSetEntry(entry, catalogById);
+          const view = describe(entry);
           return view.moveOnly && !view.missing;
         }) && (
           <li>

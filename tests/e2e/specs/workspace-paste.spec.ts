@@ -31,6 +31,22 @@ async function pasteText(
 }
 
 /**
+ * 貼り付ける先のグループを作り、見出しを 2 回クリックして選ぶ（1 回目で閉じるので、2 回目で開き直す）
+ *
+ * グループのあるワークスペースでは、選んだグループに貼る（未分類は無い。A3-157）
+ */
+async function selectPasteGroup(workspaceWindow: Page, name: string): Promise<void> {
+  await workspaceWindow.evaluate(async (groupName) => {
+    const api = window.electronAPI.workspaceAPI;
+    const [workspace] = await api.loadWorkspaces();
+    await api.createGroup(groupName, undefined, undefined, workspace.id);
+  }, name);
+  const header = workspaceWindow.locator('.workspace-group-header', { hasText: name });
+  await header.click();
+  await header.click();
+}
+
+/**
  * ワークスペースへの Ctrl+V 貼り付けの振り分け
  * - ただのテキストはフォルダにならず、クリップボードアイテムになる（以前は「拡張子なし → folder」だった）
  * - URL は URL アイテム、Windows のパスは起動アイテムになる
@@ -48,6 +64,7 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     const workspaceWindow = await getWorkspaceWindow(electronApp);
     await workspaceWindow.waitForLoadState('domcontentloaded');
     const text = '会議メモ\n二行目も残る';
+    await selectPasteGroup(workspaceWindow, '貼り付け先');
 
     await test.step('ただのテキスト', async () => {
       await pasteText(electronApp, workspaceWindow, text);
@@ -89,6 +106,11 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
       expect(fs.existsSync(dataFile)).toBe(true);
       const saved = JSON.parse(fs.readFileSync(dataFile, 'utf-8')) as { text?: string };
       expect(saved.text).toBe(text);
+      // 取り込んだ実データをそのまま使い、複製を作らない（使われない実データを残さない）
+      const dataDir = path.dirname(dataFile);
+      expect(fs.readdirSync(dataDir).filter((f) => f.endsWith('.json'))).toEqual([
+        path.basename(added.dataFileRef),
+      ]);
     });
 
     await test.step('URL は URL アイテム、パスは起動アイテムになる', async () => {
@@ -109,6 +131,167 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
 
       // ただの文字列がフォルダになっていないこと（以前の不具合の再発防止）
       expect(items.some((item) => item.type === 'item' && item.path === 'https')).toBe(false);
+    });
+  });
+
+  test('余白の右クリックの「貼り付け」（webContents.paste）でも、ファイル以外の URL が足せる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await electronApp.evaluate(({ clipboard }) => clipboard.writeText('https://example.org/menu'));
+    await selectPasteGroup(workspaceWindow, 'メニューで貼る先');
+    await workspaceWindow.bringToFront();
+    // メニューの「📋 貼り付け」がすることと同じ（以前は paste イベントでファイルしか扱わず、何も足されなかった）
+    // ワークスペースはメインのレンダラーから window.open で開くので、URL ではなくタイトルで探す
+    await electronApp.evaluate(({ BrowserWindow }) => {
+      const ws = BrowserWindow.getAllWindows().find((win) => win.getTitle() === 'Workspace');
+      ws?.webContents.paste();
+    });
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'https://example.org/menu' })
+    ).toBeVisible({ timeout: 15000 });
+  });
+
+  test('グループのあるワークスペースで、グループを選ばずに貼ると足さずに知らせる（A3-157）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('選ばないグループ', undefined, undefined, workspace.id);
+    });
+    await expect(
+      workspaceWindow.locator('.workspace-group-header', { hasText: '選ばないグループ' })
+    ).toBeVisible();
+    await pasteText(electronApp, workspaceWindow, 'https://example.net/nowhere');
+    await expect(
+      workspaceWindow.getByText(
+        '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください'
+      )
+    ).toBeVisible();
+    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
+    expect(items.some((i) => i.displayName === 'https://example.net/nowhere')).toBe(false);
+  });
+
+  test('貼り付け先のグループは見出しに枠で見え、閉じていれば開き、中のトーストでグループ名を添えて知らせる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('閉じた貼り付け先', undefined, undefined, workspace.id);
+      await api.createGroup('ほかのグループ', undefined, undefined, workspace.id);
+    });
+    const header = workspaceWindow.locator('.workspace-group-header', {
+      hasText: '閉じた貼り付け先',
+    });
+    // 1 回クリックすると閉じる。閉じても貼り付け先として選ばれ、枠が付く
+    await header.click();
+    await expect(header).toHaveClass(/paste-target/);
+    await expect(
+      workspaceWindow.locator('.workspace-group-header.paste-target', { hasText: 'ほかのグループ' })
+    ).toHaveCount(0);
+
+    await pasteText(electronApp, workspaceWindow, 'https://example.com/closed');
+    await expect(
+      workspaceWindow.getByText('https://example.com/closed を「閉じた貼り付け先」に追加しました')
+    ).toBeVisible({ timeout: 10000 });
+    // 閉じていたグループは開いて、入ったものが見える
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'https://example.com/closed' })
+    ).toBeVisible();
+  });
+
+  test('ワークスペースを切り替えると貼り付け先の選択が外れ、前のワークスペースのグループには入らない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('前のワークスペースの先', undefined, undefined, workspace.id);
+      const other = await api.createWorkspace('切り替え先');
+      await api.createGroup('切り替え先のグループ', undefined, undefined, other.id);
+    });
+    const header = workspaceWindow.locator('.workspace-group-header', {
+      hasText: '前のワークスペースの先',
+    });
+    await header.click();
+    await expect(header).toHaveClass(/paste-target/);
+
+    await workspaceWindow
+      .locator('.workspace-tab-bar .tab-button', { hasText: '切り替え先' })
+      .click();
+    await expect(
+      workspaceWindow.locator('.workspace-group-header', { hasText: '切り替え先のグループ' })
+    ).toBeVisible();
+    await expect(workspaceWindow.locator('.workspace-group-header.paste-target')).toHaveCount(0);
+
+    await pasteText(electronApp, workspaceWindow, 'https://example.com/elsewhere');
+    await expect(
+      workspaceWindow.getByText(
+        '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください'
+      )
+    ).toBeVisible();
+    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
+    expect(items.some((i) => i.displayName === 'https://example.com/elsewhere')).toBe(false);
+  });
+
+  test('貼り付け先の枠は前面のウィンドウにだけ出て、グループの外を左クリックすると外れ、Ctrl+V で貼らない（A3-186）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('枠のグループ', undefined, undefined, workspace.id);
+    });
+    const header = workspaceWindow.locator('.workspace-group-header', { hasText: '枠のグループ' });
+    await header.click();
+    await expect(header).toHaveClass(/paste-target/);
+
+    await test.step('ウィンドウが前面でなくなると枠を消し、戻ると枠を戻す', async () => {
+      await workspaceWindow.evaluate(() => window.dispatchEvent(new Event('blur')));
+      await expect(workspaceWindow.locator('.workspace-group-header.paste-target')).toHaveCount(0);
+      await workspaceWindow.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await expect(header).toHaveClass(/paste-target/);
+    });
+
+    await test.step('グループの外（タブの並びの空いている所）を左クリックすると外れ、Ctrl+V では貼らずに知らせる', async () => {
+      // 一覧はグループぴったりの高さに縮み、下端にはウィンドウの大きさを変えるつまみが重なるので、タブの並びで試す
+      const tabBar = workspaceWindow.locator('.workspace-tab-bar');
+      const box = await tabBar.boundingBox();
+      if (!box) throw new Error('タブの並びが見つかりません');
+      await tabBar.click({ position: { x: box.width / 2, y: box.height / 2 } });
+      await expect(workspaceWindow.locator('.workspace-group-header.paste-target')).toHaveCount(0);
+
+      await pasteText(electronApp, workspaceWindow, 'https://example.com/outside');
+      await expect(
+        workspaceWindow.getByText(
+          '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください'
+        )
+      ).toBeVisible();
+      const items = await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.loadItems()
+      );
+      expect(items.some((i) => i.displayName === 'https://example.com/outside')).toBe(false);
     });
   });
 

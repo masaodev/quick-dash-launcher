@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import type { AppItem, WindowInfo } from '@common/types';
 
-import { filterItems } from './dataParser';
+import { filterItems, setSearchMemo } from './dataParser';
 
 function windowItem(title: string, processName?: string): WindowInfo {
   return { hwnd: 1, title, processName } as WindowInfo;
@@ -25,5 +25,43 @@ describe('filterItems（ウィンドウ検索モード）', () => {
     const noProcess = windowItem('タイトルだけ');
     expect(filterItems([noProcess], 'タイトル', 'window')).toEqual([noProcess]);
     expect(filterItems([noProcess], 'exe', 'window')).toEqual([]);
+  });
+});
+
+describe('filterItems（メモにも当てる設定）', () => {
+  const github = {
+    id: 'g1',
+    displayName: 'GitHub',
+    path: 'https://github.com/masaodev',
+    type: 'url',
+    memo: '仕事のリポジトリ',
+  } as AppItem;
+  const notepad = { id: 'n1', displayName: 'メモ帳', path: 'notepad.exe', type: 'app' } as AppItem;
+
+  afterEach(() => setSearchMemo(false));
+
+  it('既定（オフ）では表示名だけで探す', () => {
+    expect(filterItems([github, notepad], 'masaodev')).toEqual([]);
+    expect(filterItems([github, notepad], '仕事')).toEqual([]);
+  });
+
+  it('オンにするとメモにも当たり、表示名とまたがる AND も当たる', () => {
+    setSearchMemo(true);
+    expect(filterItems([github, notepad], '仕事')).toEqual([github]);
+    expect(filterItems([github, notepad], 'github 仕事')).toEqual([github]);
+  });
+
+  it('オンでもパス（URL を含む）には当てない', () => {
+    setSearchMemo(true);
+    expect(filterItems([github, notepad], 'masaodev')).toEqual([]);
+    expect(filterItems([github, notepad], 'notepad')).toEqual([]);
+  });
+
+  it('切り替えるとすぐに効く（前の結果を覚えたままにしない）', () => {
+    expect(filterItems([github], '仕事')).toEqual([]);
+    setSearchMemo(true);
+    expect(filterItems([github], '仕事')).toEqual([github]);
+    setSearchMemo(false);
+    expect(filterItems([github], '仕事')).toEqual([]);
   });
 });

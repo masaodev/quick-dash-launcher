@@ -177,6 +177,8 @@ export async function showAdminWindowWithImportModal(modal: ImportModalType): Pr
 export function hideAdminWindow(): void {
   if (isWindowValid()) {
     adminWindow!.hide();
+    // 隠すだけなので画面の状態は残る。開いていた取込画面を閉じさせる（次に開いたとき残らないように。A3-187）
+    adminWindow!.webContents.send(IPC_CHANNELS.EVENT_ADMIN_HIDDEN);
     initialTab = 'settings';
     windowLogger.info('管理ウィンドウを非表示にしました');
   }
