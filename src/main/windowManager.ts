@@ -33,7 +33,6 @@ import {
   bringWorkspaceToFront,
   getWorkspaceWindow,
   hideWorkspaceWithMain,
-  showWorkspaceWindow,
   showWorkspaceWithMain,
 } from './workspaceWindowManager.js';
 import { getHwnd, moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
@@ -354,12 +353,6 @@ async function updateTrayMenu(): Promise<void> {
         void showWindowAtCenter();
       },
     },
-    {
-      label: t('tray.showWorkspace'),
-      click: () => {
-        void showWorkspaceWindow();
-      },
-    },
     { type: 'separator' },
     {
       label: t('tray.itemManager'),
@@ -373,19 +366,18 @@ async function updateTrayMenu(): Promise<void> {
         await showAdminWindowWithTab('settings');
       },
     },
-    { type: 'separator' },
+    {
+      // GitHub へはヘルプタブの「🔗 GitHub」から行ける
+      label: t('tray.help'),
+      click: async () => {
+        await showAdminWindowWithTab('other');
+      },
+    },
     {
       label: t('tray.openSettingsFolder'),
       click: async () => {
         const configFolder = PathManager.getConfigFolder();
         await shell.openPath(configFolder);
-      },
-    },
-    { type: 'separator' },
-    {
-      label: t('tray.help'),
-      click: async () => {
-        await shell.openExternal('https://github.com/masaodev/quick-dash-launcher');
       },
     },
     { type: 'separator' },
