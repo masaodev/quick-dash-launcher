@@ -13,10 +13,6 @@ export function canTryExecute(item: RegisterItem | undefined): boolean {
 }
 
 /**
- * 「試しに実行」を押せなくするか。クリップボードは保存済みの実データをコピーするので、
- * 取り込み直した直後や書きかけのテキストなど、まだ保存していない中身のときは試せない
- */
-/**
  * ワークスペースの編集画面の「試しに実行」を押せなくするか。こちらは取り込み直した直後・書きかけでも
  * 保存済みの中身で試す（workspaceTrialItem）ので、保存済みの実データが無いときだけ押せなくする
  */
@@ -25,6 +21,10 @@ export function isWorkspaceTryExecuteBlocked(item: RegisterItem | undefined): bo
   return !item.clipboardDataRef || !!item.clipboardDataMissing;
 }
 
+/**
+ * 「試しに実行」を押せなくするか。クリップボードは保存済みの実データをコピーするので、
+ * 取り込み直した直後や書きかけのテキストなど、まだ保存していない中身のときは試せない
+ */
 export function isTryExecuteBlocked(item: RegisterItem | undefined): boolean {
   if (!item || item.itemCategory !== 'clipboard') return false;
   return (

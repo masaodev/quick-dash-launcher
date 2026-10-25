@@ -7,18 +7,20 @@ import {
 } from '@common/utils/workspaceConverters';
 import { detectItemType } from '@common/utils/itemTypeDetector';
 
-import type { ItemFieldValue } from '../../components/ItemEditFields';
+import type { ItemEditFieldErrors, ItemFieldValue } from '../../components/ItemEditFields';
 import { logError } from '../../utils/debug';
-import { hasClipboardContent, saveClipboardText } from '../../utils/clipboardText';
-import { registerPathError } from '../../utils/registerItemValidation';
 import { applyItemCategoryChange } from '../../utils/itemCategoryChange';
+import {
+  canFetchIcon,
+  commitClipboardContent,
+  discardClipboardSession as discardItemClipboardSession,
+  fetchItemIcon,
+  resolvePathChange,
+  validateItemForm,
+} from '../../utils/itemFormActions';
 import { useToast } from '../useToast';
 
-interface FormErrors {
-  displayName?: string;
-  path?: string;
-  setEntries?: string;
-}
+type FormErrors = ItemEditFieldErrors;
 
 /** 新規（グループの右クリック「新しく入力して追加」）で開いたときの空のフォーム */
 const EMPTY_ITEM: RegisterItem = {
@@ -109,19 +111,10 @@ export function useWorkspaceItemEditForm(
   /** パス欄を離れたとき（または「選択」で選んだとき。pickedPath は選んだパスで、まだ item に入っていない）に種別を決め直す */
   const handlePathBlur = useCallback(
     async (pickedPath?: string) => {
-      // クリップボードアイテムはpathを持たない
-      if (!item || item.itemCategory === 'clipboard') return;
-      const path = pickedPath ?? item.path;
-      if (!path?.trim()) {
-        // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
-        if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
-          setItem((prev) => (prev ? { ...prev, type: 'windowSwitch', icon: undefined } : null));
-        }
-        return;
-      }
-
-      const newType = await detectItemType(path);
-      setItem((prev) => (prev ? { ...prev, path, type: newType } : null));
+      if (!item) return;
+      const apply = await resolvePathChange(item, pickedPath);
+      if (!apply) return;
+      setItem((prev) => (prev ? apply(prev) : null));
     },
     [item]
   );
@@ -129,67 +122,10 @@ export function useWorkspaceItemEditForm(
   const validate = useCallback((): boolean => {
     if (!item) return false;
 
-    const newErrors: FormErrors = {};
-
-    if (!item.displayName.trim()) {
-      newErrors.displayName = t('register.errors.displayNameRequired');
-    }
-
-    const pathError = registerPathError(item);
-    if (pathError) {
-      newErrors.path = t(pathError);
-    }
-
-    if (item.itemCategory === 'set' && !item.setEntries?.length) {
-      newErrors.setEntries = t('set.editor.entriesRequired');
-    }
-
-    if (item.itemCategory === 'clipboard' && !hasClipboardContent(item)) {
-      newErrors.path = item.clipboardDataMissing
-        ? t('register.errors.clipboardDataMissing')
-        : t('register.errors.clipboardRequired');
-    }
-
+    const newErrors = validateItemForm(item, t);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [item, t]);
-
-  /** テキストを書いた・クリップボードを取り直していたら、その中身をファイルに確定する。失敗したら null */
-  const commitClipboardSession = useCallback(
-    async (target: RegisterItem): Promise<RegisterItem | null> => {
-      if (target.itemCategory === 'clipboard' && target.clipboardText !== undefined) {
-        try {
-          return await saveClipboardText(target);
-        } catch (error) {
-          logError('Failed to save clipboard text:', error);
-          showError(
-            (error instanceof Error && error.message) || t('register.errors.clipboardSaveFailed')
-          );
-          return null;
-        }
-      }
-      if (target.itemCategory !== 'clipboard' || !target.clipboardSessionId) return target;
-      try {
-        const result = await window.electronAPI.clipboardAPI.commitSession(
-          target.clipboardSessionId
-        );
-        if (result.success && result.dataFileRef) {
-          return {
-            ...target,
-            clipboardDataRef: result.dataFileRef,
-            clipboardSavedAt: result.savedAt || target.clipboardSavedAt,
-            clipboardSessionId: undefined,
-          };
-        }
-        showError(result.error || t('register.errors.clipboardSaveFailed'));
-      } catch (error) {
-        logError('Failed to commit clipboard session:', error);
-        showError(t('register.errors.clipboardSaveFailed'));
-      }
-      return null;
-    },
-    [showError, t]
-  );
 
   // 失敗したときは画面を開いたままにして、直してもう一度保存できるようにする
   const handleSave = useCallback(async () => {
@@ -197,7 +133,7 @@ export function useWorkspaceItemEditForm(
 
     if (!validate()) return;
 
-    const committed = await commitClipboardSession(item);
+    const committed = await commitClipboardContent(item, { showWarning, showError }, t);
     if (!committed) return;
     if (committed !== item) setItem(committed);
 
@@ -213,15 +149,10 @@ export function useWorkspaceItemEditForm(
       logError('Failed to save workspace item:', error);
       showError(t(editingItem ? 'workspace.edit.updateFailed' : 'workspace.edit.addFailed'));
     }
-  }, [item, editingItem, create, validate, commitClipboardSession, onSave, onClose, showError, t]);
+  }, [item, editingItem, create, validate, onSave, onClose, showWarning, showError, t]);
 
   const discardClipboardSession = useCallback(async () => {
-    if (!item?.clipboardSessionId) return;
-    try {
-      await window.electronAPI.clipboardAPI.discardSession(item.clipboardSessionId);
-    } catch (error) {
-      logError('Failed to discard clipboard session:', error);
-    }
+    if (item) await discardItemClipboardSession(item);
   }, [item]);
 
   const handleCancel = useCallback(async () => {
@@ -245,23 +176,13 @@ export function useWorkspaceItemEditForm(
   }, [editingItem, discardClipboardSession, onClose, showError, t]);
 
   const handleFetchIcon = useCallback(async () => {
-    if (!item || !item.path?.trim() || item.type === 'folder' || item.type === 'clipboard') return;
+    if (!item || !canFetchIcon(item)) return;
 
     setIconFetchLoading(true);
-    try {
-      // 取得したアイコンは icon-cache に入り、ワークスペースは読み直すときにそこから引く
-      const icon = await window.electronAPI.getIconForItem(item.path, item.type);
-      if (icon) {
-        setItem((prev) => (prev ? { ...prev, icon } : null));
-      } else {
-        showWarning(t('register.errors.iconNotFound'));
-      }
-    } catch (error) {
-      logError('Failed to fetch icon:', error);
-      showError(t('register.errors.iconFetchError'));
-    } finally {
-      setIconFetchLoading(false);
-    }
+    // 取得したアイコンは icon-cache に入り、ワークスペースは読み直すときにそこから引く
+    const icon = await fetchItemIcon(item, { showWarning, showError }, t);
+    if (icon) setItem((prev) => (prev ? { ...prev, icon } : null));
+    setIconFetchLoading(false);
   }, [item, showError, showWarning, t]);
 
   /** ドロップしたファイル・フォルダでパスを置き換える（通常のアイテムだけ。名前などはそのまま） */
