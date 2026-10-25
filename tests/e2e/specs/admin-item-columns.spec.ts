@@ -90,6 +90,56 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
     }
   });
 
+  test('見出しの右端をダブルクリックすると、中身に合わせた幅になり、設定に残る（A3-184）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+
+    /** 見出しの右端のつまみをダブルクリックする（つまみの右半分は隣の見出しに重なるので、左寄りを押す） */
+    const doubleClickHandle = async (columnClass: string) => {
+      const box = (await adminWindow
+        .locator(`th.${columnClass} .column-resize-handle`)
+        .boundingBox())!;
+      await adminWindow.mouse.dblclick(box.x + 1, box.y + box.height / 2);
+    };
+
+    try {
+      await test.step('メモが空ならメモの列は見出しの幅まで縮む', async () => {
+        const header = adminWindow.locator('th.memo-column');
+        const before = (await header.boundingBox())!.width;
+        await doubleClickHandle('memo-column');
+        await expect.poll(async () => (await header.boundingBox())!.width).toBeLessThan(before);
+        const width = (await header.boundingBox())!.width;
+        // 見出しの文字（メモ・並べ替えの印・▾）は切れない
+        expect(await header.evaluate((th) => th.scrollWidth <= th.clientWidth + 3)).toBe(true);
+        await expect
+          .poll(() => configHelper.readSettings().adminItemColumns?.widths?.memo ?? 0)
+          .toBe(Math.round(width));
+      });
+
+      await test.step('名前の列は、どの名前も 1 行に収まる幅になる', async () => {
+        await doubleClickHandle('name-column');
+        await expect
+          .poll(() =>
+            adminWindow.evaluate(() =>
+              Array.from(document.querySelectorAll<HTMLElement>('tbody td.name-column')).every(
+                (td) => td.scrollWidth <= td.clientWidth + 1
+              )
+            )
+          )
+          .toBe(true);
+        await expect
+          .poll(() => configHelper.readSettings().adminItemColumns?.widths?.name ?? 0)
+          .toBeGreaterThan(0);
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   test('メモ列で複数行のメモを書いて保存でき、1 行目だけが表に出る', async ({
     electronApp,
     mainWindow,

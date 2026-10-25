@@ -103,6 +103,39 @@ const WorkspaceApp: React.FC = () => {
   useEffect(() => {
     setActiveGroupId(undefined);
   }, [activeWorkspaceId]);
+  // 貼り付け先の枠は前面のウィンドウにだけ出す（Ctrl+V が効くのは前面のウィンドウだけ。本体と切り離しウィンドウの
+  // 両方に枠が出て、どこに貼り付くか分からなかった。A3-186）。選んだグループは覚えておき、戻ってきたら枠を戻す
+  const [isWindowFocused, setIsWindowFocused] = useState(() => document.hasFocus());
+  useEffect(() => {
+    const handleFocus = () => setIsWindowFocused(true);
+    const handleBlur = () => setIsWindowFocused(false);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
+  // グループの外（余白・タブの並びなど）を左クリックしたら、貼り付け先を外す。外すとグループのあるワークスペースでは
+  // Ctrl+V で貼り付けない（グループを選ぶよう知らせる）。ボタン・入力欄・ダイアログ・ウィンドウの縁では外さない
+  // （右クリックの「貼り付け」は左クリックを伴わないので、選んだグループに貼れる。A3-186）
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target instanceof Element ? e.target : null;
+      if (
+        !target ||
+        target.closest(
+          '.workspace-group, button, input, textarea, select, [role="dialog"], [role="menu"], .workspace-resize-handle'
+        )
+      ) {
+        return;
+      }
+      setActiveGroupId(undefined);
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, []);
   const toggleGroup = async (groupId: string) => {
     const newCollapsed = toggleGroupCollapsed(groupId);
     if (detachedGroupId === null) {
@@ -525,7 +558,8 @@ const WorkspaceApp: React.FC = () => {
   const commonUi = {
     editingItemId: editingId,
     setEditingItemId: setEditingId,
-    activeGroupId: pasteGroupId,
+    // 枠を出すのは前面のウィンドウだけ（A3-186）
+    activeGroupId: isWindowFocused ? pasteGroupId : undefined,
     setActiveGroupId,
   };
 

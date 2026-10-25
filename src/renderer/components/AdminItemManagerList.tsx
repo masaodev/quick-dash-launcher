@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { JsonItem } from '@common/types';
@@ -18,6 +18,7 @@ import {
   tableMinWidthOf,
   type AdminItemColumnId,
 } from '../utils/adminItemColumns';
+import { measureColumnFitWidth } from '../utils/adminItemColumnFit';
 import {
   activeFilterColumns,
   type ColumnFilters,
@@ -159,11 +160,13 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   // 行の仮想化: スクロールコンテナは .editable-raw-item-list。
   // テーブル構造（sticky thead・列幅）を保つため、可視範囲外は上下のスペーサー行で高さを確保する
   const listRef = useRef<HTMLDivElement>(null);
+  // 列の境目のダブルクリックで幅を中身に合わせる列（A3-184）。測る間だけ全部の行を描く
+  const [fitColumnId, setFitColumnId] = useState<AdminItemColumnId | null>(null);
   const rowVirtualizer = useVirtualizer({
     count: editableItems.length,
     getScrollElement: () => listRef.current,
     estimateSize: () => 28, // 行高26px + 境界線。折り返し行はmeasureElementで実測補正
-    overscan: 10,
+    overscan: fitColumnId ? editableItems.length : 10,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
   const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
@@ -187,6 +190,17 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
     onAutoEditHandled();
   }, [autoEditItemId, editableItems]);
 
+  // 全部の行を描いたところで測り、幅を保存して、見えている行だけを描く状態に戻す。
+  // 測るのは今の一覧（今のタブ・絞り込み・検索の後）の行
+  const tableRef = useRef<HTMLTableElement>(null);
+  useLayoutEffect(() => {
+    if (!fitColumnId) return;
+    const def = ADMIN_ITEM_COLUMNS.find((c) => c.id === fitColumnId);
+    const width = def && tableRef.current ? measureColumnFitWidth(tableRef.current, def) : null;
+    setFitColumnId(null);
+    if (width !== null) columns.setColumnWidth(fitColumnId, width);
+  }, [fitColumnId]);
+
   const allSelected =
     editableItems.length > 0 && editableItems.every((item) => selectedItems.has(getItemKey(item)));
   const someSelected = editableItems.some((item) => selectedItems.has(getItemKey(item)));
@@ -194,6 +208,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   return (
     <div className="editable-raw-item-list" ref={listRef}>
       <table
+        ref={tableRef}
         className="raw-items-table"
         style={
           {
@@ -211,6 +226,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
           onSelectAll={onSelectAll}
           columns={columns.visibleColumns}
           onResizeStart={columns.startResize}
+          onAutoFit={setFitColumnId}
           onHeaderContextMenu={handleHeaderContextMenu}
           filteredColumns={filteredColumns}
           onOpenFilter={handleOpenFilter}
