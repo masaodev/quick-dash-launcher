@@ -6,7 +6,11 @@ import { app, globalShortcut, ipcMain, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
-import { createDefaultDataFile, createFirstLaunchTabs } from './utils/appHelpers';
+import {
+  createDefaultDataFile,
+  createFirstLaunchTabs,
+  createSampleWorkspaceFile,
+} from './utils/appHelpers';
 import PathManager from './config/pathManager.js';
 import { EnvConfig } from './config/envConfig.js';
 import { BackupService } from './services/backupService.js';
@@ -202,9 +206,12 @@ app.whenReady().then(async () => {
   // タブを表示言語の名前で決める（ウィンドウを作る前に決めて、最初の読み込みから 2 つのタブで出す）。
   // タブを決めるのはデータファイルを作ったときだけ（初回設定の途中で終了して起動し直したときに、
   // 「メイン」だけのタブで上書きして「Web」タブを消さないように）
+  // ワークスペースにも、メインウィンドウのお試しを指す参照などを入れる（初回起動で、ワークスペースのファイルがまだ無いときだけ。
+  // 最初にワークスペースを読む前に書く）
   const defaultDataFile = createDefaultDataFile(isFirstLaunch);
   if (isFirstLaunch && defaultDataFile.created) {
     await settingsService.setMultiple(createFirstLaunchTabs(defaultDataFile.splitWebTab));
+    createSampleWorkspaceFile(defaultDataFile.refTargets);
   }
 
   // 起動時スナップショットバックアップ（fire-and-forget: メインフローをブロックしない）

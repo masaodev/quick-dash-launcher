@@ -2112,6 +2112,32 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     greetingName: '定型文: あいさつ（aisatsu）',
     greetingText:
       '〇〇様\n\nいつもお世話になっております。\n△△の□□です。\n\n（ここに本文）\n\nお手数をおかけしますが、よろしくお願いいたします。',
+    /** 初回起動でワークスペースに入れるお試し */
+    workspace: {
+      favoritesGroup: 'よく使う',
+      moreGroup: '便利な使い方',
+      /** メインウィンドウのお試しを指す参照に付ける、ワークスペースでの表示名（メインウィンドウと同じなら付けない） */
+      names: {
+        desktop: 'デスクトップ',
+        downloads: 'ダウンロード',
+        calculator: '電卓',
+        notepad: 'メモ帳',
+        weather: '天気予報',
+      },
+      setName: 'セット: 電卓とメモ帳',
+      setMemo:
+        'クリックすると、電卓とメモ帳を一度に開きます。開くものは、右クリックの「編集」で変えられます。',
+      templateName: '定型文: メールテンプレート',
+      templateMemo:
+        'クリックすると、この文をクリップボードに写します。メールなどに Ctrl+V で貼り付けます。',
+      templateText:
+        '〇〇様\n\nお世話になっております。△△の□□です。\n\n打ち合わせの日程について、以下のいずれかでご都合はいかがでしょうか。\n\n・〇月〇日（〇）10:00〜11:00\n・〇月〇日（〇）14:00〜15:00\n\nご確認のほど、よろしくお願いいたします。',
+      guide: {
+        name: '📖 ワークスペースの使い方',
+        url: 'https://github.com/masaodev/quick-dash-launcher/blob/main/docs/features/workspace.md',
+        memo: 'アイテムは、メインウィンドウのアイテムを右クリックして「ワークスペースに追加」、ファイルや URL をここへドラッグ、コピーした文やパスをここで Ctrl+V、のどれかで足せます。',
+      },
+    },
   },
   parseReasons: {
     versionFilled: 'version が無いか文字列でないため "{{version}}" を補いました',
