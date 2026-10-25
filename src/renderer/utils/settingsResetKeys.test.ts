@@ -15,7 +15,7 @@ const t = ((key: string, options?: Record<string, unknown>) =>
 
 /** 戻す項目の既定値（main の SettingsService.DEFAULT_SETTINGS と同じ値） */
 const defaults = {
-  autoLaunch: false,
+  autoLaunch: true,
   cliEnabled: false,
   recordLaunchUsage: true,
   showKeyboardHints: true,
@@ -167,13 +167,13 @@ describe('getSectionResetChanges', () => {
   });
 
   it('オン・オフの項目は文言で出す', () => {
-    const settings = { ...defaults, autoLaunch: true };
+    const settings = { ...defaults, autoLaunch: false };
     const { changes } = getSectionResetChanges(t, 'system', settings, defaults);
     expect(changes).toEqual([
       {
         label: 'settings.system.autoLaunch',
-        before: 'settings.reset.values.on',
-        after: 'settings.reset.values.off',
+        before: 'settings.reset.values.off',
+        after: 'settings.reset.values.on',
       },
     ]);
   });

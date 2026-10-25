@@ -185,12 +185,16 @@ app.whenReady().then(async () => {
   app.setAppUserModelId(appUserModelId);
 
   // 自動起動設定を適用（設定ファイルの値をシステムに反映。fire-and-forget: Store 版の WinRT 呼び出しを待たない）
-  const autoLaunchEnabled = await settingsService.get('autoLaunch');
-  AutoLaunchService.getInstance()
-    .applyOnStartup(autoLaunchEnabled)
-    .catch((error) => {
-      console.error('起動時の自動起動設定の適用でエラー:', error);
-    });
+  // 初回起動の間は適用しない。既定値はオンなので、初回設定画面で選ぶ前に OS へ登録してしまうため
+  //（初回設定画面で選んだ値は、保存したときに反映する）
+  if (!isFirstLaunch) {
+    const autoLaunchEnabled = await settingsService.get('autoLaunch');
+    AutoLaunchService.getInstance()
+      .applyOnStartup(autoLaunchEnabled)
+      .catch((error) => {
+        console.error('起動時の自動起動設定の適用でエラー:', error);
+      });
+  }
 
   // CLI を使えるようにしているなら、同梱の qdl.exe と置いてあるものを比べて入れ替える
   //（本体の更新に追従させる。PowerShell を起動することがあるので待たない）
