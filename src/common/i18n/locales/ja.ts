@@ -92,7 +92,7 @@ export const ja = {
       quickAdd: '📄 アイテムを追加…',
       addBookmarks: '🔖 ブラウザのブックマークから追加',
       addApps: '💻 インストール済みアプリから追加',
-      addFolderImport: '🗂️ フォルダの中身を並べる（フォルダ取込）',
+      addFolderImport: '🗂️ フォルダからアイテムを追加',
       addFolderImportTitle:
         'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
       clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',

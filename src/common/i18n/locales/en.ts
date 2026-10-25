@@ -89,7 +89,7 @@ export const en: LocaleMessages = {
       quickAdd: '📄 Add item…',
       addBookmarks: '🔖 Add from browser bookmarks',
       addApps: '💻 Add from installed apps',
-      addFolderImport: "🗂️ List a folder's contents (folder import)",
+      addFolderImport: '🗂️ Add items from a folder',
       addFolderImportTitle:
         'Adds an item (folder import) that lists the files in a folder each time you open it',
       clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",

@@ -56,13 +56,6 @@ const LauncherRegisterDropdown: React.FC<RegisterDropdownProps> = ({
           >
             {t('launcher.registerMenu.quickAdd')}
           </button>
-          <div className="dropdown-divider"></div>
-          <button className="dropdown-item" onClick={handleImportBookmarks}>
-            {t('launcher.registerMenu.addBookmarks')}
-          </button>
-          <button className="dropdown-item" onClick={handleImportApps}>
-            {t('launcher.registerMenu.addApps')}
-          </button>
           <button
             className="dropdown-item"
             onClick={handleFolderImport}
@@ -70,6 +63,13 @@ const LauncherRegisterDropdown: React.FC<RegisterDropdownProps> = ({
             data-testid="register-menu-folder-import"
           >
             {t('launcher.registerMenu.addFolderImport')}
+          </button>
+          <div className="dropdown-divider"></div>
+          <button className="dropdown-item" onClick={handleImportBookmarks}>
+            {t('launcher.registerMenu.addBookmarks')}
+          </button>
+          <button className="dropdown-item" onClick={handleImportApps}>
+            {t('launcher.registerMenu.addApps')}
           </button>
         </div>
       )}
