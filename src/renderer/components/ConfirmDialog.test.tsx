@@ -76,6 +76,22 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it.each(['Escape', 'Enter'])('%s キーを後ろの画面のキー処理には渡さない', (key) => {
+    // 後ろの画面の入力欄（メイン画面の検索欄など）がフォーカスを持ち、自分のキー処理で Enter を受ける状況
+    const behind = vi.fn();
+    const input = document.createElement('input');
+    input.addEventListener('keydown', behind);
+    document.body.appendChild(input);
+    try {
+      const { onClose, onConfirm } = renderDialog();
+      fireEvent.keyDown(input, { key });
+      expect(onClose.mock.calls.length + onConfirm.mock.calls.length).toBe(1);
+      expect(behind).not.toHaveBeenCalled();
+    } finally {
+      input.remove();
+    }
+  });
+
   it('閉じたあとはキーを受けない', () => {
     const { rerender, onClose, onConfirm } = renderDialog();
     rerender(

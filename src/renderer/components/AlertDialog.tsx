@@ -9,6 +9,7 @@ import type { NotificationType } from '@common/types';
 import '../styles/components/Modal.css';
 import '../styles/components/AlertDialog.css';
 import { Button } from './ui';
+import { ToastTypeIcon } from './ToastTypeIcon';
 
 type AlertType = NotificationType;
 
@@ -19,13 +20,6 @@ interface AlertDialogProps {
   message: string;
   type?: AlertType;
 }
-
-const ALERT_ICONS: Record<AlertType, string> = {
-  error: '❌',
-  warning: '⚠️',
-  success: '✅',
-  info: 'ℹ️',
-};
 
 function AlertDialog({
   isOpen,
@@ -62,7 +56,7 @@ function AlertDialog({
         data-testid="alert-dialog"
       >
         <div className="alert-header">
-          <span className="alert-icon">{ALERT_ICONS[type]}</span>
+          <ToastTypeIcon type={type} size="large" />
           <h2>{title || t(`common.alertTitle.${type}`)}</h2>
         </div>
 

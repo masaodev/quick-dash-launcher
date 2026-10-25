@@ -367,7 +367,7 @@ describe('useKeyboardShortcuts', () => {
     expect(pinWindow).not.toHaveBeenCalled();
     expect(showToastWindow).toHaveBeenCalledWith({
       type: 'warning',
-      message: 'この環境は仮想デスクトップに対応していません。',
+      message: 'この環境は仮想デスクトップに対応していません',
     });
   });
 
