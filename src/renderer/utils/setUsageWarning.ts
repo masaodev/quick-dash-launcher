@@ -18,5 +18,5 @@ export function setUsageWarning(setNames: readonly string[], t: TFunction): stri
     setNames.length > MAX_LISTED
       ? t('register.setUsageMore', { names: quoted, count: setNames.length - MAX_LISTED })
       : quoted;
-  return t('register.setUsageWarning', { sets });
+  return t('register.setUsageWarning', { sets, count: setNames.length });
 }

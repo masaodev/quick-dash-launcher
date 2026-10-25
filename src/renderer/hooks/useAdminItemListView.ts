@@ -20,8 +20,8 @@ import {
 
 import {
   useAdminPathExistence,
-  checkablePathOf,
-  checkableSetEntryPathOf,
+  evaluateItemPathCheck,
+  type ItemPathCheck,
 } from './useAdminPathExistence';
 
 interface UseAdminItemListViewOptions {
@@ -75,53 +75,38 @@ export function useAdminItemListView({
     () => new Set(workingItems.map((item) => item.item.id)),
     [workingItems]
   );
-  /**
-   * セットの行のうち、見つからない行の名前（A3-79 #8）。数えるのは、パスを直接書いて確かめたら無かった行と、
-   * 指すアイテムが一覧から消えた行。指すアイテムのパスが無いときは、そのアイテムの行に出るので数えない
-   */
-  const missingSetRowsOf = useCallback(
-    (item: EditableJsonItem): string[] => {
-      const jsonItem = item.item;
-      if (jsonItem.type !== 'set' || !pathCheck.hasChecked) return [];
-      return jsonItem.entries.flatMap((entry, index) => {
-        const entryPath = checkableSetEntryPathOf(entry);
-        const missing = entryPath
-          ? pathCheck.results.get(entryPath) === 'missing'
-          : !!entry.itemId && !workingItemIds.has(entry.itemId);
-        if (!missing) return [];
-        return [entry.label || entry.open?.path || `#${index + 1}`];
-      });
-    },
-    [pathCheck.hasChecked, pathCheck.results, workingItemIds]
-  );
+  // 確認したアイテム（表示中のデータファイル）ごとの結果。行の描画・絞り込み・件数で何度も引くので、1 度だけ作る
+  const pathChecks = useMemo(() => {
+    const map = new Map<string, ItemPathCheck>();
+    if (!pathCheck.hasChecked) return map;
+    for (const item of workingItems) {
+      if (!pathCheck.checkedIds.has(item.item.id)) continue;
+      map.set(getItemKey(item), evaluateItemPathCheck(item, pathCheck.results, workingItemIds));
+    }
+    return map;
+  }, [workingItems, workingItemIds, pathCheck.hasChecked, pathCheck.checkedIds, pathCheck.results]);
   const linkStatusOf = useCallback(
-    (item: EditableJsonItem): PathExistenceStatus | undefined => {
-      const jsonItem = item.item;
-      if (jsonItem.type === 'set') {
-        if (!pathCheck.hasChecked) return undefined;
-        if (missingSetRowsOf(item).length > 0) return 'missing';
-        const statuses = jsonItem.entries
-          .map(checkableSetEntryPathOf)
-          .map((entryPath) => (entryPath ? pathCheck.results.get(entryPath) : undefined));
-        if (statuses.includes('unknown')) return 'unknown';
-        // 確かめた行（ローカルパスの行か、登録済みのアイテムを指す行）があれば ✓。URL だけのセットは空のまま
-        const checkedAny =
-          statuses.some((status) => status !== undefined) ||
-          jsonItem.entries.some((entry) => !!entry.itemId);
-        return checkedAny ? 'exists' : undefined;
-      }
-      const itemPath = checkablePathOf(item);
-      return itemPath ? pathCheck.results.get(itemPath) : undefined;
-    },
-    [pathCheck.hasChecked, pathCheck.results, missingSetRowsOf]
+    (item: EditableJsonItem): PathExistenceStatus | undefined =>
+      pathChecks.get(getItemKey(item))?.status,
+    [pathChecks]
+  );
+  /** セットの行のうち見つからない行の名前（A3-79 #8。セット以外・確認していなければ空） */
+  const missingSetRowsOf = useCallback(
+    (item: EditableJsonItem): string[] => pathChecks.get(getItemKey(item))?.missingSetRows ?? [],
+    [pathChecks]
   );
   const missingIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const item of workingItems) {
-      if (linkStatusOf(item) === 'missing') ids.add(getItemKey(item));
+    for (const [key, check] of pathChecks) {
+      if (check.status === 'missing') ids.add(key);
     }
     return ids;
-  }, [workingItems, linkStatusOf]);
+  }, [pathChecks]);
+  /** 「リンク切れを確認」を実行する（表示中のデータファイルのアイテムを確かめる） */
+  const runPathCheck = useCallback(
+    (items: EditableJsonItem[]) => pathCheck.runCheck(items, workingItemIds),
+    [pathCheck, workingItemIds]
+  );
 
   // 読み込み・保存で確認の結果が捨てられたら、リンクの絞り込みも解く
   useEffect(() => {
@@ -213,6 +198,7 @@ export function useAdminItemListView({
     linkStatusOf,
     missingSetRowsOf,
     missingIds,
+    runPathCheck,
     filteredItems,
     orderedItems,
     visibleSelectedItems,

@@ -68,6 +68,8 @@ const RegisterWindowPage: React.FC<RegisterWindowPageProps> = ({ requestId, requ
   // 編集するアイテムを行で指しているセット（削除の確認に出す。A3-79 #6）
   const [usingSetNames, setUsingSetNames] = useState<string[]>([]);
   useEffect(() => {
+    // 前のアイテムの結果を残さない
+    setUsingSetNames([]);
     if (!editingId) return;
     let cancelled = false;
     window.electronAPI

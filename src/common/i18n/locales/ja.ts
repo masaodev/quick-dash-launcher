@@ -1689,7 +1689,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     itemIdNotFound: 'アイテムIDが見つかりません',
     deleteFailed: 'アイテムの削除に失敗しました',
     deleteConfirm: '「{{name}}」を削除してもよろしいですか？',
-    setUsageWarning:
+    setUsageWarning_one:
+      'セット{{sets}}で使っています。削除すると、セットのその行は開けなくなります（行は残ります）。',
+    setUsageWarning_other:
       'セット{{sets}}で使っています。削除すると、セットのその行は開けなくなります（行は残ります）。',
     setUsageMore: '{{names}}ほか {{count}} 件',
     targetTab: '保存先タブ',

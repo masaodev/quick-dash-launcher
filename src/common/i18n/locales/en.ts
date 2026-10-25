@@ -1687,8 +1687,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     itemIdNotFound: "The item ID wasn't found",
     deleteFailed: "Couldn't delete the item.",
     deleteConfirm: 'Delete "{{name}}"?',
-    setUsageWarning:
+    setUsageWarning_one:
       "It's used in the set {{sets}}. If you delete it, that row of the set can't open anymore (the row stays).",
+    setUsageWarning_other:
+      "It's used in the sets {{sets}}. If you delete it, those rows of the sets can't open anymore (the rows stay).",
     setUsageMore: '{{names}} and {{count}} more',
     targetTab: 'Tab',
     targetFile: 'Data file',

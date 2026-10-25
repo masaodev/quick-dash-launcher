@@ -236,6 +236,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     linkStatusOf,
     missingSetRowsOf,
     missingIds,
+    runPathCheck,
     filteredItems,
     orderedItems,
     visibleSelectedItems,
@@ -256,17 +257,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   );
 
   const handleCheckMissingPaths = async () => {
-    const summary = await pathCheck.runCheck(currentFileWorkingItems);
-    // 指すアイテムが消えた行のあるセットも、リンク切れに数える（パスを確かめなくても分かる。A3-79 #8）
-    const itemIds = new Set(workingItems.map((item) => item.item.id));
-    const danglingSets = currentFileWorkingItems.filter(
-      ({ item }) =>
-        item.type === 'set' &&
-        item.entries.some((entry) => !!entry.itemId && !itemIds.has(entry.itemId))
-    ).length;
-    summary.missing += danglingSets;
+    // 件数はアイテムの数（セットは 1 件）。ステータスバーの「リンク切れ: N 件」と同じ数え方（A3-79 #8）
+    const summary = await runPathCheck(currentFileWorkingItems);
     // 結果はパスの確認の列に出すので、隠していたら出す（既定では隠している）
-    const found = summary.checked > 0 || danglingSets > 0;
+    const found = summary.checked > 0;
     if (found && !columns.visibleColumns.some((c) => c.def.id === 'link')) {
       columns.setColumnVisible('link', true);
     }
@@ -529,10 +523,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     );
   };
 
-  /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
   // 削除の確認で、今の（未保存の編集を含む）アイテムを読むための参照
   const workingItemsRef = useRef(workingItems);
   workingItemsRef.current = workingItems;
+
+  /** 削除の確認を出してから削除する（行のボタン・右クリック・Delete キー・一括削除の共通経路） */
 
   const handleRequestDelete = useCallback(
     async (items: EditableJsonItem[]) => {

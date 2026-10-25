@@ -204,13 +204,28 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     );
   };
 
+  /** セットの見つからない行の印（「⚠ N 行見つかりません」。どの行かはツールチップ） */
+  const renderSetRowsMissingLabel = () => (
+    <span
+      className="missing-path-label"
+      title={t('itemManager.row.setRowsMissingTitle', { rows: missingSetRows.join('\n') })}
+    >
+      {t('itemManager.row.setRowsMissing', { count: missingSetRows.length })}
+    </span>
+  );
+
   const renderPathCell = () => {
     const text = describePathAndArgs(jsonItem);
+    // パスの確認の列を隠しているときは、パスの列の先頭に同じ印を付ける（セットは行の数と名前）
     const missingBadge =
       pathMissing && !showsLinkColumn ? (
-        <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
-          {t('itemManager.row.pathMissing')}
-        </span>
+        missingSetRows.length > 0 ? (
+          renderSetRowsMissingLabel()
+        ) : (
+          <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
+            {t('itemManager.row.pathMissing')}
+          </span>
+        )
       ) : null;
 
     if (editingColumn === 'path') {
@@ -286,16 +301,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
 
   const renderLinkCell = () => {
     if (linkStatus === 'missing' && missingSetRows.length > 0) {
-      return (
-        <span
-          className="missing-path-label"
-          title={t('itemManager.row.setRowsMissingTitle', {
-            rows: missingSetRows.join('\n'),
-          })}
-        >
-          {t('itemManager.row.setRowsMissing', { count: missingSetRows.length })}
-        </span>
-      );
+      return renderSetRowsMissingLabel();
     }
     if (linkStatus === 'missing') {
       return (
