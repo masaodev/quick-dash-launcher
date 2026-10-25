@@ -6,8 +6,11 @@
  * @see docs/features/toast-notifications.md
  */
 
+import { createElement } from 'react';
 import toast, { ToastOptions } from 'react-hot-toast';
 import type { NotificationType } from '@common/types';
+
+import { ToastTypeIcon } from '../components/ToastTypeIcon';
 
 export type ToastType = NotificationType;
 
@@ -46,34 +49,31 @@ export function useToast(): UseToastReturn {
   return TOAST_API;
 }
 
+/**
+ * 種類ごとの見た目（白地のカードに、左の色の帯と色の丸のアイコン）。地の形は ToastProvider が決める
+ */
+function typeOptions(type: NotificationType, options?: ToastOptions): ToastOptions {
+  return {
+    icon: createElement(ToastTypeIcon, { type }),
+    ...options,
+    style: { borderLeftWidth: '4px', borderLeftColor: `var(--notify-${type})`, ...options?.style },
+  };
+}
+
 const showSuccess = (message: string, options?: ToastOptions) => {
-  toast.success(message, options);
+  toast.success(message, typeOptions('success', options));
 };
 
 const showError = (message: string, options?: ToastOptions) => {
-  toast.error(message, options);
+  toast.error(message, typeOptions('error', options));
 };
 
 const showInfo = (message: string, options?: ToastOptions) => {
-  toast(message, {
-    icon: 'ℹ️',
-    style: {
-      background: 'var(--color-info)',
-      color: 'var(--color-white)',
-    },
-    ...options,
-  });
+  toast(message, typeOptions('info', options));
 };
 
 const showWarning = (message: string, options?: ToastOptions) => {
-  toast(message, {
-    icon: '⚠️',
-    style: {
-      background: 'var(--color-warning)',
-      color: 'var(--text-primary)',
-    },
-    ...options,
-  });
+  toast(message, typeOptions('warning', options));
 };
 
 const showToast = (message: string, type: ToastType = 'info', options?: ToastOptions) => {

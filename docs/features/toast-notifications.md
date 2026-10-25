@@ -45,14 +45,16 @@
 - `src/renderer/hooks/useToast.ts` - トーストフック
 - `src/renderer/components/ToastProvider.tsx` - プロバイダー
 
-**スタイル:**
+- `src/renderer/components/ToastTypeIcon.tsx` - 種類のアイコン（色の丸に記号）
 
-| 種類 | 背景色 | テキスト色 | アイコン |
-| --- | --- | --- | --- |
-| success | `var(--color-white)` | `var(--text-muted)` | 青チェックマーク（`var(--color-primary)`） |
-| error | `var(--color-danger)` | `var(--color-white)` | 白×マーク |
-| warning | `var(--color-warning)` | `var(--text-primary)` | ⚠️ |
-| info | `var(--color-info)` | `var(--color-white)` | ℹ️ |
+**見た目:** 独立トーストと同じ白地のカード（文字は `var(--text-primary)`）で、種類は左の帯（4px）とアイコンの色で示す。色は `variables.css` の `--notify-*`。
+
+| 種類 | 色 | 記号 |
+| --- | --- | --- |
+| success | `var(--notify-success)`（緑） | ✓ |
+| error | `var(--notify-error)`（赤） | ✕ |
+| warning | `var(--notify-warning)`（黄土） | ! |
+| info | `var(--notify-info)`（青） | i |
 
 **位置:** ウィンドウの右下（下端・右端から `var(--spacing-lg)`）。管理ウィンドウだけは、アイテム管理の下の件数の帯（ステータスバー。高さ `var(--admin-status-bar-height)`）に重ならないよう、その高さの分だけ上に出す（`ToastProvider` の `bottomOffset`）
 
@@ -63,6 +65,8 @@
 - `src/main/services/overlayWindowService.ts` - オーバーレイウィンドウサービス（トーストとセットの進み具合の表示で1ウィンドウを共用）
 - `src/main/ipc/notificationHandlers.ts` - IPCハンドラー
 - `overlay.html` - オーバーレイ表示用HTML（トースト＋セットの進み具合）
+
+**見た目:** UI内トーストと同じ白地のカードに、種類の色の左の帯と印を付ける（色は `variables.css` の `--notify-*` を `overlay.html` からも読む）。シンプル形式は文言の左に色の丸の記号、アイテム名つきの形式はアイテムのアイコンの右下に小さな印を付ける。
 
 **表示時間:** 既定2.5秒、セットの起動時3秒。呼び出し側が `duration` で変えられる（エラー・警告の通知は6秒など）
 
