@@ -32,7 +32,7 @@ const AdminApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingImportModal, setPendingImportModal] = useState<'bookmark' | 'app' | null>(null);
-  // 閉じるたびに増やし、開いている取込画面を閉じさせる（A3-187）
+  // 管理ウィンドウが隠れるたびに増やし、開いている取込画面を閉じさせる（A3-187）
   const [importModalCloseSignal, setImportModalCloseSignal] = useState(0);
   // 設定タブで開いているカテゴリ。アイテム管理（手動取込）から「ブックマーク自動取込」を直接開けるよう、ここで持つ
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('basic');
@@ -72,10 +72,13 @@ const AdminApp: React.FC = () => {
       if (editingRef.current?.hasUnsavedChanges) {
         setCloseConfirmOpen(true);
       } else {
-        setImportModalCloseSignal((n) => n + 1);
         window.electronAPI.hideEditWindow();
       }
     });
+    // × のほか Ctrl+E の切り替えなど、どの経路で隠れても取込画面を閉じる（A3-187）
+    const unsubscribeHidden = window.electronAPI.onAdminHidden(() =>
+      setImportModalCloseSignal((n) => n + 1)
+    );
 
     return () => {
       unsubscribeSetActiveTab?.();
@@ -83,6 +86,7 @@ const AdminApp: React.FC = () => {
       unsubscribeData?.();
       unsubscribeWindow?.();
       unsubscribeClose?.();
+      unsubscribeHidden?.();
     };
   }, []);
 
@@ -238,7 +242,6 @@ const AdminApp: React.FC = () => {
         onConfirm={() => {
           setCloseConfirmOpen(false);
           editing.discardChanges();
-          setImportModalCloseSignal((n) => n + 1);
           window.electronAPI.hideEditWindow();
         }}
         message={t('admin.unsavedCloseConfirm')}

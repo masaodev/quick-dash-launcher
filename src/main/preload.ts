@@ -107,6 +107,7 @@ const electronAPI: ElectronAPI = {
     createEventListener<AdminTab>(IPC_CHANNELS.EVENT_SET_ACTIVE_TAB, callback),
   onAdminCloseRequested: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_CLOSE_REQUESTED, callback),
+  onAdminHidden: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_HIDDEN, callback),
   onOpenImportModal: (callback) =>
     createEventListener<'bookmark' | 'app'>(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, callback),
   onDataChanged: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_DATA_CHANGED, callback),
