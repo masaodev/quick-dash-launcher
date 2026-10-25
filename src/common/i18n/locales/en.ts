@@ -1208,7 +1208,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       launchCount: 'Times opened',
       icon: 'Icon',
       columnMenuHint:
-        'Right-click to choose columns. Drag the right edge of a header to resize it.',
+        'Right-click to choose columns. Drag the right edge of a header to resize it, or double-click it to fit the contents.',
+      resizeHandleTitle: 'Drag to resize. Double-click to fit the contents.',
       emptyFiltered: 'No items match',
       empty:
         'This data file has no items. Add one with "+ Add item", or use the ▼ next to it to import browser bookmarks or installed apps.',

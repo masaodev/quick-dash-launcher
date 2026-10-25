@@ -787,6 +787,22 @@
   opacity: 0.4;
 }
 
+/* 境目のダブルクリックで列の幅を中身に合わせるとき、測る間だけ付ける。折り返さず … で切らないようにして、
+   はみ出した幅（scrollWidth）を読む（adminItemColumnFit.ts。A3-184） */
+.raw-items-table .column-fit-measuring,
+.raw-items-table .column-fit-measuring * {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  max-width: none !important;
+}
+
+/* 同じく測る間だけ見出しに付ける。見出しの文字を 1 行にして測る（見出しの幅は最小幅に縮めたまま） */
+.raw-items-table .column-fit-measuring-header,
+.raw-items-table .column-fit-measuring-header * {
+  white-space: nowrap !important;
+}
+
 /* 可変幅の列 - 名前列は適度に伸びる */
 .raw-items-table .name-column {
   width: 20%;
