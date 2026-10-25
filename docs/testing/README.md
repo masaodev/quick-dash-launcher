@@ -168,6 +168,7 @@ test('管理ウィンドウのテスト', async ({ electronApp, mainWindow }, te
 
 - 画面やファイルが変わるのを待つときは、`waitForTimeout` で固定の時間を置かずに、`expect(locator)` か `expect.poll` で変わった結果を待ちます。`settings.json` やデータファイルへの保存は非同期なので、読む側も `expect.poll(() => configHelper.readSettings().<キー>)` で待ちます。
 - 何かが起きないこと（画面が移らない・ウィンドウが閉じない・メニューが後から出ない）を確かめるときだけ、`waitForTimeout` で少し待ってから確かめます。なぜ待つのかをコメントに書きます。
+- 例外として、管理ウィンドウを開くヘルパー（`openAdminWindow`）は、⚙ を押したあとに 0.2 秒待ちます。外すと CI で、管理ウィンドウから開く詳細編集が応答しなくなることがあるためです（2026-10-26。何を待てばよいかは分かっていません）。固定の待ちを外すときは、CI でその spec を繰り返し流して確かめます（`gh workflow run e2e.yml --ref <ブランチ> -f spec="<spec> --repeat-each=10 --retries=0"`）。
 
 ### 実際に開かないようにする
 
