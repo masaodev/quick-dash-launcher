@@ -6,6 +6,9 @@ export const COLUMN_FIT_MAX_WIDTH = 600;
 /** 測る間だけセルに付けるクラス（折り返さず、… で切らない。AdminItemManager.css） */
 const MEASURING_CLASS = 'column-fit-measuring';
 
+/** 測る間だけ見出しに付けるクラス（見出しの文字を折り返さない。幅は最小幅に縮めたままにする） */
+const MEASURING_HEADER_CLASS = 'column-fit-measuring-header';
+
 /**
  * 列の中身がすべて 1 行で収まる幅を測る（列の境目のダブルクリック。A3-184）
  *
@@ -29,9 +32,10 @@ export function measureColumnFitWidth(
   th.style.width = minWidth;
   th.style.minWidth = minWidth;
   th.style.maxWidth = minWidth;
+  th.classList.add(MEASURING_HEADER_CLASS);
   cells.forEach((cell) => cell.classList.add(MEASURING_CLASS));
   try {
-    // 見出しは並べ替えの印・絞り込みの ▾ まで含めた幅
+    // 見出しは並べ替えの印・絞り込みの ▾ まで含めた 1 行の幅（折り返したまま測ると最小幅になってしまう）
     let width = th.scrollWidth;
     for (const cell of cells) {
       // scrollWidth は左の余白と中身を含み、はみ出したときは右の余白を含まないので足す
@@ -42,6 +46,7 @@ export function measureColumnFitWidth(
     return Math.min(COLUMN_FIT_MAX_WIDTH, Math.max(def.minWidth, Math.ceil(width) + 1));
   } finally {
     cells.forEach((cell) => cell.classList.remove(MEASURING_CLASS));
+    th.classList.remove(MEASURING_HEADER_CLASS);
     th.style.cssText = savedHeaderStyle;
   }
 }

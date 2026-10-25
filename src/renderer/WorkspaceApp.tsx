@@ -126,8 +126,15 @@ const WorkspaceApp: React.FC = () => {
       if (
         !target ||
         target.closest(
-          '.workspace-group, button, input, textarea, select, [role="dialog"], [role="menu"], .workspace-resize-handle'
+          '.workspace-group, button, a, label, input, textarea, select, [role="dialog"], [role="menu"], .workspace-resize-handle'
         )
+      ) {
+        return;
+      }
+      // スクロールバーを掴んだときは外さない（押した所が、要素のスクロールバーを除いた幅・高さより外）
+      if (
+        target instanceof HTMLElement &&
+        (e.offsetX >= target.clientWidth || e.offsetY >= target.clientHeight)
       ) {
         return;
       }

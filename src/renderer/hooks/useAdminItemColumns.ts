@@ -134,9 +134,9 @@ export function useAdminItemColumns() {
       const width = Math.round(
         Math.max(def?.minWidth ?? 0, drag.startWidth + e.clientX - drag.startX)
       );
-      const current = settingRef.current;
-      if (current.widths[drag.id] === width) return;
-      save({ ...current, widths: { ...current.widths, [drag.id]: width } });
+      // 動かさずに離したときは保存しない（ダブルクリックで中身に合わせるときに、今の幅を余計に保存しない）
+      if (e.clientX === drag.startX) return;
+      setColumnWidth(drag.id, width);
     };
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -144,7 +144,7 @@ export function useAdminItemColumns() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [save]);
+  }, [setColumnWidth]);
 
   return { setting, visibleColumns, setColumnVisible, resetColumns, setColumnWidth, startResize };
 }
