@@ -35,6 +35,31 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* 何がどう変わるかの表（例: 既定値に戻すときの「表示する場所  左端 → 右端」） */
+.confirm-details {
+  margin-top: var(--spacing-md);
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.confirm-details th,
+.confirm-details td {
+  padding: var(--spacing-xs) var(--spacing-md) var(--spacing-xs) 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.confirm-details th {
+  color: var(--text-muted);
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.confirm-details-arrow {
+  margin: 0 var(--spacing-sm);
+  color: var(--text-muted);
+}
+
 /* Danger mode styling */
 .confirm-dialog.confirm-danger .confirm-header h2 {
   color: var(--color-danger);

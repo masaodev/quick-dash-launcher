@@ -211,8 +211,12 @@ async function reapplyHotkey(
 
 /**
  * 起動ホットキーとウィンドウ検索ホットキーを settings.json の値に合わせて登録し直す
+ *
+ * ホットキーを無効にして起動しているとき（DISABLE_GLOBAL_HOTKEY=1。E2E など）は
+ * HotkeyService を作っていないので何もしない（作っていないまま呼ぶと例外になり、既定値に戻すが失敗扱いになる）
  */
 async function reapplyHotkeys(settingsService: SettingsService): Promise<void> {
+  if (EnvConfig.disableGlobalHotkey) return;
   await reapplyHotkey('main', settingsService);
   await reapplyHotkey('itemSearch', settingsService);
 }
@@ -271,6 +275,8 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     logger.info('Settings get all request');
     return allSettings;
   });
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DEFAULTS, () => SettingsService.getDefaults());
 
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SET_MULTIPLE,

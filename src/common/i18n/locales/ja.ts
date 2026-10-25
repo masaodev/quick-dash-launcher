@@ -2576,20 +2576,22 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       deleteError: '削除中にエラーが発生しました',
     },
     reset: {
-      description: '「{{category}}」の設定を既定値に戻します。',
-      button: '{{category}}を既定値に戻す',
-      confirm: '「{{category}}」の設定を既定値に戻しますか？',
-      title: '既定値に戻す',
+      button: '↺ 既定値に戻す',
+      atDefault: '既定値のままです',
+      changed: '既定値から変えています',
+      title: '「{{section}}」を既定値に戻す',
+      confirm: '次の設定が変わります。',
       confirmButton: '既定値に戻す',
-      done: '「{{category}}」を既定値に戻しました',
+      done: '「{{section}}」を既定値に戻しました',
       failed: '設定のリセットに失敗しました。',
-      categories: {
-        basic: '基本設定',
-        window: 'ウィンドウ',
-        backup: 'バックアップ',
-      },
       notes: {
-        basic: 'ホットキーは変更しません。',
+        display: '「複数タブを表示」は変えません。',
+        savedPosition: '最後に置いた場所として覚えている位置も忘れます。',
+      },
+      values: {
+        on: 'オン',
+        off: 'オフ',
+        display: 'ディスプレイ {{number}}',
       },
     },
     bookmarkAutoImport: {

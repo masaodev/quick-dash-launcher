@@ -5,6 +5,7 @@ import type { AppSettings } from '@common/types';
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 
 import WindowSizeFields from './WindowSizeFields';
+import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
 
 interface AdminSettingsWindowOtherProps {
   editedSettings: AppSettings;
@@ -12,6 +13,7 @@ interface AdminSettingsWindowOtherProps {
   handleSettingChange: HandleSettingChange;
   handleNumberInputChange: <K extends keyof AppSettings>(key: K, value: string) => void;
   handleNumberInputBlur: () => Promise<void>;
+  sectionReset: SectionResetProps;
 }
 
 /** 設定画面「ウィンドウ」のその他の節: 2 つ以上のウィンドウに効く吸着と、管理ウィンドウの大きさ */
@@ -21,12 +23,19 @@ const AdminSettingsWindowOther: React.FC<AdminSettingsWindowOtherProps> = ({
   handleSettingChange,
   handleNumberInputChange,
   handleNumberInputBlur,
+  sectionReset,
 }) => {
   const { t } = useTranslation();
 
   return (
     <div className="settings-section">
-      <h3>{t('settings.windowOther.heading')}</h3>
+      <SettingsSectionHeader
+        title={t('settings.windowOther.heading')}
+        section="windowOther"
+        editedSettings={editedSettings}
+        isLoading={isLoading}
+        {...sectionReset}
+      />
       <div className="settings-form">
         <span className="settings-form-label settings-form-label-top">
           {t('settings.windowOther.snap')}

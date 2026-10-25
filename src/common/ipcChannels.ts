@@ -123,6 +123,7 @@ export const IPC_CHANNELS = {
   // 設定
   SETTINGS_IS_FIRST_LAUNCH: 'settings:is-first-launch',
   SETTINGS_GET: 'settings:get',
+  SETTINGS_GET_DEFAULTS: 'settings:get-defaults',
   SETTINGS_SET_MULTIPLE: 'settings:set-multiple',
   SETTINGS_RESET: 'settings:reset',
   SETTINGS_REAPPLY: 'settings:reapply',

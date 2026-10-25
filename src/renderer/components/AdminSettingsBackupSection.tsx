@@ -8,6 +8,7 @@ import { logError } from '../utils/debug';
 
 import { Button } from './ui';
 import BackupSnapshotModal from './BackupSnapshotModal';
+import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
 
 interface AdminSettingsBackupSectionProps {
   editedSettings: AppSettings;
@@ -15,6 +16,7 @@ interface AdminSettingsBackupSectionProps {
   handleSettingChange: HandleSettingChange;
   handleNumberInputChange: <K extends keyof AppSettings>(key: K, value: string) => void;
   handleNumberInputBlur: () => Promise<void>;
+  sectionReset: SectionResetProps;
 }
 
 /** 設定画面「バックアップ」: 自動バックアップの設定とスナップショット一覧 */
@@ -24,6 +26,7 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
   handleSettingChange,
   handleNumberInputChange,
   handleNumberInputBlur,
+  sectionReset,
 }) => {
   const { t, i18n } = useTranslation();
   const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
@@ -43,7 +46,13 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
 
   return (
     <div className="settings-section">
-      <h3>{t('settings.backup.heading')}</h3>
+      <SettingsSectionHeader
+        title={t('settings.backup.heading')}
+        section="backup"
+        editedSettings={editedSettings}
+        isLoading={isLoading}
+        {...sectionReset}
+      />
       <p className="settings-section-description">{t('settings.backup.description')}</p>
       <div className="setting-item">
         <label>

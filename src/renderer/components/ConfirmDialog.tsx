@@ -9,6 +9,13 @@ import '../styles/components/Modal.css';
 import '../styles/components/ConfirmDialog.css';
 import { Button } from './ui';
 
+/** 確認ダイアログの表の 1 行（項目名と、変わる前・後の値） */
+export interface ConfirmDetail {
+  label: string;
+  before: string;
+  after: string;
+}
+
 interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,6 +27,8 @@ interface ConfirmDialogProps {
   danger?: boolean;
   /** 本文の下に赤字で出す注意 */
   warning?: string;
+  /** 本文の下に出す「項目: 今 → 後」の表 */
+  details?: ReadonlyArray<ConfirmDetail>;
   showCheckbox?: boolean;
   checkboxLabel?: string;
   checkboxChecked?: boolean;
@@ -38,6 +47,7 @@ function ConfirmDialog({
   cancelText,
   danger = false,
   warning,
+  details,
   showCheckbox = false,
   checkboxLabel = '',
   checkboxChecked = false,
@@ -80,6 +90,24 @@ function ConfirmDialog({
 
         <div className="confirm-body">
           <p>{message}</p>
+          {details && details.length > 0 && (
+            <table className="confirm-details" data-testid="confirm-dialog-details">
+              <tbody>
+                {details.map((detail) => (
+                  <tr key={detail.label}>
+                    <th scope="row">{detail.label}</th>
+                    <td>
+                      {detail.before}
+                      <span className="confirm-details-arrow" aria-hidden="true">
+                        →
+                      </span>
+                      {detail.after}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
           {warning && (
             <p className="confirm-warning" data-testid="confirm-dialog-warning">
               {warning}

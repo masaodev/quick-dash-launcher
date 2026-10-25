@@ -2563,20 +2563,22 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       deleteError: 'An error occurred while deleting',
     },
     reset: {
-      description: 'Restores the {{category}} settings to their defaults.',
-      button: 'Restore {{category}} defaults',
-      confirm: 'Restore the {{category}} settings to their defaults?',
-      title: 'Restore defaults',
+      button: '↺ Restore defaults',
+      atDefault: 'Already at the defaults',
+      changed: 'Changed from the defaults',
+      title: 'Restore {{section}} defaults',
+      confirm: 'The following will change.',
       confirmButton: 'Restore defaults',
-      done: '{{category}} settings restored to defaults',
+      done: '{{section}} settings restored to defaults',
       failed: "Couldn't restore the default settings.",
-      categories: {
-        basic: 'General',
-        window: 'Window',
-        backup: 'Backup',
-      },
       notes: {
-        basic: "Hotkeys aren't changed.",
+        display: '"Show tabs" isn\'t changed.',
+        savedPosition: 'The remembered position is also cleared.',
+      },
+      values: {
+        on: 'On',
+        off: 'Off',
+        display: 'Display {{number}}',
       },
     },
     bookmarkAutoImport: {

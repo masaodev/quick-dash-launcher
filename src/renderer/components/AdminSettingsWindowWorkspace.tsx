@@ -4,28 +4,19 @@ import { MAIN_WINDOW_DISPLAY_INDEX } from '@common/types';
 import type { AppSettings, DisplayInfo, WorkspacePositionMode } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
+import {
+  WORKSPACE_POSITION_OPTIONS,
+  toWorkspacePositionOption,
+} from '../utils/workspacePositionOptions';
 
-/** 表示する場所の選択肢（値と、文言 settings.workspace.<文言キー>・<文言キー>Description） */
-const POSITION_OPTIONS = [
-  { value: 'displayRight', text: 'rightEdge' },
-  { value: 'displayLeft', text: 'leftEdge' },
-  { value: 'fixed', text: 'fixed' },
-] as const satisfies ReadonlyArray<{ value: WorkspacePositionMode; text: string }>;
-
-type PositionOption = (typeof POSITION_OPTIONS)[number];
-
-/** 古い値（primaryLeft・primaryRight）も、選択肢のどれかに読み替える */
-function toPositionOption(mode: WorkspacePositionMode): PositionOption {
-  if (mode === 'primaryLeft') return POSITION_OPTIONS[1];
-  if (mode === 'primaryRight') return POSITION_OPTIONS[0];
-  return POSITION_OPTIONS.find((o) => o.value === mode) ?? POSITION_OPTIONS[0];
-}
+import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
 
 interface AdminSettingsWindowWorkspaceProps {
   editedSettings: AppSettings;
   isLoading: boolean;
   handleSettingChange: HandleSettingChange;
   displays: DisplayInfo[];
+  sectionReset: SectionResetProps;
 }
 
 /**
@@ -37,9 +28,10 @@ const AdminSettingsWindowWorkspace: React.FC<AdminSettingsWindowWorkspaceProps> 
   isLoading,
   handleSettingChange,
   displays,
+  sectionReset,
 }) => {
   const { t } = useTranslation();
-  const position = toPositionOption(editedSettings.workspacePositionMode);
+  const position = toWorkspacePositionOption(editedSettings.workspacePositionMode);
   const isFixed = position.value === 'fixed';
   // 背景だけを透明にしている間は、不透明度は 100% 扱いで効かない
   const isOpacityDisabled = editedSettings.workspaceBackgroundTransparent;
@@ -52,7 +44,13 @@ const AdminSettingsWindowWorkspace: React.FC<AdminSettingsWindowWorkspaceProps> 
 
   return (
     <div className="settings-section">
-      <h3>{t('settings.workspace.heading')}</h3>
+      <SettingsSectionHeader
+        title={t('settings.workspace.heading')}
+        section="workspaceWindow"
+        editedSettings={editedSettings}
+        isLoading={isLoading}
+        {...sectionReset}
+      />
       <div className="settings-form">
         <label className="settings-form-label" htmlFor="workspacePositionMode">
           {t('settings.workspace.position')}
@@ -66,7 +64,7 @@ const AdminSettingsWindowWorkspace: React.FC<AdminSettingsWindowWorkspaceProps> 
             }
             disabled={isLoading}
           >
-            {POSITION_OPTIONS.map(({ value, text }) => (
+            {WORKSPACE_POSITION_OPTIONS.map(({ value, text }) => (
               <option key={value} value={value}>
                 {t(`settings.workspace.${text}`)}
               </option>

@@ -79,6 +79,11 @@ export class SettingsService {
     return key === 'createdWithVersion' || key === 'updatedWithVersion';
   }
 
+  /** 既定値の写し（設定画面で「既定値のままか」と戻すと何が変わるかを示すため） */
+  public static getDefaults(): AppSettings {
+    return structuredClone(SettingsService.DEFAULT_SETTINGS);
+  }
+
   private async initializeStore(): Promise<void> {
     if (this.store) return;
 

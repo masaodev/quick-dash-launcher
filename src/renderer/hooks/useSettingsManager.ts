@@ -6,9 +6,12 @@ import { clampSettingNumbers } from '@common/settingRanges';
 import { logError } from '../utils/debug';
 import {
   SETTINGS_RESET_KEYS,
-  getResetCategoryText,
-  type ResettableSettingsCategory,
+  getResetSectionText,
+  getSectionResetChanges,
+  type ResettableSettingsSection,
 } from '../utils/settingsResetKeys';
+
+import type { ConfirmOptions } from './useDialogManager';
 
 export type HandleSettingChange = <K extends keyof AppSettings>(
   key: K,
@@ -23,11 +26,10 @@ interface UseSettingsManagerProps {
   /** 既定値に戻した後の設定を親（AdminApp）にも反映する。渡さないと親の状態が古いまま残る */
   onSettingsReplaced?: (settings: AppSettings) => void;
   showAlert: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void;
-  showConfirm: (
-    message: string,
-    options?: { title?: string; confirmText?: string; cancelText?: string; danger?: boolean }
-  ) => Promise<boolean>;
+  showConfirm: (message: string, options?: ConfirmOptions) => Promise<boolean>;
   showToast?: (message: string) => void;
+  /** 設定の既定値（読み込むまでは null。既定値に戻すときに何が変わるかを出すのに使う） */
+  defaultSettings?: AppSettings | null;
 }
 
 export function useSettingsManager({
@@ -38,6 +40,7 @@ export function useSettingsManager({
   showAlert,
   showConfirm,
   showToast,
+  defaultSettings = null,
 }: UseSettingsManagerProps) {
   const { t } = useTranslation();
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
@@ -95,30 +98,43 @@ export function useSettingsManager({
   }, []);
 
   /**
-   * カテゴリ単位で設定を既定値に戻す
+   * 枠単位で設定を既定値に戻す。確認ダイアログに、何がどう変わるかを表で出す
    *
-   * @param category 戻すカテゴリ（戻す項目は SETTINGS_RESET_KEYS）
+   * @param section 戻す枠（戻す項目は SETTINGS_RESET_KEYS）
    */
   const handleReset = useCallback(
-    async (category: ResettableSettingsCategory): Promise<void> => {
-      const { label, note } = getResetCategoryText(t, category);
-      const question = t('settings.reset.confirm', { category: label });
-      const confirmed = await showConfirm(note ? `${question}\n${note}` : question, {
-        title: t('settings.reset.title'),
+    async (section: ResettableSettingsSection): Promise<void> => {
+      if (!defaultSettings) return;
+      const { label, note } = getResetSectionText(t, section);
+      const { changes, forgetsSavedPosition } = getSectionResetChanges(
+        t,
+        section,
+        editedSettings,
+        defaultSettings
+      );
+      const message = [
+        t('settings.reset.confirm'),
+        forgetsSavedPosition ? t('settings.reset.notes.savedPosition') : '',
+        note,
+      ]
+        .filter(Boolean)
+        .join('\n');
+      const confirmed = await showConfirm(message, {
+        title: t('settings.reset.title', { section: label }),
         confirmText: t('settings.reset.confirmButton'),
         cancelText: t('common.cancel'),
-        danger: true,
+        details: changes,
       });
       if (!confirmed) return;
 
       try {
         setIsLoading(true);
         const resetSettings = await window.electronAPI.resetSettings([
-          ...SETTINGS_RESET_KEYS[category],
+          ...SETTINGS_RESET_KEYS[section],
         ]);
         setEditedSettings(resetSettings);
         onSettingsReplaced?.(resetSettings);
-        showToast?.(t('settings.reset.done', { category: label }));
+        showToast?.(t('settings.reset.done', { section: label }));
       } catch (error) {
         logError('設定のリセットに失敗しました:', error);
         showAlert(t('settings.reset.failed'), 'error');
@@ -126,7 +142,16 @@ export function useSettingsManager({
         setIsLoading(false);
       }
     },
-    [setEditedSettings, onSettingsReplaced, showAlert, showConfirm, showToast, t]
+    [
+      defaultSettings,
+      editedSettings,
+      setEditedSettings,
+      onSettingsReplaced,
+      showAlert,
+      showConfirm,
+      showToast,
+      t,
+    ]
   );
 
   const handleOpenConfigFolder = useCallback(async (): Promise<void> => {

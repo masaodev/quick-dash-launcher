@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 
+import type { ConfirmDetail } from '../components/ConfirmDialog';
+
 import { useToast } from './useToast';
 
 export interface AlertDialogState {
@@ -8,13 +10,19 @@ export interface AlertDialogState {
   type?: 'info' | 'error' | 'warning' | 'success';
 }
 
-export interface ConfirmDialogState {
-  isOpen: boolean;
-  message: string;
+/** showConfirm に渡す見た目の指定 */
+export interface ConfirmOptions {
   title?: string;
   confirmText?: string;
   cancelText?: string;
   danger?: boolean;
+  /** 本文の下に出す「項目: 今 → 後」の表（何がどう変わるかを見せたいとき） */
+  details?: ReadonlyArray<ConfirmDetail>;
+}
+
+export interface ConfirmDialogState extends ConfirmOptions {
+  isOpen: boolean;
+  message: string;
 }
 
 /** AlertDialog の表示状態（メッセージ・種類）を持つ */
@@ -54,30 +62,20 @@ export function useDialogManager() {
 
   const confirmResolveRef = useRef<((value: boolean) => void) | null>(null);
 
-  const showConfirm = useCallback(
-    (
-      message: string,
-      options?: {
-        title?: string;
-        confirmText?: string;
-        cancelText?: string;
-        danger?: boolean;
-      }
-    ): Promise<boolean> => {
-      return new Promise((resolve) => {
-        confirmResolveRef.current = resolve;
-        setConfirmDialog({
-          isOpen: true,
-          message,
-          title: options?.title,
-          confirmText: options?.confirmText,
-          cancelText: options?.cancelText,
-          danger: options?.danger || false,
-        });
+  const showConfirm = useCallback((message: string, options?: ConfirmOptions): Promise<boolean> => {
+    return new Promise((resolve) => {
+      confirmResolveRef.current = resolve;
+      setConfirmDialog({
+        isOpen: true,
+        message,
+        title: options?.title,
+        confirmText: options?.confirmText,
+        cancelText: options?.cancelText,
+        danger: options?.danger || false,
+        details: options?.details,
       });
-    },
-    []
-  );
+    });
+  }, []);
 
   const closeConfirmDialog = useCallback((result: boolean) => {
     setConfirmDialog((prev) => ({ ...prev, isOpen: false }));

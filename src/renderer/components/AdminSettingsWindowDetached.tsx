@@ -4,6 +4,8 @@ import type { AppSettings, DetachedPositionMode } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 
+import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
+
 /** 切り離しウィンドウの表示する場所の選択肢（文言は settings.detached.<値>・<値>Description） */
 const DETACHED_POSITION_OPTIONS: readonly DetachedPositionMode[] = ['mainDisplay', 'saved'];
 
@@ -11,6 +13,7 @@ interface AdminSettingsWindowDetachedProps {
   editedSettings: AppSettings;
   isLoading: boolean;
   handleSettingChange: HandleSettingChange;
+  sectionReset: SectionResetProps;
 }
 
 /** 設定画面「ウィンドウ」の切り離しウィンドウの節: 表示する場所・仮想デスクトップ */
@@ -18,13 +21,20 @@ const AdminSettingsWindowDetached: React.FC<AdminSettingsWindowDetachedProps> = 
   editedSettings,
   isLoading,
   handleSettingChange,
+  sectionReset,
 }) => {
   const { t } = useTranslation();
   const mode = editedSettings.detachedPositionMode;
 
   return (
     <div className="settings-section">
-      <h3>{t('settings.detached.heading')}</h3>
+      <SettingsSectionHeader
+        title={t('settings.detached.heading')}
+        section="detachedWindow"
+        editedSettings={editedSettings}
+        isLoading={isLoading}
+        {...sectionReset}
+      />
       <div className="settings-form">
         <label className="settings-form-label" htmlFor="detachedPositionMode">
           {t('settings.detached.position')}

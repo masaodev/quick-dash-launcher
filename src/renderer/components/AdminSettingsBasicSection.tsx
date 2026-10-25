@@ -6,6 +6,7 @@ import { LANGUAGE_SETTINGS, isLanguageSetting } from '@common/i18n/languages';
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
 
 import { HotkeyInput } from './HotkeyInput';
+import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
 
 interface AdminSettingsBasicSectionProps {
   editedSettings: AppSettings;
@@ -18,6 +19,7 @@ interface AdminSettingsBasicSectionProps {
     message: string,
     options?: { title?: string; confirmText?: string; cancelText?: string; danger?: boolean }
   ) => Promise<boolean>;
+  sectionReset: SectionResetProps;
 }
 
 /** 設定画面「基本設定」: 言語・起動ホットキー・システム・表示・グループ起動 */
@@ -29,6 +31,7 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   onHotkeyValidation,
   onItemSearchHotkeyChange,
   showConfirm,
+  sectionReset,
 }) => {
   const { t } = useTranslation();
 
@@ -144,7 +147,13 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
       </div>
 
       <div className="settings-section">
-        <h3>{t('settings.system.heading')}</h3>
+        <SettingsSectionHeader
+          title={t('settings.system.heading')}
+          section="system"
+          editedSettings={editedSettings}
+          isLoading={isLoading}
+          {...sectionReset}
+        />
         <div className="setting-item">
           <label>
             <input
@@ -199,7 +208,13 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
       </div>
 
       <div className="settings-section">
-        <h3>{t('settings.display.heading')}</h3>
+        <SettingsSectionHeader
+          title={t('settings.display.heading')}
+          section="display"
+          editedSettings={editedSettings}
+          isLoading={isLoading}
+          {...sectionReset}
+        />
         <div className="setting-item">
           <label>
             <input
