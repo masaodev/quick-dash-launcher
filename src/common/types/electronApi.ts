@@ -143,6 +143,7 @@ export interface ElectronAPI {
   ) => () => void;
   cancelLayout: () => void;
   closeLayoutProgressWindow: () => void;
+  resizeLayoutProgressWindow: (contentHeight: number) => void;
   onWindowShown: (callback: (startTime?: number) => void) => () => void;
   onWindowShownItemSearch: (callback: (startTime?: number) => void) => () => void;
   onWindowHidden: (callback: () => void) => () => void;

@@ -7,7 +7,7 @@
  *   次の行を開くのは待たない（1 行ずつ最大 30 秒待つと全体が遅くなるため）
  * - 同時に開く: 全部を一度に開き、出たものから位置を合わせる
  * - 置き場所の無い行は、今までのグループと同じ（アイテムにウィンドウ設定があれば、開いていれば前面に出すだけ）
- * - 置き場所のある行が 1 つでもあれば、進み具合を画面の隅に出す（中止できる）
+ * - 置き場所のある行が 1 つでもあれば、進み具合を画面の中央に出す（中止できる）
  * - 単一アイテムのウィンドウ切り替えも、アイテムを「セットの 1 行」として同じ処理で実行する（executeLauncherItem）
  * - パスの無い単一アイテムは開くものが無いので、行は「動かすだけ」になる（開いていなければ飛ばす）
  */
@@ -50,6 +50,8 @@ import {
 } from '../../utils/nativeWindowControl.js';
 import { getDesktopCount, getWindowDesktopNumber } from '../../utils/virtualDesktop/index.js';
 import { launchItem, type LaunchableItem, type LaunchResult } from '../../utils/itemLauncher.js';
+import PathManager from '../../config/pathManager.js';
+import { loadCachedIcons, type IconItem } from '../icon/iconFetcher.js';
 import {
   getLayoutProgressWindow,
   LONG_TOAST_DURATION_MS,
@@ -145,9 +147,12 @@ export interface SetExecutorDeps {
   /** 仮想デスクトップの数（取れないときは 0 以下） */
   desktopCount?: () => number;
   progress?: {
-    show: () => Promise<void>;
+    /** 進み具合を出す（行の数に合わせて高さを決める） */
+    show: (entryCount: number) => Promise<void>;
     send: (event: ProgressEventType, progress: LayoutExecutionProgress) => void;
     onCancel: (handler: () => void) => () => void;
+    /** 開くもののアイコンをキャッシュから読む（パス → データ URL。その場で取りには行かない） */
+    loadIcons?: (items: IconItem[]) => Promise<Record<string, string>>;
   };
 }
 
@@ -279,14 +284,25 @@ const defaultDeps: SetExecutorDeps = {
       workArea: screen.dipToScreenRect(null, display.workArea),
     })),
   progress: {
-    show: async () => {
-      await showLayoutProgressWindow();
+    show: async (entryCount) => {
+      await showLayoutProgressWindow(entryCount);
     },
     send: (eventType, progress) => {
       try {
         const win = getLayoutProgressWindow();
         if (win && !win.isDestroyed()) {
-          const labels = { cancel: mainI18n.t('common.cancel'), close: mainI18n.t('common.close') };
+          const labels = {
+            cancel: mainI18n.t('set.progress.stop'),
+            close: mainI18n.t('common.close'),
+            escToStop: mainI18n.t('set.progress.escToStop'),
+            done: mainI18n.t('set.progress.done'),
+            // 数は表示側で数えて {success} などに入れる
+            summary: mainI18n.t('set.progress.summary', {
+              success: '{success}',
+              failed: '{failed}',
+              skipped: '{skipped}',
+            }),
+          };
           win.webContents.send(LAYOUT_PROGRESS_CHANNELS[eventType], { ...progress, labels });
         }
       } catch (error) {
@@ -299,8 +315,33 @@ const defaultDeps: SetExecutorDeps = {
       ipcMain.once(IPC_CHANNELS.LAYOUT_CANCEL, handler);
       return () => ipcMain.removeListener(IPC_CHANNELS.LAYOUT_CANCEL, handler);
     },
+    loadIcons: (items) =>
+      loadCachedIcons(items, {
+        favicons: PathManager.getFaviconsFolder(),
+        icons: PathManager.getAppsFolder(),
+        extensions: PathManager.getExtensionsFolder(),
+      }),
   },
 };
+
+/** 進み具合で名前の下に出す 1 行（exe 名と置く先の仮想デスクトップ） */
+function progressDetail(entry: SetEntry, resolved: ResolvedEntry): string | undefined {
+  const parts: string[] = [];
+  const processName = entry.window?.processName ?? resolved.itemWindow?.processName;
+  if (processName) parts.push(processName);
+  const desktop = entry.placement?.virtualDesktopNumber;
+  if (desktop !== undefined && !entry.pinToAllDesktops) {
+    parts.push(mainI18n.t('set.progress.desktop', { number: desktop }));
+  }
+  return parts.length > 0 ? parts.join(mainI18n.t('set.progress.separator')) : undefined;
+}
+
+/** 進み具合で、アイコンが無いときに既定のアイコンを決める種別（動かすだけの行は windowSwitch） */
+function progressItemType(resolved: ResolvedEntry): string | undefined {
+  if (resolved.launch) return resolved.launch.type;
+  if (resolved.error) return undefined;
+  return 'windowSwitch';
+}
 
 /**
  * セットを実行する
@@ -363,23 +404,31 @@ async function runSet(
   let cancelled = false;
   const progress: LayoutExecutionProgress = {
     layoutName: item.displayName,
-    entries: resolved.map((r, index): LayoutEntryProgress => ({
-      index,
-      windowTitle: r.name,
-      // 行の名前と動かすウィンドウが別のものでも分かるように、exe 名を添える
-      ...(item.entries[index].window?.processName
-        ? { processName: item.entries[index].window!.processName }
-        : {}),
-      ...(r.icon ? { icon: r.icon } : {}),
-      status: 'waiting',
-    })),
+    entries: resolved.map((r, index): LayoutEntryProgress => {
+      const detail = progressDetail(item.entries[index], r);
+      const itemType = progressItemType(r);
+      return {
+        index,
+        windowTitle: r.name,
+        // 行の名前と動かすウィンドウが別のものでも分かるように、exe 名を添える
+        ...(item.entries[index].window?.processName
+          ? { processName: item.entries[index].window!.processName }
+          : {}),
+        ...(r.icon ? { icon: r.icon } : {}),
+        ...(itemType ? { itemType } : {}),
+        ...(detail ? { detail } : {}),
+        status: 'waiting',
+        statusText: mainI18n.t('set.progress.queued'),
+      };
+    }),
     isComplete: false,
     isCancelled: false,
   };
   const showProgress = hasPlacement && deps.progress;
   let removeCancel: (() => void) | undefined;
   if (showProgress) {
-    await deps.progress!.show();
+    await loadProgressIcons(progress.entries, resolved, deps.progress!.loadIcons);
+    await deps.progress!.show(item.entries.length);
     removeCancel = deps.progress!.onCancel(() => {
       cancelled = true;
       logger.info({ setName: item.displayName }, 'セットの実行が中止されました');
@@ -412,20 +461,28 @@ async function runSet(
     if (found !== null) claimed.add(found);
     return found;
   };
-  const update = (index: number, status: LayoutEntryProgress['status'], error?: string) => {
+  const update = (
+    index: number,
+    status: LayoutEntryProgress['status'],
+    error?: string,
+    statusText?: string
+  ) => {
     progress.entries[index].status = status;
+    progress.entries[index].statusText = statusText ?? mainI18n.t(STATUS_TEXT_KEYS[status]);
     if (error) progress.entries[index].errorMessage = error;
     if (showProgress) deps.progress!.send('update', progress);
   };
-  const finish = (index: number, error?: string) => {
+  /** 行を終える。うまくいったときは何をしたか（successText）を右に出す（既定は「位置を合わせました」） */
+  const finish = (index: number, error?: string, successText?: string) => {
     results.push({
       index,
       name: resolved[index].name,
       success: !error,
       ...(error ? { error } : {}),
     });
-    update(index, error ? 'failed' : 'success', error);
+    update(index, error ? 'failed' : 'success', error, error ? undefined : successText);
   };
+  const wasOpenText = () => mainI18n.t('set.progress.wasOpen');
   /**
    * 動かすだけの行で、ウィンドウが見つからなかった（失敗とは数えず、理由だけ添える）。
    * 同じ exe のウィンドウはあるならタイトルが合わないだけなので、そう知らせる（タブの切り替えなど）。
@@ -481,7 +538,11 @@ async function runSet(
   /** 開いた結果で行を終える（UAC で「いいえ」は飛ばしたことにする） */
   const finishLaunch = (index: number, launched: LaunchResult) => {
     if (!launched.success && launched.cancelled) return skipAdminCancelled(index);
-    return finish(index, launched.success ? undefined : launched.error);
+    return finish(
+      index,
+      launched.success ? undefined : launched.error,
+      mainI18n.t('set.progress.opened')
+    );
   };
 
   /**
@@ -518,7 +579,7 @@ async function runSet(
           if (!config) return finish(index, mainI18n.t('layout.windowNotFound'));
           // 単一アイテムは前面に出すかを設定どおりにし、別のデスクトップにあればそこへ切り替える
           const result = await activate(withSingle(config, entry), r.name);
-          return result.windowFound ? finish(index) : skip(index);
+          return result.windowFound ? finish(index, undefined, wasOpenText()) : skip(index);
         }
         const itemConfig = entry.window
           ? { title: entry.window.title || ANY_WINDOW_TITLE, processName: entry.window.processName }
@@ -526,7 +587,7 @@ async function runSet(
         if (itemConfig && entry.ifOpen !== 'openNew') {
           const result = await activate(withSingle(itemConfig, entry), r.name);
           // 前面に出すのを Windows に断られても、見つかっていれば開き直さない（二重に開かない）
-          if (result.windowFound) return finish(index);
+          if (result.windowFound) return finish(index, undefined, wasOpenText());
         }
         const launched = await deps.launch(r.launch, logger);
         return finishLaunch(index, launched);
@@ -560,11 +621,12 @@ async function runSet(
       );
       if (!config) {
         // 見つけ方を決められない（URL など）: 開くだけにする
-        if (!r.launch) return finish(index);
+        if (!r.launch) return finish(index, undefined, wasOpenText());
         return finishLaunch(index, await deps.launch(r.launch, logger));
       }
 
       let hwnd = entry.ifOpen === 'openNew' ? null : findUnclaimed(config);
+      const wasOpen = hwnd !== null;
       if (hwnd === null) {
         // 動かすだけの行は、開いていなければ飛ばす
         if (!r.launch) return skip(index);
@@ -577,7 +639,12 @@ async function runSet(
         const launched = await deps.launch(r.launch, logger);
         if (!launched.success) return finishLaunch(index, launched);
         markOpened();
-        hwnd = await waitForWindow(config, before, entry.waitSeconds ?? SET_DEFAULT_WAIT_SECONDS);
+        hwnd = await waitForWindow(
+          index,
+          config,
+          before,
+          entry.waitSeconds ?? SET_DEFAULT_WAIT_SECONDS
+        );
         if (hwnd === null) {
           return finish(index, mainI18n.t(cancelled ? 'layout.cancelled' : 'layout.timedOut'));
         }
@@ -605,7 +672,8 @@ async function runSet(
         index,
         missingDesktop === undefined
           ? undefined
-          : mainI18n.t('set.run.desktopNotFound', { number: missingDesktop })
+          : mainI18n.t('set.run.desktopNotFound', { number: missingDesktop }),
+        mainI18n.t(wasOpen ? 'set.progress.placedExisting' : 'set.progress.placed')
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -618,6 +686,7 @@ async function runSet(
   };
 
   const waitForWindow = async (
+    index: number,
     config: WindowConfig,
     exclude: ReadonlySet<bigint>,
     waitSeconds: number
@@ -625,10 +694,22 @@ async function runSet(
     const deadline = waitSeconds * 1000;
     // ウィンドウを探す時間も数える（sleep の合計だけだと、ウィンドウが多いときに長く待ちすぎる）
     const end = Date.now() + deadline;
+    let shownSeconds = -1;
     for (let elapsed = 0; elapsed < deadline && Date.now() < end; elapsed += SET_WINDOW_POLL_MS) {
       if (cancelled) return null;
       const found = findUnclaimed(config, exclude);
       if (found !== null) return found;
+      // 待っている秒数は、1 秒変わったときだけ送る
+      const seconds = Math.floor(elapsed / 1000);
+      if (seconds !== shownSeconds) {
+        shownSeconds = seconds;
+        update(
+          index,
+          'launching',
+          undefined,
+          mainI18n.t('set.progress.waitingWindow', { elapsed: seconds, total: waitSeconds })
+        );
+      }
       await deps.sleep(SET_WINDOW_POLL_MS);
     }
     return null;
@@ -673,6 +754,44 @@ async function runSet(
     'セットの実行が終わりました'
   );
   return summary;
+}
+
+/** 行の状態ごとに、右に出す文字の既定（うまくいった行は何をしたかで finish が差し替える） */
+const STATUS_TEXT_KEYS = {
+  waiting: 'set.progress.queued',
+  launching: 'set.progress.opening',
+  success: 'set.progress.placed',
+  failed: 'set.progress.failed',
+  skipped: 'set.progress.skipped',
+} as const satisfies Record<LayoutEntryProgress['status'], string>;
+
+/**
+ * 進み具合に出すアイコンを、行が指すアイテムに無ければ開くもののパスでキャッシュから引く
+ *
+ * パスを書いた行はアイテムを指さないのでアイコンを持たない。メインウィンドウと同じキャッシュを読むだけで、
+ * その場で取りには行かない（実行の出だしを遅らせない）。読めなければ表示側が種別の既定のアイコンを出す
+ */
+async function loadProgressIcons(
+  entries: LayoutEntryProgress[],
+  resolved: ResolvedEntry[],
+  loadIcons: ((items: IconItem[]) => Promise<Record<string, string>>) | undefined
+): Promise<void> {
+  if (!loadIcons) return;
+  const targets = resolved
+    .map((r, index) => ({ launch: r.launch, index }))
+    .filter(({ launch, index }) => !entries[index].icon && launch && launch.path.trim() !== '');
+  if (targets.length === 0) return;
+  try {
+    const icons = await loadIcons(
+      targets.map(({ launch }) => ({ type: launch!.type, path: launch!.path }))
+    );
+    for (const { launch, index } of targets) {
+      const icon = icons[launch!.path];
+      if (icon) entries[index].icon = icon;
+    }
+  } catch (error) {
+    itemLogger.warn({ error: String(error) }, '進み具合のアイコンを読めませんでした');
+  }
 }
 
 /**

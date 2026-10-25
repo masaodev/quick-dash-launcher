@@ -95,6 +95,8 @@ const electronAPI: ElectronAPI = {
     createEventListener<LayoutExecutionProgress>(LAYOUT_PROGRESS_CHANNELS[eventType], callback),
   cancelLayout: () => ipcRenderer.send(IPC_CHANNELS.LAYOUT_CANCEL),
   closeLayoutProgressWindow: () => ipcRenderer.send(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW),
+  resizeLayoutProgressWindow: (contentHeight) =>
+    ipcRenderer.send(IPC_CHANNELS.RESIZE_LAYOUT_PROGRESS_WINDOW, contentHeight),
   onWindowShown: (callback) =>
     createEventListener<number | undefined>(IPC_CHANNELS.EVENT_WINDOW_SHOWN, callback),
   onWindowShownItemSearch: (callback) =>

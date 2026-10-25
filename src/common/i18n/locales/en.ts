@@ -847,6 +847,23 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       itemWindowTimedOut:
         'Waited {{seconds}} seconds for the window to appear, but it was not found',
     },
+    progress: {
+      queued: 'Queued',
+      opening: 'Opening',
+      waitingWindow: 'Waiting for the window {{elapsed}} / {{total}} s',
+      placed: 'Positioned',
+      placedExisting: 'Already open, positioned',
+      opened: 'Opened',
+      wasOpen: 'Already open',
+      skipped: 'Skipped',
+      failed: 'Failed',
+      desktop: 'Desktop {{number}}',
+      separator: ' · ',
+      stop: 'Stop',
+      escToStop: 'Esc to stop',
+      done: 'Done',
+      summary: '{{success}} succeeded · {{failed}} failed · {{skipped}} skipped',
+    },
     errors: {
       itemNotFound: "Couldn't find the item this row points to",
       unsupportedType: "This kind of item can't be opened from a set",

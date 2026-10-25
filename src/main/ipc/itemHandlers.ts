@@ -8,7 +8,11 @@ import { IPC_CHANNELS } from '@common/ipcChannels';
 import { isBareFileName, resolveFromPath } from '../utils/pathResolver.js';
 import { checkPathsExist } from '../services/data/pathExistenceChecker.js';
 import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
-import { hideLayoutProgressWindow, showToastWindow } from '../services/overlayWindowService.js';
+import {
+  hideLayoutProgressWindow,
+  resizeLayoutProgressWindow,
+  showToastWindow,
+} from '../services/overlayWindowService.js';
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { executeSetItem, openLauncherItem } from '../services/launch/appItemLauncher.js';
 import { openLauncherItemAsAdmin } from '../services/launch/adminItemLauncher.js';
@@ -80,5 +84,9 @@ export function setupItemHandlers(): void {
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {
     hideLayoutProgressWindow();
+  });
+
+  ipcMain.on(IPC_CHANNELS.RESIZE_LAYOUT_PROGRESS_WINDOW, (_event, contentHeight: number) => {
+    resizeLayoutProgressWindow(contentHeight);
   });
 }

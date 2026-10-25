@@ -263,6 +263,8 @@ export const IPC_CHANNELS = {
   EVENT_LAYOUT_PROGRESS_COMPLETE: 'layout-progress-complete',
   LAYOUT_CANCEL: 'layout-cancel',
   CLOSE_LAYOUT_PROGRESS_WINDOW: 'close-layout-progress-window',
+  /** 進み具合の表示が測った中身の高さ（ウィンドウの高さを合わせる） */
+  RESIZE_LAYOUT_PROGRESS_WINDOW: 'resize-layout-progress-window',
 
   // コンテキストメニュー - Admin
   SHOW_ADMIN_ITEM_CONTEXT_MENU: 'show-admin-item-context-menu',

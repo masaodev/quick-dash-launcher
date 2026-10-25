@@ -186,6 +186,12 @@ export interface LayoutEntryProgress {
   windowTitle: string;
   processName?: string;
   icon?: string;
+  /** 開くものの種別（アイコンが無いときに種別の既定のアイコンを出す。動かすだけの行は windowSwitch） */
+  itemType?: string;
+  /** 名前の下に小さく出す 1 行（exe 名・置く先の仮想デスクトップ。表示言語に合わせて main が決める） */
+  detail?: string;
+  /** 行の右に出す、今していることの短い文字（表示言語に合わせて main が決める） */
+  statusText?: string;
   status: LayoutEntryStatus;
   errorMessage?: string;
 }
