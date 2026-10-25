@@ -18,6 +18,26 @@ import { getValidWindow, t } from './contextMenuShared.js';
 /** 「検索履歴 ▸」に並べる件数（保存は 100 件まで。それより前は Ctrl+↑ でたどる） */
 const SEARCH_HISTORY_MENU_COUNT = 10;
 
+/** 「検索履歴 ▸」の項目に出す検索語の長さの上限（長い語でメニューが広がりすぎないように） */
+const SEARCH_HISTORY_LABEL_MAX = 40;
+
+/**
+ * 検索語をメニューの文言にする。Windows のメニューは「&」を次の文字の下線（アクセスキー）として扱い、
+ * 「R&D」が「RD」に見えるので「&&」にする。長い語は末尾を「…」で省く（選んだときに入るのは元の語）
+ */
+function historyMenuLabel(query: string): string {
+  const shown =
+    query.length > SEARCH_HISTORY_LABEL_MAX
+      ? `${query.slice(0, SEARCH_HISTORY_LABEL_MAX)}…`
+      : query;
+  return shown.replace(/&/g, '&&');
+}
+
+/** メニューを開いている間に画面が読み直された・閉じられたときは送らない */
+function sendIfAlive(sender: WebContents, channel: string, ...args: unknown[]): void {
+  if (!sender.isDestroyed()) sender.send(channel, ...args);
+}
+
 /** 入力欄の右クリックメニューの項目（出せる操作だけ押せる） */
 function editableMenuTemplate(flags: SearchBoxEditFlags): MenuItemConstructorOptions[] {
   return [
@@ -56,13 +76,13 @@ export function buildSearchBoxMenu(
       enabled: recent.length > 0,
       submenu: [
         ...recent.map((query): MenuItemConstructorOptions => ({
-          label: query,
-          click: () => sender.send(IPC_CHANNELS.EVENT_SEARCH_BOX_MENU_PICK_HISTORY, query),
+          label: historyMenuLabel(query),
+          click: () => sendIfAlive(sender, IPC_CHANNELS.EVENT_SEARCH_BOX_MENU_PICK_HISTORY, query),
         })),
         { type: 'separator' },
         {
           label: t('menu.searchHistory.clear'),
-          click: () => sender.send(IPC_CHANNELS.EVENT_SEARCH_BOX_MENU_CLEAR_HISTORY),
+          click: () => sendIfAlive(sender, IPC_CHANNELS.EVENT_SEARCH_BOX_MENU_CLEAR_HISTORY),
         },
       ],
     },
