@@ -291,6 +291,10 @@ export const IPC_CHANNELS = {
   EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM: 'launcher-blank-menu-add-item',
   EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD: 'launcher-blank-menu-register-from-clipboard',
   EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT: 'launcher-blank-menu-add-folder-import',
+  // コンテキストメニュー - メインウィンドウの検索欄（文字のメニュー＋検索履歴。A3-190）
+  SHOW_SEARCH_BOX_CONTEXT_MENU: 'show-search-box-context-menu',
+  EVENT_SEARCH_BOX_MENU_PICK_HISTORY: 'search-box-menu-pick-history',
+  EVENT_SEARCH_BOX_MENU_CLEAR_HISTORY: 'search-box-menu-clear-history',
 
   // コンテキストメニュー - Workspace
   SHOW_WORKSPACE_CONTEXT_MENU: 'show-workspace-context-menu',

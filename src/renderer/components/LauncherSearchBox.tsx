@@ -4,6 +4,7 @@ import {
   useImperativeHandle,
   type ReactElement,
   type KeyboardEvent,
+  type MouseEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchMode } from '@common/types/search';
@@ -12,6 +13,8 @@ interface SearchBoxProps {
   value: string;
   onChange: (value: string) => void;
   onKeyDown: (e: KeyboardEvent) => void;
+  /** 検索欄の右クリック（文字のメニューと検索履歴を出す） */
+  onContextMenu?: (e: MouseEvent<HTMLInputElement>) => void;
   searchMode?: SearchMode;
   onToggleSearchMode?: () => void;
 }
@@ -59,7 +62,10 @@ function KeyHint({
 }
 
 const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
-  ({ value, onChange, onKeyDown, searchMode = 'normal', onToggleSearchMode }, ref) => {
+  (
+    { value, onChange, onKeyDown, onContextMenu, searchMode = 'normal', onToggleSearchMode },
+    ref
+  ) => {
     const { t } = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -85,6 +91,7 @@ const LauncherSearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
+              onContextMenu={onContextMenu}
               placeholder={t(SEARCH_MODE_PLACEHOLDER_KEYS[searchMode])}
               autoFocus
             />

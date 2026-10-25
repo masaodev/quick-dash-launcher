@@ -235,3 +235,62 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
     }
   });
 });
+
+/**
+ * 取込画面は 1 つだけ開き、管理ウィンドウを × で閉じたら閉じる（A3-187）。
+ * 以前は ×（隠すだけ）の後もブックマーク取込が開いたまま残り、アプリ取込をキャンセルすると後ろから出てきた
+ */
+test.describe('QuickDashLauncher - 取込画面が後ろに残らない', () => {
+  test('メインウィンドウからブックマーク取込 → × で閉じる → アプリ取込 → キャンセルで、ブックマーク取込は出ない', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await stubScan(electronApp);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await adminWindow.waitForLoadState('domcontentloaded');
+    const bookmarkModal = adminWindow.locator('.bookmark-import-modal');
+    const appModal = adminWindow.locator(MODAL);
+
+    try {
+      await test.step('メインウィンドウの ➕ と同じく、ブックマーク取込を開く', async () => {
+        await mainWindow.evaluate(() =>
+          window.electronAPI.openEditWindowWithImportModal('bookmark')
+        );
+        await expect(bookmarkModal).toBeVisible();
+      });
+
+      await test.step('管理ウィンドウを × で閉じると、取込画面も閉じる', async () => {
+        await electronApp.evaluate(({ BrowserWindow }) => {
+          const admin = BrowserWindow.getAllWindows().find((w) =>
+            w.webContents.getURL().includes('admin.html')
+          );
+          admin?.close();
+        });
+        await expect(bookmarkModal).toHaveCount(0);
+      });
+
+      await test.step('アプリ取込を開いてキャンセルしても、ブックマーク取込は出ない', async () => {
+        await mainWindow.evaluate(() => window.electronAPI.openEditWindowWithImportModal('app'));
+        await expect(appModal).toBeVisible();
+        await expect(bookmarkModal).toHaveCount(0);
+        await appModal.getByRole('button', { name: 'キャンセル' }).click();
+        await expect(appModal).toHaveCount(0);
+        await expect(bookmarkModal).toHaveCount(0);
+      });
+
+      await test.step('閉じずにもう一方を頼んでも、重ねて開かない', async () => {
+        await mainWindow.evaluate(() =>
+          window.electronAPI.openEditWindowWithImportModal('bookmark')
+        );
+        await expect(bookmarkModal).toBeVisible();
+        await mainWindow.evaluate(() => window.electronAPI.openEditWindowWithImportModal('app'));
+        await expect(appModal).toBeVisible();
+        await expect(bookmarkModal).toHaveCount(0);
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+});

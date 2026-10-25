@@ -449,6 +449,12 @@ const electronAPI: ElectronAPI = {
     ),
   onLauncherBlankMenuAddFolderImport: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT, callback),
+  showSearchBoxContextMenu: (flags, history) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHOW_SEARCH_BOX_CONTEXT_MENU, flags, history),
+  onSearchBoxMenuPickHistory: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_SEARCH_BOX_MENU_PICK_HISTORY, callback),
+  onSearchBoxMenuClearHistory: (callback) =>
+    createEventListenerNoArg(IPC_CHANNELS.EVENT_SEARCH_BOX_MENU_CLEAR_HISTORY, callback),
   // WorkspaceTabContextMenu
   showWorkspaceTabContextMenu: (workspaceId, canDelete) =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_WORKSPACE_TAB_CONTEXT_MENU, workspaceId, canDelete),

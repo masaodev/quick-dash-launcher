@@ -251,6 +251,50 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     expect(items.some((i) => i.displayName === 'https://example.com/elsewhere')).toBe(false);
   });
 
+  test('貼り付け先の枠は前面のウィンドウにだけ出て、グループの外を左クリックすると外れ、Ctrl+V で貼らない（A3-186）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const [workspace] = await api.loadWorkspaces();
+      await api.createGroup('枠のグループ', undefined, undefined, workspace.id);
+    });
+    const header = workspaceWindow.locator('.workspace-group-header', { hasText: '枠のグループ' });
+    await header.click();
+    await expect(header).toHaveClass(/paste-target/);
+
+    await test.step('ウィンドウが前面でなくなると枠を消し、戻ると枠を戻す', async () => {
+      await workspaceWindow.evaluate(() => window.dispatchEvent(new Event('blur')));
+      await expect(workspaceWindow.locator('.workspace-group-header.paste-target')).toHaveCount(0);
+      await workspaceWindow.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await expect(header).toHaveClass(/paste-target/);
+    });
+
+    await test.step('グループの外（タブの並びの空いている所）を左クリックすると外れ、Ctrl+V では貼らずに知らせる', async () => {
+      // 一覧はグループぴったりの高さに縮み、下端にはウィンドウの大きさを変えるつまみが重なるので、タブの並びで試す
+      const tabBar = workspaceWindow.locator('.workspace-tab-bar');
+      const box = await tabBar.boundingBox();
+      if (!box) throw new Error('タブの並びが見つかりません');
+      await tabBar.click({ position: { x: box.width / 2, y: box.height / 2 } });
+      await expect(workspaceWindow.locator('.workspace-group-header.paste-target')).toHaveCount(0);
+
+      await pasteText(electronApp, workspaceWindow, 'https://example.com/outside');
+      await expect(
+        workspaceWindow.getByText(
+          '貼り付ける先のグループの見出しをクリックしてから、貼り付けてください'
+        )
+      ).toBeVisible();
+      const items = await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.loadItems()
+      );
+      expect(items.some((i) => i.displayName === 'https://example.com/outside')).toBe(false);
+    });
+  });
+
   test('クリップボードアイテムの編集画面にはパス欄を出さず、名前を変えても中身の参照は保つ', async ({
     electronApp,
     mainWindow,
