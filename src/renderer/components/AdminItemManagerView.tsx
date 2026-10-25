@@ -37,6 +37,8 @@ interface EditModeViewProps {
   onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+  /** 管理ウィンドウを閉じるたびに増える数（開いている取込画面を閉じる合図） */
+  importModalCloseSignal: number;
   /** 設定「ブックマーク自動取込」を開く（追加の ▼ メニュー・手動取込モーダルの案内から） */
   onOpenAutoImportSettings?: () => void;
 }
@@ -77,6 +79,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   onTabStructureSaved,
   pendingImportModal,
   onClearPendingImportModal,
+  importModalCloseSignal,
   onOpenAutoImportSettings,
 }) => {
   const { t } = useTranslation();
@@ -441,6 +444,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     toast: { showSuccess, showInfo, showWarning },
     pendingImportModal,
     onClearPendingImportModal,
+    importModalCloseSignal,
     onFetchIconsAfterSave: () => {
       fetchIconsAfterSaveRef.current = true;
     },

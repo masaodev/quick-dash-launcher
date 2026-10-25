@@ -57,7 +57,11 @@ export function useWorkspaceAutoFit(
         Math.min(window.screen.availHeight, Math.ceil(desiredHeight))
       );
 
-      if (Math.abs(clampedHeight - lastHeightRef.current) <= 2) return;
+      // 差が 2px 以内なら更新しない（ループ防止）。ただし中身がはみ出して縦のスクロールバーが出ているときは、
+      // 広げる分は小さくても合わせる（2px 足りずにスクロールバーが残っていた。A3-185）
+      const diff = clampedHeight - lastHeightRef.current;
+      const overflowing = itemList.scrollHeight > itemList.clientHeight;
+      if (Math.abs(diff) <= 2 && !(overflowing && diff > 0)) return;
 
       lastHeightRef.current = clampedHeight;
       resizeRef.current(window.outerWidth, clampedHeight);

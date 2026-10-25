@@ -29,6 +29,8 @@ interface AdminTabContainerProps {
   dataFileLabels?: Record<string, string>;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+  /** 管理ウィンドウを閉じるたびに増える数（開いている取込画面を閉じる合図） */
+  importModalCloseSignal: number;
   /** 設定タブで開いているカテゴリ（AdminApp が持つ。他のタブから指定して開ける） */
   settingsCategory: SettingsCategory;
   onSettingsCategoryChange: (category: SettingsCategory) => void;
@@ -53,6 +55,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   dataFileLabels = {},
   pendingImportModal,
   onClearPendingImportModal,
+  importModalCloseSignal,
   settingsCategory,
   onSettingsCategoryChange,
   onOpenSettingsCategory,
@@ -109,6 +112,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
             onTabStructureSaved={onTabStructureSaved}
             pendingImportModal={pendingImportModal}
             onClearPendingImportModal={onClearPendingImportModal}
+            importModalCloseSignal={importModalCloseSignal}
             onOpenAutoImportSettings={() => onOpenSettingsCategory('bookmarkAutoImport')}
           />
         )}

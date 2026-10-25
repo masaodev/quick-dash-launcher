@@ -891,7 +891,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   return (
     <div className="workspace-item-list" onContextMenu={handleBlankContextMenu}>
-      <div ref={contentRef}>
+      <div ref={contentRef} className="workspace-item-list-content">
         {/* ツリー構造でグループをレンダリング */}
         {groupTree.map((node) => renderGroupNode(node))}
 
