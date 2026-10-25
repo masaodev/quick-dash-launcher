@@ -459,12 +459,11 @@ export const ja = {
   tray: {
     show: '表示',
     showAtCenter: '画面中央に表示',
-    settings: '設定…',
+    settings: '設定',
     openSettingsFolder: '設定フォルダを開く',
     help: 'ヘルプ',
     restart: '再起動',
     quit: '終了',
-    showWorkspace: 'ワークスペースを表示',
     itemManager: 'アイテム管理',
     devRestart: {
       title: '再起動（開発モード）',
