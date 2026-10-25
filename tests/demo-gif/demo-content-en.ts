@@ -359,7 +359,7 @@ export const enContent: DemoContent = {
         items: ['B: Project folder', 'B: Figma designs', 'Chat: B: Store Revamp team'],
       },
     ],
-    search: 'basic design screen list',
+    search: 'wi c',
     targetGroup: 1,
   },
   shots: {

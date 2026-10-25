@@ -118,7 +118,7 @@ Set the type to **Folder import** to add all the files in a folder to the list.
 The workspace is a separate window that keeps the things you use most at the edge of your screen. To open it, select ⭐ in the launcher or press `Ctrl+W`. Unlike the launcher, it stays visible while you work in other windows.
 
 <p align="center">
-  <img src="docs/images/demo-workspace-en.gif" alt="A file found in the launcher is dragged into a workspace group, and then the group is dragged out of the workspace into a window of its own." />
+  <img src="docs/images/demo-workspace-en.gif" alt="An item found by typing wi c in the launcher is dragged into a workspace group. The group is then dragged out of the workspace into a window of its own and collapsed by clicking its header." />
 </p>
 
 - **Add items**: Right-click an item in the launcher, or drag it to the workspace. You can also drag files and URLs, or copy a path or text and press `Ctrl+V` in the workspace.

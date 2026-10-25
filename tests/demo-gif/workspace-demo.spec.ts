@@ -275,6 +275,10 @@ test('ワークスペースのデモ', async () => {
     // 4. 切り離しウィンドウの見出しをクリックして畳むと、ウィンドウが見出しだけの大きさに縮む
     const detachedTitle = `${groupName} - QuickDashLauncher`;
     const detached = await findWindow(app, detachedTitle);
+    // クリックしたグループに付く貼り付け先の枠（黄色）は、畳んで縮む様子の邪魔になるので撮影では出さない
+    await detached.addStyleTag({
+      content: '.workspace-group-header.paste-target { outline: none !important; }',
+    });
     const collapseIcon = detached.locator('.workspace-group-collapse-icon').first();
     const icon = await screenPoint(collapseIcon, await contentBounds(app, detachedTitle), scale);
     await mouse.glideTo(icon, 600);

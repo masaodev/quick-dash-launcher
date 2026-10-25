@@ -363,7 +363,7 @@ export const jaContent: DemoContent = {
         items: ['B：案件フォルダ', 'B：Figma デザイン', 'チャット: B：EC改修Prj チーム'],
       },
     ],
-    search: '基本設計 画面一覧',
+    search: 'wi c',
     targetGroup: 1,
   },
   shots: {
