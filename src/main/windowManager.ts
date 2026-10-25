@@ -237,6 +237,9 @@ export async function createWindow(): Promise<BrowserWindow> {
 
   mainWindow.on('show', () => {
     windowShownAt = Date.now();
+    // 起動直後の自動表示（スプラッシュの後・初回設定）のように showMainWindowInternal を
+    // 通らない表示でも、表示中は描画の抑制を切る（A3-130）
+    setMainWindowRenderingKept(true);
   });
 
   // 隠したら描画の抑制を戻す（表示中だけ切る。A3-130）
