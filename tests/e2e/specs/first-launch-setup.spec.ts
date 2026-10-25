@@ -251,6 +251,40 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
         'QuickDashLauncher の使い方'
       );
     });
+
+    test('ワークスペースにもお試し用のグループとアイテムが入る', async ({
+      configHelper,
+      mainWindow,
+    }) => {
+      const utils = new TestUtils(mainWindow);
+      await utils.waitForPageLoad();
+
+      const workspace = configHelper.readConfigJson<{
+        groups: { displayName: string }[];
+        items: { type: string; refItemId?: string }[];
+      }>('workspace.json');
+      expect(workspace?.groups.map((group) => group.displayName)).toEqual([
+        'よく使う',
+        '便利な使い方',
+      ]);
+      expect(workspace?.items.map((item) => item.type)).toEqual([
+        'ref',
+        'ref',
+        'ref',
+        'ref',
+        'set',
+        'clipboard',
+        'item',
+      ]);
+      // 参照はメインウィンドウのお試しを指す
+      const mainIds = [
+        ...configHelper.readDataFile('data.json').items,
+        ...configHelper.readDataFile('data2.json').items,
+      ].map((item) => item.id);
+      for (const item of workspace?.items.filter((i) => i.type === 'ref') ?? []) {
+        expect(mainIds).toContain(item.refItemId);
+      }
+    });
   });
 
   test.describe('お試し用のアイテムのアイコンを裏で取る', () => {
