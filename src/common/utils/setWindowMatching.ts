@@ -8,7 +8,7 @@
 import type { SetEntry, SetPlacement, SetWindowMatch } from '../types/launcher';
 import type { WindowInfo } from '../types/window';
 
-import { ANY_WINDOW_TITLE, createTitleMatcher } from './windowTitle';
+import { ANY_WINDOW_TITLE, createTitleMatcher, titleToPartialPattern } from './windowTitle';
 
 /** 結び付けの判定に使うウィンドウの情報 */
 export type MatchableWindow = Pick<
@@ -212,16 +212,21 @@ export function autoLinkWindows(
 }
 
 /**
- * 記録するウィンドウの見つけ方を決める（exe 名とタイトル全体）
+ * 記録するウィンドウの見つけ方を決める（exe 名と、最後の部品を落としたタイトルの一部一致）
  *
- * 記録したときに開いていたウィンドウの数で保存する中身が変わらないよう、いつもタイトル全体を保存する
- * （利用者は「そのページ・そのファイルのウィンドウ」をその位置に置きたい）。タイトルが変わるものは、
- * 行の詳細の候補で一部だけ・タイトルを問わない（*）にしてもらう
+ * 記録したときに開いていたウィンドウの数で保存する中身が変わらないよう、ウィンドウ 1 つのタイトルだけで決める
+ * （利用者は「そのページ・そのファイルのウィンドウ」をその位置に置きたい）。最後の部品（多くはアプリ名と版）を
+ * 落として `*…*` にし、アプリの版が上がっても当たるようにする（titleToPartialPattern）。区切りの無いタイトルは
+ * 全体で探す。exe 名が取れないウィンドウは別のアプリにも当たりうるので、タイトル全体のままにする。
+ * ほかに変わるもの（未読数など）は、行の詳細の候補で一部だけ・タイトルを問わない（*）にしてもらう
  */
 export function decideWindowMatch(window: MatchableWindow): SetWindowMatch {
-  const title = window.title.trim() ? window.title : undefined;
   if (!window.processName) return { title: window.title };
-  return title ? { processName: window.processName, title } : { processName: window.processName };
+  if (!window.title.trim()) return { processName: window.processName };
+  return {
+    processName: window.processName,
+    title: titleToPartialPattern(window.title) ?? window.title,
+  };
 }
 
 /**

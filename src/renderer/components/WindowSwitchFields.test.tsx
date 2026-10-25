@@ -117,6 +117,55 @@ describe('WindowMatchFields', () => {
     expect(screen.getByText('説明')).toBeTruthy();
     expect(screen.getByText('今合うウィンドウ: 0 件')).toBeTruthy();
   });
+
+  it('一部一致で記録した行は、今合う 1 つのウィンドウから候補と「タイトル全体」を出す', () => {
+    const onChange = vi.fn();
+    const initial = { processName: 'sakura.exe', title: '*一時メモ.txt*' };
+    const now: WindowInfo = {
+      hwnd: 1,
+      title: '一時メモ.txt - sakura 2.4.3.7173',
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 600,
+      processId: 1,
+      isVisible: true,
+      processName: 'sakura.exe',
+    };
+    render(
+      <WindowMatchFields
+        idPrefix="t"
+        value={initial}
+        initial={initial}
+        windows={[now]}
+        lead="説明"
+        onPickWindow={vi.fn()}
+        onChange={onChange}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'sakura 2.4.3.7173' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'タイトル全体' }));
+    expect(onChange).toHaveBeenLastCalledWith({
+      processName: 'sakura.exe',
+      title: '一時メモ.txt - sakura 2.4.3.7173',
+    });
+  });
+
+  it('区切りの無いタイトルには「タイトル全体」を出さない（もう全体で探している）', () => {
+    const initial = { processName: 'Todo.exe', title: 'Microsoft To Do' };
+    render(
+      <WindowMatchFields
+        idPrefix="t"
+        value={initial}
+        initial={initial}
+        windows={[]}
+        lead="説明"
+        onPickWindow={vi.fn()}
+        onChange={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole('button', { name: 'タイトル全体' })).toBeNull();
+  });
 });
 
 describe('WindowMatchFields の並び', () => {

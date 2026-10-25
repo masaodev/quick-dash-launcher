@@ -9,35 +9,21 @@ import type {
   ClipboardFormat,
   SetEntry,
 } from '@common/types';
-import { detectItemType } from '@common/utils/itemTypeDetector';
-import { DIR_OPTIONS_DEFAULTS } from '@common/types';
 
 import { debugInfo } from '../utils/debug';
-import { hasClipboardContent, saveClipboardText } from '../utils/clipboardText';
-import { registerPathError } from '../utils/registerItemValidation';
 import { applyItemCategoryChange } from '../utils/itemCategoryChange';
+import {
+  canFetchIcon,
+  commitClipboardContent,
+  discardClipboardSession,
+  fetchItemIcon,
+  loadCachedIconsForItems,
+  resolvePathChange,
+  validateItemForm,
+} from '../utils/itemFormActions';
 
 import { useModalInitializer } from './useModalInitializer';
 import { useToast } from './useToast';
-
-async function loadCachedIconsForItems(items: RegisterItem[]): Promise<Record<string, string>> {
-  const itemsNeedingIcons = items.filter(
-    (item) => !item.icon && item.path?.trim() && item.type !== 'folder' && item.type !== 'clipboard'
-  );
-  if (itemsNeedingIcons.length === 0) {
-    return {};
-  }
-  const launcherItems = itemsNeedingIcons.map((item) => ({
-    path: item.path,
-    type: item.type,
-    displayName: item.displayName,
-  }));
-  return window.electronAPI.loadCachedIcons(launcherItems);
-}
-
-function needsClipboardCommit(item: RegisterItem): boolean {
-  return item.itemCategory === 'clipboard' && !!item.clipboardSessionId;
-}
 
 export function useRegisterForm(
   isOpen: boolean,
@@ -71,54 +57,14 @@ export function useRegisterForm(
     });
   };
 
+  /** クリップボードの中身を確定する。1 件でも失敗したら null */
   const commitClipboardSessions = async (
     itemsToCommit: RegisterItem[]
   ): Promise<RegisterItem[] | null> => {
     const results = await Promise.all(
-      itemsToCommit.map(async (item) => {
-        if (item.itemCategory === 'clipboard' && item.clipboardText !== undefined) {
-          try {
-            return await saveClipboardText(item);
-          } catch (error) {
-            debugInfo('クリップボードのテキストの保存に失敗:', error);
-            showError(
-              (error instanceof Error && error.message) || t('register.errors.clipboardSaveFailed')
-            );
-            return item;
-          }
-        }
-        if (!needsClipboardCommit(item)) {
-          return item;
-        }
-
-        try {
-          const result = await window.electronAPI.clipboardAPI.commitSession(
-            item.clipboardSessionId!
-          );
-          if (result.success && result.dataFileRef) {
-            return {
-              ...item,
-              clipboardDataRef: result.dataFileRef,
-              clipboardSavedAt: result.savedAt || item.clipboardSavedAt,
-              clipboardSessionId: undefined,
-            };
-          }
-          showError(result.error || t('register.errors.clipboardSaveFailed'));
-          return item;
-        } catch (error) {
-          debugInfo('クリップボードセッションのコミットに失敗:', error);
-          showError(t('register.errors.clipboardSaveFailed'));
-          return item;
-        }
-      })
+      itemsToCommit.map((item) => commitClipboardContent(item, { showWarning, showError }, t))
     );
-
-    const hasCommitError = results.some(
-      (item) =>
-        (needsClipboardCommit(item) && !item.clipboardDataRef) ||
-        (item.itemCategory === 'clipboard' && item.clipboardText !== undefined)
-    );
-    return hasCommitError ? null : results;
+    return results.every((item): item is RegisterItem => item !== null) ? results : null;
   };
 
   useEffect(() => {
@@ -203,75 +149,17 @@ export function useRegisterForm(
 
   /** パス欄を離れたとき（または「選択」で選んだとき。pickedPath は選んだパスで、まだ items に入っていない）に種別を決め直す */
   const handlePathBlur = async (index: number, pickedPath?: string) => {
-    const item = pickedPath === undefined ? items[index] : { ...items[index], path: pickedPath };
-    if (item.itemCategory === 'clipboard') {
-      return;
-    }
-    if (!item.path?.trim()) {
-      // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
-      if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
-        const newItems = [...items];
-        newItems[index] = { ...item, type: 'windowSwitch', icon: undefined };
-        setItems(newItems);
-      }
-      return;
-    }
-
-    const newType = await detectItemType(item.path);
-    const cachedIcon =
-      newType === 'folder'
-        ? undefined
-        : (await loadCachedIconsForItems([{ ...item, type: newType }]))[item.path];
-
-    // 待っている間に変わったほかの欄（パス欄を離れてすぐ押したチェックなど）を戻さないよう、今の内容に当てる
-    setItems((prev) => {
-      const next = [...prev];
-      const current: RegisterItem = {
-        ...prev[index],
-        ...(pickedPath !== undefined && { path: pickedPath }),
-        type: newType,
-      };
-      if (newType === 'folder') {
-        current.folderProcessing ??= 'folder';
-        current.dirOptions ??= { ...DIR_OPTIONS_DEFAULTS };
-      } else {
-        delete current.folderProcessing;
-        delete current.dirOptions;
-        if (cachedIcon) current.icon = cachedIcon;
-      }
-      next[index] = current;
-      return next;
-    });
+    const apply = await resolvePathChange(items[index], pickedPath);
+    if (!apply) return;
+    setItems((prev) => prev.map((item, i) => (i === index ? apply(item) : item)));
   };
 
   const validateAndRegister = async () => {
     const newErrors: typeof errors = {};
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      newErrors[i] = {};
-
-      if (item.itemCategory !== 'dir' && !item.displayName.trim()) {
-        newErrors[i].displayName = t('register.errors.displayNameRequired');
-      }
-
-      const pathError = registerPathError(item);
-      if (pathError) {
-        newErrors[i].path = t(pathError);
-      }
-
-      if (item.itemCategory === 'set' && (item.setEntries ?? []).length === 0) {
-        newErrors[i].setEntries = t('set.editor.entriesRequired');
-      }
-
-      if (item.itemCategory === 'clipboard') {
-        if (!hasClipboardContent(item)) {
-          newErrors[i].path = item.clipboardDataMissing
-            ? t('register.errors.clipboardDataMissing')
-            : t('register.errors.clipboardRequired');
-        }
-      }
-    }
+    items.forEach((item, i) => {
+      newErrors[i] = validateItemForm(item, t);
+    });
 
     setErrors(newErrors);
     const hasErrors = Object.values(newErrors).some((e) => Object.keys(e).length > 0);
@@ -292,16 +180,7 @@ export function useRegisterForm(
   };
 
   const handleCancel = async () => {
-    for (const item of items) {
-      if (item.clipboardSessionId) {
-        try {
-          await window.electronAPI.clipboardAPI.discardSession(item.clipboardSessionId);
-          debugInfo('キャンセルによりクリップボードセッションを破棄:', item.clipboardSessionId);
-        } catch (error) {
-          debugInfo('クリップボードセッションの破棄に失敗:', error);
-        }
-      }
-    }
+    await Promise.all(items.map(discardClipboardSession));
     setItems([]);
     onClose();
   };
@@ -326,31 +205,15 @@ export function useRegisterForm(
 
   const handleFetchIcon = async (index: number) => {
     const item = items[index];
-    if (!item.path?.trim() || item.type === 'folder' || item.type === 'clipboard') {
-      return;
-    }
+    if (!canFetchIcon(item)) return;
 
     const setLoadingAt = (idx: number, value: boolean) =>
       setIconFetchLoading((prev) => prev.map((v, i) => (i === idx ? value : v)));
 
     setLoadingAt(index, true);
-
-    try {
-      const itemType = item.type as 'url' | 'file' | 'app' | 'customUri';
-      // urlのファビコン取得もgetIconForItem側に集約されている
-      const icon = await window.electronAPI.getIconForItem(item.path, itemType);
-
-      if (icon) {
-        updateItem(index, { icon });
-      } else {
-        showWarning(t('register.errors.iconNotFound'));
-      }
-    } catch (error) {
-      debugInfo(`アイコン取得エラー (index: ${index}):`, error);
-      showError(t('register.errors.iconFetchError'));
-    } finally {
-      setLoadingAt(index, false);
-    }
+    const icon = await fetchItemIcon(item, { showWarning, showError }, t);
+    if (icon) updateItem(index, { icon });
+    setLoadingAt(index, false);
   };
 
   const createItemsFromPaths = async (paths: string[]): Promise<RegisterItem[]> => {

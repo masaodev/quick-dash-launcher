@@ -142,11 +142,30 @@ describe('autoLinkWindows', () => {
 });
 
 describe('decideWindowMatch', () => {
-  it('開いているウィンドウの数によらず、exe 名とタイトル全体を保存する', () => {
+  it('区切りのあるタイトルは、最後の部品（アプリ名と版）を落とした一部一致で保存する', () => {
     expect(decideWindowMatch(obsidian)).toEqual({
       processName: 'Obsidian.exe',
-      title: obsidian.title,
+      title: '*TODOキャンパス - vault*',
     });
+    expect(decideWindowMatch(sakura)).toEqual({
+      processName: 'sakura.exe',
+      title: '*一時メモ.txt*',
+    });
+  });
+
+  it('版が上がっても、記録したときのタイトルにも当たる', () => {
+    const recorded = decideWindowMatch(sakura);
+    expect(matchesWindow(recorded, sakura)).toBe(true);
+    expect(matchesWindow(recorded, { ...sakura, title: '一時メモ.txt - sakura 2.4.2.0' })).toBe(
+      true
+    );
+    // 別のファイルには当たらない
+    expect(matchesWindow(recorded, { ...sakura, title: '別のメモ.txt - sakura 2.4.1.2849' })).toBe(
+      false
+    );
+  });
+
+  it('区切りの無いタイトルは、開いているウィンドウの数によらずタイトル全体を保存する', () => {
     expect(decideWindowMatch(terminal)).toEqual({
       processName: 'WindowsTerminal.exe',
       title: 'QDL_main',
@@ -160,6 +179,12 @@ describe('decideWindowMatch', () => {
   it('タイトルが空なら exe 名だけ', () => {
     expect(decideWindowMatch(win({ title: '  ', processName: 'app.exe' }))).toEqual({
       processName: 'app.exe',
+    });
+  });
+
+  it('exe 名が取れないウィンドウは、別のアプリに当たらないようタイトル全体のまま', () => {
+    expect(decideWindowMatch(win({ title: 'メモ.txt - Editor 1.0' }))).toEqual({
+      title: 'メモ.txt - Editor 1.0',
     });
   });
 });

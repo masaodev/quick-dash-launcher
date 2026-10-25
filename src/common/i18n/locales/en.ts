@@ -1000,6 +1000,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       anyTitle: 'Any title',
       anyTitleHint: 'Search by exe name only (any title)',
       titleParts: 'Search by part of the title',
+      wholeTitle: 'Whole title',
+      wholeTitleHint:
+        'Search only for windows with exactly this title (including the version number)',
       revertTitle: '↺ Revert',
       matchNone: 'Matching windows now: 0',
       matchOne: 'Matching windows now: 1 ({{title}})',

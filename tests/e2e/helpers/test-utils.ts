@@ -327,6 +327,9 @@ export class TestUtils {
       .locator('.settings-dropdown')
       .locator('button', { hasText: '⚙' });
     await settingsButton.click();
+    // 開いた直後に項目を押すと、CI では管理ウィンドウから開く詳細編集が応答しなくなることがある
+    // （この待ちを外した 2026-10-26 に、CI で 30 回中 10 回落ちた。戻すと 1 回。何を待てばよいかは未解明）
+    await this.page.waitForTimeout(200);
 
     // ドロップダウンから選択（表示言語によらないよう data-testid で選ぶ）
     const testId = tab === 'settings' ? 'settings-menu-settings' : 'settings-menu-item-manager';
