@@ -325,9 +325,9 @@ export const enContent: DemoContent = {
     apps: appItems(),
   }),
   demo: {
-    search: 'basic design',
-    refine: ' screen',
-    minutes: 'weekly 09-30',
+    search: 'bas des',
+    refine: ' scr',
+    minutes: '09-30',
     chat: 'chat',
     otherTab: 'TypeS',
     captions: {
@@ -336,7 +336,7 @@ export const enContent: DemoContent = {
       search: 'Type part of a name to narrow the list',
       refine: 'Add words separated by spaces to narrow it further',
       open: 'Select one and press Enter to open it',
-      minutes: 'Add a date to find meeting minutes right away',
+      minutes: 'Type a date to find meeting minutes right away',
       chat: 'Open Teams chats from here too',
       otherTab: 'Press Tab to jump to matches in another tab',
     },

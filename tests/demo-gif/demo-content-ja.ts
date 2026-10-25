@@ -105,7 +105,7 @@ const PROJECT_B_FILES: Record<string, string[]> = {
 };
 
 const teams = (name: string, user: string): DemoItem =>
-  item(`チャット: ${name}`, `https://teams.microsoft.com/l/chat/0/0?users=${user}@example.com`);
+  item(`Teams: ${name}`, `https://teams.microsoft.com/l/chat/0/0?users=${user}@example.com`);
 
 function dailyItems(root: string): DemoItem[] {
   return [
@@ -329,10 +329,10 @@ export const jaContent: DemoContent = {
     apps: appItems(),
   }),
   demo: {
-    search: '基本設計',
-    refine: ' 画面',
-    minutes: '定例 09-30',
-    chat: 'チャット',
+    search: 'db',
+    refine: ' ec',
+    minutes: '09-30',
+    chat: 'teams',
     otherTab: 'TypeS',
     captions: {
       intro: 'フォルダも資料も Web もアプリも、ここから開く',
@@ -340,7 +340,7 @@ export const jaContent: DemoContent = {
       search: '名前の一部を打つと、候補が絞られる',
       refine: 'スペースで区切れば、さらに絞れる',
       open: '選んで Enter で開く',
-      minutes: '議事録も、日付を足せばすぐ見つかる',
+      minutes: '議事録も、日付を打てばすぐ見つかる',
       chat: 'Teams のチャットも、ここから開く',
       otherTab: 'ほかのタブにあるものは、Tab で移る',
     },
@@ -350,17 +350,17 @@ export const jaContent: DemoContent = {
       {
         name: '毎日使う',
         color: 'primary',
-        items: ['勤怠システム', '経費精算', 'Outlook（Web）', 'チャット: 佐藤さん（上長）'],
+        items: ['勤怠システム', '経費精算', 'Outlook（Web）', 'Teams: 佐藤さん（上長）'],
       },
       {
         name: 'A：基幹刷新Prj',
         color: 'success',
-        items: ['A：案件フォルダ', 'A：課題管理（Backlog）', 'チャット: A：基幹刷新Prj チーム'],
+        items: ['A：案件フォルダ', 'A：課題管理（Backlog）', 'Teams: A：基幹刷新Prj チーム'],
       },
       {
         name: 'B：EC改修Prj',
         color: 'warning',
-        items: ['B：案件フォルダ', 'B：Figma デザイン', 'チャット: B：EC改修Prj チーム'],
+        items: ['B：案件フォルダ', 'B：Figma デザイン', 'Teams: B：EC改修Prj チーム'],
       },
     ],
     search: 'wi c',
