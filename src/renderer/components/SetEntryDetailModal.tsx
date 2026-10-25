@@ -90,6 +90,13 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
       // 「パス」を選んで空のままなら、開くものは無し（動かすだけ）にする
       let next: SetEntry =
         draft.open && draft.open.path.trim() === '' ? { ...draft, open: undefined } : draft;
+      // 名前は前後の空白を落とし、空なら持たせない（自動の名前を出す）。
+      // アイテムを指す行の名前は、アイテムが見つからないときの代わりの名前なので触らない
+      if (openKind !== 'item' && next.label !== undefined) {
+        const { label, ...rest } = next;
+        const trimmed = label.trim();
+        next = trimmed ? { ...rest, label: trimmed } : rest;
+      }
       // 開くものも動かすウィンドウも位置も無い行は何もできない（名前だけ残った行と同じ形になる）ので、
       // 開くものを外した・選ばなかったときは元の開くものに戻す
       if (!next.itemId && !next.open && !next.window && !next.placement && entry) {
@@ -105,6 +112,13 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
   if (!entry || !draft) return null;
 
   const view = describeSetEntry(draft, catalog);
+  /** 名前を入れられる行か（アイテムを指す行は、アイテムの名前を出す） */
+  const nameEditable = openKind !== 'item';
+  /** 名前が空のときに出す自動の名前（パスの行はパスの最後の部分、動かすだけの行は対象ウィンドウから作る） */
+  const autoName = describeSetEntry({ ...draft, label: undefined }, catalog).name;
+  const typedName = draft.label?.trim() ?? '';
+  /** 見出しに出す名前（入力に合わせて変わる） */
+  const shownName = nameEditable ? typedName || autoName : view.name;
   const update = (patch: Partial<SetEntry>) =>
     setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
   const changeOpenKind = (kind: OpenKind) => {
@@ -139,13 +153,58 @@ const SetEntryDetailModal: React.FC<SetEntryDetailModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
           role="dialog"
-          aria-label={t('set.detail.title', { name: view.name })}
+          aria-label={t('set.detail.title', { name: shownName })}
         >
           <div className="set-modal-header">
-            <h3>{t('set.detail.title', { name: view.name })}</h3>
+            <h3>{t('set.detail.title', { name: shownName })}</h3>
           </div>
-          {/* 欄は 4 つの枠にまとめる（登録画面の「ウィンドウ設定」と同じ形） */}
+          {/* 欄は 5 つの枠にまとめる（登録画面の「ウィンドウ設定」と同じ形） */}
           <div className="set-detail-groups">
+            <div className="set-detail-group">
+              <div className="set-detail-group-title">{t('set.detail.name')}</div>
+              {/* 見出しと同じ言葉のラベルは並べず、欄を枠の幅いっぱいに置く */}
+              <div className="set-field-col set-detail-wide">
+                {nameEditable ? (
+                  <div className="set-title-row">
+                    <input
+                      id="set-detail-name"
+                      type="text"
+                      aria-label={t('set.detail.name')}
+                      placeholder={autoName ? t('set.detail.nameAuto', { name: autoName }) : ''}
+                      value={draft.label ?? ''}
+                      onChange={(e) => update({ label: e.target.value })}
+                    />
+                    {/* 自動の名前と違う名前を入れているときだけ、空に戻すボタンを出す */}
+                    {typedName !== '' && typedName !== autoName && (
+                      <button
+                        type="button"
+                        className="set-title-revert"
+                        onClick={() => update({ label: undefined })}
+                      >
+                        {t('set.detail.nameReset')}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    id="set-detail-name"
+                    type="text"
+                    aria-label={t('set.detail.name')}
+                    disabled
+                    value={hasItem ? t('set.detail.nameFromItem', { name: view.name }) : ''}
+                  />
+                )}
+                <small className="set-detail-hint">
+                  {t(
+                    !nameEditable
+                      ? 'set.detail.nameItemNote'
+                      : openKind === 'path'
+                        ? 'set.detail.namePathNote'
+                        : 'set.detail.nameNote'
+                  )}
+                </small>
+              </div>
+            </div>
             <div className="set-detail-group">
               <div className="set-detail-group-title">{t('set.detail.open')}</div>
               <div

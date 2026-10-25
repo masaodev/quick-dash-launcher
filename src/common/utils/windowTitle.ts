@@ -48,3 +48,33 @@ export function createTitleMatcher(windowTitle: string): (title: string) => bool
   return (title: string): boolean =>
     regex ? regex.test(title) : title.toLowerCase() === lowerWindowTitle;
 }
+
+/** タイトルを部品に分ける区切り（前後に空白のある「-」「|」「—」「–」） */
+export const WINDOW_TITLE_SEPARATOR = /\s+[-|—–]\s+/;
+
+/**
+ * ウィンドウタイトルから行の名前を作る（セットの行の自動の名前）
+ *
+ * 区切りで 2 つ以上の部品に分かれるタイトルは、最後の部品（多くはアプリ名と版）を落とす。
+ * 区切りが無ければ前後の空白を落としただけのタイトル
+ */
+export function titleToEntryName(title: string): string {
+  const trimmed = title.trim();
+  const parts = trimmed.split(WINDOW_TITLE_SEPARATOR).filter((part) => part.trim() !== '');
+  if (parts.length < 2) return trimmed;
+  const separators = [...trimmed.matchAll(new RegExp(WINDOW_TITLE_SEPARATOR.source, 'g'))];
+  const last = separators[separators.length - 1];
+  return trimmed.slice(0, last.index).trim() || trimmed;
+}
+
+/**
+ * 対象ウィンドウから行の名前を作る（名前の無い、動かすだけの行の自動の名前）
+ *
+ * タイトルのワイルドカード（* と ?）を除いて titleToEntryName をかける。タイトルが無ければ exe 名
+ */
+export function windowMatchEntryName(
+  match: { title?: string; processName?: string } | undefined
+): string {
+  const title = (match?.title ?? '').replace(/[*?]/g, '').trim();
+  return (title && titleToEntryName(title)) || match?.processName || '';
+}
