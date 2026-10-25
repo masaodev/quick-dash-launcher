@@ -169,9 +169,9 @@ test.describe('QuickDashLauncher - メインウィンドウの右クリックの
       await expect
         .poll(() => readMenuLabels(electronApp))
         .toEqual([
-          '📄 アイテムを追加…',
+          '📄 アイテムを追加',
           '🗂️ フォルダからアイテムを追加',
-          '📋 クリップボードのパス・URL から追加…',
+          '📋 クリップボードのパス・URL から追加',
           '🔖 ブラウザのブックマークから追加',
           '💻 インストール済みアプリから追加',
         ]);
@@ -204,9 +204,117 @@ test.describe('QuickDashLauncher - 文字入力欄の右クリック', () => {
     await mainWindow.locator('input.search-box').click({ button: 'right' });
     await expect
       .poll(() => readMenuLabels(electronApp))
-      .toEqual(['元に戻す', 'やり直し', '切り取り', 'コピー', '貼り付け', 'すべて選択']);
+      .toEqual([
+        '元に戻す',
+        'やり直し',
+        '切り取り',
+        'コピー',
+        '貼り付け',
+        'すべて選択',
+        '🕘 検索履歴',
+      ]);
+  });
+
+  test('検索欄の右クリックの「検索履歴 ▸」に最近の検索語が並び、選ぶと検索欄に入る（A3-190）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+
+    await test.step('履歴が無いときは「検索履歴」を押せない', async () => {
+      await mainWindow.evaluate(() => window.electronAPI.clearSearchHistory());
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await captureSearchHistoryMenu(electronApp);
+      await mainWindow.locator('input.search-box').click({ button: 'right' });
+      await expect
+        .poll(() => readSearchHistoryMenu(electronApp))
+        .toEqual({ enabled: false, labels: ['🗑️ 検索履歴を消す'] });
+    });
+
+    await test.step('新しい順に 10 件まで並び、末尾に「検索履歴を消す」', async () => {
+      await mainWindow.evaluate(async () => {
+        for (let i = 1; i <= 12; i++) await window.electronAPI.addSearchHistoryEntry(`語${i}`);
+      });
+      await mainWindow.reload();
+      await utils.waitForPageLoad();
+      await captureSearchHistoryMenu(electronApp);
+      await mainWindow.locator('input.search-box').click({ button: 'right' });
+      await expect
+        .poll(() => readSearchHistoryMenu(electronApp))
+        .toEqual({
+          enabled: true,
+          labels: [
+            '語12',
+            '語11',
+            '語10',
+            '語9',
+            '語8',
+            '語7',
+            '語6',
+            '語5',
+            '語4',
+            '語3',
+            '🗑️ 検索履歴を消す',
+          ],
+        });
+    });
+
+    const menuHelper = new NativeMenuTestHelper(electronApp, mainWindow);
+
+    await test.step('選んだ検索語が検索欄に入る（アイテムは開かない）', async () => {
+      await menuHelper.sendIpcToRenderer('search-box-menu-pick-history', '語7');
+      await expect(mainWindow.locator('input.search-box')).toHaveValue('語7');
+    });
+
+    await test.step('「検索履歴を消す」は確かめてから消す', async () => {
+      const dialog = mainWindow.locator('[data-testid="confirm-dialog"]');
+      await menuHelper.sendIpcToRenderer('search-box-menu-clear-history');
+      await expect(dialog).toContainText('検索履歴をすべて消しますか');
+      await dialog.getByRole('button', { name: '消す' }).click();
+      await expect(dialog).toHaveCount(0);
+      await expect
+        .poll(() => mainWindow.evaluate(() => window.electronAPI.loadSearchHistory()))
+        .toEqual([]);
+    });
   });
 });
+
+/** 次に出るネイティブメニューの「🕘 検索履歴」の押せるかどうかと、中の項目を記録するようにする */
+async function captureSearchHistoryMenu(electronApp: ElectronApplication): Promise<void> {
+  await electronApp.evaluate(({ Menu }) => {
+    type Item = {
+      type: string;
+      label: string;
+      enabled: boolean;
+      submenu?: { items: Item[] } | null;
+    };
+    const g = globalThis as { __e2eHistoryMenu?: { enabled: boolean; labels: string[] } | null };
+    g.__e2eHistoryMenu = null;
+    Menu.prototype.popup = function (this: { items: Item[] }) {
+      const history = this.items.find((i) => i.label === '🕘 検索履歴');
+      g.__e2eHistoryMenu = history
+        ? {
+            enabled: history.enabled,
+            labels: (history.submenu?.items ?? [])
+              .filter((i) => i.type !== 'separator')
+              .map((i) => i.label),
+          }
+        : null;
+    };
+  });
+}
+
+async function readSearchHistoryMenu(
+  electronApp: ElectronApplication
+): Promise<{ enabled: boolean; labels: string[] } | null> {
+  return electronApp.evaluate(
+    () =>
+      (globalThis as { __e2eHistoryMenu?: { enabled: boolean; labels: string[] } | null })
+        .__e2eHistoryMenu ?? null
+  );
+}
 
 test.describe('QuickDashLauncher - ワークスペースの右クリックと ＋ の入口', () => {
   test('メインの右クリック「ワークスペースに追加 ▸」で、足す先のグループをその場で選ぶ（A3-157）', async ({

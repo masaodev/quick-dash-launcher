@@ -41,6 +41,7 @@ import { indexById, setEntryNames } from './utils/setEditing';
 import { loadItemIcons } from './utils/customIcons';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
+import { useSearchBoxContextMenu } from './hooks/useSearchBoxContextMenu';
 import { useRegisterWindow } from './hooks/useRegisterWindow';
 import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
@@ -102,8 +103,14 @@ function App(): React.ReactElement {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { progressState, resetProgress } = useIconProgress();
-  const { navigateToPrevious, navigateToNext, resetNavigation, addHistoryEntry } =
-    useSearchHistory();
+  const {
+    historyState,
+    navigateToPrevious,
+    navigateToNext,
+    resetNavigation,
+    addHistoryEntry,
+    clearHistory,
+  } = useSearchHistory();
   // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
   const activeTabRef = useRef<string | undefined>(undefined);
   const {
@@ -765,6 +772,16 @@ function App(): React.ReactElement {
     resetNavigation();
   };
 
+  // 検索欄の右クリック（文字のメニューと「検索履歴 ▸」。A3-190）
+  const searchBoxMenu = useSearchBoxContextMenu({
+    historyEntries: historyState.entries,
+    onPickHistory: (query) => {
+      handleSearch(query);
+      searchInputRef.current?.focus();
+    },
+    clearHistory,
+  });
+
   const handleOpenBasicSettings = async () => {
     await window.electronAPI.openEditWindowWithTab('settings');
   };
@@ -878,6 +895,7 @@ function App(): React.ReactElement {
           value={searchQuery}
           onChange={handleSearch}
           onKeyDown={handleAppKeyDown}
+          onContextMenu={searchBoxMenu.handleContextMenu}
           searchMode={searchMode}
           onToggleSearchMode={handleToggleSearchMode}
         />
@@ -1042,6 +1060,15 @@ function App(): React.ReactElement {
         onConfirm={itemDelete.dialog?.onConfirm ?? (() => {})}
         message={itemDelete.dialog?.message ?? ''}
         confirmText={t('register.delete')}
+        danger
+      />
+
+      <ConfirmDialog
+        isOpen={searchBoxMenu.isClearConfirmOpen}
+        onClose={searchBoxMenu.cancelClear}
+        onConfirm={() => void searchBoxMenu.confirmClear()}
+        message={t('launcher.searchHistoryClear.message')}
+        confirmText={t('launcher.searchHistoryClear.confirm')}
         danger
       />
 

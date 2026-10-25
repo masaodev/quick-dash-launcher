@@ -76,6 +76,16 @@ import type {
   WorkspaceBlankMenuKind,
 } from './index';
 
+/** 検索欄の右クリックの文字のメニューで押せる操作（Electron の editFlags と同じ名前） */
+export interface SearchBoxEditFlags {
+  canUndo: boolean;
+  canRedo: boolean;
+  canCut: boolean;
+  canCopy: boolean;
+  canPaste: boolean;
+  canSelectAll: boolean;
+}
+
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
   getDataFiles: () => Promise<string[]>;
@@ -533,6 +543,15 @@ export interface ElectronAPI {
   onLauncherBlankMenuAddItem: (callback: () => void) => () => void;
   onLauncherBlankMenuRegisterFromClipboard: (callback: () => void) => () => void;
   onLauncherBlankMenuAddFolderImport: (callback: () => void) => () => void;
+  /**
+   * メインウィンドウの検索欄の右クリックメニュー（文字のメニューの下に「検索履歴 ▸」）。
+   * 文字のメニューの押せる・押せないは画面側で決めて渡す（画面側で右クリックを受けるため）
+   */
+  showSearchBoxContextMenu: (flags: SearchBoxEditFlags, history: string[]) => Promise<void>;
+  /** 「検索履歴 ▸」で選んだ検索語 */
+  onSearchBoxMenuPickHistory: (callback: (query: string) => void) => () => void;
+  /** 「検索履歴を消す」（消す前に画面側で確かめる） */
+  onSearchBoxMenuClearHistory: (callback: () => void) => () => void;
   // WindowContextMenuイベントリスナー
   onWindowMenuActivate: (callback: (windowInfo: WindowInfo) => void) => () => void;
   /** ウィンドウ検索結果の右クリック「ワークスペースに追加」（includePosition: 今の位置・サイズも記録） */

@@ -34,7 +34,7 @@ interface ItemListProps {
   onCloseWindow?: (win: WindowInfo) => Promise<void>;
   /** 一覧が空のときの案内（検索で 0 件／空のタブ）。null なら何も出さない */
   emptyState?: LauncherEmptyState | null;
-  /** 空のタブと、どこにも合わないときの案内の「アイテムを追加…」 */
+  /** 空のタブと、どこにも合わないときの案内の「アイテムを追加」 */
   onAddItem?: () => void;
   /** 空のタブの「🗂️ フォルダから」（登録画面をフォルダ取込の種別で開く）。指定があれば、ブックマーク・アプリの取込も並べる */
   onAddFolderImport?: () => void;
@@ -405,6 +405,37 @@ const LauncherItemList: React.FC<ItemListProps> = ({
     window.electronAPI.showLauncherContextMenu(item, anchor);
   };
 
+  /** まとめて追加する入口（ブックマーク・アプリ・フォルダ取込）。空のタブと、検索でどこにも合わないときに出す */
+  const renderImportButtons = (testId: string) =>
+    onAddFolderImport && (
+      <div className="item-list-empty-imports" data-testid={testId}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={openBookmarkImport}
+          title={t('launcher.registerMenu.addBookmarks')}
+        >
+          {t('launcher.empty.importBookmarks')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={openAppImport}
+          title={t('launcher.registerMenu.addApps')}
+        >
+          {t('launcher.empty.importApps')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onAddFolderImport}
+          title={t('launcher.registerMenu.addFolderImport')}
+        >
+          {t('launcher.empty.importFolder')}
+        </Button>
+      </div>
+    );
+
   return (
     <>
       <div
@@ -438,11 +469,17 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                     </span>
                   )}
                 </p>
-                {/* 通常の検索でどこにも合わないときは、そのまま登録へ進めるようにする */}
-                {!emptyState.windowMode && emptyState.elsewhere === null && onAddItem && (
-                  <Button variant="secondary" size="sm" onClick={onAddItem}>
-                    {t('launcher.empty.add')}
-                  </Button>
+                {/* 通常の検索でどこにも合わないときは、そのまま登録・取込へ進めるようにする
+                    （ほかのタブに合うときは「タブを切り替える」を先に見てもらうので出さない。A3-189） */}
+                {!emptyState.windowMode && emptyState.elsewhere === null && (
+                  <>
+                    {onAddItem && (
+                      <Button variant="secondary" size="sm" onClick={onAddItem}>
+                        {t('launcher.empty.add')}
+                      </Button>
+                    )}
+                    {renderImportButtons('no-match-imports')}
+                  </>
                 )}
               </>
             ) : (
@@ -454,34 +491,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                   </Button>
                 )}
                 {/* まとめて追加する入口も見せる（初めての人が、取込があることに気づけるように。A3-172） */}
-                {onAddFolderImport && (
-                  <div className="item-list-empty-imports" data-testid="empty-tab-imports">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={openBookmarkImport}
-                      title={t('launcher.registerMenu.addBookmarks')}
-                    >
-                      {t('launcher.empty.importBookmarks')}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={openAppImport}
-                      title={t('launcher.registerMenu.addApps')}
-                    >
-                      {t('launcher.empty.importApps')}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={onAddFolderImport}
-                      title={t('launcher.registerMenu.addFolderImport')}
-                    >
-                      {t('launcher.empty.importFolder')}
-                    </Button>
-                  </div>
-                )}
+                {renderImportButtons('empty-tab-imports')}
               </>
             )}
           </div>
