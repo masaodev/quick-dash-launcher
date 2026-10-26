@@ -1,74 +1,54 @@
 import { BrowserWindow, screen } from 'electron';
 import { windowLogger } from '@common/logger';
-import type { Bounds } from '@common/types';
 
-const DEFAULT_SNAP_THRESHOLD = 20;
+import { computeSnappedPosition, type Rect } from './snapPosition.js';
+
 const WM_EXITSIZEMOVE = 0x0232;
 
-interface SnappedPosition {
-  x: number;
-  y: number;
-  snapped: boolean;
-}
+/**
+ * 吸着先になるウィンドウ（メイン・ワークスペース・切り離しウィンドウ）。
+ * 吸着するウィンドウは attachSnapHandler で、吸着先になるだけのウィンドウ（メイン）は registerSnapTarget で入る
+ */
+const snapTargets = new Set<BrowserWindow>();
 
 /**
- * 全ディスプレイのworkAreaに対して吸着位置を計算する
- * いずれかの辺が閾値以内であれば吸着後の座標を返す
+ * ほかのウィンドウの吸着先にする（自分は動かしても吸着しない）。閉じたら外れる
  */
-function calculateSnappedPosition(
-  newBounds: Bounds,
-  threshold: number = DEFAULT_SNAP_THRESHOLD
-): SnappedPosition {
-  const displays = screen.getAllDisplays();
-  let snappedX = newBounds.x;
-  let snappedY = newBounds.y;
-  let snapped = false;
+export function registerSnapTarget(win: BrowserWindow): void {
+  if (snapTargets.has(win)) return;
+  snapTargets.add(win);
+  win.once('closed', () => snapTargets.delete(win));
+}
 
-  const windowRight = newBounds.x + newBounds.width;
-  const windowBottom = newBounds.y + newBounds.height;
-
-  for (const display of displays) {
-    const workArea = display.workArea;
-    const workAreaRight = workArea.x + workArea.width;
-    const workAreaBottom = workArea.y + workArea.height;
-
-    // 左辺: ウィンドウ左端 ↔ workArea左端
-    if (Math.abs(newBounds.x - workArea.x) < threshold) {
-      snappedX = workArea.x;
-      snapped = true;
-    }
-    // 右辺: ウィンドウ右端 ↔ workArea右端
-    if (Math.abs(windowRight - workAreaRight) < threshold) {
-      snappedX = workAreaRight - newBounds.width;
-      snapped = true;
-    }
-    // 上辺: ウィンドウ上端 ↔ workArea上端
-    if (Math.abs(newBounds.y - workArea.y) < threshold) {
-      snappedY = workArea.y;
-      snapped = true;
-    }
-    // 下辺: ウィンドウ下端 ↔ workArea下端
-    if (Math.abs(windowBottom - workAreaBottom) < threshold) {
-      snappedY = workAreaBottom - newBounds.height;
-      snapped = true;
-    }
+/** 動かしたウィンドウの吸着先にする、表示中のほかのウィンドウの位置と大きさ */
+function getTargetRects(self: BrowserWindow): Rect[] {
+  const rects: Rect[] = [];
+  for (const target of snapTargets) {
+    if (target === self || target.isDestroyed()) continue;
+    if (!target.isVisible() || target.isMinimized()) continue;
+    rects.push(target.getBounds());
   }
-
-  return { x: snappedX, y: snappedY, snapped };
+  return rects;
 }
 
 /**
  * BrowserWindowにスナップハンドラーを登録する
+ *
+ * 動かし終えたとき、ディスプレイの端と、表示中のほかのウィンドウ（registerSnapTarget・attachSnapHandler で
+ * 入ったもの）へ吸着させる。このウィンドウもほかのウィンドウの吸着先になる
  * @param win 対象のBrowserWindow
  * @param getEnabled 吸着が有効かどうかを返すコールバック（同期的、キャッシュ値を使用）
  * @returns ハンドラー解除関数
  */
 export function attachSnapHandler(win: BrowserWindow, getEnabled: () => boolean): () => void {
+  registerSnapTarget(win);
+
   win.hookWindowMessage(WM_EXITSIZEMOVE, () => {
     if (!getEnabled() || win.isDestroyed()) return;
 
     const bounds = win.getBounds();
-    const { x, y, snapped } = calculateSnappedPosition(bounds);
+    const workAreas = screen.getAllDisplays().map((display) => display.workArea);
+    const { x, y, snapped } = computeSnappedPosition(bounds, workAreas, getTargetRects(win));
     if (snapped) {
       win.setPosition(x, y);
     }

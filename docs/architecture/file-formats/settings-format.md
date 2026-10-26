@@ -194,7 +194,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウをすべての仮想デスクトップに表示するか |
 | **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）をすべての仮想デスクトップに表示するか |
 | **detachedPositionMode** | DetachedPositionMode | "mainDisplay" | 切り離しウィンドウの表示位置モード（[3.8.2](#382-detachedpositionmode-値)） |
-| **windowSnapEnabled** | boolean | true | ワークスペースウィンドウ・切り離しウィンドウをモニター端に近づけたときに吸着（スナップ）させるか |
+| **windowSnapEnabled** | boolean | true | ワークスペースウィンドウ・切り離しウィンドウを、ディスプレイの端や QDL のほかのウィンドウ（メイン・ワークスペース・切り離しウィンドウ）に近づけたときに吸着（スナップ）させるか |
 
 #### 3.8.1. WorkspacePositionMode 値
 

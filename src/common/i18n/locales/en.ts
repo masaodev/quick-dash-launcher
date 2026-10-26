@@ -2537,9 +2537,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     windowOther: {
       heading: 'Other',
       snap: 'Snapping:',
-      windowSnap: 'Snap to display edges',
+      windowSnap: 'Snap to display edges and other windows',
       windowSnapDescription:
-        'Snaps the workspace window and detached windows to the edge of a display when you move them close to it',
+        'Snaps the workspace window and detached windows to the edge of a display, or to the edges of the main, workspace, and detached windows, when you move them close to it',
       adminWindowSize: 'Settings window:',
     },
     backup: {

@@ -9,7 +9,7 @@ import type { MonitorAnchor, MonitorAnchorEdge } from '@common/types';
  * ウィンドウはメインとの位置関係を保つ。
  */
 
-/** 端にくっつけたとみなす距離（px）。モニター端への吸着（windowSnap）の距離と同じ */
+/** 端にくっつけたとみなす距離（px）。吸着（snapPosition の DEFAULT_SNAP_THRESHOLD）の距離と同じ */
 const EDGE_THRESHOLD = 20;
 
 export interface Rect {
