@@ -165,6 +165,22 @@ export function rememberDetachedBoundsFromRenderer(
   if (change.moved) save('moved', true);
 }
 
+/**
+ * 切り離しウィンドウをカーソルの近くへ動かし、その位置を覚える
+ * （人がドラッグで置いた位置なので、QDL の当て直しとは扱わない。setBounds では moved が来ないので自分で覚える）
+ */
+function moveDetachedWindowToCursor(
+  groupId: string,
+  win: BrowserWindow,
+  cursorX: number,
+  cursorY: number
+): void {
+  const { width, height } = win.getBounds();
+  const { x, y } = positionAroundCursor(cursorX, cursorY, width, height);
+  setBoundsAcrossDisplays(win, { x, y, width, height });
+  boundsSavers.get(groupId)?.('moved', true);
+}
+
 /** フォーカスを奪わずにウィンドウを前面に表示する */
 export function showWithoutFocus(win: BrowserWindow): void {
   win.showInactive();
@@ -176,6 +192,19 @@ export function showWithoutFocus(win: BrowserWindow): void {
  */
 function isBoundsOnScreen(bounds: Bounds): boolean {
   return isPositionOnScreen(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+}
+
+/** カーソル（ドロップした位置・メニューを選んだ位置）の近くに置くときの左上 */
+function positionAroundCursor(
+  cursorX: number,
+  cursorY: number,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  return {
+    x: Math.max(0, Math.round(cursorX - width / 2)),
+    y: Math.max(0, Math.round(cursorY - height / 4)),
+  };
 }
 
 /**
@@ -195,10 +224,7 @@ function resolveInitialPosition(
   const w = windowWidth ?? 380;
   const h = windowHeight ?? 200;
   if (cursorX !== undefined && cursorY !== undefined) {
-    return {
-      x: Math.max(0, Math.round(cursorX - w / 2)),
-      y: Math.max(0, Math.round(cursorY - h / 4)),
-    };
+    return positionAroundCursor(cursorX, cursorY, w, h);
   }
   // フォールバック: プライマリモニターの中央に配置
   const primary = screen.getPrimaryDisplay();
@@ -287,10 +313,18 @@ export async function createDetachedGroupWindow(
   groupId: string,
   cursorX?: number,
   cursorY?: number,
-  options?: { skipFocus?: boolean; startHiddenUnlessPinned?: boolean }
+  options?: {
+    skipFocus?: boolean;
+    startHiddenUnlessPinned?: boolean;
+    /** もう切り離しウィンドウがあれば、カーソルの近くへ動かす（ワークスペースからドラッグで切り離したとき） */
+    moveExistingToCursor?: boolean;
+  }
 ): Promise<{ success: boolean }> {
   const existing = detachedWindows.get(groupId);
   if (existing && !existing.isDestroyed()) {
+    if (options?.moveExistingToCursor && cursorX !== undefined && cursorY !== undefined) {
+      moveDetachedWindowToCursor(groupId, existing, cursorX, cursorY);
+    }
     if (options?.skipFocus) {
       showWithoutFocus(existing);
     } else {

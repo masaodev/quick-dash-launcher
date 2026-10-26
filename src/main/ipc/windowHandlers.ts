@@ -298,7 +298,8 @@ export function setupWindowHandlers(
   handleIpc(
     IPC_CHANNELS.WORKSPACE_DETACH_GROUP,
     async (_event, groupId: string, cursorX?: number, cursorY?: number) => {
-      return createDetachedGroupWindow(groupId, cursorX, cursorY);
+      // 切り離し済みのグループをドラッグしたら、そのウィンドウをドロップした位置へ動かす
+      return createDetachedGroupWindow(groupId, cursorX, cursorY, { moveExistingToCursor: true });
     }
   );
 

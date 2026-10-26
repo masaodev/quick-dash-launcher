@@ -225,7 +225,7 @@ function buildMoveToGroupSubmenu(
 }
 
 /**
- * 切り離しの項目を作る。ワークスペースでは一番上のグループだけ「切り離す」（切り離し済みなら「表示」）、
+ * 切り離しの項目を作る。ワークスペースでは一番上のグループだけ「切り離す」（切り離し済みなら「閉じる」）、
  * 切り離しウィンドウでは一番上のグループだけ「ワークスペースに戻す」（× と同じ）。
  * サブグループは切り離さない（切り離しウィンドウは一番上のグループから描くので、空になる）
  */
@@ -240,10 +240,15 @@ function buildDetachMenuItem(sender: WebContents, group: WorkspaceGroup): MenuIt
     });
   }
   if (group.parentGroupId) return null;
+  if (hasDetachedGroupWindow(groupId)) {
+    // 前に出す・動かすのは、グループをワークスペースの外へドラッグして行う
+    return new MenuItem({
+      label: t('menu.workspaceGroup.closeDetached'),
+      click: () => closeDetachedGroupWindow(groupId),
+    });
+  }
   return new MenuItem({
-    label: hasDetachedGroupWindow(groupId)
-      ? t('menu.workspaceGroup.showDetached')
-      : t('menu.workspaceGroup.detach'),
+    label: t('menu.workspaceGroup.detach'),
     click: () => {
       // メニューを選んだ位置の近くに出す（ドラッグで切り離すときと同じ）
       const cursor = screen.getCursorScreenPoint();
