@@ -60,7 +60,7 @@ export const WORKSPACE_PICKER_WINDOW_NAME_PREFIX = 'workspace-picker:';
 export const WORKSPACE_LINK_PICKER_WINDOW_NAME_PREFIX = 'workspace-link-picker:';
 
 /**
- * 「メインウィンドウと同じアイテムを参照に変える」ウィンドウ（ワークスペースのタブの右クリック）の window.name 接頭辞。
+ * 「メインウィンドウのアイテムとつなぐ」ウィンドウ（ワークスペースのタブの右クリック）の window.name 接頭辞。
  * `<接頭辞><workspaceId>`
  */
 export const WORKSPACE_LINK_COPIES_WINDOW_NAME_PREFIX = 'workspace-link-copies:';

@@ -305,21 +305,36 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       expect(stored).toMatchObject({ type: 'item', displayName: 'Google' });
     });
 
-    await test.step('一括のウィンドウで、パスが同じコピーを参照に変える', async () => {
+    await test.step('「メインウィンドウのアイテムとつなぐ」で、パスが同じコピーを参照に変える', async () => {
       const workspaceId = copy.workspaceId;
       await workspaceWindow.evaluate(
         (id) => window.electronAPI.workspaceAPI.openLinkCopies(id),
         workspaceId
       );
-      const page = await waitForWindowWith(electronApp, '.workspace-link-row');
-      const row = page.locator('.workspace-link-row', { hasText: 'ウィキ' });
-      await expect(row).toContainText('→ Wikipedia');
-      await expect(row).toContainText('「ウィキ」をワークスペースでの表示名にする');
+      const page = await waitForWindowWith(electronApp, '.link-copies-pair');
+      await expect(page.locator('.link-copies-hero')).toContainText(
+        '同じアイテムが 2 件、メインウィンドウにもあります'
+      );
+      // 候補が 1 件ずつなので、すべて「そのままつなげます」に並ぶ
+      await expect(page.locator('.link-copies-section.ok')).toContainText('そのままつなげます');
+      await expect(page.locator('.link-copies-section.warn')).toHaveCount(0);
+      const row = page.locator('.link-copies-pair', { hasText: 'ウィキ' });
+      await expect(row).toContainText('Wikipedia');
+      await expect(row).toContainText('名前はそのまま');
       await expect(row).toContainText('メモをメインウィンドウへ移す');
-      await expect(page.locator('.workspace-link-row')).toHaveCount(2);
+      await expect(page.locator('.link-copies-pair')).toHaveCount(2);
+
+      await test.step('「すべて外す」で押せなくなり、「すべて選ぶ」で戻る', async () => {
+        const apply = page.locator('.modal-actions button', { hasText: '件をつなぐ' });
+        await page.getByRole('button', { name: 'すべて外す' }).click();
+        await expect(apply).toBeDisabled();
+        await page.getByRole('button', { name: 'すべて選ぶ' }).click();
+        await expect(apply).toHaveText('2 件をつなぐ');
+      });
+
       await Promise.all([
         page.waitForEvent('close', { timeout: 10000 }),
-        page.locator('.modal-actions button', { hasText: '2 件を参照に変える' }).click(),
+        page.locator('.modal-actions button', { hasText: '2 件をつなぐ' }).click(),
       ]);
 
       const items = await loadWorkspaceItems(workspaceWindow);
@@ -612,12 +627,34 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       expect(result.count).toBe(0);
     });
 
-    await test.step('選んだアイテムを指す', async () => {
-      const result = await workspaceWindow.evaluate(
-        ({ id, mainId }) => window.electronAPI.workspaceAPI.applyLinkCopies([id], { [id]: mainId }),
-        { id: copy.id, mainId: second.id ?? '' }
+    await test.step('画面では「どれとつなぐか選んでください」に出て、選ぶとつなげる', async () => {
+      await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.openLinkCopies(id),
+        copy.workspaceId
       );
-      expect(result.count).toBe(1);
+      const page = await waitForWindowWith(electronApp, '.link-copies-pair');
+      await expect(page.locator('.link-copies-section.warn')).toContainText(
+        'どれとつなぐか選んでください'
+      );
+      // 選ぶと need（点線の枠）が外れるので、選ぶ欄のある行で探す
+      const row = page.locator('.link-copies-pair', {
+        has: page.locator('select'),
+        hasText: 'Google',
+      });
+      await expect(row).toHaveClass(/need/);
+      await expect(row).toContainText('メインウィンドウに候補が 2 つ');
+      await expect(row.locator('input[type="checkbox"]')).toBeDisabled();
+      await expect(page.locator('.link-copies-status')).toContainText(
+        '選んでいない 1 件はつなぎません'
+      );
+
+      await row.locator('select').selectOption(second.id ?? '');
+      await expect(row.locator('input[type="checkbox"]')).toBeChecked();
+      await expect(page.locator('.link-copies-status')).toHaveCount(0);
+      await Promise.all([
+        page.waitForEvent('close', { timeout: 10000 }),
+        page.locator('.modal-actions button', { hasText: '件をつなぐ' }).click(),
+      ]);
       const stored = readWorkspaceFile(configHelper.getConfigDir()).items.find(
         (i) => i.id === copy.id
       );

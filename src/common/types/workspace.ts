@@ -19,6 +19,7 @@ import type {
   JsonWorkspaceRefItem,
   JsonWorkspaceSetItem,
 } from './json-workspace';
+import type { LauncherItem } from './launcher';
 
 /** ワークスペース（タブ）。ファイル形式と同じ */
 export type Workspace = JsonWorkspace;
@@ -161,7 +162,7 @@ export interface WorkspaceLinkCandidate {
 }
 
 /**
- * 「メインウィンドウと同じアイテムを参照に変える」の 1 行（パスと引数が同じメインウィンドウのアイテムがあるコピー）
+ * 「メインウィンドウのアイテムとつなぐ」の 1 行（パスと引数が同じメインウィンドウのアイテムがあるコピー）
  *
  * memo: none＝どちらにも無いか同じ／move＝コピーにだけあり、メインウィンドウへ移す／conflict＝両方にあって違う
  */
@@ -178,9 +179,11 @@ export interface WorkspaceLinkCopyEntry {
   memo: 'none' | 'move' | 'conflict';
   /** ウィンドウ切り替え・カスタムアイコンがメインウィンドウのアイテムと違う（参照にするとメインのものになる） */
   settingsDiffer: boolean;
+  /** 行に出すアイコンを、アイコンのキャッシュから読むための情報（先頭の候補のもの） */
+  iconItem?: Pick<LauncherItem, 'displayName' | 'path' | 'type' | 'customIcon' | 'originalPath'>;
 }
 
-/** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
+/** 「メインウィンドウのアイテムとつなぐ」の一覧 */
 export interface WorkspaceLinkCopiesPreview {
   /** 対象のワークスペースの表示名 */
   workspaceName: string;
