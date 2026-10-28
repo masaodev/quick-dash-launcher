@@ -229,8 +229,31 @@ export function isTextOnlyClipboard(formats: unknown): boolean {
 }
 
 /**
+ * --text-file の中身を文字列にする
+ *
+ * UTF-8（BOM の有無を問わない）と、BOM 付きの UTF-16（Windows PowerShell 5.1 の `>` や `Out-File` の既定）を読む。
+ * UTF-8 として読めないもの（Shift_JIS など）は、化けたまま保存しないよう断る
+ */
+export function decodeTextFile(buf: Buffer, filePath: string): string {
+  if (buf[0] === 0xff && buf[1] === 0xfe) return buf.subarray(2).toString('utf16le');
+  if (buf[0] === 0xfe && buf[1] === 0xff) {
+    // Node は UTF-16BE を直接読めないので、2 バイトずつ入れ替えて LE として読む
+    const body = buf.subarray(2);
+    const le = Buffer.from(body.subarray(0, body.length - (body.length % 2)));
+    le.swap16();
+    return le.toString('utf16le');
+  }
+  const start = buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf ? 3 : 0;
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf.subarray(start));
+  } catch {
+    throw new CliError('invalid', mainI18n.t('cli.errors.textFileNotUtf8', { file: filePath }));
+  }
+}
+
+/**
  * --text か --text-file の本文。どちらも無ければ undefined。
- * --text-file の相対パスは qdl を実行したフォルダが基準。UTF-8 で読み、先頭の BOM は外す
+ * --text-file の相対パスは qdl を実行したフォルダが基準。文字コードは decodeTextFile
  */
 export function readTextOption(
   text: string | undefined,
@@ -258,8 +281,7 @@ export function readTextOption(
     if (stat.size > TEXT_FILE_MAX_BYTES) {
       throw new CliError('invalid', mainI18n.t('cli.errors.textFileTooLarge', { file: filePath }));
     }
-    const raw = fs.readFileSync(filePath, 'utf8');
-    body = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+    body = decodeTextFile(fs.readFileSync(filePath), filePath);
   }
   if (body !== undefined && !body.trim()) {
     throw new CliError('invalid', mainI18n.t('cli.errors.emptyText'));

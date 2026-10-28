@@ -92,7 +92,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--label` | launcher item add（`--type set`）、set row add、launcher tab add、tab file add／update | セットでは行の名前。タブではデータファイルの名前（省略時は「<タブ名>用データファイル」） |
 | `--existing` | launcher tab file add | タブに入れる既存のデータファイル（`data5.json` など。`tab list` の `unassignedFiles`） |
 | `--memo` | item add／update | メモ |
-| `--text` `--text-file` | item add（`--type clipboard`。どちらか必須）／update | クリップボードアイテムの本文。`--text-file` は UTF-8 のテキストファイル（1 MB まで。相対パスは `qdl` を実行したフォルダが基準）。どちらか一方だけ |
+| `--text` `--text-file` | item add（`--type clipboard`。どちらか必須）／update | クリップボードアイテムの本文。`--text-file` は UTF-8（BOM の有無を問わない）か、BOM 付きの UTF-16 のテキストファイル（Windows PowerShell 5.1 の `>`・`Out-File` の既定は UTF-16。1 MB まで。相対パスは `qdl` を実行したフォルダが基準）。UTF-8 として読めないもの（`Set-Content` の既定の Shift_JIS など）は、化けたまま保存せずに `invalid` で断る。どちらか一方だけ |
 | `--with-text` | item list | 中身がテキストだけのクリップボードアイテムに、本文 `text` を付ける |
 | `--file` `--tab` | launcher item add／update、workspace item move-to-main | 足す（update・move-to-main では移す）データファイル、またはタブ（その先頭のデータファイル）。add・move-to-main で省略したときは `datafiles/data.json` |
 | `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ。廃止した `window`（ウィンドウ操作）を渡すと `usage` で断り、代わりに `--set window='{"processName":"notepad.exe","title":"…"}'` でパスの無い単一アイテムを作るよう案内する |

@@ -753,6 +753,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       textAndTextFile: 'Specify either --text or --text-file, not both',
       textFileNotFound: "Couldn't find the --text-file file: {{file}}",
       textFileTooLarge: 'The --text-file file is too large (1 MB at most): {{file}}',
+      textFileNotUtf8:
+        'The --text-file file is not valid UTF-8. Save it as UTF-8 or UTF-16 with a BOM: {{file}}',
       emptyText: 'The text is empty',
       needText: 'Specify the text with --text or --text-file',
       textOnlyClipboard: '--text and --text-file can only be used with clipboard items (clipboard)',

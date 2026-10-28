@@ -756,6 +756,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       textAndTextFile: '--text と --text-file はどちらか一方を指定してください',
       textFileNotFound: '--text-file のファイルが見つかりません: {{file}}',
       textFileTooLarge: '--text-file のファイルが大きすぎます（1 MB まで）: {{file}}',
+      textFileNotUtf8:
+        '--text-file のファイルを UTF-8 として読めません。UTF-8 か UTF-16（BOM 付き）で保存してください: {{file}}',
       emptyText: '本文が空です',
       needText: '本文を --text か --text-file で指定してください',
       textOnlyClipboard:
