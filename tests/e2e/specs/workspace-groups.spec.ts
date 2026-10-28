@@ -215,4 +215,71 @@ test.describe('QuickDashLauncher - ワークスペースのグループ', () => 
       expect(await getWorkspaceBounds(electronApp)).toEqual(boundsBefore);
     });
   });
+
+  test('アーカイブ表示中の「すべて折りたたむ」はアーカイブのグループだけを折りたたむ', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const readArchive = () =>
+      configHelper.readConfigJson<JsonWorkspaceArchiveFile>('workspace-archive.json');
+    const readCollapsed = () =>
+      configHelper.readConfigJson<WorkspaceUiStateFile>('workspace-ui-state.json')
+        ?.collapsedGroups ?? {};
+    const headerOf = (name: string) =>
+      workspaceWindow.locator('.workspace-group-header', { hasText: name });
+
+    let keptId = '';
+    await test.step('残すグループとアーカイブするグループを作る', async () => {
+      const kept = await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.createGroup('残すグループ')
+      );
+      keptId = kept.id;
+      const archived = await workspaceWindow.evaluate(() =>
+        window.electronAPI.workspaceAPI.createGroup('しまったグループ')
+      );
+      await workspaceWindow.evaluate(
+        (id) => window.electronAPI.workspaceAPI.archiveGroup(id),
+        archived.id
+      );
+      await expect.poll(() => readArchive()?.groups.some((g) => g.id === archived.id)).toBe(true);
+    });
+
+    await test.step('アーカイブタブで 🔼 を押すとアーカイブのグループが折りたたまれる', async () => {
+      await workspaceWindow.locator('.archive-tab').click();
+      await headerOf('しまったグループ').waitFor({ state: 'visible', timeout: 10000 });
+      await workspaceWindow.getByTitle('すべて折りたたむ', { exact: true }).click();
+      await expect(
+        headerOf('しまったグループ').locator('.workspace-group-collapse-icon')
+      ).toHaveClass(/collapsed/);
+    });
+
+    await test.step('ほかの変更で読み直しても、アーカイブの折りたたみは戻らない', async () => {
+      // 2 つ目をアーカイブすると変更通知でアーカイブが読み直される（それが出たら読み直し済み）
+      await workspaceWindow.evaluate(async () => {
+        const g = await window.electronAPI.workspaceAPI.createGroup('二つ目のアーカイブ');
+        await window.electronAPI.workspaceAPI.archiveGroup(g.id);
+      });
+      await headerOf('二つ目のアーカイブ').waitFor({ state: 'visible', timeout: 10000 });
+      await expect(
+        headerOf('二つ目のアーカイブ').locator('.workspace-group-collapse-icon')
+      ).not.toHaveClass(/collapsed/);
+      await expect(
+        headerOf('しまったグループ').locator('.workspace-group-collapse-icon')
+      ).toHaveClass(/collapsed/);
+    });
+
+    await test.step('通常のタブのグループは折りたたまれず、保存もされない', async () => {
+      await workspaceWindow.locator('.workspace-tab-name').first().click();
+      await headerOf('残すグループ').waitFor({ state: 'visible', timeout: 10000 });
+      await expect(
+        headerOf('残すグループ').locator('.workspace-group-collapse-icon')
+      ).not.toHaveClass(/collapsed/);
+      expect(readCollapsed()[keptId]).toBeUndefined();
+    });
+  });
 });
