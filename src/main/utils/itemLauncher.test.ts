@@ -44,6 +44,7 @@ vi.mock('../services/mainI18n.js', () => ({
 vi.mock('./shellExecuteRunAs.js', () => ({ shellExecuteRunAs: vi.fn() }));
 
 import {
+  buildCmdCommandLine,
   buildRunAsRequest,
   ERROR_CANCELLED,
   getWorkingDirectory,
@@ -53,6 +54,17 @@ import {
 import { shellExecuteRunAs } from './shellExecuteRunAs.js';
 
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
+
+describe('buildCmdCommandLine', () => {
+  it.each([
+    [['C:\\Tools\\run.bat', []], 'C:\\Tools\\run.bat'],
+    [['C:\\My Tools\\run.cmd', ['a']], '"C:\\My Tools\\run.cmd" a'],
+    [['run.bat', ['Git Bash', '', 'a&b', 'say "hi"']], 'run.bat "Git Bash" "" "a&b" "say ""hi"""'],
+    [['run.bat', ['%USERPROFILE%', '--x=1']], 'run.bat %USERPROFILE% "--x=1"'],
+  ] as const)('%j は %s', ([batPath, args], expected) => {
+    expect(buildCmdCommandLine(batPath, [...args])).toBe(expected);
+  });
+});
 
 describe('getWorkingDirectory', () => {
   it.each([
@@ -90,6 +102,19 @@ describe('launchItem（app）', () => {
       'C:\\Tools\\myahk\\AutoHotkey.exe',
       ['main.ahk'],
       expect.objectContaining({ cwd: 'C:\\Tools\\myahk', shell: false })
+    );
+  });
+
+  it('引数ありの .bat は、空白を含むパスと引数を引用符で囲んだ 1 本のコマンドで cmd.exe に渡す', async () => {
+    await launchItem(
+      { type: 'app', path: 'C:\\Program Files\\Tools\\run.BAT', args: '-p "Git Bash" x' },
+      logger
+    );
+
+    expect(spawnMock).toHaveBeenCalledWith(
+      '"C:\\Program Files\\Tools\\run.BAT" -p "Git Bash" x',
+      [],
+      expect.objectContaining({ cwd: 'C:\\Program Files\\Tools', shell: true })
     );
   });
 

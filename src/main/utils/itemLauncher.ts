@@ -185,15 +185,42 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<string |
 
   // 引数ありの場合はspawnを使用（コマンドインジェクション防止）
   const args = parseArgs(item.args);
-  const needsShell = /\.(cmd|bat)$/i.test(item.path);
+  const cwd = getWorkingDirectory(item.path);
+  // .bat・.cmd は cmd.exe 経由でしか動かない。shell: true の spawn はコマンドと引数を引用符なしで
+  // つなぐだけなので、パスの空白や "Git Bash" のような引数が分かれる。引用符を付けた 1 本のコマンドにして渡す
+  if (/\.(cmd|bat)$/i.test(item.path)) {
+    return spawnDetached(
+      buildCmdCommandLine(item.path, args),
+      [],
+      { shell: true, cwd },
+      logger,
+      { ...logContext, args: item.args },
+      'アイテムの起動に失敗しました (spawn)'
+    );
+  }
   return spawnDetached(
     item.path,
     args,
-    { shell: needsShell, cwd: getWorkingDirectory(item.path) },
+    { shell: false, cwd },
     logger,
     { ...logContext, args: item.args },
     'アイテムの起動に失敗しました (spawn)'
   );
+}
+
+/** cmd.exe が区切りや記号として読む文字（含む引数は引用符で囲む） */
+const CMD_NEEDS_QUOTES = /[\s"&|<>^(),;=]/;
+
+/**
+ * .bat・.cmd を cmd.exe に渡すコマンドを組み立てる
+ *
+ * 空白や記号を含むパス・引数は `"` で囲み、中の `"` は `""` にする（cmd.exe とバッチの %1 の読み方）。
+ * `%VAR%` は囲んでも cmd.exe が展開する（今までどおり）
+ */
+export function buildCmdCommandLine(batPath: string, args: string[]): string {
+  const quote = (value: string) =>
+    value === '' || CMD_NEEDS_QUOTES.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+  return [batPath, ...args].map(quote).join(' ');
 }
 
 /**
