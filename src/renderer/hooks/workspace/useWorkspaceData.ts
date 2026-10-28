@@ -43,7 +43,8 @@ function hasCustomIconOnly(item: WorkspaceItem): item is WorkspaceClipboardItem 
   return item.type === 'clipboard' || item.type === 'set';
 }
 
-async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise<T[]> {
+/** アイコンの無いアイテムに、キャッシュ済みのアイコンとカスタムアイコンを当てる（アーカイブの読み込みでも使う） */
+export async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise<T[]> {
   const itemsNeedingIcons = items.filter(
     (item): item is T & WorkspaceLauncherItem => !item.icon && isLauncherItem(item)
   );

@@ -21,6 +21,7 @@ import { useLatestRef } from './hooks/useLatestRef';
 import { useToast } from './hooks/useToast';
 import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
 import {
+  mergeIconsFromCache,
   useWorkspaceActions,
   useWorkspaceAutoFit,
   useWorkspaceData,
@@ -187,7 +188,8 @@ const WorkspaceApp: React.FC = () => {
         const collapsedById = new Map(prev.map((g) => [g.id, g.collapsed]));
         return groups.map((g) => ({ ...g, collapsed: collapsedById.get(g.id) ?? false }));
       });
-      setArchivedItems(items);
+      // 通常のアイテムと同じく、アイコンはキャッシュから当てる（保存データには持たない）
+      setArchivedItems(await mergeIconsFromCache(items));
     } catch (error) {
       logError('Failed to load archive data:', error);
     }
