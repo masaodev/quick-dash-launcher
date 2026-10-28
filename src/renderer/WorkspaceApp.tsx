@@ -21,6 +21,7 @@ import { useLatestRef } from './hooks/useLatestRef';
 import { useToast } from './hooks/useToast';
 import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
 import {
+  mergeIconsFromCache,
   useWorkspaceActions,
   useWorkspaceAutoFit,
   useWorkspaceData,
@@ -75,7 +76,7 @@ const WorkspaceApp: React.FC = () => {
     setActiveWorkspaceId,
     loadAllDataWithLoading,
     toggleGroupCollapsed,
-    setAllGroupsCollapsedLocal,
+    setGroupsCollapsedLocal,
   } = useWorkspaceData(detachedGroupId);
   // 切り離しウィンドウでは、切り離したグループのワークスペースを今のワークスペースとして扱う。覚えている値は
   // 本体のワークスペース画面で選んだタブなので、本体で別のタブを選んだまま起動し直すと、貼り付け先・足す先が
@@ -181,9 +182,14 @@ const WorkspaceApp: React.FC = () => {
         window.electronAPI.workspaceAPI.loadArchivedGroups(),
         window.electronAPI.workspaceAPI.loadArchivedItems(),
       ]);
-      // アーカイブ画面の折りたたみはローカル状態だけで持つ（永続化しない）
-      setArchivedGroups(groups.map((g) => ({ ...g, collapsed: false })));
-      setArchivedItems(items);
+      // アーカイブ画面の折りたたみはローカル状態だけで持つ（永続化しない）。読み直しても、
+      // すでに表示していたグループの開閉は保つ（新しく来たグループだけ開いた状態で出す）
+      setArchivedGroups((prev) => {
+        const collapsedById = new Map(prev.map((g) => [g.id, g.collapsed]));
+        return groups.map((g) => ({ ...g, collapsed: collapsedById.get(g.id) ?? false }));
+      });
+      // 通常のアイテムと同じく、アイコンはキャッシュから当てる（保存データには持たない）
+      setArchivedItems(await mergeIconsFromCache(items));
     } catch (error) {
       logError('Failed to load archive data:', error);
     }
@@ -350,16 +356,18 @@ const WorkspaceApp: React.FC = () => {
   };
 
   const setAllGroupsCollapsed = async (collapsed: boolean) => {
-    const targetGroups = displayGroups.filter((g) => g.collapsed !== collapsed);
-    if (targetGroups.length > 0) {
-      // setAllGroupsCollapsedLocal 内で detached 時は専用 API に保存される
-      setAllGroupsCollapsedLocal(collapsed);
+    // アーカイブの折りたたみはローカル状態だけで持つ（loadArchiveData と同じ）
+    if (isArchiveMode) {
+      setArchivedGroups((prev) => prev.map((g) => ({ ...g, collapsed })));
+      return;
+    }
+    const targetIds = displayGroups.filter((g) => g.collapsed !== collapsed).map((g) => g.id);
+    if (targetIds.length > 0) {
+      // setGroupsCollapsedLocal 内で detached 時は専用 API に保存される
+      setGroupsCollapsedLocal(targetIds, collapsed);
       if (!isDetached) {
         try {
-          await window.electronAPI.workspaceAPI.setGroupsCollapsed(
-            targetGroups.map((g) => g.id),
-            collapsed
-          );
+          await window.electronAPI.workspaceAPI.setGroupsCollapsed(targetIds, collapsed);
         } catch (error) {
           logError(`Failed to ${collapsed ? 'collapse' : 'expand'} all groups:`, error);
           loadAllDataWithLoading();
