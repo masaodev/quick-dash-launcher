@@ -104,6 +104,36 @@ describe('runCliCommand', () => {
     expect(workspace.stdout).toContain('qdl workspace item add');
   });
 
+  it('オプションの値としての -h・--help は説明の求めとみなさない（何も足さずに成功を返さない）', async () => {
+    const res = await runCliCommand(
+      request([
+        'launcher',
+        'item',
+        'add',
+        '--name',
+        't',
+        '--path',
+        'tool.exe',
+        '--args',
+        '-h',
+        '--dry-run',
+      ]),
+      context()
+    );
+    // 説明ではなく、コマンドを実行した結果（ここではストアの無い文脈なのでエラー）の JSON が返る
+    expect(res.stdout).not.toContain('qdl launcher item');
+    expect(() => JSON.parse(res.stdout)).not.toThrow();
+  });
+
+  it('フラグの後ろの --help は説明の求め', async () => {
+    const res = await runCliCommand(
+      request(['launcher', 'item', 'add', '--dry-run', '--help']),
+      context()
+    );
+    expect(res.exitCode).toBe(CLI_EXIT.ok);
+    expect(res.stdout).toContain('qdl launcher item');
+  });
+
   it('status は版と設定フォルダを JSON で返す', async () => {
     const res = await runCliCommand(request(['status']), context());
     expect(res.exitCode).toBe(CLI_EXIT.ok);

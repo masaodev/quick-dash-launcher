@@ -49,6 +49,29 @@ export interface OptionSpec {
   allowSet?: boolean;
 }
 
+/** どのコマンドでも値を取らないオプション（`--dry-run --help` の --help は値ではない） */
+const FLAG_NAMES: ReadonlySet<string> = new Set(['dry-run', 'copy', 'with-text']);
+
+/**
+ * 引数に説明（`--help`・`-h`）の求めがあるか
+ *
+ * 値を取るオプションの直後の `-h` はその値として読む（`--args -h`・`--memo --help` で、何も足さずに
+ * 説明を返して成功扱いにしないため）。parseArgs も同じ位置の語を値として受け取る
+ */
+export function wantsHelp(args: readonly string[]): boolean {
+  return args.some((arg, i) => {
+    if (arg !== '--help' && arg !== '-h') return false;
+    const prev = args[i - 1];
+    const prevTakesValue =
+      prev !== undefined &&
+      prev.startsWith('--') &&
+      prev !== '--help' &&
+      !prev.includes('=') &&
+      !FLAG_NAMES.has(prev.slice(2));
+    return !prevTakesValue;
+  });
+}
+
 export function parseArgs(args: readonly string[], spec: OptionSpec): ParsedArgs {
   const values = new Set(spec.values ?? []);
   const flags = new Set(spec.flags ?? []);

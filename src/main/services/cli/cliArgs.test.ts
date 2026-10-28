@@ -7,9 +7,25 @@ import {
   optionInt,
   optionString,
   parseArgs,
+  wantsHelp,
 } from './cliArgs';
 
 const spec = { values: ['name', 'position'], flags: ['dry-run'], allowSet: true } as const;
+
+describe('wantsHelp', () => {
+  it.each([
+    [['item', '--help'], true],
+    [['-h'], true],
+    [['item', 'add', '--dry-run', '--help'], true],
+    [['item', 'add', '--name=x', '-h'], true],
+    [['item', 'add', '--args', '-h'], false],
+    [['item', 'add', '--memo', '--help'], false],
+    [['item', 'add', '--set', '-h'], false],
+    [['item', 'add', '--name', 'x'], false],
+  ])('%j は %s', (args, expected) => {
+    expect(wantsHelp(args)).toBe(expected);
+  });
+});
 
 function errorOf(fn: () => unknown): CliError {
   try {
