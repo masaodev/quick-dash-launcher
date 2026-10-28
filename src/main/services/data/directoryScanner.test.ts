@@ -64,6 +64,17 @@ describe('previewDirectoryItems', () => {
     ]);
   });
 
+  it('ファイル名の条件・除外する条件は大文字・小文字を区別しない（Windows のファイル名と同じ）', async () => {
+    fs.writeFileSync(path.join(root, 'SCAN.PDF'), '');
+    fs.writeFileSync(path.join(root, 'Old.PDF'), '');
+    const result = await previewDirectoryItems(root, {
+      types: 'file',
+      filter: '*.pdf',
+      exclude: 'old*',
+    });
+    expect(result.items.map((i) => i.baseName).sort()).toEqual(['SCAN.PDF', 'b.pdf']);
+  });
+
   it('上限を超えたら走査をやめ、まだあると返す', async () => {
     const result = await previewDirectoryItems(root, {}, undefined, { maxItems: 2 });
     expect(result.items).toHaveLength(2);
