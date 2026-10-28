@@ -47,7 +47,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `check` | 読み直さずに、直近の読み込み（起動時・F5・`reload`・CLI の書き込み前）の結果を返す |
 | `open <id か表示名>` | メイン画面のアイテムを開く（画面で選んで Enter を押したのと同じ。トーストを出し、起動の記録にも数える）。セット・クリップボードアイテムも開ける。返り値は `{"opened": {"id", "name", "type"}}`。フォルダ取込の行と、そこから並ぶアイテムは開けない（`invalid`）。開くのに失敗したら `unavailable` |
 | `show [main\|workspace]` | メイン画面（既定）かワークスペースを出す。返り値は `{"shown": "main"}` など。AutoHotkey・Stream Deck・タスクスケジューラーから呼ぶ用途 |
-| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る。`--with-text` でクリップボードアイテムの本文も返す |
+| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る（無いデータファイル・タブは `not_found`）。`--with-text` でクリップボードアイテムの本文も返す |
 | `launcher item add` | メイン画面にアイテムを足す |
 | `launcher item update <id か表示名>` | メイン画面のアイテムを変える・別のタブ（データファイル）へ移す |
 | `launcher item remove <id か表示名>` | メイン画面のアイテムを消す |
@@ -180,7 +180,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - `tab add`・`tab update`: `{ "tab": 足した・変えた後のタブ }`（update は `before` も）。`tab remove` は `{ "removed", "deletedFiles" }`、`tab file add` は `{ "file": { file, label, itemCount, created }, "tab" }`、`tab file update` は `{ "before", "file" }`、`tab file remove` は `{ "removed", "deleted", "tab" }`
 - `set row list`・`set row add`・`set row remove`: `{ "set": { id, displayName, file, tab }, "entries": [ 行 ] }`（変えた後の全部の行）。各行に行番号 `index` と行の名前 `name` を付け、指しているアイテムが見つからない行には `"missing": true` を付ける
 - `settings get <キー>`: `{ "key", "value", "writable" }`（キーを省くと `{ "settings", "writable" }`）
-- `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので `id` は無い）
+- `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので、足すものの `id` は `null`）
 
 失敗したら、標準出力に次の形の JSON、標準エラーに人向けの文を出します。`code` は固定の英単語で、文言を変えても変えません。
 

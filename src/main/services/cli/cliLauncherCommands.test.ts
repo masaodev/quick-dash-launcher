@@ -133,6 +133,25 @@ describe('launcher item add', () => {
     expect(ctx.changed).not.toHaveBeenCalled();
   });
 
+  it('--dry-run の id は null（足す前なので、仮に振った id を返さない）', async () => {
+    const r = (await runLauncherItemCommand(
+      'add',
+      ['--name', 'x', '--path', 'C:\\x', '--dry-run'],
+      ctx
+    )) as { item: { id: unknown } };
+    expect(r.item.id).toBeNull();
+  });
+
+  it('書き込みに失敗したら（破損ファイルなど）unavailable', async () => {
+    store.append.mockImplementationOnce(() => {
+      throw new Error('データファイルが破損している可能性があります');
+    });
+    const error = await errorOf(
+      runLauncherItemCommand('add', ['--name', 'x', '--path', 'C:\\x'], ctx)
+    );
+    expect(error.code).toBe('unavailable');
+  });
+
   it('セットは --set の JSON で entries を渡す', async () => {
     const r = await runLauncherItemCommand(
       'add',
@@ -441,6 +460,13 @@ describe('launcher item list', () => {
         tab: 'メイン',
       }),
     ]);
+  });
+
+  it('--file は data2 のように拡張子を省いて書け、無いデータファイルは not_found', async () => {
+    const r = (await runLauncherItemCommand('list', ['--file', 'data2'], ctx)) as unknown[];
+    expect(r).toHaveLength(1);
+    const error = await errorOf(runLauncherItemCommand('list', ['--file', 'data9'], ctx));
+    expect(error.code).toBe('not_found');
   });
 });
 
