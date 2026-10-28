@@ -384,7 +384,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 | ウィンドウ | 開く操作 | `window.name`（フォールバックの URL クエリ） | 中身 |
 | --- | --- | --- | --- |
 | 指すアイテムを選ぶ | 参照の右クリック「🔁 別のアイテムを指す…」 | `workspace-link-picker:<itemId>`（`linkItemId`） | `WorkspaceLinkPickerPage.tsx`（`SetItemPickerModal` を 1 つだけ選ぶ形で描く）。選んだら `workspace:link-to-main` |
-| メインウィンドウと同じアイテムを参照に変える | ワークスペースのタブの右クリック | `workspace-link-copies:<workspaceId>`（`linkCopiesWorkspaceId`） | `WorkspaceLinkCopiesPage.tsx`。一覧は `workspace:preview-link-copies`、確定は `workspace:apply-link-copies` |
+| メインウィンドウのアイテムとつなぐ | ワークスペースのタブの右クリック | `workspace-link-copies:<workspaceId>`（`linkCopiesWorkspaceId`） | `WorkspaceLinkCopiesPage.tsx`。一覧は `workspace:preview-link-copies`、確定は `workspace:apply-link-copies` |
 
 ## ウィンドウ位置・サイズ制御
 

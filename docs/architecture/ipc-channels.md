@@ -196,7 +196,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - `workspace:launch-item` は、参照ならメインウィンドウのアイテムの今の中身で開き直す（画面が持つ中身は古いことがあるため）。元のアイテムが見つからない参照は開かず、トーストで理由を知らせて `{ success: false }` を返す。起動の記録はメインウィンドウのアイテムの id で残す
 - 変更系（成功すると `workspace-changed`）: `workspace:convert-to-copy`（参照 → コピー）、`workspace:link-to-main`（参照の指し直し・CLI の `convert --to ref`。コピーのメモは、メインウィンドウのアイテムにメモが無ければデータファイルへ移す）、`workspace:apply-link-copies`（`ids, choices?`。コピーをまとめて参照に。候補が 1 件ならそれ、2 件以上なら `choices`＝コピーの id → 選んだメインウィンドウのアイテムの id）、`workspace:move-to-main`（`id, file?`。コピーをメインウィンドウのデータファイルへ移して参照に変える（移す先に同じパス・引数の通常アイテムがあれば、足さずにそれを指す）。`file` が無ければ先頭のタブの先頭のファイル。結果はメインプロセスがトーストで知らせ、`boolean` を返す。右クリックの「🚀 メインウィンドウへ移して参照にする」と同じ処理＝`src/main/ipc/workspaceRefMenu.ts` の `moveItemToMain`。メインウィンドウへのドロップで使う。データファイルにも書くので `data-changed` も送る）、`workspace:remap-refs`（アイテム管理の「重複を削除」を保存したあと、参照の指す先を付け替える）
 - 読むだけ: `workspace:find-link-candidates`（パスと引数が同じメインウィンドウのアイテム）、`workspace:preview-link-copies`（まとめて参照に変える一覧）、`workspace:count-refs`（メインウィンドウのアイテムの id ごとの参照の数。アーカイブを含む。削除の確認・編集画面の帯に使う）
-- 子ウィンドウを開く: `workspace:open-link-picker`（指すアイテムを選ぶ）、`workspace:open-link-copies`（メインウィンドウと同じアイテムを参照に変える）。送信元のウィンドウを親にしたモーダルの子ウィンドウで開く
+- 子ウィンドウを開く: `workspace:open-link-picker`（指すアイテムを選ぶ）、`workspace:open-link-copies`（メインウィンドウのアイテムとつなぐ）。送信元のウィンドウを親にしたモーダルの子ウィンドウで開く
 - メインウィンドウの右クリックの「📄 ワークスペースにコピーを追加 ▸」は、`launcher-menu-add-copy-to-workspace`（イベント）でレンダラーに伝え、レンダラーが `workspace:add-item` を `{ copy: true }` で呼ぶ。「⭐ ワークスペースに追加 ▸」（`launcher-menu-add-to-workspace`）も含め、イベントにはサブメニューで選んだ置き場（`target`＝ワークスペースとグループ）を付ける（サブメニューは `src/main/ipc/workspaceGroupPicker.ts`）
 - グループのあるワークスペースへ、グループを指定せずにアイテムを足す・移すと、`WorkspaceService` が `WorkspaceGroupRequiredError` で断る（`workspacePlacement.ts`）。グループが 1 つも無いワークスペースだけ、「未分類」という名前のグループを作って入れる
 
@@ -238,7 +238,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - 管理画面から `window:open-main-child` で開いたときは、管理ウィンドウを親・開き元にする。登録フォームは内容を保存せず、`window:return-main-child-value` で返した内容が閉じたときに管理画面へ渡る（`MainChildWindowReturn` は、「更新」なら `{ kind: 'register', items }`、「削除」なら `{ kind: 'delete' }`。削除は管理画面で未保存の削除になる）
 - 要求は子ウィンドウが閉じるまで保持されるので、手順 2 は何度呼んでもよい
 - メイン画面の子ウィンドウでの操作結果（登録・更新・削除）は `window:notify-main-child-result`（`send`）でメインへ伝え、メインは `window:main-child-result` イベントとしてメイン画面に中継する（トースト表示用）。データ自体の反映は `data-changed` で行う
-- 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）、グループに追加するアイテムを選ぶウィンドウは `workspace:open-item-picker`（`src/main/workspaceItemPickerWindowManager.ts`）、グループに新しく入力して追加するウィンドウは `workspace:open-new-item-editor`（編集ウィンドウと同じ `workspaceItemEditorWindowManager.ts`）、参照の指すアイテムを選ぶウィンドウ・メインウィンドウと同じアイテムを参照に変えるウィンドウは `workspace:open-link-picker`・`workspace:open-link-copies`（`src/main/workspaceLinkWindowManager.ts`）。どれも要求を預けず、`window.name` の ID（itemId・groupId・workspaceId）だけで中身を決める
+- 実装: `src/main/mainChildWindowManager.ts`、`src/main/workspaceConfirmWindowManager.ts`。ワークスペースアイテムの編集ウィンドウは `workspace:open-item-editor`（`src/main/workspaceItemEditorWindowManager.ts`）、グループに追加するアイテムを選ぶウィンドウは `workspace:open-item-picker`（`src/main/workspaceItemPickerWindowManager.ts`）、グループに新しく入力して追加するウィンドウは `workspace:open-new-item-editor`（編集ウィンドウと同じ `workspaceItemEditorWindowManager.ts`）、参照の指すアイテムを選ぶウィンドウ・メインウィンドウのアイテムとつなぐウィンドウは `workspace:open-link-picker`・`workspace:open-link-copies`（`src/main/workspaceLinkWindowManager.ts`）。どれも要求を預けず、`window.name` の ID（itemId・groupId・workspaceId）だけで中身を決める
 - 詳細は [ウィンドウ制御](window-control.md) を参照
 
 ## 外部で開く

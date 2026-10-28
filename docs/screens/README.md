@@ -57,7 +57,7 @@
 | **グループに追加するアイテム**（`WorkspaceItemPickerPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「➕ アイテムを追加」→「🔍 メインウィンドウのアイテムから選ぶ…」 | [workspace-window.md](./workspace-window.md#589-グループを右クリックしてアイテムを追加)（一覧の操作は [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) と同じ） |
 | **ワークスペースにアイテムを追加**（`WorkspaceNewItemPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「➕ アイテムを追加」→「✏️ 新しく入力して追加…」 | [workspace-window.md](./workspace-window.md#589-グループを右クリックしてアイテムを追加)（欄は編集ウィンドウと同じ） |
 | **指すアイテムを選ぶ**（`WorkspaceLinkPickerPage`） | ワークスペースウィンドウ・切り離しウィンドウで、参照を右クリック→「🔁 別のアイテムを指す…」 | [workspace-window.md](./workspace-window.md#520-指すアイテムを選ぶ)（一覧の操作は [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) と同じ） |
-| **メインウィンドウと同じアイテムを参照に変える**（`WorkspaceLinkCopiesPage`） | ワークスペースウィンドウでタブを右クリック→「🔗 メインウィンドウと同じアイテムを参照に変える…」 | [workspace-window.md](./workspace-window.md#521-メインウィンドウと同じアイテムを参照に変える) |
+| **メインウィンドウのアイテムとつなぐ**（`WorkspaceLinkCopiesPage`） | ワークスペースウィンドウでタブを右クリック→「🔗 メインウィンドウのアイテムとつなぐ…」 | [workspace-window.md](./workspace-window.md#521-メインウィンドウのアイテムとつなぐ) |
 | **ワークスペースの確認**（`WorkspaceConfirmPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループのアーカイブ・削除を選んだとき | なし（`src/main/workspaceConfirmWindowManager.ts`。説明は [ウィンドウ制御](../architecture/window-control.md#確認ウィンドウグループの削除アーカイブ)） |
 
 ### モーダル
