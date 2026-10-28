@@ -12,7 +12,7 @@ QuickDashLauncherは主に以下の 3 種類のファイルを使用してアプ
 | **[データファイル](data-format.md)** | ランチャーアイテムの定義 | `datafiles/data.json`, `datafiles/data2.json`, ... |
 | **[ワークスペースファイル](workspace-format.md)** | ワークスペース機能のデータ | `workspace.json`, `workspace-archive.json`（UI 状態は `workspace-ui-state.json`） |
 
-JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。
+JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。手で直して BOM 付きで保存したファイルも読めます（読むときに先頭の BOM を外す）。
 
 ---
 

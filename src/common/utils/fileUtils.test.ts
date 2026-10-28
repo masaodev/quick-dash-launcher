@@ -6,6 +6,39 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { FileUtils } from './fileUtils';
 
+describe('FileUtils.safeReadTextFile', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fileutils-read-test-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('先頭の BOM を外して返す（手直しで BOM 付きになった JSON を読めるように）', () => {
+    const filePath = path.join(tempDir, 'data.json');
+    fs.writeFileSync(filePath, '﻿{"version":"1.0","items":[]}', 'utf8');
+
+    const content = FileUtils.safeReadTextFile(filePath);
+
+    expect(content).toBe('{"version":"1.0","items":[]}');
+    expect(() => JSON.parse(content!)).not.toThrow();
+  });
+
+  it('BOM の無いファイルはそのまま返す', () => {
+    const filePath = path.join(tempDir, 'plain.txt');
+    fs.writeFileSync(filePath, 'abc﻿', 'utf8');
+
+    expect(FileUtils.safeReadTextFile(filePath)).toBe('abc﻿');
+  });
+
+  it('存在しないファイルは null', () => {
+    expect(FileUtils.safeReadTextFile(path.join(tempDir, 'none.json'))).toBeNull();
+  });
+});
+
 describe('FileUtils アトミック書き込み', () => {
   let tempDir: string;
 
