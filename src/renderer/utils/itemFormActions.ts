@@ -41,6 +41,25 @@ export async function loadCachedIconsForItems(
 }
 
 /**
+ * パス欄に入れた文字を、保存する形に整える（前後の空白と、全体を囲む `"` を外す）
+ *
+ * エクスプローラーの「パスのコピー」は `"C:\…\a.exe"` と引用符付きでコピーするので、そのまま貼ると
+ * 開けないアイテムになる。前の空白が付いた `https://…` は URL と判定されない
+ */
+export function normalizePathInput(path: string): string {
+  const trimmed = path.trim();
+  const m = trimmed.match(/^"(.*)"$/);
+  return m ? m[1].trim() : trimmed;
+}
+
+/** 保存の前にパスを整える（パスを持たないクリップボードはそのまま。変わらなければ同じオブジェクト） */
+export function withNormalizedPath(item: RegisterItem): RegisterItem {
+  if (item.itemCategory === 'clipboard' || typeof item.path !== 'string') return item;
+  const path = normalizePathInput(item.path);
+  return path === item.path ? item : { ...item, path };
+}
+
+/**
  * パス欄を離れたとき（または「選択」で選んだとき）に、パスに合わせて種別・アイコンを決め直す
  *
  * 判定を待つ間にほかの欄が変わっても戻さないよう、今の内容に当てる関数を返す。決め直すものが無ければ undefined
@@ -52,7 +71,10 @@ export async function resolvePathChange(
   pickedPath?: string
 ): Promise<((current: RegisterItem) => RegisterItem) | undefined> {
   if (item.itemCategory === 'clipboard') return undefined;
-  const path = pickedPath ?? item.path;
+  const rawPath = pickedPath ?? item.path;
+  const path = typeof rawPath === 'string' ? normalizePathInput(rawPath) : rawPath;
+  // 整えて変わったときは、欄の表示も整えた形にする
+  const pathChanged = pickedPath !== undefined || path !== item.path;
   if (!path?.trim()) {
     // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
     if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
@@ -70,7 +92,7 @@ export async function resolvePathChange(
   return (current) => {
     const next: RegisterItem = {
       ...current,
-      ...(pickedPath !== undefined && { path: pickedPath }),
+      ...(pathChanged && { path }),
       type: newType,
     };
     if (newType === 'folder') {

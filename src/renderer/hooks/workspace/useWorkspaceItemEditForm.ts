@@ -17,6 +17,7 @@ import {
   fetchItemIcon,
   resolvePathChange,
   validateItemForm,
+  withNormalizedPath,
 } from '../../utils/itemFormActions';
 import { useToast } from '../useToast';
 
@@ -119,21 +120,17 @@ export function useWorkspaceItemEditForm(
     [item]
   );
 
-  const validate = useCallback((): boolean => {
-    if (!item) return false;
-
-    const newErrors = validateItemForm(item, t);
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [item, t]);
-
   // 失敗したときは画面を開いたままにして、直してもう一度保存できるようにする
   const handleSave = useCallback(async () => {
     if (!item || (!editingItem && !create)) return;
 
-    if (!validate()) return;
+    // パス欄を離れずに保存したとき（Enter など）も、前後の空白・引用符を外して保存する
+    const normalized = withNormalizedPath(item);
+    const newErrors = validateItemForm(normalized, t);
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
-    const committed = await commitClipboardContent(item, { showWarning, showError }, t);
+    const committed = await commitClipboardContent(normalized, { showWarning, showError }, t);
     if (!committed) return;
     if (committed !== item) setItem(committed);
 
@@ -149,7 +146,7 @@ export function useWorkspaceItemEditForm(
       logError('Failed to save workspace item:', error);
       showError(t(editingItem ? 'workspace.edit.updateFailed' : 'workspace.edit.addFailed'));
     }
-  }, [item, editingItem, create, validate, onSave, onClose, showWarning, showError, t]);
+  }, [item, editingItem, create, onSave, onClose, showWarning, showError, t]);
 
   const discardClipboardSession = useCallback(async () => {
     if (item) await discardItemClipboardSession(item);
