@@ -7,6 +7,7 @@ import { TestUtils } from '../helpers/test-utils';
  * 検索の範囲（A3-152）
  * - メインウィンドウ: 設定「検索でメモにも当てる」（既定オフ）
  * - ワークスペースの絞り込み: スペース区切りの AND。「すべて」では語がグループ名とアイテム名にまたがってよい
+ * - 設定「検索で全角と半角を区別しない」「検索でひらがなとカタカナを区別しない」（既定オフ。A3-209）
  */
 
 /** 常駐しているワークスペースウィンドウ（workspace-groups.spec.ts と同じ） */
@@ -55,6 +56,84 @@ test.describe('QuickDashLauncher - 検索の範囲', () => {
         window.electronAPI.setMultipleSettings({ searchMemo: false })
       );
       await expect(mainWindow.locator('.item')).toHaveCount(0);
+    });
+  });
+
+  test('全角・半角、ひらがな・カタカナは既定で区別し、設定をオンにするとメインとワークスペースで区別しない', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    configHelper.addItemToFile('data.json', {
+      id: 'e2ewid01',
+      type: 'item',
+      displayName: 'テスト手順書',
+      path: 'https://example.com/test',
+    });
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.reload();
+    await utils.waitForPageLoad();
+    const item = mainWindow.locator('.item', { hasText: 'テスト手順書' });
+
+    await test.step('既定ではメインウィンドウの検索で ﾃｽﾄ・てすと は当たらない', async () => {
+      await utils.searchFor('ﾃｽﾄ');
+      await expect(mainWindow.locator('.item')).toHaveCount(0);
+      await utils.searchFor('てすと');
+      await expect(mainWindow.locator('.item')).toHaveCount(0);
+    });
+
+    await test.step('全角と半角を区別しないと ﾃｽﾄ で当たる（てすと は当たらない）', async () => {
+      await mainWindow.evaluate(() =>
+        window.electronAPI.setMultipleSettings({ searchIgnoreWidth: true })
+      );
+      await utils.searchFor('ﾃｽﾄ');
+      await expect(item).toBeVisible();
+      await utils.searchFor('てすと');
+      await expect(mainWindow.locator('.item')).toHaveCount(0);
+    });
+
+    await test.step('ひらがなとカタカナも区別しないと てすと で当たる', async () => {
+      await mainWindow.evaluate(() =>
+        window.electronAPI.setMultipleSettings({ searchIgnoreKana: true })
+      );
+      await expect(item).toBeVisible();
+    });
+
+    await test.step('ワークスペースの絞り込みも同じ設定に従う', async () => {
+      const workspaceWindow = await getWorkspaceWindow(electronApp);
+      await workspaceWindow.waitForLoadState('domcontentloaded');
+      await workspaceWindow.evaluate(async () => {
+        const api = window.electronAPI.workspaceAPI;
+        const [ws] = await api.loadWorkspaces();
+        const group = await api.createGroup('資料', undefined, undefined, ws.id);
+        await api.addItem(
+          { displayName: 'テスト結果.xlsx', path: 'r.xlsx', type: 'file' },
+          group.id,
+          ws.id
+        );
+        await api.addItem(
+          { displayName: '週報.xlsm', path: 'w.xlsm', type: 'file' },
+          group.id,
+          ws.id
+        );
+      });
+      const card = (name: string) =>
+        workspaceWindow.locator('.workspace-item-card', { hasText: name });
+      await expect(card('週報.xlsm')).toBeVisible({ timeout: 10000 });
+      await workspaceWindow.keyboard.press('Control+f');
+      const input = workspaceWindow.locator('.workspace-filter-input');
+      await input.fill('てすと ＸＬＳＸ');
+      await expect(card('テスト結果.xlsx')).toBeVisible();
+      await expect(card('週報.xlsm')).toHaveCount(0);
+
+      await mainWindow.evaluate(() =>
+        window.electronAPI.setMultipleSettings({
+          searchIgnoreWidth: false,
+          searchIgnoreKana: false,
+        })
+      );
+      await expect(card('テスト結果.xlsx')).toHaveCount(0);
     });
   });
 

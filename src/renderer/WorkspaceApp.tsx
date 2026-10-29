@@ -20,6 +20,7 @@ import { useNativeDragDrop } from './hooks/useNativeDragDrop';
 import { useLatestRef } from './hooks/useLatestRef';
 import { useToast } from './hooks/useToast';
 import { useWorkspaceFilter, type FilterScope } from './hooks/useWorkspaceFilter';
+import { useSearchNormalization } from './hooks/useSearchNormalization';
 import {
   mergeIconsFromCache,
   useWorkspaceActions,
@@ -216,7 +217,15 @@ const WorkspaceApp: React.FC = () => {
     [isArchiveMode, archivedItems, filteredItems]
   );
 
-  const filterResult = useWorkspaceFilter(displayGroups, displayItems, filterText, filterScope);
+  // 検索で全角・半角、ひらがな・カタカナを区別しないか（変わったら絞り直す）
+  const searchNormalization = useSearchNormalization();
+  const filterResult = useWorkspaceFilter(
+    displayGroups,
+    displayItems,
+    filterText,
+    filterScope,
+    searchNormalization
+  );
   const isDetached = detachedGroupId !== null;
   const { handleResize } = useWorkspaceResize(
     isDetached

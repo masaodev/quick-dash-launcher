@@ -1,11 +1,42 @@
 import { AppItem, SearchMode, WindowInfo } from '@common/types';
 
+/** 検索で区別しない違い（設定 searchIgnoreWidth・searchIgnoreKana）。各ウィンドウが設定を読んで入れる */
+export interface SearchNormalization {
+  /** 全角と半角を区別しない */
+  ignoreWidth: boolean;
+  /** ひらがなとカタカナを区別しない */
+  ignoreKana: boolean;
+}
+
+let normalization: SearchNormalization = { ignoreWidth: false, ignoreKana: false };
+
+/** 検索で区別しない違いを切り替える（設定の読み込み・変更のたびに呼ぶ） */
+export function setSearchNormalization(next: SearchNormalization): void {
+  normalization = { ...next };
+}
+
+/** カタカナ（ァ〜ヶ）をひらがなにする。長音（ー）などはそのまま */
+function katakanaToHiragana(text: string): string {
+  return text.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+}
+
 /**
- * クエリ文字列をキーワード配列に分割する
+ * 検索で照合する形にそろえる。大文字・小文字はいつも区別しない
+ *
+ * 設定に応じて、NFKC で全角英数を半角に・半角カナを全角にそろえ（`ｃｈｒｏｍｅ` で `Chrome`、`ﾃｽﾄ` で `テスト`）、
+ * カタカナをひらがなにそろえる（`てすと` で `テスト`）。検索語と照合する文の両方にかける
+ */
+export function normalizeForSearch(text: string): string {
+  let result = normalization.ignoreWidth ? text.normalize('NFKC') : text;
+  if (normalization.ignoreKana) result = katakanaToHiragana(result);
+  return result.toLowerCase();
+}
+
+/**
+ * クエリ文字列をキーワード配列に分割する（照合する文には normalizeForSearch をかけてから比べる）
  */
 export function parseKeywords(query: string): string[] {
-  return query
-    .toLowerCase()
+  return normalizeForSearch(query)
     .split(/\s+/)
     .filter((k) => k.length > 0);
 }
@@ -38,15 +69,24 @@ function getSearchText(item: AppItem): string {
  * キー入力ごとの全アイテム再小文字化を避ける。アイテムはデータ再読込で
  * 作り直されるため、WeakMapで古いオブジェクトごと自動解放される。
  */
-const lowerSearchTextCache = new WeakMap<AppItem, string>();
-/** メモにも当てるときのキャッシュ（設定を切り替えても作り直さずに済むよう分ける） */
-const lowerSearchTextWithMemoCache = new WeakMap<AppItem, string>();
+const searchTextCaches = new Map<string, WeakMap<AppItem, string>>();
+
+/** 設定（メモ・区別しない違い）の組ごとにキャッシュを分ける（切り替えても作り直さずに済む） */
+function getSearchTextCache(): WeakMap<AppItem, string> {
+  const key = `${includeMemo}|${normalization.ignoreWidth}|${normalization.ignoreKana}`;
+  let cache = searchTextCaches.get(key);
+  if (!cache) {
+    cache = new WeakMap();
+    searchTextCaches.set(key, cache);
+  }
+  return cache;
+}
 
 function getLowerSearchText(item: AppItem): string {
-  const cache = includeMemo ? lowerSearchTextWithMemoCache : lowerSearchTextCache;
+  const cache = getSearchTextCache();
   let text = cache.get(item);
   if (text === undefined) {
-    text = getSearchText(item).toLowerCase();
+    text = normalizeForSearch(getSearchText(item));
     cache.set(item, text);
   }
   return text;

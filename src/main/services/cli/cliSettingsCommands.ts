@@ -57,6 +57,8 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   itemSearchHotkey: { kind: 'hotkey' },
   showKeyboardHints: BOOLEAN,
   searchMemo: BOOLEAN,
+  searchIgnoreWidth: BOOLEAN,
+  searchIgnoreKana: BOOLEAN,
   recordLaunchUsage: BOOLEAN,
   showDataFileTabs: BOOLEAN,
   defaultFileTab: { kind: 'dataFile' },
