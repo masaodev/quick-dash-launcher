@@ -372,7 +372,7 @@ const AdminItemManagerTabBar: React.FC<AdminItemManagerTabBarProps> = ({
               className={`admin-tab${isActive ? ' active' : ''}`}
               onClick={() => onSelectTab(index)}
               onContextMenu={(e) => void openTabMenu(e, index)}
-              title={t('itemManager.tabs.tabTitle', { files: filesTitle })}
+              title={`${tab.name}\n${t('itemManager.tabs.tabTitle', { files: filesTitle })}`}
               data-testid="admin-tab"
             >
               {renamingTabIndex === index ? (
