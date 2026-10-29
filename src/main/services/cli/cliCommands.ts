@@ -1,7 +1,7 @@
 import type { LoadReport } from '../loadReportService.js';
 import { mainI18n } from '../mainI18n.js';
 
-import { CliError, expectPositionals, parseArgs } from './cliArgs.js';
+import { CliError, expectPositionals, parseArgs, wantsHelp } from './cliArgs.js';
 import type { CliErrorCode } from './cliArgs.js';
 import { CLI_EXIT, cliResponse } from './cliProtocol.js';
 import type { CliRequest, CliResponse } from './cliProtocol.js';
@@ -123,7 +123,7 @@ async function dispatch(
   ctx: CliContext
 ): Promise<unknown> {
   // 「qdl launcher --help」「qdl workspace item --help」はそれぞれの説明
-  const wantsHelp = rest.some((a) => a === '--help' || a === '-h');
+  const helpRequested = wantsHelp(rest);
 
   switch (command) {
     case 'status':
@@ -150,7 +150,7 @@ async function dispatch(
 
     case 'launcher': {
       const [noun, verb, ...args] = rest;
-      if (wantsHelp || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.launcher'));
+      if (helpRequested || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.launcher'));
       const launcherCtx = {
         store: ctx.launcher,
         cwd: req.cwd,
@@ -176,7 +176,7 @@ async function dispatch(
 
     case 'workspace': {
       const [noun, verb, ...args] = rest;
-      if (wantsHelp || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.workspace'));
+      if (helpRequested || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.workspace'));
       return runWorkspaceCommand(noun, verb, args, {
         store: ctx.workspace,
         cwd: req.cwd,
@@ -192,7 +192,7 @@ async function dispatch(
     }
 
     case 'open': {
-      if (wantsHelp) throw helpAsResult(mainI18n.t('cli.help.main'));
+      if (helpRequested) throw helpAsResult(mainI18n.t('cli.help.main'));
       const parsed = parseArgs(rest, {});
       const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
       const entry = await findLauncherEntry(key, ctx.launcher);
@@ -203,7 +203,7 @@ async function dispatch(
     }
 
     case 'show': {
-      if (wantsHelp) throw helpAsResult(mainI18n.t('cli.help.main'));
+      if (helpRequested) throw helpAsResult(mainI18n.t('cli.help.main'));
       const parsed = parseArgs(rest, {});
       const target = parsed.positionals[0] ?? 'main';
       if (parsed.positionals.length > 1 || (target !== 'main' && target !== 'workspace')) {
@@ -215,7 +215,7 @@ async function dispatch(
 
     case 'settings': {
       const [verb, ...args] = rest;
-      if (wantsHelp || verb === undefined) throw helpAsResult(mainI18n.t('cli.help.settings'));
+      if (helpRequested || verb === undefined) throw helpAsResult(mainI18n.t('cli.help.settings'));
       return runSettingsCommand(verb, args, {
         store: ctx.settings,
         changed: (message) => ctx.changed('settings', message),
