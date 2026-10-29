@@ -98,6 +98,20 @@ export function launcherCandidate(entry: LauncherEntry, tabs: DataFileTab[]): Cl
   };
 }
 
+/**
+ * データファイルへの書き込みの失敗（破損ファイル・書き込みエラー）を unavailable にする（move と同じ）
+ *
+ * 包まないと code が internal になり、docs の「設定ファイルが読めない（破損など）＝ unavailable」とずれる
+ */
+async function writeOrUnavailable<T>(write: () => T | Promise<T>): Promise<T> {
+  try {
+    return await write();
+  } catch (error) {
+    if (error instanceof CliError) throw error;
+    throw new CliError('unavailable', (error as Error)?.message ?? String(error));
+  }
+}
+
 /** --file・--tab から書き込む先のデータファイルを決める（どちらも無ければ既定のデータファイル） */
 export async function resolveTargetFile(
   ctx: Pick<LauncherCommandContext, 'store'>,
@@ -166,8 +180,9 @@ async function list(args: readonly string[], ctx: LauncherCommandContext): Promi
   let entries = await ctx.store.load();
   if (file || tab) {
     if (file && tab) throw new CliError('usage', mainI18n.t('cli.errors.fileAndTab'));
+    // 無いデータファイルは --tab と同じく not_found にする（打ち間違いで空の一覧を返さない）
     const files = file
-      ? [normalizeFileName(file)]
+      ? [await resolveTargetFile(ctx, file, undefined)]
       : tabs.filter((t) => t.name === tab).flatMap((t) => t.files);
     if (tab && files.length === 0)
       throw new CliError('not_found', mainI18n.t('cli.errors.noTabSimple', { tab }));
@@ -267,9 +282,10 @@ async function add(args: readonly string[], ctx: LauncherCommandContext): Promis
   const item = validateAsDataItem(merged, setKeys);
   item.updatedAt = Date.now();
   const result = view({ item, file: targetFile }, await ctx.store.tabs());
-  if (dryRun) return { dryRun: true, item: result };
+  // 足す前なので id はまだ無い（仮に振った id を返すと、後で使って not_found になる）
+  if (dryRun) return { dryRun: true, item: { ...result, id: null } };
 
-  ctx.store.append(targetFile, item);
+  await writeOrUnavailable(() => ctx.store.append(targetFile, item));
   ctx.changed(mainI18n.t('cli.changed.launcherAdded', { name: itemName(item) }));
   return result;
 }
@@ -312,9 +328,10 @@ async function addSet(parsed: ParsedArgs, ctx: LauncherCommandContext): Promise<
   const item = validateAsDataItem(merged, setKeys);
   item.updatedAt = Date.now();
   const result = view({ item, file: targetFile }, await ctx.store.tabs());
-  if (dryRun) return { dryRun: true, item: result };
+  // 足す前なので id はまだ無い（仮に振った id を返すと、後で使って not_found になる）
+  if (dryRun) return { dryRun: true, item: { ...result, id: null } };
 
-  ctx.store.append(targetFile, item);
+  await writeOrUnavailable(() => ctx.store.append(targetFile, item));
   ctx.changed(mainI18n.t('cli.changed.launcherAdded', { name: itemName(item) }));
   return result;
 }
@@ -361,7 +378,7 @@ async function addClipboard(parsed: ParsedArgs, ctx: LauncherCommandContext): Pr
     };
   }
   const item = { ...checked, ...ctx.clipboard.save(text), updatedAt: Date.now() } as JsonItem;
-  ctx.store.append(targetFile, item);
+  await writeOrUnavailable(() => ctx.store.append(targetFile, item));
   ctx.changed(mainI18n.t('cli.changed.launcherAdded', { name: itemName(item) }));
   return view({ item, file: targetFile }, tabs);
 }
@@ -507,7 +524,7 @@ async function update(args: readonly string[], ctx: LauncherCommandContext): Pro
       })
     );
   } else {
-    ctx.store.replace(item);
+    await writeOrUnavailable(() => ctx.store.replace(item));
     ctx.changed(mainI18n.t('cli.changed.launcherUpdated', { name: itemName(item) }));
   }
   return result;
@@ -525,7 +542,7 @@ async function remove(args: readonly string[], ctx: LauncherCommandContext): Pro
   const refs = workspaceRefs > 0 ? { workspaceRefs } : {};
   if (dryRun) return { dryRun: true, removed, ...refs };
 
-  await ctx.store.remove(entry.item.id);
+  await writeOrUnavailable(() => ctx.store.remove(entry.item.id));
   ctx.changed(mainI18n.t('cli.changed.launcherRemoved', { name: itemName(entry.item) }));
   return { removed, ...refs };
 }
