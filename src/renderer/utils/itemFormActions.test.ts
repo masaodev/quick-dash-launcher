@@ -45,6 +45,11 @@ describe('normalizePathInput', () => {
     ['   https://example.com/', 'https://example.com/'],
     [' " C:\\a b " ', 'C:\\a b'],
     ['C:\\a "b".txt', 'C:\\a "b".txt'],
+    // 引数までパス欄に入れたものは、どこまでがパスか分からないので触らない
+    ['"C:\\a.exe" "arg"', '"C:\\a.exe" "arg"'],
+    // 全角スペースで終わるフォルダ名は Windows で作れるので残す
+    ['C:\\メモ\u3000', 'C:\\メモ\u3000'],
+    ['""', '""'],
     ['', ''],
   ])('%j は %j', (input, expected) => {
     expect(normalizePathInput(input)).toBe(expected);

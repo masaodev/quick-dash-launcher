@@ -40,16 +40,20 @@ export async function loadCachedIconsForItems(
   return window.electronAPI.loadCachedIcons(launcherItems);
 }
 
+/** 前後から外す空白（半角の空白・タブ・改行だけ。全角スペースで終わるフォルダ名は Windows で作れるので残す） */
+const EDGE_WHITESPACE = /^[ \t\r\n]+|[ \t\r\n]+$/g;
+
 /**
  * パス欄に入れた文字を、保存する形に整える（前後の空白と、全体を囲む `"` を外す）
  *
  * エクスプローラーの「パスのコピー」は `"C:\…\a.exe"` と引用符付きでコピーするので、そのまま貼ると
- * 開けないアイテムになる。前の空白が付いた `https://…` は URL と判定されない
+ * 開けないアイテムになる。前の空白が付いた `https://…` は URL と判定されない。
+ * 中にも `"` があるとき（`"C:\a.exe" "引数"` のように引数まで入れた）は、どこまでがパスか分からないので触らない
  */
 export function normalizePathInput(path: string): string {
-  const trimmed = path.trim();
-  const m = trimmed.match(/^"(.*)"$/);
-  return m ? m[1].trim() : trimmed;
+  const trimmed = path.replace(EDGE_WHITESPACE, '');
+  const m = trimmed.match(/^"([^"]+)"$/);
+  return m ? m[1].replace(EDGE_WHITESPACE, '') : trimmed;
 }
 
 /** 保存の前にパスを整える（パスを持たないクリップボードはそのまま。変わらなければ同じオブジェクト） */
