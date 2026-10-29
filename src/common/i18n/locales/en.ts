@@ -535,6 +535,7 @@ Commands:
 Output: On success, JSON on standard output. On failure, {"error": {"code", "message", "candidates"?}} on
 standard output and a description on standard error. code is usage / not_found / ambiguous / invalid / conflict / unavailable / internal.
 Commands that write accept --dry-run to check the result without writing.
+Add --ascii to write non-ASCII characters in the JSON as \\uXXXX (use it when Windows PowerShell 5.1 garbles them in ConvertFrom-Json).
 
 Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 communication error (CLI and app versions don't match, the request is too large or can't be read, and so on)
 `,
