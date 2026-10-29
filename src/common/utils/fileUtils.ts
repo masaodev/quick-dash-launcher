@@ -7,13 +7,17 @@ import * as path from 'path';
 export class FileUtils {
   /**
    * テキストファイルを安全に読み込む（存在しない場合やエラー時はnull）
+   *
+   * 先頭の BOM は外す。PowerShell 5.1 の Set-Content -Encoding utf8 やメモ帳で手直しすると
+   * BOM 付きで保存され、そのまま JSON.parse すると破損扱いになって中身が全部消えて見えるため
    */
   static safeReadTextFile(filePath: string): string | null {
     try {
       if (!fs.existsSync(filePath)) {
         return null;
       }
-      return fs.readFileSync(filePath, 'utf8');
+      const content = fs.readFileSync(filePath, 'utf8');
+      return content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
     } catch (_error) {
       return null;
     }
