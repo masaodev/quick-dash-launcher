@@ -20,6 +20,8 @@ const defaults = {
   recordLaunchUsage: true,
   showKeyboardHints: true,
   searchMemo: false,
+  searchIgnoreWidth: false,
+  searchIgnoreKana: false,
   windowPositionMode: 'cursorMonitorCenter',
   windowFixedPosition: null,
   windowWidth: 600,

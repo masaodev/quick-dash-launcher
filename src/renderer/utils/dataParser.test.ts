@@ -1,11 +1,49 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import type { AppItem, WindowInfo } from '@common/types';
 
-import { filterItems, setSearchMemo } from './dataParser';
+import { filterItems, setSearchMemo, setSearchNormalization } from './dataParser';
 
 function windowItem(title: string, processName?: string): WindowInfo {
   return { hwnd: 1, title, processName } as WindowInfo;
 }
+
+describe('filterItems（全角・半角、ひらがな・カタカナを区別しない設定）', () => {
+  const item = (displayName: string) => ({ displayName }) as unknown as AppItem;
+  const chrome = item('Google Chrome');
+  const test = item('テスト手順');
+  const fullWidth = item('ＡＢＣ全角');
+  const items: AppItem[] = [chrome, test, fullWidth];
+
+  afterEach(() => setSearchNormalization({ ignoreWidth: false, ignoreKana: false }));
+
+  it('既定（どちらもオフ）では今までどおり区別する。大文字・小文字は区別しない', () => {
+    expect(filterItems(items, 'ｃｈｒｏｍｅ')).toEqual([]);
+    expect(filterItems(items, 'ﾃｽﾄ')).toEqual([]);
+    expect(filterItems(items, 'てすと')).toEqual([]);
+    expect(filterItems(items, 'CHROME')).toEqual([chrome]);
+  });
+
+  it('全角と半角を区別しないと、全角英数・半角カナでも当たる', () => {
+    setSearchNormalization({ ignoreWidth: true, ignoreKana: false });
+    expect(filterItems(items, 'ｃｈｒｏｍｅ')).toEqual([chrome]);
+    expect(filterItems(items, 'ﾃｽﾄ')).toEqual([test]);
+    expect(filterItems(items, 'abc')).toEqual([fullWidth]);
+    expect(filterItems(items, 'てすと')).toEqual([]);
+  });
+
+  it('ひらがなとカタカナを区別しないと、ひらがなでカタカナの名前に当たる', () => {
+    setSearchNormalization({ ignoreWidth: false, ignoreKana: true });
+    expect(filterItems(items, 'てすと')).toEqual([test]);
+    expect(filterItems(items, 'ﾃｽﾄ')).toEqual([]);
+  });
+
+  it('両方オンなら半角カナとひらがなもそろう。切り替えるとすぐに効く', () => {
+    setSearchNormalization({ ignoreWidth: true, ignoreKana: true });
+    expect(filterItems([item('てすと')], 'ﾃｽﾄ')).toHaveLength(1);
+    setSearchNormalization({ ignoreWidth: false, ignoreKana: false });
+    expect(filterItems(items, 'てすと')).toEqual([]);
+  });
+});
 
 describe('filterItems（ウィンドウ検索モード）', () => {
   const notepad = windowItem('無題 - メモ帳', 'Notepad.exe');

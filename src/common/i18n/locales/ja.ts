@@ -2496,6 +2496,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       searchMemo: '検索でメモにも当てる',
       searchMemoDescription:
         'メインウィンドウの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
+      searchIgnoreWidth: '検索で全角と半角を区別しない',
+      searchIgnoreWidthDescription:
+        'メインウィンドウの検索とワークスペースの絞り込みで、「ｃｈｒｏｍｅ」で「Chrome」、「ﾃｽﾄ」で「テスト」が見つかるようにします。',
+      searchIgnoreKana: '検索でひらがなとカタカナを区別しない',
+      searchIgnoreKanaDescription:
+        'メインウィンドウの検索とワークスペースの絞り込みで、「てすと」で「テスト」が見つかるようにします。',
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',

@@ -2483,6 +2483,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       searchMemo: 'Search notes too',
       searchMemoDescription:
         'When you search in the launcher, also finds items whose note contains the words. When off, only display names are searched.',
+      searchIgnoreWidth: 'Ignore full-width and half-width in search',
+      searchIgnoreWidthDescription:
+        'In the launcher search and the workspace filter, "ｃｈｒｏｍｅ" finds "Chrome" and half-width katakana finds full-width katakana.',
+      searchIgnoreKana: 'Ignore hiragana and katakana in search',
+      searchIgnoreKanaDescription:
+        'In the launcher search and the workspace filter, a word typed in hiragana also finds names written in katakana.',
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',

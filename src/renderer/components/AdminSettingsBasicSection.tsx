@@ -253,6 +253,34 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           </label>
           <div className="setting-description">{t('settings.display.searchMemoDescription')}</div>
         </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.searchIgnoreWidth ?? false}
+              onChange={(e) => handleSettingChange('searchIgnoreWidth', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.display.searchIgnoreWidth')}
+          </label>
+          <div className="setting-description">
+            {t('settings.display.searchIgnoreWidthDescription')}
+          </div>
+        </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.searchIgnoreKana ?? false}
+              onChange={(e) => handleSettingChange('searchIgnoreKana', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.display.searchIgnoreKana')}
+          </label>
+          <div className="setting-description">
+            {t('settings.display.searchIgnoreKanaDescription')}
+          </div>
+        </div>
       </div>
     </>
   );

@@ -65,6 +65,8 @@ export class SettingsService {
     backupIncludeClipboard: false,
     showKeyboardHints: true,
     searchMemo: false,
+    searchIgnoreWidth: false,
+    searchIgnoreKana: false,
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     detachedPositionMode: 'mainDisplay',

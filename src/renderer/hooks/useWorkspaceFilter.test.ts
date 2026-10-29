@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { WorkspaceGroup, WorkspaceItem } from '@common/types';
+
+import { setSearchNormalization } from '../utils/dataParser';
 
 import { useWorkspaceFilter } from './useWorkspaceFilter';
 
@@ -42,5 +44,17 @@ describe('useWorkspaceFilter（スペース区切りの AND）', () => {
   it('1 語なら今までと同じ（グループ名に当たればその中のアイテムを出す）', () => {
     expect(visibleItems('株')).toEqual(['a', 'b']);
     expect(visibleItems('メモ')).toEqual(['d']);
+  });
+});
+
+describe('useWorkspaceFilter（全角・半角、ひらがな・カタカナを区別しない設定）', () => {
+  afterEach(() => setSearchNormalization({ ignoreWidth: false, ignoreKana: false }));
+
+  it('既定では区別し、設定をオンにすると全角英数・ひらがなでも当たる', () => {
+    expect(visibleItems('ＸＬＳＸ')).toEqual([]);
+    expect(visibleItems('めも')).toEqual([]);
+    setSearchNormalization({ ignoreWidth: true, ignoreKana: true });
+    expect(visibleItems('ＸＬＳＸ')).toEqual(['b']);
+    expect(visibleItems('めも')).toEqual(['d']);
   });
 });
