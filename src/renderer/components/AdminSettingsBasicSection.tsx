@@ -281,6 +281,20 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             {t('settings.display.searchIgnoreKanaDescription')}
           </div>
         </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.searchSortByUsage ?? false}
+              onChange={(e) => handleSettingChange('searchSortByUsage', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.display.searchSortByUsage')}
+          </label>
+          <div className="setting-description">
+            {t('settings.display.searchSortByUsageDescription')}
+          </div>
+        </div>
       </div>
     </>
   );

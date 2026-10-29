@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import type { ElectronApplication, Page } from '@playwright/test';
 
 import { test, expect } from '../fixtures/electron-app';
@@ -134,6 +137,61 @@ test.describe('QuickDashLauncher - 検索の範囲', () => {
         })
       );
       await expect(card('テスト結果.xlsx')).toHaveCount(0);
+    });
+  });
+
+  test('設定をオンにすると、検索結果が「名前が語で始まる → よく開く順」に並ぶ', async ({
+    mainWindow,
+    configHelper,
+  }) => {
+    for (const [id, displayName] of [
+      ['e2eord01', '議事録ぺんぎん'],
+      ['e2eord02', 'ぺんぎんの書き方'],
+      ['e2eord03', 'ぺんぎん帳'],
+    ]) {
+      configHelper.addItemToFile('data.json', {
+        id,
+        type: 'item',
+        displayName,
+        path: `https://example.com/${id}`,
+      });
+    }
+    // 起動の記録（本体は初めて使うときに読むので、先に置けばそれを使う）
+    fs.writeFileSync(
+      path.join(configHelper.getConfigDir(), 'item-usage.json'),
+      JSON.stringify({
+        version: 1,
+        since: 0,
+        byId: {
+          e2eord01: { count: 50, lastLaunchedAt: 1 },
+          e2eord03: { count: 5, lastLaunchedAt: 1 },
+        },
+        byPath: {},
+      })
+    );
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.reload();
+    await utils.waitForPageLoad();
+    const names = async () =>
+      (await mainWindow.locator('.item .item-name').allTextContents()).map((n) => n.trim());
+
+    await test.step('既定（オフ）では今までどおりの順（名前順）', async () => {
+      await utils.searchFor('ぺんぎん');
+      await expect.poll(names).toEqual(['ぺんぎんの書き方', 'ぺんぎん帳', '議事録ぺんぎん']);
+    });
+
+    await test.step('オンにすると、語で始まるものが上、その中でよく開くものが上', async () => {
+      await mainWindow.evaluate(() =>
+        window.electronAPI.setMultipleSettings({ searchSortByUsage: true })
+      );
+      await expect.poll(names).toEqual(['ぺんぎん帳', 'ぺんぎんの書き方', '議事録ぺんぎん']);
+    });
+
+    await test.step('検索欄が空なら並べ替えない', async () => {
+      await utils.searchFor('');
+      const all = await names();
+      expect(all.indexOf('ぺんぎんの書き方')).toBeLessThan(all.indexOf('ぺんぎん帳'));
     });
   });
 

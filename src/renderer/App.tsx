@@ -34,6 +34,7 @@ import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
+import { sortByUsage } from './utils/searchUsageOrder';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { findNoMatchElsewhere } from './utils/noMatchElsewhere';
 import { debugLog, logError } from './utils/debug';
@@ -48,6 +49,7 @@ import { useDataFileTabs } from './hooks/useDataFileTabs';
 import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
 import { useSearchMemo } from './hooks/useSearchMemo';
 import { useSearchNormalization } from './hooks/useSearchNormalization';
+import { useSearchUsageOrder } from './hooks/useSearchUsageOrder';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -146,6 +148,8 @@ function App(): React.ReactElement {
   const searchMemo = useSearchMemo();
   // 検索で全角・半角、ひらがな・カタカナを区別しないか（変わったら一覧を絞り直す）
   const searchNormalization = useSearchNormalization();
+  // 検索結果をよく開く順に並べるか（オフなら null。オンなら開いた回数を引く関数）
+  const usageCountOf = useSearchUsageOrder();
 
   // ワークスペースからドラッグされたアイテム。選んでいるタブ（の先頭のファイル）へ移し、ワークスペース側を参照にする
   // （結果はメインプロセスがトーストで知らせる）。参照はもうメインウィンドウにあるので、移さずに知らせる
@@ -550,7 +554,11 @@ function App(): React.ReactElement {
       searchMode === 'window'
         ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
         : tabFilteredItems;
-    return filterItems(itemsToFilter, searchQuery, searchMode);
+    const matched = filterItems(itemsToFilter, searchQuery, searchMode);
+    // 通常検索で設定がオンなら、名前が最初の語で始まるもの → よく開くものを上へ
+    return searchMode === 'normal' && usageCountOf
+      ? sortByUsage(matched, searchQuery, usageCountOf)
+      : matched;
     // searchMemo・searchNormalization は filterItems の中で読む設定。変わったら絞り直す
   }, [
     searchMode,
@@ -560,6 +568,7 @@ function App(): React.ReactElement {
     searchQuery,
     searchMemo,
     searchNormalization,
+    usageCountOf,
   ]);
 
   // 検索で 0 件のとき、他のタブや通常の検索に合うものがあるか（一覧が空の案内に使う）
