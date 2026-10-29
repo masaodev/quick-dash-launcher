@@ -56,13 +56,15 @@ import { shellExecuteRunAs } from './shellExecuteRunAs.js';
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger;
 
 describe('buildCmdCommandLine', () => {
+  // パスだけを囲み、引数は書いたとおりに付ける（コマンドプロンプトに打つのと同じ）
   it.each([
-    [['C:\\Tools\\run.bat', []], 'C:\\Tools\\run.bat'],
-    [['C:\\My Tools\\run.cmd', ['a']], '"C:\\My Tools\\run.cmd" a'],
-    [['run.bat', ['Git Bash', '', 'a&b', 'say "hi"']], 'run.bat "Git Bash" "" "a&b" "say ""hi"""'],
-    [['run.bat', ['%USERPROFILE%', '--x=1']], 'run.bat %USERPROFILE% "--x=1"'],
-  ] as const)('%j は %s', ([batPath, args], expected) => {
-    expect(buildCmdCommandLine(batPath, [...args])).toBe(expected);
+    ['C:\\Tools\\run.bat', '', '"C:\\Tools\\run.bat"'],
+    ['C:\\My Tools\\run.cmd', 'a', '"C:\\My Tools\\run.cmd" a'],
+    ['run.bat', '  -p "Git Bash"  ', '"run.bat" -p "Git Bash"'],
+    ['run.bat', '--title="My App" "a&b"', '"run.bat" --title="My App" "a&b"'],
+    ['C:\\a&b (x)\\run.bat', '%USERPROFILE%', '"C:\\a&b (x)\\run.bat" %USERPROFILE%'],
+  ])('%s に %j', (batPath, args, expected) => {
+    expect(buildCmdCommandLine(batPath, args)).toBe(expected);
   });
 });
 
@@ -105,14 +107,14 @@ describe('launchItem（app）', () => {
     );
   });
 
-  it('引数ありの .bat は、空白を含むパスと引数を引用符で囲んだ 1 本のコマンドで cmd.exe に渡す', async () => {
+  it('引数ありの .bat は、パスを引用符で囲み、引数を書いたとおりに付けた 1 本のコマンドで cmd.exe に渡す', async () => {
     await launchItem(
-      { type: 'app', path: 'C:\\Program Files\\Tools\\run.BAT', args: '-p "Git Bash" x' },
+      { type: 'app', path: 'C:\\Program Files\\Tools\\run.BAT', args: '--title="My App" x' },
       logger
     );
 
     expect(spawnMock).toHaveBeenCalledWith(
-      '"C:\\Program Files\\Tools\\run.BAT" -p "Git Bash" x',
+      '"C:\\Program Files\\Tools\\run.BAT" --title="My App" x',
       [],
       expect.objectContaining({ cwd: 'C:\\Program Files\\Tools', shell: true })
     );
