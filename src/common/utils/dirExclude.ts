@@ -1,6 +1,15 @@
 import { minimatch } from 'minimatch';
 
 /**
+ * フォルダ取込のファイル名の条件・除外する条件に名前が当たるか
+ *
+ * Windows のファイル名は大文字・小文字を区別しないので、照合も区別しない（`*.pdf` が `SCAN.PDF` に当たる）
+ */
+export function matchesDirPattern(name: string, pattern: string): boolean {
+  return minimatch(name, pattern, { nocase: true });
+}
+
+/**
  * ファイル名を、フォルダ取込の除外フィルタ（minimatch のパターン）の中でそのまま 1 件に当たる形にする
  *
  * ワイルドカード（* ? [ ] ( ) など）に加え、まとめて書くときの { } , も文字として扱う
@@ -37,7 +46,7 @@ export function appendExcludeName(current: string | undefined, fileName: string)
   const escaped = escapeExcludeName(fileName);
   const pattern = current?.trim() ?? '';
   if (!pattern) return escaped;
-  if (minimatch(fileName, pattern)) return pattern;
+  if (matchesDirPattern(fileName, pattern)) return pattern;
   if (isWholeBraceGroup(pattern)) return `${pattern.slice(0, -1)},${escaped}}`;
   return `{${pattern},${escaped}}`;
 }
