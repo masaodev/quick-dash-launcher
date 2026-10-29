@@ -2023,6 +2023,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     fileUnreadable: 'ファイルを読み込めませんでした',
     convertFailed: '変換に失敗: {{error}}',
     configLoadFailed: '設定ファイルの読み込みに失敗しました（破損の可能性）: {{files}}',
+    settingsRecovered:
+      'settings.json を読めなかったので、既定の設定で起動しました。元のファイルは設定フォルダの {{file}} に残しています',
   },
   loadReport: {
     accepted_one: '{{count}} 件読み込み',

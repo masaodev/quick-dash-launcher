@@ -32,6 +32,8 @@ type StoreInstance = {
  */
 export class SettingsService {
   private store: StoreInstance | null = null;
+  /** 起動時に壊れていて退避した settings.json の行き先（退避しなかったら null） */
+  private recoveredBrokenFile: string | null = null;
   private static instance: SettingsService;
 
   private static readonly DEFAULT_SETTINGS: AppSettings = {
@@ -115,6 +117,7 @@ export class SettingsService {
       if (!(error instanceof SyntaxError) || !fs.existsSync(settingsFilePath)) throw error;
       const dest = brokenFilePath(settingsFilePath);
       fs.renameSync(settingsFilePath, dest);
+      this.recoveredBrokenFile = dest;
       logger.warn(
         { error, brokenFile: dest },
         'settings.json を読めないため別名で退避し、既定値で起動します'
@@ -128,6 +131,11 @@ export class SettingsService {
     }
 
     logger.info(`SettingsService initialized successfully at ${configFolder}`);
+  }
+
+  /** 起動時に壊れていて退避した settings.json の行き先（退避しなかったら null。起動時の知らせに使う） */
+  public getRecoveredBrokenFile(): string | null {
+    return this.recoveredBrokenFile;
   }
 
   /** ストアが初期化されていることを保証し、インスタンスを返す */

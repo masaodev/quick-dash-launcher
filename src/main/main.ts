@@ -47,7 +47,7 @@ import {
 import { migrateRemovedWindowSettings } from './services/removedWindowSettings.js';
 import { closeAllDetachedGroupWindows } from './detachedGroupWindowManager';
 import { markAppQuitting } from './utils/managedWindow.js';
-import { destroyOverlayWindow } from './services/overlayWindowService.js';
+import { destroyOverlayWindow, showToastWindow } from './services/overlayWindowService.js';
 import { cancelAllChildWindowCreations } from './services/childWindowService.js';
 import { closeAllMainChildWindows } from './mainChildWindowManager.js';
 import { closeAllWorkspaceItemEditors } from './workspaceItemEditorWindowManager.js';
@@ -56,6 +56,7 @@ import { closeAllWorkspaceLinkWindows } from './workspaceLinkWindowManager.js';
 import { closeAllWorkspaceConfirms } from './workspaceConfirmWindowManager.js';
 import { BookmarkAutoImportService } from './services/bookmarkAutoImportService.js';
 import { applyLanguageSetting, registerLanguageHandler } from './services/i18nService.js';
+import { mainI18n } from './services/mainI18n.js';
 import { installNavigationGuard } from './utils/navigationGuard.js';
 import { startFileLogging } from './services/fileLogging.js';
 import { LaunchUsageService } from './services/launchUsageService.js';
@@ -263,6 +264,21 @@ app.whenReady().then(async () => {
   await rendererReadyPromise;
   notifySplashInitComplete();
   resolveAppReady();
+
+  // settings.json が壊れていて退避したときは、既定の設定で起動したことを知らせる
+  //（初回設定の画面が出る理由と、元の設定の残り場所が分かるように）
+  const recoveredSettingsFile = settingsService.getRecoveredBrokenFile();
+  if (recoveredSettingsFile) {
+    showToastWindow({
+      message: mainI18n.t('dataErrors.settingsRecovered', {
+        file: path.basename(recoveredSettingsFile),
+      }),
+      type: 'warning',
+      long: true,
+    }).catch((error) => {
+      console.error('設定の退避を知らせるトーストの表示でエラー:', error);
+    });
+  }
 
   // テスト環境の場合、ウィンドウを自動表示（createWindow完了後に実行）
   if (EnvConfig.showWindowOnStartup) {
