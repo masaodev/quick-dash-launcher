@@ -12,7 +12,8 @@ import { TestUtils } from '../helpers/test-utils';
 test.describe('QuickDashLauncher - 壊れた settings.json', () => {
   test.use({ configTemplate: 'broken-settings' });
 
-  test('壊れた settings.json は別名で退避し、既定値で起動する', async ({
+  test('壊れた settings.json は別名で退避し、既定値で起動したことをトーストで知らせる', async ({
+    electronApp,
     mainWindow,
     configHelper,
   }) => {
@@ -30,5 +31,16 @@ test.describe('QuickDashLauncher - 壊れた settings.json', () => {
     expect(() =>
       JSON.parse(fs.readFileSync(path.join(configDir, 'settings.json'), 'utf8'))
     ).not.toThrow();
+
+    // 初回設定の画面が出る理由と元のファイルの名前を、トーストで知らせる
+    // トーストの窓は about:blank に HTML を書き込んで作るので、#toast を持つ窓を探す
+    const toastText = async () => {
+      for (const win of electronApp.windows()) {
+        const toast = win.locator('#toast');
+        if ((await toast.count()) > 0) return (await toast.textContent()) ?? '';
+      }
+      return '';
+    };
+    await expect.poll(toastText, { timeout: 10000 }).toContain(broken[0]);
   });
 });

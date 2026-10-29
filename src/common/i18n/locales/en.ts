@@ -2023,6 +2023,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     fileUnreadable: "Couldn't read the file",
     convertFailed: 'Conversion failed: {{error}}',
     configLoadFailed: "Couldn't load the settings files (they may be corrupted): {{files}}",
+    settingsRecovered:
+      "Couldn't read settings.json, so QuickDashLauncher started with the default settings. The original file is kept as {{file}} in the settings folder",
   },
   loadReport: {
     accepted_one: '{{count}} item loaded',
