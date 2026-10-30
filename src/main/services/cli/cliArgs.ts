@@ -50,7 +50,19 @@ export interface OptionSpec {
 }
 
 /** どのコマンドでも値を取らないオプション（`--dry-run --help` の --help は値ではない） */
-const FLAG_NAMES: ReadonlySet<string> = new Set(['dry-run', 'copy', 'with-text']);
+const FLAG_NAMES: ReadonlySet<string> = new Set(['dry-run', 'copy', 'with-text', 'ascii']);
+
+/** args[i] が、直前の値を取るオプションの値か（`--args -h` の `-h`・`--memo --ascii` の `--ascii`） */
+function isOptionValue(args: readonly string[], i: number): boolean {
+  const prev = args[i - 1];
+  return (
+    prev !== undefined &&
+    prev.startsWith('--') &&
+    prev !== '--help' &&
+    !prev.includes('=') &&
+    !FLAG_NAMES.has(prev.slice(2))
+  );
+}
 
 /**
  * 引数に説明（`--help`・`-h`）の求めがあるか
@@ -59,17 +71,29 @@ const FLAG_NAMES: ReadonlySet<string> = new Set(['dry-run', 'copy', 'with-text']
  * 説明を返して成功扱いにしないため）。parseArgs も同じ位置の語を値として受け取る
  */
 export function wantsHelp(args: readonly string[]): boolean {
-  return args.some((arg, i) => {
-    if (arg !== '--help' && arg !== '-h') return false;
-    const prev = args[i - 1];
-    const prevTakesValue =
-      prev !== undefined &&
-      prev.startsWith('--') &&
-      prev !== '--help' &&
-      !prev.includes('=') &&
-      !FLAG_NAMES.has(prev.slice(2));
-    return !prevTakesValue;
-  });
+  return args.some((arg, i) => (arg === '--help' || arg === '-h') && !isOptionValue(args, i));
+}
+
+/**
+ * どのコマンドにも付けられる `--ascii`（JSON の日本語などを `\uXXXX` で書く）を取り出す
+ *
+ * コマンドの前にも後ろにも書ける。値を取るオプションの直後はその値として読み、取り出さない
+ */
+export function takeAsciiFlag(argv: readonly string[]): { ascii: boolean; argv: string[] } {
+  const rest = argv.filter((arg, i) => arg !== '--ascii' || isOptionValue(argv, i));
+  return { ascii: rest.length !== argv.length, argv: rest };
+}
+
+/**
+ * JSON の文字列の ASCII 以外を `\uXXXX` にする（JSON では ASCII 以外は文字列の中にしか出ないので、全体にかけてよい）
+ *
+ * JSON.stringify は制御文字を書き換えて出すので、残るのは改行・空白〜`~` と ASCII 以外だけ
+ */
+export function escapeNonAscii(jsonText: string): string {
+  return jsonText.replace(
+    /[^\n -~]/g,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`
+  );
 }
 
 export function parseArgs(args: readonly string[], spec: OptionSpec): ParsedArgs {

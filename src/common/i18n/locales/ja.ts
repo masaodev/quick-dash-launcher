@@ -536,6 +536,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 出力: 成功したら標準出力に JSON。失敗したら標準出力に {"error": {"code", "message", "candidates"?}}、
 標準エラーに説明。code は usage / not_found / ambiguous / invalid / conflict / unavailable / internal。
 書き込むコマンドは --dry-run で、書き込まずに結果だけを確かめられます。
+--ascii を付けると、JSON の日本語などを \\uXXXX で書きます（Windows PowerShell 5.1 で ConvertFrom-Json に渡すと化けるとき）。
 
 終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 やり取りの誤り（CLI と本体の版の不一致・依頼が大きすぎる・読めないなど）
 `,

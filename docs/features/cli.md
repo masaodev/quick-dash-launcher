@@ -182,6 +182,8 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - `settings get <キー>`: `{ "key", "value", "writable" }`（キーを省くと `{ "settings", "writable" }`）
 - `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので、足すものの `id` は `null`）
 
+JSON は UTF-8 で出します。どのコマンドにも `--ascii` を付けられ（コマンドの前でも後ろでもよい。値を取るオプションの直後はその値として読む）、付けると JSON の ASCII 以外の文字（日本語・絵文字）を `\uXXXX` で書きます（失敗のときの JSON も。標準エラーの文と `--help` の説明はそのまま）。Windows PowerShell 5.1 は、パイプで受け取る文字を既定で Shift_JIS として読むので、`qdl launcher item list | ConvertFrom-Json` の日本語が化けます。`--ascii` を付けるか、先に `[Console]::OutputEncoding = [Text.Encoding]::UTF8` を実行してください。
+
 失敗したら、標準出力に次の形の JSON、標準エラーに人向けの文を出します。`code` は固定の英単語で、文言を変えても変えません。
 
 `message`・標準エラーの文・`--help` の説明は、本体の表示言語（基本設定の「表示言語」。日本語か英語）で出します。`code` と JSON のキーは言語によりません。qdl.exe 自身が出す文（本体に接続できない・起動できないとき、版が合わないとき）は、本体の言語が分からないので日本語のままです。
