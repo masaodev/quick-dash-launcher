@@ -2492,6 +2492,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       searchIgnoreKana: 'Ignore hiragana and katakana in search',
       searchIgnoreKanaDescription:
         'In the launcher search and the workspace filter, a word typed in hiragana also finds names written in katakana.',
+      searchSortByUsage: 'Sort search results by how often you open them',
+      searchSortByUsageDescription:
+        'When you search in the launcher, items whose name starts with the typed word come first, and among them the ones you open most often. The order stays as before when the search box is empty or when "Keep a launch history" is off.',
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',

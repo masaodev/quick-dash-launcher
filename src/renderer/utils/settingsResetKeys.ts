@@ -36,7 +36,13 @@ export const SETTINGS_RESET_KEYS: Record<
   ReadonlyArray<keyof AppSettings>
 > = {
   system: ['autoLaunch', 'cliEnabled', 'recordLaunchUsage'],
-  display: ['showKeyboardHints', 'searchMemo', 'searchIgnoreWidth', 'searchIgnoreKana'],
+  display: [
+    'showKeyboardHints',
+    'searchMemo',
+    'searchIgnoreWidth',
+    'searchIgnoreKana',
+    'searchSortByUsage',
+  ],
   mainWindow: ['windowPositionMode', 'windowFixedPosition', 'windowWidth', 'windowHeight'],
   workspaceWindow: [
     'workspacePositionMode',
@@ -123,6 +129,7 @@ const RESET_ROWS: Record<ResettableSettingsSection, ReadonlyArray<ResetRow>> = {
     checkRow('searchMemo', 'settings.display.searchMemo'),
     checkRow('searchIgnoreWidth', 'settings.display.searchIgnoreWidth'),
     checkRow('searchIgnoreKana', 'settings.display.searchIgnoreKana'),
+    checkRow('searchSortByUsage', 'settings.display.searchSortByUsage'),
   ],
   mainWindow: [
     {

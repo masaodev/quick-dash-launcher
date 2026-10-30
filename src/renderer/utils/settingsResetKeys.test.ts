@@ -22,6 +22,7 @@ const defaults = {
   searchMemo: false,
   searchIgnoreWidth: false,
   searchIgnoreKana: false,
+  searchSortByUsage: false,
   windowPositionMode: 'cursorMonitorCenter',
   windowFixedPosition: null,
   windowWidth: 600,

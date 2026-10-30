@@ -69,6 +69,7 @@ export class SettingsService {
     searchMemo: false,
     searchIgnoreWidth: false,
     searchIgnoreKana: false,
+    searchSortByUsage: false,
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     detachedPositionMode: 'mainDisplay',
