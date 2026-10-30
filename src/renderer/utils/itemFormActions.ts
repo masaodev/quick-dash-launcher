@@ -40,6 +40,29 @@ export async function loadCachedIconsForItems(
   return window.electronAPI.loadCachedIcons(launcherItems);
 }
 
+/** 前後から外す空白（半角の空白・タブ・改行だけ。全角スペースで終わるフォルダ名は Windows で作れるので残す） */
+const EDGE_WHITESPACE = /^[ \t\r\n]+|[ \t\r\n]+$/g;
+
+/**
+ * パス欄に入れた文字を、保存する形に整える（前後の空白と、全体を囲む `"` を外す）
+ *
+ * エクスプローラーの「パスのコピー」は `"C:\…\a.exe"` と引用符付きでコピーするので、そのまま貼ると
+ * 開けないアイテムになる。前の空白が付いた `https://…` は URL と判定されない。
+ * 中にも `"` があるとき（`"C:\a.exe" "引数"` のように引数まで入れた）は、どこまでがパスか分からないので触らない
+ */
+export function normalizePathInput(path: string): string {
+  const trimmed = path.replace(EDGE_WHITESPACE, '');
+  const m = trimmed.match(/^"([^"]+)"$/);
+  return m ? m[1].replace(EDGE_WHITESPACE, '') : trimmed;
+}
+
+/** 保存の前にパスを整える（パスを持たないクリップボードはそのまま。変わらなければ同じオブジェクト） */
+export function withNormalizedPath(item: RegisterItem): RegisterItem {
+  if (item.itemCategory === 'clipboard' || typeof item.path !== 'string') return item;
+  const path = normalizePathInput(item.path);
+  return path === item.path ? item : { ...item, path };
+}
+
 /**
  * パス欄を離れたとき（または「選択」で選んだとき）に、パスに合わせて種別・アイコンを決め直す
  *
@@ -52,7 +75,10 @@ export async function resolvePathChange(
   pickedPath?: string
 ): Promise<((current: RegisterItem) => RegisterItem) | undefined> {
   if (item.itemCategory === 'clipboard') return undefined;
-  const path = pickedPath ?? item.path;
+  const rawPath = pickedPath ?? item.path;
+  const path = typeof rawPath === 'string' ? normalizePathInput(rawPath) : rawPath;
+  // 整えて変わったときは、欄の表示も整えた形にする
+  const pathChanged = pickedPath !== undefined || path !== item.path;
   if (!path?.trim()) {
     // パスを空にした単一アイテムは、開いているウィンドウに切り替えるだけの種別にする
     if (item.itemCategory === 'item' && item.type !== 'windowSwitch') {
@@ -70,7 +96,7 @@ export async function resolvePathChange(
   return (current) => {
     const next: RegisterItem = {
       ...current,
-      ...(pickedPath !== undefined && { path: pickedPath }),
+      ...(pathChanged && { path }),
       type: newType,
     };
     if (newType === 'folder') {

@@ -19,6 +19,7 @@ import {
   fetchItemIcon,
   loadCachedIconsForItems,
   resolvePathChange,
+  withNormalizedPath,
   validateItemForm,
 } from '../utils/itemFormActions';
 
@@ -156,8 +157,10 @@ export function useRegisterForm(
 
   const validateAndRegister = async () => {
     const newErrors: typeof errors = {};
+    // パス欄を離れずに登録したとき（Enter など）も、前後の空白・引用符を外して保存する
+    const normalizedItems = items.map(withNormalizedPath);
 
-    items.forEach((item, i) => {
+    normalizedItems.forEach((item, i) => {
       newErrors[i] = validateItemForm(item, t);
     });
 
@@ -167,7 +170,7 @@ export function useRegisterForm(
       return;
     }
 
-    const finalItems = await commitClipboardSessions(items);
+    const finalItems = await commitClipboardSessions(normalizedItems);
     if (!finalItems) {
       return;
     }
