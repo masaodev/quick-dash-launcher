@@ -115,7 +115,8 @@ export const ja = {
       switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
       corrupted: '{{files}} を読めませんでした（壊れている可能性があります）',
-      corruptedHint: 'ファイルを直してから F5 で読み直してください。直すまで、QDL はこのファイルを書き換えません',
+      corruptedHint:
+        'ファイルを直してから F5 で読み直してください。直すまで、QDL はこのファイルを書き換えません',
       openConfigFolder: '📂 設定フォルダを開く',
       add: '📄 アイテムを追加',
       importBookmarks: '🔖 ブックマークから',
