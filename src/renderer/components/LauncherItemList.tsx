@@ -38,6 +38,8 @@ interface ItemListProps {
   onAddItem?: () => void;
   /** 空のタブの「🗂️ フォルダから」（登録画面をフォルダ取込の種別で開く）。指定があれば、ブックマーク・アプリの取込も並べる */
   onAddFolderImport?: () => void;
+  /** 読めなかったデータファイルの案内の「設定フォルダを開く」 */
+  onOpenConfigFolder?: () => void;
   /** 一覧の余白（アイテムの無い所）の右クリック。未指定なら何も出さない */
   onBlankContextMenu?: () => void;
   /** 他のタブにあるときの案内の「Tab:タブを切り替える」（Tab キーと同じ動き） */
@@ -55,7 +57,9 @@ interface ItemListProps {
 /** 一覧が空のときの案内の種類 */
 export type LauncherEmptyState =
   | { kind: 'noMatch'; query: string; windowMode: boolean; elsewhere: NoMatchElsewhere }
-  | { kind: 'emptyTab' };
+  | { kind: 'emptyTab' }
+  /** 今のタブのデータファイルを読めなかった（壊れている可能性がある）。追加の入口は出さずに直し方を案内する */
+  | { kind: 'corrupted'; files: string[] };
 
 /** 検索で 0 件のときの案内の 2 行（辞書のキー）。場面ごとの文言の対応はここだけで決める */
 function noMatchKeys(windowMode: boolean, elsewhere: NoMatchElsewhere) {
@@ -115,6 +119,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   emptyState,
   onAddItem,
   onAddFolderImport,
+  onOpenConfigFolder,
   onBlankContextMenu,
   onSwitchTab,
 }) => {
@@ -482,6 +487,20 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                     )}
                     {renderImportButtons('no-match-imports')}
                   </>
+                )}
+              </>
+            ) : emptyState.kind === 'corrupted' ? (
+              <>
+                <p>
+                  {t('launcher.empty.corrupted', {
+                    files: emptyState.files.join(t('common.listSeparator')),
+                  })}
+                </p>
+                <p className="item-list-empty-hint">{t('launcher.empty.corruptedHint')}</p>
+                {onOpenConfigFolder && (
+                  <Button variant="secondary" size="sm" onClick={onOpenConfigFolder}>
+                    {t('launcher.empty.openConfigFolder')}
+                  </Button>
                 )}
               </>
             ) : (

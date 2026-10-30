@@ -14,6 +14,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.CREATE_DATA_FILE]: ElectronAPI['createDataFile'];
   [IPC_CHANNELS.DELETE_DATA_FILE]: ElectronAPI['deleteDataFile'];
   [IPC_CHANNELS.LOAD_DATA_FILES]: ElectronAPI['loadDataFiles'];
+  [IPC_CHANNELS.GET_CORRUPTED_DATA_FILES]: ElectronAPI['getCorruptedDataFiles'];
   [IPC_CHANNELS.OPEN_ITEM]: ElectronAPI['openItem'];
   [IPC_CHANNELS.OPEN_PARENT_FOLDER]: ElectronAPI['openParentFolder'];
   [IPC_CHANNELS.RUN_ITEM_AS_ADMIN]: ElectronAPI['runItemAsAdmin'];

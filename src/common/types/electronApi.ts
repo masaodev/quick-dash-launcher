@@ -101,6 +101,8 @@ export interface ElectronAPI {
    * 'internal' = 変更通知・画面内の一覧取得
    */
   loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
+  /** 直近の読み込みで読めなかった（壊れている可能性がある）データファイル（例: 'datafiles/data2.json'） */
+  getCorruptedDataFiles: () => Promise<string[]>;
   /** options.trial＝登録・編集フォームで試しに開く（起動の記録に数えない） */
   openItem: (item: LauncherItem, options?: LaunchOptions) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;

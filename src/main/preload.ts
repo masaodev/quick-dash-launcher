@@ -77,6 +77,7 @@ const electronAPI: ElectronAPI = {
   deleteDataFile: (fileName) => ipcInvoke(IPC_CHANNELS.DELETE_DATA_FILE, fileName),
   // trigger: 'full' は「アイコンをすべて取り直す」、'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
   loadDataFiles: (trigger) => ipcInvoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
+  getCorruptedDataFiles: () => ipcInvoke(IPC_CHANNELS.GET_CORRUPTED_DATA_FILES),
   openItem: (item, options) => ipcInvoke(IPC_CHANNELS.OPEN_ITEM, item, options),
   openParentFolder: (item) => ipcInvoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
   runItemAsAdmin: (item) => ipcInvoke(IPC_CHANNELS.RUN_ITEM_AS_ADMIN, item),
