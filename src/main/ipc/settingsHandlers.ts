@@ -240,6 +240,17 @@ async function reapplyHotkeys(settingsService: SettingsService): Promise<void> {
 export async function reapplySettingsFromDisk(): Promise<void> {
   const settingsService = await SettingsService.getInstance();
 
+  // 起動した後に settings.json が壊れたときは、既定値で自動起動・CLI・ホットキーを書き換えないよう、
+  // 何も適用せずに知らせるだけにする（直して F5 を押せば適用する）
+  if (!SettingsService.isSettingsFileReadable()) {
+    logger.warn('settings.json を読めないため、設定を適用し直しませんでした');
+    showToastWindow({
+      message: mainI18n.t('dataErrors.settingsUnreadableOnReload'),
+      type: 'error',
+    }).catch((error) => logger.error({ error }, '設定の読み直しの失敗トーストの表示に失敗'));
+    return;
+  }
+
   await applySettingsEffects(EFFECT_KEYS, settingsService);
   try {
     await reapplyHotkeys(settingsService);

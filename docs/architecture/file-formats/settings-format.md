@@ -22,6 +22,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 手で直して JSON として読めなくなったときは、起動時に `settings.broken-YYYYMMDDTHHmmss.json` へ退避し、既定値で起動します（既定値は起動ホットキーが空なので、初回設定の画面が出ます）。退避したときは、起動の後に「settings.json を読めなかったので、既定の設定で起動しました。元のファイルは設定フォルダの settings.broken-….json に残しています」とトースト（警告・長め）で知らせます（`src/main/main.ts`）。退避したファイルは消さないので、直してから `settings.json` に戻せます（`src/main/services/settingsService.ts`）。
 
+起動した後に QDL の外で壊したときは、F5（と CLI の `reload`）で設定を適用し直さず、「settings.json を読めないため、設定を読み直しませんでした（自動起動・CLI・ホットキーは今のまま）。ファイルを直してから F5 を押してください」とトースト（エラー）で知らせます。壊れたまま適用し直すと、読むたびに既定値が返るので、自動起動のショートカットを作り直し・CLI を外し・ウィンドウ検索のホットキーを外してしまうためです。ファイルは退避も上書きもしません（`src/main/ipc/settingsHandlers.ts` の `reapplySettingsFromDisk`）。
+
 ---
 
 ## 2. ファイル構造
