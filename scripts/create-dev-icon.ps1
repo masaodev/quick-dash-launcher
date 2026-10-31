@@ -17,10 +17,17 @@ try {
     $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
 
-    $graphics.DrawImage($sourceImage, 0, 0, $sourceImage.Width, $sourceImage.Height)
-
-    $overlayBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(100, 255, 0, 0))
-    $graphics.FillRectangle($overlayBrush, 0, 0, $sourceImage.Width, $sourceImage.Height)
+    # Tint toward red without touching alpha, so transparent corners stay transparent
+    $tint = 100 / 255
+    $matrix = New-Object System.Drawing.Imaging.ColorMatrix
+    $matrix.Matrix00 = 1 - $tint
+    $matrix.Matrix11 = 1 - $tint
+    $matrix.Matrix22 = 1 - $tint
+    $matrix.Matrix40 = $tint
+    $attributes = New-Object System.Drawing.Imaging.ImageAttributes
+    $attributes.SetColorMatrix($matrix)
+    $rect = New-Object System.Drawing.Rectangle(0, 0, $sourceImage.Width, $sourceImage.Height)
+    $graphics.DrawImage($sourceImage, $rect, 0, 0, $sourceImage.Width, $sourceImage.Height, [System.Drawing.GraphicsUnit]::Pixel, $attributes)
 
     $fontSize = [int]($sourceImage.Height * 0.25)
     $font = New-Object System.Drawing.Font("Arial", $fontSize, [System.Drawing.FontStyle]::Bold)
@@ -84,7 +91,7 @@ try {
     $graphics.Dispose()
     $bitmap.Dispose()
     $sourceImage.Dispose()
-    $overlayBrush.Dispose()
+    $attributes.Dispose()
     $textBrush.Dispose()
     $outlineBrush.Dispose()
     $font.Dispose()
