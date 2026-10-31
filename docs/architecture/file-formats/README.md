@@ -169,6 +169,7 @@ v0.8.0-beta.5 までの QDL は、直接編集する人・AI 向けに `config/R
 1. 環境変数 `QUICK_DASH_CONFIG_DIR` があれば、そのフォルダ。Windows のシステムフォルダ（`C:\Windows`・`C:\Program Files` など）を指したときは無視して既定に戻す
 2. なければ、userData フォルダの下の `config\`。userData は既定で `%APPDATA%\quick-dash-launcher\`（`package.json` の `name`。Store 版で新しく作る場合はパッケージ専用の場所に振り替えられる。[ビルドとデプロイ - Store 版（MSIX）](../../setup/build-deploy.md#store-版msix)）なので、設定フォルダは `%APPDATA%\quick-dash-launcher\config\`
 3. 多重起動用の環境変数 `APP_INSTANCE` があると、userData が `%APPDATA%\<APP_INSTANCE>-quick-dash-launcher\` に変わり、設定フォルダもその下の `config\` になる（`npm run dev` は `APP_INSTANCE=dev` なので `%APPDATA%\dev-quick-dash-launcher\config\`）
+4. ポータブル版（ZIP）で、exe の横にデータフォルダ `QuickDashLauncher-data\` があれば、userData がそのフォルダになり、設定フォルダは `QuickDashLauncher-data\config\` になる（`APP_INSTANCE` が付いているときは使わない。書き込めないときは `%APPDATA%` を使い、起動時にトーストで知らせる。[ビルドとデプロイ - ポータブル版（ZIP）](../../setup/build-deploy.md#ポータブル版zip)）
 
 データファイル・ワークスペースファイル・バックアップなど、このページに出てくるファイルとフォルダはすべて設定フォルダの下に置かれる。パスの組み立ては `PathManager` にまとまっている。
 

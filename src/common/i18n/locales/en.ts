@@ -1728,6 +1728,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     about: 'ℹ️ About',
     version: 'Version',
     distribution: 'Edition',
+    dataLocation: 'Data location',
+    dataLocations: {
+      portable: 'QuickDashLauncher-data next to the exe',
+      appData: '%APPDATA%',
+    },
     updateAvailable: 'New version v{{version}} is available',
     updateToast: 'New version v{{version}} is available. Open it from the tray menu.',
     openReleasePage: 'Open the download page',
@@ -2090,6 +2095,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       "Some files were saved by a newer version of QDL: {{files}}. They're shown, but can't be changed until you update QDL to the latest version.",
     settingsNewerFormat:
       "settings.json was saved by a newer version of QDL. Changes to settings last only until you quit QDL and aren't saved to the file. Update QDL to the latest version.",
+    portableDataUnwritable:
+      "Can't write to the data folder, so data is saved in %APPDATA% instead: {{dir}}. Move QDL to a folder you can write to.",
   },
   loadReport: {
     accepted_one: '{{count}} item loaded',
