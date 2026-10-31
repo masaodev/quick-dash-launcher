@@ -13,6 +13,9 @@ import { forgetDataFile, writeDataFile } from '../dataFileTracker.js';
 import { mainI18n } from '../mainI18n.js';
 import { notifyDataChanged } from '../../ipc/notifications.js';
 
+import { clearDataFileCorrupted } from './corruptedDataFiles.js';
+import { clearNewerFormatFile } from './newerFormatFiles.js';
+
 /**
  * データファイルそのものの作成・削除（アイテム管理のタブ構成の操作と CLI の launcher tab が使う）
  */
@@ -80,6 +83,9 @@ export async function deleteDataFile(
     const dataRefs = clipboardDataRefsInFile(filePath);
     await fs.promises.unlink(filePath);
     forgetDataFile(fileName);
+    // 新しい版・壊れていたファイルの印も外す（残ると、ほかのファイルの保存まで止まる）
+    clearNewerFormatFile(fileName);
+    clearDataFileCorrupted(fileName);
     releaseClipboardData(configFolder, dataRefs);
 
     // 削除されたファイルを targetFile に持つ自動取込ルールを無効化

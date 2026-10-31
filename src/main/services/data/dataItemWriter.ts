@@ -58,7 +58,7 @@ function readDataFilesForSearch(configFolder: string): {
 }
 
 /** 書けなかったときのエラー（新しい版の QDL が保存したファイルなら、その旨と直し方） */
-function writeFailedError(fileName: string): Error {
+export function writeFailedError(fileName: string): Error {
   return new Error(
     getNewerFormatFiles().includes(fileName)
       ? mainI18n.t('dataErrors.saveBlockedNewer', { files: fileName })
