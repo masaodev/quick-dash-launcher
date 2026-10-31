@@ -20,6 +20,7 @@ import {
   detectExternalChange,
   forgetDataFile,
   hashContent,
+  prepareDataFileContent,
   rememberDataFileContent,
   resetDataFileTrackerForTesting,
   toDataFileKey,
@@ -71,5 +72,102 @@ describe('dataFileTracker', () => {
     forgetDataFile('datafiles/data2.json');
 
     expect(detectExternalChange('datafiles/data2.json', 'v2')).toBeNull();
+  });
+
+  describe('知らない項目の付け直し（新しい版の QDL が足した項目を消さない）', () => {
+    const writeJson = (relative: string, value: unknown) => {
+      const filePath = path.join(tempRoot.dir, ...relative.split('/'));
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
+      return filePath;
+    };
+    const readJson = (filePath: string) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+    it('同じ id のアイテムが持っていた知らない項目を付け直して書き、その内容を記憶すること', () => {
+      const filePath = writeJson('datafiles/data.json', {
+        version: '1.0',
+        items: [{ id: 'Aaaaaaa1', type: 'item', displayName: 'A', path: 'p', future: 1 }],
+      });
+      const next = JSON.stringify(
+        { version: '1.0', items: [{ id: 'Aaaaaaa1', type: 'item', displayName: 'B', path: 'p' }] },
+        null,
+        2
+      );
+
+      expect(writeDataFile(filePath, next)).toBe(true);
+      const written = fs.readFileSync(filePath, 'utf8');
+      expect(JSON.parse(written).items[0]).toEqual({
+        id: 'Aaaaaaa1',
+        type: 'item',
+        displayName: 'B',
+        path: 'p',
+        future: 1,
+      });
+      expect(detectExternalChange('datafiles/data.json', written)).toBeNull();
+    });
+
+    it('ほかのデータファイルから移ってきたアイテムの項目も付け直すこと', () => {
+      writeJson('datafiles/data2.json', {
+        version: '1.0',
+        items: [{ id: 'Aaaaaaa1', type: 'item', displayName: 'A', path: 'p', future: 'x' }],
+      });
+      const target = writeJson('datafiles/data.json', { version: '1.0', items: [] });
+      const next = JSON.stringify({
+        version: '1.0',
+        items: [{ id: 'Aaaaaaa1', type: 'item', displayName: 'A', path: 'p' }],
+      });
+
+      expect(writeDataFile(target, next)).toBe(true);
+      expect(readJson(target).items[0]).toHaveProperty('future', 'x');
+    });
+
+    it('付け直すものが無ければ渡した内容をそのまま書くこと', () => {
+      const filePath = writeJson('datafiles/data.json', { version: '1.0', items: [] });
+      const next = '{\n"version": "1.0",\n"items": []\n}';
+
+      expect(prepareDataFileContent(filePath, next)).toBe(next);
+    });
+
+    it('ワークスペースはアーカイブとの間で移った要素の項目を付け直すこと', () => {
+      writeJson('workspace-archive.json', {
+        version: '2.0',
+        groups: [],
+        items: [{ id: 'Iiiiiii1', type: 'item', displayName: 'A', path: 'p', future: true }],
+      });
+      const main = writeJson('workspace.json', {
+        version: '2.0',
+        workspaces: [],
+        groups: [],
+        items: [],
+      });
+      const next = JSON.stringify({
+        version: '2.0',
+        workspaces: [],
+        groups: [],
+        items: [{ id: 'Iiiiiii1', type: 'item', displayName: 'A', path: 'p' }],
+      });
+
+      expect(writeDataFile(main, next)).toBe(true);
+      expect(readJson(main).items[0]).toHaveProperty('future', true);
+    });
+
+    it('データファイル・ワークスペースファイル以外はそのまま書くこと', () => {
+      const filePath = writeJson('other.json', { a: 1, extra: 2 });
+
+      expect(prepareDataFileContent(filePath, '{"a":1}')).toBe('{"a":1}');
+    });
+
+    it('渡した付け直しの元を使うこと（書き始める前に読んだ内容）', () => {
+      const filePath = writeJson('datafiles/data.json', { version: '1.0', items: [] });
+      const next = JSON.stringify({ version: '1.0', items: [{ id: 'Aaaaaaa1', type: 'item' }] });
+
+      const output = prepareDataFileContent(filePath, next, {
+        unknownKeySources: {
+          target: { version: '1.0', items: [] },
+          others: [{ items: [{ id: 'Aaaaaaa1', kept: 1 }] }],
+        },
+      });
+      expect(JSON.parse(output).items[0]).toHaveProperty('kept', 1);
+    });
   });
 });

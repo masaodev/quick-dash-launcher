@@ -35,9 +35,11 @@ import {
   convertLegacyWindowConfigs,
   hasLegacyWindowConfig,
 } from '@common/utils/itemWindowConversion';
+import type { UnknownKeySources } from '@common/utils/unknownKeys';
 
 import {
   detectExternalChange,
+  readJsonForCompat,
   rememberDataFileContent,
   writeDataFile,
 } from '../dataFileTracker.js';
@@ -889,12 +891,17 @@ export class WorkspaceFileStore {
     const nextMain = clone(this.main);
     const nextArchive = clone(this.archive);
     mutate(nextMain, nextArchive);
+    // 知らない項目を付け直す元は書き始める前に読む（2 回目を書くときには、移した要素が 1 回目で消えているため）
+    const mainDisk = readJsonForCompat(this.paths.main);
+    const archiveDisk = readJsonForCompat(this.paths.archive);
+    const mainSources = { target: mainDisk, others: [archiveDisk] };
+    const archiveSources = { target: archiveDisk, others: [mainDisk] };
     if (writeFirst === 'archive') {
-      this.writeArchive(nextArchive);
-      this.writeMain(nextMain);
+      this.writeArchive(nextArchive, archiveSources);
+      this.writeMain(nextMain, mainSources);
     } else {
-      this.writeMain(nextMain);
-      this.writeArchive(nextArchive);
+      this.writeMain(nextMain, mainSources);
+      this.writeArchive(nextArchive, archiveSources);
     }
   }
 
@@ -914,7 +921,7 @@ export class WorkspaceFileStore {
     }
   }
 
-  private writeMain(next: WorkspaceMainData): void {
+  private writeMain(next: WorkspaceMainData, unknownKeySources?: UnknownKeySources): void {
     const content = serializeWorkspaceFile(
       {
         version: JSON_WORKSPACE_VERSION,
@@ -924,13 +931,13 @@ export class WorkspaceFileStore {
       },
       this.invalidMain
     );
-    if (!writeDataFile(this.paths.main, content)) {
+    if (!writeDataFile(this.paths.main, content, { unknownKeySources })) {
       throw new WorkspaceWriteError(WORKSPACE_FILE_KEY);
     }
     this.main = next;
   }
 
-  private writeArchive(next: WorkspaceArchiveData): void {
+  private writeArchive(next: WorkspaceArchiveData, unknownKeySources?: UnknownKeySources): void {
     const content = serializeWorkspaceArchiveFile(
       {
         version: JSON_WORKSPACE_VERSION,
@@ -939,7 +946,7 @@ export class WorkspaceFileStore {
       },
       this.invalidArchive
     );
-    if (!writeDataFile(this.paths.archive, content)) {
+    if (!writeDataFile(this.paths.archive, content, { unknownKeySources })) {
       throw new WorkspaceWriteError(WORKSPACE_ARCHIVE_FILE_KEY);
     }
     this.archive = next;

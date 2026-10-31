@@ -32,6 +32,8 @@ import { releaseClipboardData } from '../clipboardDataUsage.js';
 import {
   detectExternalChange,
   hashContent,
+  prepareDataFileContent,
+  readJsonForCompat,
   rememberDataFileContent,
   writeDataFile,
 } from '../dataFileTracker.js';
@@ -86,7 +88,8 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
 
         // 採番・補正があれば書き戻す（編集画面の保存が id ベースで動くように）
         if (parsed.modified) {
-          content = serializeJsonDataFile(parsed.data);
+          // 知らない項目を付け直した内容でハッシュを取る（楽観ロックがディスクの内容と合うように）
+          content = prepareDataFileContent(filePath, serializeJsonDataFile(parsed.data));
           writeDataFile(filePath, content);
         }
         fileHashes[fileName] = hashContent(content);
@@ -302,6 +305,12 @@ export async function saveEditableItems(
   const writtenFiles: string[] = [];
   const previousContents = new Map<string, string>();
 
+  // 知らない項目を付け直す元は、書き始める前に全ファイルから読んでおく
+  // （ファイルをまたいで移したアイテムを、移す元から先に書いても項目が消えないように）
+  const diskContents = new Map(
+    dataFiles.map((fileName) => [fileName, readJsonForCompat(path.join(configFolder, fileName))])
+  );
+
   // 管理対象のすべてのファイルを確認し、内容が変わるものだけ書く（空になったファイルも含む）
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
@@ -312,11 +321,17 @@ export async function saveEditableItems(
     const jsonItems = sortedItems.map((item) => item.item);
 
     const jsonData: JsonDataFile = { ...createEmptyJsonDataFile(), items: jsonItems };
-    const content = serializeJsonDataFile(jsonData);
+    const unknownKeySources = {
+      target: diskContents.get(fileName),
+      others: dataFiles.filter((f) => f !== fileName).map((f) => diskContents.get(f)),
+    };
+    const content = prepareDataFileContent(filePath, serializeJsonDataFile(jsonData), {
+      unknownKeySources,
+    });
     const currentContent = FileUtils.safeReadTextFile(filePath);
 
     if (currentContent !== content) {
-      if (!writeDataFile(filePath, content)) {
+      if (!writeDataFile(filePath, content, { unknownKeySources })) {
         throw new Error(mainI18n.t('dataErrors.writeFailed', { file: fileName }));
       }
       writtenFiles.push(fileName);

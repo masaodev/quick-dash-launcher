@@ -94,6 +94,34 @@ describe('dataItemWriter', () => {
     expect(readItems('datafiles/data.json')[0]).toMatchObject({ id: 'aaaaaaaa' });
   });
 
+  it('新しい版の QDL が足した知らない項目を、編集したアイテムでもほかのアイテムでも消さないこと', () => {
+    writeFile(
+      'datafiles/data.json',
+      JSON.stringify({
+        version: '1.0',
+        futureTop: 'keep',
+        items: [
+          { id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe', future: 1 },
+          { id: 'cccccccc', type: 'item', displayName: 'C', path: 'C:\\c.exe', future: 2 },
+        ],
+      })
+    );
+
+    replaceItemById(tempRoot.dir, {
+      id: 'aaaaaaaa',
+      type: 'item',
+      displayName: 'A2',
+      path: 'C:\\a.exe',
+    });
+
+    const file = JSON.parse(
+      fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data.json'), 'utf8')
+    );
+    expect(file.futureTop).toBe('keep');
+    expect(file.items[0]).toMatchObject({ displayName: 'A2', future: 1 });
+    expect(file.items[1]).toMatchObject({ displayName: 'C', future: 2 });
+  });
+
   it('ID が見つからなければエラーにすること', () => {
     writeFile('datafiles/data.json', JSON.stringify({ version: '1.0', items: [] }));
 

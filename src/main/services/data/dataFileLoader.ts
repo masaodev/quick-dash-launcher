@@ -20,6 +20,7 @@ import { showToastWindow } from '../overlayWindowService.js';
 import { BackupService } from '../backupService.js';
 import {
   detectExternalChange,
+  prepareDataFileContent,
   rememberDataFileContent,
   writeDataFile,
 } from '../dataFileTracker.js';
@@ -114,7 +115,7 @@ async function loadJsonDataFile(
   // 採番・補正があれば 1 回だけ書き戻す（次回以降は同じ id で読める）
   let currentContent = content;
   if (parsed.modified) {
-    const serialized = serializeJsonDataFile(parsed.data);
+    const serialized = prepareDataFileContent(filePath, serializeJsonDataFile(parsed.data));
     report.rewritten = writeDataFile(filePath, serialized);
     if (report.rewritten) currentContent = serialized;
   }
