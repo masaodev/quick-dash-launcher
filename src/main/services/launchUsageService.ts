@@ -5,15 +5,13 @@ import { itemLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { isNewerFormatVersion } from '@common/utils/formatVersion';
 import {
+  LAUNCH_USAGE_VERSION,
   launchUsagePathKey,
   type LaunchUsageRecord,
   type LaunchUsageSnapshot,
 } from '@common/types/launchUsage';
 
 import { SettingsService } from './settingsService.js';
-
-/** item-usage.json の形式の版 */
-const LAUNCH_USAGE_VERSION = 1;
 
 interface LaunchUsageFile extends LaunchUsageSnapshot {
   version: typeof LAUNCH_USAGE_VERSION;

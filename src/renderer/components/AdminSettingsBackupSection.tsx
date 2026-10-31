@@ -4,11 +4,13 @@ import type { AppSettings, BackupStatus } from '@common/types';
 import { SETTING_NUMBER_RANGES } from '@common/settingRanges';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
+import { useDataImport } from '../hooks/useDataImport';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 
 import { Button } from './ui';
 import BackupSnapshotModal from './BackupSnapshotModal';
+import DataImportConfirmDialog from './DataImportConfirmDialog';
 import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
 
 interface AdminSettingsBackupSectionProps {
@@ -33,7 +35,8 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
   const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const { showSuccess, showWarning } = useToast();
+  const { showSuccess, showWarning, showInfo } = useToast();
+  const dataImport = useDataImport({ onProblem: showWarning, onApplied: showInfo });
 
   // 表示時と、スナップショット一覧（復元・削除で件数が変わる）の開閉時に状態を取り直す
   useEffect(() => {
@@ -173,8 +176,23 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
           >
             {t('settings.backup.exportAll')}
           </Button>
+          <Button
+            variant="secondary"
+            className="setting-item-button"
+            onClick={dataImport.start}
+            disabled={isLoading || dataImport.isBusy}
+            data-testid="import-data"
+          >
+            {t('dataImport.button')}
+          </Button>
         </div>
       </div>
+
+      <DataImportConfirmDialog
+        summary={dataImport.pending?.summary ?? null}
+        onConfirm={dataImport.confirm}
+        onClose={dataImport.cancel}
+      />
     </>
   );
 };

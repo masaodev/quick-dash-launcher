@@ -5,7 +5,7 @@ import { isNewerFormatVersion } from '@common/utils/formatVersion';
 import { SearchHistoryEntry } from '@common/types';
 
 /** search-history.json の形式の版 */
-const SEARCH_HISTORY_VERSION = '1.0';
+export const SEARCH_HISTORY_VERSION = '1.0';
 
 /**
  * 検索履歴ファイルのJSON形式
