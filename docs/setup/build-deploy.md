@@ -9,7 +9,7 @@ npm run dev2            # 開発モード第2インスタンス（ポート9002�
 npm run dev:test        # テストデータで開発モード起動（全機能を含むテストデータ、ポート9003、ホットキー: Ctrl+Alt+T）
 npm run build           # 型チェック（tsc）→ Viteビルド。prebuildでTHIRD-PARTY-NOTICES.mdを生成
 npm run start           # ビルドして実行
-npm run dist            # Windowsインストーラー（NSIS）とポータブル版の作成（x64）。build と build:cli を含む
+npm run dist            # Windowsインストーラー（NSIS）とポータブル版の ZIP の作成（x64）。build と build:cli を含む。ZIP は postdist（scripts/make-portable-zip.mjs）が作る
 npm run dist:appx       # Store 版（MSIX の appx、x64）の作成。ロゴ画像を build/appx/ に作ってからパッケージにする（試作中）。build と build:cli を含む
 npm run winrt:generate  # Store 版で使う WinRT の呼び出しコード（src/main/winrt/generated/）を作り直す
 npm run build:cli       # CLI（qdl.exe）のビルド（cargo build --release。Rust が要る）
@@ -39,7 +39,7 @@ Viteベースのビルドシステムを使用:
 - **パッケージングツール**: electron-builder
 - **出力先**: `release/`ディレクトリ
 - **Windows専用**: クロスプラットフォーム非対応
-- **ターゲット**: NSISインストーラーとポータブル版（いずれもx64）。Store 版（appx）は別のコマンドで作る（下記）
+- **ターゲット**: NSISインストーラー（x64）。ポータブル版は、electron-builder が途中で作る展開済みのアプリ（`release/win-unpacked`）を ZIP にしたもの（下の「ポータブル版（ZIP）」）。Store 版（appx）は別のコマンドで作る（下記）
 - **App ID**: `net.masaodev.quick-dash-launcher`（masaodev.netドメイン所有者のため）
 - **CLI の同梱**: `npm run dist`・`dist:appx` は `build:cli` で `qdl.exe` を作ってから同梱する（`package.json` の `build.extraResources`。同梱先は下の「CLI（qdl.exe）」）。Rust が無いと失敗する（[開発ガイド - 必要なツール](development.md#必要なツール)）
 - **DLL の同梱**: 仮想デスクトップの操作に使う `resources/native/VirtualDesktopAccessor.dll`（リポジトリに入っている）を、`build.extraResources` でアプリの `resources/resources/native/` に同梱する。パッケージ版は `process.resourcesPath` の下から、開発時はリポジトリ直下から読む（`src/main/utils/virtualDesktop/dllLoader.ts`）
@@ -49,9 +49,25 @@ Viteベースのビルドシステムを使用:
 CLI は Rust の Cargo プロジェクト（`cli/`）で、本体とは別の実行ファイルになる。本体の Vite ビルド（`npm run build`）には含まれない。
 
 - 出力: `cli/target/release/qdl.exe`（リリースビルドはサイズ優先の設定。`cli/Cargo.toml` の `[profile.release]`）
-- 同梱先: インストーラー版は `<インストール先>\resources\bin\qdl.exe`。ポータブル版にも同じく入るが、起動のたびに一時フォルダへ展開されて場所が変わる。ターミナルから `qdl` で呼ぶには、どちらも設定「QuickDashLauncher CLI を使えるようにする」で `%LOCALAPPDATA%\quick-dash-launcher\bin` にコピーしてから PATH で呼ぶ（[CLI](../features/cli.md#qdl-を使えるようにする)）
-- パッケージ版の本体は起動のたびに、`qdl.exe` が本体を起動するときに使う本体の場所を userData の `cli-launcher.json` に書き出す（`src/main/services/cli/cliLauncherInfo.ts`）
+- 同梱先: インストーラー版は `<インストール先>\resources\bin\qdl.exe`、ポータブル版は `<展開したフォルダ>\resources\bin\qdl.exe`。ターミナルから `qdl` で呼ぶには、どちらも設定「QuickDashLauncher CLI を使えるようにする」で `%LOCALAPPDATA%\quick-dash-launcher\bin` にコピーしてから PATH で呼ぶ（[CLI](../features/cli.md#qdl-を使えるようにする)）
+- パッケージ版の本体は起動のたびに、`qdl.exe` が本体を起動するときに使う本体の場所を userData の `cli-launcher.json` に書き出す（`src/main/services/cli/cliLauncherInfo.ts`）。ポータブル版でデータフォルダを使っているときは userData がデータフォルダになり、`qdl.exe` が見る `%APPDATA%` には書かないので、QDL が起動していないときに `qdl` から起動することはできない（起動中なら使える）
 - やり取りの形を変えたら、本体の `CLI_PROTOCOL_VERSION`（`src/main/services/cli/cliProtocol.ts`）と `cli/src/main.rs` の `PROTOCOL_VERSION` を一緒に上げる
+
+### ポータブル版（ZIP）
+
+`npm run dist` の最後に `postdist` が `scripts/make-portable-zip.mjs` を動かし、`release/QuickDashLauncher-<版>-portable.zip` を作る。中身は次のとおり（ZIP は Windows 標準の `tar.exe` で作る。空のフォルダも入る）。
+
+```text
+QuickDashLauncher-<版>\
+├─ QuickDashLauncher.exe など（release/win-unpacked の中身そのまま）
+├─ portable.txt              ポータブル版の印（中身は使い方の説明）
+└─ QuickDashLauncher-data\   データフォルダ（空）
+```
+
+- **データの置き場所**: 印のある exe で、横にデータフォルダがあれば、起動の最初に userData をデータフォルダにする（`src/main/utils/portableMode.ts`・`src/main/main.ts`）。設定フォルダは userData の下の `config\` なので一緒に移り、Electron のキャッシュなども `%APPDATA%` に書かない。データフォルダを消すと `%APPDATA%\quick-dash-launcher` を使う。データフォルダに書き込めないときは `%APPDATA%` を使い、起動時にトーストで知らせる。`APP_INSTANCE` が付いているとき（試用・計測用の別インスタンス）はデータフォルダを使わない
+- **配布形式の判定**: 印のファイルで「ポータブル版」とみなす（`src/main/utils/appDistribution.ts`）。インストーラー版・Store 版は印が無いので、同じ名前のフォルダがあっても使わない
+- **同時に動かす**: userData が違うので、インストーラー版や別のフォルダのポータブル版と同時に起動できる。CLI の待ち受け（パイプ名）は共通なので、先に起動した方が `qdl` の依頼を受ける。ホットキーも先に起動した方が取る
+- **起動の速さ**: 以前の 1 ファイルの exe（electron-builder の portable）は、起動のたびに一時フォルダへ展開していた。2026-10-31 の計測では、設定を読み込むまでが 1 ファイルの exe は 17〜23 秒、展開済みのフォルダは 1〜2 秒だった
 
 ### App ID（アプリケーション識別子）
 
@@ -77,7 +93,7 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 
 - **ロゴ**: `scripts/generate-appx-assets.mjs` が `assets/icon.svg` から拡大率・大きさ別の画像を `build/appx/` に作る（Electron で描くので `electron` コマンドで実行する）
 - **自動起動**: マニフェストに StartupTask を書く（`resources/appx/extensions.xml`。初期値は無効）。アプリからは `@microsoft/dynwinrt`（プレビュー版）で WinRT の StartupTask を切り替える。呼び出しコードは `npm run winrt:generate` で作り、git に入れる。生成物の `index.js` は変数を `require` するのでバンドルできず、クラスのファイルを直接読み込む
-- **設定フォルダ**: `%APPDATA%` 直下に新しく作るフォルダは、パッケージ専用の場所（`%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Roaming\`）に振り替えられる。既にある `%APPDATA%\quick-dash-launcher` は振り替えられず、ポータブル版・インストーラー版と共有する
+- **設定フォルダ**: `%APPDATA%` 直下に新しく作るフォルダは、パッケージ専用の場所（`%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Roaming\`）に振り替えられる。既にある `%APPDATA%\quick-dash-launcher` は振り替えられず、インストーラー版（とデータフォルダを使わないポータブル版）と共有する
 - **Publisher・Identity**: Partner Center に登録する前の仮の値。提出前に Partner Center の値にする
 
 ローカルで試すとき（署名なしの appx は実行ファイルを含められないので、開発者モードで展開したフォルダを登録する）:
@@ -87,7 +103,7 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 3. `Add-AppxPackage -Register <展開したフォルダ>\AppxManifest.xml` で登録し、`Start-Process "shell:AppsFolder\<パッケージファミリー名>!QuickDashLauncher"` で起動する
 4. 外すときは `Get-AppxPackage -Name QuickDashLauncher | Remove-AppxPackage`
 
-ポータブル版と同時には起動しない（同じ設定フォルダとホットキーを使う）。
+`%APPDATA%\quick-dash-launcher` を共有しているときは、インストーラー版と同時には起動しない（同じ設定フォルダとホットキーを使う）。
 
 ## リリース（タグ → GitHub Release）
 

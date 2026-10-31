@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const appMock = vi.hoisted(() => ({ isPackaged: true }));
 
 vi.mock('electron', () => ({ app: appMock }));
+const portableMock = vi.hoisted(() => ({ edition: false }));
+vi.mock('./portableMode.js', () => ({ isPortableEdition: () => portableMock.edition }));
 
 import { getAppDistribution } from './appDistribution';
 
@@ -16,6 +18,7 @@ describe('getAppDistribution', () => {
 
   beforeEach(() => {
     appMock.isPackaged = true;
+    portableMock.edition = false;
     setWindowsStore(undefined);
     delete process.env.PORTABLE_EXECUTABLE_FILE;
   });
@@ -31,6 +34,11 @@ describe('getAppDistribution', () => {
     } else {
       process.env.PORTABLE_EXECUTABLE_FILE = originalPortable;
     }
+  });
+
+  it('exe の横に印のファイル（ZIP のポータブル版）があれば portable', () => {
+    portableMock.edition = true;
+    expect(getAppDistribution()).toBe('portable');
   });
 
   it('パッケージ化されていなければ dev', () => {

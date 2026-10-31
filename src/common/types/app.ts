@@ -20,6 +20,8 @@ export interface AppInfo {
   repository: string;
   /** 配布形式 */
   distribution: AppDistribution;
+  /** データを exe の横のデータフォルダに置いている（ポータブル版） */
+  portableData: boolean;
 }
 
 /** 更新の知らせで見つけた、今の版より新しい版 */

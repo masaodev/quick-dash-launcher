@@ -1,6 +1,6 @@
 {
   "name": "quick-dash-launcher",
-  "version": "0.8.0-beta.29",
+  "version": "0.8.0-beta.30",
   "main": "dist/main/main.js",
   "scripts": {
     "create-dev-icon": "powershell -ExecutionPolicy Bypass -File scripts/create-dev-icon.ps1",
@@ -13,6 +13,7 @@
     "build:cli": "cargo build --release --manifest-path cli/Cargo.toml",
     "test:cli": "cargo test --manifest-path cli/Cargo.toml",
     "dist": "npm run build && npm run build:cli && electron-builder",
+    "postdist": "node scripts/make-portable-zip.mjs",
     "dist:appx": "npm run build && npm run build:cli && electron scripts/generate-appx-assets.mjs && electron-builder --win appx --x64",
     "generate-licenses": "license-checker --production --markdown --out THIRD-PARTY-NOTICES.md",
     "winrt:generate": "dynwinrt-codegen generate --namespace Windows.ApplicationModel --class-name StartupTask --output src/main/winrt/generated",
@@ -140,12 +141,6 @@
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
           "arch": [
             "x64"
           ]
