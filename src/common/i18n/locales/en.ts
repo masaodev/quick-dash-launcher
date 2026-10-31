@@ -634,6 +634,8 @@ Works with the app settings (settings.json). Keys are the same names as in setti
 Keys you can change:
   Display      language (auto / ja / en) showKeyboardHints showDataFileTabs
                defaultFileTab (the data file of the tab to open at startup, e.g. data2.json)
+  Search       searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
+  Updates      updateCheckEnabled updateCheckIncludeBeta
   Hotkeys      hotkey itemSearchHotkey (checked before changing; "" turns off itemSearchHotkey)
   Launcher     windowWidth (400-2000) windowHeight (300-1200)
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
@@ -1141,7 +1143,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       scopeLabel: 'Groups to show',
       scopeAll: 'All groups',
       scopeSelected: 'Selected groups',
-      allNote: 'Groups you add later appear automatically, in the same order as the workspace',
+      allNote:
+        'Groups you add later appear automatically. In the launcher, they are sorted by name like other items',
       selectedNote: 'Only top-level groups can be chosen (subgroups are not shown)',
       noGroups: 'The workspace has no groups',
       missing_one: '⚠ {{count}} group was not found (it was deleted). It is removed when you apply',

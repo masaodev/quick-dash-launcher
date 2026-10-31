@@ -633,8 +633,10 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
 変えられるキー:
   表示            language（auto / ja / en）showKeyboardHints showDataFileTabs
                   defaultFileTab（起動したときに開くタブのデータファイル。例 data2.json）
+  検索            searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
+  更新            updateCheckEnabled updateCheckIncludeBeta
   ホットキー      hotkey itemSearchHotkey（登録できるか確かめてから変える。itemSearchHotkey は "" で無効）
-  メイン          windowWidth（400〜2000）windowHeight（300〜1200）
+  ランチャー      windowWidth（400〜2000）windowHeight（300〜1200）
                   windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
                   windowFixedPosition（固定位置で置いた場所。x,y か null＝まだ置いていない）
                   windowSnapEnabled
@@ -1145,7 +1147,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       scopeLabel: '並べるグループ',
       scopeAll: 'すべてのグループ',
       scopeSelected: '選んだグループ',
-      allNote: 'あとで増やしたグループも自動で並びます。並び順はワークスペースと同じです',
+      allNote:
+        'あとで増やしたグループも自動で並びます。ランチャーでは、ほかのアイテムと同じく名前の順に並びます',
       selectedNote: 'いちばん上の階層のグループだけを選べます（サブグループは並べません）',
       noGroups: 'ワークスペースにグループがありません',
       missing_one:
@@ -2654,7 +2657,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       snap: '吸着:',
       windowSnap: 'ディスプレイの端やほかのウィンドウに近づけたら吸着する',
       windowSnapDescription:
-        'ワークスペースウィンドウと切り離しウィンドウを、ディスプレイの端や、メイン・ワークスペース・切り離しウィンドウの辺にぴったり寄せます',
+        'ワークスペースウィンドウと切り離しウィンドウを、ディスプレイの端や、ランチャー・ワークスペース・切り離しウィンドウの辺にぴったり寄せます',
       adminWindowSize: '管理ウィンドウ:',
     },
     backup: {
