@@ -8,6 +8,7 @@ import { zipSync, strToU8, strFromU8, type Zippable } from 'fflate';
 import { buildDataExport } from './dataExportService';
 import {
   applyDataImport,
+  DataImportApplyError,
   countCurrentItems,
   countImportItems,
   isImportablePath,
@@ -203,6 +204,45 @@ describe('dataImportService', () => {
       expect(exists('backup/2026-10-01T00-00-00/settings.json')).toBe(true);
       expect(countCurrentItems(configFolder)).toEqual({ items: 1, workspaceItems: 1 });
       expect(strFromU8(result.content.files.get('settings.json')!)).toBe('{"hotkey":"new"}');
+    });
+
+    it('途中で書けなかったら、足したファイルを消して元の中身に戻し、戻せたことを伝える', () => {
+      write(configFolder, 'settings.json', '{"hotkey":"old"}');
+      write(configFolder, 'datafiles/data.json', '{"version":"1.0","items":[{}]}');
+      write(configFolder, 'datafiles/data3.json', '{"version":"1.0","items":[{},{}]}');
+      // data.json だけ書けないようにする（読み取り専用）
+      const locked = path.join(configFolder, 'datafiles', 'data.json');
+      fs.chmodSync(locked, 0o444);
+      try {
+        const result = readDataImport(
+          zipSync({
+            'manifest.json': manifest(),
+            'settings.json': strToU8('{"hotkey":"new"}'),
+            'datafiles/data.json': strToU8('{"version":"1.0","items":[]}'),
+            'datafiles/data2.json': strToU8('{"version":"1.0","items":[{}]}'),
+          })
+        );
+        if (!result.ok) throw new Error('読めなかった');
+
+        let thrown: unknown;
+        try {
+          applyDataImport(configFolder, result.content);
+        } catch (error) {
+          thrown = error;
+        }
+        expect(thrown).toBeInstanceOf(DataImportApplyError);
+        expect((thrown as DataImportApplyError).rolledBack).toBe(true);
+
+        const read = (relPath: string) =>
+          fs.readFileSync(path.join(configFolder, ...relPath.split('/')), 'utf8');
+        const exists = (relPath: string) =>
+          fs.existsSync(path.join(configFolder, ...relPath.split('/')));
+        expect(read('settings.json')).toBe('{"hotkey":"old"}');
+        expect(read('datafiles/data3.json')).toBe('{"version":"1.0","items":[{},{}]}');
+        expect(exists('datafiles/data2.json')).toBe(false);
+      } finally {
+        fs.chmodSync(locked, 0o644);
+      }
     });
   });
 });

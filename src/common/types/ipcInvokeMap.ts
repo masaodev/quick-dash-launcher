@@ -200,6 +200,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.BACKUP_EXPORT_ALL]: ElectronAPI['backupAPI']['exportAll'];
   [IPC_CHANNELS.BACKUP_IMPORT_INSPECT]: ElectronAPI['backupAPI']['inspectImport'];
   [IPC_CHANNELS.BACKUP_IMPORT_APPLY]: ElectronAPI['backupAPI']['applyImport'];
+  [IPC_CHANNELS.BACKUP_IMPORT_CANCEL]: ElectronAPI['backupAPI']['cancelImport'];
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap;

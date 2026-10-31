@@ -263,6 +263,7 @@ export class BackupService {
    * _pre-external は cleanupPreExternalSnapshots() が別枠で管理するため数に入れない
    * （数に入れると、外部編集を繰り返したときに日次スナップショットが押し出される）。
    * _pre-set-migration・_pre-window-migration は前の版に戻すときの拠り所なので、それぞれ新しい 2 つは消さない
+   * _pre-import もインポートする前に戻す拠り所なので、新しい 2 つは消さない（保持数が少ないと数日で消えていた）
    */
   private async cleanupOldSnapshots(): Promise<void> {
     if (!this.settingsService) return;
@@ -271,7 +272,7 @@ export class BackupService {
     const all = await this.listSnapshotEntries();
     // 変換前のスナップショットは新しい 2 つ（データファイル用とワークスペース用）を残す
     const keptSetMigrations = new Set(
-      [PRE_SET_MIGRATION_SUFFIX, PRE_WINDOW_MIGRATION_SUFFIX].flatMap((suffix) =>
+      [PRE_SET_MIGRATION_SUFFIX, PRE_WINDOW_MIGRATION_SUFFIX, PRE_IMPORT_SUFFIX].flatMap((suffix) =>
         all
           .filter((s) => s.timestamp.endsWith(suffix))
           .slice(0, 2)
