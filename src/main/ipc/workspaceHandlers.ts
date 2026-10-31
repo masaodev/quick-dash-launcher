@@ -19,6 +19,7 @@ import {
   WorkspaceService,
   WorkspaceCorruptedError,
   WorkspaceExternalChangeConflictError,
+  WorkspaceNewerFormatError,
   WorkspaceReloadInProgressError,
   WorkspaceWriteError,
 } from '../services/workspace/index.js';
@@ -101,10 +102,11 @@ async function withWorkspaceService<T>(
     return await action(workspaceService);
   } catch (error) {
     logger.error({ error, ...errorContext }, errorMsg);
-    // 外部編集との競合・破損・書き込み失敗は操作者に直接伝える
+    // 外部編集との競合・破損・新しい版のファイル・書き込み失敗は操作者に直接伝える
     if (
       error instanceof WorkspaceExternalChangeConflictError ||
       error instanceof WorkspaceCorruptedError ||
+      error instanceof WorkspaceNewerFormatError ||
       error instanceof WorkspaceReloadInProgressError ||
       error instanceof WorkspaceWriteError
     ) {

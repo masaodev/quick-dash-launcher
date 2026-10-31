@@ -280,6 +280,17 @@ app.whenReady().then(async () => {
     });
   }
 
+  // settings.json が新しい版の QDL で保存されていれば、設定を保存しないことを知らせる
+  if (settingsService.isNewerFormat()) {
+    showToastWindow({
+      message: mainI18n.t('dataErrors.settingsNewerFormat'),
+      type: 'warning',
+      long: true,
+    }).catch((error) => {
+      console.error('設定を保存しないことを知らせるトーストの表示でエラー:', error);
+    });
+  }
+
   // テスト環境の場合、ウィンドウを自動表示（createWindow完了後に実行）
   if (EnvConfig.showWindowOnStartup) {
     const mainWindow = getMainWindow();

@@ -27,6 +27,7 @@ vi.mock('../clipboardService.js', () => ({
 }));
 
 import { getCorruptedDataFiles, clearDataFileCorrupted } from './corruptedDataFiles';
+import { resetNewerFormatFilesForTesting } from './newerFormatFiles';
 import {
   deleteItemsById,
   moveItemToFile,
@@ -48,6 +49,7 @@ describe('dataItemWriter', () => {
     tempRoot.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-writer-'));
     fs.mkdirSync(path.join(tempRoot.dir, 'datafiles'));
     for (const f of getCorruptedDataFiles()) clearDataFileCorrupted(f);
+    resetNewerFormatFilesForTesting();
   });
 
   afterEach(() => {
@@ -92,6 +94,63 @@ describe('dataItemWriter', () => {
     expect(items[0]).not.toHaveProperty('memo');
     expect(items[1]).toMatchObject({ id: 'cccccccc', displayName: 'C' });
     expect(readItems('datafiles/data.json')[0]).toMatchObject({ id: 'aaaaaaaa' });
+  });
+
+  it('新しい版の QDL が足した知らない項目を、編集したアイテムでもほかのアイテムでも消さないこと', () => {
+    writeFile(
+      'datafiles/data.json',
+      JSON.stringify({
+        version: '1.0',
+        futureTop: 'keep',
+        items: [
+          { id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe', future: 1 },
+          { id: 'cccccccc', type: 'item', displayName: 'C', path: 'C:\\c.exe', future: 2 },
+        ],
+      })
+    );
+
+    replaceItemById(tempRoot.dir, {
+      id: 'aaaaaaaa',
+      type: 'item',
+      displayName: 'A2',
+      path: 'C:\\a.exe',
+    });
+
+    const file = JSON.parse(
+      fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data.json'), 'utf8')
+    );
+    expect(file.futureTop).toBe('keep');
+    expect(file.items[0]).toMatchObject({ displayName: 'A2', future: 1 });
+    expect(file.items[1]).toMatchObject({ displayName: 'C', future: 2 });
+  });
+
+  it('新しい版の QDL が保存したファイルは書き換えず、更新を促すエラーにすること', () => {
+    const original = JSON.stringify({
+      version: '1.1',
+      items: [{ id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe' }],
+    });
+    writeFile('datafiles/data.json', original);
+
+    expect(() =>
+      replaceItemById(tempRoot.dir, {
+        id: 'aaaaaaaa',
+        type: 'item',
+        displayName: 'A2',
+        path: 'C:\\a.exe',
+      })
+    ).toThrow(/新しい版の QDL|newer version/);
+    expect(() =>
+      registerItems(tempRoot.dir, [
+        {
+          displayName: 'B',
+          path: 'C:\\b.exe',
+          type: 'app',
+          targetTab: 'datafiles/data.json',
+          itemCategory: 'item',
+        },
+      ])
+    ).toThrow(/新しい版の QDL|newer version/);
+    expect(fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data.json'), 'utf8')).toBe(original);
   });
 
   it('ID が見つからなければエラーにすること', () => {

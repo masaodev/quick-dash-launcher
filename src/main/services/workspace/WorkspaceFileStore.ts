@@ -35,9 +35,16 @@ import {
   convertLegacyWindowConfigs,
   hasLegacyWindowConfig,
 } from '@common/utils/itemWindowConversion';
+import type { UnknownKeySources } from '@common/utils/unknownKeys';
 
 import {
+  clearNewerFormatFile,
+  isNewerFormatFile,
+  markNewerFormatFile,
+} from '../data/newerFormatFiles.js';
+import {
   detectExternalChange,
+  readJsonForCompat,
   rememberDataFileContent,
   writeDataFile,
 } from '../dataFileTracker.js';
@@ -103,6 +110,14 @@ export class WorkspaceCorruptedError extends Error {
   constructor(fileKey: string) {
     super(mainI18n.t('workspaceErrors.corrupted', { file: fileKey }));
     this.name = 'WorkspaceCorruptedError';
+  }
+}
+
+/** 新しい版の QDL が保存したファイル。書き戻すと新しい版の形を壊すので書かない */
+export class WorkspaceNewerFormatError extends Error {
+  constructor(fileKey: string) {
+    super(mainI18n.t('workspaceErrors.newerFormat', { file: fileKey }));
+    this.name = 'WorkspaceNewerFormatError';
   }
 }
 
@@ -285,6 +300,8 @@ export class WorkspaceFileStore {
     items: [],
   };
   private corruptedFiles = new Set<string>();
+  /** 新しい版の QDL が保存したファイル（表示はするが、どちらのファイルも書かない） */
+  private newerFormatFiles = new Set<string>();
   private pendingReports: LoadReportFile[] = [];
   private pendingExternalChanges: Array<{ relativePath: string; content: string }> = [];
   private loaded = false;
@@ -364,6 +381,22 @@ export class WorkspaceFileStore {
       }
     }
 
+    // 新しい版の QDL が保存したファイルは、表示はするが書き戻さない（旧形式からの変換・採番の書き戻しもしない）
+    this.newerFormatFiles.clear();
+    for (const [report, raw] of [
+      [mainReport, mainRaw],
+      [archiveReport, archiveRaw],
+    ] as const) {
+      if (report.status === 'ok' && isNewerFormatFile('workspace', raw)) {
+        report.newerFormat = true;
+        this.newerFormatFiles.add(report.file);
+        markNewerFormatFile(report.file);
+      } else {
+        clearNewerFormatFile(report.file);
+      }
+    }
+    const newerFormat = this.newerFormatFiles.size > 0;
+
     // 旧形式の main を archive が読めないまま 2.0 としてパースすると、version が付いて移行が二度と走らない。
     // archive を直すまで main も保留する
     if (
@@ -380,6 +413,7 @@ export class WorkspaceFileStore {
 
     // 旧形式 → 2.0
     if (
+      !newerFormat &&
       mainReport.status === 'ok' &&
       archiveReport.status === 'ok' &&
       (isLegacyWorkspaceFile(mainRaw) || isLegacyWorkspaceFile(archiveRaw))
@@ -418,6 +452,7 @@ export class WorkspaceFileStore {
     let forceRewriteMain = false;
     let forceRewriteArchive = false;
     if (
+      !newerFormat &&
       mainReport.status === 'ok' &&
       archiveReport.status === 'ok' &&
       mainContent !== null &&
@@ -458,7 +493,7 @@ export class WorkspaceFileStore {
         };
         this.invalidMain = parsed.invalid;
         this.corruptedFiles.delete(WORKSPACE_FILE_KEY);
-        if (parsed.modified || forceRewriteMain) {
+        if ((parsed.modified || forceRewriteMain) && !newerFormat) {
           mainReport.rewritten = writeDataFile(
             this.paths.main,
             serializeWorkspaceFile(parsed.data, parsed.invalid)
@@ -484,7 +519,7 @@ export class WorkspaceFileStore {
         };
         this.invalidArchive = parsed.invalid;
         this.corruptedFiles.delete(WORKSPACE_ARCHIVE_FILE_KEY);
-        if (parsed.modified || forceRewriteArchive) {
+        if ((parsed.modified || forceRewriteArchive) && !newerFormat) {
           archiveReport.rewritten = writeDataFile(
             this.paths.archive,
             serializeWorkspaceArchiveFile(parsed.data, parsed.invalid)
@@ -889,12 +924,17 @@ export class WorkspaceFileStore {
     const nextMain = clone(this.main);
     const nextArchive = clone(this.archive);
     mutate(nextMain, nextArchive);
+    // 知らない項目を付け直す元は書き始める前に読む（2 回目を書くときには、移した要素が 1 回目で消えているため）
+    const mainDisk = readJsonForCompat(this.paths.main);
+    const archiveDisk = readJsonForCompat(this.paths.archive);
+    const mainSources = { target: mainDisk, others: [archiveDisk] };
+    const archiveSources = { target: archiveDisk, others: [mainDisk] };
     if (writeFirst === 'archive') {
-      this.writeArchive(nextArchive);
-      this.writeMain(nextMain);
+      this.writeArchive(nextArchive, archiveSources);
+      this.writeMain(nextMain, mainSources);
     } else {
-      this.writeMain(nextMain);
-      this.writeArchive(nextArchive);
+      this.writeMain(nextMain, mainSources);
+      this.writeArchive(nextArchive, archiveSources);
     }
   }
 
@@ -903,6 +943,10 @@ export class WorkspaceFileStore {
     // （読めなかった側を空のキャッシュで上書きしないため）
     if (!this.loaded || this.corruptedFiles.size > 0) {
       throw new WorkspaceCorruptedError([...this.corruptedFiles].join(', ') || key);
+    }
+    // 新しい版の QDL が保存したファイルがあれば、2 ファイルとも書かない（参照が両ファイルにまたがるため）
+    if (this.newerFormatFiles.size > 0) {
+      throw new WorkspaceNewerFormatError([...this.newerFormatFiles].join(', '));
     }
     // 再読込の await 中（旧形式の移行）に書くと、移行の書き出しで上書きされて消える
     if (this.reloadPromise) {
@@ -914,7 +958,7 @@ export class WorkspaceFileStore {
     }
   }
 
-  private writeMain(next: WorkspaceMainData): void {
+  private writeMain(next: WorkspaceMainData, unknownKeySources?: UnknownKeySources): void {
     const content = serializeWorkspaceFile(
       {
         version: JSON_WORKSPACE_VERSION,
@@ -924,13 +968,13 @@ export class WorkspaceFileStore {
       },
       this.invalidMain
     );
-    if (!writeDataFile(this.paths.main, content)) {
+    if (!writeDataFile(this.paths.main, content, { unknownKeySources })) {
       throw new WorkspaceWriteError(WORKSPACE_FILE_KEY);
     }
     this.main = next;
   }
 
-  private writeArchive(next: WorkspaceArchiveData): void {
+  private writeArchive(next: WorkspaceArchiveData, unknownKeySources?: UnknownKeySources): void {
     const content = serializeWorkspaceArchiveFile(
       {
         version: JSON_WORKSPACE_VERSION,
@@ -939,7 +983,7 @@ export class WorkspaceFileStore {
       },
       this.invalidArchive
     );
-    if (!writeDataFile(this.paths.archive, content)) {
+    if (!writeDataFile(this.paths.archive, content, { unknownKeySources })) {
       throw new WorkspaceWriteError(WORKSPACE_ARCHIVE_FILE_KEY);
     }
     this.archive = next;

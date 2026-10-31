@@ -1,7 +1,11 @@
 import * as path from 'path';
 
 import { FileUtils } from '@common/utils/fileUtils';
+import { isNewerFormatVersion } from '@common/utils/formatVersion';
 import { SearchHistoryEntry } from '@common/types';
+
+/** search-history.json の形式の版 */
+const SEARCH_HISTORY_VERSION = '1.0';
 
 /**
  * 検索履歴ファイルのJSON形式
@@ -30,6 +34,18 @@ export class SearchHistoryService {
     return [...entries].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
+  }
+
+  /** 履歴ファイルの版が、この QDL の扱える版より新しいか（無い・読めないなら false） */
+  private isNewerFormatFile(): boolean {
+    const content = FileUtils.safeReadTextFile(this.historyFilePath);
+    if (!content) return false;
+    try {
+      const data = JSON.parse(content) as Partial<SearchHistoryFile> | null;
+      return isNewerFormatVersion(data?.version, SEARCH_HISTORY_VERSION);
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -61,8 +77,10 @@ export class SearchHistoryService {
    * @param entries 保存する検索履歴のエントリー配列
    */
   saveHistory(entries: SearchHistoryEntry[]): void {
+    // 新しい版の QDL が書いたファイルは上書きしない（新しい版の形を壊さないため。履歴は残らないだけ）
+    if (this.isNewerFormatFile()) return;
     const data: SearchHistoryFile = {
-      version: '1.0',
+      version: SEARCH_HISTORY_VERSION,
       entries: this.sortByTimestampDesc(entries).slice(0, this.maxHistoryCount),
     };
 

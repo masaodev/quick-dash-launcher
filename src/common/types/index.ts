@@ -148,7 +148,7 @@ export type {
   AutoLaunchStatus,
   StoreAutoLaunchState,
 } from './settings';
-export { MAIN_WINDOW_DISPLAY_INDEX } from './settings';
+export { MAIN_WINDOW_DISPLAY_INDEX, SETTINGS_FORMAT_VERSION } from './settings';
 
 // アイコン関連の型
 export type {

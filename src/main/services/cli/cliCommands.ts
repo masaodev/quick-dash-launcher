@@ -250,7 +250,12 @@ function reloadResult(report: LoadReport | null): Record<string, unknown> {
     // 問題のあったファイルだけ詳しく返す
     filesWithIssues:
       report?.files.filter(
-        (f) => f.status !== 'ok' || f.issues.length > 0 || f.externallyChanged || f.rewritten
+        (f) =>
+          f.status !== 'ok' ||
+          f.issues.length > 0 ||
+          f.externallyChanged ||
+          f.rewritten ||
+          f.newerFormat
       ) ?? [],
     preChangeSnapshot: report?.preChangeSnapshot ?? null,
   };

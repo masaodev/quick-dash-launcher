@@ -70,6 +70,7 @@ describe('SETTINGS_RESET_KEYS', () => {
   it('メタ情報（$schema・バージョン）を含まないこと', () => {
     for (const keys of Object.values(SETTINGS_RESET_KEYS)) {
       expect(keys).not.toContain('$schema');
+      expect(keys).not.toContain('settingsVersion');
       expect(keys).not.toContain('createdWithVersion');
       expect(keys).not.toContain('updatedWithVersion');
     }

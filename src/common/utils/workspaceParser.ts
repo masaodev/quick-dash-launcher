@@ -41,6 +41,7 @@ import {
 } from './jsonParser';
 import type { JsonItemIssue } from './jsonParser';
 import { ITEM_WINDOW_SWITCH_KEYS, windowItemToPathlessItem } from './itemWindowConversion';
+import { isNewerFormatVersion } from './formatVersion';
 
 // ============================================================
 // 型
@@ -187,6 +188,8 @@ function takeArray(obj: Record<string, unknown>, key: Section, issues: IssueColl
 }
 
 function normalizeHeader(obj: Record<string, unknown>, issues: IssueCollector): void {
+  // 新しい版の QDL が保存したファイルは直さない（書き戻しもしない。WorkspaceFileStore が書き込みを止める）
+  if (isNewerFormatVersion(obj.version, JSON_WORKSPACE_VERSION)) return;
   if (obj.version !== JSON_WORKSPACE_VERSION) {
     issues.normalized(
       undefined,

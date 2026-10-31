@@ -32,6 +32,8 @@ import { releaseClipboardData } from '../clipboardDataUsage.js';
 import {
   detectExternalChange,
   hashContent,
+  prepareDataFileContent,
+  readJsonForCompat,
   rememberDataFileContent,
   writeDataFile,
 } from '../dataFileTracker.js';
@@ -42,6 +44,11 @@ import {
   markDataFileCorrupted,
 } from './corruptedDataFiles.js';
 import { logParseIssues, snapshotExternalChanges } from './dataFileLoader.js';
+import {
+  clearNewerFormatFile,
+  getNewerFormatDataFiles,
+  markNewerFormatFile,
+} from './newerFormatFiles.js';
 
 /**
  * 編集画面用に EditableJsonItem 配列を読み込む
@@ -82,11 +89,14 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
           t: mainI18n.t,
         });
         clearDataFileCorrupted(fileName);
+        if (parsed.newerFormat) markNewerFormatFile(fileName);
+        else clearNewerFormatFile(fileName);
         logParseIssues(fileName, parsed.issues);
 
         // 採番・補正があれば書き戻す（編集画面の保存が id ベースで動くように）
         if (parsed.modified) {
-          content = serializeJsonDataFile(parsed.data);
+          // 知らない項目を付け直した内容でハッシュを取る（楽観ロックがディスクの内容と合うように）
+          content = prepareDataFileContent(filePath, serializeJsonDataFile(parsed.data));
           writeDataFile(filePath, content);
         }
         fileHashes[fileName] = hashContent(content);
@@ -280,6 +290,14 @@ export async function saveEditableItems(
     );
   }
 
+  // 新しい版の QDL が保存したファイルは書き換えられない。全量の保存なので、途中まで書いて止まらないよう先に断る
+  const newerFormatFiles = getNewerFormatDataFiles();
+  if (newerFormatFiles.length > 0) {
+    throw new Error(
+      mainI18n.t('dataErrors.saveBlockedNewer', { files: newerFormatFiles.join(', ') })
+    );
+  }
+
   const dataFiles = PathManager.getDataFiles();
 
   if (expectedHashes) {
@@ -302,6 +320,12 @@ export async function saveEditableItems(
   const writtenFiles: string[] = [];
   const previousContents = new Map<string, string>();
 
+  // 知らない項目を付け直す元は、書き始める前に全ファイルから読んでおく
+  // （ファイルをまたいで移したアイテムを、移す元から先に書いても項目が消えないように）
+  const diskContents = new Map(
+    dataFiles.map((fileName) => [fileName, readJsonForCompat(path.join(configFolder, fileName))])
+  );
+
   // 管理対象のすべてのファイルを確認し、内容が変わるものだけ書く（空になったファイルも含む）
   for (const fileName of dataFiles) {
     const filePath = path.join(configFolder, fileName);
@@ -312,11 +336,17 @@ export async function saveEditableItems(
     const jsonItems = sortedItems.map((item) => item.item);
 
     const jsonData: JsonDataFile = { ...createEmptyJsonDataFile(), items: jsonItems };
-    const content = serializeJsonDataFile(jsonData);
+    const unknownKeySources = {
+      target: diskContents.get(fileName),
+      others: dataFiles.filter((f) => f !== fileName).map((f) => diskContents.get(f)),
+    };
+    const content = prepareDataFileContent(filePath, serializeJsonDataFile(jsonData), {
+      unknownKeySources,
+    });
     const currentContent = FileUtils.safeReadTextFile(filePath);
 
     if (currentContent !== content) {
-      if (!writeDataFile(filePath, content)) {
+      if (!writeDataFile(filePath, content, { unknownKeySources })) {
         throw new Error(mainI18n.t('dataErrors.writeFailed', { file: fileName }));
       }
       writtenFiles.push(fileName);

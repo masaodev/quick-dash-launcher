@@ -2072,6 +2072,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     configLoadFailed: "Couldn't load the settings files (they may be corrupted): {{files}}",
     settingsRecovered:
       "Couldn't read settings.json, so QuickDashLauncher started with the default settings. The original file is kept as {{file}} in the settings folder",
+    saveBlockedNewer:
+      "These data files were saved by a newer version of QDL, so they can't be changed: {{files}}. Update QDL to the latest version.",
+    newerFormatLoaded:
+      "Some files were saved by a newer version of QDL: {{files}}. They're shown, but can't be changed until you update QDL to the latest version.",
+    settingsNewerFormat:
+      "settings.json was saved by a newer version of QDL. Changes to settings last only until you quit QDL and aren't saved to the file. Update QDL to the latest version.",
   },
   loadReport: {
     accepted_one: '{{count}} item loaded',
@@ -2099,6 +2105,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     reloadInProgress: 'The workspace is reloading. Try again in a moment.',
     corrupted:
       "{{file}} is corrupted, so it can't be written. Repair the file and press F5 to reload.",
+    newerFormat:
+      "{{file}} was saved by a newer version of QDL, so it can't be written. Update QDL to the latest version.",
     migrated:
       'Converted from the old format (no version) to 2.0: reassigned IDs as 8-character alphanumerics, aligned the field names for window action coordinates and clipboard/window layout items with the data files, and moved the group collapse and detached window states to workspace-ui-state.json',
     migrationNeedsArchive:

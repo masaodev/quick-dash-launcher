@@ -37,6 +37,7 @@ import {
   WorkspaceExternalChangeConflictError,
   WorkspaceFileStore,
   resolveLauncherType,
+  WorkspaceNewerFormatError,
   WorkspaceWriteError,
 } from './WorkspaceFileStore';
 import { WorkspaceUiStateStore } from './WorkspaceUiStateStore';
@@ -213,6 +214,68 @@ describe('WorkspaceFileStore', () => {
     });
     expect(store.archiveStore.get('items')).toHaveLength(1);
     expect(store.allIds()).toEqual(new Set(['wsAAAAA1', 'grAAAAA1', 'itAAAAA1']));
+  });
+
+  it('新しい版の QDL が足した知らない項目を、書き込み・アーカイブで消さないこと', async () => {
+    fs.writeFileSync(
+      paths.main,
+      v2File({
+        futureTop: 'keep',
+        workspaces: [{ ...ws, wsFuture: 1 }],
+        groups: [{ ...group, groupFuture: 2 }],
+        items: [{ ...launcher, itemFuture: 3 }],
+      }),
+      'utf8'
+    );
+    const store = createStore();
+    await store.reload();
+
+    const items = store.get('items');
+    items[0].displayName = 'GitHub 2';
+    store.set('items', items);
+
+    const main = readJson(paths.main);
+    expect(main.futureTop).toBe('keep');
+    expect(main.workspaces[0]).toHaveProperty('wsFuture', 1);
+    expect(main.groups[0]).toHaveProperty('groupFuture', 2);
+    expect(main.items[0]).toMatchObject({ displayName: 'GitHub 2', itemFuture: 3 });
+
+    // アーカイブへ移しても残る（受け取る側を先に書くので、元の内容は書き始める前に読む）
+    store.updateBoth((m, archive) => {
+      const [item] = m.items;
+      m.items = [];
+      m.groups = [];
+      archive.groups.push({ ...group, archivedAt: 5, originalOrder: 0, itemCount: 1 });
+      archive.items.push({ ...item, archivedAt: 5, archivedGroupId: group.id });
+    }, 'main');
+    const archived = readJson(paths.archive);
+    expect(archived.groups[0]).toHaveProperty('groupFuture', 2);
+    expect(archived.items[0]).toHaveProperty('itemFuture', 3);
+  });
+
+  it('新しい版の QDL が保存したファイルは、表示はするが版を直さず、どちらのファイルも書かないこと', async () => {
+    const original = v2File({
+      version: '2.1',
+      // 採番が要る（書き戻しが要る）内容でも書き戻さない
+      items: [{ ...launcher, id: undefined }],
+    });
+    fs.writeFileSync(paths.main, original, 'utf8');
+    const store = createStore();
+    await store.reload();
+
+    expect(store.get('items')).toHaveLength(1);
+    const { files } = store.consumeLoadReports();
+    expect(files[0]).toMatchObject({ newerFormat: true, rewritten: false });
+    expect(files[0].issues.some((i) => i.reason.includes('2.1'))).toBe(false);
+    expect(files[1]).not.toHaveProperty('newerFormat');
+    expect(() => store.set('items', [])).toThrow(WorkspaceNewerFormatError);
+    expect(() => store.updateArchive(() => {})).toThrow(WorkspaceNewerFormatError);
+    expect(fs.readFileSync(paths.main, 'utf8')).toBe(original);
+
+    // 版を戻したファイル（新しい版で戻した・差し替えた）なら、また書ける
+    fs.writeFileSync(paths.main, v2File(), 'utf8');
+    await store.reload();
+    expect(() => store.set('items', store.get('items'))).not.toThrow();
   });
 
   it('QDL の外で変更されたファイルへの書き込みは拒否すること（楽観ロック）', async () => {

@@ -25,6 +25,8 @@ export interface LoadReportFile {
   externallyChanged: boolean;
   /** 採番・補正のためファイルを書き戻したか */
   rewritten: boolean;
+  /** 新しい版の QDL が保存したファイル（読んで表示はするが、書き込まない）。そのときだけ true で付く */
+  newerFormat?: true;
 }
 
 export interface LoadReport {
@@ -40,6 +42,8 @@ export interface LoadReport {
     groupsFlattened: number;
     corruptedFiles: string[];
     externallyChangedFiles: string[];
+    /** 新しい版の QDL が保存したため書き込まないファイル */
+    newerFormatFiles: string[];
   };
   files: LoadReportFile[];
   /** 外部変更の検知時に作った変更前スナップショットのフォルダ名（なければ null） */
@@ -84,6 +88,7 @@ export function buildLoadReport(
       groupsFlattened,
       corruptedFiles: files.filter((f) => f.status !== 'ok').map((f) => f.file),
       externallyChangedFiles: files.filter((f) => f.externallyChanged).map((f) => f.file),
+      newerFormatFiles: files.filter((f) => f.newerFormat).map((f) => f.file),
     },
     files,
     preChangeSnapshot,
@@ -109,4 +114,13 @@ export function formatLoadReportToast(report: LoadReport): string | null {
   const key =
     externallyChangedFiles.length > 0 ? 'loadReport.externalSummary' : 'loadReport.summary';
   return t(key, { parts: parts.join(t('loadReport.separator')) });
+}
+
+/**
+ * 新しい版の QDL が保存したファイルがあるときのトースト文言（無ければ null）
+ */
+export function formatNewerFormatToast(report: LoadReport): string | null {
+  const { newerFormatFiles } = report.summary;
+  if (newerFormatFiles.length === 0) return null;
+  return mainI18n.t('dataErrors.newerFormatLoaded', { files: newerFormatFiles.join(', ') });
 }

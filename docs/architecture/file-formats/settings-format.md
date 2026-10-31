@@ -28,6 +28,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ```json
 {
+  "settingsVersion": 1,
   "createdWithVersion": "0.7.0",
   "updatedWithVersion": "0.7.13",
   "hotkey": "",
@@ -90,10 +91,13 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
+| **settingsVersion** | number | `1` | 設定ファイルの形式の版。無いファイルは `1` として読み、次に書くときに `1` を書く。項目を足すだけでは上げない（[形式の版と互換](README.md#形式の版と互換)） |
 | **createdWithVersion** | string | - | この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） |
 | **updatedWithVersion** | string | - | この設定ファイルを最後に更新したアプリバージョン |
 
-`createdWithVersion`・`updatedWithVersion` はメタ情報で、更新しても `updatedWithVersion` は進まない。
+`settingsVersion`・`createdWithVersion`・`updatedWithVersion` はメタ情報で、更新しても `updatedWithVersion` は進まない。
+
+`settingsVersion` が扱える版（`1`）より新しいファイルは、新しい版の QDL が保存したものとみなし、ファイルには一切書かない（electron-store に既定値を渡さないので、既定値の書き足しもしない。ファイルに無い項目は既定値で読む）。画面や CLI で変えた設定はメモリにだけ持ち、QDL を終了するまで効く。起動時に「settings.json は新しい版の QDL で保存されています。…」とトースト（警告・長め）で知らせる（`src/main/services/settingsService.ts`・`src/main/main.ts`）。
 
 v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-store が未知のキーとして残すので、ファイルからは消えない）。
 

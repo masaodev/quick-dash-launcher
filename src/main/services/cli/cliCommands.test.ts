@@ -22,6 +22,7 @@ function report(): LoadReport {
       groupsFlattened: 0,
       corruptedFiles: [],
       externallyChangedFiles: [],
+      newerFormatFiles: [],
     },
     files: [
       {
