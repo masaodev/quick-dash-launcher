@@ -41,6 +41,14 @@ export type WorkspacePositionMode =
 /** workspaceTargetDisplayIndex で「メインウィンドウと同じディスプレイ」を指す値 */
 export const MAIN_WINDOW_DISPLAY_INDEX = -1;
 
+/**
+ * 設定ファイル（settings.json）の形式の版
+ *
+ * 項目の追加では上げない（electron-store は知らない項目もそのまま残す）。古い版の QDL に保存させると
+ * 困る変更（項目の意味や形を変える）のときだけ上げる（docs/architecture/file-formats/README.md「形式の版と互換」）
+ */
+export const SETTINGS_FORMAT_VERSION = 1;
+
 /** 固定位置で最後に置いた場所（ウィンドウの左上の画面座標） */
 export interface FixedPosition {
   x: number;
@@ -104,6 +112,11 @@ export interface AdminItemColumnsSetting {
  * electron-storeを使用して永続化される
  */
 export interface AppSettings {
+  /**
+   * 設定ファイルの形式の版（SETTINGS_FORMAT_VERSION）。無いファイルは 1 として読み、次に書くときに 1 を書く。
+   * これより新しい版のファイルは新しい版の QDL が保存したもので、設定を保存しない（SettingsService）
+   */
+  settingsVersion?: number;
   /** この設定ファイルを作成したアプリバージョン（初回作成時のみ記録） */
   createdWithVersion?: string;
   /** この設定ファイルを最後に更新したアプリバージョン */

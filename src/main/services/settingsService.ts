@@ -2,9 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { app } from 'electron';
-import { DEFAULT_DATA_FILE, DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS } from '@common/types';
+import {
+  DEFAULT_DATA_FILE,
+  DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
+  SETTINGS_FORMAT_VERSION,
+} from '@common/types';
 import type { AppSettings } from '@common/types';
 import { validateHotkey } from '@common/utils/hotkeyValidator';
+import { isNewerFormatVersion } from '@common/utils/formatVersion';
 import { DEFAULT_LANGUAGE_SETTING } from '@common/i18n/languages';
 import logger from '@common/logger';
 
@@ -34,9 +39,16 @@ export class SettingsService {
   private store: StoreInstance | null = null;
   /** 起動時に壊れていて退避した settings.json の行き先（退避しなかったら null） */
   private recoveredBrokenFile: string | null = null;
+  /**
+   * settings.json が新しい版の QDL で保存されたもの（settingsVersion が SETTINGS_FORMAT_VERSION より新しい）。
+   * そのときはファイルに書かず、変えた設定は sessionOverrides に持って QDL を終了するまでだけ効かせる
+   */
+  private newerFormat = false;
+  private sessionOverrides: Partial<AppSettings> = {};
   private static instance: SettingsService;
 
   private static readonly DEFAULT_SETTINGS: AppSettings = {
+    settingsVersion: SETTINGS_FORMAT_VERSION,
     language: DEFAULT_LANGUAGE_SETTING,
     hotkey: '',
     windowWidth: 600,
@@ -82,7 +94,9 @@ export class SettingsService {
 
   /** 設定値ではないメタ情報のキー（更新しても updatedWithVersion を進めない） */
   private static isMetadataKey(key: keyof AppSettings): boolean {
-    return key === 'createdWithVersion' || key === 'updatedWithVersion';
+    return (
+      key === 'settingsVersion' || key === 'createdWithVersion' || key === 'updatedWithVersion'
+    );
   }
 
   /** 既定値の写し（設定画面で「既定値のままか」と戻すと何が変わるかを示すため） */
@@ -101,11 +115,19 @@ export class SettingsService {
     const configFolder = PathManager.getConfigFolder();
     const settingsFilePath = path.join(configFolder, 'settings.json');
     let isNewFile = !fs.existsSync(settingsFilePath);
+    // 新しい版の QDL が保存したファイルには既定値も書き足さない（electron-store は defaults を書き足すため渡さない）
+    this.newerFormat = !isNewFile && SettingsService.isNewerFormatFile(settingsFilePath);
+    if (this.newerFormat) {
+      logger.warn(
+        { settingsFilePath },
+        'settings.json は新しい版の QDL で保存されています。設定を変えてもファイルには保存しません'
+      );
+    }
 
     const storeOptions = {
       name: 'settings',
       cwd: configFolder,
-      defaults: SettingsService.DEFAULT_SETTINGS,
+      defaults: this.newerFormat ? undefined : SettingsService.DEFAULT_SETTINGS,
       // 手で直して BOM 付きで保存しても読めるよう、先頭の BOM を外してから読む
       deserialize: (text: string) =>
         JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text),
@@ -128,6 +150,7 @@ export class SettingsService {
     }
 
     if (isNewFile) {
+      this.newerFormat = false;
       this.setCreatedWithVersion();
     }
 
@@ -137,6 +160,42 @@ export class SettingsService {
   /** 起動時に壊れていて退避した settings.json の行き先（退避しなかったら null。起動時の知らせに使う） */
   public getRecoveredBrokenFile(): string | null {
     return this.recoveredBrokenFile;
+  }
+
+  /** settings.json が新しい版の QDL で保存されたもので、設定を保存していないか（起動時の知らせに使う） */
+  public isNewerFormat(): boolean {
+    return this.newerFormat;
+  }
+
+  /** settings.json の settingsVersion が、この QDL の扱える版より新しいか（読めなければ false。壊れたファイルは別に扱う） */
+  private static isNewerFormatFile(settingsFilePath: string): boolean {
+    try {
+      const text = fs.readFileSync(settingsFilePath, 'utf8');
+      const raw: unknown = JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
+      return (
+        typeof raw === 'object' &&
+        raw !== null &&
+        isNewerFormatVersion(
+          (raw as Record<string, unknown>).settingsVersion,
+          SETTINGS_FORMAT_VERSION
+        )
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  /** 新しい版のファイルのとき: その回だけの変更 → ファイルの値 → 既定値の順に読む */
+  private readWithoutSaving<K extends keyof AppSettings>(
+    store: StoreInstance,
+    key: K
+  ): AppSettings[K] {
+    if (Object.prototype.hasOwnProperty.call(this.sessionOverrides, key)) {
+      return this.sessionOverrides[key] as AppSettings[K];
+    }
+    const raw = store.store as unknown as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(raw, key)) return raw[key] as AppSettings[K];
+    return structuredClone(SettingsService.DEFAULT_SETTINGS[key]);
   }
 
   /** ストアが初期化されていることを保証し、インスタンスを返す */
@@ -157,6 +216,7 @@ export class SettingsService {
   public async get<K extends keyof AppSettings>(key: K): Promise<AppSettings[K]> {
     const store = await this.ensureStore();
     try {
+      if (this.newerFormat) return this.readWithoutSaving(store, key);
       return store.get(key);
     } catch (error) {
       logger.error({ error, key }, 'Failed to get setting');
@@ -166,6 +226,11 @@ export class SettingsService {
 
   public async set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void> {
     const store = await this.ensureStore();
+    if (this.newerFormat) {
+      this.sessionOverrides[key] = value;
+      logger.info({ key, value }, 'Setting updated (not saved: settings.json is a newer format)');
+      return;
+    }
     store.set(key, value);
     if (!SettingsService.isMetadataKey(key)) {
       this.recordUpdatedVersion(store);
@@ -186,14 +251,24 @@ export class SettingsService {
     return found;
   }
 
-  /** 設定から外した古いキーを消す */
+  /** 設定から外した古いキーを消す（新しい版の QDL が保存したファイルからは消さない） */
   public async deleteRemovedKeys(keys: readonly string[]): Promise<void> {
     const store = await this.ensureStore();
+    if (this.newerFormat) return;
     for (const key of keys) store.delete(key);
   }
 
   public async setMultiple(settings: Partial<AppSettings>): Promise<void> {
     const store = await this.ensureStore();
+    if (this.newerFormat) {
+      for (const [key, value] of Object.entries(settings)) {
+        if (value !== undefined) {
+          (this.sessionOverrides as Record<string, unknown>)[key] = value;
+        }
+      }
+      logger.info({ settings }, 'Multiple settings updated (not saved: newer format)');
+      return;
+    }
     const hasNonMetadataKey = Object.keys(settings).some(
       (key) => !SettingsService.isMetadataKey(key as keyof AppSettings)
     );
@@ -228,6 +303,13 @@ export class SettingsService {
   public async getAll(): Promise<AppSettings> {
     const store = await this.ensureStore();
     try {
+      if (this.newerFormat) {
+        return {
+          ...structuredClone(SettingsService.DEFAULT_SETTINGS),
+          ...store.store,
+          ...this.sessionOverrides,
+        };
+      }
       return store.store;
     } catch (error) {
       logger.error({ error }, 'Failed to get all settings');
@@ -237,6 +319,14 @@ export class SettingsService {
 
   public async reset(): Promise<void> {
     const store = await this.ensureStore();
+    if (this.newerFormat) {
+      const { settingsVersion: _version, ...defaults } = structuredClone(
+        SettingsService.DEFAULT_SETTINGS
+      );
+      this.sessionOverrides = defaults;
+      logger.info('Settings reset to defaults (not saved: newer format)');
+      return;
+    }
     store.clear();
     logger.info('Settings reset to defaults');
   }
