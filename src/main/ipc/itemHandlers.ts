@@ -16,6 +16,7 @@ import {
 import { hideMainWindowOnExecute } from '../windowManager.js';
 import { createDetachedGroupWindow } from '../detachedGroupWindowManager.js';
 import { WorkspaceService } from '../services/workspace/WorkspaceService.js';
+import { LaunchUsageService } from '../services/launchUsageService.js';
 import { executeSetItem, openLauncherItem } from '../services/launch/appItemLauncher.js';
 import { openLauncherItemAsAdmin } from '../services/launch/adminItemLauncher.js';
 import { mainI18n } from '../services/mainI18n.js';
@@ -84,15 +85,21 @@ export function setupItemHandlers(): void {
 
   // WSグループ: そのグループの切り離しウィンドウを開く。ほかの実行と違ってランチャーは隠さない
   // （切り離しウィンドウへフォーカスが移っても、QDL のウィンドウ群の中なのでメインは隠れない）
-  handleIpc(IPC_CHANNELS.OPEN_WS_GROUP, async (_event, groupId: string) => {
-    const service = await WorkspaceService.getInstance();
-    const groups = await service.loadGroups();
-    if (!groups.some((group) => group.id === groupId && !group.parentGroupId)) {
-      itemLogger.warn({ groupId }, 'WSグループのグループが見つかりません');
-      return { success: false };
+  handleIpc(
+    IPC_CHANNELS.OPEN_WS_GROUP,
+    async (_event, groupId: string, expandedFromId?: string) => {
+      const service = await WorkspaceService.getInstance();
+      const groups = await service.loadGroups();
+      if (!groups.some((group) => group.id === groupId && !group.parentGroupId)) {
+        itemLogger.warn({ groupId }, 'WSグループのグループが見つかりません');
+        return { success: false };
+      }
+      const result = await createDetachedGroupWindow(groupId);
+      // フォルダ取込と同じく、展開元の行の id で起動を記録する（記録が無いと「起動したことがない」に出る）
+      if (result.success) await LaunchUsageService.getInstance()?.recordById(expandedFromId);
+      return result;
     }
-    return createDetachedGroupWindow(groupId);
-  });
+  );
 
   ipcMain.on(IPC_CHANNELS.CLOSE_LAYOUT_PROGRESS_WINDOW, () => {
     hideLayoutProgressWindow();

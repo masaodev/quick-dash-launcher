@@ -78,11 +78,13 @@ const electronAPI: ElectronAPI = {
   // trigger: 'full' は「アイコンをすべて取り直す」、'internal' は変更通知・画面内の一覧取得（レポートは報告事項があるときだけ更新）
   loadDataFiles: (trigger) => ipcInvoke(IPC_CHANNELS.LOAD_DATA_FILES, trigger),
   getCorruptedDataFiles: () => ipcInvoke(IPC_CHANNELS.GET_CORRUPTED_DATA_FILES),
+  hasWsGroupRows: () => ipcInvoke(IPC_CHANNELS.HAS_WS_GROUP_ROWS),
   openItem: (item, options) => ipcInvoke(IPC_CHANNELS.OPEN_ITEM, item, options),
   openParentFolder: (item) => ipcInvoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
   runItemAsAdmin: (item) => ipcInvoke(IPC_CHANNELS.RUN_ITEM_AS_ADMIN, item),
   executeSet: (item, allItems) => ipcInvoke(IPC_CHANNELS.EXECUTE_SET, item, allItems),
-  openWsGroup: (groupId) => ipcInvoke(IPC_CHANNELS.OPEN_WS_GROUP, groupId),
+  openWsGroup: (groupId, expandedFromId) =>
+    ipcInvoke(IPC_CHANNELS.OPEN_WS_GROUP, groupId, expandedFromId),
   openConfigFolder: () => ipcInvoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url) => ipcInvoke(IPC_CHANNELS.FETCH_FAVICON, url),
   extractIcon: (filePath) => ipcInvoke(IPC_CHANNELS.EXTRACT_ICON, filePath),
