@@ -33,7 +33,7 @@ interface WsGroupEditModalProps {
 const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm, onCancel }) => {
   const { t } = useTranslation();
   const [candidates, setCandidates] = useState<WsGroupCandidate[] | null>(null);
-  const [scope, setScope] = useState<WsGroupScope>(initial?.scope ?? 'selected');
+  const [scope, setScope] = useState<WsGroupScope>(initial?.scope ?? 'all');
   const [groupIds, setGroupIds] = useState<string[]>(initial?.groupIds ?? []);
   const [prefix, setPrefix] = useState(initial?.options?.prefix ?? '');
   const [suffix, setSuffix] = useState(initial?.options?.suffix ?? '');

@@ -262,3 +262,20 @@
   border: 1.5px solid var(--color-white);
   border-radius: 1px;
 }
+
+/* WSグループ: 表示名の右の「ワークスペース」の札（普通のアイテムと見分ける） */
+.ws-group-badge {
+  margin-left: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  font-weight: normal;
+  color: var(--text-muted);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  white-space: nowrap;
+}
+
+.item.selected .ws-group-badge {
+  color: var(--color-white);
+  border-color: var(--color-white);
+}

@@ -147,6 +147,7 @@ export const ja = {
       groupCount_one: '（{{count}} 件）',
       groupCount_other: '（{{count}} 件）',
       setPlacedBadge: 'ウィンドウ位置のある行があります',
+      wsGroupBadge: 'ワークスペース',
       windowSearchBadge: 'ウィンドウ検索: {{title}}',
       showNote: 'メモを表示',
     },

@@ -144,6 +144,7 @@ export const en: LocaleMessages = {
       groupCount_one: ' ({{count}} item)',
       groupCount_other: ' ({{count}} items)',
       setPlacedBadge: 'Some rows have a window position',
+      wsGroupBadge: 'Workspace',
       windowSearchBadge: 'Window search: {{title}}',
       showNote: 'Show note',
     },

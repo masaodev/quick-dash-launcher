@@ -542,6 +542,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const isWindow = isWindowInfo(item);
             const isSet = isSetItem(item);
             const isClipboard = isClipboardItem(item);
+            const isWsGroup = isWsGroupItem(item);
             // WSグループはグループを開くだけで中身を持たないので、ワークスペースへドラッグさせない
             const isDraggable = !isWsGroupItem(item);
             const isDragging = draggedItemIndex === index;
@@ -617,6 +618,11 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                       {item.entries.some((entry) => entry.placement) && (
                         <span title={t('launcher.list.setPlacedBadge')}> 📍</span>
                       )}
+                    </span>
+                  )}
+                  {isWsGroup && (
+                    <span className="ws-group-badge" title={t('launcher.tooltip.wsGroup')}>
+                      {t('launcher.list.wsGroupBadge')}
                     </span>
                   )}
                   {isLauncherItem(item) && hasItemWindowSwitch(item) && (

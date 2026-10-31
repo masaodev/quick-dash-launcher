@@ -50,7 +50,10 @@ test.describe('QuickDashLauncher - WSグループ', () => {
         await adminWindow.getByTestId('add-ws-group').click();
         await expect(adminWindow.getByTestId('ws-group-modal')).toBeVisible();
         await expect(adminWindow.getByTestId('ws-group-list')).toContainText('E2E 予備');
+        // 既定は「すべてのグループ」
+        await expect(adminWindow.getByTestId('ws-group-scope-all')).toBeChecked();
         // 「選んだグループ」で何も選んでいなければ追加できない
+        await adminWindow.getByTestId('ws-group-scope-selected').check();
         await expect(adminWindow.getByTestId('ws-group-confirm')).toBeDisabled();
       });
 
@@ -95,6 +98,8 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       const items = mainWindow.locator('.item', { hasText: 'WS: E2E' });
       await expect(items).toHaveCount(2);
       await expect(items.first().locator('.ws-group-item-icon')).toBeVisible();
+      // ワークスペースのグループだと分かる札
+      await expect(items.first().locator('.ws-group-badge')).toHaveText('ワークスペース');
       // 選んでいないグループは並ばない
       await expect(mainWindow.locator('.item', { hasText: 'E2E 予備' })).toHaveCount(0);
     });
