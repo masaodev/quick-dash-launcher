@@ -1,0 +1,25 @@
+/* WSグループのアイコン: 窓の形（上の帯だけグループの色）。選択中は窓の線を白にして、帯が選択の色と同じでも形を残す */
+.ws-group-item-icon {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.ws-group-item-icon .ws-group-icon-frame {
+  fill: var(--bg-app);
+  stroke: var(--text-secondary);
+}
+
+.ws-group-item-icon .ws-group-icon-divider {
+  stroke: var(--text-secondary);
+}
+
+.item.selected .ws-group-item-icon .ws-group-icon-frame {
+  fill: none;
+  stroke: var(--color-white);
+}
+
+.item.selected .ws-group-item-icon .ws-group-icon-divider {
+  stroke: var(--color-white);
+}
