@@ -41,7 +41,7 @@ function resolveActiveTab(files: string[], preferredTab: string): string {
  */
 export function useDataFileTabs() {
   const [showDataFileTabs, setShowDataFileTabs] = useState(false);
-  /** 前に読んだ「複数タブを表示」（切り替わったかを見るため） */
+  /** 前に読んだ「タブを表示する」（切り替わったかを見るため） */
   const lastShowDataFileTabs = useRef<boolean | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>(DEFAULT_DATA_FILE);
   const [dataFileTabs, setDataFileTabs] = useState<DataFileTab[]>([]);
@@ -138,7 +138,7 @@ export function useDataFileTabs() {
       debugLog('設定変更通知を受信、タブ設定を再読み込みします');
       try {
         const settings = await window.electronAPI.getSettings();
-        // 「複数タブを表示」を切り替えたら最初のタブに戻す（オフにしたのに、見ていたタブの中身が残らないように）
+        // 「タブを表示する」を切り替えたら最初のタブに戻す（オフにしたのに、見ていたタブの中身が残らないように）
         const tabsToggled =
           lastShowDataFileTabs.current !== undefined &&
           lastShowDataFileTabs.current !== settings.showDataFileTabs;

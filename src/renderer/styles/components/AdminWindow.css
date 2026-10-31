@@ -230,6 +230,24 @@
   margin-right: var(--spacing-sm);
 }
 
+/* 節の中の項目の間をあけ、説明文が次の項目にくっついて見えないようにする */
+.settings-section .setting-item + .setting-item {
+  margin-top: var(--spacing-lg);
+}
+
+/* チェックボックスの項目は、説明・案内をラベルの文字の位置まで字下げする */
+.setting-item:has(> label > input[type='checkbox']) > .setting-description,
+.setting-item:has(> label > input[type='checkbox']) > .validation-error {
+  margin-top: 0;
+  padding-left: calc(13px + var(--spacing-sm));
+}
+
+/* 上の項目に従う項目（「ベータ版も知らせる」など）は 1 段下げる */
+.setting-item.setting-item-child {
+  margin-top: var(--spacing-sm);
+  padding-left: calc(13px + var(--spacing-sm));
+}
+
 .unit {
   font-size: var(--font-size-sm);
   color: var(--text-muted);

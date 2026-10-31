@@ -147,7 +147,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面では基本設定の「表示」にある「複数タブを表示」 |
+| **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面では基本設定の「ランチャー」にある「タブを表示する」 |
 | **defaultFileTab** | string | "datafiles/data.json" | ランチャーを開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
 | **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定。初回起動でデータファイル（`data.json`）を作ったときは、ウィンドウを作る前に表示言語の名前（英語なら `Main`）で書き直す。お試し用の Web のアイテムを `datafiles/data2.json` に分けたときは、2 つ目のタブ「Web」も足す |
 | **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名）。初回起動でデータファイルを作ったときは、タブと同じときに表示言語の名前（「〈タブ名〉用データファイル」）で書き直す |
@@ -271,9 +271,9 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 | **searchIgnoreWidth** | boolean | false | ランチャーの検索とワークスペースの絞り込みで、全角と半角を区別しないか（NFKC でそろえる。`ｃｈｒｏｍｅ` で `Chrome`、`ﾃｽﾄ` で `テスト`） |
 | **searchIgnoreKana** | boolean | false | ランチャーの検索とワークスペースの絞り込みで、ひらがなとカタカナを区別しないか（`てすと` で `テスト`） |
 | **searchSortByUsage** | boolean | false | ランチャーの検索（通常モード）で、検索語があるとき、名前が最初の語で始まるもの → 開いた回数（`item-usage.json`）の多いもの → 今の順（名前順）に並べるか |
-| **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「システム」にある「起動の記録を残す」 |
-| **updateCheckEnabled** | boolean | true | 新しい版が出たら知らせるか（[ファイル形式一覧 - 更新の知らせ](README.md#更新の知らせ)）。設定画面では基本設定の「システム」にある「新しい版が出たら知らせる」。初回設定の画面でも選べる。Store 版では使わない（画面にも出さない） |
-| **updateCheckIncludeBeta** | boolean | false | 正式版を使っていても、ベータ版を知らせるか。ベータ版を使っている間は、この値に関係なくベータ版も知らせる。設定画面では「ベータ版も知らせる」（「新しい版が出たら知らせる」がオフの間は押せない） |
+| **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「ランチャー」にある「起動回数を記録する」 |
+| **updateCheckEnabled** | boolean | true | 新しいバージョンを確認して知らせるか（[ファイル形式一覧 - 更新の知らせ](README.md#更新の知らせ)）。設定画面では基本設定の「起動と更新」にある「アップデートを自動で確認する」。初回設定の画面でも選べる。Store 版では使わない（画面にも出さない） |
+| **updateCheckIncludeBeta** | boolean | false | 正式版を使っていても、ベータ版を知らせるか。ベータ版を使っている間は、この値に関係なくベータ版も知らせる。設定画面では「ベータ版も確認する」（「アップデートを自動で確認する」がオフの間は押せない） |
 | **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`lastLaunched`・`launchCount`・`updatedAt`。`memo`・`link`・`lastLaunched`・`launchCount` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`）の `widths` は使わない。`pathAndArgs` は `widths` が無ければ残りの幅を使う。画面の見出しの右クリックと見出しの右端のドラッグ・ダブルクリックで変わり、設定画面にはない |
 
 ---

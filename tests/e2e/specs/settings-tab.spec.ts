@@ -55,11 +55,13 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
           .filter({ has: adminWindow.locator('h3', { hasText: 'ホットキー' }) });
         await expect(hotkeySection).toBeVisible();
 
-        // システムセクション
-        const systemSection = adminWindow
-          .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'システム' }) });
-        await expect(systemSection).toBeVisible();
+        // 起動と更新・ランチャー・検索・CLI の節
+        for (const heading of ['起動と更新', 'ランチャー', '検索', 'QuickDashLauncher CLI']) {
+          const section = adminWindow
+            .locator('.settings-section')
+            .filter({ has: adminWindow.locator('h3', { hasText: heading }) });
+          await expect(section).toBeVisible();
+        }
       });
 
       await test.step('ウィンドウカテゴリに切り替えてセクションを確認', async () => {
@@ -93,13 +95,13 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(backupSection).toBeVisible();
       });
 
-      await test.step('「複数タブを表示」は基本設定にあり、タブ管理のカテゴリは無い', async () => {
+      await test.step('「タブを表示する」は基本設定にあり、タブ管理のカテゴリは無い', async () => {
         // タブとデータファイルの構成はアイテム管理で扱う
         await expect(adminWindow.locator('.menu-item', { hasText: 'タブ管理' })).toHaveCount(0);
 
         await adminWindow.locator('.menu-item', { hasText: '基本設定' }).click();
         const showTabs = adminWindow
-          .locator('label', { hasText: '複数タブを表示' })
+          .locator('label', { hasText: 'タブを表示する' })
           .locator('input');
         await expect(showTabs).not.toBeChecked();
         await showTabs.check();
@@ -174,7 +176,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
       await test.step('基本設定カテゴリで自動起動設定をON/OFFできる', async () => {
         // デフォルトで基本設定が選択されている
         const autoLaunchLabel = adminWindow.locator('label', {
-          hasText: 'Windows へのサインイン時に起動する',
+          hasText: 'Windows にサインインしたら起動する',
         });
         const autoLaunchCheckbox = autoLaunchLabel.locator('input[type="checkbox"]');
         const initialState = await autoLaunchCheckbox.isChecked();
@@ -210,7 +212,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     }
   });
 
-  test('「操作のヒントを表示」でランチャー下のヒントを出し入れできる', async ({
+  test('「操作のヒントを表示する」でランチャー下のヒントを出し入れできる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -226,7 +228,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
     try {
-      const hintLabel = adminWindow.locator('label', { hasText: '操作のヒントを表示' });
+      const hintLabel = adminWindow.locator('label', { hasText: '操作のヒントを表示する' });
       const hintCheckbox = hintLabel.locator('input[type="checkbox"]');
 
       await test.step('基本設定でオフにすると、ヒントが消えて設定に保存される', async () => {

@@ -222,7 +222,7 @@ fn run() -> Result<u8, (u8, String)> {
         return Err((
             EXIT_PROTOCOL,
             format!(
-                "CLI と QuickDashLauncher の版が合いません（CLI: {PROTOCOL_VERSION}、本体: {}）。同じ版の QuickDashLauncher に付属する qdl を使ってください",
+                "CLI と QuickDashLauncher のバージョンが合いません（CLI: {PROTOCOL_VERSION}、本体: {}）。同じバージョンの QuickDashLauncher に付属する qdl を使ってください",
                 response.protocol
             ),
         ));
