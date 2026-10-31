@@ -45,6 +45,20 @@ describe('restoreUnknownKeys（データファイル）', () => {
     expect(next).toEqual(before);
   });
 
+  it('WSグループの範囲を「すべて」に戻したとき、消した groupIds を戻さない', () => {
+    const disk = {
+      version: '1.0',
+      items: [{ id: 'Ddddddd4', type: 'wsgroup', scope: 'selected', groupIds: ['g1', 'g2'] }],
+    };
+    const next = {
+      version: '1.0',
+      items: [{ id: 'Ddddddd4', type: 'wsgroup', scope: 'all' }],
+    };
+
+    expect(restoreUnknownKeys('data', next, { target: disk })).toBe(false);
+    expect(next.items[0]).toEqual({ id: 'Ddddddd4', type: 'wsgroup', scope: 'all' });
+  });
+
   it('書く側の値を優先し、$schema は戻さない', () => {
     const disk = {
       $schema: './schemas/data.schema.json',
