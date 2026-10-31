@@ -161,7 +161,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 - **範囲の外・形の違う値**: `invalid` で断る。範囲は設定画面と同じ。知らないキーと、どのタブにも入っていない `defaultFileTab` は `not_found`。古い値の `primaryLeft`・`primaryRight` は読めるが、新しくは選べない
 - **ホットキー**: 設定画面と同じく、形式を確かめ、他のアプリともう一方のホットキーに使われていないかを確かめてから登録し直す（`--dry-run` でも使われていないかまで確かめる）。形式の誤りは `invalid`、使用中は `conflict`。登録の途中で失敗したときは元のキーに戻す。ランチャーを開く `hotkey` は空にできない
-- **読むだけの項目**: `settings get` では読めるが、`set` は `usage` で断る。自動起動（`autoLaunch`。OS のスタートアップを書き換えるうえ、Store 版は Windows 側でしか変えられない状態がある）、ブックマークの自動取込（`bookmarkAutoImport`）、CLI を使えるようにする設定（`cliEnabled`。CLI から自分を外せてしまう）、アプリが書く版（`createdWithVersion`・`updatedWithVersion`）。タブ構成（`dataFileTabs`・`dataFileLabels`）は `launcher tab` で変える
+- **読むだけの項目**: `settings get` では読めるが、`set` は `usage` で断る。自動起動（`autoLaunch`。OS のスタートアップを書き換えるうえ、Store 版は Windows 側でしか変えられない状態がある）、ブックマークの自動取込（`bookmarkAutoImport`）、CLI を使えるようにする設定（`cliEnabled`。CLI から自分を外せてしまう）、アプリが書く版（`settingsVersion`・`createdWithVersion`・`updatedWithVersion`）。タブ構成（`dataFileTabs`・`dataFileLabels`）は `launcher tab` で変える
 
 ### 出力
 
@@ -211,7 +211,7 @@ JSON は UTF-8 で出します。どのコマンドにも `--ascii` を付けら
 2. データファイルとワークスペースファイルを読み直し、読み込みレポートを作り直す
 3. 開いているすべての画面に、データが変わったことを知らせる（各画面が表示を読み直す）
 
-標準出力の JSON には、読み込んだ日時・件数の集計・外部変更の検知時に作ったスナップショットのフォルダ名と、問題のあったファイル（読めなかった、スキップ・採番・補正があった、QDL の外で変更されていた、書き戻した）の詳しい結果だけが入ります（形式は [データファイル形式 - 読み込みレポートの形式](../architecture/file-formats/data-format.md#読み込みレポートの形式)）。`check` は読み直さずに、直近の読み込みの同じ結果を返します。
+標準出力の JSON には、読み込んだ日時・件数の集計・外部変更の検知時に作ったスナップショットのフォルダ名と、問題のあったファイル（読めなかった、スキップ・採番・補正があった、QDL の外で変更されていた、書き戻した、新しい版の QDL が保存したので書き込まない）の詳しい結果だけが入ります（形式は [データファイル形式 - 読み込みレポートの形式](../architecture/file-formats/data-format.md#読み込みレポートの形式)）。`check` は読み直さずに、直近の読み込みの同じ結果を返します。
 
 ## 終了コード
 

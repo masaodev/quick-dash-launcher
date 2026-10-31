@@ -68,7 +68,7 @@ QuickDashLauncher のワークスペース機能で使用されるファイル�
 
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| **version** | string | ✓ | `"2.0"`。無いファイルは旧形式として移行される |
+| **version** | string | ✓ | `"2.0"`。無いファイルは旧形式として移行される。これより新しい版のファイルは、表示はするが書き換えない（5 章） |
 | **workspaces** | Workspace[] | ✓ | 1 件以上。0 件なら既定ワークスペースを作る（名前は作るときの表示言語で「既定」／「Default」） |
 | **groups** | WorkspaceGroup[] | ✓ | |
 | **items** | WorkspaceItem[] | ✓ | |
@@ -225,7 +225,9 @@ QDL が管理する UI 状態。壊れている・読めないときは警告し
 | 仕組み | 内容 |
 | --- | --- |
 | 読み込みタイミング | 起動時と**メイン画面の F5**（`reloadConfigFiles`）。ファイルは監視しない。electron-store のように操作のたびにディスクを読むことはない |
-| 寛容パース | JSON 構文エラー・ルート構造の不正・配列フィールドの型違い（配列以外）だけ `corrupted`。配列フィールドが無ければ空配列を補う（`normalized`）。要素単位の不正は `invalid`（読み込みから外し、書き戻し時に配列の末尾へ残す）。ただしオブジェクトでない要素は残さず削除する。id の欠落/不正/重複は採番（`idAssigned`）し、参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId`）を追随させる。宙に浮いた参照・`version`・省略した `order` 等は補正（`normalized`） |
+| 寛容パース | JSON 構文エラー・ルート構造の不正・配列フィールドの型違い（配列以外）だけ `corrupted`。配列フィールドが無ければ空配列を補う（`normalized`）。要素単位の不正は `invalid`（読み込みから外し、書き戻し時に配列の末尾へ残す）。ただしオブジェクトでない要素は残さず削除する。id の欠落/不正/重複は採番（`idAssigned`）し、参照（`groupId` / `parentGroupId` / `workspaceId` / `archivedGroupId`）を追随させる。宙に浮いた参照・`version`・省略した `order` 等は補正（`normalized`）。ただし扱える版より新しい `version` は直さない（下の「新しい版のファイル」） |
+| 新しい版のファイル | どちらかの `version` が扱える版（`"2.0"`）より新しければ、新しい版の QDL が保存したものとして、読んで表示はするが両ファイルとも書かない。旧形式からの変換・採番の書き戻しもしない。書き込む操作は「QDL を最新の版に更新してください」で止まる（`WorkspaceNewerFormatError`。トーストで知らせる）。読み込みレポートの `newerFormat` に載る（[形式の版と互換](README.md#形式の版と互換)） |
+| 知らない項目 | 新しい版の QDL が足した項目（ファイル直下と、タブ・グループ・アイテムの直下）は、書き込んでも消さずに要素の最後に残す。アーカイブ・復元で両ファイルの間を移した要素も同じ（[知らない項目は残す](README.md#知らない項目は残す)） |
 | レポート | 読み込みレポート（[データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え)。CLI の `qdl reload`・`qdl check` が返す）の `files[]` に `workspace.json` / `workspace-archive.json` がデータファイルと並ぶ。ワークスペースの `issues[]` は `section`（`workspaces` / `groups` / `items`）を持ち、`index` はその配列内の位置 |
 | 外部変更検知 | データファイルと同じ `dataFileTracker`。前回読んだ/書いた内容と違えば `externallyChanged`、`backupEnabled` なら変更前を `backup/*_pre-external/` に残す |
 | 楽観ロック | 書き込み前に現在のファイル内容を確認し、QDL の外で変更されていれば書かずに拒否（メイン画面で F5 を押して再読み込みするよう促すトーストを出す）。読み直せば再び書ける |
