@@ -422,7 +422,7 @@ export const ja = {
       restore: '↩️ ワークスペースへ復元',
       deleteFromArchive: '🗑️ アーカイブから削除',
       detach: '🪟 別のウィンドウに切り離す',
-      showDetached: '🪟 切り離しウィンドウを表示',
+      closeDetached: '📥 切り離しウィンドウを閉じる',
       reattach: '📥 ワークスペースに戻す',
       addSubgroup: '➕ サブグループを追加',
       addItem: '➕ アイテムを追加',

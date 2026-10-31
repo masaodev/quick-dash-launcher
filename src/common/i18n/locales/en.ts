@@ -421,7 +421,7 @@ export const en: LocaleMessages = {
       restore: '↩️ Restore to workspace',
       deleteFromArchive: '🗑️ Delete from archive',
       detach: '🪟 Detach to a separate window',
-      showDetached: '🪟 Show detached window',
+      closeDetached: '📥 Close detached window',
       reattach: '📥 Return to workspace',
       addSubgroup: '➕ Add subgroup',
       addItem: '➕ Add item',
