@@ -1073,6 +1073,13 @@
   cursor: pointer;
 }
 
+/* WSグループの名前の列（並べる範囲。1 行に収め、全文はツールチップ） */
+.ws-group-name-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* WSグループの種類（切り替えられないので、プルダウンでなく文字だけ） */
 .type-fixed {
   font-size: var(--font-size-xs);

@@ -72,6 +72,7 @@ test.describe('QuickDashLauncher - WSグループ', () => {
         await expect(adminWindow.getByTestId('ws-group-modal')).toHaveCount(0);
         await expect(adminWindow.locator('.type-fixed').first()).toHaveText('WSグループ');
         await expect(adminWindow.getByText('選んだグループ 2 件')).toBeVisible();
+        await expect(adminWindow.getByText('選んだワークスペースグループ（2 件）')).toBeVisible();
 
         await adminWindow.locator('button:has-text("変更を保存")').click();
         await adminWindow.getByTestId('confirm-dialog-confirm-button').click();
@@ -99,7 +100,7 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       await expect(items).toHaveCount(2);
       await expect(items.first().locator('.ws-group-item-icon')).toBeVisible();
       // ワークスペースのグループだと分かる札
-      await expect(items.first().locator('.ws-group-badge')).toHaveText('ワークスペース');
+      await expect(items.first().locator('.ws-group-badge')).toHaveText('ワークスペースグループ');
       // 選んでいないグループは並ばない
       await expect(mainWindow.locator('.item', { hasText: 'E2E 予備' })).toHaveCount(0);
     });

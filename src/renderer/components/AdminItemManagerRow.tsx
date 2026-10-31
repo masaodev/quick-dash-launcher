@@ -162,16 +162,24 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   };
 
   const renderNameCell = () => {
-    if (!hasDisplayName(jsonItem)) {
+    // WSグループは名前を持たないので、並べる範囲を名前の代わりに出す
+    if (jsonItem.type === 'wsgroup') {
+      const label =
+        jsonItem.scope === 'all'
+          ? t('itemManager.row.wsGroupNameAll')
+          : t('itemManager.row.wsGroupNameSelected', { count: jsonItem.groupIds?.length ?? 0 });
       return (
         <div
-          className="readonly-cell"
-          title={t(
-            jsonItem.type === 'wsgroup'
-              ? 'itemManager.row.wsGroupHasNoName'
-              : 'itemManager.row.dirHasNoName'
-          )}
+          className="readonly-cell ws-group-name-cell"
+          title={`${label}\n${t('itemManager.row.wsGroupHasNoName')}`}
         >
+          {label}
+        </div>
+      );
+    }
+    if (!hasDisplayName(jsonItem)) {
+      return (
+        <div className="readonly-cell" title={t('itemManager.row.dirHasNoName')}>
           -
         </div>
       );
