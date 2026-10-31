@@ -1353,6 +1353,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unsavedDeleted: ', {{count}} deleted',
     },
     loadError: "Couldn't load the data file. Fix the file, and then reopen this window.",
+    corruptedTab:
+      "Couldn't read {{files}} (it may be damaged). Its items aren't shown, and QDL won't change the file until it's fixed. You can still edit the other tabs. After fixing it, reopen this window.",
     missingCheck: {
       nothingToCheck: 'No local paths to check (URLs, shell:, and command names are skipped)',
       unknownNote_one: ', {{count}} no response',

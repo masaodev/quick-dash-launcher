@@ -23,6 +23,8 @@ const AdminApp: React.FC = () => {
   // 楽観ロック用: 読み込み時（または保存後）のデータファイルのハッシュ。保存時に渡して外部変更との競合を検知する
   const [fileHashes, setFileHashes] = useState<Record<string, string> | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // JSON として読めなかったデータファイル（そのファイルだけ外して、ほかは編集できる）
+  const [corruptedFiles, setCorruptedFiles] = useState<string[]>([]);
 
   // admin.html の <title> は日本語なので、表示言語のタイトルに差し替える（言語を変えたときも）
   useEffect(() => {
@@ -105,10 +107,12 @@ const AdminApp: React.FC = () => {
         setLoadError(itemsResult.error);
         setEditableItems([]);
         setFileHashes(undefined);
+        setCorruptedFiles([]);
       } else {
         setLoadError(null);
         setEditableItems(itemsResult.items);
         setFileHashes(itemsResult.fileHashes);
+        setCorruptedFiles(itemsResult.corruptedFiles ?? []);
       }
     } catch (error) {
       logError('Failed to load data:', error);
@@ -216,6 +220,7 @@ const AdminApp: React.FC = () => {
         }
         editing={editing}
         loadError={loadError}
+        corruptedFiles={corruptedFiles}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         dataFileTabs={dataFileTabs}

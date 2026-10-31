@@ -23,6 +23,8 @@ interface AdminTabContainerProps {
   editing: AdminItemEditing;
   /** データファイルの読み込みエラー（あれば一覧の代わりに表示する） */
   loadError: string | null;
+  /** JSON として読めなかったデータファイル（そのファイルのタブに知らせを出す） */
+  corruptedFiles: string[];
   searchQuery: string;
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
@@ -49,6 +51,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
   onTabStructureSaved,
   editing,
   loadError,
+  corruptedFiles,
   searchQuery,
   onSearchChange,
   dataFileTabs,
@@ -104,6 +107,7 @@ const AdminTabContainer: React.FC<AdminTabContainerProps> = ({
           <AdminItemManagerView
             editing={editing}
             loadError={loadError}
+            corruptedFiles={corruptedFiles}
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
             dataFileTabs={dataFileTabs}
