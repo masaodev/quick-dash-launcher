@@ -88,10 +88,16 @@ export async function resolvePathChange(
   }
 
   const newType = await detectItemType(path);
+  // すでにアイコンを持つアイテムも引き直す（前のパスのアイコンを残さない。A3-203）。
+  // 「アイコン取得」で取ったアイコンも icon-cache に入っているので、パスが同じなら同じものが返る
   const cachedIcon =
     newType === 'folder'
       ? undefined
-      : (await loadCachedIconsForItems([{ ...item, path, type: newType }]))[path];
+      : (
+          await window.electronAPI
+            .loadCachedIcons([{ path, type: newType, displayName: item.displayName }])
+            .catch(() => ({}) as Record<string, string>)
+        )[path];
 
   return (current) => {
     const next: RegisterItem = {
@@ -105,8 +111,9 @@ export async function resolvePathChange(
     } else {
       delete next.folderProcessing;
       delete next.dirOptions;
-      if (cachedIcon) next.icon = cachedIcon;
     }
+    // キャッシュに無ければ（フォルダも）アイコンを外し、種別の既定のアイコンを出す
+    next.icon = cachedIcon;
     return next;
   };
 }

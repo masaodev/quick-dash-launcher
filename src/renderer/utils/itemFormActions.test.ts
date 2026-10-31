@@ -80,6 +80,37 @@ describe('resolvePathChange', () => {
     expect(apply?.(baseItem)).toMatchObject({ type: 'url', icon: 'data:icon' });
   });
 
+  it('アイコンを持つアイテムでも、変えたパスのアイコンを引き直して置き換える', async () => {
+    loadCachedIcons.mockResolvedValueOnce({ 'https://example.com': 'data:new' });
+    const old = { ...baseItem, icon: 'data:old' };
+    const apply = await resolvePathChange({ ...old, path: 'https://example.com' });
+    expect(loadCachedIcons).toHaveBeenCalledWith([
+      { path: 'https://example.com', type: 'url', displayName: 'メモ帳' },
+    ]);
+    expect(apply?.(old)).toMatchObject({ type: 'url', icon: 'data:new' });
+  });
+
+  it('変えたパスのアイコンがキャッシュに無ければ、前のアイコンを外す', async () => {
+    const old = { ...baseItem, icon: 'data:old' };
+    const apply = await resolvePathChange({ ...old, path: 'https://example.com' });
+    expect(apply?.(old).icon).toBeUndefined();
+  });
+
+  it('キャッシュを引けなかったときも、前のアイコンを外す', async () => {
+    loadCachedIcons.mockRejectedValueOnce(new Error('ipc'));
+    const old = { ...baseItem, icon: 'data:old' };
+    const apply = await resolvePathChange({ ...old, path: 'https://example.com' });
+    expect(apply?.(old).icon).toBeUndefined();
+  });
+
+  it('フォルダに変えたときは、キャッシュを引かずに前のアイコンを外す', async () => {
+    // 拡張子の無いパスはフォルダと判定される
+    const old = { ...baseItem, icon: 'data:old' };
+    const apply = await resolvePathChange({ ...old, path: 'C:\\Users' });
+    expect(loadCachedIcons).not.toHaveBeenCalled();
+    expect(apply?.(old)).toMatchObject({ type: 'folder', icon: undefined });
+  });
+
   it('「選択」で選んだパスはまだ item に無いので、パスも入れる', async () => {
     const apply = await resolvePathChange(baseItem, 'https://example.com');
     expect(apply?.(baseItem)).toMatchObject({ path: 'https://example.com', type: 'url' });
