@@ -77,7 +77,7 @@ const settings = await window.electronAPI.getSettings();
 - 外部変更（QDL の外での変更）を検知した場合は、変更前の内容をスナップショットに残す。破損ファイルや読み込み時の補正はトーストで知らせる
 - 実装: `src/main/services/data/dataFileLoader.ts`（`reloadConfigFiles()`）
 
-メイン画面は読み込みのたびに続けて `get-corrupted-data-files` を呼び、JSON として読めなかったデータファイルの名前（例: `datafiles/data2.json`）を受け取る。読み込みのときに覚えた結果を返すだけで、ファイルは読み直さない（`src/main/services/data/corruptedDataFiles.ts`）。今のタブのファイルが入っていれば、空のタブの案内の代わりに読めなかったことを出す（[メイン画面](../screens/main-window.md#3-画面項目一覧) の「一覧が空のときの案内」）。
+メイン画面は読み込みのたびに続けて `get-corrupted-data-files` を呼び、JSON として読めなかったデータファイルの名前（例: `datafiles/data2.json`）を受け取る。読み込みのときに覚えた結果を返すだけで、ファイルは読み直さない（`src/main/services/data/corruptedDataFiles.ts`）。今のタブのファイルが入っていれば、空のタブの案内の代わりに読めなかったことを出す（メイン画面の仕様書の「一覧が空のときの案内」）。
 
 F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-files` を `explicit` で呼ぶ。ファイル監視はしないので、QDL の外で編集したファイルが反映されるのは F5 か再起動のときだけ。QDL の外での変更への備えは[データファイル形式](file-formats/data-format.md#53-qdl-の外での変更への備え)を参照。
 
