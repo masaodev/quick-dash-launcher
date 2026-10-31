@@ -127,9 +127,51 @@ describe('UpdateCheckService', () => {
       }),
     });
     const status = await service.checkNow();
-    expect(status).toMatchObject({ failed: true, available: null });
+    expect(status).toMatchObject({ failed: true, available: null, lastCheckedAt: null });
     expect(deps.notify).not.toHaveBeenCalled();
-    expect(JSON.parse(fs.readFileSync(filePath, 'utf-8')).lastCheckedAt).toBe(now);
+    // 「最後に確かめた日時」は進めない（24 時間待たずに確かめ直すため）
+    expect(
+      fs.existsSync(filePath)
+        ? JSON.parse(fs.readFileSync(filePath, 'utf-8')).lastCheckedAt
+        : undefined
+    ).toBeUndefined();
+
+    // 1 時間たつまでは確かめ直さない（設定を変えるたびに問い合わせない）
+    now += 30 * 60 * 1000;
+    await service.checkIfDue();
+    expect(deps.fetchReleases).toHaveBeenCalledTimes(1);
+
+    // 1 時間たてば、つながったところで確かめ直す
+    now += 31 * 60 * 1000;
+    vi.mocked(deps.fetchReleases).mockResolvedValue([release('v0.8.1')]);
+    await service.checkIfDue();
+    expect(deps.fetchReleases).toHaveBeenCalledTimes(2);
+    expect(await service.getStatus()).toMatchObject({ failed: false, lastCheckedAt: now });
+    expect(deps.notify).toHaveBeenCalledTimes(1);
+  });
+
+  it('「ベータ版も知らせる」を切ったら、前に見つけたベータ版を出さずに確かめ直す', async () => {
+    let includeBeta = true;
+    const { service, deps } = makeService({
+      getSettings: vi.fn(async () => ({ enabled: true, includeBeta })),
+      fetchReleases: vi.fn(async () => [release('v0.9.0-beta.1'), release('v0.8.0')]),
+    });
+    expect((await service.checkNow()).available).toMatchObject({ version: '0.9.0-beta.1' });
+
+    includeBeta = false;
+    expect(await service.getAvailableRelease()).toBeNull();
+    await service.onSettingsChanged();
+    expect(deps.fetchReleases).toHaveBeenCalledTimes(2);
+    expect(await service.getAvailableRelease()).toBeNull();
+  });
+
+  it('ベータ版から正式版に上げた後は、前に見つけたベータ版を出さない', async () => {
+    await makeService({
+      currentVersion: '0.8.0-beta.30',
+      fetchReleases: vi.fn(async () => [release('v0.9.0-beta.1')]),
+    }).service.checkNow();
+    const { service } = makeService({ currentVersion: '0.8.0' });
+    expect(await service.getAvailableRelease()).toBeNull();
   });
 
   it('同時に押されても、問い合わせは 1 回だけ', async () => {

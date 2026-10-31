@@ -7,6 +7,7 @@ import { isNewerFormatVersion } from '@common/utils/formatVersion';
 
 import {
   compareAppVersions,
+  isPrereleaseVersion,
   isReleasePageUrl,
   pickAvailableRelease,
   type AvailableRelease,
@@ -69,6 +70,10 @@ export class UpdateCheckService {
   private newerFormat = false;
   private checking: Promise<UpdateCheckStatus> | null = null;
   private lastError = false;
+  /** 最後に確かめられなかった日時（失敗したら 24 時間を待たず、1 時間ごとの見回りで確かめ直す） */
+  private lastFailedAt: number | null = null;
+  /** 最後に確かめたときの「ベータ版も知らせる」（変わったら確かめ直す） */
+  private checkedWithBeta: boolean | null = null;
   private timers: ReturnType<typeof setTimeout>[] = [];
 
   constructor(private readonly deps: UpdateCheckDeps) {
@@ -107,9 +112,18 @@ export class UpdateCheckService {
   /** 知らせる版（設定を切っている・今の版が追いついたときは null） */
   async getAvailableRelease(): Promise<AvailableRelease | null> {
     if (!this.isSupported()) return null;
-    if (!(await this.deps.getSettings()).enabled) return null;
+    const { enabled, includeBeta } = await this.deps.getSettings();
+    if (!enabled) return null;
     const latest = this.state.latest;
     if (!latest || compareAppVersions(latest.version, this.deps.currentVersion) <= 0) return null;
+    // 「ベータ版も知らせる」を切った・正式版に上げた後に、前に見つけたベータ版を出し続けない
+    if (
+      isPrereleaseVersion(latest.version) &&
+      !includeBeta &&
+      !isPrereleaseVersion(this.deps.currentVersion)
+    ) {
+      return null;
+    }
     if (!isReleasePageUrl(latest.url, UPDATE_CHECK_REPOSITORY)) return null;
     return latest;
   }
@@ -126,9 +140,19 @@ export class UpdateCheckService {
     };
   }
 
-  /** 設定が変わったとき。入れたら間隔が来ていれば確かめ、切ったらトレイから消す */
+  /** 設定が変わったとき。入れたら間隔が来ていれば確かめ、切ったらトレイから消す。ベータ版の設定を変えたら確かめ直す */
   async onSettingsChanged(): Promise<void> {
     this.deps.onChange();
+    const { enabled, includeBeta } = await this.deps.getSettings();
+    if (
+      enabled &&
+      this.isSupported() &&
+      this.checkedWithBeta !== null &&
+      this.checkedWithBeta !== includeBeta
+    ) {
+      await this.checkNow();
+      return;
+    }
     await this.checkIfDue();
   }
 
@@ -138,6 +162,9 @@ export class UpdateCheckService {
     if (!(await this.deps.getSettings()).enabled) return;
     const now = this.now();
     const last = this.state.lastCheckedAt;
+    // 失敗した後は、1 時間たつまで確かめ直さない（設定を変えるたびに問い合わせないように）
+    if (this.lastFailedAt !== null && now - this.lastFailedAt < TICK_MS && now >= this.lastFailedAt)
+      return;
     // 時計が戻った（未来の日時が入っている）ときも確かめ直す
     if (last !== undefined && now - last < CHECK_INTERVAL_MS && now >= last) return;
     await this.checkNow();
@@ -165,12 +192,16 @@ export class UpdateCheckService {
         repository: UPDATE_CHECK_REPOSITORY,
       });
       this.lastError = false;
+      this.lastFailedAt = null;
+      this.checkedWithBeta = includeBeta;
+      this.state.lastCheckedAt = this.now();
     } catch (error) {
-      // ネットにつながらない・GitHub が応えないときは知らせず、次の回にまた確かめる
+      // ネットにつながらない・GitHub が応えないときは知らせず、1 時間ごとの見回りでまた確かめる。
+      // 「最後に確かめた日時」は確かめられた日時のまま残す（進めると 24 時間確かめず、確かめられたようにも見える）
       updateLogger.info({ error }, '新しい版を確かめられませんでした');
       this.lastError = true;
+      this.lastFailedAt = this.now();
     }
-    this.state.lastCheckedAt = this.now();
 
     const available = await this.getAvailableRelease();
     if (available && this.state.notifiedVersion !== available.version) {
