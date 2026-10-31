@@ -18,7 +18,8 @@ const updateLogger = logger.child({ context: 'update' });
 const UPDATE_CHECK_VERSION = 1;
 
 export const UPDATE_CHECK_REPOSITORY = 'masaodev/quick-dash-launcher';
-const RELEASES_API_URL = `https://api.github.com/repos/${UPDATE_CHECK_REPOSITORY}/releases?per_page=30`;
+// 新しい順に返る。ベータ版が続いても正式版を取りこぼさないよう、1 回で読める最大の 100 件を読む
+const RELEASES_API_URL = `https://api.github.com/repos/${UPDATE_CHECK_REPOSITORY}/releases?per_page=100`;
 
 /** 起動してから最初に確かめるまで */
 const FIRST_CHECK_DELAY_MS = 60 * 1000;
