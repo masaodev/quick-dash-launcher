@@ -50,6 +50,24 @@ describe('LaunchUsageService', () => {
     expect(reloaded.getSnapshot().since).toBe(saved.since);
   });
 
+  it('新しい版の QDL が書いたファイルは読んで使うが、記録を足しても上書きしない', async () => {
+    const filePath = path.join(dir, 'item-usage.json');
+    const original = JSON.stringify({
+      version: 2,
+      since: 1,
+      byId: { abc12345: { lastLaunchedAt: 5, count: 4 } },
+      byPath: {},
+      future: true,
+    });
+    fs.writeFileSync(filePath, original);
+
+    const service = LaunchUsageService.initialize(dir);
+    await service.recordById('abc12345');
+    expect(service.getSnapshot().byId.abc12345.count).toBe(5);
+    service.flush();
+    expect(fs.readFileSync(filePath, 'utf8')).toBe(original);
+  });
+
   it('設定「起動の記録を残す」が切ってあれば数えない', async () => {
     settings.recordLaunchUsage = false;
     const service = LaunchUsageService.initialize(dir);

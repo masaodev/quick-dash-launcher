@@ -3,6 +3,7 @@ import * as path from 'path';
 
 import { itemLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
+import { isNewerFormatVersion } from '@common/utils/formatVersion';
 import {
   launchUsagePathKey,
   type LaunchUsageRecord,
@@ -11,14 +12,17 @@ import {
 
 import { SettingsService } from './settingsService.js';
 
+/** item-usage.json の形式の版 */
+const LAUNCH_USAGE_VERSION = 1;
+
 interface LaunchUsageFile extends LaunchUsageSnapshot {
-  version: 1;
+  version: typeof LAUNCH_USAGE_VERSION;
   /** 設定「起動の記録を残す」を切った日時（入れ直したとき、since をその日に進める） */
   pausedAt?: number;
 }
 
 function emptyFile(): LaunchUsageFile {
-  return { version: 1, since: Date.now(), byId: {}, byPath: {} };
+  return { version: LAUNCH_USAGE_VERSION, since: Date.now(), byId: {}, byPath: {} };
 }
 
 /** 数の項目がそろった記録だけを残す（手で書き換えた・一部が壊れたファイルに備える） */
@@ -59,6 +63,8 @@ export class LaunchUsageService {
   private writeTimer: ReturnType<typeof setTimeout> | null = null;
   /** 書いていない記録があるか（読んだだけのときは書かない） */
   private dirty = false;
+  /** 新しい版の QDL が書いたファイル。読んで使うが、上書きすると新しい版の形を壊すので書かない */
+  private newerFormat = false;
 
   private constructor(private readonly filePath: string) {}
 
@@ -95,8 +101,14 @@ export class LaunchUsageService {
     }
     try {
       const raw = JSON.parse(text) as Partial<LaunchUsageFile>;
+      this.newerFormat = isNewerFormatVersion(raw.version, LAUNCH_USAGE_VERSION);
+      if (this.newerFormat) {
+        itemLogger.warn(
+          '起動の記録は新しい版の QDL が書いたものなので、読むだけにします（記録を足しても書きません）'
+        );
+      }
       this.data = {
-        version: 1,
+        version: LAUNCH_USAGE_VERSION,
         since: typeof raw.since === 'number' ? raw.since : Date.now(),
         byId: validRecords(raw.byId),
         byPath: validRecords(raw.byPath),
@@ -133,7 +145,7 @@ export class LaunchUsageService {
       clearTimeout(this.writeTimer);
       this.writeTimer = null;
     }
-    if (!this.data || !this.dirty) return;
+    if (!this.data || !this.dirty || this.newerFormat) return;
     // 書いている途中で落ちても壊れないよう、一時ファイルに書いてから置き換える
     if (FileUtils.safeWriteTextFile(this.filePath, JSON.stringify(this.data, null, 2))) {
       this.dirty = false;

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 
 import logger from '@common/logger';
+import { isNewerFormatVersion } from '@common/utils/formatVersion';
 
 import PathManager from '../config/pathManager.js';
 
@@ -23,6 +24,16 @@ export interface MemoStorage {
 
 const MEMO_VERSION = 1;
 
+/** メモの版が、この QDL の扱える版より新しいか（無い・壊れているなら false。壊れたメモは書き直す） */
+function isNewerMemoFile(filePath: string): boolean {
+  try {
+    const current = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as { version?: unknown } | null;
+    return isNewerFormatVersion(current?.version, MEMO_VERSION);
+  } catch {
+    return false;
+  }
+}
+
 const fileStorage: MemoStorage = {
   read() {
     const filePath = PathManager.getPathTypeCacheFilePath();
@@ -36,6 +47,8 @@ const fileStorage: MemoStorage = {
   },
   write(paths) {
     const filePath = PathManager.getPathTypeCacheFilePath();
+    // 新しい版の QDL が書いたメモは上書きしない（新しい版の形を壊さないため。覚えた結果は残らないだけ）
+    if (isNewerMemoFile(filePath)) return;
     const body = { version: MEMO_VERSION, extensionlessFiles: paths };
     fs.writeFileSync(filePath, JSON.stringify(body, null, 2) + '\n', 'utf-8');
   },
