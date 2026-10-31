@@ -2135,9 +2135,15 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     restoreFailed: '復元に失敗しました',
     deleteFailed: '削除に失敗しました',
     preMigrationCopyFailed: '移行前スナップショットに {{file}} をコピーできませんでした',
+    preImportCopyFailed:
+      '読み込みの前のスナップショットに {{file}} をコピーできなかったので、読み込みをやめました',
   },
   dataExport: {
-    exportTitle: 'QuickDashLauncher のデータをすべて書き出す',
+    exportTitle: 'エクスポート',
+    importTitle: 'インポートするファイルを選ぶ',
+    importExpired: '選んだファイルが見つかりません。もう一度インポートしてください',
+    applyFailed:
+      'インポートの途中で失敗しました。元のデータはスナップショット（{{snapshot}}）に残っています: {{error}}',
   },
   clipboardService: {
     imagePreview: '画像（{{width}}×{{height}}）',
@@ -2170,6 +2176,23 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     faviconFailed: 'ファビコン取得に失敗しました',
     iconNotFound: 'アイコンが見つかりませんでした',
     iconFailed: 'アイコン抽出に失敗しました',
+  },
+  dataImport: {
+    confirmTitle: 'インポート',
+    confirmMessage: 'エクスポートしたデータをインポートして、再起動します。',
+    confirmWarning: '今のデータはすべて置き換わります。\n元のデータはスナップショットに残します。',
+    detailSource: 'エクスポート元',
+    sourceValue: 'QuickDashLauncher {{version}}（{{distribution}}）',
+    detailExportedAt: 'エクスポートした日時',
+    detailItems: 'アイテム（今 → インポート後）',
+    detailWorkspaceItems: 'ワークスペースのアイテム',
+    confirmButton: 'インポートして再起動',
+    notExport: 'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません',
+    newerVersion:
+      '新しい版の QuickDashLauncher でエクスポートしたファイルです。QuickDashLauncher を最新の版にしてからインポートしてください',
+    invalidFile: 'ファイルの中の {{file}} を読めないため、インポートできません',
+    failed: 'インポートに失敗しました: {{error}}',
+    restarting: 'インポートしました。再起動します…',
   },
   itemCsv: {
     replanned:
@@ -2666,13 +2689,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       lastBackup: '最終バックアップ: {{time}}',
       neverBackedUp: 'なし',
       openSnapshots: 'スナップショット一覧',
-      transferHeading: 'データの書き出しと読み込み',
-      transferDescription:
-        'アイテム・ワークスペース・設定などをまとめて 1 つの zip ファイルに書き出します。別の PC や別の配布形式の QuickDashLauncher に移すときに使います。',
-      exportAll: 'すべて書き出す…',
-      exported_one: '{{count}} 個のファイルを書き出しました: {{path}}',
-      exported_other: '{{count}} 個のファイルを書き出しました: {{path}}',
-      exportFailed: '書き出しに失敗しました: {{error}}',
+      transferHeading: 'エクスポートとインポート',
+      transferDescription: 'データと設定を 1 つのファイルにまとめて、別の PC などへ移せます。',
+      exportAll: 'エクスポート…',
+      importAll: 'インポート…',
+      exported: 'エクスポートしました: {{path}}',
+      exportFailed: 'エクスポートに失敗しました: {{error}}',
     },
     snapshots: {
       title: 'スナップショット一覧',

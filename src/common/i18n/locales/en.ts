@@ -2133,9 +2133,15 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     restoreFailed: "Couldn't restore",
     deleteFailed: "Couldn't delete",
     preMigrationCopyFailed: "Couldn't copy {{file}} to the pre-migration snapshot",
+    preImportCopyFailed:
+      "Couldn't copy {{file}} to the pre-import snapshot, so the import was canceled",
   },
   dataExport: {
-    exportTitle: 'Export all QuickDashLauncher data',
+    exportTitle: 'Export',
+    importTitle: 'Choose a file to import',
+    importExpired: "The file you chose wasn't found. Import it again.",
+    applyFailed:
+      'The import failed partway. Your original data is in the snapshot ({{snapshot}}): {{error}}',
   },
   clipboardService: {
     imagePreview: 'Image ({{width}}x{{height}})',
@@ -2168,6 +2174,24 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     faviconFailed: "Couldn't get the favicon",
     iconNotFound: "The icon wasn't found",
     iconFailed: "Couldn't extract the icon",
+  },
+  dataImport: {
+    confirmTitle: 'Import',
+    confirmMessage: 'Imports the exported data, then restarts.',
+    confirmWarning:
+      'All of your current data will be replaced.\nYour original data is kept in a snapshot.',
+    detailSource: 'Exported from',
+    sourceValue: 'QuickDashLauncher {{version}} ({{distribution}})',
+    detailExportedAt: 'Exported on',
+    detailItems: 'Items (now → after import)',
+    detailWorkspaceItems: 'Workspace items',
+    confirmButton: 'Import and restart',
+    notExport: "This file wasn't exported from QuickDashLauncher, so it can't be imported",
+    newerVersion:
+      'This file was exported from a newer version of QuickDashLauncher. Update QuickDashLauncher, then import it.',
+    invalidFile: "{{file}} in the file can't be read, so it can't be imported",
+    failed: "Couldn't import: {{error}}",
+    restarting: 'Imported. Restarting…',
   },
   itemCsv: {
     replanned:
@@ -2656,12 +2680,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       lastBackup: 'Last backup: {{time}}',
       neverBackedUp: 'None',
       openSnapshots: 'Snapshots',
-      transferHeading: 'Export and import data',
-      transferDescription:
-        'Exports your items, workspace, settings, and more into a single zip file. Use it to move to another PC or another edition of QuickDashLauncher.',
-      exportAll: 'Export all…',
-      exported_one: 'Exported {{count}} file: {{path}}',
-      exported_other: 'Exported {{count}} files: {{path}}',
+      transferHeading: 'Export and import',
+      transferDescription: 'Move your data and settings to another PC as a single file.',
+      exportAll: 'Export…',
+      importAll: 'Import…',
+      exported: 'Exported: {{path}}',
       exportFailed: "Couldn't export: {{error}}",
     },
     snapshots: {

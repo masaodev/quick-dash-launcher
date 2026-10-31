@@ -87,6 +87,8 @@ export const IPC_CHANNELS = {
   BACKUP_DELETE_SNAPSHOT: 'backup:delete-snapshot',
   BACKUP_GET_STATUS: 'backup:get-status',
   BACKUP_EXPORT_ALL: 'backup:export-all',
+  BACKUP_IMPORT_INSPECT: 'backup:import-inspect',
+  BACKUP_IMPORT_APPLY: 'backup:import-apply',
 
   // ウィンドウ操作
   // ピン留め（送ってきたウィンドウ＝メイン・ワークスペース・切り離しのどれかを対象にする）

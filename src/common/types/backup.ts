@@ -51,3 +51,30 @@ export interface DataExportResult {
   filePath: string;
   fileCount: number;
 }
+
+/** 読み込めなかった理由（画面の文言は renderer が選ぶ） */
+export type DataImportProblem =
+  /** zip でない・QDL が書き出したものでない */
+  | { kind: 'notExport' }
+  /** 新しい版の QDL で書き出したもの（この QDL では読めない） */
+  | { kind: 'newerVersion' }
+  /** 中のファイルが読めない・決まった名前でない・大きすぎる */
+  | { kind: 'invalidFile'; file: string };
+
+/** 読み込みの確認に出す、書き出したデータの説明と件数（今 → 読み込んだ後） */
+export interface DataImportSummary {
+  exportedAt: string;
+  appVersion: string;
+  distribution: AppDistribution;
+  fileCount: number;
+  items: { before: number; after: number };
+  workspaceItems: { before: number; after: number };
+}
+
+/** 書き出したファイルを確かめた結果（ファイルを選ぶのをやめたときは null を返す） */
+export type DataImportInspectResult =
+  | { ok: true; token: string; filePath: string; summary: DataImportSummary }
+  | { ok: false; filePath: string; problem: DataImportProblem };
+
+/** 読み込みの結果（成功したら QDL を再起動するので、普通は返らない） */
+export type DataImportApplyResult = { success: true } | { success: false; error: string };

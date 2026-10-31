@@ -4,11 +4,13 @@ import type { AppSettings, BackupStatus } from '@common/types';
 import { SETTING_NUMBER_RANGES } from '@common/settingRanges';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
+import { useDataImport } from '../hooks/useDataImport';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
 
 import { Button } from './ui';
 import BackupSnapshotModal from './BackupSnapshotModal';
+import DataImportConfirmDialog from './DataImportConfirmDialog';
 import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
 
 interface AdminSettingsBackupSectionProps {
@@ -33,7 +35,8 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
   const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const { showSuccess, showWarning } = useToast();
+  const { showSuccess, showWarning, showInfo } = useToast();
+  const dataImport = useDataImport({ onProblem: showWarning, onApplied: showInfo });
 
   // 表示時と、スナップショット一覧（復元・削除で件数が変わる）の開閉時に状態を取り直す
   useEffect(() => {
@@ -52,10 +55,7 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
     try {
       const result = await window.electronAPI.backupAPI.exportAll();
       if (!result) return;
-      showSuccess(
-        t('settings.backup.exported', { count: result.fileCount, path: result.filePath }),
-        { long: true }
-      );
+      showSuccess(t('settings.backup.exported', { path: result.filePath }), { long: true });
     } catch (error) {
       logError('データの書き出しに失敗:', error);
       showWarning(
@@ -159,22 +159,35 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
         />
       </div>
 
-      {/* 書き出しはバックアップ機能のオン・オフに関係なく使える */}
+      {/* エクスポート・インポートはバックアップ機能のオン・オフに関係なく使える */}
       <div className="settings-section">
         <h3>{t('settings.backup.transferHeading')}</h3>
         <p className="settings-section-description">{t('settings.backup.transferDescription')}</p>
-        <div className="setting-item">
+        <div className="setting-item-buttons">
           <Button
             variant="secondary"
-            className="setting-item-button"
             onClick={handleExportAll}
             disabled={isLoading || isExporting}
             data-testid="export-all-data"
           >
             {t('settings.backup.exportAll')}
           </Button>
+          <Button
+            variant="secondary"
+            onClick={dataImport.start}
+            disabled={isLoading || dataImport.isBusy}
+            data-testid="import-data"
+          >
+            {t('settings.backup.importAll')}
+          </Button>
         </div>
       </div>
+
+      <DataImportConfirmDialog
+        summary={dataImport.pending?.summary ?? null}
+        onConfirm={dataImport.confirm}
+        onClose={dataImport.cancel}
+      />
     </>
   );
 };
