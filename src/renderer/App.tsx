@@ -57,6 +57,7 @@ import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
 import { useSearchMemo } from './hooks/useSearchMemo';
 import { useSearchNormalization } from './hooks/useSearchNormalization';
 import { useSearchUsageOrder } from './hooks/useSearchUsageOrder';
+import { useKeepSelectionOnReorder } from './hooks/useKeepSelectionOnReorder';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -632,6 +633,9 @@ function App(): React.ReactElement {
       activeDesktopTab,
     ]
   );
+
+  // よく開く順の回数を読み直して並びが変わっても、選んでいたアイテムを選んだままにする
+  useKeepSelectionOnReorder(filteredItems, selectedIndex, setSelectedIndex, usageCountOf);
 
   // 一覧が縮んで選択が範囲外になったら末尾に合わせる（末尾のウィンドウを閉じた後など）
   useEffect(() => {
