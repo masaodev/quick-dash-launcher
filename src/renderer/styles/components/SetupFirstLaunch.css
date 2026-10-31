@@ -254,23 +254,32 @@
   user-select: none;
 }
 
-.auto-launch-checkbox {
+.auto-launch-checkbox,
+.update-check-checkbox {
   cursor: pointer;
 }
 
-.auto-launch-checkbox-label:has(.auto-launch-checkbox:disabled) {
+.auto-launch-checkbox-label:has(.auto-launch-checkbox:disabled),
+.auto-launch-checkbox-label:has(.update-check-checkbox:disabled) {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.auto-launch-checkbox:disabled {
+.auto-launch-checkbox:disabled,
+.update-check-checkbox:disabled {
   cursor: not-allowed;
 }
 
-.auto-launch-hint {
+.auto-launch-hint,
+.update-check-hint {
   margin: var(--spacing-xs) 0 0 0;
   margin-left: calc(var(--spacing-sm) + 18px); /* チェックボックス幅 + gap */
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   line-height: 1.5;
+}
+
+/* 自動起動の下に並べる「新しい版が出たら知らせる」 */
+.update-check-checkbox-label {
+  margin-top: var(--spacing-md);
 }

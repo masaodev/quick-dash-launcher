@@ -310,18 +310,18 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               <p className="auto-launch-hint">{t('firstLaunch.autoLaunchHint')}</p>
               {!isStore && (
                 <>
-                  <label className="auto-launch-checkbox-label">
+                  <label className="auto-launch-checkbox-label update-check-checkbox-label">
                     <input
                       type="checkbox"
                       checked={updateCheckEnabled}
                       onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
                       disabled={isLoading}
-                      className="auto-launch-checkbox"
+                      className="update-check-checkbox"
                       data-testid="first-launch-update-check"
                     />
                     {t('firstLaunch.updateCheck')}
                   </label>
-                  <p className="auto-launch-hint">{t('firstLaunch.updateCheckHint')}</p>
+                  <p className="update-check-hint">{t('firstLaunch.updateCheckHint')}</p>
                 </>
               )}
             </div>
