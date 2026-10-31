@@ -192,6 +192,7 @@ export const en: LocaleMessages = {
       dataFile: 'Data file: {{value}}',
       id: 'ID: {{value}}',
       expandedFromId: 'Imported from ID: {{value}}',
+      wsGroup: 'Workspace group (opens in a detached window when you pick it)',
       lineNumber: 'Line: {{value}}',
       expandedFrom: 'Imported from: {{value}}',
       expandedOptions: 'Options: {{value}}',
@@ -240,6 +241,8 @@ export const en: LocaleMessages = {
       virtualDesktopUnsupported: "Virtual desktops aren't supported on this PC.",
       noContainingFolder: "This item doesn't have a containing folder",
       noContainingFolderNamed: '"{{name}}" doesn\'t have a containing folder',
+      wsGroupNotFound:
+        'The group "{{name}}" was not found (it may have been deleted in the workspace)',
       launchFailed: 'Couldn\'t open "{{name}}": {{error}}',
       appNotFoundInPath: "Couldn't find the app in PATH",
       clipboardDataMissing: "Couldn't find the clipboard data",
@@ -679,6 +682,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unknownCommand: 'Unknown command: {{command}}',
       cannotOpenDir:
         "Folder import rows and the items listed from them can't be opened from the CLI: {{name}}",
+      cannotOpenWsGroup:
+        "WS group rows can't be opened (open the listed groups by detaching them in the workspace): {{name}}",
       cannotOpen: "This item can't be opened: {{name}}",
       openFailed: "Couldn't open {{name}} ({{error}})",
       unknownShowTarget: 'Show main or workspace: {{target}}',
@@ -768,6 +773,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         "--{{option}} can't be used with --from (to change the contents, use workspace item update after copying)",
       fromDir:
         'The folder import "{{name}}" can\'t be copied to the workspace (add the files in it one by one with --path)',
+      fromWsGroup: 'The WS group "{{name}}" can\'t be copied to the workspace',
       fromInvalid: '"{{name}}" failed validation when loading, so it can\'t be copied: {{reason}}',
       clipboardNotText:
         "This clipboard item contains more than text ({{formats}}), so its text can't be replaced (you can still change its name and memo or move it; change its contents on screen)",
@@ -1123,11 +1129,34 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     discardAndClose: 'Discard and close',
   },
   itemManager: {
+    wsGroup: {
+      titleAdd: 'Show workspace groups in search',
+      titleEdit: 'Edit WS group',
+      lead: 'Each group you choose appears in this tab and in search. Picking one opens that group in a detached window',
+      scopeLabel: 'Groups to show',
+      scopeAll: 'All groups',
+      scopeSelected: 'Selected groups',
+      allNote: 'Groups you add later appear automatically, in the same order as the workspace',
+      selectedNote: 'Only top-level groups can be chosen (subgroups are not shown)',
+      noGroups: 'The workspace has no groups',
+      missing_one: '⚠ {{count}} group was not found (it was deleted). It is removed when you apply',
+      missing_other:
+        '⚠ {{count}} groups were not found (they were deleted). They are removed when you apply',
+      affixLabel: 'Text to add before and after the name (optional)',
+      prefixPlaceholder: 'Text before',
+      suffixPlaceholder: 'Text after',
+      previewLabel: 'How it looks in the launcher',
+      previewEmpty: '(no groups to show)',
+      memoLabel: 'Note (optional)',
+      confirmAdd: 'Add',
+      confirmEdit: 'Apply',
+    },
     types: {
       item: 'Single item',
       dir: 'Folder import',
       clipboard: 'Clipboard',
       set: 'Set',
+      wsgroup: 'WS group',
       unknown: 'Unknown',
     },
     noName: '(no name)',
@@ -1142,6 +1171,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       setRowsPlaced_one: '{{count}} row ({{placed}} with a window position)',
       setRowsPlaced_other: '{{count}} rows ({{placed}} with a window position)',
       unknownType: '(unknown type)',
+      wsGroupAll: 'All groups',
+      wsGroupSelected_one: '{{count}} selected group',
+      wsGroupSelected_other: '{{count}} selected groups',
     },
     toolbar: {
       importCsv: '📄 Import from CSV',
@@ -1154,6 +1186,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       addFolder: '🗂️ Add folder import',
       addFolderTitle:
         'Adds an item that lists the files in a folder each time the launcher opens (folder import)',
+      addWsGroup: '🪟 Show workspace groups in search',
+      addWsGroupTitle:
+        'Lists the groups you choose in this tab and in search, and opens a group in a detached window when you pick it (adds a row of the WS group type)',
       removeFilter: 'Remove the "{{name}}" filter',
       deleteSelected: 'Delete',
       deleteSelectedTitle: 'Deletes the checked items',
@@ -1210,6 +1245,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         dir: 'Folder import',
         set: 'Set',
         clipboard: 'Clipboard',
+        wsgroup: 'WS group',
       },
       link: {
         missing: '⚠ Not found',
@@ -1273,6 +1309,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       typeSelectTitle:
         'Changes the type. Single item and folder import switch right away; set (opens several items together and places their windows) and clipboard open Edit details.',
       dirHasNoName: "Folder imports don't have names (the imported file names are shown)",
+      wsGroupHasNoName: "WS groups don't have names (the group names are shown)",
+      wsGroupTypeFixed: 'A WS group cannot be changed to another type',
       namePlaceholder: 'Enter a name (Enter moves to the path)',
       invalid: 'This item has a problem: {{error}}',
       editNameTitle: 'Select to edit the name',

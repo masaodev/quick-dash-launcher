@@ -297,7 +297,30 @@ export interface SetItem {
 export type SetItemFields = Pick<SetItem, 'displayName' | 'entries' | 'launchMode' | 'customIcon'>;
 
 /**
- * アプリケーションで扱うすべてのアイテムの統合型
- * 通常のLauncherItem、ClipboardItem、SetItem、WindowInfo（ウィンドウ検索結果）を扱える
+ * WSグループから展開したアイテム（ワークスペースのグループ 1 つ分）
+ * 選ぶとそのグループの切り離しウィンドウを開く。保存形式には書かない（WSグループの行から毎回作る）
  */
-export type AppItem = LauncherItem | ClipboardItem | SetItem | WindowInfo;
+export interface WsGroupItem {
+  /** アイテムタイプ（常に'wsgroup'） */
+  type: 'wsgroup';
+  /** 表示名（グループの今の名前にプレフィックス・サフィックスを付けたもの） */
+  displayName: string;
+  /** 開くワークスペースのグループの id */
+  groupId: string;
+  /** グループの色（色のトークンか #RRGGBB。無ければ未設定） */
+  color?: string;
+  /** 元のデータファイル */
+  sourceFile?: string;
+  /** データファイル内の行番号（WSグループの行の位置） */
+  lineNumber?: number;
+  /** 展開元の WSグループの行の id */
+  expandedFromId?: string;
+  /** 展開したアイテムは id を持たない（行の id は expandedFromId） */
+  id?: undefined;
+}
+
+/**
+ * アプリケーションで扱うすべてのアイテムの統合型
+ * 通常のLauncherItem、ClipboardItem、SetItem、WsGroupItem、WindowInfo（ウィンドウ検索結果）を扱える
+ */
+export type AppItem = LauncherItem | ClipboardItem | SetItem | WsGroupItem | WindowInfo;

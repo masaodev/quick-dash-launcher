@@ -15,6 +15,7 @@ import { useAdminItemListView } from '../hooks/useAdminItemListView';
 import { useLaunchUsage } from '../hooks/useLaunchUsage';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
+import { useWsGroupEditor } from '../hooks/useWsGroupEditor';
 import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
 import { itemsToCsv, planCsvImport, type CsvImportPlan } from '../utils/itemCsv';
 import { setUsageWarning } from '../utils/setUsageWarning';
@@ -26,6 +27,7 @@ import BookmarkImportModal from './BookmarkImportModal';
 import AppImportModal from './AppImportModal';
 import AdminItemCsvImportModal from './AdminItemCsvImportModal';
 import ConfirmDialog from './ConfirmDialog';
+import WsGroupEditModal from './WsGroupEditModal';
 
 interface EditModeViewProps {
   editing: AdminItemEditing;
@@ -295,6 +297,15 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     }
   };
 
+  const wsGroupEditor = useWsGroupEditor({
+    editing,
+    dataFile: selectedDataFile,
+    beforeAdd: () => {
+      if (searchQuery) onSearchChange('');
+      listView.clearFilters();
+    },
+  });
+
   // 詳細編集で受け取った内容を未保存の編集状態に反映する（最新の editing を使うため ref 経由）
   const applyDetailEditRef = useRef<(target: EditableJsonItem, items: RegisterItem[]) => void>(
     () => {}
@@ -316,6 +327,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
    */
   const openDetailEditor = useCallback(
     async (target: EditableJsonItem, initialCategory?: RegisterItem['itemCategory']) => {
+      // WSグループは登録画面を使わず、専用のダイアログで直す
+      if (target.item.type === 'wsgroup') {
+        wsGroupEditor.open(target);
+        return;
+      }
       try {
         const result = await window.electronAPI.openMainChildWindow({
           kind: 'register',
@@ -334,7 +350,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         logError('詳細編集ウィンドウを開けませんでした:', error);
       }
     },
-    [editing.deleteItems]
+    [editing.deleteItems, wsGroupEditor.open]
   );
 
   // AdminItemManagerList側のIPCリスナー登録effectが依存するため、
@@ -347,6 +363,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   );
 
   const handleChangeType = (item: EditableJsonItem, newType: JsonItem['type']) => {
+    // WSグループは「＋ アイテムを追加」の ▼ からだけ作り、ほかの種別とは行き来しない
+    if (newType === 'wsgroup' || item.item.type === 'wsgroup') return;
     if (isInlineItemType(newType)) {
       editing.recordEdit({ ...item, item: changeItemType(item.item, newType) });
       return;
@@ -651,6 +669,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
       <AdminItemManagerToolbar
         onAddItem={handleAddItem}
         onAddFolder={handleAddFolder}
+        onAddWsGroup={() => wsGroupEditor.open()}
         onOpenBookmarkImport={imports.openBookmarkModal}
         onOpenAppImport={imports.openAppImportModal}
         onImportCsv={() => void handleImportCsv()}
@@ -779,6 +798,14 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           getFileLabel={getFileLabel}
           onConfirm={confirmCsvImport}
           onCancel={() => setCsvImport(null)}
+        />
+      )}
+
+      {wsGroupEditor.isOpen && (
+        <WsGroupEditModal
+          initial={wsGroupEditor.initial}
+          onConfirm={wsGroupEditor.confirm}
+          onCancel={wsGroupEditor.close}
         />
       )}
 

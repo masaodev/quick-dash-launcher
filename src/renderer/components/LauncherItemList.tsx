@@ -1,10 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { isLauncherItem, isWindowInfo, isSetItem, isClipboardItem } from '@common/types/guards';
+import {
+  isLauncherItem,
+  isWindowInfo,
+  isSetItem,
+  isClipboardItem,
+  isWsGroupItem,
+} from '@common/types/guards';
 import { LauncherItem, AppItem, WindowInfo, type WorkspaceTarget } from '@common/types';
 import { windowInfoToPathlessItem } from '@common/utils/windowInfoConverter';
 import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
+import { resolveGroupColorCss } from '@common/groupColors';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
@@ -350,6 +357,17 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       return '🪟';
     }
 
+    // WSグループ: グループの色の四角に、切り離しウィンドウの印
+    if (isWsGroupItem(item)) {
+      return (
+        <span
+          className="ws-group-item-icon"
+          style={{ background: resolveGroupColorCss(item.color) }}
+          aria-hidden="true"
+        />
+      );
+    }
+
     return ITEM_TYPE_ICONS[item.type] || '❓';
   }
 
@@ -524,7 +542,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const isWindow = isWindowInfo(item);
             const isSet = isSetItem(item);
             const isClipboard = isClipboardItem(item);
-            const isDraggable = true;
+            // WSグループはグループを開くだけで中身を持たないので、ワークスペースへドラッグさせない
+            const isDraggable = !isWsGroupItem(item);
             const isDragging = draggedItemIndex === index;
             const isMarked = isWindow && !!windowSelection?.isMarked(item.hwnd);
 

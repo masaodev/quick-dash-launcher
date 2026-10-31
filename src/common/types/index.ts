@@ -23,6 +23,7 @@ export type {
   SetPlacement,
   SetOpenTarget,
   SetLaunchMode,
+  WsGroupItem,
   AppItem,
 } from './launcher';
 
@@ -97,6 +98,9 @@ export type {
   JsonClipboardItem,
   JsonLayoutItem,
   JsonSetItem,
+  JsonWsGroupItem,
+  JsonWsGroupOptions,
+  WsGroupScope,
   DirOptionsForProcessing,
 } from './json-data';
 export {
@@ -104,6 +108,7 @@ export {
   isJsonDirItem,
   isJsonClipboardItem,
   isJsonSetItem,
+  isJsonWsGroupItem,
   JSON_DATA_VERSION,
   JSON_ID_LENGTH,
   DIR_OPTIONS_DEFAULTS,
@@ -224,4 +229,4 @@ export type { ToastItemType, ToastEventData, NotificationType, ToastOptions } fr
 export type { SnapshotInfo, BackupStatus } from './backup';
 
 // 型ガード関数
-export { isWindowInfo, isLauncherItem, isClipboardItem, isSetItem } from './guards';
+export { isWindowInfo, isLauncherItem, isClipboardItem, isSetItem, isWsGroupItem } from './guards';

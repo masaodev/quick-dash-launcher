@@ -1,0 +1,129 @@
+/* アイテム管理: WSグループの追加・編集（WsGroupEditModal） */
+.ws-group-modal {
+  width: min(520px, 90vw);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  overflow-y: auto;
+}
+
+.ws-group-modal h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.ws-group-modal-lead {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.ws-group-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.ws-group-modal-field legend,
+.ws-group-modal-label {
+  padding: 0;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.ws-group-modal-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+.ws-group-modal-radios label,
+.ws-group-modal-groups label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.ws-group-modal-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+  max-height: 220px;
+  overflow-y: auto;
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.ws-group-modal-groups.is-disabled label {
+  color: var(--text-disabled);
+}
+
+.ws-group-modal-workspace {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.ws-group-modal-workspace:first-child {
+  margin-top: 0;
+}
+
+.ws-group-swatch {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--border-radius-sm);
+}
+
+.ws-group-modal-note {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.ws-group-modal-warning {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-warning);
+}
+
+.ws-group-modal-affix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.ws-group-modal-affix input,
+.ws-group-modal-field > input {
+  min-width: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-normal);
+  border-radius: var(--border-radius);
+  font: inherit;
+}
+
+.ws-group-modal-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  list-style: none;
+  background: var(--bg-section);
+  border-radius: var(--border-radius);
+}
+
+.ws-group-modal-preview li {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}

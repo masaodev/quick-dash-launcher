@@ -13,6 +13,7 @@ import type {
   JsonClipboardItem,
   JsonLayoutItem,
   JsonSetItem,
+  JsonWsGroupItem,
   SetEntry,
   WindowConfig,
 } from '@common/types';
@@ -446,6 +447,8 @@ export function validateJsonItem(item: unknown, index: number): JsonItem {
       return validateJsonClipboardItem(obj);
     case 'set':
       return validateJsonSetItem(obj);
+    case 'wsgroup':
+      return validateJsonWsGroupItem(obj);
     default:
       throw new Error(`Unknown item type: ${obj.type}`);
   }
@@ -533,6 +536,47 @@ function validateJsonDirItem(obj: Record<string, unknown>): JsonDirItem {
     validateOptionalString(opts, item.options, 'exclude');
     validateOptionalString(opts, item.options, 'prefix');
     validateOptionalString(opts, item.options, 'suffix');
+  }
+
+  validateOptionalString(obj, item, 'memo');
+  validateTypedFields(obj, item, ['updatedAt'], 'number');
+
+  return item;
+}
+
+/**
+ * JsonWsGroupItemを検証
+ */
+function validateJsonWsGroupItem(obj: Record<string, unknown>): JsonWsGroupItem {
+  if (obj.scope !== 'all' && obj.scope !== 'selected') {
+    throw new Error('scope must be "all" or "selected"');
+  }
+
+  const item: JsonWsGroupItem = {
+    id: obj.id as string,
+    type: 'wsgroup',
+    scope: obj.scope,
+  };
+
+  if (obj.groupIds !== undefined) {
+    if (!Array.isArray(obj.groupIds)) {
+      throw new Error('groupIds must be an array');
+    }
+    for (let i = 0; i < obj.groupIds.length; i++) {
+      if (typeof obj.groupIds[i] !== 'string' || !obj.groupIds[i]) {
+        throw new Error(`groupIds[${i}] must be a non-empty string`);
+      }
+    }
+    item.groupIds = obj.groupIds as string[];
+  }
+
+  if (obj.options !== undefined) {
+    if (!isRecord(obj.options)) {
+      throw new Error('options must be an object');
+    }
+    item.options = {};
+    validateOptionalString(obj.options, item.options, 'prefix');
+    validateOptionalString(obj.options, item.options, 'suffix');
   }
 
   validateOptionalString(obj, item, 'memo');

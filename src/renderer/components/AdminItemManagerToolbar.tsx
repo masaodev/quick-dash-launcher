@@ -16,6 +16,8 @@ interface AdminItemManagerToolbarProps {
   onAddItem: () => void;
   /** 追加「▼」: フォルダ取込のアイテムを追加 */
   onAddFolder: () => void;
+  /** 追加「▼」: WSグループ（ワークスペースのグループを検索に出す行）を追加 */
+  onAddWsGroup: () => void;
   onOpenBookmarkImport: () => void;
   onOpenAppImport: () => void;
   /** 追加「▼」: CSV から取り込む */
@@ -106,6 +108,7 @@ const AdminItemManagerToolbar: React.FC<AdminItemManagerToolbarProps> = (props) 
 const AddSplitButton: React.FC<AdminItemManagerToolbarProps> = ({
   onAddItem,
   onAddFolder,
+  onAddWsGroup,
   onOpenBookmarkImport,
   onOpenAppImport,
   onImportCsv,
@@ -144,6 +147,14 @@ const AddSplitButton: React.FC<AdminItemManagerToolbarProps> = ({
             title={t('itemManager.toolbar.addFolderTitle')}
           >
             {t('itemManager.toolbar.addFolder')}
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={choose(onAddWsGroup)}
+            title={t('itemManager.toolbar.addWsGroupTitle')}
+            data-testid="add-ws-group"
+          >
+            {t('itemManager.toolbar.addWsGroup')}
           </button>
           <div className="dropdown-separator" />
           <button className="dropdown-item" onClick={choose(onOpenBookmarkImport)}>

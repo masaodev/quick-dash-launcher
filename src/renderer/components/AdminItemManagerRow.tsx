@@ -115,24 +115,31 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   const showsSourceColumn = columns.includes('source');
   const showsLinkColumn = columns.includes('link');
 
-  const renderTypeCell = () => (
-    <span className="type-cell">
-      <span className="type-icon">{getItemTypeIcon(jsonItem)}</span>
-      <select
-        className="type-select"
-        value={jsonItem.type}
-        onChange={(e) => onChangeType(item, e.target.value as JsonItem['type'])}
-        title={t('itemManager.row.typeSelectTitle')}
-      >
-        {TYPE_OPTIONS.map(({ type, opensDetail }) => (
-          <option key={type} value={type}>
-            {getItemTypeLabel(type)}
-            {opensDetail ? '…' : ''}
-          </option>
-        ))}
-      </select>
-    </span>
-  );
+  const renderTypeCell = () =>
+    // WSグループは ▼ の「ワークスペースのグループを検索に出す」からだけ作り、ほかの種別とは行き来しない
+    jsonItem.type === 'wsgroup' ? (
+      <span className="type-cell" title={t('itemManager.row.wsGroupTypeFixed')}>
+        <span className="type-icon">{getItemTypeIcon(jsonItem)}</span>
+        <span className="type-fixed">{getItemTypeLabel(jsonItem.type)}</span>
+      </span>
+    ) : (
+      <span className="type-cell">
+        <span className="type-icon">{getItemTypeIcon(jsonItem)}</span>
+        <select
+          className="type-select"
+          value={jsonItem.type}
+          onChange={(e) => onChangeType(item, e.target.value as JsonItem['type'])}
+          title={t('itemManager.row.typeSelectTitle')}
+        >
+          {TYPE_OPTIONS.map(({ type, opensDetail }) => (
+            <option key={type} value={type}>
+              {getItemTypeLabel(type)}
+              {opensDetail ? '…' : ''}
+            </option>
+          ))}
+        </select>
+      </span>
+    );
 
   const renderIconCell = () => {
     // 単一アイテムのアイコンと、クリップボード・セットのカスタムアイコン
@@ -143,6 +150,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     if (jsonItem.type === 'clipboard') return <span className="folder-emoji">📋</span>;
     if (jsonItem.type === 'set') return <span className="folder-emoji">📦</span>;
     if (jsonItem.type === 'dir') return <span className="folder-emoji">🗂️</span>;
+    if (jsonItem.type === 'wsgroup') return <span className="folder-emoji">🪟</span>;
     if (jsonItem.type !== 'item') return null;
     // パスの無い単一アイテム（開いているウィンドウに切り替えるだけ）
     if (isPathlessItem(jsonItem)) {
@@ -156,7 +164,14 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   const renderNameCell = () => {
     if (!hasDisplayName(jsonItem)) {
       return (
-        <div className="readonly-cell" title={t('itemManager.row.dirHasNoName')}>
+        <div
+          className="readonly-cell"
+          title={t(
+            jsonItem.type === 'wsgroup'
+              ? 'itemManager.row.wsGroupHasNoName'
+              : 'itemManager.row.dirHasNoName'
+          )}
+        >
           -
         </div>
       );

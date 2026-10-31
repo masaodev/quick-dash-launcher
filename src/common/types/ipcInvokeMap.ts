@@ -19,6 +19,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.OPEN_PARENT_FOLDER]: ElectronAPI['openParentFolder'];
   [IPC_CHANNELS.RUN_ITEM_AS_ADMIN]: ElectronAPI['runItemAsAdmin'];
   [IPC_CHANNELS.EXECUTE_SET]: ElectronAPI['executeSet'];
+  [IPC_CHANNELS.OPEN_WS_GROUP]: ElectronAPI['openWsGroup'];
   [IPC_CHANNELS.OPEN_CONFIG_FOLDER]: ElectronAPI['openConfigFolder'];
   [IPC_CHANNELS.FETCH_FAVICON]: ElectronAPI['fetchFavicon'];
   [IPC_CHANNELS.EXTRACT_ICON]: ElectronAPI['extractIcon'];

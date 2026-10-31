@@ -110,6 +110,8 @@ export interface ElectronAPI {
   runItemAsAdmin: (item: LauncherItem) => Promise<void>;
   /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
   executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
+  /** WSグループのアイテムを開く（そのグループの切り離しウィンドウを開く。メインウィンドウは隠さない）。グループが無ければ success: false */
+  openWsGroup: (groupId: string) => Promise<{ success: boolean }>;
   openConfigFolder: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;

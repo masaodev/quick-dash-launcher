@@ -82,6 +82,7 @@ const electronAPI: ElectronAPI = {
   openParentFolder: (item) => ipcInvoke(IPC_CHANNELS.OPEN_PARENT_FOLDER, item),
   runItemAsAdmin: (item) => ipcInvoke(IPC_CHANNELS.RUN_ITEM_AS_ADMIN, item),
   executeSet: (item, allItems) => ipcInvoke(IPC_CHANNELS.EXECUTE_SET, item, allItems),
+  openWsGroup: (groupId) => ipcInvoke(IPC_CHANNELS.OPEN_WS_GROUP, groupId),
   openConfigFolder: () => ipcInvoke(IPC_CHANNELS.OPEN_CONFIG_FOLDER),
   fetchFavicon: (url) => ipcInvoke(IPC_CHANNELS.FETCH_FAVICON, url),
   extractIcon: (filePath) => ipcInvoke(IPC_CHANNELS.EXTRACT_ICON, filePath),

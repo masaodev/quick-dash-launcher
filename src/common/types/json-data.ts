@@ -29,7 +29,8 @@ export interface JsonDataFile {
 /**
  * JSONデータファイル内のアイテム型（Union型）
  */
-export type JsonItem = JsonLauncherItem | JsonDirItem | JsonClipboardItem | JsonSetItem;
+export type JsonItem =
+  JsonLauncherItem | JsonDirItem | JsonClipboardItem | JsonSetItem | JsonWsGroupItem;
 
 // ============================================================
 // 共通フィールド
@@ -248,6 +249,37 @@ export interface JsonSetItem extends JsonItemBase {
 }
 
 // ============================================================
+// WSグループ (type: "wsgroup")
+// ============================================================
+
+/** WSグループで並べるグループの範囲: all＝すべて／selected＝groupIds で選んだもの */
+export type WsGroupScope = 'all' | 'selected';
+
+/** WSグループのオプション */
+export interface JsonWsGroupOptions {
+  /** 表示名のプレフィックス（オプション） */
+  prefix?: string;
+  /** 表示名のサフィックス（オプション） */
+  suffix?: string;
+}
+
+/**
+ * WSグループ
+ * ワークスペースのグループ（いちばん上の階層のもの）を、開くたびに一覧へ 1 件ずつ並べる。
+ * 選ぶとそのグループの切り離しウィンドウを開く。表示名は持たず、グループの今の名前を使う
+ */
+export interface JsonWsGroupItem extends JsonItemBase {
+  /** アイテムタイプ */
+  type: 'wsgroup';
+  /** 並べるグループの範囲 */
+  scope: WsGroupScope;
+  /** 並べるグループの id（scope が selected のときだけ使う。並びはワークスペースの順） */
+  groupIds?: string[];
+  /** オプション */
+  options?: JsonWsGroupOptions;
+}
+
+// ============================================================
 // 型ガード関数
 // ============================================================
 
@@ -263,6 +295,13 @@ export function isJsonLauncherItem(item: JsonItem): item is JsonLauncherItem {
  */
 export function isJsonDirItem(item: JsonItem): item is JsonDirItem {
   return item.type === 'dir';
+}
+
+/**
+ * JsonWsGroupItemかどうかを判定
+ */
+export function isJsonWsGroupItem(item: JsonItem): item is JsonWsGroupItem {
+  return item.type === 'wsgroup';
 }
 
 /**

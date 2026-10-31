@@ -243,10 +243,12 @@ export function createCliContext(
       );
     },
     beforeGroupRemoved: closeDetachedWindowsForGroup,
-    // メイン画面の読み込みと同じ変換（.lnk はリンク先を読む）。フォルダ取込は中身に展開されるので 1 件にならない
+    // メイン画面の読み込みと同じ変換（.lnk はリンク先を読む）。フォルダ取込・WSグループは中身に展開されるので 1 件にならない
     launcherAppItem: async (entry) => {
       const converted = await convertJsonItemToAppItems(entry.item, entry.file, 0, new Set(), 0);
-      return entry.item.type !== 'dir' && converted.length === 1 ? converted[0] : undefined;
+      return entry.item.type !== 'dir' && entry.item.type !== 'wsgroup' && converted.length === 1
+        ? converted[0]
+        : undefined;
     },
     duplicateClipboardData: (ref) => ClipboardService.getInstance().duplicateClipboardData(ref),
     // 画面で Enter を押したのと同じく、読み込んだ形（.lnk のリンク先・セットの行の解決）で開く
@@ -254,6 +256,9 @@ export function createCliContext(
       const name = itemName(entry.item);
       if (entry.item.type === 'dir') {
         throw new CliError('invalid', mainI18n.t('cli.errors.cannotOpenDir', { name }));
+      }
+      if (entry.item.type === 'wsgroup') {
+        throw new CliError('invalid', mainI18n.t('cli.errors.cannotOpenWsGroup', { name }));
       }
       const all = await reloadConfigFiles(configFolder, 'internal');
       const item = all.find(

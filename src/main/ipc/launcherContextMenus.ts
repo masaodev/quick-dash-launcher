@@ -8,7 +8,7 @@ import { Menu, MenuItem } from 'electron';
 import type { AppItem, WindowInfo, VirtualDesktopInfo } from '@common/types';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 import { desktopLabel } from '@common/utils/desktopLabel';
-import { isLauncherItem, isSetItem } from '@common/types/guards';
+import { isLauncherItem, isSetItem, isWsGroupItem } from '@common/types/guards';
 import { getDeletableItemId } from '@common/utils/launcherItemDelete';
 import { canRunAsAdmin } from '@common/utils/runAsAdmin';
 
@@ -146,7 +146,10 @@ function setupLauncherContextMenuHandler(): void {
       }
 
       // 足す先のグループはその場で選ぶ（未分類は無い。A3-157）
-      const { workspaces, groups } = await loadWorkspaceTargets();
+      // WSグループはグループを開くだけで中身を持たないので、ワークスペースには足せない（メニューを出さない）
+      const { workspaces, groups } = isWsGroupItem(item)
+        ? { workspaces: [], groups: [] }
+        : await loadWorkspaceTargets();
       const sendTo = (channel: string) => (pick: WorkspaceTargetPick) =>
         event.sender.send(channel, { item, target: pick });
       const addTo = buildWorkspaceTargetSubmenu(

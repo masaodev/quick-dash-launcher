@@ -91,12 +91,13 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ### 2.4. アイテムタイプ
 
-データファイルには以下の4種類のアイテムが存在します：
+データファイルには以下の5種類のアイテムが存在します：
 
 1. **通常アイテム** (`type: "item"`) - アプリケーション、URL、ファイル、フォルダを起動
 2. **フォルダ取込アイテム** (`type: "dir"`) - 指定フォルダ内のファイル/フォルダを自動取込
 3. **セット** (`type: "set"`) - 複数のアイテムをまとめて開き、必要ならウィンドウを決まった位置に並べる
 4. **クリップボードアイテム** (`type: "clipboard"`) - クリップボードの内容を保存・復元
+5. **WSグループ** (`type: "wsgroup"`) - ワークスペースのグループを一覧に並べ、選ぶと切り離しウィンドウで開く
 
 旧グループ（`type: "group"`）と旧ウィンドウ配置（`type: "layout"`）は、読み込み時にセットへ変換して書き戻す（[3.3.6](#336-旧形式からの変換)）。廃止したウィンドウ操作（`type: "window"`）は、読み込み時にパスの無い単一アイテムへ変換して書き戻す（[3.4](#34-ウィンドウ操作廃止読み込み時に変換)）。
 
@@ -593,6 +594,46 @@ v0.8.0-beta.12 までは、既にあるウィンドウを探して前面に出�
 - **復元できないとき**: 書き込める形式が 1 つもなければ（保存したファイルがすべて消えていたときなど）、クリップボードを変えずに失敗とする（失敗はログに残り、エラーのトーストで知らせる）
 - **セットからの参照**: セットの行からは指せません
 
+### 3.6. WSグループ（JsonWsGroupItem）
+
+ワークスペースのグループ（いちばん上の階層のもの）を、読み込むたびにメインウィンドウの一覧へ 1 件ずつ並べるアイテムです。並んだ 1 件を選ぶと、そのグループの切り離しウィンドウを開きます。画面での作り方は [管理ウィンドウ](../../screens/admin-window.md#532-wsグループの追加と編集) にあります。
+
+#### 3.6.1. フィールドの要点
+
+- **必須**: `type: "wsgroup"`・`scope`（`"all"`＝すべてのグループ、`"selected"`＝`groupIds` で選んだグループ）
+- **任意**: `groupIds`（グループの id の配列。`scope` が `"selected"` のときだけ使う。画面からは 1 つ以上を選ぶ）、`options.prefix`・`options.suffix`（表示名の前後に付ける文字。フォルダ取込と同じくそのままつなぐ）
+- `displayName` は持たない。表示名はグループの今の名前で、グループを改名すると一覧の名前も変わる
+
+#### 3.6.2. 使用例
+
+```json
+{
+  "version": "1.0",
+  "items": [
+    {
+      "id": "Wq3k9ZtA",
+      "type": "wsgroup",
+      "scope": "selected",
+      "groupIds": ["aB12cD34", "eF56gH78"],
+      "options": { "prefix": "WS: " }
+    },
+    {
+      "id": "Kp7Lm2Nx",
+      "type": "wsgroup",
+      "scope": "all"
+    }
+  ]
+}
+```
+
+#### 3.6.3. 展開時の動作
+
+- 並び順はワークスペースの順、その中はグループの順（`selected` でも `groupIds` の順ではない）。展開は `src/common/utils/wsGroupExpansion.ts`
+- サブグループと、見つからない id（消したグループ）は並べない。管理ウィンドウの編集ダイアログは見つからない数を出し、反映すると外す
+- 展開したアイテムは内部型 `WsGroupItem`（`type: "wsgroup"`・`groupId`・`color`・`expandedFromId`）で、`id` を持たない。選んだときはアイテムの起動と違ってメインウィンドウを隠さない
+- ワークスペースへの追加（コピー・参照）、セットの行、CLI の `item open` の対象にならない
+- グループを足す・改名する・消すと、メインウィンドウは WSグループを並べているときだけ一覧を読み直す
+
 ## 4. 重複排除ルール
 
 QuickDashLauncherは、アイテムの重複を自動的に排除します。
@@ -650,7 +691,7 @@ QuickDashLauncherは、アイテムの重複を自動的に排除します。
 
 ### 4.5. 重複チェックの対象
 
-重複チェックの対象は、通常アイテム（`type: "item"`）とフォルダ取込の展開分だけです（`src/main/services/data/jsonItemConverter.ts`）。セット・クリップボードは重複チェックせずに追加します：
+重複チェックの対象は、通常アイテム（`type: "item"`）とフォルダ取込の展開分だけです（`src/main/services/data/jsonItemConverter.ts`）。セット・クリップボード・WSグループは重複チェックせずに追加します（同じグループを指す WSグループの行が 2 つあれば、2 回並ぶ）：
 
 - 同じ名前のセットが同じタブに複数あっても、すべて表示されます
 - セットは、同じ名前でも行の中身が異なる可能性があるためです
@@ -768,14 +809,14 @@ CLI の `qdl check` が返す `filesWithIssues` などは、この形式の一�
 
 | 対象 | 場所 | 主な型 |
 | --- | --- | --- |
-| ファイルに書く JSON の形 | `src/common/types/json-data.ts` | `JsonDataFile`、`JsonItem`（union）、`JsonLauncherItem`・`JsonDirItem`・`JsonSetItem`・`JsonClipboardItem`、`JsonDirOptions`（旧形式の `JsonGroupItem`・`JsonLayoutItem` は変換のためだけに残る）、型ガード `isJson*Item()` |
-| 表示・実行用の内部型 | `src/common/types/launcher.ts` | `LauncherItem`・`SetItem`・`ClipboardItem`・`AppItem`、`ItemWindowSwitch`（単一アイテムのウィンドウ切り替え）、`SetEntry`、`WindowConfig`（ウィンドウを探して前面に出す・動かす処理 `src/main/utils/windowActivator.ts` に渡す内部の形） |
+| ファイルに書く JSON の形 | `src/common/types/json-data.ts` | `JsonDataFile`、`JsonItem`（union）、`JsonLauncherItem`・`JsonDirItem`・`JsonSetItem`・`JsonClipboardItem`・`JsonWsGroupItem`、`JsonDirOptions`（旧形式の `JsonGroupItem`・`JsonLayoutItem` は変換のためだけに残る）、型ガード `isJson*Item()` |
+| 表示・実行用の内部型 | `src/common/types/launcher.ts` | `LauncherItem`・`SetItem`・`ClipboardItem`・`WsGroupItem`・`AppItem`、`ItemWindowSwitch`（単一アイテムのウィンドウ切り替え）、`SetEntry`、`WindowConfig`（ウィンドウを探して前面に出す・動かす処理 `src/main/utils/windowActivator.ts` に渡す内部の形） |
 | 検索 | `src/common/types/search.ts` | `SearchMode`・`SearchHistoryEntry`・`SearchHistoryState` |
 
 **要点:**
 
-- `JsonItem` は `type`（`item` / `dir` / `set` / `clipboard`）で判別する union。全アイテム共通のフィールドは `id`（8 文字の英数字）・`memo`・`updatedAt`
-- ファイル上の型（`Json*`）と画面で扱う内部型は別。読み込み時に `src/main/services/data/jsonItemConverter.ts` が JSON アイテムを内部型へ変換する（フォルダ取込の展開・`.lnk` の解析を含む）
+- `JsonItem` は `type`（`item` / `dir` / `set` / `clipboard` / `wsgroup`）で判別する union。全アイテム共通のフィールドは `id`（8 文字の英数字）・`memo`・`updatedAt`
+- ファイル上の型（`Json*`）と画面で扱う内部型は別。読み込み時に `src/main/services/data/jsonItemConverter.ts` が JSON アイテムを内部型へ変換する（フォルダ取込・WSグループの展開、`.lnk` の解析を含む）
 - 内部型の `type` は JSON 側と語彙が違う。`JsonLauncherItem`（`type: "item"`）は、パスから判定した実行タイプ（`url` / `file` / `folder` / `app` / `customUri`、`path` が空なら `windowSwitch`＝パスの無い単一アイテム、3.1.5.7）を `type` に持つ `LauncherItem` になる
 - 内部型の `sourceFile`・`id` は、編集・削除のときに元のファイルとアイテムを特定するために使う（`lineNumber` は非推奨）
 

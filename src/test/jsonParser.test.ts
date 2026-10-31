@@ -853,3 +853,51 @@ describe('jsonParser: パスの無い単一アイテム', () => {
     );
   });
 });
+
+describe('jsonParser: WSグループ', () => {
+  const fileWith = (items: unknown[]): string => JSON.stringify({ version: '1.0', items });
+
+  it('scope・groupIds・options・memo を読むこと', () => {
+    const result = parseJsonDataFileLenient(
+      fileWith([
+        {
+          id: 'wsgrp001',
+          type: 'wsgroup',
+          scope: 'selected',
+          groupIds: ['grpAAAA1', 'grpBBBB2'],
+          options: { prefix: 'WS: ', suffix: '' },
+          memo: 'メモ',
+        },
+      ])
+    );
+
+    expect(result.issues).toEqual([]);
+    expect(result.validItems).toEqual([
+      {
+        id: 'wsgrp001',
+        type: 'wsgroup',
+        scope: 'selected',
+        groupIds: ['grpAAAA1', 'grpBBBB2'],
+        options: { prefix: 'WS: ', suffix: '' },
+        memo: 'メモ',
+      },
+    ]);
+  });
+
+  it('scope が all か selected でなければ不正とすること', () => {
+    const result = parseJsonDataFileLenient(
+      fileWith([{ id: 'wsgrp002', type: 'wsgroup', scope: 'some' }])
+    );
+
+    expect(result.validItems).toHaveLength(0);
+    expect(result.issues[0].kind).toBe('invalid');
+  });
+
+  it('groupIds に空の文字列や文字列でない値があれば不正とすること', () => {
+    const result = parseJsonDataFileLenient(
+      fileWith([{ id: 'wsgrp003', type: 'wsgroup', scope: 'selected', groupIds: ['ok', 1] }])
+    );
+
+    expect(result.validItems).toHaveLength(0);
+  });
+});

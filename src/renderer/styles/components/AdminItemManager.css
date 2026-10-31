@@ -1073,6 +1073,14 @@
   cursor: pointer;
 }
 
+/* WSグループの種類（切り替えられないので、プルダウンでなく文字だけ） */
+.type-fixed {
+  font-size: var(--font-size-xs);
+  color: var(--text-info);
+  padding: 0 var(--spacing-xs);
+  white-space: nowrap;
+}
+
 /* パス列は 1 行に収めて省略し、全文はツールチップで見せる */
 .raw-items-table td.content-column {
   max-width: 0;
