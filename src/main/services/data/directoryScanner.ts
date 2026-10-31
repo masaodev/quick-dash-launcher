@@ -96,7 +96,7 @@ export function processShortcut(
   return null;
 }
 
-/** 走査を途中で打ち切るための指定（登録画面のプレビューで使う。メイン画面の読み込みでは渡さない） */
+/** 走査を途中で打ち切るための指定（登録画面のプレビューで使う。ランチャーの読み込みでは渡さない） */
 export interface ScanLimits {
   /** 中止・時間切れ。立ったらその場で走査をやめ、そこまでの結果を返す */
   signal?: AbortSignal;

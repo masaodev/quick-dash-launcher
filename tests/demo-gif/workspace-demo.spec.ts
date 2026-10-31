@@ -17,10 +17,10 @@ import { OsMouse } from './os-mouse';
 import type { Point } from './os-mouse';
 
 /**
- * README のワークスペースのデモ GIF の素材（メインウィンドウとワークスペースを並べた範囲の動画）を撮る
+ * README のワークスペースのデモ GIF の素材（ランチャーとワークスペースを並べた範囲の動画）を撮る
  *
- * 1. メインウィンドウで打った候補を、ワークスペースのグループへドラッグして入れる
- * 2. メインウィンドウを閉じても、ワークスペースは残る
+ * 1. ランチャーで打った候補を、ワークスペースのグループへドラッグして入れる
+ * 2. ランチャーを閉じても、ワークスペースは残る
  * 3. グループをワークスペースの外へドラッグして、切り離しウィンドウにする
  * 4. 切り離しウィンドウの見出しをクリックして畳む（ウィンドウが縮む）
  *
@@ -37,7 +37,7 @@ const NAME = LANG === 'en' ? 'workspace-en' : 'workspace';
 const OUT_DIR = path.join(process.cwd(), 'test-results', 'demo-gif', NAME);
 const DEMO_ROOT = path.join(os.tmpdir(), LANG === 'en' ? 'qdl-demo-en' : 'qdl-demo');
 const TYPE_DELAY_MS = 120;
-/** メインウィンドウとワークスペースの間の隙間（論理ピクセル） */
+/** ランチャーとワークスペースの間の隙間（論理ピクセル） */
 const GAP = 40;
 
 /**
@@ -115,7 +115,7 @@ test('ワークスペースのデモ', async () => {
       await main
         .locator(`button[aria-label="${MESSAGES.common.showDetails}"]`)
         .waitFor({ state: 'visible', timeout: 240000 });
-      // 取得の間にメインウィンドウが隠れることがあるので、表示によらず押せる DOM の click で閉じる
+      // 取得の間にランチャーが隠れることがあるので、表示によらず押せる DOM の click で閉じる
       await main.locator('.progress-close-btn').evaluate((el) => (el as HTMLElement).click());
     }
 
@@ -129,8 +129,8 @@ test('ワークスペースのデモ', async () => {
     const targetHeader = ws.locator('.workspace-group-header', { hasText: groupName });
     await targetHeader.waitFor({ state: 'visible' });
 
-    // メインウィンドウをワークスペースの左隣に寄せ、両方を最前面に固定する
-    // ワークスペースを画面の右上の端から余白の分だけ離し、メインウィンドウをその左隣に寄せ、両方を最前面に固定する
+    // ランチャーをワークスペースの左隣に寄せ、両方を最前面に固定する
+    // ワークスペースを画面の右上の端から余白の分だけ離し、ランチャーをその左隣に寄せ、両方を最前面に固定する
     const scale = await app.evaluate(
       ({ BrowserWindow, screen }, { gap, margin }) => {
         const ws = BrowserWindow.getAllWindows().find((bw) => bw.getTitle() === 'Workspace');
@@ -152,7 +152,7 @@ test('ワークスペースのデモ', async () => {
     const wsBounds = await contentBounds(app, 'Workspace');
     const mainBounds = await contentBounds(app, 'QuickDashLauncher');
 
-    // 撮る範囲: メインウィンドウの左からワークスペースの右まで、ワークスペースの上からメインウィンドウの下まで（周りに余白）
+    // 撮る範囲: ランチャーの左からワークスペースの右まで、ワークスペースの上からランチャーの下まで（周りに余白）
     const left = mainBounds.x - BACKDROP_MARGIN;
     const top = wsBounds.y - BACKDROP_MARGIN;
     const right = wsBounds.x + wsBounds.width + BACKDROP_MARGIN;
@@ -171,7 +171,7 @@ test('ワークスペースのデモ', async () => {
     );
     await input.focus();
 
-    // マウスはメインウィンドウの入力欄の脇で待たせる。ドロップの後は、ツールチップが出ないよう空いている所へ逃がす
+    // マウスはランチャーの入力欄の脇で待たせる。ドロップの後は、ツールチップが出ないよう空いている所へ逃がす
     await mouse.moveTo(await screenPoint(input, mainBounds, scale, 120));
     const restPoint: Point = {
       x: (mainBounds.x + mainBounds.width * 0.5) * scale,
@@ -213,7 +213,7 @@ test('ワークスペースのデモ', async () => {
     await main.waitForTimeout(1500);
     const startSec = Math.max(0, (Date.now() - recordStart) / 1000 - 0.7);
 
-    // 1. メインウィンドウで候補を出し、ワークスペースのグループへドラッグして入れる
+    // 1. ランチャーで候補を出し、ワークスペースのグループへドラッグして入れる
     await main.keyboard.type(CONTENT.workspace.search, { delay: TYPE_DELAY_MS });
     await main.waitForTimeout(900);
     const row = main.locator('.item-row-wrapper .item-name').first();
@@ -228,7 +228,7 @@ test('ワークスペースのデモ', async () => {
     await mouse.glideTo(restPoint, 500);
     await main.waitForTimeout(1200);
 
-    // 2. メインウィンドウを閉じても、ワークスペースは残る
+    // 2. ランチャーを閉じても、ワークスペースは残る
     await app.evaluate(({ BrowserWindow }) => {
       BrowserWindow.getAllWindows()
         .find((bw) => bw.isVisible() && bw.webContents.getURL().includes('index.html'))
@@ -236,7 +236,7 @@ test('ワークスペースのデモ', async () => {
     });
     await main.waitForTimeout(1200);
 
-    // 3. グループの見出しをワークスペースの外（メインウィンドウのあった所）へドラッグして切り離す
+    // 3. グループの見出しをワークスペースの外（ランチャーのあった所）へドラッグして切り離す
     const header = await screenPoint(targetHeader, wsBounds, scale);
     await mouse.glideTo(header, 600);
     await main.waitForTimeout(300);

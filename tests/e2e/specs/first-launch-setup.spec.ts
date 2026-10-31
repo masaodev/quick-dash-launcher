@@ -278,7 +278,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
         'clipboard',
         'item',
       ]);
-      // 参照はメインウィンドウのお試しを指す
+      // 参照はランチャーのお試しを指す
       const mainIds = [
         ...configHelper.readDataFile('data.json').items,
         ...configHelper.readDataFile('data2.json').items,

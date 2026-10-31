@@ -90,7 +90,7 @@ v0.5.3以降、開発時に複数のインスタンスを同時に起動でき�
 | `HOTKEY` | 起動ホットキー（設定ファイルを上書き） | `Ctrl+Alt+A`, `Ctrl+Alt+S` |
 | `QUICK_DASH_CONFIG_DIR` | 設定フォルダのパス（絶対パスまたは相対パス） | `./tests/dev/full` |
 | `WINDOW_PIN_MODE` | 起動時のピン留めモード（`normal`・`alwaysOnTop`・`stayVisible`。それ以外は無視） | `stayVisible` |
-| `SHOW_WINDOW_ON_STARTUP` | `1` で起動時にメインウィンドウを表示する | `1` |
+| `SHOW_WINDOW_ON_STARTUP` | `1` で起動時にランチャーを表示する | `1` |
 | `SKIP_SPLASH_WINDOW` | `1` でスプラッシュウィンドウを出さない | `1` |
 | `DISABLE_GLOBAL_HOTKEY` | `1` でグローバルホットキーを登録しない（画面からホットキーを変えたときも、登録せずに設定ファイルへの保存だけ行う） | `1` |
 
@@ -135,7 +135,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 #### 二重起動の防止
 
-同じ userData で 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がメインウィンドウを表示する（`src/main/main.ts` の `app.requestSingleInstanceLock()` と `second-instance`。CLI が `--launched-by-cli` を付けて起動したときは表示しない）。
+同じ userData で 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がランチャーを表示する（`src/main/main.ts` の `app.requestSingleInstanceLock()` と `second-instance`。CLI が `--launched-by-cli` を付けて起動したときは表示しない）。
 
 - 防止は userData ごとなので、`APP_INSTANCE` が違うインスタンス（`dev`・`dev2`・本番）は同時に動かせる。同じ `npm run dev` を 2 回起動すると（別の作業ツリーで同時に起動した場合も）、2 つ目は終了する。終了するときは、理由と userData の場所を標準エラーに出す
 - 作業ツリーを複数使って同時に試すときは、2 つ目を別の `APP_INSTANCE`・`VITE_PORT`・`HOTKEY` で起動する（[カスタムインスタンスの作成](#カスタムインスタンスの作成)）
@@ -168,7 +168,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 
 ### ウィンドウの動作
 
-メインウィンドウの表示・非表示・ピン留めモード・子ウィンドウの扱いは [ウィンドウ制御](../architecture/window-control.md) を正とする。サイズと表示位置の設定項目は [設定ファイルの形式](../architecture/file-formats/settings-format.md) を参照。
+ランチャーの表示・非表示・ピン留めモード・子ウィンドウの扱いは [ウィンドウ制御](../architecture/window-control.md) を正とする。サイズと表示位置の設定項目は [設定ファイルの形式](../architecture/file-formats/settings-format.md) を参照。
 
 ### データファイル形式
 
@@ -405,7 +405,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 
 ## UIコンポーネント構造
 
-画面とコンポーネントの対応は、[画面一覧](../screens/README.md) と各画面仕様の「基本情報」を正とする（画面のいちばん上のコンポーネントには「画面仕様:」コメントがある）。共通ダイアログは [共通ダイアログ](../screens/dialogs.md)、メイン画面の ⚙️ メニューは [メインウィンドウ](../screens/main-window.md) を参照。
+画面とコンポーネントの対応は、[画面一覧](../screens/README.md) と各画面仕様の「基本情報」を正とする（画面のいちばん上のコンポーネントには「画面仕様:」コメントがある）。共通ダイアログは [共通ダイアログ](../screens/dialogs.md)、ランチャーの ⚙️ メニューは [ランチャー](../screens/main-window.md) を参照。
 
 ## デバッグ
 
@@ -417,7 +417,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 
 - `Ctrl+Shift+I` で開発者ツールを開閉する（開発モードのみ。`attachCommonKeyHandlers`（`src/main/utils/managedWindow.ts`）を付けたウィンドウで使える）
 
-**メインウィンドウ:**
+**ランチャー:**
 
 - `attachCommonKeyHandlers` が付いていないため `Ctrl+Shift+I` は使えません。コードを直接編集して `mainWindow.webContents.openDevTools()` を追加する方法もありますが、通常は管理ウィンドウのDevToolsで十分です
 
@@ -459,7 +459,7 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 
 #### 白い/空白のウィンドウ
 
-- DevToolsコンソールでエラーを確認（管理・ワークスペース・切り離しウィンドウは `Ctrl+Shift+I` で開く。メインウィンドウは `Ctrl+Shift+I` が使えないため、上記の方法で開く）
+- DevToolsコンソールでエラーを確認（管理・ワークスペース・切り離しウィンドウは `Ctrl+Shift+I` で開く。ランチャーは `Ctrl+Shift+I` が使えないため、上記の方法で開く）
 - Viteデベロップメントサーバーが起動しているか確認（開発モード時）
 - プロダクションモードでindex.htmlパスが正しいか確認
 
@@ -499,14 +499,14 @@ npm run debug:windows -- --all-desktops --show-excluded --output debug.txt
 
 #### 検索インターフェース
 
-- **クリアボタン**: メイン画面の検索ボックス・アイテム管理の検索・アプリ取込の検索は、入力があるときだけ「×」（`.search-clear-button`）を表示し、クリックで入力を消す。新しく検索欄を作るときもこの形にそろえる
+- **クリアボタン**: ランチャーの検索ボックス・アイテム管理の検索・アプリ取込の検索は、入力があるときだけ「×」（`.search-clear-button`）を表示し、クリックで入力を消す。新しく検索欄を作るときもこの形にそろえる
 - **リアルタイム検索**: 入力と同時に結果を絞り込み
 - **キーボードナビゲーション**: 矢印キー、Enterキーでの操作
 
 #### フォーカス管理
 
-- **自動フォーカス**: メインウィンドウの表示時に検索ボックスへ、検索欄を持つモーダル（ウィンドウ選択・セットに追加するアイテムの選択）やワークスペースの絞り込み欄は表示時にその欄へフォーカスする
-- **フォーカス維持**: メイン画面の検索ボックスは、クリアボタンを押した後もフォーカスを保つ
+- **自動フォーカス**: ランチャーの表示時に検索ボックスへ、検索欄を持つモーダル（ウィンドウ選択・セットに追加するアイテムの選択）やワークスペースの絞り込み欄は表示時にその欄へフォーカスする
+- **フォーカス維持**: ランチャーの検索ボックスは、クリアボタンを押した後もフォーカスを保つ
 
 ### アクセシビリティ
 

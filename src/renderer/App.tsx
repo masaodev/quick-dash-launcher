@@ -1,5 +1,5 @@
 /**
- * 画面: メインウィンドウ
+ * 画面: ランチャー
  * 画面仕様: docs/screens/main-window.md
  */
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -125,7 +125,7 @@ function App(): React.ReactElement {
     addHistoryEntry,
     clearHistory,
   } = useSearchHistory();
-  // 登録・編集は独立した子ウィンドウで行う（メインウィンドウは動かさない）。保存先の初期値は今のタブ
+  // 登録・編集は独立した子ウィンドウで行う（ランチャーは動かさない）。保存先の初期値は今のタブ
   const activeTabRef = useRef<string | undefined>(undefined);
   const {
     isRegisterWindowOpen,
@@ -162,7 +162,7 @@ function App(): React.ReactElement {
   const usageCountOf = useSearchUsageOrder();
 
   // ワークスペースからドラッグされたアイテム。選んでいるタブ（の先頭のファイル）へ移し、ワークスペース側を参照にする
-  // （結果はメインプロセスがトーストで知らせる）。参照はもうメインウィンドウにあるので、移さずに知らせる
+  // （結果はメインプロセスがトーストで知らせる）。参照はもうランチャーにあるので、移さずに知らせる
   const handleWorkspaceItemDropped = useCallback(
     (item: WorkspaceItem) => {
       if (item.type === 'ref') {
@@ -175,7 +175,7 @@ function App(): React.ReactElement {
       }
       window.electronAPI.workspaceAPI
         .moveToMain(item.id, activeTabRef.current || undefined)
-        .catch((error) => logError('メインウィンドウへ移せませんでした:', error));
+        .catch((error) => logError('ランチャーへ移せませんでした:', error));
     },
     [showWarning, t]
   );
@@ -183,7 +183,7 @@ function App(): React.ReactElement {
   const itemDelete = useLauncherItemDelete(showErrorAlert);
 
   // Shift+F10・アプリケーションキーで検索欄にも右クリックのイベントが来る（マウスの右ボタンではない）。
-  // メインウィンドウでは行のメニューを出すので、そちらは止めて検索欄の文字のメニューを出さない
+  // ランチャーでは行のメニューを出すので、そちらは止めて検索欄の文字のメニューを出さない
   useEffect(() => {
     const suppressKeyboardContextMenu = (e: MouseEvent) => {
       if (e.isTrusted && e.button !== 2) e.preventDefault();

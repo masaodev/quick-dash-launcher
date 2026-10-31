@@ -56,7 +56,7 @@ import { WorkspaceGroupRequiredError } from './workspacePlacement.js';
  * - データ本体（workspace.json / workspace-archive.json）は WorkspaceFileStore
  * - UI 状態（折りたたみ・切り離しウィンドウ）は WorkspaceUiStateStore
  *
- * ファイルの読み込みは初期化時と reload()（メイン画面の F5）のときだけ。
+ * ファイルの読み込みは初期化時と reload()（ランチャーの F5）のときだけ。
  */
 /**
  * ワークスペースのグループが指していたデータファイルのアイテムを、名前から引く表を作る
@@ -175,13 +175,13 @@ export class WorkspaceService {
     return WorkspaceService.instance;
   }
 
-  // --- 再読込・レポート（メイン画面の F5 から呼ばれる） ---
+  // --- 再読込・レポート（ランチャーの F5 から呼ばれる） ---
 
   /** ディスクから読み直す。旧形式なら移行、補正があれば書き戻す */
   public async reload(): Promise<WorkspaceReloadResult> {
     await this.initializeStore();
     // 初期化時の読み込み結果がまだ取り出されていなければ、それを結果として使う
-    // （起動直後のメイン画面の読み込みで移行やレポートを二重に処理しないため）
+    // （起動直後のランチャーの読み込みで移行やレポートを二重に処理しないため）
     if (this.store!.hasPendingReports()) {
       return { changed: false };
     }
@@ -319,7 +319,7 @@ export class WorkspaceService {
     workspaceId?: string
   ): Promise<WorkspaceItem> {
     await this.initializeStore();
-    // メイン画面の判定でフォルダと分かっているもの（ドット入りのフォルダ名）は、見た目でも分かるようにして保存する
+    // ランチャーの判定でフォルダと分かっているもの（ドット入りのフォルダ名）は、見た目でも分かるようにして保存する
     const marked =
       'type' in item && item.type === 'folder' && 'path' in item && !item.originalPath
         ? { ...item, path: markKnownFolderPath(item.path) }
@@ -360,7 +360,7 @@ export class WorkspaceService {
   public async updateDisplayName(id: string, displayName: string): Promise<void> {
     await this.initializeStore();
     const item = this.itemManager!.loadItems().find((i) => i.id === id);
-    // 参照で、メインウィンドウの表示名と同じ名前にしたら、ワークスペースでの表示名を消す（以後はメインに追随する）
+    // 参照で、ランチャーの表示名と同じ名前にしたら、ワークスペースでの表示名を消す（以後はメインに追随する）
     const mainName =
       item?.type === 'ref' ? getMainItemIndex()?.byId.get(item.ref.itemId)?.displayName : undefined;
     this.itemManager!.updateDisplayName(id, mainName === displayName.trim() ? '' : displayName);
@@ -368,7 +368,7 @@ export class WorkspaceService {
 
   // --- 参照アイテム ---
 
-  /** ワークスペースの画面・CLI に渡す形（参照をメインウィンドウのアイテムの中身で埋めたもの） */
+  /** ワークスペースの画面・CLI に渡す形（参照をランチャーのアイテムの中身で埋めたもの） */
   public async loadResolvedItems(): Promise<WorkspaceItem[]> {
     return resolveWorkspaceItems(await this.loadItems(), getMainItemIndex());
   }
@@ -387,7 +387,7 @@ export class WorkspaceService {
     return item ? resolveWorkspaceItem(item, getMainItemIndex()) : undefined;
   }
 
-  /** メインウィンドウのアイテムを指す参照を足す */
+  /** ランチャーのアイテムを指す参照を足す */
   public async addRef(
     main: ReferenceableAppItem & { id: string },
     groupId?: string,
@@ -405,7 +405,7 @@ export class WorkspaceService {
   }
 
   /**
-   * データファイルを読み直したあと、参照の「最後に見た表示名」を今のメインウィンドウの表示名に合わせる
+   * データファイルを読み直したあと、参照の「最後に見た表示名」を今のランチャーの表示名に合わせる
    *
    * @returns 参照の解決した中身が前回から変わったか（変わればワークスペースの画面に再取得を知らせる）
    */
@@ -437,7 +437,7 @@ export class WorkspaceService {
 
   /**
    * ワークスペースのセットの行が指すアイテムを付け替える（コピーを参照に変えたとき、ワークスペースの id →
-   * メインウィンドウのアイテムの id）
+   * ランチャーのアイテムの id）
    */
   public async relinkSetEntries(fromId: string, toId: string): Promise<void> {
     await this.initializeStore();
@@ -454,7 +454,7 @@ export class WorkspaceService {
   /**
    * 参照をコピー（中身を持つアイテム）にする。表示名はワークスペースでの表示名があればそれ
    *
-   * @param main 中身にするメインウィンドウのアイテム（クリップボードは呼び出し側で実データを複製しておく）
+   * @param main 中身にするランチャーのアイテム（クリップボードは呼び出し側で実データを複製しておく）
    */
   public async convertRefToCopy(id: string, main: ReferenceableAppItem): Promise<WorkspaceItem> {
     await this.initializeStore();
@@ -472,9 +472,9 @@ export class WorkspaceService {
   }
 
   /**
-   * アイテムを、メインウィンドウのアイテムの参照に置き換える（コピー → 参照・参照の指し直し）
+   * アイテムを、ランチャーのアイテムの参照に置き換える（コピー → 参照・参照の指し直し）
    *
-   * コピーの表示名がメインウィンドウの表示名と違えば、ワークスペースでの表示名として残す。
+   * コピーの表示名がランチャーの表示名と違えば、ワークスペースでの表示名として残す。
    * 参照の指し直しでは、ワークスペースでの表示名をそのまま引き継ぐ
    */
   public async replaceWithRef(
@@ -518,7 +518,7 @@ export class WorkspaceService {
     return count;
   }
 
-  /** メインウィンドウのアイテムの id ごとの、参照の件数（ワークスペースとアーカイブの合計。0 件は返さない） */
+  /** ランチャーのアイテムの id ごとの、参照の件数（ワークスペースとアーカイブの合計。0 件は返さない） */
   public async countRefs(itemIds: readonly string[]): Promise<Record<string, number>> {
     await this.initializeStore();
     const counts = countRefsByItemId([
@@ -864,7 +864,7 @@ export class WorkspaceService {
 
   /**
    * 書き換えのあと、ワークスペースで使われなくなったクリップボードの実データを消す
-   * （メインウィンドウのアイテムが同じ実データを使っていれば消さない。A3-67）
+   * （ランチャーのアイテムが同じ実データを使っていれば消さない。A3-67）
    */
   private releasingClipboardData<T>(change: () => T): T {
     const before = this.clipboardDataRefs();

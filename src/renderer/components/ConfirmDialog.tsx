@@ -57,7 +57,7 @@ function ConfirmDialog({
   const { t } = useTranslation();
 
   // Enter・Esc は AlertDialog と同じく capture 段階で受けて止める。後ろの画面のキー処理
-  //（メイン画面で Enter がアイテムを実行する・Esc が画面を閉じるなど）に漏らさない
+  //（ランチャーで Enter がアイテムを実行する・Esc が画面を閉じるなど）に漏らさない
   useEffect(() => {
     if (!isOpen) return;
 

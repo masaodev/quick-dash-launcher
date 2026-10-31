@@ -15,8 +15,8 @@ async function getWorkspaceWindow(electronApp: ElectronApplication): Promise<Pag
 
 /**
  * 表示言語の切り替え
- * - settings.json の language を変えて F5 すると、メインウィンドウ（検索欄・ヒント行）がその言語になる
- * - 設定タブの「表示言語」で変えると、開いているメインウィンドウ・管理ウィンドウ・ワークスペースにその場で反映される
+ * - settings.json の language を変えて F5 すると、ランチャー（検索欄・ヒント行）がその言語になる
+ * - 設定タブの「表示言語」で変えると、開いているランチャー・管理ウィンドウ・ワークスペースにその場で反映される
  */
 test.describe('QuickDashLauncher - 表示言語', () => {
   test('言語を切り替えると、開いているウィンドウにその場で反映される', async ({
@@ -39,7 +39,7 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       await expect(searchBox).toHaveAttribute('placeholder', 'Search items…');
       await expect(mainWindow.locator('.search-mode-label')).toHaveText('🔍 Normal search');
       await expect(mainWindow.locator('html')).toHaveAttribute('lang', 'en');
-      // メインウィンドウの他の文言（ヒント行）も英語になる
+      // ランチャーの他の文言（ヒント行）も英語になる
       await expect(mainWindow.getByTestId('keyboard-hint-bar')).toContainText(
         'Shift+Enter:Open containing folder'
       );
@@ -51,7 +51,7 @@ test.describe('QuickDashLauncher - 表示言語', () => {
       );
     });
 
-    await test.step('設定タブの表示言語で日本語に戻すと、メインウィンドウも戻る', async () => {
+    await test.step('設定タブの表示言語で日本語に戻すと、ランチャーも戻る', async () => {
       const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
       const select = adminWindow.locator('select#language');
       // 管理ウィンドウも英語で開く

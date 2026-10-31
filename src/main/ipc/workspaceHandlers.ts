@@ -164,7 +164,7 @@ async function withWorkspaceChange<T = void>(
 export function setupWorkspaceHandlers(): void {
   handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_ITEMS, () =>
     withWorkspaceService(async (service) => {
-      // 参照はメインウィンドウのアイテムの中身で埋めて渡す（まだデータファイルを読んでいなければ読む）
+      // 参照はランチャーのアイテムの中身で埋めて渡す（まだデータファイルを読んでいなければ読む）
       await ensureMainItemIndex();
       const items = await service.loadResolvedItems();
       logger.info({ count: items.length }, 'Loaded workspace items');
@@ -183,7 +183,7 @@ export function setupWorkspaceHandlers(): void {
     ) =>
       withWorkspaceService(
         async () => {
-          // 既定はメインウィンドウのアイテムの参照。参照できないもの・copy の指定はコピー（クリップボードは実データを複製）
+          // 既定はランチャーのアイテムの参照。参照できないもの・copy の指定はコピー（クリップボードは実データを複製）
           const result = await addAppItemToWorkspace(item, groupId, workspaceId, options);
           logger.info(
             {
@@ -342,7 +342,7 @@ export function setupWorkspaceHandlers(): void {
     async (_event, requested: WorkspaceItem, options?: LaunchOptions) => {
       let item = requested;
       try {
-        // 参照はメインウィンドウのアイテムの今の中身で開く（画面が持っている中身は古いことがある）
+        // 参照はランチャーのアイテムの今の中身で開く（画面が持っている中身は古いことがある）
         if (requested.ref) {
           await ensureMainItemIndex();
           const workspaceService = await WorkspaceService.getInstance();
@@ -434,11 +434,11 @@ export function setupWorkspaceHandlers(): void {
           };
         }
 
-        // 単一アイテムはメイン画面と同じ処理で開く（起動種別は path から判定済み）
+        // 単一アイテムはランチャーと同じ処理で開く（起動種別は path から判定済み）
         if (!(await openSingleItem({ ...item, type: item.launcherType }, logger))) {
           return { success: false };
         }
-        // 参照はメインウィンドウのアイテムの id で数える。コピーは id が違うので、パスでメインのアイテムに寄せる
+        // 参照はランチャーのアイテムの id で数える。コピーは id が違うので、パスでメインのアイテムに寄せる
         //（編集画面で試しに開いたときは数えない）
         if (!options?.trial) {
           const usage = LaunchUsageService.getInstance();
@@ -488,7 +488,7 @@ export function setupWorkspaceHandlers(): void {
     )
   );
 
-  // メインウィンドウへのドロップ。結果は右クリックと同じくトーストで知らせる（ワークスペースの画面へもここで知らせる）
+  // ランチャーへのドロップ。結果は右クリックと同じくトーストで知らせる（ワークスペースの画面へもここで知らせる）
   handleIpc(IPC_CHANNELS.WORKSPACE_MOVE_TO_MAIN, (_event, id: string, file?: string) =>
     moveItemToMain(id, file)
   );
@@ -514,7 +514,7 @@ export function setupWorkspaceHandlers(): void {
       )
   );
 
-  // メインウィンドウのアイテムを指すワークスペースの参照の数（削除の確認・編集画面の帯に出す）
+  // ランチャーのアイテムを指すワークスペースの参照の数（削除の確認・編集画面の帯に出す）
   handleIpc(IPC_CHANNELS.WORKSPACE_COUNT_REFS, (_event, itemIds: string[]) =>
     withWorkspaceService((service) => service.countRefs(itemIds), 'Failed to count references')
   );

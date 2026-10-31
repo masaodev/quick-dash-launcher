@@ -91,7 +91,7 @@ body {
   border-top: 1px solid var(--color-warning);
 }
 
-/* 操作ヒント（メインウィンドウ下部。幅が足りないときは折り返さず右側を省略） */
+/* 操作ヒント（ランチャー下部。幅が足りないときは折り返さず右側を省略） */
 .shortcut-hint {
   flex-shrink: 0;
   padding: var(--spacing-xs) var(--spacing-lg);

@@ -474,7 +474,7 @@
   font-size: var(--font-size-xs);
 }
 
-/* 行の操作ボタン。メインウィンドウもこの CSS を読むので、ヘッダーの .action-buttons に効かないよう一覧の中に絞る */
+/* 行の操作ボタン。ランチャーもこの CSS を読むので、ヘッダーの .action-buttons に効かないよう一覧の中に絞る */
 .raw-items-table .action-buttons button {
   background: none;
   border: none;

@@ -95,7 +95,7 @@ test.describe('QuickDashLauncher - ウィンドウ検索結果をワークスペ
 });
 
 /**
- * メイン画面の右クリック「ワークスペースに追加」は、LauncherItem 以外（セットなど）でもトーストで知らせる
+ * ランチャーの右クリック「ワークスペースに追加」は、LauncherItem 以外（セットなど）でもトーストで知らせる
  */
 test.describe('QuickDashLauncher - セットをワークスペースに追加', () => {
   test('セットを追加するとワークスペースに入り、トーストで知らせる', async ({

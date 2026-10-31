@@ -40,12 +40,12 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | z-index と寸法 | `--z-{dropdown\|modal\|popover}`、`--input-height*`、`--button-height`、`--icon-size*`、`--modal-*`、`--menu-*`、画面ごとの寸法（例 `--set-row-*`、`--admin-status-bar-height`、`--workspace-tab-max-width`、`--minimap-*`） |
 | ワークスペースのグループ色トークン | `--group-color-{トークン}` |
 | 知らせの種類の色 | `--notify-{success\|error\|warning\|info}`（トースト・セットの進み具合で、白地の上の帯・印・文字に使う。`overlay.html` も読む） |
-| 検索モードの色（メインウィンドウ） | `--mode-{accent\|accent-solid\|tint\|surface\|marked}`（役割の名前。値はモードで変わる） |
+| 検索モードの色（ランチャー） | `--mode-{accent\|accent-solid\|tint\|surface\|marked}`（役割の名前。値はモードで変わる） |
 
 - `variables.css` に無い変数名（`--border-color`・`--text-color` など）は使わない。定義されていない変数は何も指定していないのと同じになり、枠や色が黙って消える（2026-10 に約 30 種類を既存の変数へ付け替えた）
 - ワークスペースのグループ色トークンは、`workspace.json` の `groups[].color` に保存される値に対応する。`primary`/`success`/`danger`/`warning`/`info`/`secondary` はテーマ色（`--color-*`）を参照し、それ以外（`purple` など）は固有色を持つ。トークンから CSS 変数への解決は `src/common/groupColors.ts` の `resolveGroupColorCss()` が行う。
 - フォント（`--font-family`・`--font-family-mono`）は表示言語で変わる。英語の画面（`<html lang="en">`）では Segoe UI・Consolas を優先する（メイリオや日本語の等幅フォントは `\` を `¥` で描くため）。文字の並びに関わる指定でも `font-family` を直書きせず、この 2 つを使う。
-- 検索モードの色（`--mode-*`）は、メインウィンドウでモードによって色が変わる箇所（選択中の行・ヘッダーの面・検索欄の縁など）に使う。既定は通常検索モードの値（青と `--bg-header`）で、ウィンドウ検索モードでは `.app.search-mode-window` が紫（`--color-window-search` など）に差し替える。モードで色を変えたい箇所が増えたら、`--color-primary` を直接使わずこの変数を使う。ダークモードを入れるときも、この変数の値をもう一組足せば済む
+- 検索モードの色（`--mode-*`）は、ランチャーでモードによって色が変わる箇所（選択中の行・ヘッダーの面・検索欄の縁など）に使う。既定は通常検索モードの値（青と `--bg-header`）で、ウィンドウ検索モードでは `.app.search-mode-window` が紫（`--color-window-search` など）に差し替える。モードで色を変えたい箇所が増えたら、`--color-primary` を直接使わずこの変数を使う。ダークモードを入れるときも、この変数の値をもう一組足せば済む
 - 必要な値が変数にないときは、直書きせず `variables.css` に既存の命名の型に沿って変数を足す。
 
 ## 共通ユーティリティクラス
@@ -62,7 +62,7 @@ QuickDashLauncherのスタイルは、CSS変数（カスタムプロパティ）
 | `.btn-primary` / `.btn-secondary` / `.btn-danger` / `.btn-danger-solid` | `Button.css` | 種類別の色（Buttonコンポーネントの `variant`。使い分けは [ui-components.md](ui-components.md#buttonコンポーネント)）。無効の見た目は `.btn:disabled` で全種類共通 |
 | `.btn-sm` / `.btn-lg` | `Button.css` | サイズ（`md` はクラスなし） |
 | `.btn-full-width` | `Button.css` | 幅いっぱいに広げる |
-| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（メインウィンドウとワークスペースのヘッダー：登録・設定・更新・ピン留めなど）。オン・オフを切り替えるボタン（⭐・📌・ワークスペースの 🔍）のオンと、メニューのボタン（➕・🔄・⚙）でメニューを開いている間は `.toggle-on`（薄い青の背景とへこみ。オフは通常のボタン）。前はメニューを開いている間だけ `.active`（青い塗り）で、見た目がそろっていなかった。📌 の常に最前面は `.pin-always-on-top`（薄い黄の背景と右上の ▲）。📌 は `.pin-btn` を付け、オンを ⭐ より強く見せる（一段濃い地・紺の枠・深いへこみ。中の `.pin-btn-icon` を 45° 回してピンを立てる）。切り離しウィンドウでは色のついた見出しに重なるため。絵文字は色を変えられないので、背景を濃く塗らない |
+| `.action-btn` | `common.css` | 32x32 の正方形アイコンボタン（ランチャーとワークスペースのヘッダー：登録・設定・更新・ピン留めなど）。オン・オフを切り替えるボタン（⭐・📌・ワークスペースの 🔍）のオンと、メニューのボタン（➕・🔄・⚙）でメニューを開いている間は `.toggle-on`（薄い青の背景とへこみ。オフは通常のボタン）。前はメニューを開いている間だけ `.active`（青い塗り）で、見た目がそろっていなかった。📌 の常に最前面は `.pin-always-on-top`（薄い黄の背景と右上の ▲）。📌 は `.pin-btn` を付け、オンを ⭐ より強く見せる（一段濃い地・紺の枠・深いへこみ。中の `.pin-btn-icon` を 45° 回してピンを立てる）。切り離しウィンドウでは色のついた見出しに重なるため。絵文字は色を変えられないので、背景を濃く塗らない |
 | `.close-btn` | `common.css` | 閉じる・削除の ×（下の「閉じる・削除ボタンクラス」） |
 
 ### その他の共通クラス

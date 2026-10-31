@@ -18,23 +18,23 @@ import { getAdminWindow } from './adminWindowManager.js';
 import { getMainWindow, setModalMode } from './windowManager.js';
 
 /**
- * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
+ * ランチャーの子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
  *
- * 以前はメインウィンドウの中にモーダルを描き、ウィンドウを 850x1000 等に広げて中央へ
+ * 以前はランチャーの中にモーダルを描き、ウィンドウを 850x1000 等に広げて中央へ
  * 動かしていた（閉じると元のサイズに戻すが位置は中央のまま。カーソル位置・固定位置の
  * 設定と食い違う）。管理ウィンドウのモーダルも同じ IPC を送っていたため、管理画面で
- * 詳細編集を開くだけでメインウィンドウが動いていた。
+ * 詳細編集を開くだけでランチャーが動いていた。
  *
- * ここではメインウィンドウを動かさず、要求（何を表示するか）をメインプロセスに預けて
+ * ここではランチャーを動かさず、要求（何を表示するか）をメインプロセスに預けて
  * 子ウィンドウを開く。子ウィンドウはメインのレンダラーから window.open で開く
  * （レンダラープロセス共有。常駐コストはほぼ増えない）。window.name の requestId で
  * 要求を引き取り、閉じたら破棄する。
  *
- * 子ウィンドウが開いている間はメインウィンドウをモーダルモードにし、フォーカスが
+ * 子ウィンドウが開いている間はランチャーをモーダルモードにし、フォーカスが
  * 外れても隠れないようにする（ウィンドウのサイズ・位置は変えない）。
  *
  * 管理画面の詳細編集も同じ登録フォームを使う。管理画面から開いたときは管理ウィンドウを
- * 親・開き元にし、メインウィンドウには触らない。フォームは保存せず内容を返し
+ * 親・開き元にし、ランチャーには触らない。フォームは保存せず内容を返し
  * （returnToOpener）、管理画面が未保存の編集状態に反映する。
  */
 
@@ -79,7 +79,7 @@ export function setMainChildWindowReturn(requestId: string, value: MainChildWind
 }
 
 /**
- * 子ウィンドウでの操作結果をメイン画面へ中継する（トースト表示用）
+ * 子ウィンドウでの操作結果をランチャーへ中継する（トースト表示用）
  */
 export function relayMainChildWindowResult(result: MainChildWindowResult): void {
   const mainWindow = getMainWindow();
@@ -87,11 +87,11 @@ export function relayMainChildWindowResult(result: MainChildWindowResult): void 
   mainWindow.webContents.send(IPC_CHANNELS.EVENT_MAIN_CHILD_WINDOW_RESULT, result);
 }
 
-/** 開き元（メイン画面か管理画面か）ごとの開き方 */
+/** 開き元（ランチャーか管理画面か）ごとの開き方 */
 interface Caller {
   opener: ChildWindowOpenerKey;
   parent: BrowserWindow | null;
-  /** 開いている間メインウィンドウをモーダルモードにするか */
+  /** 開いている間ランチャーをモーダルモードにするか */
   holdsMainModal: boolean;
 }
 

@@ -82,7 +82,7 @@ export function toLauncherItem(item: RegisterItem): LauncherItem | null {
 /**
  * 登録フォームの内容を保存前に実行してみる
  *
- * 登録フォームは独立した子ウィンドウで開き、開いている間はメインウィンドウがモーダル
+ * 登録フォームは独立した子ウィンドウで開き、開いている間はランチャーがモーダル
  * モードになる（フォーカスが外れても隠れない）ので、ピンモードの切り替えは不要。
  */
 export async function tryExecuteRegisterItem(item: RegisterItem): Promise<void> {

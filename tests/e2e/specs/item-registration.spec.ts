@@ -8,7 +8,7 @@ import { test, expect } from '../fixtures/electron-app';
 import { NativeMenuTestHelper, TestUtils } from '../helpers/test-utils';
 
 /**
- * メインウィンドウの bounds をメインプロセスから読む
+ * ランチャーの bounds をメインプロセスから読む
  * 子ウィンドウ（登録・編集）は index.html を書き込んだ直後は同じタイトルになるので、
  * 親を持たないウィンドウに限って探す
  */
@@ -50,7 +50,7 @@ test.describe('QuickDashLauncher - アイテム登録・編集機能テスト', 
       expect(isVisible).toBe(true);
     });
 
-    await test.step('メインウィンドウのサイズ・位置は変わらない', async () => {
+    await test.step('ランチャーのサイズ・位置は変わらない', async () => {
       // 以前は 850x1000 に広げて中央へ動かしていた
       const boundsAfter = await getMainWindowBounds(electronApp);
       expect(boundsAfter).toEqual(boundsBefore);

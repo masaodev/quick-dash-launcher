@@ -49,7 +49,7 @@ async function waitForWindowWith(
 }
 
 /**
- * メイン画面の「アイコン未取得」から一括取得し、終わるまで待つ（アイコンの写った一覧を撮るため）
+ * ランチャーの「アイコン未取得」から一括取得し、終わるまで待つ（アイコンの写った一覧を撮るため）
  *
  * Web サイトのファビコン取得にネットワークを使う
  */
@@ -63,7 +63,7 @@ async function fetchIcons(mainWindow: Page): Promise<void> {
 test.use({ configTemplate: 'screenshots' });
 
 test.describe('画面仕様書の画面イメージ', () => {
-  test('メインウィンドウ', async ({ mainWindow }) => {
+  test('ランチャー', async ({ mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
     await fetchIcons(mainWindow);
@@ -230,7 +230,7 @@ test.describe('画面仕様書の画面イメージ', () => {
   test('ワークスペースウィンドウ', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
-    // ワークスペースはメイン画面と同じアイコンキャッシュを使うので、先に取得しておく
+    // ワークスペースはランチャーと同じアイコンキャッシュを使うので、先に取得しておく
     await fetchIcons(mainWindow);
     await electronApp.evaluate(({ BrowserWindow }) => {
       BrowserWindow.getAllWindows()

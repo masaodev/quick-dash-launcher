@@ -8,7 +8,7 @@ import { TestUtils } from '../helpers/test-utils';
 
 /**
  * 検索の範囲（A3-152）
- * - メインウィンドウ: 設定「検索でメモにも当てる」（既定オフ）
+ * - ランチャー: 設定「検索でメモにも当てる」（既定オフ）
  * - ワークスペースの絞り込み: スペース区切りの AND。「すべて」では語がグループ名とアイテム名にまたがってよい
  * - 設定「検索で全角と半角を区別しない」「検索でひらがなとカタカナを区別しない」（既定オフ。A3-209）
  */
@@ -24,7 +24,7 @@ async function getWorkspaceWindow(electronApp: ElectronApplication): Promise<Pag
 }
 
 test.describe('QuickDashLauncher - 検索の範囲', () => {
-  test('設定をオンにすると、メインウィンドウの検索がメモにも当たる', async ({
+  test('設定をオンにすると、ランチャーの検索がメモにも当たる', async ({
     mainWindow,
     configHelper,
   }) => {
@@ -79,7 +79,7 @@ test.describe('QuickDashLauncher - 検索の範囲', () => {
     await utils.waitForPageLoad();
     const item = mainWindow.locator('.item', { hasText: 'テスト手順書' });
 
-    await test.step('既定ではメインウィンドウの検索で ﾃｽﾄ・てすと は当たらない', async () => {
+    await test.step('既定ではランチャーの検索で ﾃｽﾄ・てすと は当たらない', async () => {
       await utils.searchFor('ﾃｽﾄ');
       await expect(mainWindow.locator('.item')).toHaveCount(0);
       await utils.searchFor('てすと');

@@ -545,7 +545,7 @@ test.describe('QuickDashLauncher - マルチタブ機能テスト', () => {
     });
 
     // 実際にアプリや URL を開かないよう、アイテムを開く IPC を差し替えて開いたアイテムの名前を記録する。
-    // 差し替えたハンドラはメインウィンドウを隠さないので、続けて操作できる
+    // 差し替えたハンドラはランチャーを隠さないので、続けて操作できる
     await electronApp.evaluate(({ ipcMain }) => {
       globalThis.__e2eOpenedItems = [];
       ipcMain.removeHandler('open-item');

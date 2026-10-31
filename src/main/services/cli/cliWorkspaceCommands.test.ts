@@ -264,7 +264,7 @@ beforeEach(() => {
 });
 
 let launcherEntries: LauncherEntry[];
-/** 参照できない（表に無い）ことにするメインウィンドウのアイテムの id */
+/** 参照できない（表に無い）ことにするランチャーのアイテムの id */
 let unrefable: Set<string>;
 beforeEach(() => {
   unrefable = new Set();
@@ -638,7 +638,7 @@ describe('workspace のクリップボードアイテム（テキスト）', () 
   });
 });
 
-describe('workspace item add --from（メインウィンドウのアイテムを参照・コピーで足す）', () => {
+describe('workspace item add --from（ランチャーのアイテムを参照・コピーで足す）', () => {
   it('既定は参照で足す（--name はワークスペースでの表示名）', async () => {
     const addRef = vi.spyOn(ctx.store, 'addRef');
     const addItem = vi.spyOn(ctx.store, 'addItem');
@@ -712,7 +712,7 @@ describe('workspace item add --from（メインウィンドウのアイテムを
     expect(e.code).toBe('usage');
   });
 
-  it('--copy ならセットを行ごと写し、行はメインウィンドウのアイテムを id で指したまま', async () => {
+  it('--copy ならセットを行ごと写し、行はランチャーのアイテムを id で指したまま', async () => {
     const addItem = vi.spyOn(ctx.store, 'addItem');
     const r = await runWorkspaceCommand(
       'item',
@@ -802,7 +802,7 @@ describe('workspace item add --from（メインウィンドウのアイテムを
   });
 });
 
-describe('workspace item move-to-main（コピーをメインウィンドウへ移して参照にする）', () => {
+describe('workspace item move-to-main（コピーをランチャーへ移して参照にする）', () => {
   it('既定のデータファイルへ移し、参照になったアイテムと移した先を返す', async () => {
     const r = (await runWorkspaceCommand('item', 'move-to-main', ['It000001'], ctx)) as Record<
       string,

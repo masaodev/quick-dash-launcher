@@ -60,7 +60,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
           },
         }}
         containerStyle={{
-          // メインウィンドウ内で適切な位置に表示
+          // ランチャー内で適切な位置に表示
           bottom: bottomOffset,
           right: 'var(--spacing-lg)',
         }}

@@ -214,7 +214,7 @@ const electronAPI: ElectronAPI = {
   getPendingImportModal: () => ipcInvoke(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL),
   copyToClipboard: (text) => ipcInvoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
   readClipboardForRegister: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER),
-  // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
+  // ランチャーの子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
   openMainChildWindow: (request) => ipcInvoke(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, request),
   getMainChildWindowRequest: (requestId) =>
     ipcInvoke(IPC_CHANNELS.GET_MAIN_CHILD_WINDOW_REQUEST, requestId),
@@ -263,7 +263,7 @@ const electronAPI: ElectronAPI = {
   closeWindow: (hwnd) => ipcInvoke(IPC_CHANNELS.CLOSE_WINDOW, hwnd),
   waitForWindowsClosed: (hwnds) => ipcInvoke(IPC_CHANNELS.WAIT_FOR_WINDOWS_CLOSED, hwnds),
   // システム通知API
-  // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
+  // トーストウィンドウAPI（ランチャーが閉じた後も表示可能）
   showToastWindow: (options) => ipcInvoke(IPC_CHANNELS.SHOW_TOAST_WINDOW, options),
   onShowToast: (callback) =>
     createEventListener<ToastEventData>(IPC_CHANNELS.EVENT_SHOW_TOAST, callback),

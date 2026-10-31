@@ -5,7 +5,7 @@ import type { ElectronApplication, Page } from '@playwright/test';
 
 import { ConfigFileHelper } from '../helpers/config-file-helper';
 
-// Electronアプリとメインウィンドウを提供するフィクスチャの型定義
+// Electronアプリとランチャーを提供するフィクスチャの型定義
 type ElectronFixtures = {
   configHelper: ConfigFileHelper;
   electronApp: ElectronApplication;
@@ -28,7 +28,7 @@ type ElectronOptions = {
  * このフィクスチャは以下を提供します：
  * - configHelper: 設定ファイル操作ヘルパー
  * - electronApp: Electronアプリケーションインスタンス
- * - mainWindow: メインウィンドウページ
+ * - mainWindow: ランチャーページ
  *
  * 一時ディレクトリを使用してテストを実行し、成功時のみクリーンアップします。
  */
@@ -124,21 +124,21 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
     }
   },
 
-  // メインウィンドウを取得するフィクスチャ
+  // ランチャーを取得するフィクスチャ
   mainWindow: async ({ electronApp }, use) => {
-    // メインウィンドウを探す関数（非同期）
+    // ランチャーを探す関数（非同期）
     const findMainWindow = async (windows: Page[]): Promise<Page | undefined> => {
       // Workspaceウィンドウを除外するヘルパー
       const isWorkspaceWindow = async (win: Page): Promise<boolean> => {
         const title = await win.title();
         const url = win.url();
         // 子ウィンドウ（ワークスペース・オーバーレイ等）は about:blank で開いてから中身を
-        // 書き込むため、書き込み前はタイトルも URL も判定に使えない。メインウィンドウは
+        // 書き込むため、書き込み前はタイトルも URL も判定に使えない。ランチャーは
         // about:blank にならないので、この状態のウィンドウは除外する
         return title === 'Workspace' || url.includes('workspace.html') || url === 'about:blank';
       };
 
-      // タイトルで判定（QuickDashLauncherがメインウィンドウ）
+      // タイトルで判定（QuickDashLauncherがランチャー）
       for (const win of windows) {
         if (await isWorkspaceWindow(win)) continue;
         const title = await win.title();
@@ -173,7 +173,7 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
       return undefined;
     };
 
-    // メインウィンドウが見つかるまで最大10秒待機（ポーリング）
+    // ランチャーが見つかるまで最大10秒待機（ポーリング）
     let mainWindow: Page | undefined;
     const maxAttempts = 20; // 20回 × 500ms = 10秒
     const delayMs = 500;
@@ -185,12 +185,12 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
         break;
       }
 
-      // メインウィンドウが見つからない場合は少し待つ
+      // ランチャーが見つからない場合は少し待つ
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
     if (!mainWindow) {
-      throw new Error('メインウィンドウが見つかりません');
+      throw new Error('ランチャーが見つかりません');
     }
 
     // テストでウィンドウを使用

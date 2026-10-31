@@ -56,32 +56,32 @@ export interface WorkspaceStore {
   deleteWorkspace(id: string): Promise<void>;
   reorderWorkspaces(ids: string[]): Promise<void>;
   loadGroups(): Promise<WorkspaceGroupView[]>;
-  /** アイテム（参照はメインウィンドウのアイテムの中身で埋めたもの） */
+  /** アイテム（参照はランチャーのアイテムの中身で埋めたもの） */
   loadItems(): Promise<WorkspaceItem[]>;
   addItem(item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem>;
-  /** メインウィンドウのアイテム（id）を参照できるか（今のデータファイルにあり、フォルダ取込で展開したものでない） */
+  /** ランチャーのアイテム（id）を参照できるか（今のデータファイルにあり、フォルダ取込で展開したものでない） */
   canRef(itemId: string): Promise<boolean>;
-  /** メインウィンドウのアイテム（id）を指す参照を足す。参照できなければ undefined */
+  /** ランチャーのアイテム（id）を指す参照を足す。参照できなければ undefined */
   addRef(
     itemId: string,
     groupId?: string,
     workspaceId?: string
   ): Promise<WorkspaceItem | undefined>;
-  /** 表示名を変える（参照ならワークスペースでの表示名。空ならメインウィンドウの表示名に戻す） */
+  /** 表示名を変える（参照ならワークスペースでの表示名。空ならランチャーの表示名に戻す） */
   updateDisplayName(id: string, displayName: string): Promise<void>;
   /** 参照をコピーにする */
   convertToCopy(id: string): Promise<WorkspaceItem>;
   /**
-   * コピーをメインウィンドウのデータファイルへ移し、参照に変える（画面の「メインウィンドウへ移して参照にする」と同じ）。
+   * コピーをランチャーのデータファイルへ移し、参照に変える（画面の「ランチャーへ移して参照にする」と同じ）。
    * reused は、移す先に同じアイテムがあり、新しく作らずにそれを指したとき
    */
   moveToMain(
     id: string,
     file: string
   ): Promise<{ item: WorkspaceItem; file: string; tabName?: string; reused: boolean }>;
-  /** アイテムをメインウィンドウのアイテムの参照にする（コピー → 参照・指し直し） */
+  /** アイテムをランチャーのアイテムの参照にする（コピー → 参照・指し直し） */
   linkToMain(id: string, mainItemId: string): Promise<WorkspaceItem>;
-  /** コピーと同じパス・引数のメインウィンドウのアイテム（id） */
+  /** コピーと同じパス・引数のランチャーのアイテム（id） */
   findLinkCandidates(id: string): Promise<string[]>;
   updateItem(id: string, update: WorkspaceItemUpdate): Promise<void>;
   removeItem(id: string): Promise<void>;
@@ -116,7 +116,7 @@ export interface WorkspaceCommandContext {
   beforeGroupRemoved(groupId: string): Promise<void>;
   /** クリップボードアイテムの実データ（テキストだけ） */
   clipboard: ClipboardTextStore;
-  /** --from: 写す元のメイン画面のアイテム */
+  /** --from: 写す元のランチャーのアイテム */
   launcher: LauncherStore;
   /** --from: データファイルの項目を、画面が持つ実行時の形にする（.lnk はリンク先を読む。フォルダ取込は undefined） */
   launcherAppItem(entry: LauncherEntry): Promise<AppItem | undefined>;
@@ -638,9 +638,9 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
 }
 
 /**
- * メイン画面のアイテムを足す（右クリックの「ワークスペースに追加」と同じ）。
- * 既定はメインウィンドウのアイテムを指す参照（--name はワークスペースでの表示名）。--copy なら写す（コピー）。
- * コピーでは、セットの行はメイン画面のアイテムを id で指したまま。クリップボードは実データを複製して自分のファイルを持たせる
+ * ランチャーのアイテムを足す（右クリックの「ワークスペースに追加」と同じ）。
+ * 既定はランチャーのアイテムを指す参照（--name はワークスペースでの表示名）。--copy なら写す（コピー）。
+ * コピーでは、セットの行はランチャーのアイテムを id で指したまま。クリップボードは実データを複製して自分のファイルを持たせる
  */
 async function addFromLauncher(
   parsed: ParsedArgs,
@@ -952,8 +952,8 @@ async function updateItem(args: readonly string[], ctx: WorkspaceCommandContext)
 }
 
 /**
- * 参照アイテムを変える。中身（パス・メモなど）はメインウィンドウのアイテムのものなので、変えられるのは
- * ワークスペースでの表示名（--name。"" でメインウィンドウの表示名に戻す）と置き場所だけ
+ * 参照アイテムを変える。中身（パス・メモなど）はランチャーのアイテムのものなので、変えられるのは
+ * ワークスペースでの表示名（--name。"" でランチャーの表示名に戻す）と置き場所だけ
  */
 async function updateRefItem(
   parsed: ParsedArgs,
@@ -1023,7 +1023,7 @@ async function updateRefItem(
 
 /**
  * 参照とコピーを行き来する（--to copy | ref）。参照にするときの指す先は --from（id か表示名）。
- * 省略すると、パスと引数が同じメインウィンドウのアイテムが 1 件だけあればそれ
+ * 省略すると、パスと引数が同じランチャーのアイテムが 1 件だけあればそれ
  */
 async function convertItem(
   args: readonly string[],
@@ -1083,7 +1083,7 @@ async function convertItem(
 }
 
 /**
- * コピーをメインウィンドウへ移し、ワークスペース側を参照に変える（画面の「🚀 メインウィンドウへ移して参照にする」と同じ）。
+ * コピーをランチャーへ移し、ワークスペース側を参照に変える（画面の「🚀 ランチャーへ移して参照にする」と同じ）。
  * 移す先は --file か --tab（無ければ既定のデータファイル）。参照・元が見つからない参照は conflict
  */
 async function moveItemToMain(

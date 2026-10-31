@@ -30,7 +30,7 @@ interface WsGroupEditModalProps {
   onCancel: () => void;
 }
 
-/** ワークスペースのグループを選んで、メインウィンドウの一覧と検索に並べる行（WSグループ）を作る・直す */
+/** ワークスペースのグループを選んで、ランチャーの一覧と検索に並べる行（WSグループ）を作る・直す */
 const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm, onCancel }) => {
   const { t } = useTranslation();
   const [candidates, setCandidates] = useState<WsGroupCandidate[] | null>(null);

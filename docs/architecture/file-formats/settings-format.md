@@ -113,7 +113,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **hotkey** | string | "" | メインウィンドウのホットキー<br>空の場合はホットキー未設定（初回セットアップで設定）<br>修飾キー（Ctrl・Alt・Shift など）1 つ以上と通常キー 1 つを `+` でつなぐ。形が合わない値は登録しない<br>例: "Alt+Space", "Ctrl+Shift+L" |
+| **hotkey** | string | "" | ランチャーのホットキー<br>空の場合はホットキー未設定（初回セットアップで設定）<br>修飾キー（Ctrl・Alt・Shift など）1 つ以上と通常キー 1 つを `+` でつなぐ。形が合わない値は登録しない<br>例: "Alt+Space", "Ctrl+Shift+L" |
 
 ### 3.3. ウィンドウサイズ設定
 
@@ -148,7 +148,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面では基本設定の「表示」にある「複数タブを表示」 |
-| **defaultFileTab** | string | "datafiles/data.json" | メイン画面を開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
+| **defaultFileTab** | string | "datafiles/data.json" | ランチャーを開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
 | **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定。初回起動でデータファイル（`data.json`）を作ったときは、ウィンドウを作る前に表示言語の名前（英語なら `Main`）で書き直す。お試し用の Web のアイテムを `datafiles/data2.json` に分けたときは、2 つ目のタブ「Web」も足す |
 | **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名）。初回起動でデータファイルを作ったときは、タブと同じときに表示言語の名前（「〈タブ名〉用データファイル」）で書き直す |
 
@@ -161,7 +161,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **files** | string[] | ✓ | タブにまとめるデータファイルの一覧（設定フォルダからの相対パス）。例: `["datafiles/data.json"]`、`["datafiles/data2.json", "datafiles/data3.json"]` |
 | **name** | string | ✓ | タブに表示する名前。例: `"メイン"`、`"サブ1"` |
 
-メイン画面は設定を読むたびに、`files` にあって存在しないデータファイルを空で作る。`datafiles/` 直下の `.json` 以外の名前など、作れなかったファイルがあればメイン画面にエラーのトースト（「タブのデータファイルを作成できませんでした: 〈ファイル名〉（〈理由〉）」）を出す。
+ランチャーは設定を読むたびに、`files` にあって存在しないデータファイルを空で作る。`datafiles/` 直下の `.json` 以外の名前など、作れなかったファイルがあればランチャーにエラーのトースト（「タブのデータファイルを作成できませんでした: 〈ファイル名〉（〈理由〉）」）を出す。
 
 型定義: [src/common/types/data.ts](../../../src/common/types/data.ts) の `DataFileTab`
 
@@ -200,7 +200,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 | **workspaceOpacity** | number | 100 | ワークスペースウィンドウの不透明度（0-100%）。ワークスペースウィンドウ本体だけで、切り離しウィンドウには効かない |
 | **workspaceBackgroundTransparent** | boolean | false | ワークスペースウィンドウと切り離しウィンドウの背景だけを透過するか。`true` の間は `workspaceOpacity` を使わない |
 | **workspacePositionMode** | WorkspacePositionMode | "displayRight" | ワークスペースウィンドウの表示位置モード |
-| **workspaceTargetDisplayIndex** | number | -1 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり）。`-1`（既定）はメインウィンドウと同じディスプレイで、表示するたびにそのディスプレイの端へ移す（高さはそのディスプレイの作業領域に合わせる）。番号のディスプレイが接続されていなければプライマリに出す |
+| **workspaceTargetDisplayIndex** | number | -1 | ターゲットディスプレイ番号（displayLeft/displayRight時に使用、0始まり）。`-1`（既定）はランチャーと同じディスプレイで、表示するたびにそのディスプレイの端へ移す（高さはそのディスプレイの作業領域に合わせる）。番号のディスプレイが接続されていなければプライマリに出す |
 | **workspaceFixedPosition** | `{ x: number, y: number }` \| null | null | 固定位置で最後に置いた場所（workspacePositionMode='fixed'時に使用）。`null` はまだ置いていないことを表し、次に出すときにプライマリディスプレイの右上へ置いて保存する |
 | **workspaceVisibleOnAllDesktops** | boolean | true | ワークスペースウィンドウをすべての仮想デスクトップに表示するか |
 | **detachedVisibleOnAllDesktops** | boolean | true | 切り離しウィンドウ（ワークスペースから切り離したグループのウィンドウ）をすべての仮想デスクトップに表示するか |
@@ -221,12 +221,12 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 | 値 | 説明 |
 | --- | --- |
-| **mainDisplay** | 既定。メインウィンドウと一緒に表示するとき、ピン留めしていない切り離しウィンドウを、メインウィンドウと同じディスプレイの同じ位置へ移す。位置の決め方は [ウィンドウ制御 - 切り離しウィンドウの表示位置](../window-control.md#切り離しウィンドウの表示位置) |
+| **mainDisplay** | 既定。ランチャーと一緒に表示するとき、ピン留めしていない切り離しウィンドウを、ランチャーと同じディスプレイの同じ位置へ移す。位置の決め方は [ウィンドウ制御 - 切り離しウィンドウの表示位置](../window-control.md#切り離しウィンドウの表示位置) |
 | **saved** | 最後に置いた場所に表示する |
 
 #### 3.8.3. 削除した設定（ワークスペースの自動表示・切り離しウィンドウの連動）
 
-`autoShowWorkspace`（メイン画面表示時にワークスペースを自動表示）と `hideDetachedWithMainWindow`（メインウィンドウと一緒に切り離しウィンドウも隠す）は、ウィンドウが出る・隠れるを 📌 で決めるようにしたときに削除した（[ウィンドウ制御](../window-control.md#ウィンドウ非表示の判定)）。
+`autoShowWorkspace`（ランチャー表示時にワークスペースを自動表示）と `hideDetachedWithMainWindow`（ランチャーと一緒に切り離しウィンドウも隠す）は、ウィンドウが出る・隠れるを 📌 で決めるようにしたときに削除した（[ウィンドウ制御](../window-control.md#ウィンドウ非表示の判定)）。
 
 起動時に 1 回、古い値を読み替えてから `settings.json` から消す（`migrateRemovedWindowSettings()`、`src/main/services/removedWindowSettings.ts`）。
 
@@ -266,11 +266,11 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **showKeyboardHints** | boolean | true | メインウィンドウの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
-| **searchMemo** | boolean | false | メインウィンドウの検索（通常モード）で、表示名に加えてメモにも当てるか（パスには当てない） |
-| **searchIgnoreWidth** | boolean | false | メインウィンドウの検索とワークスペースの絞り込みで、全角と半角を区別しないか（NFKC でそろえる。`ｃｈｒｏｍｅ` で `Chrome`、`ﾃｽﾄ` で `テスト`） |
-| **searchIgnoreKana** | boolean | false | メインウィンドウの検索とワークスペースの絞り込みで、ひらがなとカタカナを区別しないか（`てすと` で `テスト`） |
-| **searchSortByUsage** | boolean | false | メインウィンドウの検索（通常モード）で、検索語があるとき、名前が最初の語で始まるもの → 開いた回数（`item-usage.json`）の多いもの → 今の順（名前順）に並べるか |
+| **showKeyboardHints** | boolean | true | ランチャーの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
+| **searchMemo** | boolean | false | ランチャーの検索（通常モード）で、表示名に加えてメモにも当てるか（パスには当てない） |
+| **searchIgnoreWidth** | boolean | false | ランチャーの検索とワークスペースの絞り込みで、全角と半角を区別しないか（NFKC でそろえる。`ｃｈｒｏｍｅ` で `Chrome`、`ﾃｽﾄ` で `テスト`） |
+| **searchIgnoreKana** | boolean | false | ランチャーの検索とワークスペースの絞り込みで、ひらがなとカタカナを区別しないか（`てすと` で `テスト`） |
+| **searchSortByUsage** | boolean | false | ランチャーの検索（通常モード）で、検索語があるとき、名前が最初の語で始まるもの → 開いた回数（`item-usage.json`）の多いもの → 今の順（名前順）に並べるか |
 | **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「システム」にある「起動の記録を残す」 |
 | **updateCheckEnabled** | boolean | true | 新しい版が出たら知らせるか（[ファイル形式一覧 - 更新の知らせ](README.md#更新の知らせ)）。設定画面では基本設定の「システム」にある「新しい版が出たら知らせる」。初回設定の画面でも選べる。Store 版では使わない（画面にも出さない） |
 | **updateCheckIncludeBeta** | boolean | false | 正式版を使っていても、ベータ版を知らせるか。ベータ版を使っている間は、この値に関係なくベータ版も知らせる。設定画面では「ベータ版も知らせる」（「新しい版が出たら知らせる」がオフの間は押せない） |
@@ -290,7 +290,7 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 
 ### 4.3. QDL の外での変更の反映
 
-`settings.json` を手で編集する使い方はサポートしない（設定は画面から変える）。それでも QDL の外でファイルが変わった場合、設定値そのものは次の取得時から反映されます（electron-store は取得のたびにファイルを読みます）。ただし OS やウィンドウに作用する設定（ホットキー登録・自動起動・CLI（qdl）の PATH 登録・ワークスペースの不透明度と位置・全デスクトップ表示・スナップ）は `set()` 時にしか適用されないため、**`qdl reload`、メイン画面の F5、または再起動**で適用し直されます（`settings:reapply` IPC → `reapplySettingsFromDisk()`）。
+`settings.json` を手で編集する使い方はサポートしない（設定は画面から変える）。それでも QDL の外でファイルが変わった場合、設定値そのものは次の取得時から反映されます（electron-store は取得のたびにファイルを読みます）。ただし OS やウィンドウに作用する設定（ホットキー登録・自動起動・CLI（qdl）の PATH 登録・ワークスペースの不透明度と位置・全デスクトップ表示・スナップ）は `set()` 時にしか適用されないため、**`qdl reload`、ランチャーの F5、または再起動**で適用し直されます（`settings:reapply` IPC → `reapplySettingsFromDisk()`）。
 
 - ホットキーの値が不正、または他のアプリが使用中で登録できない場合は、現在の登録を維持し、トーストで知らせます。`settings.json` の値は書き戻しません（外で書かれた値を勝手に消さないため）
 - 環境変数 `HOTKEY` で上書きしている間は `settings.json` のホットキーは使いません

@@ -60,7 +60,7 @@ export const ja = {
     },
     dropToAdd: 'ファイル / URLをドロップして登録',
     dropWorkspaceItemToMove:
-      'ドロップしてメインウィンドウへ移す（ワークスペースのアイテムは参照になります）',
+      'ドロップしてランチャーへ移す（ワークスペースのアイテムは参照になります）',
     dropPathUnavailable:
       'ファイルパスを取得できませんでした。\nファイルを直接エクスプローラーからドラッグしてください。',
     hints: {
@@ -418,11 +418,11 @@ export const ja = {
     },
     workspaceItem: {
       rename: '🏷️ 表示名を変更',
-      editMain: '✏️ 編集（メインウィンドウのアイテム）',
+      editMain: '✏️ 編集（ランチャーのアイテム）',
       renameAlias: '🏷️ 表示名を変更（ワークスペースだけ）',
-      convertToCopy: '📄 コピーにする（メインウィンドウと切り離す）',
+      convertToCopy: '📄 コピーにする（ランチャーと切り離す）',
       retarget: '🔁 別のアイテムを指す…',
-      moveToMain: '🚀 メインウィンドウへ移して参照にする',
+      moveToMain: '🚀 ランチャーへ移して参照にする',
       moveToWorkspace: '📁 ワークスペースを移動',
       moveToGroup: '📁 グループへ移動',
       remove: '🗑️ ワークスペースから削除',
@@ -436,7 +436,7 @@ export const ja = {
       reattach: '📥 ワークスペースに戻す',
       addSubgroup: '➕ サブグループを追加',
       addItem: '➕ アイテムを追加',
-      addFromMain: '🔍 メインウィンドウのアイテムから選ぶ…',
+      addFromMain: '🔍 ランチャーのアイテムから選ぶ…',
       addNew: '✏️ 新しく入力して追加…',
       rename: '✏️ グループ名を変更',
       changeColor: '🎨 色を変更',
@@ -448,7 +448,7 @@ export const ja = {
     },
     tab: {
       rename: '✏️ 名前を変更',
-      linkCopies: '🔗 メインウィンドウのアイテムとつなぐ…',
+      linkCopies: '🔗 ランチャーのアイテムとつなぐ…',
       delete: '🗑️ 削除',
     },
     window: {
@@ -528,19 +528,19 @@ export const ja = {
 QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼します。起動していなければ起動します。
 
 コマンド:
-  launcher item list|add|update|remove     メインウィンドウのアイテム（qdl launcher --help）
-  launcher set row list|add|remove       メインウィンドウのセットの行
-  launcher tab list|add|update|remove    メインウィンドウのタブとデータファイルの構成
+  launcher item list|add|update|remove     ランチャーのアイテム（qdl launcher --help）
+  launcher set row list|add|remove       ランチャーのセットの行
+  launcher tab list|add|update|remove    ランチャーのタブとデータファイルの構成
   launcher tab file add|update|remove    タブのデータファイル（作る・名前を変える・外す）
   settings get|set                         本体の設定（ホットキー・ウィンドウなど。qdl settings --help）
   workspace list|add|update|remove         ワークスペース自体
   workspace item list|add|update|remove    ワークスペースのアイテム（qdl workspace --help）
   workspace group list|add|update|remove|archive   ワークスペースのグループ
   workspace archive list|restore           アーカイブしたグループ
-  open <id か表示名>                       メインウィンドウのアイテムを開く（画面で Enter を押したのと同じ）
-  show [main|workspace]                    メインウィンドウ（既定）かワークスペースを出す
+  open <id か表示名>                       ランチャーのアイテムを開く（画面で Enter を押したのと同じ）
+  show [launcher|workspace]                ランチャー（既定）かワークスペースを出す
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
-  reload                                   設定ファイルを読み直す（メインウィンドウの F5 と同じ）
+  reload                                   設定ファイルを読み直す（ランチャーの F5 と同じ）
   status                                   本体の版・設定フォルダなどを表示する
   help                                     この説明を表示する
 
@@ -555,7 +555,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
         qdl launcher set row <操作> <セット> [引数]
         qdl launcher tab <操作> [引数]
 
-メインウィンドウのアイテム（datafiles/data*.json）を扱います。
+ランチャーのアイテム（datafiles/data*.json）を扱います。
 
   item list                     一覧（--file <data2.json> | --tab <タブ名>、--grep <語>、
                                 --with-text でクリップボードの本文も）
@@ -598,16 +598,16 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   qdl workspace item add                      追加（--name・--path と、グループのあるワークスペースなら --group も必須。--args --memo
                                               --workspace --position <0 始まり> --set key=value --dry-run。
                                               --type clipboard なら --path の代わりに --text | --text-file）
-  qdl workspace item add --from <id か表示名>  メインウィンドウのアイテムを参照で追加（--copy ならコピー。
+  qdl workspace item add --from <id か表示名>  ランチャーのアイテムを参照で追加（--copy ならコピー。
                                               --name（参照ならワークスペースでの表示名）--group --workspace
                                               --position --dry-run）
   qdl workspace item update <id か表示名>     変更（--name --path --args --memo --text --text-file --set --unset、
                                               --group <グループ> --workspace --position --dry-run）
   qdl workspace item remove <id か表示名>     削除（--dry-run）
   qdl workspace item convert <id か表示名>    参照とコピーを行き来する（--to copy | ref は必須。ref なら --from <指す先>。
-                                              省略時はパスと引数が同じメインウィンドウのアイテム、--dry-run）
+                                              省略時はパスと引数が同じランチャーのアイテム、--dry-run）
   qdl workspace item move-to-main <id か表示名>
-                                              コピーをメインウィンドウへ移し、参照に変える（--file | --tab
+                                              コピーをランチャーへ移し、参照に変える（--file | --tab
                                               <移す先>。省略時は既定のデータファイル、--dry-run）
   qdl workspace group list                    グループの一覧（--workspace --grep）
   qdl workspace group add                     追加（--name は必須。--color --parent --workspace --dry-run）
@@ -640,7 +640,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
   管理            editModeWidth（800〜2000）editModeHeight（600〜1200）
   ワークスペース  workspaceOpacity（0〜100）workspaceBackgroundTransparent
                   workspacePositionMode（displayLeft / displayRight / fixed）
-                  workspaceTargetDisplayIndex（0 始まり。-1 はメインウィンドウと同じディスプレイ）
+                  workspaceTargetDisplayIndex（0 始まり。-1 はランチャーと同じディスプレイ）
                   workspaceFixedPosition（固定位置で置いた場所。x,y か null）
                   workspaceVisibleOnAllDesktops detachedVisibleOnAllDesktops
                   detachedPositionMode（mainDisplay / saved）
@@ -690,7 +690,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         'WSグループの行は開けません（並ぶグループは、ワークスペースの切り離しで開いてください）: {{name}}',
       cannotOpen: 'このアイテムは開けません: {{name}}',
       openFailed: '開けませんでした: {{name}}（{{error}}）',
-      unknownShowTarget: '出すものは main か workspace です: {{target}}',
+      unknownShowTarget: '出すものは launcher か workspace です: {{target}}',
       unknownLauncherNoun:
         '不明なコマンドです: launcher {{noun}}（launcher item・launcher set・launcher tab のみ）',
       missingSetNoun: 'launcher set の後に row を指定してください',
@@ -698,13 +698,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       unknownVerb: '不明な操作です: {{command}}',
       copyNeedsFrom: '--copy は --from と一緒に使います',
       refBody:
-        '参照アイテムの中身はメインウィンドウのアイテムのものです（--{{option}} は使えません）。中身は qdl launcher item update {{id}} で直してください',
+        '参照アイテムの中身はランチャーのアイテムのものです（--{{option}} は使えません）。中身は qdl launcher item update {{id}} で直してください',
       convertTo: '--to には copy か ref を指定してください（{{to}}）',
       notRef: '参照アイテムではありません',
-      alreadyInMain: '参照アイテムはもうメインウィンドウにあります（移せるのはコピーだけです）',
+      alreadyInMain: '参照アイテムはもうランチャーにあります（移せるのはコピーだけです）',
       refMissing: '元のアイテムが見つからないので、コピーにできません',
       noLinkCandidate:
-        'パスと引数が同じメインウィンドウのアイテムが {{count}} 件です。--from で指す先を指定してください',
+        'パスと引数が同じランチャーのアイテムが {{count}} 件です。--from で指す先を指定してください',
       missingVerb: '操作を指定してください（list / add / update / remove）',
       missingWorkspaceNoun:
         'workspace の後に list / add / update / remove / item / group / archive を指定してください',
@@ -794,7 +794,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       expectedInteger: '整数',
       expectedFixedPosition: '「x,y」（整数 2 つ）か null',
       expectedRange: '{{min}}〜{{max}} の整数',
-      expectedDisplayIndex: '0〜{{max}} の整数、または -1（メインウィンドウと同じディスプレイ）',
+      expectedDisplayIndex: '0〜{{max}} の整数、または -1（ランチャーと同じディスプレイ）',
       hotkeyInvalid: 'ホットキー「{{hotkey}}」は使えません: {{reason}}',
       hotkeyInUse:
         'ホットキー「{{hotkey}}」を登録できません（他のアプリかもう一方のホットキーで使用中）',
@@ -806,7 +806,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '自動取込で入ったアイテムは別のタブへ移せません（次の取込で同じものがまた足されます）。取込のルールの取り込み先を変えてください',
     },
     targets: {
-      launcherItem: 'メインウィンドウのアイテム',
+      launcherItem: 'ランチャーのアイテム',
       set: 'セット',
       workspace: 'ワークスペース',
       group: 'グループ',
@@ -816,10 +816,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       dataFile: 'データファイル',
     },
     changed: {
-      launcherAdded: 'CLI: メインウィンドウに「{{name}}」を追加しました',
-      launcherUpdated: 'CLI: メインウィンドウの「{{name}}」を変更しました',
-      launcherRemoved: 'CLI: メインウィンドウの「{{name}}」を削除しました',
-      launcherMoved: 'CLI: メインウィンドウの「{{name}}」をタブ「{{tab}}」へ移しました',
+      launcherAdded: 'CLI: ランチャーに「{{name}}」を追加しました',
+      launcherUpdated: 'CLI: ランチャーの「{{name}}」を変更しました',
+      launcherRemoved: 'CLI: ランチャーの「{{name}}」を削除しました',
+      launcherMoved: 'CLI: ランチャーの「{{name}}」をタブ「{{tab}}」へ移しました',
       workspaceAdded: 'CLI: ワークスペース「{{name}}」を追加しました',
       workspaceUpdated: 'CLI: ワークスペース「{{name}}」を変更しました',
       workspaceRemoved: 'CLI: ワークスペース「{{name}}」を削除しました',
@@ -1154,7 +1154,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       affixLabel: '表示名の前後に付ける文字（任意）',
       prefixPlaceholder: '前に付ける文字',
       suffixPlaceholder: '後ろに付ける文字',
-      previewLabel: 'メインウィンドウでの見え方',
+      previewLabel: 'ランチャーでの見え方',
       previewEmpty: '（並ぶグループがありません）',
       memoLabel: 'メモ（任意）',
       confirmAdd: '追加',
@@ -1317,7 +1317,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       typeSelectTitle:
         '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
-      wsGroupHasNoName: 'WSグループは名前を持ちません（メインウィンドウではグループの名前で表示）',
+      wsGroupHasNoName: 'WSグループは名前を持ちません（ランチャーではグループの名前で表示）',
       wsGroupNameAll: 'すべてのワークスペースグループ',
       wsGroupNameSelected_one: '選んだワークスペースグループ（{{count}} 件）',
       wsGroupNameSelected_other: '選んだワークスペースグループ（{{count}} 件）',
@@ -1444,7 +1444,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '取込先のデータファイルが無くなったため、自動取込のルールを無効にしました: {{rules}}',
       saveFailed: 'タブ設定の保存に失敗しました。{{error}}',
       showTabsConfirm:
-        'メインウィンドウにタブを表示しない設定になっています。\nこのままでは、作ったタブはメインウィンドウに出ません。タブを表示しますか？',
+        'ランチャーにタブを表示しない設定になっています。\nこのままでは、作ったタブはランチャーに出ません。タブを表示しますか？',
       showTabsTitle: 'タブの表示',
       showTabsYes: '表示する',
       showTabsNo: '表示しない',
@@ -1712,10 +1712,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     shortcuts: '⌨️ キーボードショートカット',
     notSet: '（未設定）',
     keys: {
-      toggleLauncher: 'メインウィンドウの表示/非表示',
+      toggleLauncher: 'ランチャーの表示/非表示',
       windowSearch: 'ウィンドウ検索で起動',
-      toggleAdmin: '管理ウィンドウの表示/非表示（メインウィンドウで）',
-      toggleWorkspace: 'ワークスペースの表示/非表示（メインウィンドウで）',
+      toggleAdmin: '管理ウィンドウの表示/非表示（ランチャーで）',
+      toggleWorkspace: 'ワークスペースの表示/非表示（ランチャーで）',
       open: '選択したアイテムを開く',
       openFolder: '選択したアイテムの親フォルダを開く',
       runAsAdmin: '選択したアプリを管理者として実行',
@@ -1725,7 +1725,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       switchTab: 'タブを切り替え（タブ表示有効時）',
       switchMode: '検索モードを切り替え（通常 / ウィンドウ）',
       reload: '再読み込み',
-      close: 'メインウィンドウを閉じる',
+      close: 'ランチャーを閉じる',
     },
     about: 'ℹ️ アプリについて',
     version: 'バージョン',
@@ -2109,7 +2109,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     groupRequired:
       'どのグループに入れるかを選んでください（グループがあるワークスペースでは、グループを指定して足します）',
     externalChange:
-      '{{file}} が QDL の外で変更されています。メインウィンドウで F5 を押して再読み込みしてから操作してください',
+      '{{file}} が QDL の外で変更されています。ランチャーで F5 を押して再読み込みしてから操作してください',
     writeFailed: '{{file}} の書き込みに失敗しました。ディスクの空き容量や権限を確認してください',
     changeFailed: 'ワークスペースを変更できませんでした: {{error}}',
     addFromPathsFailed_one:
@@ -2242,7 +2242,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     workspace: {
       favoritesGroup: 'よく使う',
       moreGroup: '便利な使い方',
-      /** メインウィンドウのお試しを指す参照に付ける、ワークスペースでの表示名（メインウィンドウと同じなら付けない） */
+      /** ランチャーのお試しを指す参照に付ける、ワークスペースでの表示名（ランチャーと同じなら付けない） */
       names: {
         desktop: 'デスクトップ',
         downloads: 'ダウンロード',
@@ -2261,7 +2261,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       guide: {
         name: '📖 ワークスペースの使い方',
         url: 'https://github.com/masaodev/quick-dash-launcher/blob/main/README.ja.md#%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9',
-        memo: 'アイテムは、メインウィンドウのアイテムを右クリックして「ワークスペースに追加」、ファイルや URL をここへドラッグ、コピーした文やパスをここで Ctrl+V、のどれかで足せます。',
+        memo: 'アイテムは、ランチャーのアイテムを右クリックして「ワークスペースに追加」、ファイルや URL をここへドラッグ、コピーした文やパスをここで Ctrl+V、のどれかで足せます。',
       },
     },
   },
@@ -2368,7 +2368,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     empty: {
       title: 'ワークスペースは空です',
-      hint: 'メインウィンドウのアイテムを右クリックして「ワークスペースに追加」を選択してください',
+      hint: 'ランチャーのアイテムを右クリックして「ワークスペースに追加」を選択してください',
       addGroup: '＋ グループを追加',
     },
     restoresPosition: '開いているときに、このウィンドウを記録したウィンドウ位置に戻します',
@@ -2404,32 +2404,30 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       missing: '元のアイテムが見つかりません',
       unsupported: 'フォルダ取込は参照できません',
       unknownName: '（見つからないアイテム）',
-      tooltipMain: '🔗 メインウィンドウのアイテム: {{name}}',
+      tooltipMain: '🔗 ランチャーのアイテム: {{name}}',
       tooltipTab: 'タブ: {{tab}}',
       tooltipMissing: '⚠ {{reason}}（最後に見た表示名: {{name}}）',
       tooltipMissingHint: '右クリックで、別のアイテムを指すか、ワークスペースから削除できます',
       launchMissing: '「{{name}}」は開けません。{{reason}}',
       addedAsCopy: '参照できないアイテムなので、コピーで追加しました',
       convertedToCopy: '「{{name}}」をコピーにしました',
-      linked: '「{{name}}」をメインウィンドウのアイテムの参照にしました',
+      linked: '「{{name}}」をランチャーのアイテムの参照にしました',
       retargeted: '「{{name}}」の指すアイテムを変えました',
       alreadyInMain:
-        '「{{name}}」はメインウィンドウのアイテムを参照しています（もうメインウィンドウにあります）',
+        '「{{name}}」はランチャーのアイテムを参照しています（もうランチャーにあります）',
       editBanner_one:
-        '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
+        '🔗 ランチャーのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
       editBanner_other:
-        '🔗 メインウィンドウのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
-      editMainNotFound: 'メインウィンドウのアイテムが見つかりません',
-      cannotMoveMissing:
-        '「{{name}}」は元のアイテムが見つからないので、メインウィンドウへ移せません',
+        '🔗 ランチャーのアイテムを編集しています。ワークスペースで参照している {{count}} か所にも反映されます',
+      editMainNotFound: 'ランチャーのアイテムが見つかりません',
+      cannotMoveMissing: '「{{name}}」は元のアイテムが見つからないので、ランチャーへ移せません',
       movedToMain:
-        '「{{name}}」をメインウィンドウの「{{tab}}」タブへ移し、ワークスペースのアイテムは参照にしました',
-      movedToMainNoTab:
-        '「{{name}}」をメインウィンドウへ移し、ワークスペースのアイテムは参照にしました',
+        '「{{name}}」をランチャーの「{{tab}}」タブへ移し、ワークスペースのアイテムは参照にしました',
+      movedToMainNoTab: '「{{name}}」をランチャーへ移し、ワークスペースのアイテムは参照にしました',
       linkedToSameInMain:
-        'メインウィンドウの「{{tab}}」タブに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
+        'ランチャーの「{{tab}}」タブに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
       linkedToSameInMainNoTab:
-        'メインウィンドウに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
+        'ランチャーに同じアイテムがあったので、「{{name}}」はそれを指す参照にしました',
       deleteWarning_one:
         'ワークスペースから {{count}} 件参照されています。削除すると、その参照は「元のアイテムが見つかりません」になります。',
       deleteWarning_other:
@@ -2457,53 +2455,53 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addedItems_one: '{{count}} 件のアイテム',
       addedItems_other: '{{count}} 件のアイテム',
       addedToGroup: 'グループ「{{group}}」に追加しました',
-      addAsCopy: 'コピーで追加（メインウィンドウと切り離す）',
+      addAsCopy: 'コピーで追加（ランチャーと切り離す）',
     },
     linkPicker: {
       windowTitle: '指すアイテムを選ぶ',
-      title: '「{{name}}」が指すメインウィンドウのアイテム',
+      title: '「{{name}}」が指すランチャーのアイテム',
       banner:
-        '選んだメインウィンドウのアイテムを指す参照にします。表示とメモはメインウィンドウのアイテムのものになります。',
+        '選んだランチャーのアイテムを指す参照にします。表示とメモはランチャーのアイテムのものになります。',
       candidates: '同じパスのアイテム',
       others: 'ほかのアイテム',
       current: '今の指す先',
       notFound: 'ワークスペースのアイテムが見つかりません（削除された可能性があります）。',
     },
     linkCopies: {
-      title: 'メインウィンドウのアイテムとつなぐ',
-      heroTitle_one: '同じアイテムが {{count}} 件、メインウィンドウにもあります',
-      heroTitle_other: '同じアイテムが {{count}} 件、メインウィンドウにもあります',
+      title: 'ランチャーのアイテムとつなぐ',
+      heroTitle_one: '同じアイテムが {{count}} 件、ランチャーにもあります',
+      heroTitle_other: '同じアイテムが {{count}} 件、ランチャーにもあります',
       heroBody:
-        'つなぐと、メインウィンドウで直したパスやメモがワークスペース「{{workspace}}」にも反映されます。ワークスペースでの名前と並び順はそのままです。',
+        'つなぐと、ランチャーで直したパスやメモがワークスペース「{{workspace}}」にも反映されます。ワークスペースでの名前と並び順はそのままです。',
       workspaceSide: 'ワークスペース',
-      mainSide: 'メインウィンドウ',
+      mainSide: 'ランチャー',
       needChoice: '✋ どれとつなぐか選んでください',
       ready: '✓ そのままつなげます',
       selectAll: 'すべて選ぶ',
       selectNone: 'すべて外す',
       nameKept: '名前はそのまま',
-      nameSame: '名前もメインウィンドウと同じ',
+      nameSame: '名前もランチャーと同じ',
       tab: 'タブ: {{tab}}',
-      memoMove: '📝 メモをメインウィンドウへ移す',
+      memoMove: '📝 メモをランチャーへ移す',
       memoConflict: '⚠ メモが両方にあって違う（つなぐとこのメモは消えます）',
       settingsDiffer:
-        '⚠ ウィンドウ切り替え・アイコン・管理者として実行が違う（つなぐとメインウィンドウのものになります）',
-      candidates_one: 'メインウィンドウに候補が {{count}} つ',
-      candidates_other: 'メインウィンドウに候補が {{count}} つ',
+        '⚠ ウィンドウ切り替え・アイコン・管理者として実行が違う（つなぐとランチャーのものになります）',
+      candidates_one: 'ランチャーに候補が {{count}} つ',
+      candidates_other: 'ランチャーに候補が {{count}} つ',
       choose: 'どれとつなぐ？',
-      chooseLabel: '「{{name}}」とつなぐメインウィンドウのアイテム',
+      chooseLabel: '「{{name}}」とつなぐランチャーのアイテム',
       candidateOption: '{{name}}（タブ: {{tab}}）',
       unchosen_one: '選んでいない {{count}} 件はつなぎません',
       unchosen_other: '選んでいない {{count}} 件はつなぎません',
       notMatchableSummary_one: 'ここに出ないアイテム（{{count}} 件）',
       notMatchableSummary_other: 'ここに出ないアイテム（{{count}} 件）',
       notMatchableBody:
-        'クリップボード・セット・パスの無い単一アイテムは、メインウィンドウのどれと同じかを見分けられないので出していません。1 件ずつつなぐときは、アイテムの右クリックの「🚀 メインウィンドウへ移して参照にする」を使います。',
-      empty: 'メインウィンドウとつなげるアイテムはありません。',
+        'クリップボード・セット・パスの無い単一アイテムは、ランチャーのどれと同じかを見分けられないので出していません。1 件ずつつなぐときは、アイテムの右クリックの「🚀 ランチャーへ移して参照にする」を使います。',
+      empty: 'ランチャーとつなげるアイテムはありません。',
       apply_one: '{{count}} 件をつなぐ',
       apply_other: '{{count}} 件をつなぐ',
-      done_one: '{{count}} 件をメインウィンドウのアイテムとつなぎました',
-      done_other: '{{count}} 件をメインウィンドウのアイテムとつなぎました',
+      done_one: '{{count}} 件をランチャーのアイテムとつなぎました',
+      done_other: '{{count}} 件をランチャーのアイテムとつなぎました',
       notFound: 'ワークスペースが見つかりません（削除された可能性があります）。',
     },
   },
@@ -2531,14 +2529,14 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     hotkeys: {
       heading: '起動ホットキー',
-      launcher: 'メインウィンドウ:',
+      launcher: 'ランチャー:',
       windowSearch: 'ウィンドウ検索:',
       windowSearchPlaceholder: '設定なし（オプション）',
       windowSearchDescription:
         'このホットキーでウィンドウ検索モードとして起動します。設定なしで無効化されます。',
       windowSearchSaved: 'ウィンドウ検索の起動ホットキーを設定しました',
       windowSearchSameAsLauncher:
-        'ウィンドウ検索の起動ホットキーの設定に失敗しました。メインウィンドウのホットキーと同じ値は設定できません。',
+        'ウィンドウ検索の起動ホットキーの設定に失敗しました。ランチャーのホットキーと同じ値は設定できません。',
       windowSearchChangeFailed: 'ウィンドウ検索の起動ホットキーの変更に失敗しました。',
     },
     system: {
@@ -2568,25 +2566,25 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       heading: '表示',
       keyboardHints: '操作のヒントを表示',
       keyboardHintsDescription:
-        'メインウィンドウの下に、気づきにくいキー操作（F2 で編集、Shift+Enter で親フォルダを開くなど）を表示します。',
+        'ランチャーの下に、気づきにくいキー操作（F2 で編集、Shift+Enter で親フォルダを開くなど）を表示します。',
       searchMemo: '検索でメモにも当てる',
       searchMemoDescription:
-        'メインウィンドウの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
+        'ランチャーの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
       searchIgnoreWidth: '検索で全角と半角を区別しない',
       searchIgnoreWidthDescription:
-        'メインウィンドウの検索とワークスペースの絞り込みで、「ｃｈｒｏｍｅ」で「Chrome」、「ﾃｽﾄ」で「テスト」が見つかるようにします。',
+        'ランチャーの検索とワークスペースの絞り込みで、「ｃｈｒｏｍｅ」で「Chrome」、「ﾃｽﾄ」で「テスト」が見つかるようにします。',
       searchIgnoreKana: '検索でひらがなとカタカナを区別しない',
       searchIgnoreKanaDescription:
-        'メインウィンドウの検索とワークスペースの絞り込みで、「てすと」で「テスト」が見つかるようにします。',
+        'ランチャーの検索とワークスペースの絞り込みで、「てすと」で「テスト」が見つかるようにします。',
       searchSortByUsage: '検索結果をよく開く順に並べる',
       searchSortByUsageDescription:
-        'メインウィンドウで検索したとき、名前が入力した語で始まるアイテムを上に、その中ではよく開くアイテムを上に並べます。検索欄が空のときと、「起動の記録を残す」がオフのときは今までどおりの順です。',
+        'ランチャーで検索したとき、名前が入力した語で始まるアイテムを上に、その中ではよく開くアイテムを上に並べます。検索欄が空のときと、「起動の記録を残す」がオフのときは今までどおりの順です。',
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
-        'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
+        'ランチャーでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
       dataFileTabsOffTitle: '複数タブの表示をやめる',
       dataFileTabsOffConfirm:
-        'オフにすると、メインウィンドウには最初のタブ「{{name}}」のアイテムだけが出ます。ほかのタブのアイテムは消えませんが、メインウィンドウからは開けなくなります。オフにしますか？',
+        'オフにすると、ランチャーには最初のタブ「{{name}}」のアイテムだけが出ます。ほかのタブのアイテムは消えませんが、ランチャーからは開けなくなります。オフにしますか？',
       dataFileTabsOffButton: 'オフにする',
     },
     windowSize: {
@@ -2595,7 +2593,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       height: '高さ',
     },
     windowPosition: {
-      heading: 'メインウィンドウ',
+      heading: 'ランチャー',
       label: '表示する場所:',
       cursorMonitorCenter: 'マウスカーソルのあるディスプレイの中央（既定）',
       cursorMonitorCenterDescription: 'マウスカーソルがあるディスプレイの中央に表示します',
@@ -2619,7 +2617,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       displayDisabled:
         '「最後に置いた場所」の間は、置いた場所のディスプレイに出るので、ディスプレイは選べません',
       displayLabel: 'ディスプレイ',
-      mainWindowDisplay: 'メインウィンドウと同じディスプレイ（既定）',
+      mainWindowDisplay: 'ランチャーと同じディスプレイ（既定）',
       missingDisplay: 'ディスプレイ {{number}}（今は接続されていないため、プライマリに表示中）',
       appearance: '見た目:',
       backgroundTransparent: '背景だけを透明にする',
@@ -2635,9 +2633,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     detached: {
       heading: '切り離しウィンドウ',
       position: '表示する場所:',
-      mainDisplay: 'メインウィンドウと同じディスプレイ（既定）',
+      mainDisplay: 'ランチャーと同じディスプレイ（既定）',
       mainDisplayDescription:
-        'メインウィンドウと同じディスプレイの、同じ位置に移して表示します。📌 を押したものは動かしません',
+        'ランチャーと同じディスプレイの、同じ位置に移して表示します。📌 を押したものは動かしません',
       saved: '最後に置いた場所',
       savedDescription: '最後に置いた場所に表示します',
       virtualDesktops: '仮想デスクトップ:',
@@ -2712,7 +2710,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     bookmarkAutoImport: {
       heading: 'ブックマーク自動取込',
       description:
-        'Chrome / Edge のブックマークを読み取り、メインウィンドウのアイテムとして自動取込します。',
+        'Chrome / Edge のブックマークを読み取り、ランチャーのアイテムとして自動取込します。',
     },
   },
 } as const;

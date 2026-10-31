@@ -83,7 +83,7 @@ export function useAdminItemIcons(items: EditableJsonItem[]): Map<string, string
       });
       customIconFileNames.forEach((name) => fetchedCustomIconsRef.current.add(name));
 
-      // loadCachedIcons() でアイコンを一括取得（メイン画面と同じ API）
+      // loadCachedIcons() でアイコンを一括取得（ランチャーと同じ API）
       const [iconCache, customIcons] = await loadItemIcons(launcherItems, customIconFileNames);
 
       setItemIcons((prev) => {

@@ -12,7 +12,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | **共通型定義** | `src/common/types/` | プロセス間で共有される型定義（機能別に分割） |
 | **CLI（qdl.exe）** | `cli/`（Rust） | 本体とは別の実行ファイル。引数を名前付きパイプでメインプロセスに送り、返ってきた出力と終了コードをそのまま出す中継役。受け口と解釈はメインプロセスの `src/main/services/cli/`（[CLI からの依頼](#cli-からの依頼)） |
 
-本体は userData ごとに 1 つしか動かない（`src/main/main.ts` の `app.requestSingleInstanceLock()`）。2 つ目を起動するとすぐに終了し、動いている側がメインウィンドウを表示する（CLI が `--launched-by-cli` 付きで起動した場合は表示しない）。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は対象外。
+本体は userData ごとに 1 つしか動かない（`src/main/main.ts` の `app.requestSingleInstanceLock()`）。2 つ目を起動するとすぐに終了し、動いている側がランチャーを表示する（CLI が `--launched-by-cli` 付きで起動した場合は表示しない）。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は対象外。
 
 ### ウィンドウとレンダラープロセスの対応
 
@@ -23,14 +23,14 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 | オーバーレイ（トースト・セットの進み具合） | メインのレンダラーが `window.open` で生成 | **メインと共有** |
 | 切り離しグループウィンドウ | ワークスペースのレンダラーが `window.open` で生成 | **メインと共有** |
 | ワークスペースアイテムの編集ウィンドウ | ワークスペースのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有** |
-| ワークスペースのそのほかの子ウィンドウ（グループに追加するアイテムを選ぶ `WorkspaceItemPickerPage`・新しく入力して追加 `WorkspaceNewItemPage`・指すアイテムを選ぶ `WorkspaceLinkPickerPage`・メインウィンドウのアイテムとつなぐ `WorkspaceLinkCopiesPage`） | ワークスペースのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有** |
-| メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果） | メインのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有**（管理画面から開いた場合は管理と共有） |
+| ワークスペースのそのほかの子ウィンドウ（グループに追加するアイテムを選ぶ `WorkspaceItemPickerPage`・新しく入力して追加 `WorkspaceNewItemPage`・指すアイテムを選ぶ `WorkspaceLinkPickerPage`・ランチャーのアイテムとつなぐ `WorkspaceLinkCopiesPage`） | ワークスペースのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有** |
+| ランチャーの子ウィンドウ（アイテムの登録・編集、アイコン取得結果） | メインのレンダラーが `window.open` で生成（閉じると破棄） | **メインと共有**（管理画面から開いた場合は管理と共有） |
 | ワークスペースの確認ウィンドウ | ワークスペースのレンダラーが `window.open` で生成（閉じると破棄） | **ワークスペースと共有** |
 | 管理画面の子ウィンドウ（アイテムの登録・編集） | 管理のレンダラーが `window.open` で生成（閉じると破棄） | **管理と共有** |
 | 管理 / スプラッシュ | メインプロセスの `BrowserWindow` | ウィンドウごとに1プロセス |
 
 レンダラープロセスは1枚あたり約60MB以上の固定メモリを消費するため、常駐するウィンドウは
-`src/main/services/childWindowService.ts` の `openChildWindow()` でメインウィンドウのレンダラーから開き、プロセスを共有する。
+`src/main/services/childWindowService.ts` の `openChildWindow()` でランチャーのレンダラーから開き、プロセスを共有する。
 流れは次のとおり:
 
 1. メインプロセスが対象HTML（`index.html` / `workspace.html` / `overlay.html`）の内容を読み込み、IPC（`WINDOW_OPEN_CHILD`）で開き元レンダラーに渡す
@@ -74,7 +74,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 ### 構成上のポイント
 
 - **データファイル**: 読み込み・変換・保存は `src/main/services/data/` に分かれる（読み込みと外部変更の検知、JSON アイテムから表示用アイテムへの変換、管理画面の一覧の保存と楽観ロック、データファイル自体の作成・削除（`dataFileOps.ts`。アイテム管理のタブ構成と CLI の `launcher tab` が使う）、破損ファイルの記録）
-- **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。メインウィンドウのアイテムを指す参照アイテムは、データファイルを読み直すたびに作るメインウィンドウのアイテムの表（`workspaceRefResolver.ts`）で、画面・CLI・起動に渡すときに中身を埋める。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
+- **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。ランチャーのアイテムを指す参照アイテムは、データファイルを読み直すたびに作るランチャーのアイテムの表（`workspaceRefResolver.ts`）で、画面・CLI・起動に渡すときに中身を埋める。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
 - **トースト通知**: トーストとセットの進み具合は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する
 - **子ウィンドウ**: メインのレンダラーを共有する子ウィンドウは `childWindowService.ts` で開く（[ウィンドウとレンダラープロセスの対応](#ウィンドウとレンダラープロセスの対応)）
 - **配布形式**: 開発版・Store 版・ポータブル版・インストーラー版の判定は `utils/appDistribution.ts`。自動起動はこれで分かれ、Store 版は WinRT の StartupTask、それ以外はスタートアップフォルダのショートカットを使う（`services/autoLaunchService.ts`）
@@ -89,9 +89,9 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 
 設定フォルダのデータファイル（`datafiles/data*.json`）とワークスペースファイルは、QDL の外で変わる（古い版・同期ツール・手での修正）ことに備えて読み書きする。手での編集はサポートせず、AI からの変更は CLI（`services/cli/`）で受ける。各処理の仕様は[データファイル形式 5 章](file-formats/data-format.md#5-エラー処理とフォールバック)と[ワークスペースファイル形式](file-formats/workspace-format.md)を参照。
 
-- **読み込み**: 起動時・メイン画面の F5・🔄 の「アイコンをすべて取り直す」で、データファイルとワークスペースをまとめて読み直す（`services/data/dataFileLoader.ts` の `reloadConfigFiles`）。寛容パース（`common/utils/jsonParser.ts`）で、JSON 構文が壊れたファイルは「破損」として読まず、不正なアイテムはアイテム単位でスキップし、`id` の欠落・重複は採番する。採番・補正があれば 1 回だけ書き戻す
+- **読み込み**: 起動時・ランチャーの F5・🔄 の「アイコンをすべて取り直す」で、データファイルとワークスペースをまとめて読み直す（`services/data/dataFileLoader.ts` の `reloadConfigFiles`）。寛容パース（`common/utils/jsonParser.ts`）で、JSON 構文が壊れたファイルは「破損」として読まず、不正なアイテムはアイテム単位でスキップし、`id` の欠落・重複は採番する。採番・補正があれば 1 回だけ書き戻す
 - **変換**: JSON アイテムを表示用の `AppItem` に変換する（`services/data/jsonItemConverter.ts`）。フォルダ取込（`type: "dir"`）はフォルダを走査して展開し、`.lnk` はリンク先を解析する（`services/data/directoryScanner.ts`）。タブ単位で重複を除き、表示名でソートする。種別はパスから決めるが、見た目だけでは分からないもの（ドット入りのフォルダ名・拡張子の無いファイル）は `utils/folderPathProbe.ts` がディスクの状態と記録（`config/path-type-cache.json`）で補う（[データファイル形式 3.1.2](file-formats/data-format.md#312-サポートされるパス種類)）
-- **保存**: QDL 自身の書き込みは `services/dataFileTracker.ts` の `writeDataFile()` を通し、書いた内容を記憶する。管理画面の一覧保存は読み込み時のハッシュと照合する楽観ロック付き（`editableItemsStore.ts`）。メイン画面からの登録・編集・削除と CLI の書き込みは、都度ディスクを読み直して ID で差し替える・消す（`dataItemWriter.ts`。IPC の `editHandlers.ts` は受け口だけ）。破損中のファイルへの保存・登録は拒否する。ID で探すときは破損ファイルを飛ばして他のファイルで続け、目当ての ID が破損ファイルにあるかもしれないときは何も書かずに止める
+- **保存**: QDL 自身の書き込みは `services/dataFileTracker.ts` の `writeDataFile()` を通し、書いた内容を記憶する。管理画面の一覧保存は読み込み時のハッシュと照合する楽観ロック付き（`editableItemsStore.ts`）。ランチャーからの登録・編集・削除と CLI の書き込みは、都度ディスクを読み直して ID で差し替える・消す（`dataItemWriter.ts`。IPC の `editHandlers.ts` は受け口だけ）。破損中のファイルへの保存・登録は拒否する。ID で探すときは破損ファイルを飛ばして他のファイルで続け、目当ての ID が破損ファイルにあるかもしれないときは何も書かずに止める
 - **外部変更**: ファイル監視はしない。読み込んだ内容が記憶と違えば QDL の外で編集されたとみなし、変更前の内容をスナップショット（`backup/*_pre-external/`。`backupEnabled` が true のとき）に残す。読み込み結果はレポートにまとめてメモリに持ち、CLI の `reload`・`check` が返す（`services/loadReportService.ts`）
 - **形式の移行**: データファイルは `version` を補完し、旧グループ（`type: "group"`）・旧ウィンドウ配置（`type: "layout"`）を見つけたら、スナップショット（`_pre-set-migration`）を作ってからセット（`type: "set"`）に変換して書き戻す（`services/data/setMigration.ts`）。単一アイテムの旧形式 `windowConfig` も同じ読み込みでウィンドウ切り替えの新しいキーに変換し、廃止した種別「ウィンドウ操作」（`type: "window"`）もパスの無い単一アイテム（id は変えない）に変換する（セットへの変換が無ければスナップショットは `_pre-window-migration`。`common/utils/itemWindowConversion.ts`）。ワークスペースファイルも、2.0 への移行の後に同じ変換をする。ワークスペースファイルは旧形式（`version` なし）を検知すると、移行前スナップショット（`_pre-migration`）を作ってから 2.0 に変換して書き戻す（`services/workspace/WorkspaceFileStore.ts`・`workspaceMigration.ts`）
 
@@ -105,7 +105,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 
 1. アプリケーション起動時に`hotkey`設定の有無をチェック
 2. `hotkey`が空 → 初回設定画面を表示
-3. ユーザーがホットキーを設定 → 設定保存 → メインウィンドウに遷移
+3. ユーザーがホットキーを設定 → 設定保存 → ランチャーに遷移
 
 ### 通常モード（表示・起動）
 
@@ -119,7 +119,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 
 1. 管理ウィンドウがデータファイルを JSON のまま読み込む（`load-editable-items`）
 2. 一覧での編集は管理ウィンドウの中だけで持ち、保存のときにまとめて書き込む（`save-editable-items`）
-3. 書き込んだら `data-changed` イベントでメインウィンドウなどに知らせ、各ウィンドウが読み直す
+3. 書き込んだら `data-changed` イベントでランチャーなどに知らせ、各ウィンドウが読み直す
 
 ### 設定の即座反映フロー
 
@@ -141,7 +141,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 
 ### ワークスペースフロー
 
-1. ワークスペースウィンドウ・切り離しウィンドウ・メイン画面からの追加・編集は、IPC でメインプロセスのワークスペースのサービスに依頼する
+1. ワークスペースウィンドウ・切り離しウィンドウ・ランチャーからの追加・編集は、IPC でメインプロセスのワークスペースのサービスに依頼する
 2. サービスが `workspace.json`・`workspace-archive.json` に書き込み、`workspace-changed` イベントで各ウィンドウに知らせる
 3. 形式と読み書きの仕組みは [ワークスペースファイル形式](file-formats/workspace-format.md)を参照
 
@@ -149,7 +149,7 @@ IPC の設計とチャンネル定義の置き場所は[IPCチャンネル](ipc-
 
 1. メインプロセスは起動の早い段階で、名前付きパイプ `\\.\pipe\<userData のフォルダ名>-cli-<ユーザー名>` で待ち受ける（`services/cli/cliServer.ts`。パイプ名は `cliProtocol.ts` の `getCliPipeName()`）。`QUICK_DASH_CONFIG_DIR` を指定した起動では待ち受けない
 2. `qdl.exe` が引数・実行したフォルダ・やり取りの版を JSON 1 行で送る。本体が動いていなければ、`qdl.exe` が本体を `--launched-by-cli` 付きで起動し（スプラッシュを出さない）、パイプが開くのを待つ
-3. メインプロセスは初期化が終わるのを待ってから（最大 60 秒）、コマンドを解釈して実行する（振り分けとエラーの形は `services/cli/cliCommands.ts`、メイン画面のアイテムは `cliLauncherCommands.ts`、メイン画面のセットの行（`launcher set row`）は `cliSetCommands.ts`、ワークスペースは `cliWorkspaceCommands.ts`、メイン画面のタブとデータファイルの構成（`launcher tab`）は `cliTabCommands.ts`、設定（`settings`）は `cliSettingsCommands.ts`、本体の処理へのつなぎは `cliStores.ts`）。`reload` はメイン画面の F5 と同じく設定の再適用とデータファイル・ワークスペースの読み直しをし、`data-changed` で全ウィンドウに知らせる。書き込むコマンドは、まず読み直して外部変更を検知してから、画面の登録・編集と同じ書き込み処理（データファイルは `dataItemWriter.ts`、データファイル自体の作成・削除は `dataFileOps.ts`。アイテムの削除は画面の ID 指定の削除と同じ `deleteItemsById`。ワークスペースは `WorkspaceService`）を通し、`data-changed`／`workspace-changed` とトーストで知らせる。`settings set` は書く前に読み直さず、設定画面と同じ保存の処理を通して `settings-changed` とトーストで知らせる
+3. メインプロセスは初期化が終わるのを待ってから（最大 60 秒）、コマンドを解釈して実行する（振り分けとエラーの形は `services/cli/cliCommands.ts`、ランチャーのアイテムは `cliLauncherCommands.ts`、ランチャーのセットの行（`launcher set row`）は `cliSetCommands.ts`、ワークスペースは `cliWorkspaceCommands.ts`、ランチャーのタブとデータファイルの構成（`launcher tab`）は `cliTabCommands.ts`、設定（`settings`）は `cliSettingsCommands.ts`、本体の処理へのつなぎは `cliStores.ts`）。`reload` はランチャーの F5 と同じく設定の再適用とデータファイル・ワークスペースの読み直しをし、`data-changed` で全ウィンドウに知らせる。書き込むコマンドは、まず読み直して外部変更を検知してから、画面の登録・編集と同じ書き込み処理（データファイルは `dataItemWriter.ts`、データファイル自体の作成・削除は `dataFileOps.ts`。アイテムの削除は画面の ID 指定の削除と同じ `deleteItemsById`。ワークスペースは `WorkspaceService`）を通し、`data-changed`／`workspace-changed` とトーストで知らせる。`settings set` は書く前に読み直さず、設定画面と同じ保存の処理を通して `settings-changed` とトーストで知らせる
 4. 終了コード・標準出力・標準エラーを JSON 1 行で返し、接続を閉じる（1 接続 1 往復）。やり取りの形を変えたら、`cliProtocol.ts` の `CLI_PROTOCOL_VERSION` と `cli/src/main.rs` の `PROTOCOL_VERSION` を一緒に上げる
 
 パッケージ版のメインプロセスは起動のたびに、`qdl.exe` が本体を起動するときに使う exe の場所を userData の `cli-launcher.json` に書き出す（`services/cli/cliLauncherInfo.ts`）。

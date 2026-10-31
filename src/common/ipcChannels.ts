@@ -53,7 +53,7 @@ export const IPC_CHANNELS = {
   LOAD_CACHED_ICONS: 'load-cached-icons',
   FETCH_ICONS_COMBINED: 'fetch-icons-combined',
   ENSURE_ICONS: 'ensure-icons',
-  /** 管理ウィンドウなどから、メインウィンドウに未取得のアイコンの取得を頼む（ブックマーク取込の後。A3-174） */
+  /** 管理ウィンドウなどから、ランチャーに未取得のアイコンの取得を頼む（ブックマーク取込の後。A3-174） */
   REQUEST_FETCH_MISSING_ICONS: 'request-fetch-missing-icons',
   EVENT_FETCH_MISSING_ICONS_REQUESTED: 'fetch-missing-icons-requested',
   GET_ICON_FETCH_ERRORS: 'get-icon-fetch-errors',
@@ -107,7 +107,7 @@ export const IPC_CHANNELS = {
   GET_VIRTUAL_DESKTOP_INFO: 'get-virtual-desktop-info',
   ACTIVATE_WINDOW: 'activate-window',
   COPY_TO_CLIPBOARD: 'copy-to-clipboard',
-  // メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
+  // ランチャーの子ウィンドウ（アイテムの登録・編集、アイコン取得結果）
   OPEN_MAIN_CHILD_WINDOW: 'window:open-main-child',
   GET_MAIN_CHILD_WINDOW_REQUEST: 'window:get-main-child-request',
   NOTIFY_MAIN_CHILD_WINDOW_RESULT: 'window:notify-main-child-result',
@@ -294,12 +294,12 @@ export const IPC_CHANNELS = {
   /** 「削除…」（フォルダ取込で並んだアイテム・自動取込のアイテムには出さない） */
   EVENT_LAUNCHER_MENU_DELETE_ITEM: 'launcher-menu-delete-item',
   EVENT_LAUNCHER_MENU_EXCLUDE_FROM_DIR: 'launcher-menu-exclude-from-dir',
-  // コンテキストメニュー - メインウィンドウの一覧の余白
+  // コンテキストメニュー - ランチャーの一覧の余白
   SHOW_LAUNCHER_BLANK_CONTEXT_MENU: 'show-launcher-blank-context-menu',
   EVENT_LAUNCHER_BLANK_MENU_ADD_ITEM: 'launcher-blank-menu-add-item',
   EVENT_LAUNCHER_BLANK_MENU_REGISTER_FROM_CLIPBOARD: 'launcher-blank-menu-register-from-clipboard',
   EVENT_LAUNCHER_BLANK_MENU_ADD_FOLDER_IMPORT: 'launcher-blank-menu-add-folder-import',
-  // コンテキストメニュー - メインウィンドウの検索欄（文字のメニュー＋検索履歴。A3-190）
+  // コンテキストメニュー - ランチャーの検索欄（文字のメニュー＋検索履歴。A3-190）
   SHOW_SEARCH_BOX_CONTEXT_MENU: 'show-search-box-context-menu',
   EVENT_SEARCH_BOX_MENU_PICK_HISTORY: 'search-box-menu-pick-history',
   EVENT_SEARCH_BOX_MENU_CLEAR_HISTORY: 'search-box-menu-clear-history',
@@ -383,7 +383,7 @@ export const IPC_CHANNELS = {
   CLIPBOARD_CAPTURE_TO_SESSION: 'clipboard:capture-to-session',
   CLIPBOARD_COMMIT_SESSION: 'clipboard:commit-session',
   CLIPBOARD_DISCARD_SESSION: 'clipboard:discard-session',
-  // 実データの複製（メインウィンドウとワークスペースの間で写すとき）
+  // 実データの複製（ランチャーとワークスペースの間で写すとき）
   // 登録画面の内容欄（書いたテキストの保存と、見せる中身＝全文・画像の縮小版の読み出し）
   CLIPBOARD_SAVE_TEXT: 'clipboard:save-text',
   CLIPBOARD_READ_CONTENT: 'clipboard:read-content',

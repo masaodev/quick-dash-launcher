@@ -212,7 +212,7 @@ export { isEditingLauncherItem, isEditingSetItem, isEditableJsonItem } from './e
 export type { EditableJsonItem, LoadEditableItemsResult, ValidationResult } from './editableItem';
 export { validateEditableItem } from './editableItem';
 
-// メイン画面が開く子ウィンドウ（登録・編集、アイコン取得結果）の型
+// ランチャーが開く子ウィンドウ（登録・編集、アイコン取得結果）の型
 export type {
   MainChildWindowRequest,
   RegisterWindowRequest,

@@ -250,7 +250,7 @@ export class HotkeyService {
 
       if (mainWindow.isVisible()) {
         // 表示したまま別の仮想デスクトップにある（ピン留め中など）ときは、隠さずに今のデスクトップへ呼び寄せる。
-        // 先に focus() すると、Windows がメインウィンドウのあるデスクトップへ切り替えてしまう
+        // 先に focus() すると、Windows がランチャーのあるデスクトップへ切り替えてしまう
         if (moveWindowToCurrentDesktop(getHwnd(mainWindow))) {
           void this.showWindowCallback(Date.now());
           return;

@@ -52,9 +52,9 @@ let trayLanguageListenerAdded = false;
 let windowPinMode: WindowPinMode = EnvConfig.windowPinMode ?? 'normal';
 let isFirstLaunchMode: boolean = false;
 let isModalMode: boolean = false;
-// メインウィンドウのページで Esc を受けるか（複数選択・確認の帯があるあいだ。レンダラーが知らせる）
+// ランチャーのページで Esc を受けるか（複数選択・確認の帯があるあいだ。レンダラーが知らせる）
 let escapeHandledByPage = false;
-let windowShownAt = 0; // メインウィンドウを最後に表示した時刻（表示直後のフォーカスの揺れ対策）
+let windowShownAt = 0; // ランチャーを最後に表示した時刻（表示直後のフォーカスの揺れ対策）
 
 /** 表示直後のフォーカスの揺れが収まるまでの時間（ms）。この間のblurは収まってから移動先を確認する */
 const BLUR_SETTLE_AFTER_SHOW_MS = 200;
@@ -63,7 +63,7 @@ const BLUR_SETTLE_AFTER_SHOW_MS = 200;
 const BLUR_FOCUS_CHECK_DELAY_MS = 50;
 
 /**
- * メインウィンドウと一緒に、ワークスペース（開いているもの）と切り離しウィンドウを出し入れする（即座）
+ * ランチャーと一緒に、ワークスペース（開いているもの）と切り離しウィンドウを出し入れする（即座）
  * 隠すのは 📌 なしのものだけ。出すときは、📌 ありのものを手前に出す
  */
 async function toggleCompanionWindows(show: boolean): Promise<void> {
@@ -79,7 +79,7 @@ async function toggleCompanionWindows(show: boolean): Promise<void> {
 }
 
 /**
- * 起動時の復元が終わったときに呼ぶ。復元より先にホットキーでメインウィンドウを出していたら、
+ * 起動時の復元が終わったときに呼ぶ。復元より先にホットキーでランチャーを出していたら、
  * 後から隠したまま作った 📌 なしのウィンドウもメインと一緒に出す（次のホットキーまで隠れたままにしない）
  */
 export async function syncCompanionWindowsWithMain(): Promise<void> {
@@ -103,7 +103,7 @@ function isQdlWindowFocused(): boolean {
 }
 
 /**
- * メインウィンドウを隠した後の連動非表示（50ms遅延 + フォーカスチェック付き）
+ * ランチャーを隠した後の連動非表示（50ms遅延 + フォーカスチェック付き）
  * QDLのウィンドウ群にフォーカスがある場合は切り離しウィンドウを非表示にしない
  */
 function hideDetachedWindowsAfterBlur(): void {
@@ -118,7 +118,7 @@ function hideDetachedWindowsAfterBlur(): void {
 }
 
 /**
- * メインウィンドウを非表示にし、レンダラープロセスに通知を送る
+ * ランチャーを非表示にし、レンダラープロセスに通知を送る
  * window-hiddenイベントを送信してから、実際にウィンドウを非表示にする
  */
 function hideMainWindowInternal(): void {
@@ -132,8 +132,8 @@ function hideMainWindowInternal(): void {
 }
 
 /**
- * メインウィンドウの描画の抑制（backgroundThrottling）を切るか戻す
- * Windows がメインウィンドウを他のウィンドウに隠れていると誤って判定したままになると、
+ * ランチャーの描画の抑制（backgroundThrottling）を切るか戻す
+ * Windows がランチャーを他のウィンドウに隠れていると誤って判定したままになると、
  * 表示したのに描き直しが止まり、打った文字がクリックするまで画面に出ない（A3-130）。
  * 表示しているあいだだけ抑制を切り、ページを常に表示中の扱いにする。隠したら戻す
  */
@@ -151,21 +151,21 @@ function isAutoHideSuppressed(): boolean {
 }
 
 /**
- * フォーカス喪失時にメインウィンドウを非表示にしてよい状態か
+ * フォーカス喪失時にランチャーを非表示にしてよい状態か
  */
 function shouldHideOnBlur(): boolean {
   return !!mainWindow && !mainWindow.webContents.isDevToolsOpened() && !isAutoHideSuppressed();
 }
 
 /**
- * フォーカスがQDLのウィンドウ群の外へ出ていれば、メインウィンドウと、ピン留めしていないワークスペース・切り離しウィンドウを隠す
+ * フォーカスがQDLのウィンドウ群の外へ出ていれば、ランチャーと、ピン留めしていないワークスペース・切り離しウィンドウを隠す
  * ウィンドウ群の中でフォーカスが移っただけなら何もしない
  */
 async function hideWindowsIfFocusLeftQdl(): Promise<void> {
   if (isQdlWindowFocused()) return;
 
   if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) {
-    // メインウィンドウを表示し続けるモード（ピン留め等）では切り離しウィンドウも残す
+    // ランチャーを表示し続けるモード（ピン留め等）では切り離しウィンドウも残す
     if (!shouldHideOnBlur()) return;
     hideMainWindowInternal();
   }
@@ -189,7 +189,7 @@ function scheduleHideIfFocusLeftQdl(): void {
 }
 
 /**
- * アプリケーションのメインウィンドウを作成し、初期設定を行う
+ * アプリケーションのランチャーを作成し、初期設定を行う
  * 初期状態では通常モード（非最前面）で、フレームレスで中央に配置される
  * フォーカス喪失時の自動非表示やESCキーでの終了など、ランチャーアプリとしての動作を設定
  */
@@ -232,11 +232,11 @@ export async function createWindow(): Promise<BrowserWindow> {
   // ワークスペース・オーバーレイはこのレンダラーから window.open で開き、プロセスを共有する
   registerChildWindowOpener('main', mainWindow.webContents);
 
-  // ワークスペース・切り離しウィンドウを「メインウィンドウと同じディスプレイ」に出すための基準
+  // ワークスペース・切り離しウィンドウを「ランチャーと同じディスプレイ」に出すための基準
   registerMainWindowBoundsProvider(() =>
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : null
   );
-  // ワークスペース・切り離しウィンドウの吸着先にする（メインウィンドウ自体は吸着しない）
+  // ワークスペース・切り離しウィンドウの吸着先にする（ランチャー自体は吸着しない）
   registerSnapTarget(mainWindow);
 
   mainWindow.on('show', () => {
@@ -461,7 +461,7 @@ export async function registerGlobalShortcut(): Promise<void> {
 }
 
 /**
- * メインウィンドウの Esc をページで受けるかを設定する（true のあいだは Esc で隠さない）
+ * ランチャーの Esc をページで受けるかを設定する（true のあいだは Esc で隠さない）
  */
 export function setEscapeHandledByPage(handled: boolean): void {
   escapeHandledByPage = handled;
@@ -502,7 +502,7 @@ function updateWindowBehavior(): void {
 /**
  * モーダルモードの切り替え
  *
- * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間に
+ * ランチャーの子ウィンドウ（アイテムの登録・編集、アイコン取得結果）が開いている間に
  * メインプロセスが ON にする（`mainChildWindowManager.ts`）。モーダルモード中は
  * フォーカス喪失・Escape・ホットキー・アイテム実行でウィンドウが隠れず、最前面に固定される。
  * ウィンドウのサイズ・位置は変えない（以前はモーダルの要求サイズに広げて中央へ動かしていた）。
@@ -692,8 +692,8 @@ export async function saveWindowPosition(): Promise<void> {
 
 /**
  * 表示中のワークスペース・切り離しウィンドウ（📌 の有無を問わない）を、ほかのウィンドウの下にあっても手前に出す
- * メインウィンドウにフォーカスを移した後に呼ぶ（その前だとほかのアプリが前面で、Windows が並べ替えを無視することがある）。
- * 最後にメインウィンドウを一番手前に戻す
+ * ランチャーにフォーカスを移した後に呼ぶ（その前だとほかのアプリが前面で、Windows が並べ替えを無視することがある）。
+ * 最後にランチャーを一番手前に戻す
  */
 function bringCompanionsToFront(): void {
   if (!mainWindow) return;
@@ -703,30 +703,30 @@ function bringCompanionsToFront(): void {
 }
 
 /**
- * メインウィンドウをアクティブ化して検索欄にフォーカス（共通ヘルパー関数）
+ * ランチャーをアクティブ化して検索欄にフォーカス（共通ヘルパー関数）
  * 開いているワークスペース・切り離しウィンドウも一緒に出す
  */
 async function activateMainWindowWithFocus(): Promise<void> {
   if (!mainWindow) return;
 
-  // ワークスペース・切り離しウィンドウも一緒に出す（メインウィンドウのフォーカス前に実行）
+  // ワークスペース・切り離しウィンドウも一緒に出す（ランチャーのフォーカス前に実行）
   await toggleCompanionWindows(true);
 
   // ピン留め中で表示したままでも、隠れている扱いで描画が止まっていることがある（A3-130）
   setMainWindowRenderingKept(true);
 
-  // メインウィンドウに確実にフォーカスを戻す
+  // ランチャーに確実にフォーカスを戻す
   mainWindow.focus();
   bringCompanionsToFront();
 
   // 検索欄にフォーカスを当てるため、window-shownイベントを送信
   // （時刻も渡し、表示したときと同じく描画が止まっていないかをレンダラーに記録させる。A3-130）
-  windowLogger.info('メインウィンドウをアクティブにしました');
+  windowLogger.info('ランチャーをアクティブにしました');
   mainWindow.webContents.send(IPC_CHANNELS.EVENT_WINDOW_SHOWN, Date.now());
 }
 
 /**
- * メインウィンドウを表示する共通処理
+ * ランチャーを表示する共通処理
  * @param eventName 送信するイベント名
  * @param options.startTime パフォーマンス計測用の開始時刻
  * @param options.enableTimer パフォーマンスタイマーを有効にするか
@@ -772,25 +772,25 @@ async function showMainWindowInternal(
 }
 
 /**
- * メインウィンドウを表示する（ホットキー用）
+ * ランチャーを表示する（ホットキー用）
  * 設定されたモードに応じてウィンドウ位置を設定してから表示する
  */
 export async function showMainWindow(startTime?: number): Promise<void> {
   await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN, { startTime, enableTimer: true });
-  windowLogger.info('メインウィンドウを表示しました');
+  windowLogger.info('ランチャーを表示しました');
 }
 
 /**
- * メインウィンドウを表示し、アイテム検索モードに切り替える（アイテム検索ホットキー用）
+ * ランチャーを表示し、アイテム検索モードに切り替える（アイテム検索ホットキー用）
  * 設定されたモードに応じてウィンドウ位置を設定してから表示する
  */
 export async function showMainWindowWithItemSearch(startTime?: number): Promise<void> {
   await showMainWindowInternal(IPC_CHANNELS.EVENT_WINDOW_SHOWN_ITEM_SEARCH, { startTime });
-  windowLogger.info('メインウィンドウをアイテム検索モードで表示しました');
+  windowLogger.info('ランチャーをアイテム検索モードで表示しました');
 }
 
 /**
- * アイテム実行時にメインウィンドウを即座に非表示にする
+ * アイテム実行時にランチャーを即座に非表示にする
  * 起動したアプリがフォーカスを奪う（blur）のを待たずに閉じることで、
  * 起動待ちの間にEnterを連打して多重起動してしまうのを防ぐ
  * ピン留めモード、モーダルモード、初回起動モード時は非表示にしない
@@ -805,18 +805,18 @@ export function hideMainWindowOnExecute(): void {
 }
 
 /**
- * メインウィンドウが別の仮想デスクトップにあれば、今のデスクトップへ移す
+ * ランチャーが別の仮想デスクトップにあれば、今のデスクトップへ移す
  * @returns 移したら true（同じデスクトップ・全デスクトップに表示中・番号が取れないときは false）
  */
 function bringMainWindowToCurrentDesktop(): boolean {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
   const moved = moveWindowToCurrentDesktop(getHwnd(mainWindow));
-  if (moved) windowLogger.info('メインウィンドウを今の仮想デスクトップへ移しました');
+  if (moved) windowLogger.info('ランチャーを今の仮想デスクトップへ移しました');
   return moved;
 }
 
 /**
- * メインウィンドウを非表示にする（ホットキー用）
+ * ランチャーを非表示にする（ホットキー用）
  * ピン留めモード、モーダルモード、初回起動モード時は非表示にしない
  */
 export async function hideMainWindow(): Promise<void> {
@@ -843,5 +843,5 @@ export async function hideMainWindow(): Promise<void> {
   hideMainWindowInternal();
   await toggleCompanionWindows(false);
 
-  windowLogger.info('メインウィンドウを非表示にしました');
+  windowLogger.info('ランチャーを非表示にしました');
 }

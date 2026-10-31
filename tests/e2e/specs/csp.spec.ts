@@ -41,7 +41,7 @@ async function findOverlay(electronApp: ElectronApplication): Promise<Page | und
 }
 
 test.describe('QuickDashLauncher - CSP', () => {
-  test('メインウィンドウに CSP があり、差し込んだインラインスクリプトは動かない', async ({
+  test('ランチャーに CSP があり、差し込んだインラインスクリプトは動かない', async ({
     mainWindow,
   }) => {
     const utils = new TestUtils(mainWindow);

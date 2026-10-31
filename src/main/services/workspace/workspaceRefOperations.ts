@@ -33,7 +33,7 @@ import {
 /**
  * 参照アイテムの操作（ワークスペースの IPC・右クリック・CLI から共通で使う）
  *
- * メインウィンドウのアイテムの表（workspaceRefResolver）が要る操作をまとめる。表はデータファイルを読み直す
+ * ランチャーのアイテムの表（workspaceRefResolver）が要る操作をまとめる。表はデータファイルを読み直す
  * たびに作り直されるので、まだ読んでいなければここで読む
  */
 
@@ -44,7 +44,7 @@ const EMPTY_INDEX: MainItemIndex = {
 };
 
 /**
- * メインウィンドウのアイテムの表を返す（まだ無い、または refresh のときはデータファイルを読む）
+ * ランチャーのアイテムの表を返す（まだ無い、または refresh のときはデータファイルを読む）
  *
  * 読めなくてもワークスペースは開けるよう、失敗したら手元の表か空の表を返す（参照は「見つからない」として出る）
  */
@@ -61,7 +61,7 @@ export async function ensureMainItemIndex(refresh = false): Promise<MainItemInde
 
 /**
  * クリップボードアイテムなら実データを複製した参照に差し替える
- * （コピーはメインウィンドウと 1 つのファイルを共有しない。メインウィンドウで消したときにコピーが復元できなくなるため）。
+ * （コピーはランチャーと 1 つのファイルを共有しない。ランチャーで消したときにコピーが復元できなくなるため）。
  * 複製できなければ元の参照のまま
  */
 export function withOwnClipboardData<T extends AppItem>(item: T): T {
@@ -80,9 +80,9 @@ export interface AddToWorkspaceResult {
 }
 
 /**
- * メインウィンドウのアイテムをワークスペースへ足す（既定は参照。copy ならコピー）
+ * ランチャーのアイテムをワークスペースへ足す（既定は参照。copy ならコピー）
  *
- * 参照にできるのは、id を持ち、今のデータファイルにあるメインウィンドウのアイテム（通常アイテム・クリップボード・
+ * 参照にできるのは、id を持ち、今のデータファイルにあるランチャーのアイテム（通常アイテム・クリップボード・
  * セット）。フォルダ取込で展開したアイテム・ウィンドウ検索の結果などはコピーで足す
  *
  * @param options.freshClipboardData - 取り込んだばかりで、どこからも使われていないクリップボードの実データ
@@ -111,7 +111,7 @@ export async function addAppItemToWorkspace(
     groupId,
     workspaceId
   );
-  // 「メインウィンドウのアイテムだが参照できない」もの（展開したアイテム・データファイルに見つからないもの）だけ知らせる
+  // 「ランチャーのアイテムだが参照できない」もの（展開したアイテム・データファイルに見つからないもの）だけ知らせる
   // （ウィンドウ検索の結果・ファイルのドロップなどはもともとコピー）
   const fellBackToCopy =
     !options.copy &&
@@ -141,7 +141,7 @@ function candidateOf(item: ReferenceableAppItem, index: MainItemIndex): Workspac
   };
 }
 
-/** パスと引数が同じメインウィンドウのアイテム（通常アイテムだけ。表の並び順） */
+/** パスと引数が同じランチャーのアイテム（通常アイテムだけ。表の並び順） */
 function findSamePathItems(
   path: string,
   args: string | undefined,
@@ -154,7 +154,7 @@ function findSamePathItems(
   );
 }
 
-/** コピーの指す先の候補（パスと引数が同じメインウィンドウのアイテム） */
+/** コピーの指す先の候補（パスと引数が同じランチャーのアイテム） */
 export async function findLinkCandidates(id: string): Promise<WorkspaceLinkCandidate[]> {
   const service = await WorkspaceService.getInstance();
   const index = await ensureMainItemIndex();
@@ -164,11 +164,11 @@ export async function findLinkCandidates(id: string): Promise<WorkspaceLinkCandi
 }
 
 /**
- * アイテム（コピーまたは参照）を、メインウィンドウのアイテムの参照にする
+ * アイテム（コピーまたは参照）を、ランチャーのアイテムの参照にする
  *
- * - コピーのメモは、メインウィンドウのアイテムにメモが無ければメインへ移す（両方にあれば、コピーのメモは捨てる）。
+ * - コピーのメモは、ランチャーのアイテムにメモが無ければメインへ移す（両方にあれば、コピーのメモは捨てる）。
  *   メモが有るかはデータファイルの今の内容で決める（一括で同じアイテムへ続けて移すとき、先に移したメモを上書きしない）
- * - ワークスペースのセットの行がこのアイテムを指していれば、メインウィンドウのアイテムの id に付け替える
+ * - ワークスペースのセットの行がこのアイテムを指していれば、ランチャーのアイテムの id に付け替える
  *   （参照はセットの行を選ぶ候補に出さないので、ワークスペースの id のままだと編集画面で見つからなくなる）
  */
 export async function linkToMainItem(id: string, mainItemId: string): Promise<WorkspaceItem> {
@@ -195,7 +195,7 @@ export async function linkToMainItem(id: string, mainItemId: string): Promise<Wo
   return linked;
 }
 
-/** メインウィンドウへ移した結果 */
+/** ランチャーへ移した結果 */
 export interface MoveToMainResult {
   /** 参照に変えたワークスペースのアイテム */
   item: WorkspaceItem;
@@ -208,16 +208,16 @@ export interface MoveToMainResult {
 }
 
 /**
- * ワークスペースのアイテム（コピー）をメインウィンドウのデータファイルへ移し、ワークスペース側を参照に変える
+ * ワークスペースのアイテム（コピー）をランチャーのデータファイルへ移し、ワークスペース側を参照に変える
  *
  * - 中身は登録画面と同じ変換（convertRegisterItemToJsonItem）でデータファイルの末尾に足す。id は新しく振る
- * - セットは、ワークスペースのアイテムを指す行をパスの行に置き換える（メインウィンドウのセットはワークスペースを探さない）
+ * - セットは、ワークスペースのアイテムを指す行をパスの行に置き換える（ランチャーのセットはワークスペースを探さない）
  * - クリップボードは実データを複製せず、そのままメインのアイテムへ引き継ぐ（ワークスペース側は参照になり、実データを持たなくなる）
  * - 通常アイテムで、移す先のデータファイルにパスと引数が同じアイテムが既にあれば、新しく作らずにそれを指す参照にする
- *   （メインウィンドウとワークスペースの両方に登録していたアイテムを移しても、メインウィンドウに重複を作らない）。
+ *   （ランチャーとワークスペースの両方に登録していたアイテムを移しても、ランチャーに重複を作らない）。
  *   ウィンドウ切り替え・カスタムアイコンが違うときは、参照にするとコピーの設定が消えるので、これまでどおり新しく足す
  *
- * @throws 参照（もうメインウィンドウにある）・見つからないアイテム・データファイルに書けない場合
+ * @throws 参照（もうランチャーにある）・見つからないアイテム・データファイルに書けない場合
  */
 export async function moveWorkspaceItemToMain(
   id: string,
@@ -279,8 +279,8 @@ function settingsDiffer(copy: WorkspaceItem, main: ReferenceableAppItem): boolea
 }
 
 /**
- * 「メインウィンドウのアイテムとつなぐ」の一覧を作る（そのワークスペースのコピーのうち、
- * パスと引数が同じメインウィンドウのアイテムがあるもの）
+ * 「ランチャーのアイテムとつなぐ」の一覧を作る（そのワークスペースのコピーのうち、
+ * パスと引数が同じランチャーのアイテムがあるもの）
  */
 export async function previewLinkCopies(workspaceId: string): Promise<WorkspaceLinkCopiesPreview> {
   const service = await WorkspaceService.getInstance();
@@ -337,7 +337,7 @@ export async function previewLinkCopies(workspaceId: string): Promise<WorkspaceL
 /**
  * 一覧で選んだコピーを参照に変える。変えた件数を返す
  *
- * 指す先は、候補が 1 件ならそれ、2 件以上なら choices（コピーの id → メインウィンドウのアイテムの id）で選んだもの。
+ * 指す先は、候補が 1 件ならそれ、2 件以上なら choices（コピーの id → ランチャーのアイテムの id）で選んだもの。
  * choices が候補に無ければ変えない
  */
 export async function applyLinkCopies(

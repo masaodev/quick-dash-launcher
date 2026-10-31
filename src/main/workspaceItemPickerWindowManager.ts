@@ -7,7 +7,7 @@ import { ModalChildWindows, resolveWorkArea } from './utils/modalChildWindows.js
 import { mainI18n } from './services/mainI18n.js';
 
 /**
- * グループに追加するアイテムを選ぶウィンドウ（グループの右クリック「メインウィンドウのアイテムから選ぶ」）
+ * グループに追加するアイテムを選ぶウィンドウ（グループの右クリック「ランチャーのアイテムから選ぶ」）
  *
  * 編集ウィンドウと同じく、ワークスペースのレンダラーから window.open で開く独立した子ウィンドウ。
  * ワークスペースは幅が狭いことが多く、中に一覧を出すと窮屈なので別のウィンドウにする。

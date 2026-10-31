@@ -265,18 +265,21 @@ describe('runCliCommand（open・show）', () => {
     expect(openLauncherEntry).not.toHaveBeenCalled();
   });
 
-  it('show は既定でメインウィンドウ、workspace でワークスペースを出す。ほかは usage', async () => {
+  it('show は既定でランチャー、workspace でワークスペースを出す。旧名の main も受け付ける。ほかは usage', async () => {
     const show = vi.fn(async () => {});
     const ctx = context({ show });
     expect(JSON.parse((await runCliCommand(request(['show']), ctx)).stdout)).toEqual({
-      shown: 'main',
+      shown: 'launcher',
+    });
+    expect(JSON.parse((await runCliCommand(request(['show', 'main']), ctx)).stdout)).toEqual({
+      shown: 'launcher',
     });
     expect(JSON.parse((await runCliCommand(request(['show', 'workspace']), ctx)).stdout)).toEqual({
       shown: 'workspace',
     });
     const bad = await runCliCommand(request(['show', 'admin']), ctx);
     expect(bad.exitCode).toBe(CLI_EXIT.usage);
-    expect(show.mock.calls).toEqual([['main'], ['workspace']]);
+    expect(show.mock.calls).toEqual([['launcher'], ['launcher'], ['workspace']]);
   });
 });
 

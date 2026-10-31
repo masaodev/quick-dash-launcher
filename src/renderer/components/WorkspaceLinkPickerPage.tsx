@@ -19,7 +19,7 @@ interface WorkspaceLinkPickerPageProps {
   itemId: string;
 }
 
-/** 指せるアイテム（id を持つメインウィンドウのアイテム。フォルダ取込で展開したものは除く） */
+/** 指せるアイテム（id を持つランチャーのアイテム。フォルダ取込で展開したものは除く） */
 type LinkableItem = ReferenceableAppItem & { id: string };
 
 function isLinkable(item: AppItem): item is LinkableItem {
@@ -33,7 +33,7 @@ function rowKind(item: LinkableItem): SetCatalogItem['kind'] {
 }
 
 /**
- * ワークスペースのアイテムが指すメインウィンドウのアイテムを 1 つ選ぶページ（独立したウィンドウの中身）
+ * ワークスペースのアイテムが指すランチャーのアイテムを 1 つ選ぶページ（独立したウィンドウの中身）
  *
  * パスと引数が同じアイテム（候補）を先に並べる。選ぶと、そのアイテムを指す参照に置き換える
  * （コピーなら参照に変え、参照なら指す先を変える）。変更通知でワークスペース側が読み直すので、選んだら閉じるだけでよい

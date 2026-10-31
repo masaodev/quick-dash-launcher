@@ -39,9 +39,9 @@
 | --- | --- | --- |
 | **スプラッシュウィンドウ** | アプリケーション起動時に自動表示 | なし（起動時のローディング画面。`src/main/splashWindowManager.ts`） |
 | **初回設定画面** | 初回起動時（`hotkey`が空文字列または未設定の場合） | [first-launch-setup.md](./first-launch-setup.md) |
-| **メインウィンドウ** | 起動時に既定で表示<br>Alt+Spaceで表示/非表示（既定） | [main-window.md](./main-window.md) |
+| **ランチャー** | 起動時に既定で表示<br>Alt+Spaceで表示/非表示（既定） | [main-window.md](./main-window.md) |
 | **管理ウィンドウ** | Ctrl+E または設定メニューから | [admin-window.md](./admin-window.md) |
-| **ワークスペースウィンドウ** | Ctrl+W<br>メインウィンドウのヘッダーの ⭐ ボタン<br>開いていて 📌 なしなら、メイン画面の表示時に一緒に出る | [workspace-window.md](./workspace-window.md) |
+| **ワークスペースウィンドウ** | Ctrl+W<br>ランチャーのヘッダーの ⭐ ボタン<br>開いていて 📌 なしなら、ランチャーの表示時に一緒に出る | [workspace-window.md](./workspace-window.md) |
 | **グループの切り離しウィンドウ** | ワークスペースウィンドウのグループヘッダーをウィンドウの外へドラッグしてドロップしたとき<br>前回開いていたものはワークスペースウィンドウの初回表示時に復元 | [workspace-window.md](./workspace-window.md#519-グループを切り離す)（`src/main/detachedGroupWindowManager.ts`。構成は [システム概要](../architecture/overview.md#ウィンドウとレンダラープロセスの対応)、連動非表示は [ウィンドウ制御](../architecture/window-control.md#ウィンドウ非表示の判定)） |
 | **オーバーレイウィンドウ** | 独立トーストの表示時、ウィンドウ位置を記録した行があるセットを開いたときの進み具合の表示時（1 枚を共用） | なし（`overlay.html`・`src/main/services/overlayWindowService.ts`。説明は [トースト通知](../features/toast-notifications.md#独立トースト)） |
 
@@ -54,21 +54,21 @@
 | **アイテム登録・編集**（`RegisterWindowPage`） | ファイルドラッグ&ドロップ時<br>➕ボタンクリック時<br>右クリック→「編集」選択時<br>管理画面で✏️ボタンクリック時 | [register-modal.md](./register-modal.md) |
 | **アイコン取得結果**（`IconProgressDetailModal`、`MainChildPage` 経由） | アイコン一括取得完了後、進捗バーの「詳細」ボタンクリック時 | [icon-progress-detail-modal.md](./icon-progress-detail-modal.md) |
 | **ワークスペースアイテム編集**（`WorkspaceItemEditPage`） | ワークスペースウィンドウ・切り離しウィンドウでアイテムを右クリック→「編集」 | [workspace-window.md](./workspace-window.md#各メニュー項目の処理) の「編集」 |
-| **グループに追加するアイテム**（`WorkspaceItemPickerPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「➕ アイテムを追加」→「🔍 メインウィンドウのアイテムから選ぶ…」 | [workspace-window.md](./workspace-window.md#589-グループを右クリックしてアイテムを追加)（一覧の操作は [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) と同じ） |
+| **グループに追加するアイテム**（`WorkspaceItemPickerPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「➕ アイテムを追加」→「🔍 ランチャーのアイテムから選ぶ…」 | [workspace-window.md](./workspace-window.md#589-グループを右クリックしてアイテムを追加)（一覧の操作は [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) と同じ） |
 | **ワークスペースにアイテムを追加**（`WorkspaceNewItemPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループを右クリック→「➕ アイテムを追加」→「✏️ 新しく入力して追加…」 | [workspace-window.md](./workspace-window.md#589-グループを右クリックしてアイテムを追加)（欄は編集ウィンドウと同じ） |
 | **指すアイテムを選ぶ**（`WorkspaceLinkPickerPage`） | ワークスペースウィンドウ・切り離しウィンドウで、参照を右クリック→「🔁 別のアイテムを指す…」 | [workspace-window.md](./workspace-window.md#520-指すアイテムを選ぶ)（一覧の操作は [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) と同じ） |
-| **メインウィンドウのアイテムとつなぐ**（`WorkspaceLinkCopiesPage`） | ワークスペースウィンドウでタブを右クリック→「🔗 メインウィンドウのアイテムとつなぐ…」 | [workspace-window.md](./workspace-window.md#521-メインウィンドウのアイテムとつなぐ) |
+| **ランチャーのアイテムとつなぐ**（`WorkspaceLinkCopiesPage`） | ワークスペースウィンドウでタブを右クリック→「🔗 ランチャーのアイテムとつなぐ…」 | [workspace-window.md](./workspace-window.md#521-ランチャーのアイテムとつなぐ) |
 | **ワークスペースの確認**（`WorkspaceConfirmPage`） | ワークスペースウィンドウ・切り離しウィンドウでグループのアーカイブ・削除を選んだとき | なし（`src/main/workspaceConfirmWindowManager.ts`。説明は [ウィンドウ制御](../architecture/window-control.md#確認ウィンドウグループの削除アーカイブ)） |
 
 ### モーダル
 
 | 画面名 | 表示条件 | 仕様書 |
 | --- | --- | --- |
-| **ブックマーク取込画面**（`BookmarkImportModal`） | 管理ウィンドウの追加の ▼ メニュー「🔖 ブラウザのブックマークから追加」<br>メインウィンドウの ➕ の「🔖 ブラウザのブックマークから追加」<br>設定「ブックマーク自動取込」の「手動で取り込む」 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
+| **ブックマーク取込画面**（`BookmarkImportModal`） | 管理ウィンドウの追加の ▼ メニュー「🔖 ブラウザのブックマークから追加」<br>ランチャーの ➕ の「🔖 ブラウザのブックマークから追加」<br>設定「ブックマーク自動取込」の「手動で取り込む」 | [bookmark-import-modal.md](./bookmark-import-modal.md) |
 | **ブックマークの取込ルールの追加・編集画面**（`BookmarkAutoImportRuleModal`） | 設定「ブックマーク自動取込」の「＋ ルールを追加」「編集」 | [bookmark-rule-modal.md](./bookmark-rule-modal.md) |
-| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの追加の ▼ メニュー「💻 インストール済みアプリから追加」<br>メインウィンドウの ➕ の「💻 インストール済みアプリから追加」 | [app-import-modal.md](./app-import-modal.md) |
+| **アプリ取込画面**（`AppImportModal`） | 管理ウィンドウの追加の ▼ メニュー「💻 インストール済みアプリから追加」<br>ランチャーの ➕ の「💻 インストール済みアプリから追加」 | [app-import-modal.md](./app-import-modal.md) |
 | **バックアップスナップショットモーダル**（`BackupSnapshotModal`） | 設定のバックアップ欄の「スナップショット一覧」ボタン | [admin-window.md](./admin-window.md#551-スナップショット一覧) |
-| **メモ表示モーダル**（`MemoViewModal`） | メインウィンドウのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | [main-window.md](./main-window.md#5101-メモを表示) |
+| **メモ表示モーダル**（`MemoViewModal`） | ランチャーのアイテム一覧で 📝 バッジのクリック<br>右クリックメニューの「📝 メモを表示」 | [main-window.md](./main-window.md#5101-メモを表示) |
 | **セットに追加するアイテム**（`SetItemPickerModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ アイテムを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#2-セットに追加するアイテム) |
 | **ウィンドウを追加**（`SetAddWindowsModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「＋ ウィンドウを追加」クリック時 | [set-editor-modals.md](./set-editor-modals.md#3-ウィンドウを追加) |
 | **ウィンドウ位置を更新**（`SetUpdatePositionsModal`） | アイテム登録・編集、ワークスペースアイテム編集でセットの「📍 ウィンドウ位置を更新」クリック時 | [set-editor-modals.md](./set-editor-modals.md#4-ウィンドウ位置を更新) |

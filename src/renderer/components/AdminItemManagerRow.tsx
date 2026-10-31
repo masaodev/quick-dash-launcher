@@ -146,7 +146,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     if (iconData) {
       return <img src={iconData} alt="" className="item-icon-image" />;
     }
-    // アイコンが無いときは、メイン画面と同じ種類ごとの絵文字を出す
+    // アイコンが無いときは、ランチャーと同じ種類ごとの絵文字を出す
     if (jsonItem.type === 'clipboard') return <span className="folder-emoji">📋</span>;
     if (jsonItem.type === 'set') return <span className="folder-emoji">📦</span>;
     if (jsonItem.type === 'dir') return <span className="folder-emoji">🗂️</span>;

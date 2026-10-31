@@ -81,7 +81,7 @@
   --bg-file-bar: #e0f2ef;
   --color-file: var(--group-color-teal);
 
-  /* メインウィンドウの検索モードの色。既定は通常検索モードの値で、
+  /* ランチャーの検索モードの色。既定は通常検索モードの値で、
      ウィンドウ検索モードでは .app.search-mode-window で差し替える（index.css）。
      紫＝通常の青と分け、危険・警告・成功の赤・黄・緑を避けた色 */
   --color-window-search: #7b3fc4;
@@ -183,7 +183,7 @@
   --set-row-name-min-width: 200px; /* セットの行の名前の列（これより狭いときは位置の列を縮める） */
   --admin-status-bar-height: 36px; /* アイテム管理の下の件数の帯（トーストをその上に出す） */
   --workspace-tab-max-width: 160px; /* ワークスペースのタブ名の最大幅（超えたら省略） */
-  --data-tab-name-max-width: 160px; /* メインウィンドウ・アイテム管理のタブ名の最大幅（超えたら省略） */
+  --data-tab-name-max-width: 160px; /* ランチャー・アイテム管理のタブ名の最大幅（超えたら省略） */
   --input-height-lg: 40px;
   --input-height-sm: 34px;
   --input-height: 32px;

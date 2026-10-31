@@ -111,7 +111,7 @@ export interface ElectronAPI {
   runItemAsAdmin: (item: LauncherItem) => Promise<void>;
   /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
   executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
-  /** WSグループのアイテムを開く（そのグループの切り離しウィンドウを開く。メインウィンドウは隠さない）。グループが無ければ success: false */
+  /** WSグループのアイテムを開く（そのグループの切り離しウィンドウを開く。ランチャーは隠さない）。グループが無ければ success: false */
   openWsGroup: (groupId: string) => Promise<{ success: boolean }>;
   openConfigFolder: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
@@ -131,9 +131,9 @@ export interface ElectronAPI {
   ) => Promise<{ favicons: Record<string, string | null>; icons: Record<string, string | null> }>;
   // キャッシュ欠損の補完API（進捗通知なし）
   ensureIcons: (items: LauncherItem[]) => Promise<Record<string, string>>;
-  /** メインウィンドウに、未取得のアイコンを全タブ分取るよう頼む（進捗バーはメインウィンドウに出る） */
+  /** ランチャーに、未取得のアイコンを全タブ分取るよう頼む（進捗バーはランチャーに出る） */
   requestFetchMissingIcons: () => Promise<void>;
-  /** メインウィンドウ用: ほかのウィンドウから未取得のアイコンの取得を頼まれた */
+  /** ランチャー用: ほかのウィンドウから未取得のアイコンの取得を頼まれた */
   onFetchMissingIconsRequested: (callback: () => void) => () => void;
   // アイコン取得エラー記録を取得
   getIconFetchErrors: () => Promise<IconFetchErrorRecord[]>;
@@ -179,7 +179,7 @@ export interface ElectronAPI {
     /** メインプロセス側で段階が変わったとき（このウィンドウの分だけ届く） */
     onChanged: (callback: (level: PinLevel) => void) => () => void;
   };
-  /** true のあいだ、メインウィンドウの Esc を隠す処理に回さずページで受ける（複数選択の解除・確認の取り消し） */
+  /** true のあいだ、ランチャーの Esc を隠す処理に回さずページで受ける（複数選択の解除・確認の取り消し） */
   setEscapeHandledByPage: (handled: boolean) => void;
   /** 呼び出したウィンドウの移動を始める（マウスのボタンを押している間に呼ぶ。切り離しウィンドウの見出しを掴んだとき） */
   startWindowMove: () => void;
@@ -287,14 +287,14 @@ export interface ElectronAPI {
   /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
   readClipboardForRegister: () => Promise<{ files: string[]; text: string }>;
   /**
-   * メイン画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
-   * 開き元（メイン画面・管理画面）は動かさない。子ウィンドウが閉じたら、子が返した内容
+   * ランチャーの子ウィンドウ（アイテムの登録・編集、アイコン取得結果）を開く
+   * 開き元（ランチャー・管理画面）は動かさない。子ウィンドウが閉じたら、子が返した内容
    * （returnToOpener のとき。なければ null）で解決する
    */
   openMainChildWindow: (request: MainChildWindowRequest) => Promise<MainChildWindowReturn | null>;
   /** 子ウィンドウが自分の requestId で要求（表示内容）を受け取る */
   getMainChildWindowRequest: (requestId: string) => Promise<MainChildWindowRequest | null>;
-  /** 子ウィンドウでの操作結果をメイン画面へ知らせる（トースト表示用） */
+  /** 子ウィンドウでの操作結果をランチャーへ知らせる（トースト表示用） */
   notifyMainChildWindowResult: (result: MainChildWindowResult) => void;
   /** 子ウィンドウが開き元へ返す内容を預ける（returnToOpener のとき。この後 window.close する） */
   returnMainChildWindowValue: (requestId: string, value: MainChildWindowReturn) => Promise<void>;
@@ -334,7 +334,7 @@ export interface ElectronAPI {
     reorderWorkspaces: (ids: string[]) => Promise<{ success: boolean }>;
     // アイテム管理
     loadItems: () => Promise<WorkspaceItem[]>;
-    /** メインウィンドウのアイテムを足す（既定は参照。copy ならコピー。参照できないものはコピー） */
+    /** ランチャーのアイテムを足す（既定は参照。copy ならコピー。参照できないものはコピー） */
     addItem: (
       item: AppItem,
       groupId?: string,
@@ -357,25 +357,25 @@ export interface ElectronAPI {
     updateItem: (id: string, updates: WorkspaceItemUpdate) => Promise<{ success: boolean }>;
     launchItem: (item: WorkspaceItem, options?: LaunchOptions) => Promise<{ success: boolean }>;
     // 参照アイテム
-    /** 参照をコピーにする（メインウィンドウと切り離す） */
+    /** 参照をコピーにする（ランチャーと切り離す） */
     convertToCopy: (id: string) => Promise<{ success: boolean; item?: WorkspaceItem }>;
-    /** アイテム（コピー・参照）を、メインウィンドウのアイテムの参照にする */
+    /** アイテム（コピー・参照）を、ランチャーのアイテムの参照にする */
     linkToMain: (
       id: string,
       mainItemId: string
     ) => Promise<{ success: boolean; item?: WorkspaceItem }>;
-    /** アイテム（コピー）をメインウィンドウのデータファイルへ移し、参照に変える（結果はトーストで知らせる） */
+    /** アイテム（コピー）をランチャーのデータファイルへ移し、参照に変える（結果はトーストで知らせる） */
     moveToMain: (id: string, file?: string) => Promise<boolean>;
-    /** コピーの指す先の候補（パスと引数が同じメインウィンドウのアイテム） */
+    /** コピーの指す先の候補（パスと引数が同じランチャーのアイテム） */
     findLinkCandidates: (id: string) => Promise<WorkspaceLinkCandidate[]>;
-    /** 「メインウィンドウのアイテムとつなぐ」の一覧 */
+    /** 「ランチャーのアイテムとつなぐ」の一覧 */
     previewLinkCopies: (workspaceId: string) => Promise<WorkspaceLinkCopiesPreview>;
-    /** 一覧で選んだコピーを参照に変える（choices＝候補が 2 件以上のコピーで選んだ指す先。コピーの id → メインウィンドウのアイテムの id） */
+    /** 一覧で選んだコピーを参照に変える（choices＝候補が 2 件以上のコピーで選んだ指す先。コピーの id → ランチャーのアイテムの id） */
     applyLinkCopies: (
       ids: string[],
       choices?: Record<string, string>
     ) => Promise<{ success: boolean; count?: number }>;
-    /** メインウィンドウのアイテムの id ごとの、ワークスペースの参照の数（0 件は返さない） */
+    /** ランチャーのアイテムの id ごとの、ワークスペースの参照の数（0 件は返さない） */
     countRefs: (itemIds: string[]) => Promise<Record<string, number>>;
     /** 参照の指す先を付け替える（消した id → 残す id。アイテム管理の「重複を統合」を保存したとき） */
     remapRefs: (idMap: Record<string, string>) => Promise<{ success: boolean; count?: number }>;
@@ -429,9 +429,9 @@ export interface ElectronAPI {
     openItemEditor: (itemId: string) => Promise<void>;
     /** グループに追加するアイテムを選ぶウィンドウを開く */
     openItemPicker: (groupId: string) => Promise<void>;
-    /** アイテムが指すメインウィンドウのアイテムを選ぶウィンドウを開く（参照の指し直し・コピーを参照にする） */
+    /** アイテムが指すランチャーのアイテムを選ぶウィンドウを開く（参照の指し直し・コピーを参照にする） */
     openLinkPicker: (itemId: string) => Promise<void>;
-    /** 「メインウィンドウのアイテムとつなぐ」のウィンドウを開く */
+    /** 「ランチャーのアイテムとつなぐ」のウィンドウを開く */
     openLinkCopies: (workspaceId: string) => Promise<void>;
     /** グループに新しいアイテムを入力して追加するウィンドウを開く */
     openNewItemEditor: (groupId: string) => Promise<void>;
@@ -483,7 +483,7 @@ export interface ElectronAPI {
   closeWindow: (hwnd: number | bigint) => Promise<{ success: boolean; error?: string }>;
   /** ウィンドウが閉じる（か隠れる）のを、まとめて最大 1 秒待つ */
   waitForWindowsClosed: (hwnds: (number | bigint)[]) => Promise<void>;
-  // トーストウィンドウAPI（メインウィンドウが閉じた後も表示可能）
+  // トーストウィンドウAPI（ランチャーが閉じた後も表示可能）
   showToastWindow: (options: ToastOptions) => Promise<void>;
   // 独立トーストのイベントリスナー（overlay.html 用）
   onShowToast: (callback: (data: ToastEventData) => void) => () => void;
@@ -552,13 +552,13 @@ export interface ElectronAPI {
   onLauncherMenuDeleteItem: (callback: (item: AppItem) => void) => () => void;
   /** フォルダ取込で並んだアイテムの右クリック「この取込から外す…」 */
   onLauncherMenuExcludeFromDir: (callback: (item: AppItem) => void) => () => void;
-  /** メインウィンドウの一覧の余白の右クリックメニュー */
+  /** ランチャーの一覧の余白の右クリックメニュー */
   showLauncherBlankContextMenu: () => Promise<void>;
   onLauncherBlankMenuAddItem: (callback: () => void) => () => void;
   onLauncherBlankMenuRegisterFromClipboard: (callback: () => void) => () => void;
   onLauncherBlankMenuAddFolderImport: (callback: () => void) => () => void;
   /**
-   * メインウィンドウの検索欄の右クリックメニュー（文字のメニューの下に「検索履歴 ▸」）。
+   * ランチャーの検索欄の右クリックメニュー（文字のメニューの下に「検索履歴 ▸」）。
    * 文字のメニューの押せる・押せないは画面側で決めて渡す（画面側で右クリックを受けるため）
    */
   showSearchBoxContextMenu: (flags: SearchBoxEditFlags, history: string[]) => Promise<void>;

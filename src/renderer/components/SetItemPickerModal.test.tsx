@@ -54,7 +54,7 @@ describe('SetItemPickerModal', () => {
     expect(screen.getByText('電卓')).toBeTruthy();
   });
 
-  it('検索は空白で区切った言葉をすべて含むものに絞る（メインウィンドウと同じ）', () => {
+  it('検索は空白で区切った言葉をすべて含むものに絞る（ランチャーと同じ）', () => {
     renderPicker([
       item('a', 'Git Bash ai-workspace', 'メイン'),
       item('b', 'Git Bash stock_calc', 'メイン'),

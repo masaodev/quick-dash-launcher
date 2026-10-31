@@ -46,7 +46,7 @@ const creatingGroupIds = new Set<string>();
 
 /**
  * まだ初めての表示をしていない groupId。中身に合わせて大きさを決めた後（またはしばらく待った後）に 1 回だけ出す。
- * 隠したまま作ったもの（起動時に開き直した 📌 なしのもの）は入れない。メインウィンドウと一緒に出る
+ * 隠したまま作ったもの（起動時に開き直した 📌 なしのもの）は入れない。ランチャーと一緒に出る
  */
 const pendingInitialShow = new Set<string>();
 
@@ -142,7 +142,7 @@ export function takeDetachedInitialShow(win: BrowserWindow): boolean {
 
 /**
  * レンダラーが setBounds で変えた大きさを、切り離しウィンドウの覚えているサイズにする
- * （覚えないと、メインウィンドウと同じディスプレイへ移すたびに、切り離した直後の大きさに戻ってしまう）
+ * （覚えないと、ランチャーと同じディスプレイへ移すたびに、切り離した直後の大きさに戻ってしまう）
  * - userResize: 端のドラッグ。幅・高さを覚え、位置も変わった（左端・上端）なら位置の基準も覚え直す
  * - autoFit: 中身に合わせた高さ。高さだけを覚える（幅は小さいディスプレイで表示だけ縮めたものかもしれない）。
  *   上端を動かさずに伸び縮みするので、位置の基準も覚え直す（中央を基準にしていると、次に移したとき上端がずれるため）
@@ -235,7 +235,7 @@ function resolveInitialPosition(
   };
 }
 
-/** メインウィンドウと同じディスプレイの作業領域 */
+/** ランチャーと同じディスプレイの作業領域 */
 function getReferenceWorkArea(): Bounds {
   return getMainWindowDisplay().workArea;
 }
@@ -265,7 +265,7 @@ function markProgrammaticPlacement(groupId: string, bounds: Bounds): void {
 }
 
 /**
- * 切り離しウィンドウを、覚えた位置のままメインウィンドウと同じディスプレイへ移す
+ * 切り離しウィンドウを、覚えた位置のままランチャーと同じディスプレイへ移す
  * （まだ位置を覚えていなければ、今載っているディスプレイに対する位置を使う）
  */
 function placeOnMainWindowDisplay(groupId: string, win: BrowserWindow): void {
@@ -307,7 +307,7 @@ function createStandaloneWindow(
 /**
  * 切り離しグループウィンドウを作成する（既存ならフォーカスのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
- * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（メインウィンドウと一緒に出る）
+ * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（ランチャーと一緒に出る）
  */
 export async function createDetachedGroupWindow(
   groupId: string,
@@ -373,7 +373,7 @@ export async function createDetachedGroupWindow(
   let width = savedBounds?.width ?? defaultWidth;
   let height = savedBounds?.height ?? defaultHeight;
   let position = resolveInitialPosition(savedBounds, cursorX, cursorY, width, height);
-  // 前回のウィンドウを開き直すとき、メインウィンドウと同じディスプレイに出す設定なら覚えた位置で当てる（ピン留めしたものは置いた場所のまま）
+  // 前回のウィンドウを開き直すとき、ランチャーと同じディスプレイに出す設定なら覚えた位置で当てる（ピン留めしたものは置いた場所のまま）
   const placedByAnchor = followMainWindow && savedPinMode === 0 && savedAnchor !== null;
   if (placedByAnchor && savedAnchor) {
     const target = placeByMonitorAnchor(savedAnchor, { width, height }, getReferenceWorkArea());
@@ -638,8 +638,8 @@ export function hideAllDetachedGroupWindows(): { success: boolean } {
 /**
  * ピン留めしていない切り離しウィンドウを再表示する（フォーカスを奪わない）
  * ピン留めしたものは出たままなので触らない。ほかのアプリが前面のうちは手前に来ないことがあるので、
- * メインウィンドウにフォーカスを移した後に bringDetachedToFront で手前に出し直す
- * @param options.placeOnMainWindowDisplay true なら、ピン留めしていないウィンドウを表示する前にメインウィンドウと同じディスプレイへ移す
+ * ランチャーにフォーカスを移した後に bringDetachedToFront で手前に出し直す
+ * @param options.placeOnMainWindowDisplay true なら、ピン留めしていないウィンドウを表示する前にランチャーと同じディスプレイへ移す
  *   （子ウィンドウを開いていて隠さなかったものは動かさない）
  */
 export function showAllDetachedGroupWindows(options?: { placeOnMainWindowDisplay?: boolean }): {
@@ -718,7 +718,7 @@ export async function applyDetachedVisibilityOnAllDesktops(): Promise<void> {
 /**
  * 前回開いていた切り離しウィンドウを復元する（存在するグループのみ）
  * @param options.skipFocus trueの場合、フォーカスを奪わずに表示する
- * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（起動時。メインウィンドウと一緒に出る）
+ * @param options.startHiddenUnlessPinned trueの場合、📌 なしのものは隠したまま作る（起動時。ランチャーと一緒に出る）
  */
 export async function restoreDetachedWindows(options?: {
   skipFocus?: boolean;

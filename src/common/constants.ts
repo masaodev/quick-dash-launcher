@@ -47,20 +47,20 @@ export const WORKSPACE_EDITOR_WINDOW_NAME_PREFIX = 'workspace-editor:';
 export const WORKSPACE_CONFIRM_WINDOW_NAME_PREFIX = 'workspace-confirm:';
 
 /**
- * グループに追加するアイテムを選ぶウィンドウ（グループの右クリック「メインウィンドウのアイテムから選ぶ」）の window.name 接頭辞
+ * グループに追加するアイテムを選ぶウィンドウ（グループの右クリック「ランチャーのアイテムから選ぶ」）の window.name 接頭辞
  * ワークスペースのレンダラーが window.open で開く子ウィンドウに `<接頭辞><groupId>` という名前を付け、
  * レンダラー側で追加先のグループを判定する
  */
 export const WORKSPACE_PICKER_WINDOW_NAME_PREFIX = 'workspace-picker:';
 
 /**
- * ワークスペースの参照が指すメインウィンドウのアイテムを選ぶウィンドウ（参照の「別のアイテムを指す」）の
+ * ワークスペースの参照が指すランチャーのアイテムを選ぶウィンドウ（参照の「別のアイテムを指す」）の
  * window.name 接頭辞。`<接頭辞><itemId>`
  */
 export const WORKSPACE_LINK_PICKER_WINDOW_NAME_PREFIX = 'workspace-link-picker:';
 
 /**
- * 「メインウィンドウのアイテムとつなぐ」ウィンドウ（ワークスペースのタブの右クリック）の window.name 接頭辞。
+ * 「ランチャーのアイテムとつなぐ」ウィンドウ（ワークスペースのタブの右クリック）の window.name 接頭辞。
  * `<接頭辞><workspaceId>`
  */
 export const WORKSPACE_LINK_COPIES_WINDOW_NAME_PREFIX = 'workspace-link-copies:';
@@ -72,7 +72,7 @@ export const WORKSPACE_LINK_COPIES_WINDOW_NAME_PREFIX = 'workspace-link-copies:'
 export const WORKSPACE_NEW_ITEM_WINDOW_NAME_PREFIX = 'workspace-new-item:';
 
 /**
- * メイン画面が開く子ウィンドウ（アイテムの登録・編集、アイコン取得結果）の window.name 接頭辞
+ * ランチャーが開く子ウィンドウ（アイテムの登録・編集、アイコン取得結果）の window.name 接頭辞
  * メインのレンダラーが window.open で開く子ウィンドウに `<接頭辞><requestId>` という名前を付け、
  * レンダラー側で requestId を取り出して表示内容（要求）をメインプロセスから受け取る
  */
@@ -80,7 +80,7 @@ export const MAIN_CHILD_WINDOW_NAME_PREFIX = 'main-child:';
 
 /**
  * ワークスペースのアイテムをドラッグするときに、アイテムの JSON を載せる dataTransfer の型
- * メインウィンドウに落とすと、このアイテムを初期値にして登録画面を開く
+ * ランチャーに落とすと、このアイテムを初期値にして登録画面を開く
  */
 export const WORKSPACE_ITEM_DRAG_TYPE = 'workspaceItem';
 

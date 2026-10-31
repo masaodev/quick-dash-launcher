@@ -16,7 +16,7 @@ import type { CliCandidate } from './cliArgs.js';
 import { resolveOne } from './cliShared.js';
 
 /**
- * qdl launcher tab … — メイン画面のタブとデータファイルの構成（settings.json の dataFileTabs・dataFileLabels）
+ * qdl launcher tab … — ランチャーのタブとデータファイルの構成（settings.json の dataFileTabs・dataFileLabels）
  *
  * 構成の計算はアイテム管理画面と同じ TabStructureEdits を使い、確定の順も同じにする
  * （新しいファイルを作る → 設定を保存する → 要らなくなったファイルを消す）。

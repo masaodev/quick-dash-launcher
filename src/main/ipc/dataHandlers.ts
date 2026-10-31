@@ -50,7 +50,7 @@ export function setupDataHandlers(configFolder: string) {
     deleteDataFile(configFolder, fileName)
   );
 
-  // メイン画面の初回読み込み・F5。ワークスペースも含めて読み直し、レポートを書く
+  // ランチャーの初回読み込み・F5。ワークスペースも含めて読み直し、レポートを書く
   handleIpc(IPC_CHANNELS.LOAD_DATA_FILES, (_event, trigger?: LoadTrigger) =>
     reloadConfigFiles(configFolder, trigger)
   );

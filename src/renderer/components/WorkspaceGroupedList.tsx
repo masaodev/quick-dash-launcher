@@ -197,7 +197,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       const targetPath = pathType === 'parent' ? PathUtils.getParentPath(basePath) : basePath;
 
       if (operation === 'copy') {
-        // メインウィンドウと同じく、画面の右下に「コピーしました」を出す
+        // ランチャーと同じく、画面の右下に「コピーしました」を出す
         const target = useOriginalPath
           ? pathType === 'parent'
             ? 'shortcutParentPath'
@@ -426,7 +426,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     if (kind === 'item') {
       const item = itemsMap.get(id);
       e.dataTransfer.setData('currentGroupId', item?.groupId || '');
-      // メインウィンドウに落とすと、このアイテムを初期値にして登録画面を開く（別のウィンドウなので ID では引けない）
+      // ランチャーに落とすと、このアイテムを初期値にして登録画面を開く（別のウィンドウなので ID では引けない）
       if (item) e.dataTransfer.setData(WORKSPACE_ITEM_DRAG_TYPE, JSON.stringify(item));
     } else {
       e.dataTransfer.setData('currentParentGroupId', groupsMap.get(id)?.parentGroupId || '');
@@ -653,7 +653,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   /**
    * AppItem（LauncherItem/SetItem/ClipboardItem）をワークスペースに追加
    *
-   * 既定はメインウィンドウのアイテムの参照で、Ctrl を押してドロップしたときはコピー（エクスプローラーの Ctrl と同じ）。
+   * 既定はランチャーのアイテムの参照で、Ctrl を押してドロップしたときはコピー（エクスプローラーの Ctrl と同じ）。
    * ウィンドウ検索結果は送り側でパスの無い単一アイテム（exe 名＋タイトル）に変換済み（もともとコピー）。
    * windowPosition（placement）が付いていて Ctrl を押してドロップしたときだけ、今の位置・サイズも記録する
    */

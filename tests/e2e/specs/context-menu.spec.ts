@@ -130,7 +130,7 @@ $Shortcut.Save()
         type: 'url',
       });
 
-      // 編集は独立した子ウィンドウで開く（メインウィンドウは動かさない）
+      // 編集は独立した子ウィンドウで開く（ランチャーは動かさない）
       const editor = await utils.waitForRegisterWindow(electronApp);
       await expect(editor.locator('.register-modal h2')).toContainText('アイテムの編集');
       await expect(editor).toHaveTitle('アイテムの編集');

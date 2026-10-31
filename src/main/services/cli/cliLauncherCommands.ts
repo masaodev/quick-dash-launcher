@@ -21,7 +21,7 @@ import { normalizeDataFileName as normalizeFileName } from './cliTabCommands.js'
 import { checkCliSetEntries, entryFromOptions } from './cliSetCommands.js';
 
 /**
- * qdl launcher item … — メイン画面のアイテム（datafiles/data*.json）
+ * qdl launcher item … — ランチャーのアイテム（datafiles/data*.json）
  */
 
 export interface LauncherEntry {
@@ -32,7 +32,7 @@ export interface LauncherEntry {
   invalid?: string;
 }
 
-/** メイン画面のアイテムの読み書き（本体の既存の処理を包む。テストでは差し替える） */
+/** ランチャーのアイテムの読み書き（本体の既存の処理を包む。テストでは差し替える） */
 export interface LauncherStore {
   load(): Promise<LauncherEntry[]>;
   dataFiles(): string[];
@@ -383,7 +383,7 @@ async function addClipboard(parsed: ParsedArgs, ctx: LauncherCommandContext): Pr
   return view({ item, file: targetFile }, tabs);
 }
 
-/** メイン画面のアイテムを id か表示名の完全一致で 1 件に絞る（ワークスペースの --from でも使う） */
+/** ランチャーのアイテムを id か表示名の完全一致で 1 件に絞る（ワークスペースの --from でも使う） */
 export async function findLauncherEntry(key: string, store: LauncherStore): Promise<LauncherEntry> {
   const tabs = await store.tabs();
   return resolveOne(

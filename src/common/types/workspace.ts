@@ -43,7 +43,7 @@ interface RuntimeIcon {
 
 /**
  * 参照の解決の結果
- * - ok: メインウィンドウのアイテムが見つかった（中身はそのアイテムのもの）
+ * - ok: ランチャーのアイテムが見つかった（中身はそのアイテムのもの）
  * - missing: 見つからない（消された・id が変わった）
  * - unsupported: 見つかったが参照できない種別（フォルダ取込）
  */
@@ -56,19 +56,19 @@ export type WorkspaceRefStatus = 'ok' | 'missing' | 'unsupported';
  * （item / clipboard / set）の形で中身を持ち、この情報で参照だと分かる
  */
 export interface WorkspaceRefInfo {
-  /** 指すメインウィンドウのアイテムの id */
+  /** 指すランチャーのアイテムの id */
   itemId: string;
-  /** ワークスペースでの表示名（無ければメインウィンドウの表示名を使う） */
+  /** ワークスペースでの表示名（無ければランチャーの表示名を使う） */
   alias?: string;
-  /** 最後に見たメインウィンドウの表示名 */
+  /** 最後に見たランチャーの表示名 */
   lastKnownName?: string;
   /** 解決の結果 */
   status: WorkspaceRefStatus;
-  /** メインウィンドウのアイテムの表示名（解決できたときだけ） */
+  /** ランチャーのアイテムの表示名（解決できたときだけ） */
   mainDisplayName?: string;
-  /** メインウィンドウのアイテムのデータファイル（解決できたときだけ） */
+  /** ランチャーのアイテムのデータファイル（解決できたときだけ） */
   sourceFile?: string;
-  /** メインウィンドウのアイテムのタブの名前（解決できたときだけ） */
+  /** ランチャーのアイテムのタブの名前（解決できたときだけ） */
   tabName?: string;
 }
 
@@ -103,7 +103,7 @@ export type WorkspaceRefItem = Omit<JsonWorkspaceRefItem, 'displayName' | 'lastK
 /**
  * ワークスペースに追加されたアイテム（実行時）。type で判別できる union
  *
- * メインウィンドウのアイテムのコピー（item / clipboard / set）か、参照（ref。解決できたら指す先の種別の形になり
+ * ランチャーのアイテムのコピー（item / clipboard / set）か、参照（ref。解決できたら指す先の種別の形になり
  * ref を持つ）
  */
 export type WorkspaceItem =
@@ -151,9 +151,9 @@ export type ArchivedWorkspaceGroup = JsonArchivedWorkspaceGroup;
 /** アーカイブされたアイテム（実行時） */
 export type ArchivedWorkspaceItem = WorkspaceItem & JsonArchivedItemMeta;
 
-/** コピーを参照に変えるときの、指す先の候補（メインウィンドウのアイテム） */
+/** コピーを参照に変えるときの、指す先の候補（ランチャーのアイテム） */
 export interface WorkspaceLinkCandidate {
-  /** メインウィンドウのアイテムの id */
+  /** ランチャーのアイテムの id */
   itemId: string;
   /** 表示名 */
   displayName: string;
@@ -162,9 +162,9 @@ export interface WorkspaceLinkCandidate {
 }
 
 /**
- * 「メインウィンドウのアイテムとつなぐ」の 1 行（パスと引数が同じメインウィンドウのアイテムがあるコピー）
+ * 「ランチャーのアイテムとつなぐ」の 1 行（パスと引数が同じランチャーのアイテムがあるコピー）
  *
- * memo: none＝どちらにも無いか同じ／move＝コピーにだけあり、メインウィンドウへ移す／conflict＝両方にあって違う
+ * memo: none＝どちらにも無いか同じ／move＝コピーにだけあり、ランチャーへ移す／conflict＝両方にあって違う
  */
 export interface WorkspaceLinkCopyEntry {
   /** ワークスペースのアイテムの id */
@@ -173,17 +173,17 @@ export interface WorkspaceLinkCopyEntry {
   displayName: string;
   /** 候補（2 件以上なら選べないので、右クリックから 1 件ずつ選ぶ） */
   candidates: WorkspaceLinkCandidate[];
-  /** 参照にしたあとのワークスペースでの表示名（メインウィンドウの表示名と違うときだけ） */
+  /** 参照にしたあとのワークスペースでの表示名（ランチャーの表示名と違うときだけ） */
   alias?: string;
   /** メモの扱い */
   memo: 'none' | 'move' | 'conflict';
-  /** ウィンドウ切り替え・カスタムアイコンがメインウィンドウのアイテムと違う（参照にするとメインのものになる） */
+  /** ウィンドウ切り替え・カスタムアイコンがランチャーのアイテムと違う（参照にするとメインのものになる） */
   settingsDiffer: boolean;
   /** 行に出すアイコンを、アイコンのキャッシュから読むための情報（先頭の候補のもの） */
   iconItem?: Pick<LauncherItem, 'displayName' | 'path' | 'type' | 'customIcon' | 'originalPath'>;
 }
 
-/** 「メインウィンドウのアイテムとつなぐ」の一覧 */
+/** 「ランチャーのアイテムとつなぐ」の一覧 */
 export interface WorkspaceLinkCopiesPreview {
   /** 対象のワークスペースの表示名 */
   workspaceName: string;

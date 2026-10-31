@@ -49,7 +49,7 @@ describe('buildSampleWorkspaceFile', () => {
     ]);
   });
 
-  it('参照は、メインウィンドウと違う名前のときだけワークスペースでの表示名を付ける', () => {
+  it('参照は、ランチャーと違う名前のときだけワークスペースでの表示名を付ける', () => {
     const file = buildSampleWorkspaceFile(refs, template, texts);
     const [calc, weather] = file.items.filter((item) => item.type === 'ref');
 

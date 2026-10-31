@@ -46,7 +46,7 @@ function safeWindowOperation<T extends unknown[]>(
 }
 
 /**
- * QDL 自身のメインウィンドウとトースト（オーバーレイ）を一覧から外す。
+ * QDL 自身のランチャーとトースト（オーバーレイ）を一覧から外す。
  * ワークスペース・アイテム管理などは切り替え先として残す
  */
 function excludeQdlWindows(

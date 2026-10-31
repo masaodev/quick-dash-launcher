@@ -6,7 +6,7 @@ vi.mock('../services/mainI18n.js', () => ({ mainI18n: { t: (key: string) => key 
 import { isPinLevel, levelToPinMode, nextPinLevelFromMenu, pinModeToLevel } from './pinMenu';
 
 describe('pinMenu', () => {
-  it('メインウィンドウのピンモードと段階を行き来できる', () => {
+  it('ランチャーのピンモードと段階を行き来できる', () => {
     expect(pinModeToLevel('normal')).toBe(0);
     expect(pinModeToLevel('stayVisible')).toBe(1);
     expect(pinModeToLevel('alwaysOnTop')).toBe(2);

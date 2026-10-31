@@ -85,7 +85,7 @@ export function appendPathMenuItems(
   options: {
     hasParentFolder: boolean;
     isShortcut: boolean;
-    /** 右端に添えるキー（メインウィンドウだけ。ワークスペースにはキーが無い） */
+    /** 右端に添えるキー（ランチャーだけ。ワークスペースにはキーが無い） */
     keys?: { copyPath: string; copyParentPath: string; openParentFolder: string };
   }
 ): void {

@@ -4,10 +4,10 @@
 import type { AppItem, ClipboardItem, LauncherItem, SetItem } from '../types';
 import { isLauncherItem, isWindowInfo } from '../types/guards';
 
-/** 参照できるメインウィンドウのアイテム（ウィンドウ検索の結果は除く） */
+/** 参照できるランチャーのアイテム（ウィンドウ検索の結果は除く） */
 export type ReferenceableAppItem = LauncherItem | ClipboardItem | SetItem;
 
-/** 参照できるメインウィンドウのアイテムか（id を持つ通常アイテム・クリップボード・セット。展開したものは除く） */
+/** 参照できるランチャーのアイテムか（id を持つ通常アイテム・クリップボード・セット。展開したものは除く） */
 export function isReferenceableAppItem(item: AppItem): item is ReferenceableAppItem {
   if (isWindowInfo(item)) return false;
   if (!item.id) return false;

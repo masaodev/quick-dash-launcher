@@ -87,7 +87,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     if (isEditing) return;
-    // Shift+クリックは親フォルダを開く（メインウィンドウの Shift+Enter と同じ。親フォルダの無いものは普通に開く）
+    // Shift+クリックは親フォルダを開く（ランチャーの Shift+Enter と同じ。親フォルダの無いものは普通に開く）
     if (e.shiftKey && onOpenParentFolder) {
       onOpenParentFolder(item);
       return;
@@ -101,7 +101,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   };
 
   // Enter とフォーカスを外したときで同じ扱い（空・変更なしなら元の名前に戻す）。
-  // 参照でワークスペースでの表示名があるときは、空にするとそれを消してメインウィンドウの表示名に戻す
+  // 参照でワークスペースでの表示名があるときは、空にするとそれを消してランチャーの表示名に戻す
   const commitEdit = () => {
     const name = resolveInlineName(editValue, item.displayName);
     if (name) {
@@ -125,7 +125,7 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
 
   const getTooltipText = (): string => {
     const lines: string[] = [];
-    // 参照は、どのメインウィンドウのアイテムを指しているかを先頭に出す（カードには右下の矢印だけ）
+    // 参照は、どのランチャーのアイテムを指しているかを先頭に出す（カードには右下の矢印だけ）
     if (item.type === 'ref') {
       lines.push(
         t('workspace.ref.tooltipMissing', {

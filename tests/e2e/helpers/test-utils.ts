@@ -19,7 +19,7 @@ function ignoreClosedError(error: unknown): void {
  */
 export class TestUtils {
   /**
-   * メイン画面から開いた登録・編集ウィンドウ（独立した子ウィンドウ）
+   * ランチャーから開いた登録・編集ウィンドウ（独立した子ウィンドウ）
    * openRegisterModal() で取得し、フォーム操作はこのページに対して行う。
    * 管理画面のように同じウィンドウ内にモーダルを描く場合は null のまま
    */
@@ -145,7 +145,7 @@ export class TestUtils {
   }
 
   /**
-   * メイン画面から開かれた登録・編集ウィンドウ（子ウィンドウ）を待つ
+   * ランチャーから開かれた登録・編集ウィンドウ（子ウィンドウ）を待つ
    *
    * 子ウィンドウは about:blank で開いてから中身を書き込むため、`.register-modal` が
    * 描かれるまで待つ。開いたページを registerPage として記憶する
@@ -177,7 +177,7 @@ export class TestUtils {
    * 登録モーダルを開く
    *
    * プラスボタンはサブメニュー（アイテムを追加 / ブックマーク / アプリ）を開くため、
-   * その中の「アイテムを追加」を選ぶ。メイン画面では登録フォームは独立した子ウィンドウで開くので、
+   * その中の「アイテムを追加」を選ぶ。ランチャーでは登録フォームは独立した子ウィンドウで開くので、
    * electronApp を渡すとその子ウィンドウを待って返す（以降のフォーム操作はそのページに対して行う）
    */
   async openRegisterModal(electronApp?: ElectronApplication): Promise<Page> {

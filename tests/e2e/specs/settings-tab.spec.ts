@@ -11,7 +11,7 @@ import { TestUtils } from '../helpers/test-utils';
  *
  * 設定画面はサイドバーメニューで以下のカテゴリに分かれています：
  * - 基本設定: 表示言語、ホットキー、システム、表示
- * - ウィンドウ: メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウ・その他の節（どれも畳まずに出す）
+ * - ウィンドウ: ランチャー・ワークスペースウィンドウ・切り離しウィンドウ・その他の節（どれも畳まずに出す）
  * - バックアップ: バックアップ
  */
 test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
@@ -67,9 +67,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         const windowMenu = adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' });
         await windowMenu.click();
 
-        // メインウィンドウ・ワークスペースウィンドウ・切り離しウィンドウ・その他の節
+        // ランチャー・ワークスペースウィンドウ・切り離しウィンドウ・その他の節
         for (const heading of [
-          'メインウィンドウ',
+          'ランチャー',
           'ワークスペースウィンドウ',
           '切り離しウィンドウ',
           'その他',
@@ -149,7 +149,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         for (const section of ['mainWindow', 'workspaceWindow', 'detachedWindow', 'windowOther']) {
           await expect(adminWindow.getByTestId(`settings-reset-${section}`)).toBeVisible();
         }
-        // base テンプレートはメインウィンドウ・切り離しウィンドウを既定値のままにしている
+        // base テンプレートはランチャー・切り離しウィンドウを既定値のままにしている
         // （ワークスペースのディスプレイと管理ウィンドウの高さは既定値と違う）
         await expect(adminWindow.getByTestId('settings-reset-mainWindow')).toBeDisabled();
         await expect(adminWindow.getByTestId('settings-reset-detachedWindow')).toBeDisabled();
@@ -210,14 +210,14 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     }
   });
 
-  test('「操作のヒントを表示」でメインウィンドウ下のヒントを出し入れできる', async ({
+  test('「操作のヒントを表示」でランチャー下のヒントを出し入れできる', async ({
     electronApp,
     mainWindow,
     configHelper,
   }) => {
     const hintBar = mainWindow.locator('[data-testid="keyboard-hint-bar"]');
 
-    await test.step('既定ではメインウィンドウの下に通常モードのヒントが出る', async () => {
+    await test.step('既定ではランチャーの下に通常モードのヒントが出る', async () => {
       await expect(hintBar).toBeVisible();
       await expect(hintBar).toContainText('F2:編集');
       await expect(hintBar).toContainText('Shift+Enter:親フォルダを開く');
@@ -246,9 +246,9 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     }
   });
 
-  // ==================== メインウィンドウの表示する場所の設定テスト ====================
+  // ==================== ランチャーの表示する場所の設定テスト ====================
 
-  test('メインウィンドウの表示する場所を設定できる', async ({
+  test('ランチャーの表示する場所を設定できる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -262,10 +262,10 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await windowMenu.click();
       });
 
-      await test.step('メインウィンドウの節が表示される', async () => {
+      await test.step('ランチャーの節が表示される', async () => {
         const positionSection = adminWindow
           .locator('.settings-section')
-          .filter({ has: adminWindow.locator('h3', { hasText: 'メインウィンドウ' }) });
+          .filter({ has: adminWindow.locator('h3', { hasText: 'ランチャー' }) });
         await expect(positionSection).toBeVisible();
       });
 
@@ -312,7 +312,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
 
     try {
-      await test.step('ウィンドウカテゴリでメインウィンドウとワークスペースウィンドウの設定を変える', async () => {
+      await test.step('ウィンドウカテゴリでランチャーとワークスペースウィンドウの設定を変える', async () => {
         await adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' }).click();
 
         await adminWindow.locator('#windowPositionMode').selectOption('center');
@@ -346,7 +346,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(details).not.toContainText('不透明度');
       });
 
-      await test.step('戻すと、ワークスペースウィンドウだけが既定値になり、メインウィンドウは残る', async () => {
+      await test.step('戻すと、ワークスペースウィンドウだけが既定値になり、ランチャーは残る', async () => {
         await adminWindow.getByTestId('confirm-dialog-confirm-button').click();
         await expect(adminWindow.getByTestId('confirm-dialog')).toHaveCount(0);
 
@@ -432,9 +432,7 @@ test.describe('QuickDashLauncher - ヘルプタブのショートカット一覧
     const shortcuts = adminWindow.locator('.shortcuts-grid');
 
     await expect(
-      shortcuts
-        .locator('.shortcut-item', { hasText: 'メインウィンドウの表示/非表示' })
-        .locator('kbd')
+      shortcuts.locator('.shortcut-item', { hasText: 'ランチャーの表示/非表示' }).locator('kbd')
     ).toHaveText('Alt+Space');
     await expect(
       shortcuts.locator('.shortcut-item', { hasText: 'ウィンドウ検索で起動' }).locator('kbd')

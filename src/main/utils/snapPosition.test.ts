@@ -6,7 +6,7 @@ import { computeSnappedPosition, type Rect } from './snapPosition';
 const FHD: Rect = { x: 0, y: 0, width: 1920, height: 1040 };
 const RIGHT: Rect = { x: 1920, y: 0, width: 1920, height: 1040 };
 
-// 吸着先のウィンドウ（メインウィンドウの例）
+// 吸着先のウィンドウ（ランチャーの例）
 const MAIN: Rect = { x: 600, y: 300, width: 400, height: 500 };
 
 /** 大きさ 300×200 のウィンドウを (x, y) に置いたもの */

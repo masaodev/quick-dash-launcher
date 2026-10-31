@@ -54,7 +54,7 @@ export interface DemoContent {
   workspace: {
     /** 最初から入れておくグループ（color は色トークン） */
     groups: { name: string; color: string; items: string[] }[];
-    /** メインウィンドウで打ち、先頭の候補をワークスペースへドラッグする言葉 */
+    /** ランチャーで打ち、先頭の候補をワークスペースへドラッグする言葉 */
     search: string;
     /** ドラッグで入れる先で、後で切り離すグループ（groups の添字） */
     targetGroup: number;

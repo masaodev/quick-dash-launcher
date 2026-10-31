@@ -350,7 +350,7 @@ function progressItemType(resolved: ResolvedEntry): string | undefined {
 /**
  * セットを実行する
  *
- * @param resolve 行の itemId からアイテムを探す（メイン画面・ワークスペースで探す範囲が違う）
+ * @param resolve 行の itemId からアイテムを探す（ランチャー・ワークスペースで探す範囲が違う）
  */
 export async function executeSet(
   item: Pick<SetItem, 'displayName' | 'entries' | 'launchMode'> & { id?: string },
@@ -774,7 +774,7 @@ const STATUS_TEXT_KEYS = {
 /**
  * 進み具合に出すアイコンを、行が指すアイテムに無ければ開くもののパスでキャッシュから引く
  *
- * パスを書いた行はアイテムを指さないのでアイコンを持たない。メインウィンドウと同じキャッシュを読むだけで、
+ * パスを書いた行はアイテムを指さないのでアイコンを持たない。ランチャーと同じキャッシュを読むだけで、
  * その場で取りには行かない（実行の出だしを遅らせない）。読めなければ表示側が種別の既定のアイコンを出す
  */
 async function loadProgressIcons(

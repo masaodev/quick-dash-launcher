@@ -1,5 +1,5 @@
 /**
- * メインウィンドウ・管理ウィンドウの右クリックメニュー
+ * ランチャー・管理ウィンドウの右クリックメニュー
  * （アイテム・タブ・ウィンドウ検索の行・アイテム管理の行）
  *
  * 画面仕様: docs/screens/context-menu.md
@@ -95,7 +95,7 @@ function setupLauncherContextMenuHandler(): void {
       const isShortcut = hasPathMenu && item.originalPath !== undefined;
       const hasMemo = 'memo' in item && item.memo && item.memo.trim().length > 0;
 
-      // F2 はメインウィンドウのキー処理で受けるので、ここでは右端に表示するだけ（登録しない）
+      // F2 はランチャーのキー処理で受けるので、ここでは右端に表示するだけ（登録しない）
       menu.append(
         new MenuItem({
           label: t('menu.edit'),
@@ -116,7 +116,7 @@ function setupLauncherContextMenuHandler(): void {
         );
       }
 
-      // アプリ（exe・.lnk・.bat/.cmd）だけ。Ctrl+Shift+Enter はメインウィンドウのキー処理で受ける
+      // アプリ（exe・.lnk・.bat/.cmd）だけ。Ctrl+Shift+Enter はランチャーのキー処理で受ける
       if (isLauncherItem(item) && canRunAsAdmin(item)) {
         menu.append(
           createMenuItemWithKey(
@@ -183,7 +183,7 @@ function setupLauncherContextMenuHandler(): void {
         });
       }
 
-      // 削除は確認してから（確認はメインウィンドウの中に出す）。フォルダ取込で並んだもの・自動取込のものには出さない
+      // 削除は確認してから（確認はランチャーの中に出す）。フォルダ取込で並んだもの・自動取込のものには出さない
       if (getDeletableItemId(item)) {
         menu.append(createSeparator());
         menu.append(
@@ -215,7 +215,7 @@ function setupLauncherContextMenuHandler(): void {
   );
 }
 
-/** メインウィンドウの一覧の余白（アイテムの無い所）の右クリックメニュー。➕ と同じ追加の入口を出す */
+/** ランチャーの一覧の余白（アイテムの無い所）の右クリックメニュー。➕ と同じ追加の入口を出す */
 function setupLauncherBlankContextMenuHandler(): void {
   handleIpc(IPC_CHANNELS.SHOW_LAUNCHER_BLANK_CONTEXT_MENU, async (event): Promise<void> => {
     const senderWindow = getValidWindow(event);
@@ -376,7 +376,7 @@ function setupWindowContextMenuHandler(): void {
         const pinChannel = isPinned
           ? IPC_CHANNELS.EVENT_WINDOW_MENU_UNPIN
           : IPC_CHANNELS.EVENT_WINDOW_MENU_PIN;
-        // Ctrl+P・Ctrl+D はメインウィンドウのキー処理で受けるので、右端に表示するだけ（登録しない）
+        // Ctrl+P・Ctrl+D はランチャーのキー処理で受けるので、右端に表示するだけ（登録しない）
         menu.append(
           new MenuItem({
             label: pinLabel,
@@ -475,7 +475,7 @@ function setupWindowsContextMenuHandler(): void {
   );
 }
 
-/** メインウィンドウ・管理ウィンドウの右クリックメニューを設定 */
+/** ランチャー・管理ウィンドウの右クリックメニューを設定 */
 export function setupLauncherContextMenus(): void {
   setupAdminItemContextMenuHandler();
   setupLauncherContextMenuHandler();

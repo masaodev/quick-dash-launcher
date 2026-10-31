@@ -24,12 +24,12 @@ const LEVEL_TO_WINDOW_PIN_MODE: Record<PinLevel, WindowPinMode> = {
   2: 'alwaysOnTop',
 };
 
-/** メインウィンドウのピンモード（文字列）を段階に直す */
+/** ランチャーのピンモード（文字列）を段階に直す */
 export function pinModeToLevel(mode: WindowPinMode): PinLevel {
   return WINDOW_PIN_MODE_TO_LEVEL[mode];
 }
 
-/** 段階をメインウィンドウのピンモード（文字列）に直す */
+/** 段階をランチャーのピンモード（文字列）に直す */
 export function levelToPinMode(level: PinLevel): WindowPinMode {
   return LEVEL_TO_WINDOW_PIN_MODE[level];
 }

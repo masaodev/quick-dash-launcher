@@ -35,7 +35,7 @@ interface UseAdminItemImportsOptions {
   addAutoImportRule: (rule: BookmarkAutoImportRule) => Promise<unknown>;
   executeAutoImportRule: (rule: BookmarkAutoImportRule) => Promise<BookmarkAutoImportResult>;
   toast: Pick<Toast, 'showSuccess' | 'showInfo' | 'showWarning'>;
-  /** メインウィンドウから開くよう頼まれた取込画面 */
+  /** ランチャーから開くよう頼まれた取込画面 */
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
   /** 管理ウィンドウを閉じるたびに増える数（開いている取込画面を閉じる合図） */
@@ -80,7 +80,7 @@ export function useAdminItemImports({
     setIsAppImportModalOpen(true);
   };
 
-  // メインウィンドウからのインポートモーダル表示リクエストを処理
+  // ランチャーからのインポートモーダル表示リクエストを処理
   useEffect(() => {
     if (!pendingImportModal) return;
 
@@ -136,7 +136,7 @@ export function useAdminItemImports({
         ? checkDuplicates(bookmarks, fileItems).newCount
         : bookmarks.length;
     editing.importBookmarks(bookmarks, duplicateHandling, target.fileName);
-    // まだデータファイルに無いので、保存してメインウィンドウが読み直してから取る
+    // まだデータファイルに無いので、保存してランチャーが読み直してから取る
     if (options.fetchIcons && addedCount > 0) onFetchIconsAfterSave();
     onShowTarget(target);
     showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
@@ -182,7 +182,7 @@ export function useAdminItemImports({
       };
     }
     if (result.success) {
-      // ルールはデータファイルへ直接書くので、すぐメインウィンドウに取ってもらう
+      // ルールはデータファイルへ直接書くので、すぐランチャーに取ってもらう
       if (options.fetchIcons) void window.electronAPI.requestFetchMissingIcons();
       const message = t('itemManager.ruleSavedAndRun', {
         name: rule.name,

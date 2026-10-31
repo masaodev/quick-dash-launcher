@@ -59,7 +59,7 @@ export function useAdminItemListView({
   usageLoaded,
   ruleNames,
 }: UseAdminItemListViewOptions) {
-  // 並べ替え。初期値はメイン画面と同じ表示名の昇順
+  // 並べ替え。初期値はランチャーと同じ表示名の昇順
   const [sortState, setSortState] = useState<SortState>({
     column: 'displayName',
     direction: 'asc',

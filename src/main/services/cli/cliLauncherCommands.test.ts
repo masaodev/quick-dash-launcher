@@ -105,7 +105,7 @@ describe('launcher item add', () => {
       expect.objectContaining({ id: 'NewId001' })
     );
     expect(ctx.syncBeforeWrite).toHaveBeenCalled();
-    expect(ctx.changed).toHaveBeenCalledWith('CLI: メインウィンドウに「資料」を追加しました');
+    expect(ctx.changed).toHaveBeenCalledWith('CLI: ランチャーに「資料」を追加しました');
   });
 
   it('PATH から探すコマンド・URL・%VAR% のパスはそのまま', async () => {
