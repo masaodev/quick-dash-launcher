@@ -22,6 +22,7 @@ import {
 } from './utils/virtualDesktop/index.js';
 import { computeMonitorAnchor, placeByMonitorAnchor } from './utils/monitorAnchor.js';
 import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
+import { placeNearCursor } from './utils/cursorPlacement.js';
 import { notifyPinLevel } from './utils/pinMenu.js';
 import { suppressSystemContextMenu } from './utils/systemContextMenu.js';
 import { getMainWindowDisplay } from './utils/referenceDisplay.js';
@@ -194,17 +195,18 @@ function isBoundsOnScreen(bounds: Bounds): boolean {
   return isPositionOnScreen(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
 }
 
-/** カーソル（ドロップした位置・メニューを選んだ位置）の近くに置くときの左上 */
+/** カーソル（ドロップした位置・メニューを選んだ位置）の近くに置くときの左上（カーソルのあるディスプレイの作業領域に収める） */
 function positionAroundCursor(
   cursorX: number,
   cursorY: number,
   width: number,
   height: number
 ): { x: number; y: number } {
-  return {
-    x: Math.max(0, Math.round(cursorX - width / 2)),
-    y: Math.max(0, Math.round(cursorY - height / 4)),
-  };
+  const { workArea } = screen.getDisplayNearestPoint({
+    x: Math.round(cursorX),
+    y: Math.round(cursorY),
+  });
+  return placeNearCursor(cursorX, cursorY, width, height, workArea);
 }
 
 /**
