@@ -111,6 +111,16 @@ describe('resolvePathChange', () => {
     expect(apply?.(old)).toMatchObject({ type: 'folder', icon: undefined });
   });
 
+  it('カスタムアイコンのあるアイテムは、パスを出入りしてもアイコンを変えない（フォルダでも）', async () => {
+    loadCachedIcons.mockResolvedValue({ 'C:\\Windows\\notepad.exe': 'data:auto' });
+    const custom = { ...baseItem, customIcon: 'custom.png', icon: 'data:custom' };
+    const same = await resolvePathChange(custom);
+    expect(same?.(custom).icon).toBe('data:custom');
+    const folder = await resolvePathChange({ ...custom, path: 'C:\\Users' });
+    expect(folder?.(custom)).toMatchObject({ type: 'folder', icon: 'data:custom' });
+    loadCachedIcons.mockResolvedValue({});
+  });
+
   it('「選択」で選んだパスはまだ item に無いので、パスも入れる', async () => {
     const apply = await resolvePathChange(baseItem, 'https://example.com');
     expect(apply?.(baseItem)).toMatchObject({ path: 'https://example.com', type: 'url' });
