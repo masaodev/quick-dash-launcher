@@ -112,8 +112,9 @@ export async function resolvePathChange(
       delete next.folderProcessing;
       delete next.dirOptions;
     }
-    // キャッシュに無ければ（フォルダも）アイコンを外し、種別の既定のアイコンを出す
-    next.icon = cachedIcon;
+    // カスタムアイコンはパスに関係ないので、そのまま残す（引き直すと自動取得のアイコンか空に変わっていた）。
+    // それ以外は、キャッシュに無ければ（フォルダも）アイコンを外し、種別の既定のアイコンを出す
+    if (!current.customIcon) next.icon = cachedIcon;
     return next;
   };
 }
