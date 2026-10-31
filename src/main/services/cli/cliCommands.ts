@@ -43,7 +43,7 @@ export interface CliContext {
   /** 書き込みの前に読み直す（外部変更の検知。ワークスペースは読み直さないと書き込みを断られる） */
   syncBeforeWrite: () => Promise<void>;
   launcher: LauncherStore;
-  /** メイン画面のタブとデータファイルの構成 */
+  /** ランチャーのタブとデータファイルの構成 */
   tabs: TabStore;
   workspace: WorkspaceStore;
   /** settings.json の設定 */
@@ -54,13 +54,13 @@ export interface CliContext {
   beforeGroupRemoved: (groupId: string) => Promise<void>;
   /** クリップボードアイテムの実データ（テキストだけ）の読み書き */
   clipboard: ClipboardTextStore;
-  /** ワークスペースの item add --from（メイン画面のアイテムを写す） */
+  /** ワークスペースの item add --from（ランチャーのアイテムを写す） */
   launcherAppItem: WorkspaceCommandContext['launcherAppItem'];
   duplicateClipboardData: WorkspaceCommandContext['duplicateClipboardData'];
-  /** open: メインウィンドウのアイテムを、画面で Enter を押したのと同じように開く。開いたアイテムの種類を返す */
+  /** open: ランチャーのアイテムを、画面で Enter を押したのと同じように開く。開いたアイテムの種類を返す */
   openLauncherEntry: (entry: LauncherEntry) => Promise<{ type: string }>;
-  /** show: メインウィンドウかワークスペースを出す */
-  show: (target: 'main' | 'workspace') => Promise<void>;
+  /** show: ランチャーかワークスペースを出す */
+  show: (target: 'launcher' | 'workspace') => Promise<void>;
 }
 
 const EXIT_BY_CODE: Record<CliErrorCode, number> = {
@@ -220,9 +220,11 @@ async function dispatch(
     case 'show': {
       if (helpRequested) throw helpAsResult(mainI18n.t('cli.help.main'));
       const parsed = parseArgs(rest, {});
-      const target = parsed.positionals[0] ?? 'main';
-      if (parsed.positionals.length > 1 || (target !== 'main' && target !== 'workspace')) {
-        throw new CliError('usage', mainI18n.t('cli.errors.unknownShowTarget', { target }));
+      const given = parsed.positionals[0] ?? 'launcher';
+      // main は v0.8.0-beta.29 までの呼び名。書いてあるスクリプトが動くよう受け付ける
+      const target = given === 'main' ? 'launcher' : given;
+      if (parsed.positionals.length > 1 || (target !== 'launcher' && target !== 'workspace')) {
+        throw new CliError('usage', mainI18n.t('cli.errors.unknownShowTarget', { target: given }));
       }
       await ctx.show(target);
       return { shown: target };

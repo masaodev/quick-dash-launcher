@@ -4,10 +4,10 @@ import type { RegisterItem } from './register';
 import type { IconProgressResult } from './icon';
 
 /**
- * メイン画面（と管理画面）が独立した子ウィンドウで開く画面の要求
+ * ランチャー（と管理画面）が独立した子ウィンドウで開く画面の要求
  *
- * 以前はメインウィンドウの中にモーダルを描き、ウィンドウを 850x1000 等に広げて中央へ
- * 動かしていた。今はメインウィンドウを動かさず、メインのレンダラーが window.open で開いた
+ * 以前はランチャーの中にモーダルを描き、ウィンドウを 850x1000 等に広げて中央へ
+ * 動かしていた。今はランチャーを動かさず、メインのレンダラーが window.open で開いた
  * 子ウィンドウに描画する。子ウィンドウは window.name から requestId を取り出し、
  * この要求をメインプロセスから受け取って表示内容を決める。
  */
@@ -20,7 +20,7 @@ export interface RegisterWindowRequest {
   droppedPaths: string[];
   /** 編集対象（新規登録なら null。管理画面からは EditableJsonItem） */
   editingItem: EditingAppItem | EditableJsonItem | null;
-  /** 開いたときにメイン画面で選ばれていたタブ（保存先の初期値） */
+  /** 開いたときにランチャーで選ばれていたタブ（保存先の初期値） */
   currentTab?: string;
   /** 開いたときにこの種別へ切り替える（管理画面の種類プルダウンから、詳細編集でしか作れない種別を選んだとき） */
   initialCategory?: RegisterItem['itemCategory'];
@@ -49,8 +49,8 @@ export type MainChildWindowReturn =
   { kind: 'register'; items: RegisterItem[] } | { kind: 'delete' };
 
 /**
- * 子ウィンドウでの操作結果（子ウィンドウ → メインプロセス → メイン画面へ中継）
- * メイン画面はこれを受けてトーストを出す。データの再読込は data-changed で別途行われる
+ * 子ウィンドウでの操作結果（子ウィンドウ → メインプロセス → ランチャーへ中継）
+ * ランチャーはこれを受けてトーストを出す。データの再読込は data-changed で別途行われる
  */
 export interface MainChildWindowResult {
   kind: 'register';

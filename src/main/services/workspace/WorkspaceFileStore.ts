@@ -69,7 +69,7 @@ import { coerceWorkspaceUiState, type WorkspaceUiStateStore } from './WorkspaceU
  *
  * 2 ファイルを 1 つの論理データセットとして扱う（id の名前空間と参照が両ファイルにまたがるため）。
  *
- * 読み込みはキャッシュ: ディスクを読むのは reload()（起動時・メイン画面の F5）のときだけ。
+ * 読み込みはキャッシュ: ディスクを読むのは reload()（起動時・ランチャーの F5）のときだけ。
  * 書き込みは楽観ロック: 前回読んだ/書いた内容と現在のファイルが違えば（QDL の外で編集されていれば）
  * 書かずに WorkspaceExternalChangeConflictError を投げる。
  * 壊れたファイル（JSON 構文エラー等）を読んだときは corrupted になり、書き込みをすべて拒否する

@@ -358,7 +358,7 @@ html:has(.workspace-window.background-transparent) {
   min-width: 0; /* テキストの切り詰めを有効にする */
 }
 
-/* アイコン（メイン画面と同じサイズ） */
+/* アイコン（ランチャーと同じサイズ） */
 .workspace-item-icon {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);

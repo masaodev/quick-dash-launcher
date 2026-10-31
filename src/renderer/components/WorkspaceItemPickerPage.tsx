@@ -1,5 +1,5 @@
 /**
- * 画面: グループに追加するアイテム（ワークスペースのグループの右クリック「メインウィンドウのアイテムから選ぶ」）
+ * 画面: グループに追加するアイテム（ワークスペースのグループの右クリック「ランチャーのアイテムから選ぶ」）
  * 画面仕様: docs/screens/workspace-window.md#589-グループを右クリックしてアイテムを追加
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -27,7 +27,7 @@ interface WorkspaceItemPickerPageProps {
   groupId: string;
 }
 
-/** 選べるアイテム（メインウィンドウのアイテム。ウィンドウ検索の結果は来ない） */
+/** 選べるアイテム（ランチャーのアイテム。ウィンドウ検索の結果は来ない） */
 type PickableItem = LauncherItem | ClipboardItem | SetItem;
 
 function isPickable(item: AppItem): item is PickableItem {
@@ -65,7 +65,7 @@ function rowKind(item: PickableItem): string {
  * グループに追加するアイテムを選ぶページ（独立したウィンドウの中身）
  *
  * ワークスペースのレンダラーが window.open で開いた子ウィンドウに描画される。
- * メインウィンドウのアイテム（すべてのタブ）を選び、メインの「ワークスペースに追加」と同じ処理で
+ * ランチャーのアイテム（すべてのタブ）を選び、メインの「ワークスペースに追加」と同じ処理で
  * 追加先のグループに入れる。変更通知でワークスペース側が読み直すので、追加したら閉じるだけでよい。
  */
 const WorkspaceItemPickerPage: React.FC<WorkspaceItemPickerPageProps> = ({ groupId }) => {

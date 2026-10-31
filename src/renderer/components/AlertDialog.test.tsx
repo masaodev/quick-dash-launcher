@@ -43,7 +43,7 @@ describe('AlertDialog', () => {
   });
 
   it.each(['Escape', 'Enter'])('%s キーで閉じ、後ろの画面のキー処理には渡さない', (key) => {
-    // 後ろの画面の入力欄（メイン画面の検索欄など）がフォーカスを持ち、自分のキー処理で Enter を受ける状況
+    // 後ろの画面の入力欄（ランチャーの検索欄など）がフォーカスを持ち、自分のキー処理で Enter を受ける状況
     const onClose = vi.fn();
     const behind = vi.fn();
     const input = document.createElement('input');

@@ -31,7 +31,7 @@
 | **新しいタブ・データファイルの作成** | `src/renderer/hooks/useAdminTabStructure.ts` の `createImportFile`（タブバーの「＋」と同じ計算＝`src/common/utils/tabManager/tabStructureEdits.ts`） |
 | **取込先の帯** | `src/renderer/components/ImportDestinationBand.tsx`（ブックマーク取込・取込ルールの画面と共通） |
 | **スタイル** | `src/renderer/styles/components/AppImport.css`（見出し・案内・取込先の帯・フッターは `ImportModal.css`、検索欄・重複警告は `BookmarkImport.css` を共用） |
-| **表示条件** | アイテム管理の「＋ アイテムを追加」の右隣の ▼ →「💻 インストール済みアプリから追加」、メインウィンドウの ➕ の「💻 インストール済みアプリから追加」（管理ウィンドウのアイテム管理タブでこの画面を開く） |
+| **表示条件** | アイテム管理の「＋ アイテムを追加」の右隣の ▼ →「💻 インストール済みアプリから追加」、ランチャーの ➕ の「💻 インストール済みアプリから追加」（管理ウィンドウのアイテム管理タブでこの画面を開く） |
 | **画面タイプ** | オーバーレイ型モーダル（管理ウィンドウ内） |
 | **親画面** | 管理ウィンドウ（アイテム管理タブ） |
 

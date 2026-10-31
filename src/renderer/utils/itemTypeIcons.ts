@@ -1,6 +1,6 @@
 import type { WorkspaceItem } from '@common/types';
 
-/** 種類ごとの絵文字（アイコン画像が取れていないときにメイン画面・セットの画面で出す） */
+/** 種類ごとの絵文字（アイコン画像が取れていないときにランチャー・セットの画面で出す） */
 export const ITEM_TYPE_ICONS: Readonly<Record<string, string>> = {
   url: '🌐',
   folder: '📁',

@@ -352,7 +352,7 @@ function validateItemBody(source: Record<string, unknown>, id: string): Record<s
 /**
  * 参照アイテムの本体を検証する（指す id は必須。ワークスペースでの表示名・最後に見た表示名は任意）
  *
- * 参照アイテムはメモを持たない（メインウィンドウのアイテムのメモを使う）ので、書いてあっても落とす
+ * 参照アイテムはメモを持たない（ランチャーのアイテムのメモを使う）ので、書いてあっても落とす
  */
 function validateRefItemBody(body: Record<string, unknown>): Record<string, unknown> {
   if (!isValidId(body.refItemId)) {

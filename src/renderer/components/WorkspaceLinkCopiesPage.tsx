@@ -1,6 +1,6 @@
 /**
- * 画面: メインウィンドウのアイテムとつなぐ（ワークスペースのタブの右クリック）
- * 画面仕様: docs/screens/workspace-window.md#521-メインウィンドウのアイテムとつなぐ
+ * 画面: ランチャーのアイテムとつなぐ（ワークスペースのタブの右クリック）
+ * 画面仕様: docs/screens/workspace-window.md#521-ランチャーのアイテムとつなぐ
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,11 +35,11 @@ function isCheckedByDefault(entry: WorkspaceLinkCopyEntry): boolean {
 }
 
 /**
- * ワークスペースのコピーのうち、パスと引数が同じメインウィンドウのアイテムがあるものを一覧にし、
- * チェックしたものをメインウィンドウのアイテムとつなぐ（参照に変える）ページ（独立したウィンドウの中身）
+ * ワークスペースのコピーのうち、パスと引数が同じランチャーのアイテムがあるものを一覧にし、
+ * チェックしたものをランチャーのアイテムとつなぐ（参照に変える）ページ（独立したウィンドウの中身）
  *
  * 「どれとつなぐか選んでください」（候補が 2 件以上）を上に、「そのままつなげます」を下に分けて出す。
- * 行は「ワークスペースの名前 🔗 メインウィンドウのアイテム」の左右 2 列
+ * 行は「ワークスペースの名前 🔗 ランチャーのアイテム」の左右 2 列
  */
 const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ workspaceId }) => {
   const { t } = useTranslation();
@@ -47,7 +47,7 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
   const [preview, setPreview] = useState<WorkspaceLinkCopiesPreview | null>(null);
   const [icons, setIcons] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  // 候補が 2 件以上のコピーで選んだつなぐ先（コピーの id → メインウィンドウのアイテムの id）
+  // 候補が 2 件以上のコピーで選んだつなぐ先（コピーの id → ランチャーのアイテムの id）
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [notFound, setNotFound] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -103,7 +103,7 @@ const WorkspaceLinkCopiesPage: React.FC<WorkspaceLinkCopiesPageProps> = ({ works
       window.close();
     } catch (error) {
       // 途中まで変えたものは残す（失敗は本体側がエラーのトーストで知らせる）
-      logError('メインウィンドウのアイテムとつなげませんでした:', error);
+      logError('ランチャーのアイテムとつなげませんでした:', error);
       setBusy(false);
     }
   }, [selected, choices, t]);

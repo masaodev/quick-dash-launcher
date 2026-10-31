@@ -7,13 +7,13 @@ import type {
 } from '@common/types';
 import { JSON_WORKSPACE_VERSION } from '@common/types';
 
-/** お試しの参照が指すメインウィンドウのアイテム */
+/** お試しの参照が指すランチャーのアイテム */
 export interface SampleRefTarget {
   /** データファイルのアイテムの id */
   id: string;
-  /** メインウィンドウでの表示名 */
+  /** ランチャーでの表示名 */
   mainDisplayName: string;
-  /** ワークスペースでの表示名（メインウィンドウと同じなら付けない） */
+  /** ワークスペースでの表示名（ランチャーと同じなら付けない） */
   workspaceName: string;
 }
 
@@ -39,7 +39,7 @@ export type SampleTemplateData = Pick<
 
 /**
  * 初回起動のお試しのワークスペースを組み立てる。
- * 「よく使う」にメインウィンドウのお試しを指す参照を、「便利な使い方」にワークスペースだけのアイテム
+ * 「よく使う」にランチャーのお試しを指す参照を、「便利な使い方」にワークスペースだけのアイテム
  * （セット・定型文・使い方）を入れる。定型文の保存データが無いときは定型文を外す
  */
 export function buildSampleWorkspaceFile(
@@ -71,7 +71,7 @@ export function buildSampleWorkspaceFile(
     ...base(favorites.id, index),
     type: 'ref',
     refItemId: ref.id,
-    // メインウィンドウと同じ名前は、ワークスペースでの表示名にしない（付けるとメインの改名に追随しない）
+    // ランチャーと同じ名前は、ワークスペースでの表示名にしない（付けるとメインの改名に追随しない）
     ...(ref.workspaceName !== ref.mainDisplayName ? { displayName: ref.workspaceName } : {}),
     lastKnownName: ref.mainDisplayName,
   }));

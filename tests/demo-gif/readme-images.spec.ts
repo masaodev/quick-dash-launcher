@@ -79,7 +79,7 @@ async function launch(configDir: string): Promise<{ app: ElectronApplication; ma
     main = app.windows().find((w) => w.url().includes('index.html'));
     if (!main) await new Promise((r) => setTimeout(r, 250));
   }
-  if (!main) throw new Error('メインウィンドウが見つかりません');
+  if (!main) throw new Error('ランチャーが見つかりません');
   await main.waitForLoadState('networkidle');
   return { app, main };
 }
@@ -131,7 +131,7 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await fetchIcons(main);
     const utils = new TestUtils(main);
 
-    // 別案用: 検索中のメイン画面（リポジトリのプレビュー画像の素材。説明文は入れない）
+    // 別案用: 検索中のランチャー（リポジトリのプレビュー画像の素材。説明文は入れない）
     await main.mouse.move(5, 5);
     const input = main.locator('input[type="text"]').first();
     await input.fill(CONTENT.demo.search);

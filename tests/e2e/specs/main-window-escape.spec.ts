@@ -4,7 +4,7 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 /**
- * Esc でメインウィンドウを隠す（メインプロセスの before-input-event）
+ * Esc でランチャーを隠す（メインプロセスの before-input-event）
  * - ウィンドウ検索で選んでいるあいだは、Esc をページに渡して選択を外すのに使い、隠さない
  */
 
@@ -20,7 +20,7 @@ async function expectMainWindowHidden(electronApp: ElectronApplication): Promise
   await expect
     .poll(() => isMainWindowVisible(electronApp), {
       timeout: 5000,
-      message: 'メインウィンドウが隠れませんでした',
+      message: 'ランチャーが隠れませんでした',
     })
     .toBe(false);
 }
@@ -45,7 +45,7 @@ async function enterWindowSearch(mainWindow: Page): Promise<number> {
   return mainWindow.locator('.window-item').count();
 }
 
-test.describe('QuickDashLauncher - Esc でメインウィンドウを隠す', () => {
+test.describe('QuickDashLauncher - Esc でランチャーを隠す', () => {
   test('通常モードの Esc で隠れる', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();

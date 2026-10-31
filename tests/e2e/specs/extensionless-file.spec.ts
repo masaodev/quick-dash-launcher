@@ -10,7 +10,7 @@ import { TestUtils } from '../helpers/test-utils';
 const FOLDER_ICON = '\u{1F4C1}';
 const FILE_ICON = '\u{1F4C4}';
 
-/** メイン画面のアイテム行の種別アイコン（アイコン画像が無いときの絵文字） */
+/** ランチャーのアイテム行の種別アイコン（アイコン画像が無いときの絵文字） */
 function itemIcon(page: Page, name: string) {
   return page.locator('.item', { hasText: name }).locator('.item-icon');
 }

@@ -60,7 +60,7 @@ async function notifyParentFolder(item: LauncherItem, message: string): Promise<
 }
 
 export function setupItemHandlers(): void {
-  // 各実行ハンドラでは、起動処理の前にメインウィンドウを閉じる
+  // 各実行ハンドラでは、起動処理の前にランチャーを閉じる
   // （blur待ちにすると起動の遅いアプリでウィンドウが残り、Enter連打で多重起動するため）
   handleIpc(IPC_CHANNELS.OPEN_ITEM, async (_event, item: LauncherItem, options?: LaunchOptions) => {
     hideMainWindowOnExecute();
@@ -82,7 +82,7 @@ export function setupItemHandlers(): void {
     await executeSetItem(item, allItems);
   });
 
-  // WSグループ: そのグループの切り離しウィンドウを開く。ほかの実行と違ってメインウィンドウは隠さない
+  // WSグループ: そのグループの切り離しウィンドウを開く。ほかの実行と違ってランチャーは隠さない
   // （切り離しウィンドウへフォーカスが移っても、QDL のウィンドウ群の中なのでメインは隠れない）
   handleIpc(IPC_CHANNELS.OPEN_WS_GROUP, async (_event, groupId: string) => {
     const service = await WorkspaceService.getInstance();

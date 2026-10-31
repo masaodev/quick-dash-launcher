@@ -11,7 +11,7 @@ import type { ClipboardFormat } from './clipboard';
 /** フォルダ取込のプレビューの結果の種類 */
 export type DirPreviewStatus = 'ok' | 'notFound' | 'notFolder' | 'timeout' | 'cancelled';
 
-/** フォルダ取込のプレビューに並べる 1 件（登録したときにメイン画面に並ぶもの） */
+/** フォルダ取込のプレビューに並べる 1 件（登録したときにランチャーに並ぶもの） */
 export interface DirPreviewItem {
   /** 頭・後ろに付ける文字を付けた表示名 */
   displayName: string;

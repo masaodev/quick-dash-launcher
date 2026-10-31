@@ -215,7 +215,7 @@ app.whenReady().then(async () => {
   // タブを表示言語の名前で決める（ウィンドウを作る前に決めて、最初の読み込みから 2 つのタブで出す）。
   // タブを決めるのはデータファイルを作ったときだけ（初回設定の途中で終了して起動し直したときに、
   // 「メイン」だけのタブで上書きして「Web」タブを消さないように）
-  // ワークスペースにも、メインウィンドウのお試しを指す参照などを入れる（初回起動で、ワークスペースのファイルがまだ無いときだけ。
+  // ワークスペースにも、ランチャーのお試しを指す参照などを入れる（初回起動で、ワークスペースのファイルがまだ無いときだけ。
   // 最初にワークスペースを読む前に書く）
   const defaultDataFile = createDefaultDataFile(isFirstLaunch);
   if (isFirstLaunch && defaultDataFile.created) {
@@ -251,11 +251,11 @@ app.whenReady().then(async () => {
   // 固定位置の座標の古いキー（X・Y）も新しいキーに移す（ウィンドウを作る前に済ませる）
   await migrateRemovedWindowSettings();
 
-  // メインウィンドウ・トレイ・ワークスペースを並列作成（互いに独立）
+  // ランチャー・トレイ・ワークスペースを並列作成（互いに独立）
   await Promise.all([createWindow(), createTray(), createWorkspaceWindow()]);
 
   // 再起動しても直前と同じ見え方に戻す（📌 ありのワークスペース・切り離しウィンドウを出す）。
-  // 待たずにホットキーを登録するので、復元の途中でメインウィンドウが出ていたら、終わった後に合わせる
+  // 待たずにホットキーを登録するので、復元の途中でランチャーが出ていたら、終わった後に合わせる
   void restoreWindowsOnStartup().then(syncCompanionWindowsWithMain);
 
   // ホットキー登録（スプラッシュから分離、スキップ環境でも確実に実行）

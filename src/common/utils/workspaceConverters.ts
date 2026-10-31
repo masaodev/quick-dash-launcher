@@ -1,7 +1,7 @@
 /**
  * ワークスペースアイテムの変換ユーティリティ
  *
- * - AppItem（メイン画面のアイテム）→ ワークスペースアイテムの本体（追加時）
+ * - AppItem（ランチャーのアイテム）→ ワークスペースアイテムの本体（追加時）
  * - WorkspaceItem ⇄ RegisterItem（編集モーダル）
  * - 表示用の文字列（ツールチップ・テキストコピー・トースト）
  *
@@ -82,7 +82,7 @@ function setBody(item: SetItem): WorkspaceItemUpdate {
 }
 
 /**
- * メイン画面のアイテムをワークスペースアイテムの本体に変換する（id・並び順・所属は呼び出し側が付ける）
+ * ランチャーのアイテムをワークスペースアイテムの本体に変換する（id・並び順・所属は呼び出し側が付ける）
  *
  * WindowInfo（ウィンドウ検索結果）は exe 名とタイトルだけのパスの無い単一アイテムにする。
  * 位置も記録したいときは呼び出し側で windowInfoToPathlessItem(info, { includePosition: true }) を通す
@@ -192,9 +192,9 @@ function expandWorkspaceEntry(
 }
 
 /**
- * ワークスペースのセットの行を、メインウィンドウのセットの行にする（メインウィンドウへ移すとき）
+ * ワークスペースのセットの行を、ランチャーのセットの行にする（ランチャーへ移すとき）
  *
- * メインウィンドウのセットは行の itemId をデータファイルのアイテムからしか探さないので、ワークスペースの
+ * ランチャーのセットは行の itemId をデータファイルのアイテムからしか探さないので、ワークスペースの
  * アイテムを指す行はそのままでは「アイテムが見つかりません」になる。そうした行は、指す先のパス・引数を
  * 行に書いた行に置き換える。ワークスペースで開くときと同じく
  * ワークスペースのアイテムを先に探すので、データファイルのアイテムを指す行は id のまま残る
@@ -207,7 +207,7 @@ export function expandWorkspaceSetEntries(
   for (const item of workspaceItems) byId.set(item.id, item);
   return entries.map((entry) => {
     const item = entry.itemId ? byId.get(entry.itemId) : undefined;
-    // 参照を指す行は、指す先のメインウィンドウのアイテムの id にする（メインウィンドウにあるのでそのまま開ける）
+    // 参照を指す行は、指す先のランチャーのアイテムの id にする（ランチャーにあるのでそのまま開ける）
     if (item?.ref?.status === 'ok') return { ...entry, itemId: item.ref.itemId };
     const expanded = item?.type === 'item' ? expandWorkspaceEntry(entry, item) : undefined;
     return expanded ?? { ...entry };

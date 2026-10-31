@@ -210,7 +210,7 @@ async function parseValue(
       if (rule.values.includes(text)) return text;
       throw invalid(key, rule.values.join(' / '));
     case 'displayIndex': {
-      // -1 はメインウィンドウと同じディスプレイ（設定画面の「メインウィンドウと同じディスプレイ」と同じ）
+      // -1 はランチャーと同じディスプレイ（設定画面の「ランチャーと同じディスプレイ」と同じ）
       if (text === String(MAIN_WINDOW_DISPLAY_INDEX)) return MAIN_WINDOW_DISPLAY_INDEX;
       const count = store.displayCount();
       const n = /^\d+$/.test(text) ? Number(text) : NaN;

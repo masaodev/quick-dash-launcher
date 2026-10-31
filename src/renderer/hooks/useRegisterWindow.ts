@@ -10,10 +10,10 @@ type RegisterWindowContent = Pick<
 >;
 
 /**
- * アイテムの登録・編集ウィンドウを開くフック（メイン画面用）
+ * アイテムの登録・編集ウィンドウを開くフック（ランチャー用）
  *
- * 以前はメイン画面の中に RegisterModal を描き、ウィンドウを 850x1000 に広げていた。
- * 今は要求をメインプロセスに渡して独立した子ウィンドウで開く（メインウィンドウは動かさない）。
+ * 以前はランチャーの中に RegisterModal を描き、ウィンドウを 850x1000 に広げていた。
+ * 今は要求をメインプロセスに渡して独立した子ウィンドウで開く（ランチャーは動かさない）。
  * 開いている間は isRegisterWindowOpen が true になる（ドロップ受付の抑止に使う）
  */
 export function useRegisterWindow(getCurrentTab: () => string | undefined) {

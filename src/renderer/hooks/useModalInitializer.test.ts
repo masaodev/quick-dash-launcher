@@ -35,7 +35,7 @@ describe('useModalInitializer の initializeFromEditingItem', () => {
     expect(onLoadCustomIcon).toHaveBeenCalledWith(0, 'set.png');
   });
 
-  it('メイン画面からクリップボード・セットを開いても、カスタムアイコンのプレビューを読む', async () => {
+  it('ランチャーからクリップボード・セットを開いても、カスタムアイコンのプレビューを読む', async () => {
     const onLoadCustomIcon = vi.fn(async () => undefined);
     const { initializeFromEditingItem } = useModalInitializer(vi.fn());
 

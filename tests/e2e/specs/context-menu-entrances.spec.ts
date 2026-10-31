@@ -84,7 +84,7 @@ async function readSubmenuLabels(electronApp: ElectronApplication): Promise<stri
   );
 }
 
-test.describe('QuickDashLauncher - メインウィンドウの右クリックの入口', () => {
+test.describe('QuickDashLauncher - ランチャーの右クリックの入口', () => {
   test('ふつうのアイテムには「削除…」が出て、確認してから消える。自動取込のアイテムには出ない', async ({
     electronApp,
     mainWindow,

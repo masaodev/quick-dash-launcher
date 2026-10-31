@@ -29,7 +29,7 @@ function AlertDialog({
   type = 'info',
 }: AlertDialogProps): React.ReactElement | null {
   const { t } = useTranslation();
-  // Enter・Esc は capture 段階で受けて止める。後ろの画面のキー処理（メイン画面で Enter がアイテムを
+  // Enter・Esc は capture 段階で受けて止める。後ろの画面のキー処理（ランチャーで Enter がアイテムを
   // 実行するなど）に先に取られると、ダイアログが閉じずに後ろの操作が走る
   useEffect(() => {
     if (!isOpen) return;

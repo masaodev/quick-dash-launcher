@@ -1,9 +1,9 @@
 /*
- * メインウィンドウのアイテムとつなぐ（WorkspaceLinkCopiesPage）
+ * ランチャーのアイテムとつなぐ（WorkspaceLinkCopiesPage）
  * 枠・ボタンの並びは SetEditor.css の set-picker-* を使い、ここでは中身だけを描く
  */
 
-/* 上の説明: 「ワークスペース 🔗 メインウィンドウ」の図と、つなぐと何が変わるかの 1 文 */
+/* 上の説明: 「ワークスペース 🔗 ランチャー」の図と、つなぐと何が変わるかの 1 文 */
 .link-copies-hero {
   display: flex;
   align-items: center;
@@ -99,7 +99,7 @@
   background-color: var(--color-primary-50);
 }
 
-/* 行: チェック・ワークスペース側・🔗・メインウィンドウ側 */
+/* 行: チェック・ワークスペース側・🔗・ランチャー側 */
 .link-copies-columns,
 .link-copies-pair {
   display: grid;

@@ -560,7 +560,7 @@ export class ClipboardService {
   /**
    * 実データのファイルを新しい ID で複製し、その参照を返す（読めなければ null）
    *
-   * メインウィンドウとワークスペースの間でクリップボードアイテムを写すときに使う。
+   * ランチャーとワークスペースの間でクリップボードアイテムを写すときに使う。
    * 参照をそのまま写すと 1 つのファイルを共有し、片方で消すともう片方が復元できなくなる
    */
   duplicateClipboardData(dataFileRef: string): string | null {

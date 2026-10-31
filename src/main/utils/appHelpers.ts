@@ -141,7 +141,7 @@ export function createDefaultDataFile(splitWebTab: boolean = false): {
 
 /**
  * 初回起動のお試しのワークスペース（workspace.json）を作る。既にあれば作らない。
- * 参照はメインウィンドウのお試し（refTargets）を指す。名前は作るときの表示言語で決める
+ * 参照はランチャーのお試し（refTargets）を指す。名前は作るときの表示言語で決める
  * @returns 作ったら true
  */
 export function createSampleWorkspaceFile(refTargets: SampleRefTarget[]): boolean {

@@ -75,7 +75,7 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
         continue;
       }
 
-      // 編集画面が先に読んで書き戻すと、メイン画面の読込では外部変更を検知できなくなる。
+      // 編集画面が先に読んで書き戻すと、ランチャーの読込では外部変更を検知できなくなる。
       // ここでも検知して変更前スナップショットを残す
       const previousContent = detectExternalChange(fileName, content);
       if (previousContent !== null) {
@@ -193,7 +193,7 @@ function assertNoExternalChange(
 /**
  * 保存前のファイル内容にあった実データのうち、保存後にどこからも使われなくなったものを消す
  *
- * メイン画面の削除（deleteItemsById）と同じ後始末。編集画面は全件を書き戻すので、消したアイテムも
+ * ランチャーの削除（deleteItemsById）と同じ後始末。編集画面は全件を書き戻すので、消したアイテムも
  * 本文を書き換えたアイテムも、保存前に指していた実データをまとめて渡し、使われているかを確かめて消す
  */
 function releaseReplacedClipboardData(
@@ -218,9 +218,9 @@ function releaseReplacedClipboardData(
 }
 
 /**
- * 起動種別をメイン画面と同じ判定（ドット入りのフォルダ名はディスクで確かめる）で meta に入れる
+ * 起動種別をランチャーと同じ判定（ドット入りのフォルダ名はディスクで確かめる）で meta に入れる
  *
- * 画面側はパスの文字列しか見られないため、アイコンやフォルダの絵文字がメイン画面と食い違わないようにする
+ * 画面側はパスの文字列しか見られないため、アイコンやフォルダの絵文字がランチャーと食い違わないようにする
  */
 async function resolveLauncherTypes(items: EditableJsonItem[]): Promise<void> {
   const launcherEntries = items.filter((entry) => isJsonLauncherItem(entry.item));

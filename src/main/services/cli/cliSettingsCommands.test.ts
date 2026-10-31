@@ -177,7 +177,7 @@ describe('settings set', () => {
     expect((await errorOf(run('set', 'workspaceTargetDisplayIndex', '-2'))).code).toBe('invalid');
   });
 
-  it('ディスプレイの番号 -1 はメインウィンドウと同じディスプレイ', async () => {
+  it('ディスプレイの番号 -1 はランチャーと同じディスプレイ', async () => {
     await run('set', 'workspaceTargetDisplayIndex', '-1');
     expect(settings.workspaceTargetDisplayIndex).toBe(-1);
   });

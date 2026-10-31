@@ -44,12 +44,12 @@ interface SetItemPickerModalProps {
   sectionTitles?: { same: string; others: string };
   /**
    * 「すべて」のタブを出す（タブをまたいで先に並べたいものがあるとき。指す先を選ぶ画面の「同じパスのアイテム」）。
-   * 既定はメインウィンドウと同じく、タブを 1 つ選んでその中を探す
+   * 既定はランチャーと同じく、タブを 1 つ選んでその中を探す
    */
   allTab?: boolean;
 }
 
-/** 表示名が検索のキーワードをすべて含むか（メインウィンドウの検索と同じく、空白で区切った AND） */
+/** 表示名が検索のキーワードをすべて含むか（ランチャーの検索と同じく、空白で区切った AND） */
 function matchesKeywords(item: SetCatalogItem, keywords: readonly string[]): boolean {
   if (keywords.length === 0) return true;
   const name = item.displayName.toLowerCase();
@@ -59,7 +59,7 @@ function matchesKeywords(item: SetCatalogItem, keywords: readonly string[]): boo
 /**
  * セットに追加するアイテムを選ぶ画面
  *
- * どのタブのアイテムも選べる。メインウィンドウと同じく、上のタブを 1 つ選んでその中を探す（開いたときはセットと同じタブ）。
+ * どのタブのアイテムも選べる。ランチャーと同じく、上のタブを 1 つ選んでその中を探す（開いたときはセットと同じタブ）。
  * allTab のときだけ「すべて」のタブを出し、同じタブ（候補）のアイテムを先に並べる。
  * single のときは行の詳細から開き、行が開くアイテムを 1 つだけ選ぶ
  */
@@ -114,7 +114,7 @@ const SetItemPickerModal: React.FC<SetItemPickerModalProps> = ({
     [catalog, keywords, activeGroup]
   );
 
-  // 検索欄で Tab・Shift+Tab を押すと、上のタブを順に切り替える（メインウィンドウの Tab と同じ。検索中は合うアイテムの無いタブを飛ばす）
+  // 検索欄で Tab・Shift+Tab を押すと、上のタブを順に切り替える（ランチャーの Tab と同じ。検索中は合うアイテムの無いタブを飛ばす）
   const switchGroupByTab = (event: KeyboardEvent): boolean => {
     if (document.activeElement !== searchRef.current || groups.length <= 1) return false;
     const tabs: (string | null)[] = allTab ? [null, ...groups] : groups;

@@ -52,7 +52,7 @@ import type { CliContext } from './cliCommands.js';
 const cliLogger = createChildLogger('cli');
 
 /**
- * メイン画面のアイテムの読み書きを、本体の既存の処理につなぐ
+ * ランチャーのアイテムの読み書きを、本体の既存の処理につなぐ
  * （登録画面・編集画面と同じ書き込み経路。トラッカー・破損ファイルの扱いもそのまま）
  */
 function createLauncherStore(configFolder: string): LauncherStore {
@@ -161,7 +161,7 @@ export function createCliContext(
     ...base,
     configFolder,
     reload: async () => {
-      // メイン画面の F5 と同じく、設定の再適用に失敗してもデータの読み直しは続ける
+      // ランチャーの F5 と同じく、設定の再適用に失敗してもデータの読み直しは続ける
       await reapplySettingsFromDisk().catch((error) =>
         cliLogger.warn({ error }, 'CLI の reload で設定の再適用に失敗')
       );
@@ -186,7 +186,7 @@ export function createCliContext(
       reorderWorkspaces: async (ids) =>
         (await WorkspaceService.getInstance()).reorderWorkspaces(ids),
       loadGroups: async () => (await WorkspaceService.getInstance()).loadGroups(),
-      // 参照はメインウィンドウのアイテムの中身で埋めて返す
+      // 参照はランチャーのアイテムの中身で埋めて返す
       loadItems: async () => {
         await ensureMainItemIndex();
         return (await WorkspaceService.getInstance()).loadResolvedItems();
@@ -243,7 +243,7 @@ export function createCliContext(
       );
     },
     beforeGroupRemoved: closeDetachedWindowsForGroup,
-    // メイン画面の読み込みと同じ変換（.lnk はリンク先を読む）。フォルダ取込・WSグループは中身に展開されるので 1 件にならない
+    // ランチャーの読み込みと同じ変換（.lnk はリンク先を読む）。フォルダ取込・WSグループは中身に展開されるので 1 件にならない
     launcherAppItem: async (entry) => {
       const converted = await convertJsonItemToAppItems(entry.item, entry.file, 0, new Set(), 0);
       return entry.item.type !== 'dir' && entry.item.type !== 'wsgroup' && converted.length === 1

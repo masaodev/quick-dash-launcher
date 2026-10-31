@@ -39,7 +39,7 @@ async function waitForWindowWith(
   throw new Error(`ウィンドウが開きませんでした: ${selector}`);
 }
 
-/** メインウィンドウのアイテム（表示名で探す） */
+/** ランチャーのアイテム（表示名で探す） */
 async function mainItem(mainWindow: Page, displayName: string): Promise<LauncherItem> {
   const items: AppItem[] = await mainWindow.evaluate(() =>
     window.electronAPI.loadDataFiles('internal')
@@ -47,7 +47,7 @@ async function mainItem(mainWindow: Page, displayName: string): Promise<Launcher
   const found = items.find(
     (item): item is LauncherItem => 'displayName' in item && item.displayName === displayName
   );
-  if (!found) throw new Error(`メインウィンドウのアイテムが見つかりません: ${displayName}`);
+  if (!found) throw new Error(`ランチャーのアイテムが見つかりません: ${displayName}`);
   return found;
 }
 
@@ -60,9 +60,9 @@ function readWorkspaceFile(configDir: string): { items: Record<string, unknown>[
 }
 
 /**
- * 参照アイテム（メインウィンドウのアイテムを id で指すワークスペースのアイテム）
- * - メインウィンドウから足すと既定で参照になり、ファイルには指す id だけを書く
- * - メインウィンドウで直すと、ワークスペースの表示も変わる
+ * 参照アイテム（ランチャーのアイテムを id で指すワークスペースのアイテム）
+ * - ランチャーから足すと既定で参照になり、ファイルには指す id だけを書く
+ * - ランチャーで直すと、ワークスペースの表示も変わる
  * - ワークスペースでの表示名を付けられ、空にするとメインの表示名に戻る
  * - 元が消えると薄く表示し、別のアイテムを指し直せる
  * - 参照とコピーを行き来できる（1 件ずつ・一括）
@@ -88,7 +88,7 @@ async function prepareTestGroup(workspaceWindow: Page): Promise<void> {
 }
 
 test.describe('QuickDashLauncher - ワークスペースの参照アイテム', () => {
-  test('メインウィンドウから足すと参照になり、メインで直すとワークスペースにも出る', async ({
+  test('ランチャーから足すと参照になり、メインで直すとワークスペースにも出る', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -121,10 +121,10 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       const card = workspaceWindow.locator(`.workspace-item-card[data-ref="ok"]`).first();
       await expect(card).toBeVisible();
       await expect(card).not.toHaveClass(/workspace-item-card-missing/);
-      await expect(card).toHaveAttribute('title', /🔗 メインウィンドウのアイテム: GitHub/);
+      await expect(card).toHaveAttribute('title', /🔗 ランチャーのアイテム: GitHub/);
     });
 
-    await test.step('メインウィンドウで表示名を直すと、ワークスペースも変わる', async () => {
+    await test.step('ランチャーで表示名を直すと、ワークスペースも変わる', async () => {
       await mainWindow.evaluate(
         (item) =>
           window.electronAPI.updateItemById({
@@ -217,7 +217,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       notepad
     );
 
-    await test.step('メインウィンドウで消すと、最後に見た表示名で薄く出る', async () => {
+    await test.step('ランチャーで消すと、最後に見た表示名で薄く出る', async () => {
       await mainWindow.evaluate((id) => window.electronAPI.deleteItemsById([{ id }]), notepad.id!);
       const card = workspaceWindow.locator('.workspace-item-card-missing', { hasText: 'メモ帳' });
       await expect(card).toBeVisible({ timeout: 10000 });
@@ -305,7 +305,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       expect(stored).toMatchObject({ type: 'item', displayName: 'Google' });
     });
 
-    await test.step('「メインウィンドウのアイテムとつなぐ」で、パスが同じコピーを参照に変える', async () => {
+    await test.step('「ランチャーのアイテムとつなぐ」で、パスが同じコピーを参照に変える', async () => {
       const workspaceId = copy.workspaceId;
       await workspaceWindow.evaluate(
         (id) => window.electronAPI.workspaceAPI.openLinkCopies(id),
@@ -313,7 +313,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       );
       const page = await waitForWindowWith(electronApp, '.link-copies-pair');
       await expect(page.locator('.link-copies-hero')).toContainText(
-        '同じアイテムが 2 件、メインウィンドウにもあります'
+        '同じアイテムが 2 件、ランチャーにもあります'
       );
       // 候補が 1 件ずつなので、すべて「そのままつなげます」に並ぶ
       await expect(page.locator('.link-copies-section.ok')).toContainText('そのままつなげます');
@@ -321,7 +321,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       const row = page.locator('.link-copies-pair', { hasText: 'ウィキ' });
       await expect(row).toContainText('Wikipedia');
       await expect(row).toContainText('名前はそのまま');
-      await expect(row).toContainText('メモをメインウィンドウへ移す');
+      await expect(row).toContainText('メモをランチャーへ移す');
       await expect(page.locator('.link-copies-pair')).toHaveCount(2);
 
       await test.step('「すべて外す」で押せなくなり、「すべて選ぶ」で戻る', async () => {
@@ -344,14 +344,14 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
         ref: { itemId: wikipedia.id, alias: 'ウィキ', status: 'ok' },
       });
       expect(items.find((i) => i.id === linked.id)?.ref?.itemId).toBe(google.id);
-      // コピーのメモはメインウィンドウのアイテムへ移る
+      // コピーのメモはランチャーのアイテムへ移る
       await expect
         .poll(async () => (await mainItem(mainWindow, 'Wikipedia')).memo)
         .toBe('コピーのメモ');
     });
   });
 
-  test('メインウィンドウのアイテムを消すとき、参照の数を知らせる', async ({
+  test('ランチャーのアイテムを消すとき、参照の数を知らせる', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -430,7 +430,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     expect(relinked?.type === 'set' && relinked.entries[0].itemId).toBe(google.id);
   });
 
-  test('コピーをメインウィンドウへ移すと、メインウィンドウのアイテムになり、ワークスペース側は参照になる', async ({
+  test('コピーをランチャーへ移すと、ランチャーのアイテムになり、ワークスペース側は参照になる', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -452,7 +452,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
         globalThis.__e2eGroupId
       )
     );
-    // 移すアイテムを指すワークスペースのセット（移したあと、行はメインウィンドウのアイテムを指す）
+    // 移すアイテムを指すワークスペースのセット（移したあと、行はランチャーのアイテムを指す）
     const set: WorkspaceItem = await workspaceWindow.evaluate(
       (id) =>
         window.electronAPI.workspaceAPI.createItem(
@@ -486,7 +486,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
       expect(relinked?.type === 'set' && relinked.entries[0].itemId).toBe(main.id);
     });
 
-    await test.step('セットを移す（行はメインウィンドウのアイテムを指したまま）', async () => {
+    await test.step('セットを移す（行はランチャーのアイテムを指したまま）', async () => {
       const main = await mainItem(mainWindow, '移すアイテム');
       await workspaceWindow.evaluate(
         (id) => window.electronAPI.workspaceAPI.moveToMain(id),
@@ -590,7 +590,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
     await prepareTestGroup(workspaceWindow);
 
     const google = await mainItem(mainWindow, 'Google');
-    // パスが同じメインウィンドウのアイテムをもう 1 つ作る
+    // パスが同じランチャーのアイテムをもう 1 つ作る
     await mainWindow.evaluate(
       (path) =>
         window.electronAPI.registerItems([
@@ -642,7 +642,7 @@ test.describe('QuickDashLauncher - ワークスペースの参照アイテム', 
         hasText: 'Google',
       });
       await expect(row).toHaveClass(/need/);
-      await expect(row).toContainText('メインウィンドウに候補が 2 つ');
+      await expect(row).toContainText('ランチャーに候補が 2 つ');
       await expect(row.locator('input[type="checkbox"]')).toBeDisabled();
       await expect(page.locator('.link-copies-status')).toContainText(
         '選んでいない 1 件はつなぎません'

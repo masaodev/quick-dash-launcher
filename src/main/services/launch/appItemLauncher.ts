@@ -13,7 +13,7 @@ import { executeSet, indexItemsById, notifySetFailures } from './setExecutor.js'
 import { openSingleItem } from './itemOpener.js';
 
 /**
- * メインウィンドウのアイテムを開く処理（画面の Enter と CLI の open で共通）
+ * ランチャーのアイテムを開く処理（画面の Enter と CLI の open で共通）
  */
 
 /** 単一アイテムを開き、開けたら起動の記録に数える（登録・編集フォームで試しに開いたときは数えない） */
@@ -35,7 +35,7 @@ export async function openLauncherItem(item: LauncherItem, options?: LaunchOptio
   }
 }
 
-/** メインウィンドウの単一アイテムを開けたことを、起動の記録に数える */
+/** ランチャーの単一アイテムを開けたことを、起動の記録に数える */
 export async function recordLauncherItemLaunch(item: LauncherItem): Promise<void> {
   // フォルダ取込で展開したアイテムは id がその場で振られるので、展開元のフォルダ取込の行の id で数える
   const usage = LaunchUsageService.getInstance();
@@ -55,7 +55,7 @@ export async function executeSetItem(item: SetItem, allItems: AppItem[]): Promis
 }
 
 /**
- * どの種類のアイテムでも、メインウィンドウで Enter を押したときと同じように開く（CLI の open 用）
+ * どの種類のアイテムでも、ランチャーで Enter を押したときと同じように開く（CLI の open 用）
  *
  * 画面の Enter はトーストをレンダラーが出すので、ここでは同じトーストを本体から出す
  */

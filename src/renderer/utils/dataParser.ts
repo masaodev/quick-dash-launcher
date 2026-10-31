@@ -41,7 +41,7 @@ export function parseKeywords(query: string): string[] {
     .filter((k) => k.length > 0);
 }
 
-/** 設定「検索でメモにも当てる」（searchMemo）。メインウィンドウが設定を読んで入れる */
+/** 設定「検索でメモにも当てる」（searchMemo）。ランチャーが設定を読んで入れる */
 let includeMemo = false;
 
 /** 検索でメモにも当てるかを切り替える（設定の読み込み・変更のたびに呼ぶ） */

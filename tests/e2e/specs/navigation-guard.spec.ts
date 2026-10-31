@@ -25,10 +25,7 @@ async function runInMainWindow(electronApp: ElectronApplication, script: string)
 }
 
 test.describe('QuickDashLauncher - ナビゲーションの制御', () => {
-  test('メインウィンドウはページ側から外部のページへ移らない', async ({
-    electronApp,
-    mainWindow,
-  }) => {
+  test('ランチャーはページ側から外部のページへ移らない', async ({ electronApp, mainWindow }) => {
     const utils = new TestUtils(mainWindow);
     await utils.waitForPageLoad();
     const before = await mainWindowUrl(electronApp);

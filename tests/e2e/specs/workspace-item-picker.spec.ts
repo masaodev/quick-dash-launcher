@@ -39,7 +39,7 @@ async function waitForPickerWindow(electronApp: ElectronApplication): Promise<Pa
 }
 
 /**
- * グループの右クリック「🔍 メインウィンドウのアイテムから選ぶ…」を押したことにして、選ぶウィンドウを待つ
+ * グループの右クリック「🔍 ランチャーのアイテムから選ぶ…」を押したことにして、選ぶウィンドウを待つ
  *
  * ワークスペースの URL は about:blank（中身を書き込む作り）で、トーストのウィンドウと区別できないので、
  * NativeMenuTestHelper（URL で送り先を探す）は使わず、タイトルが Workspace のウィンドウへ送る
@@ -53,7 +53,7 @@ async function openPicker(electronApp: ElectronApplication, groupId: string): Pr
 }
 
 /**
- * グループの右クリックから、メインウィンドウのアイテムを選んでグループに追加する
+ * グループの右クリックから、ランチャーのアイテムを選んでグループに追加する
  * - 選ぶ画面は独立した子ウィンドウで開き、追加先（ワークスペース名 › グループ名）を出す
  * - 複数選んで追加すると、そのグループに入ってウィンドウが閉じる
  * - すでにグループにあるアイテム（パスと引数が同じ）は「追加済み」で選べない

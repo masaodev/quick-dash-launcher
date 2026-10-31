@@ -19,8 +19,8 @@ import './styles/components/AppImport.css';
 import './styles/components/MainChildPage.css';
 
 /**
- * メイン画面の子ウィンドウとして開かれたときの requestId
- * 通常は window.name（メイン画面から window.open で開かれた場合）、
+ * ランチャーの子ウィンドウとして開かれたときの requestId
+ * 通常は window.name（ランチャーから window.open で開かれた場合）、
  * メインプロセスが直接生成したフォールバック時は URL クエリから読む
  */
 function getChildRequestIdFromWindow(): string | null {

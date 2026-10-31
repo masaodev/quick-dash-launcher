@@ -259,7 +259,7 @@ describe('workspaceConverters: WorkspaceItem ⇄ RegisterItem', () => {
   });
 });
 
-describe('workspaceConverters: expandWorkspaceSetEntries（メインウィンドウへ移すセットの行）', () => {
+describe('workspaceConverters: expandWorkspaceSetEntries（ランチャーへ移すセットの行）', () => {
   const wsItem = (id: string, fields: Partial<WorkspaceItem>): WorkspaceItem =>
     ({ ...meta, id, type: 'item', launcherType: 'app', ...fields }) as WorkspaceItem;
   const terminal = wsItem('wsTerm01', {
@@ -394,7 +394,7 @@ describe('workspaceConverters: 表示', () => {
 });
 
 describe('expandWorkspaceSetEntries: 参照を指す行', () => {
-  it('参照（見つかったもの）を指す行は、指す先のメインウィンドウのアイテムの id にすること', () => {
+  it('参照（見つかったもの）を指す行は、指す先のランチャーのアイテムの id にすること', () => {
     const linked = {
       id: 'WsRef001',
       type: 'item',

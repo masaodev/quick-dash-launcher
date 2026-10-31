@@ -11,13 +11,13 @@ interface FilterResult {
   itemVisibility: Map<string, boolean> | null;
 }
 
-/** 文がすべての語を含むか（メインウィンドウの検索と同じく、スペース区切りの AND） */
+/** 文がすべての語を含むか（ランチャーの検索と同じく、スペース区切りの AND） */
 function includesAll(text: string, keywords: readonly string[]): boolean {
   const lower = normalizeForSearch(text);
   return keywords.every((keyword) => lower.includes(keyword));
 }
 
-/** アイテムの名前の文（参照はメインウィンドウの表示名も足す） */
+/** アイテムの名前の文（参照はランチャーの表示名も足す） */
 function itemNameText(item: WorkspaceItem): string {
   return item.ref?.mainDisplayName
     ? `${item.displayName}\n${item.ref.mainDisplayName}`

@@ -7,7 +7,7 @@ import type { HandleSettingChange } from '../hooks/useSettingsManager';
 import WindowSizeFields from './WindowSizeFields';
 import SettingsSectionHeader, { type SectionResetProps } from './SettingsSectionHeader';
 
-/** メインウィンドウの表示する場所の選択肢（文言は settings.windowPosition.<値>・<値>Description） */
+/** ランチャーの表示する場所の選択肢（文言は settings.windowPosition.<値>・<値>Description） */
 const WINDOW_POSITION_OPTIONS: readonly WindowPositionMode[] = [
   'cursorMonitorCenter',
   'cursor',
@@ -24,7 +24,7 @@ interface AdminSettingsWindowMainProps {
   sectionReset: SectionResetProps;
 }
 
-/** 設定画面「ウィンドウ」のメインウィンドウの節: 表示する場所・大きさ */
+/** 設定画面「ウィンドウ」のランチャーの節: 表示する場所・大きさ */
 const AdminSettingsWindowMain: React.FC<AdminSettingsWindowMainProps> = ({
   editedSettings,
   isLoading,

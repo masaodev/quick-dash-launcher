@@ -20,14 +20,14 @@ import { notifyWorkspaceChanged } from './notifications.js';
 /**
  * ワークスペースのアイテムの右クリックのうち、参照アイテムに関わる項目
  *
- * - 参照: 編集はメインウィンドウの編集画面で行う。「コピーにする」「別のアイテムを指す」を出す
+ * - 参照: 編集はランチャーの編集画面で行う。「コピーにする」「別のアイテムを指す」を出す
  * - 元が見つからない参照: 「別のアイテムを指す」だけ（中身が無いので編集・パスの項目は出さない）
- * - コピー: 「メインウィンドウへ移して参照にする」を出す
+ * - コピー: 「ランチャーへ移して参照にする」を出す
  */
 
 const t = mainI18n.t.bind(mainI18n);
 
-/** 参照の指すメインウィンドウのアイテムを、メインウィンドウの編集画面で開く */
+/** 参照の指すランチャーのアイテムを、ランチャーの編集画面で開く */
 export async function editLinkedMainItem(item: WorkspaceItem): Promise<void> {
   if (!item.ref) return;
   const index = await ensureMainItemIndex();
@@ -36,7 +36,7 @@ export async function editLinkedMainItem(item: WorkspaceItem): Promise<void> {
     await showToastWindow({ message: t('workspace.ref.editMainNotFound'), type: 'warning' });
     return;
   }
-  // 編集画面はメインウィンドウを親にして開くので、先にメインウィンドウを出す
+  // 編集画面はランチャーを親にして開くので、先にランチャーを出す
   await showMainWindow();
   const mainWindow = getMainWindow();
   if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -64,7 +64,7 @@ async function convertToCopy(item: WorkspaceItem): Promise<void> {
 }
 
 /**
- * ワークスペースのアイテムをメインウィンドウへ移して参照に変え、知らせる（右クリック・メインウィンドウへのドロップ）
+ * ワークスペースのアイテムをランチャーへ移して参照に変え、知らせる（右クリック・ランチャーへのドロップ）
  *
  * @param file - 移す先のデータファイル（無ければ先頭のタブの先頭のファイル）
  * @returns 移せたか
@@ -86,7 +86,7 @@ export async function moveItemToMain(id: string, file?: string): Promise<boolean
     });
     return true;
   } catch (error) {
-    logger.error({ error, id, file }, 'メインウィンドウへ移せませんでした');
+    logger.error({ error, id, file }, 'ランチャーへ移せませんでした');
     await showToastWindow({
       message: t('workspaceErrors.changeFailed', {
         error: error instanceof Error ? error.message : String(error),
@@ -98,7 +98,7 @@ export async function moveItemToMain(id: string, file?: string): Promise<boolean
 }
 
 /**
- * 「メインウィンドウへ移して参照にする」。移す先のタブを選ぶサブメニューにする
+ * 「ランチャーへ移して参照にする」。移す先のタブを選ぶサブメニューにする
  * （ファイルが 2 つ以上のタブは、その下にファイルを並べる。タブが無ければ既定のファイルへ移す）
  */
 export async function buildMoveToMainMenuItem(item: WorkspaceItem): Promise<MenuItem> {
@@ -134,7 +134,7 @@ function linkPickerMenuItem(sender: WebContents, item: WorkspaceItem, label: str
   });
 }
 
-/** 参照の「コピーにする」「別のアイテムを指す」（コピーには出さない。コピーは「メインウィンドウへ移して参照にする」で参照にする） */
+/** 参照の「コピーにする」「別のアイテムを指す」（コピーには出さない。コピーは「ランチャーへ移して参照にする」で参照にする） */
 export function buildRefMenuItems(sender: WebContents, item: WorkspaceItem): MenuItem[] {
   if (item.ref?.status === 'ok') {
     return [

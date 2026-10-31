@@ -241,7 +241,7 @@ test.describe('QuickDashLauncher - アプリ取込', () => {
  * 以前は ×（隠すだけ）の後もブックマーク取込が開いたまま残り、アプリ取込をキャンセルすると後ろから出てきた
  */
 test.describe('QuickDashLauncher - 取込画面が後ろに残らない', () => {
-  test('メインウィンドウからブックマーク取込 → × で閉じる → アプリ取込 → キャンセルで、ブックマーク取込は出ない', async ({
+  test('ランチャーからブックマーク取込 → × で閉じる → アプリ取込 → キャンセルで、ブックマーク取込は出ない', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -254,7 +254,7 @@ test.describe('QuickDashLauncher - 取込画面が後ろに残らない', () => 
     const appModal = adminWindow.locator(MODAL);
 
     try {
-      await test.step('メインウィンドウの ➕ と同じく、ブックマーク取込を開く', async () => {
+      await test.step('ランチャーの ➕ と同じく、ブックマーク取込を開く', async () => {
         await mainWindow.evaluate(() =>
           window.electronAPI.openEditWindowWithImportModal('bookmark')
         );

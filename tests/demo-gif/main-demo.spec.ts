@@ -14,11 +14,11 @@ import { BACKDROP_MARGIN, showBackdrop } from './demo-backdrop';
 import { demoContent, demoLang, writeDemoData } from './demo-data';
 
 /**
- * README のメインデモ GIF の素材（メインウィンドウの動画）を撮る
+ * README のメインデモ GIF の素材（ランチャーの動画）を撮る
  *
  * デモデータ（5 タブ。メインに約 140 件）は demo-data.ts。案件フォルダは %TEMP%\qdl-demo\ に空のファイルで作る。
  * 環境変数 DEMO_LANG=en で英語の画面とデータで撮る（GIF は docs/images/demo-main-en.gif。既定は日本語で demo-main.gif）。
- * 録画は ffmpeg の gdigrab で、メインウィンドウの周りに少し余白を足した範囲を 30fps・劣化なしで撮る（Playwright の動画は
+ * 録画は ffmpeg の gdigrab で、ランチャーの周りに少し余白を足した範囲を 30fps・劣化なしで撮る（Playwright の動画は
  * 圧縮の残像が出るため使わない）。余白には色付きの背景を敷く（demo-backdrop.ts）。
  * 撮影中はウィンドウを最前面に固定するので、その範囲に他の物を重ねないこと。
  * 動画のどこから使うかを test-results/demo-gif/<main か main-en>/meta.json に書き、scripts/make-demo-gif.mjs がその範囲を
@@ -97,7 +97,7 @@ test('メインデモ', async () => {
       win = app.windows().find((w) => w.url().includes('index.html'));
       if (!win) await new Promise((r) => setTimeout(r, 250));
     }
-    if (!win) throw new Error('メインウィンドウが見つかりません');
+    if (!win) throw new Error('ランチャーが見つかりません');
     await win.waitForLoadState('networkidle');
 
     // アイコンを取得してから撮る（Web サイトのファビコン取得にネットワークを使う）
@@ -120,12 +120,12 @@ test('メインデモ', async () => {
     await clearSearch(win);
     await caption(win, CONTENT.demo.captions.intro);
 
-    // メインウィンドウを最前面に固定し、周りに余白を足した範囲を撮る。余白には色付きの背景を敷く
+    // ランチャーを最前面に固定し、周りに余白を足した範囲を撮る。余白には色付きの背景を敷く
     const { area, scale } = await app.evaluate(({ BrowserWindow, screen }, margin) => {
       const w = BrowserWindow.getAllWindows().find(
         (bw) => bw.isVisible() && bw.webContents.getURL().includes('index.html')
       );
-      if (!w) throw new Error('メインウィンドウが見つかりません');
+      if (!w) throw new Error('ランチャーが見つかりません');
       w.setAlwaysOnTop(true, 'screen-saver');
       w.focus();
       const b = w.getContentBounds();

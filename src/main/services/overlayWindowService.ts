@@ -3,7 +3,7 @@
  *
  * どちらも小型の透過・最前面ウィンドウであるため、1枚のウィンドウを
  * モードに応じてサイズ・位置・操作可否を切り替えて使い回す。
- * ウィンドウはメインウィンドウのレンダラープロセスを共有する（childWindowService）。
+ * ウィンドウはランチャーのレンダラープロセスを共有する（childWindowService）。
  *
  * 表示ポリシー: レイアウト進捗の表示中はトーストを表示しない（進捗の方が
  * 情報量が多く、レイアウト実行は数秒〜数十秒で終わるため）。
@@ -170,7 +170,7 @@ const OVERLAY_WINDOW_OPTIONS: BrowserWindowConstructorOptions = {
 
 /**
  * オーバーレイウィンドウを生成する
- * メインウィンドウのレンダラーから window.open で開き、レンダラープロセスを共有する
+ * ランチャーのレンダラーから window.open で開き、レンダラープロセスを共有する
  * （トースト表示のたびに別プロセスが立つのを避け、初回表示も速くなる）
  * 開き元が使えない場合はメインプロセスで直接生成する
  */
@@ -238,7 +238,7 @@ function applyToastMode(win: BrowserWindow): void {
   const { x, y } = getToastPosition();
   win.setIgnoreMouseEvents(true, { forward: true });
   // 表示中のウィンドウに setFocusable(false) を呼ぶと、Electron が Z 順で次のウィンドウ（最前面の
-  // トーストの下はタスクバー）を前面に出し、メインウィンドウがフォーカスを失って隠れる。
+  // トーストの下はタスクバー）を前面に出し、ランチャーがフォーカスを失って隠れる。
   // トーストを続けて出すと毎回これが起きるので、フォーカスを受け取れる状態のときだけ切り替える
   if (win.isFocusable()) {
     win.setFocusable(false);

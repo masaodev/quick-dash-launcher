@@ -44,7 +44,7 @@ export function setupIconHandlers(
     loadCachedIcons(items, folders)
   );
 
-  // 統合進捗API（進捗はメインウィンドウの進捗バーに表示する。silent なら進捗を送らない）
+  // 統合進捗API（進捗はランチャーの進捗バーに表示する。silent なら進捗を送らない）
   handleIpc(
     IPC_CHANNELS.FETCH_ICONS_COMBINED,
     (
@@ -56,7 +56,7 @@ export function setupIconHandlers(
     ) => fetchIconsCombined(urlItems, items, folders, forceRefresh, silent ? null : getMainWindow())
   );
 
-  // ほかのウィンドウからの「未取得のアイコンを取って」をメインウィンドウへ渡す（取得はメインウィンドウが流す）
+  // ほかのウィンドウからの「未取得のアイコンを取って」をランチャーへ渡す（取得はランチャーが流す）
   handleIpc(IPC_CHANNELS.REQUEST_FETCH_MISSING_ICONS, () => {
     const mainWindow = getMainWindow();
     if (mainWindow && !mainWindow.isDestroyed()) {

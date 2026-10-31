@@ -76,7 +76,7 @@ function setupWorkspaceContextMenuHandler(): void {
       if (!senderWindow) return;
 
       const menu = new Menu();
-      // 参照: 解決できたもの（linked）は編集をメインウィンドウで行う。元が見つからないもの（missing）は中身が無い
+      // 参照: 解決できたもの（linked）は編集をランチャーで行う。元が見つからないもの（missing）は中身が無い
       const linked = item.ref?.status === 'ok';
       const missing = item.type === 'ref';
       // パス系のメニューは通常アイテム（path を持つ）だけに出す（パスの無い単一アイテムには出さない）
@@ -86,7 +86,7 @@ function setupWorkspaceContextMenuHandler(): void {
       const isShortcut = isLauncher && item.originalPath !== undefined;
       const hasMemo = !!item.memo && item.memo.trim().length > 0;
 
-      // 並びはメインウィンドウの右クリックに合わせる（編集・メモ → 置き場の操作 → パス → 削除）。
+      // 並びはランチャーの右クリックに合わせる（編集・メモ → 置き場の操作 → パス → 削除）。
       // 起動はクリックでできるので置かない
       if (linked) {
         menu.append(
@@ -158,12 +158,12 @@ function setupWorkspaceContextMenuHandler(): void {
       const moveToGroup = buildMoveToGroupSubmenu(event.sender, item, groups ?? []);
       if (moveToGroup) menu.append(moveToGroup);
 
-      // 参照は「コピーにする」「別のアイテムを指す」（コピーを参照にするのは下の「メインウィンドウへ移して参照にする」）
+      // 参照は「コピーにする」「別のアイテムを指す」（コピーを参照にするのは下の「ランチャーへ移して参照にする」）
       menu.append(createSeparator());
       buildRefMenuItems(event.sender, item).forEach((menuItem) => menu.append(menuItem));
 
-      // メインウィンドウの「ワークスペースに追加」の逆向き。移したあとワークスペース側は参照になる
-      // （参照はもうメインウィンドウにあるので出さない）
+      // ランチャーの「ワークスペースに追加」の逆向き。移したあとワークスペース側は参照になる
+      // （参照はもうランチャーにあるので出さない）
       if (!item.ref) {
         menu.append(await buildMoveToMainMenuItem(item));
       }

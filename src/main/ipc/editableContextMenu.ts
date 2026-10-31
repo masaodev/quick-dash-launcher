@@ -4,7 +4,7 @@
  * Electron は入力欄を右クリックしても何も出さないので、すべての webContents の
  * context-menu イベントを拾い、入力欄（isEditable）のときだけ出す。アイテム・グループなど
  * 画面側で右クリックを受けている所は、画面側が preventDefault するのでこのイベントは来ない。
- * メインウィンドウの検索欄も画面側で受け、検索履歴を添えて SHOW_SEARCH_BOX_CONTEXT_MENU で頼む（A3-190）。
+ * ランチャーの検索欄も画面側で受け、検索履歴を添えて SHOW_SEARCH_BOX_CONTEXT_MENU で頼む（A3-190）。
  *
  * 画面仕様: docs/screens/context-menu.md
  */
@@ -60,7 +60,7 @@ export function buildEditableMenu(flags: SearchBoxEditFlags): Menu {
 }
 
 /**
- * メインウィンドウの検索欄の右クリックメニュー。文字のメニューの下に「検索履歴 ▸」を足す（A3-190）。
+ * ランチャーの検索欄の右クリックメニュー。文字のメニューの下に「検索履歴 ▸」を足す（A3-190）。
  * 選んだ検索語は検索欄に入れるだけ（Ctrl+↑ でたどったときと同じ）。「検索履歴を消す」は画面側で確かめてから消す
  */
 export function buildSearchBoxMenu(

@@ -65,7 +65,7 @@ const LauncherIconProgressBar: React.FC<IconProgressBarProps> = ({ progress, onC
   // 全結果を統合
   const allResults = progress.phases.flatMap((phase) => phase.results || []);
 
-  // 詳細は独立した子ウィンドウで開く（メインウィンドウを広げない）
+  // 詳細は独立した子ウィンドウで開く（ランチャーを広げない）
   const openDetail = () => {
     void window.electronAPI.openMainChildWindow({
       kind: 'iconProgressDetail',

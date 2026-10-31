@@ -314,7 +314,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
     }
   });
 
-  test('メイン画面で起動すると、最終起動の列に日時が出て、起動回数を数え、記録の無い行に絞り込める', async ({
+  test('ランチャーで起動すると、最終起動の列に日時が出て、起動回数を数え、記録の無い行に絞り込める', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -351,7 +351,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
       }
     });
 
-    // 起動するとメイン画面は隠れるので、管理ウィンドウを開く前に出し直す
+    // 起動するとランチャーは隠れるので、管理ウィンドウを開く前に出し直す
     await electronApp.evaluate(({ BrowserWindow }) => {
       BrowserWindow.getAllWindows()
         .find((w) => w.getTitle() === 'QuickDashLauncher')

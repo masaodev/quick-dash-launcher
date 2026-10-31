@@ -38,7 +38,7 @@ export type WorkspacePositionMode =
   | 'displayRight' // 指定ディスプレイの右端に配置（デフォルト）
   | 'fixed'; // 固定位置に表示（手動で移動した位置を記憶）
 
-/** workspaceTargetDisplayIndex で「メインウィンドウと同じディスプレイ」を指す値 */
+/** workspaceTargetDisplayIndex で「ランチャーと同じディスプレイ」を指す値 */
 export const MAIN_WINDOW_DISPLAY_INDEX = -1;
 
 /**
@@ -60,7 +60,7 @@ export interface FixedPosition {
  */
 export type DetachedPositionMode =
   | 'saved' // 置いた場所に表示する
-  | 'mainDisplay'; // メインウィンドウと一緒に出すとき、メインウィンドウと同じディスプレイの同じ位置に表示する（既定）
+  | 'mainDisplay'; // ランチャーと一緒に出すとき、ランチャーと同じディスプレイの同じ位置に表示する（既定）
 
 /**
  * ディスプレイ情報を表すインターフェース
@@ -159,7 +159,7 @@ export interface AppSettings {
   workspaceBackgroundTransparent: boolean;
   /** ワークスペースウィンドウの表示位置モード（デフォルト: 'displayRight'） */
   workspacePositionMode: WorkspacePositionMode;
-  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、-1＝メインウィンドウと同じディスプレイ、デフォルト: -1） */
+  /** ワークスペースのターゲットディスプレイ番号（displayLeft/displayRight時に使用、-1＝ランチャーと同じディスプレイ、デフォルト: -1） */
   workspaceTargetDisplayIndex: number;
   /** 固定位置で最後に置いた場所（workspacePositionMode='fixed'時に使用。null＝まだ置いていない、デフォルト: null） */
   workspaceFixedPosition: FixedPosition | null;
@@ -167,9 +167,9 @@ export interface AppSettings {
   workspaceVisibleOnAllDesktops: boolean;
   /** 切り離しウィンドウを全仮想デスクトップに表示（デフォルト: true） */
   detachedVisibleOnAllDesktops: boolean;
-  /** メインウィンドウの下に、気づきにくいキー操作のヒントを表示する（デフォルト: true） */
+  /** ランチャーの下に、気づきにくいキー操作のヒントを表示する（デフォルト: true） */
   showKeyboardHints: boolean;
-  /** メインウィンドウの検索で、表示名に加えてメモにも当てる（デフォルト: false） */
+  /** ランチャーの検索で、表示名に加えてメモにも当てる（デフォルト: false） */
   searchMemo: boolean;
   /** 検索で全角と半角を区別しない（デフォルト: false） */
   searchIgnoreWidth: boolean;

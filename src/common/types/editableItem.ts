@@ -35,7 +35,7 @@ export interface EditableJsonItem {
     validationError?: string;
 
     /**
-     * 起動種別（type: "item" のみ。読み込み時にメイン画面と同じ判定で決める）
+     * 起動種別（type: "item" のみ。読み込み時にランチャーと同じ判定で決める）
      *
      * ドット入りのフォルダ名はパスの文字列だけではファイルと区別できないため、ディスクで確かめた結果を渡す
      */

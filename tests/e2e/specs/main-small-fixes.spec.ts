@@ -8,7 +8,7 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 /**
- * メイン画面まわりの小さな直し（A3-158・A3-159・A3-162）
+ * ランチャーまわりの小さな直し（A3-158・A3-159・A3-162）
  * - フォルダ取込で並んだアイテムの右クリック「この取込から外す…」で、元の取込の編集画面を除外フィルタ入りで開く
  * - クリップボード・ドロップから開いた登録画面でも、パスを書き換えられる
  * - 「複数タブを表示」を切り替えたら最初のタブに戻り、タブが複数あるときにオフにするなら確認を出す
@@ -34,7 +34,7 @@ async function readMenuLabels(electronApp: ElectronApplication): Promise<string[
   );
 }
 
-test.describe('QuickDashLauncher - メイン画面の小さな直し', () => {
+test.describe('QuickDashLauncher - ランチャーの小さな直し', () => {
   let workDir: string;
 
   test.beforeEach(() => {

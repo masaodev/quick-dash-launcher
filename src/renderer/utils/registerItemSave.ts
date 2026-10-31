@@ -8,7 +8,7 @@ import { canSetRunAsAdmin } from '@common/utils/runAsAdmin';
  *
  * 新規登録は register-items、編集は種別ごとの update-*-by-id で更新する。保存先が変わった
  * 編集は「削除して登録し直す」。以前は App.tsx にあったが、登録・編集を独立した子ウィンドウで
- * 行うようになったため切り出した（メイン画面は data-changed で読み直す）
+ * 行うようになったため切り出した（ランチャーは data-changed で読み直す）
  *
  * @returns 'registered' | 'updated'（編集だったかどうか）
  */

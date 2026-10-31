@@ -58,7 +58,7 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 
 | 所属 | プレフィックス |
 | --- | --- |
-| メインウィンドウ | `Launcher*` |
+| ランチャー | `Launcher*` |
 | 管理ウィンドウ（共通） | `Admin*` |
 | 管理 > 設定タブ | `AdminSettings*` |
 | 管理 > アイテム管理タブ | `AdminItemManager*` |
@@ -74,7 +74,7 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 1. **2つ以上のウィンドウで使用される**
 2. **ビジネスロジックを持たない純粋なUI部品**（ダイアログ、入力部品など）
 
-例：`AlertDialog`, `ConfirmDialog`, `ColorPicker`, `HotkeyInput`, `MemoViewModal`（メモの表示。メインウィンドウとワークスペースウィンドウで使う）, `SetEntriesEditor`（セットの行の編集。登録・編集とワークスペースのアイテム編集の 2 つのウィンドウで使う。そこから開く `SetItemPickerModal`・`SetAddWindowsModal`・`SetUpdatePositionsModal`・`SetEntryDetailModal` も同じ）, `ItemWindowSwitchEditor`（単一アイテムのウィンドウ切り替え。中の 3 つの枠 `WindowMatchFields`・`WindowPlacementFields`・`OpenBehaviorFields`（`WindowSwitchFields.tsx`）は `SetEntryDetailModal` と共用）, `PlacementMinimap`（ウィンドウ位置の図。セットの編集の各画面と単一アイテムのウィンドウ切り替えで使う）
+例：`AlertDialog`, `ConfirmDialog`, `ColorPicker`, `HotkeyInput`, `MemoViewModal`（メモの表示。ランチャーとワークスペースウィンドウで使う）, `SetEntriesEditor`（セットの行の編集。登録・編集とワークスペースのアイテム編集の 2 つのウィンドウで使う。そこから開く `SetItemPickerModal`・`SetAddWindowsModal`・`SetUpdatePositionsModal`・`SetEntryDetailModal` も同じ）, `ItemWindowSwitchEditor`（単一アイテムのウィンドウ切り替え。中の 3 つの枠 `WindowMatchFields`・`WindowPlacementFields`・`OpenBehaviorFields`（`WindowSwitchFields.tsx`）は `SetEntryDetailModal` と共用）, `PlacementMinimap`（ウィンドウ位置の図。セットの編集の各画面と単一アイテムのウィンドウ切り替えで使う）
 
 ### 既知の例外（命名規則未適用）
 
@@ -88,6 +88,6 @@ Rendererプロセス（`src/renderer/`）のコンポーネント命名規則を
 | `BookmarkImportModal` | `AdminItemManagerView` | `Admin*` |
 | `ImportDestinationBand` | `AppImportModal`、`BookmarkImportModal`、`BookmarkAutoImportRuleModal` | `Admin*` |
 | `AppImportModal` | `AdminItemManagerView` | `Admin*` |
-| `MissingIconNotice` | `App`（メインウィンドウ） | `Launcher*` |
+| `MissingIconNotice` | `App`（ランチャー） | `Launcher*` |
 
-メインウィンドウの子ウィンドウ（登録・編集、アイコン取得結果）の部品（`RegisterModal`・`RegisterPlacementBar`・`RegisterWindowPage`・`IconProgressDetailModal`・`MainChildPage`）はプレフィックスなしで、子ウィンドウに付けるプレフィックスはまだ決めていない。
+ランチャーの子ウィンドウ（登録・編集、アイコン取得結果）の部品（`RegisterModal`・`RegisterPlacementBar`・`RegisterWindowPage`・`IconProgressDetailModal`・`MainChildPage`）はプレフィックスなしで、子ウィンドウに付けるプレフィックスはまだ決めていない。

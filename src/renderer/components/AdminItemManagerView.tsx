@@ -36,7 +36,7 @@ interface EditModeViewProps {
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
   dataFileLabels?: Record<string, string>;
-  /** メイン画面でタブを表示する設定か（タブを作るときに、表示しない設定なら確認する） */
+  /** ランチャーでタブを表示する設定か（タブを作るときに、表示しない設定なら確認する） */
   showDataFileTabs: boolean;
   /** タブ・データファイルの構成を保存したとき（管理画面全体の設定に反映する） */
   onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
@@ -384,7 +384,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   const handleAddItem = () => addBlank('item');
   const handleAddFolder = () => addBlank('dir');
 
-  // 取り込んだブックマークのアイコンを、保存のあとにメインウィンドウで取る（取込画面のチェック。A3-174）
+  // 取り込んだブックマークのアイコンを、保存のあとにランチャーで取る（取込画面のチェック。A3-174）
   const fetchIconsAfterSaveRef = useRef(false);
 
   // 未保存の変更が無くなったら（保存・破棄・閉じるときの「変更を捨てて閉じる」のどれでも）頼まない

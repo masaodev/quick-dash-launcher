@@ -170,23 +170,23 @@ export interface JsonWorkspaceSetItem extends JsonWorkspaceItemBase {
 
 /**
  * 参照アイテム（type: "ref"）
- * メインウィンドウのアイテム（データファイルのアイテム）を id で指す。中身（パス・メモなど）は持たず、
- * 表示・起動のたびにメインウィンドウのアイテムの中身を使う
+ * ランチャーのアイテム（データファイルのアイテム）を id で指す。中身（パス・メモなど）は持たず、
+ * 表示・起動のたびにランチャーのアイテムの中身を使う
  */
 export interface JsonWorkspaceRefItem extends Omit<JsonWorkspaceItemBase, 'displayName' | 'memo'> {
   /** アイテムタイプ */
   type: 'ref';
   /**
-   * 指すメインウィンドウのアイテムの id（データファイルの名前空間）
+   * 指すランチャーのアイテムの id（データファイルの名前空間）
    * @pattern ^[A-Za-z0-9]{8}$
    */
   refItemId: string;
   /**
-   * ワークスペースでの表示名（オプション）。省略するとメインウィンドウのアイテムの表示名を使う
+   * ワークスペースでの表示名（オプション）。省略するとランチャーのアイテムの表示名を使う
    * @minLength 1
    */
   displayName?: string;
-  /** 最後に見たメインウィンドウのアイテムの表示名（元が見つからないときの表示に使う。QDL が書く） */
+  /** 最後に見たランチャーのアイテムの表示名（元が見つからないときの表示に使う。QDL が書く） */
   lastKnownName?: string;
 }
 
@@ -262,7 +262,7 @@ export interface DetachedWindowState {
   bounds: { x: number; y: number; width: number; height: number };
   /** ピン留めモード */
   pinMode?: PinLevel;
-  /** 最後に動かしたときの、載っていたモニターに対する位置（メインウィンドウと同じディスプレイに出すときに使う） */
+  /** 最後に動かしたときの、載っていたモニターに対する位置（ランチャーと同じディスプレイに出すときに使う） */
   anchor?: MonitorAnchor;
 }
 
@@ -299,7 +299,7 @@ export interface WorkspaceUiStateFile {
  * ワークスペースウィンドウの状態
  */
 export interface WorkspaceWindowState {
-  /** 開いているか（⭐・Ctrl+W・× で閉じるまで true。メインウィンドウと一緒に隠れただけなら true のまま） */
+  /** 開いているか（⭐・Ctrl+W・× で閉じるまで true。ランチャーと一緒に隠れただけなら true のまま） */
   open: boolean;
   /** ピン留めの段階（0=なし, 1=表示固定, 2=常に最前面） */
   pinLevel: PinLevel;

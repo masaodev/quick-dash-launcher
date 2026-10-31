@@ -52,7 +52,7 @@ export function findMissingWsGroupIds(
 }
 
 /**
- * WSグループの行を、メインウィンドウに並べるアイテムに展開する
+ * WSグループの行を、ランチャーに並べるアイテムに展開する
  */
 export function expandWsGroupItem(
   item: JsonWsGroupItem,

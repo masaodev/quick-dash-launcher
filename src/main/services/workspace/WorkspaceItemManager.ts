@@ -81,7 +81,7 @@ export class WorkspaceItemManager {
   }
 
   /**
-   * メインウィンドウのアイテムを指す参照アイテムを末尾に足す
+   * ランチャーのアイテムを指す参照アイテムを末尾に足す
    *
    * @param refItemId 指すアイテムの id（データファイルの名前空間）
    * @param lastKnownName いまの表示名（元が見つからなくなったときの表示に使う）
@@ -135,7 +135,7 @@ export class WorkspaceItemManager {
   /**
    * アイテムを参照アイテムに置き換える（id・並び順・所属・追加日時は保つ。コピー → 参照、指し直し）
    *
-   * @param alias ワークスペースでの表示名（省略するとメインウィンドウの表示名を使う）
+   * @param alias ワークスペースでの表示名（省略するとランチャーの表示名を使う）
    */
   public replaceWithRef(
     id: string,
@@ -193,7 +193,7 @@ export class WorkspaceItemManager {
   /**
    * 参照アイテムを書き換える（ワークスペースでの表示名・最後に見た表示名・指す先）。変わったものがあれば true
    *
-   * 表示名は空なら消す（メインウィンドウの表示名に戻る）
+   * 表示名は空なら消す（ランチャーの表示名に戻る）
    */
   public updateRefs(
     mutate: (item: WorkspaceRefItem) => boolean,
@@ -272,7 +272,7 @@ export class WorkspaceItemManager {
       }
 
       if (item.type === 'ref') {
-        // 参照はワークスペースでの表示名を変える。空ならメインウィンドウの表示名に戻す
+        // 参照はワークスペースでの表示名を変える。空ならランチャーの表示名に戻す
         const alias = displayName.trim();
         if (alias === '') delete item.ref.alias;
         else item.ref.alias = displayName;
@@ -303,7 +303,7 @@ export class WorkspaceItemManager {
 
       const existing = items[itemIndex];
       if (existing.type === 'ref') {
-        // 参照の中身はメインウィンドウのアイテムのもの。ここでは直さない（メインウィンドウの編集画面で直す）
+        // 参照の中身はランチャーのアイテムのもの。ここでは直さない（ランチャーの編集画面で直す）
         throw new Error(`Reference item cannot be edited in the workspace: ${id}`);
       }
       // path が変わらない編集ではショートカットのリンク先（originalPath）を保つ

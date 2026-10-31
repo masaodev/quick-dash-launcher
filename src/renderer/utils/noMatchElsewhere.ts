@@ -16,7 +16,7 @@ export type NoMatchElsewhere = 'otherTab' | 'normalSearch' | null;
 interface NoMatchElsewhereParams {
   searchMode: SearchMode;
   searchQuery: string;
-  /** メイン画面のアイテム（ウィンドウを含んでもよい） */
+  /** ランチャーのアイテム（ウィンドウを含んでもよい） */
   mainItems: AppItem[];
   dataFileTabs: DataFileTab[];
   showDataFileTabs: boolean;

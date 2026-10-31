@@ -77,7 +77,7 @@ describe('ConfirmDialog', () => {
   });
 
   it.each(['Escape', 'Enter'])('%s キーを後ろの画面のキー処理には渡さない', (key) => {
-    // 後ろの画面の入力欄（メイン画面の検索欄など）がフォーカスを持ち、自分のキー処理で Enter を受ける状況
+    // 後ろの画面の入力欄（ランチャーの検索欄など）がフォーカスを持ち、自分のキー処理で Enter を受ける状況
     const behind = vi.fn();
     const input = document.createElement('input');
     input.addEventListener('keydown', behind);

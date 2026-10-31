@@ -179,14 +179,14 @@ export function setupWindowHandlers(
     return true;
   });
 
-  // メインウィンドウの余白の右クリック「クリップボードのパス・URL から追加」。振り分けはレンダラーが行う
+  // ランチャーの余白の右クリック「クリップボードのパス・URL から追加」。振り分けはレンダラーが行う
   // （この版の Electron では clipboard.readText は Promise を返すので待つ）
   handleIpc(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER, async () => ({
     files: readClipboardFilePaths(),
     text: await clipboard.readText(),
   }));
 
-  // メイン画面・管理画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）。閉じるまで待つ
+  // ランチャー・管理画面の子ウィンドウ（アイテムの登録・編集、アイコン取得結果）。閉じるまで待つ
   handleIpc(IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW, (event, request: MainChildWindowRequest) =>
     openMainChildWindow(request, event.sender)
   );
@@ -352,7 +352,7 @@ export function setupWindowHandlers(
     async (_event, mode: WorkspacePositionMode) => {
       const settingsService = await SettingsService.getInstance();
       // 左端・右端を選び直したときは、カーソルのあるディスプレイを対象にする
-      // （「メインウィンドウと同じディスプレイ」に出す設定なら、そのまま残す）
+      // （「ランチャーと同じディスプレイ」に出す設定なら、そのまま残す）
       const followsMainWindow =
         (await settingsService.get('workspaceTargetDisplayIndex')) === MAIN_WINDOW_DISPLAY_INDEX;
       if ((mode === 'displayLeft' || mode === 'displayRight') && !followsMainWindow) {

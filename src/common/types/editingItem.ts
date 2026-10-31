@@ -76,7 +76,7 @@ export function isEditingSetItem(item: EditingAppItem): item is EditingSetItem {
 }
 
 /**
- * 管理画面から渡された編集対象（EditableJsonItem）か。メイン画面からは EditingAppItem が渡される
+ * 管理画面から渡された編集対象（EditableJsonItem）か。ランチャーからは EditingAppItem が渡される
  */
 export function isEditableJsonItem(
   item: EditingAppItem | EditableJsonItem

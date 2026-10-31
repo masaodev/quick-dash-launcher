@@ -38,7 +38,7 @@ describe('WorkspaceItemManager', () => {
 
   const readItems = () => test.readMain().items as Record<string, unknown>[];
 
-  it('addItem はメイン画面のアイテムをファイル形式で保存し、launcherType を持つこと', () => {
+  it('addItem はランチャーのアイテムをファイル形式で保存し、launcherType を持つこと', () => {
     const added = manager.addItem({
       displayName: 'GitHub',
       path: 'https://github.com/',
@@ -176,7 +176,7 @@ describe('WorkspaceItemManager', () => {
       expect(manager.loadItems()[0].displayName).toBe('Visual Studio Code');
     });
 
-    it('updateItem は参照の中身を直さないこと（メインウィンドウの編集画面で直す）', () => {
+    it('updateItem は参照の中身を直さないこと（ランチャーの編集画面で直す）', () => {
       const added = manager.addRef('Main0001', 'x');
       expect(() =>
         manager.updateItem(added.id, { type: 'item', displayName: 'y', path: 'notepad.exe' })

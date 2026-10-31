@@ -243,7 +243,7 @@ test.describe('QuickDashLauncher - ワークスペースの操作', () => {
         .first()
         .click({ modifiers: ['Shift'] });
       await expect
-        // ワークスペースは親フォルダのパスをそのまま開く（メインウィンドウの Shift+Enter は親フォルダの中で選ぶ）
+        // ワークスペースは親フォルダのパスをそのまま開く（ランチャーの Shift+Enter は親フォルダの中で選ぶ）
         .poll(async () => (await opened()).filter((o) => o.startsWith('path:')))
         .toEqual(['path:C:\\Windows\\System32']);
     });

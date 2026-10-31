@@ -22,10 +22,10 @@ async function isMainWindowVisible(electronApp: ElectronApplication) {
 }
 
 /**
- * WSグループ: ワークスペースのグループをメインウィンドウの一覧と検索に並べ、選ぶと切り離しウィンドウで開く
+ * WSグループ: ワークスペースのグループをランチャーの一覧と検索に並べ、選ぶと切り離しウィンドウで開く
  */
 test.describe('QuickDashLauncher - WSグループ', () => {
-  test('アイテム管理の ▼ から追加し、メインウィンドウで選ぶと切り離しウィンドウが開き、メインは残る', async ({
+  test('アイテム管理の ▼ から追加し、ランチャーで選ぶと切り離しウィンドウが開き、メインは残る', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -94,7 +94,7 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       await adminWindow.close();
     }
 
-    await test.step('メインウィンドウで検索すると、窓の形のアイコン（上の帯がグループの色）で並ぶ', async () => {
+    await test.step('ランチャーで検索すると、窓の形のアイコン（上の帯がグループの色）で並ぶ', async () => {
       await utils.searchFor('E2E');
       const items = mainWindow.locator('.item', { hasText: 'WS: E2E' });
       await expect(items).toHaveCount(2);
@@ -105,8 +105,8 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       await expect(mainWindow.locator('.item', { hasText: 'E2E 予備' })).toHaveCount(0);
     });
 
-    await test.step('Enter で切り離しウィンドウが開き、メインウィンドウは隠れない', async () => {
-      // 管理ウィンドウを開いたときにメインウィンドウは隠れているので、出し直す
+    await test.step('Enter で切り離しウィンドウが開き、ランチャーは隠れない', async () => {
+      // 管理ウィンドウを開いたときにランチャーは隠れているので、出し直す
       await electronApp.evaluate(({ BrowserWindow }) => {
         const main = BrowserWindow.getAllWindows().find(
           (w) => w.getTitle() === 'QuickDashLauncher'
@@ -122,7 +122,7 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       expect(await isMainWindowVisible(electronApp)).toBe(true);
     });
 
-    await test.step('グループを改名すると、メインウィンドウの名前も変わる', async () => {
+    await test.step('グループを改名すると、ランチャーの名前も変わる', async () => {
       await mainWindow.evaluate(
         (id) => window.electronAPI.workspaceAPI.updateGroup(id, { displayName: 'E2E 副業' }),
         hobby

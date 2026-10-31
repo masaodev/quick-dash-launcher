@@ -17,7 +17,7 @@ declare global {
 const LAUNCH_DELAY_MS = 2000;
 
 test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作', () => {
-  test('アイテム実行時、起動完了を待たずにメインウィンドウが即座に閉じる', async ({
+  test('アイテム実行時、起動完了を待たずにランチャーが即座に閉じる', async ({
     electronApp,
     mainWindow,
   }, _testInfo) => {
@@ -42,7 +42,7 @@ test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作
       }, LAUNCH_DELAY_MS);
     });
 
-    await test.step('実行前はメインウィンドウが表示されている', async () => {
+    await test.step('実行前はランチャーが表示されている', async () => {
       const visible = await electronApp.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows().some(
           (win) => win.getTitle() === 'QuickDashLauncher' && win.isVisible()
@@ -57,7 +57,7 @@ test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作
       await mainWindow.keyboard.press('Enter');
     });
 
-    await test.step('起動処理が完了する前にメインウィンドウが非表示になる', async () => {
+    await test.step('起動処理が完了する前にランチャーが非表示になる', async () => {
       // 起動スタブが完了する（LAUNCH_DELAY_MS）より十分に短い時間内に閉じることを確認
       await expect
         .poll(
@@ -67,7 +67,7 @@ test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作
                 (win) => win.getTitle() === 'QuickDashLauncher' && win.isVisible()
               )
             ),
-          { timeout: LAUNCH_DELAY_MS / 2, message: 'メインウィンドウが閉じませんでした' }
+          { timeout: LAUNCH_DELAY_MS / 2, message: 'ランチャーが閉じませんでした' }
         )
         .toBe(false);
 

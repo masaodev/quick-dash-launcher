@@ -4,7 +4,7 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 /**
- * メインウィンドウのキー（A3-148）
+ * ランチャーのキー（A3-148）
  * - Ctrl+C: 選んでいるアイテムのパスをコピー（検索欄で文字を選んでいるときは文字のコピー）
  * - Ctrl+Shift+C: 親フォルダのパスをコピー
  * - Shift+F10・アプリケーションキー: 選んでいる行の右クリックメニュー（検索欄の文字のメニューは出さない）
@@ -29,7 +29,7 @@ async function readMenus(electronApp: ElectronApplication): Promise<string[][]> 
   return electronApp.evaluate(() => (globalThis as { __e2eMenus?: string[][] }).__e2eMenus ?? []);
 }
 
-test.describe('QuickDashLauncher - メインウィンドウのコピーとメニューのキー', () => {
+test.describe('QuickDashLauncher - ランチャーのコピーとメニューのキー', () => {
   test.beforeEach(async ({ mainWindow, configHelper }) => {
     configHelper.addItemToFile('data.json', {
       id: 'e2ekey01',

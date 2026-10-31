@@ -16,7 +16,7 @@ import type { LauncherCommandContext, LauncherEntry } from './cliLauncherCommand
 import { resolveCliPath, resolveOne, validateAsDataItem } from './cliShared.js';
 
 /**
- * qdl launcher set row … — メイン画面のセットの行
+ * qdl launcher set row … — ランチャーのセットの行
  *
  * 行に入れられるのは、開くもの（登録済みのアイテムか、パス）だけ。
  * 動かすウィンドウと位置は、画面の「ウィンドウを追加」「位置を更新」で付ける（CLI からは付けない）。
@@ -171,7 +171,7 @@ const SET_ENTRY_KEYS = new Set([
 /**
  * --set entries=… で渡された行を確かめる（読み込みの検証は知らないキーを黙って捨て、空の行を通すため）
  *
- * @param all メイン画面のアイテム。渡すと itemId が実在し、行にできる種類かも確かめる（ワークスペースでは渡さない）
+ * @param all ランチャーのアイテム。渡すと itemId が実在し、行にできる種類かも確かめる（ワークスペースでは渡さない）
  */
 export function checkCliSetEntries(raw: unknown, all?: readonly LauncherEntry[]): void {
   if (!Array.isArray(raw)) return;

@@ -434,7 +434,7 @@ const LOAD_PROBE_MODES: Record<LoadTrigger, LoadProbeMode> = {
   internal: 'normal',
 };
 
-/** メイン画面のアイテムのうち、パスを持つ起動アイテムのパス */
+/** ランチャーのアイテムのうち、パスを持つ起動アイテムのパス */
 function collectLauncherPaths(items: AppItem[]): string[] {
   return items.filter(isLauncherItem).map((item) => item.path);
 }
@@ -466,14 +466,14 @@ export function getLastLoadReport(): LoadReport | null {
 }
 
 /**
- * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・メイン画面の F5・「アイコンをすべて取り直す」）
+ * 設定ファイル群（データファイル + ワークスペース）をディスクから読み直す（起動時・ランチャーの F5・「アイコンをすべて取り直す」）
  *
  * データファイルとワークスペースの読み込み結果を 1 つのレポートにまとめ、
  * 外部変更があれば変更前スナップショットを 1 つ作る。ワークスペースの内容が変わっていれば
  * ワークスペース画面にも再取得を通知する。
  *
  * @param trigger 読み込みのきっかけ。internal（変更通知・画面内の一覧取得）は先行の再読込の結果を共有する
- * @returns メイン画面に表示するアイテム
+ * @returns ランチャーに表示するアイテム
  */
 export function reloadConfigFiles(
   configFolder: string,
@@ -525,7 +525,7 @@ async function reloadConfigFilesInternal(
     workspaceExternal = consumed.externallyChanged;
     workspaceCorrupted = workspaceService.isCorrupted();
     workspacePaths = await collectWorkspaceItemPaths(workspaceService);
-    // 参照アイテムがあれば、メインウィンドウのアイテムの変更を画面に反映させる（最後に見た表示名も控え直す）
+    // 参照アイテムがあれば、ランチャーのアイテムの変更を画面に反映させる（最後に見た表示名も控え直す）
     workspaceRefsChanged = await workspaceService.syncRefs();
   } catch (error) {
     dataLogger.error({ error }, 'ワークスペースファイルの再読込に失敗しました');

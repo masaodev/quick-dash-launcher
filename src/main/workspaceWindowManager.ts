@@ -32,7 +32,7 @@ import {
 } from './services/childWindowService.js';
 
 /**
- * メインウィンドウのレンダラー経由でワークスペースを生成する際の待機上限（ms）
+ * ランチャーのレンダラー経由でワークスペースを生成する際の待機上限（ms）
  * 起動時はメインレンダラーの読み込み完了を待つため長めに取る
  */
 const WORKSPACE_OPEN_TIMEOUT_MS = 15000;
@@ -45,8 +45,8 @@ let detachedRestored: boolean = false;
 /** ピン留めの段階。ワークスペースは最初から表示固定（開きっぱなしで使ってもらうため） */
 let workspacePinLevel: PinLevel = 1;
 /**
- * 開いているか。⭐・Ctrl+W・× で閉じるまで true（メインウィンドウと一緒に隠れただけなら true のまま）。
- * 開いていて 📌 なしなら、メインウィンドウと一緒に出て一緒に隠れる
+ * 開いているか。⭐・Ctrl+W・× で閉じるまで true（ランチャーと一緒に隠れただけなら true のまま）。
+ * 開いていて 📌 なしなら、ランチャーと一緒に出て一緒に隠れる
  */
 let isWorkspaceOpen: boolean = false;
 /** 保存した状態（開いているか・ピン留め）を読んだか */
@@ -94,7 +94,7 @@ function setWorkspaceOpen(open: boolean): void {
   broadcastWorkspaceOpen();
 }
 
-/** メインウィンドウの ⭐ ボタンの押し込み表示を、開いているかに合わせる */
+/** ランチャーの ⭐ ボタンの押し込み表示を、開いているかに合わせる */
 function broadcastWorkspaceOpen(): void {
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) {
@@ -117,7 +117,7 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
       const state = await ws.loadWorkspaceWindowState();
       workspacePinLevel = state.pinLevel;
       isWorkspaceOpen = state.open;
-      // メインウィンドウが読み込む前に問い合わせていると「閉じている」が返っているので、読んだ値を知らせ直す
+      // ランチャーが読み込む前に問い合わせていると「閉じている」が返っているので、読んだ値を知らせ直す
       if (isWorkspaceOpen) broadcastWorkspaceOpen();
     } catch (error) {
       windowLogger.warn({ error }, 'ワークスペースウィンドウの状態の読み込みに失敗');
@@ -147,8 +147,8 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
     webPreferences: DEFAULT_WEB_PREFERENCES,
   };
 
-  // メインウィンドウのレンダラーから window.open で開き、レンダラープロセスを共有する
-  // （メインウィンドウは常駐なので、常時1プロセス分のメモリを節約できる）
+  // ランチャーのレンダラーから window.open で開き、レンダラープロセスを共有する
+  // （ランチャーは常駐なので、常時1プロセス分のメモリを節約できる）
   const sharedWindow = await openChildWindow('main', {
     name: 'workspace',
     html: 'workspace.html',
@@ -180,7 +180,7 @@ async function createWorkspaceWindowInternal(): Promise<BrowserWindow> {
     notifyPinLevel(createdWindow, workspacePinLevel)
   );
 
-  // × は「閉じる」。メインウィンドウと一緒に出てこなくなる
+  // × は「閉じる」。ランチャーと一緒に出てこなくなる
   hideOnClose(workspaceWindow, () => {
     isWorkspaceWindowVisible = false;
     setWorkspaceOpen(false);
@@ -223,7 +223,7 @@ export async function showWorkspaceWindow(options?: { skipFocus?: boolean }): Pr
 }
 
 /**
- * 開いているワークスペースを、メインウィンドウと一緒に出す（隠れているときだけ。閉じているものは出さない）
+ * 開いているワークスペースを、ランチャーと一緒に出す（隠れているときだけ。閉じているものは出さない）
  */
 export async function showWorkspaceWithMain(): Promise<void> {
   if (!isWorkspaceOpen || isWorkspaceWindowVisible) return;
@@ -231,7 +231,7 @@ export async function showWorkspaceWithMain(): Promise<void> {
 }
 
 /**
- * メインウィンドウと一緒に隠す（📌 なしのときだけ。開いている状態は変えない）。
+ * ランチャーと一緒に隠す（📌 なしのときだけ。開いている状態は変えない）。
  * 編集・確認の子ウィンドウを開いている間は隠さない（メインのモーダル中と同じ考え方）
  */
 export function hideWorkspaceWithMain(): void {
@@ -301,7 +301,7 @@ async function presentWorkspaceWindow(options?: { skipFocus?: boolean }): Promis
   }
 }
 
-/** ワークスペースウィンドウを閉じる（⭐・Ctrl+W・×）。メインウィンドウと一緒に出てこなくなる */
+/** ワークスペースウィンドウを閉じる（⭐・Ctrl+W・×）。ランチャーと一緒に出てこなくなる */
 export function hideWorkspaceWindow(): void {
   setWorkspaceOpen(false);
   if (workspaceWindow && !workspaceWindow.isDestroyed()) {
@@ -400,7 +400,7 @@ export function getWorkspaceAlwaysOnTop(): boolean {
 }
 
 /**
- * 表示中のワークスペースを、ほかのウィンドウの下にあっても手前に出す（ホットキーでメインウィンドウを出すとき。
+ * 表示中のワークスペースを、ほかのウィンドウの下にあっても手前に出す（ホットキーでランチャーを出すとき。
  * ディスプレイの中では動かさない）。📌 なしのものも対象（メインと一緒に showInactive() で出しただけでは、
  * ほかのアプリの下に残ることがある）。別の仮想デスクトップにあれば今のデスクトップへ連れてくる
  * （すべてのデスクトップに表示しない設定のとき。moveTop() だけでは出てこない）。
@@ -416,7 +416,7 @@ export function bringWorkspaceToFront(): void {
   workspaceWindow.moveTop();
 }
 
-/** 指定インデックスのディスプレイを取得（MAIN_WINDOW_DISPLAY_INDEX はメインウィンドウと同じディスプレイ、範囲外はプライマリ） */
+/** 指定インデックスのディスプレイを取得（MAIN_WINDOW_DISPLAY_INDEX はランチャーと同じディスプレイ、範囲外はプライマリ） */
 function getDisplayByIndex(displayIndex: number): Display {
   if (displayIndex === MAIN_WINDOW_DISPLAY_INDEX) {
     return getMainWindowDisplay();
@@ -474,7 +474,7 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
       const side = isLeft ? '左' : '右';
       const target =
         targetIndex === MAIN_WINDOW_DISPLAY_INDEX
-          ? 'メインウィンドウと同じディスプレイ'
+          ? 'ランチャーと同じディスプレイ'
           : `ディスプレイ${targetIndex + 1}`;
       windowLogger.info(`ワークスペースを${target}の${side}端に配置`);
       break;

@@ -2,7 +2,7 @@ import type { MainChildWindowRequest } from '@common/types';
 
 import { mainI18n } from '../services/mainI18n.js';
 
-/** メイン画面の子ウィンドウの標準サイズ・タイトル */
+/** ランチャーの子ウィンドウの標準サイズ・タイトル */
 export interface MainChildWindowSpec {
   title: string;
   size: { width: number; height: number };
@@ -11,7 +11,7 @@ export interface MainChildWindowSpec {
 /**
  * 要求の種類ごとのウィンドウ仕様を返す
  *
- * サイズは以前のモーダルがメインウィンドウに要求していた大きさ（登録 850x1000、
+ * サイズは以前のモーダルがランチャーに要求していた大きさ（登録 850x1000、
  * アイコン取得結果 800x700）を基準に、フォームが収まる範囲で少し詰めたもの。
  * 実際の大きさは作業領域で切り詰められる（calculateEditorBounds）
  */

@@ -471,9 +471,9 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
     }
   });
 
-  // ==================== メイン画面との同期テスト ====================
+  // ==================== ランチャーとの同期テスト ====================
 
-  test('管理画面でアイテムを編集するとメイン画面に即座に反映される', async ({
+  test('管理画面でアイテムを編集するとランチャーに即座に反映される', async ({
     electronApp,
     mainWindow,
   }, _testInfo) => {
@@ -502,8 +502,8 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
         await confirmButton.click();
       });
 
-      await test.step('メイン画面に変更が反映されたことを確認', async () => {
-        // メイン画面を確認（リロード不要で反映されるはず）
+      await test.step('ランチャーに変更が反映されたことを確認', async () => {
+        // ランチャーを確認（リロード不要で反映されるはず）
         const updatedItem = mainWindow.locator('.item', { hasText: 'GitHub同期テスト' });
         await expect(updatedItem).toBeVisible({ timeout: 3000 });
 

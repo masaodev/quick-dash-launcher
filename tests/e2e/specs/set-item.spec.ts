@@ -24,7 +24,7 @@ test.describe('QuickDashLauncher - セットの登録・編集・変換', () => 
     mainWindow,
     configHelper,
   }) => {
-    await test.step('メイン画面にセットとして表示される', async () => {
+    await test.step('ランチャーにセットとして表示される', async () => {
       for (const name of ['開発環境スタート', 'Web開発セット', 'ドキュメント作成']) {
         const row = mainWindow.locator('.item', { hasText: name });
         await expect(row).toBeVisible({ timeout: 5000 });

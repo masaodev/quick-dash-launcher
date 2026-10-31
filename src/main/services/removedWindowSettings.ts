@@ -7,10 +7,10 @@ import { WorkspaceService } from './workspace/index.js';
 /**
  * 設定から外した 2 つの項目を、ワークスペースの状態と 📌 に読み替える（起動時に 1 回）
  *
- * - autoShowWorkspace（メインウィンドウ表示時にワークスペースを自動表示）
- * - hideDetachedWithMainWindow（メインウィンドウと一緒に切り離しウィンドウも隠す）
+ * - autoShowWorkspace（ランチャー表示時にワークスペースを自動表示）
+ * - hideDetachedWithMainWindow（ランチャーと一緒に切り離しウィンドウも隠す）
  *
- * 今は「📌 なし＝メインウィンドウと一緒に出て一緒に隠れる」「📌 あり＝隠れずに残る」で決まる。
+ * 今は「📌 なし＝ランチャーと一緒に出て一緒に隠れる」「📌 あり＝隠れずに残る」で決まる。
  * 前と同じ見え方になるように読み替えて、古いキーは settings.json から消す。
  *
  * ほかに、古い表示位置の値（primaryLeft・primaryRight）と、固定位置の座標の古いキー（X・Y を別々に持っていた）も読み替える。

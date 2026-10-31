@@ -104,15 +104,15 @@ export async function loadSetCatalog(
   const currentTab = tabOf(currentFile);
 
   const launchers = allItems.filter((item): item is LauncherItem => isLauncherItem(item));
-  // 参照は指す先のメインウィンドウのアイテムが下に並ぶので出さない（選べばメインのアイテムの id が入る）
+  // 参照は指す先のランチャーのアイテムが下に並ぶので出さない（選べばメインのアイテムの id が入る）
   const workspaceItems = includeWorkspace
     ? (await window.electronAPI.workspaceAPI.loadItems()).filter(
         (item): item is Extract<WorkspaceItem, { type: 'item' }> =>
           item.type === 'item' && !item.ref
       )
     : [];
-  // ワークスペースのアイテムは読んだだけではアイコンを持たないので、メインウィンドウのアイテムと同じくキャッシュから読む。
-  // 同じパスでもカスタムアイコンが違うことがあるので、メインウィンドウのアイテムとは分けて読む
+  // ワークスペースのアイテムは読んだだけではアイコンを持たないので、ランチャーのアイテムと同じくキャッシュから読む。
+  // 同じパスでもカスタムアイコンが違うことがあるので、ランチャーのアイテムとは分けて読む
   const [icons, workspaceIcons] = await Promise.all([
     window.electronAPI.loadCachedIcons(launchers).catch(() => ({})),
     workspaceItems.length > 0
@@ -556,5 +556,5 @@ export function setEntriesSummary(
     : i18next.t('launcher.tooltip.setRows', { names: joined });
 }
 
-/** アイコンが取れていないときの、種類ごとの絵文字（メイン画面と同じ表に、動かすだけの行を足す） */
+/** アイコンが取れていないときの、種類ごとの絵文字（ランチャーと同じ表に、動かすだけの行を足す） */
 export const SET_KIND_ICONS: Readonly<Record<string, string>> = { ...ITEM_TYPE_ICONS, none: '🖥️' };
