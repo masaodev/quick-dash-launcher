@@ -86,6 +86,8 @@ async function loadJsonDataFile(
   const content = FileUtils.safeReadTextFile(filePath);
 
   if (content === null) {
+    // 壊れていたファイルを QDL の外で消したときは、「読めませんでした」の印も外す（ロックなどで読めないだけなら残す）
+    if (!FileUtils.exists(filePath)) clearDataFileCorrupted(fileName);
     dataLogger.warn({ filePath }, 'JSONファイルが読み込めませんでした');
     report.status = 'unreadable';
     report.error = mainI18n.t('dataErrors.fileUnreadable');

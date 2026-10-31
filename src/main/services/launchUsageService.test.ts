@@ -75,6 +75,25 @@ describe('LaunchUsageService', () => {
     expect(service.getSnapshot().byId).toEqual({});
   });
 
+  it('BOM 付きで保存したファイルも読み、壊れたとは見なさない', async () => {
+    fs.writeFileSync(
+      path.join(dir, 'item-usage.json'),
+      '﻿' +
+        JSON.stringify({
+          version: 1,
+          since: 1,
+          byId: { abc12345: { lastLaunchedAt: 2, count: 4 } },
+          byPath: {},
+        }),
+      'utf8'
+    );
+    const service = LaunchUsageService.initialize(dir);
+    expect(service.getSnapshot().byId.abc12345.count).toBe(4);
+    expect(fs.readdirSync(dir).some((name) => name.startsWith('item-usage.json.broken-'))).toBe(
+      false
+    );
+  });
+
   it('壊れたファイルは脇へ移して記録を始め直す。数でない記録は捨てる', async () => {
     fs.writeFileSync(path.join(dir, 'item-usage.json'), '{ broken', 'utf8');
     const service = LaunchUsageService.initialize(dir);
