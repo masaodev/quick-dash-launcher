@@ -13,15 +13,7 @@
  * - 書く側に同じ項目があれば、書く側を優先する
  */
 
-import type {
-  JsonClipboardItem,
-  JsonDataFile,
-  JsonDirItem,
-  JsonGroupItem,
-  JsonLauncherItem,
-  JsonLayoutItem,
-  JsonSetItem,
-} from '@common/types';
+import type { JsonDataFile, JsonGroupItem, JsonItem, JsonLayoutItem } from '@common/types';
 import type {
   JsonArchivedWorkspaceGroup,
   JsonArchivedWorkspaceItem,
@@ -75,6 +67,9 @@ const DATA_ITEM_KEYS = [
   // セット（旧ウィンドウ配置も entries）
   'entries',
   'launchMode',
+  // WSグループ
+  'scope',
+  'groupIds',
   // 旧形式（読み込み時に変換する）
   'itemNames',
   'windowConfig',
@@ -125,14 +120,8 @@ type KeysOfUnion<T> = T extends unknown ? keyof T : never;
 type AssertCovered<Keys, Listed extends readonly string[]> =
   Exclude<Keys, Listed[number]> extends never ? true : Exclude<Keys, Listed[number]>;
 const dataItemKeysCovered: AssertCovered<
-  KeysOfUnion<
-    | JsonLauncherItem
-    | JsonDirItem
-    | JsonClipboardItem
-    | JsonSetItem
-    | JsonGroupItem
-    | JsonLayoutItem
-  >,
+  // 今の形式は JsonItem 全体で照合する（種別を足したら、ここを直さなくても型チェックで止まる）
+  KeysOfUnion<JsonItem | JsonGroupItem | JsonLayoutItem>,
   typeof DATA_ITEM_KEYS
 > = true;
 const dataFileKeysCovered: AssertCovered<keyof JsonDataFile, typeof DATA_FILE_KEYS> = true;
