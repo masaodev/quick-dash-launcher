@@ -63,6 +63,12 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 - **形式**: `{ "version": 1, "since": <記録を始めた日時>, "byId": { "<id>": { "lastLaunchedAt": <日時>, "count": <回数> } }, "byPath": { "<パス>": { ... } }, "pausedAt": <記録を切った日時。切っている間だけ> }`（日時は Unix ミリ秒）
 - **内容**: アイテムを開いた記録（QDL 管理）。メイン画面・セットから開いたものは `byId`（データファイルの id）、ワークスペースの参照アイテムから開いたものは指すメインウィンドウのアイテムの `byId`、ワークスペースのそれ以外のアイテムから開いたものは `byPath`（パスは前後の空白と末尾の区切り文字を除いて小文字にする。引数は含めない）。フォルダ取込で展開したアイテムは、フォルダ取込の行の id で `byId` に数える。登録・編集画面の「試しに実行」は数えない。初めて読んだときに `since` を書いておく。中身が壊れて読めないファイルは `item-usage.json.broken-<日時>` に移してから記録を始め直す（移せないときと、ロックなどで読めないときは、上書きしないよう次に読めるまで記録しない）。アイテム管理は、単一アイテム・セット・クリップボードの行には `byId` と同じパスの `byPath` を足したもの、フォルダ取込の行には `byId` を最終起動・起動回数に出す。設定の `recordLaunchUsage` が `false` の間は記録しない（切った日時を `pausedAt` に残し、入れ直したら `since` をその日に進める）。新しい版の QDL が書いたファイルは読んで使うが、上書きしない（[形式の版と互換](#形式の版と互換)）
 
+### 更新の知らせ
+
+- **ファイル**: `update-check.json`
+- **形式**: `{ "version": 1, "lastCheckedAt": <最後に確かめた日時>, "latest": { "version": "0.8.1", "url": "https://github.com/masaodev/quick-dash-launcher/releases/tag/v0.8.1" }, "notifiedVersion": "0.8.1" }`（日時は Unix ミリ秒。`latest` は今の版より新しい版が無ければ `null`）
+- **内容**: 新しい版の確認の状態（QDL 管理。`src/main/services/updateCheckService.ts`）。GitHub の releases API（`https://api.github.com/repos/masaodev/quick-dash-launcher/releases`。ログインなし）を起動の 1 分後と、前回から 24 時間たったら（1 時間ごとに見る）読み、今の版より新しい版を `latest` に残す。下書きは除き、ベータ版は設定の `updateCheckIncludeBeta` か、今の版がベータ版のときだけ含める。初めて見つけた版はトーストで 1 回知らせ（`notifiedVersion`）、新しい版がある間はトレイのメニューの先頭と、管理ウィンドウのヘルプタブに出す。リリースのページを開くだけで、入れ替えはしない。つながらない・GitHub が応えないときは何も出さず、ログに残して次の回に確かめ直す（失敗した回も `lastCheckedAt` を進める）。設定の `updateCheckEnabled` が `false` の間は読まず、知らせも出さない。Store 版（Store が更新する）と開発版では動かない（開発版で試すときは環境変数 `QDL_UPDATE_CHECK_IN_DEV=1`）。壊れたファイルは無視して初めからやり直す。新しい版の QDL が書いたファイルは上書きしない（[形式の版と互換](#形式の版と互換)）。バックアップの対象ではない
+
 ### 拡張子の無いファイルのメモ
 
 - **ファイル**: `path-type-cache.json`
@@ -125,6 +131,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 | `settings.json` | `settingsVersion`（`1`） | ファイルには一切書かない（既定値の書き足しもしない）。画面や CLI で変えた設定は QDL を終了するまでだけ効く |
 | `item-usage.json`・`path-type-cache.json` | `version`（`1`） | 上書きしない（起動の記録は読んで使い、足した分は保存しない） |
 | `search-history.json` | `version`（`"1.0"`） | 上書きしない（検索履歴は残らない） |
+| `update-check.json` | `version`（`1`） | 上書きしない（最後に確かめた日時と知らせ済みの版は残らない） |
 
 データファイル・ワークスペースファイルは、QDL の書き込みがすべて通る `writeDataFile`（`src/main/services/dataFileTracker.ts`）がディスク上のファイルの版を確かめ、新しければ書かない。読み込みで見つけたときは、読み込みレポートの `newerFormat`・`summary.newerFormatFiles`（[データファイル形式 5.3](data-format.md#53-qdl-の外での変更への備え)）に載せ、トーストで知らせる。`settings.json` が新しい版のときは起動時にトーストで知らせる。
 

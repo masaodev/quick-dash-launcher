@@ -23,6 +23,7 @@ import { EnvConfig } from '../config/envConfig.js';
 import { showToastWindow } from '../services/overlayWindowService.js';
 import { applyLanguageSetting, mainI18n } from '../services/i18nService.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
+import { UpdateCheckService } from '../services/updateCheckService.js';
 import { handleIpc } from '../utils/ipcWrapper';
 
 export function notifySettingsChanged(): void {
@@ -53,6 +54,8 @@ const EFFECT_KEYS: ReadonlyArray<keyof AppSettings> = [
   'detachedVisibleOnAllDesktops',
   'windowSnapEnabled',
   'recordLaunchUsage',
+  'updateCheckEnabled',
+  'updateCheckIncludeBeta',
 ];
 
 async function applySettingsEffects(
@@ -108,6 +111,13 @@ async function applySettingsEffects(
     const enabled = await settingsService.get('windowSnapEnabled');
     setWindowSnapEnabled(enabled);
     setDetachedWindowSnapEnabled(enabled);
+  }
+
+  if (
+    changedKeys.includes('updateCheckEnabled') ||
+    changedKeys.includes('updateCheckIncludeBeta')
+  ) {
+    void UpdateCheckService.getInstance()?.onSettingsChanged();
   }
 
   if (changedKeys.includes('recordLaunchUsage')) {

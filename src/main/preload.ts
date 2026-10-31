@@ -249,6 +249,8 @@ const electronAPI: ElectronAPI = {
   clearSearchHistory: () => ipcInvoke(IPC_CHANNELS.CLEAR_SEARCH_HISTORY),
   // アプリ情報関連API
   getAppInfo: () => ipcInvoke(IPC_CHANNELS.GET_APP_INFO),
+  getUpdateStatus: () => ipcInvoke(IPC_CHANNELS.GET_UPDATE_STATUS),
+  checkForUpdates: () => ipcInvoke(IPC_CHANNELS.CHECK_FOR_UPDATES),
   openExternalUrl: (url) => ipcInvoke(IPC_CHANNELS.OPEN_EXTERNAL_URL, url),
   openFolder: (folderPath) => ipcInvoke(IPC_CHANNELS.SHELL_OPEN_FOLDER, folderPath),
   // ウィンドウ検索API

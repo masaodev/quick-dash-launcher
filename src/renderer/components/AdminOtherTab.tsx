@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppInfo } from '@common/types';
+import type { AppInfo, UpdateCheckStatus } from '@common/types';
 
 import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui';
@@ -25,6 +25,10 @@ const AdminOtherTab: React.FC = () => {
   const { t } = useTranslation();
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [quitConfirmOpen, setQuitConfirmOpen] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateCheckStatus | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  // 「今すぐ確かめる」を押したあとだけ「最新の版です」を出す（開いただけでは出さない）
+  const [checkedByUser, setCheckedByUser] = useState(false);
   const [hotkeys, setHotkeys] = useState<{ launch: string; itemSearch: string }>({
     launch: '',
     itemSearch: '',
@@ -37,6 +41,25 @@ const AdminOtherTab: React.FC = () => {
     };
     loadAppInfo();
   }, []);
+
+  // 更新の知らせの状態（設定を切り替えたら読み直す）
+  useEffect(() => {
+    const loadUpdateStatus = async () => {
+      setUpdateStatus(await window.electronAPI.getUpdateStatus());
+    };
+    void loadUpdateStatus();
+    return window.electronAPI.onSettingsChanged(loadUpdateStatus);
+  }, []);
+
+  const handleCheckForUpdates = async () => {
+    setCheckingUpdate(true);
+    try {
+      setUpdateStatus(await window.electronAPI.checkForUpdates());
+      setCheckedByUser(true);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   // ショートカット一覧のホットキーは設定の値を表示する（設定が変わったら読み直す）
   useEffect(() => {
@@ -105,6 +128,52 @@ const AdminOtherTab: React.FC = () => {
                     {appInfo ? t(`help.distributions.${appInfo.distribution}`) : t('help.loading')}
                   </span>
                 </div>
+                {updateStatus?.supported && (
+                  <div className="app-info-update" data-testid="help-update-status">
+                    {updateStatus.available ? (
+                      <>
+                        <span className="app-info-update-available">
+                          {t('help.updateAvailable', { version: updateStatus.available.version })}
+                        </span>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() =>
+                            updateStatus.available &&
+                            window.electronAPI.openExternalUrl(updateStatus.available.url)
+                          }
+                        >
+                          {t('help.openReleasePage')}
+                        </Button>
+                      </>
+                    ) : !updateStatus.enabled ? (
+                      <span className="app-info-update-note">{t('help.updateCheckOff')}</span>
+                    ) : checkingUpdate ? (
+                      <span className="app-info-update-note">{t('help.checkingForUpdates')}</span>
+                    ) : updateStatus.failed && checkedByUser ? (
+                      <span className="app-info-update-note">{t('help.updateCheckFailed')}</span>
+                    ) : checkedByUser ? (
+                      <span className="app-info-update-note">{t('help.upToDate')}</span>
+                    ) : null}
+                    {updateStatus.enabled && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleCheckForUpdates}
+                        disabled={checkingUpdate}
+                      >
+                        {t('help.checkForUpdates')}
+                      </Button>
+                    )}
+                    {updateStatus.lastCheckedAt !== null && (
+                      <span className="app-info-update-note">
+                        {t('help.updateLastChecked', {
+                          date: new Date(updateStatus.lastCheckedAt).toLocaleString(),
+                        })}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="app-info-item">
                   <span className="app-info-label">{t('help.license')}</span>
                   <span className="app-info-value">{appInfo?.license || t('help.loading')}</span>

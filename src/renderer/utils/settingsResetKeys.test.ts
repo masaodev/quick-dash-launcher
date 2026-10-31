@@ -18,6 +18,8 @@ const defaults = {
   autoLaunch: true,
   cliEnabled: false,
   recordLaunchUsage: true,
+  updateCheckEnabled: true,
+  updateCheckIncludeBeta: false,
   showKeyboardHints: true,
   searchMemo: false,
   searchIgnoreWidth: false,

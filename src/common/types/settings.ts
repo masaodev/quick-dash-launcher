@@ -189,6 +189,10 @@ export interface AppSettings {
   windowSnapEnabled: boolean;
   /** アイテムを起動した記録（最終起動・起動回数）を残す（デフォルト: true。手元の item-usage.json にだけ書く） */
   recordLaunchUsage: boolean;
+  /** 新しい版が出たら知らせる（デフォルト: true。GitHub のリリース一覧を 1 日 1 回読む。Store 版では使わない） */
+  updateCheckEnabled: boolean;
+  /** 正式版を使っていても、ベータ版を知らせる（デフォルト: false。ベータ版を使っている間は常に知らせる） */
+  updateCheckIncludeBeta: boolean;
   /** アイテム管理の一覧の列の表示と幅（デフォルト: すべて既定） */
   adminItemColumns: AdminItemColumnsSetting;
 }

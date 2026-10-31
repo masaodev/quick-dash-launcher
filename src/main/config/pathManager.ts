@@ -103,6 +103,11 @@ export class PathManager {
     return path.join(this.getConfigFolder(), 'path-type-cache.json');
   }
 
+  /** 更新の知らせの状態（services/updateCheckService） */
+  static getUpdateCheckFilePath(): string {
+    return path.join(this.getConfigFolder(), 'update-check.json');
+  }
+
   /** datafilesフォルダ内のすべてのdata*.jsonファイルを取得（configFolderからの相対パス） */
   static getDataFiles(): string[] {
     const dataFilesFolder = this.getDataFilesFolder();

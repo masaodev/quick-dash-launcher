@@ -19,6 +19,8 @@ interface FirstLaunchSettings {
   hotkey: string;
   autoLaunch: boolean;
   itemSearchHotkey: string;
+  /** 新しい版が出たら知らせる（Store 版では出さないので undefined） */
+  updateCheckEnabled?: boolean;
 }
 
 interface FirstLaunchSetupProps {
@@ -74,9 +76,22 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
   const [hotkeyPressed, setHotkeyPressed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [autoLaunch, setAutoLaunch] = useState(true);
+  const [updateCheckEnabled, setUpdateCheckEnabled] = useState(true);
+  // Store 版は Store が更新するので「新しい版が出たら知らせる」を出さない
+  const [isStore, setIsStore] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
   const isValid = hotkeyValidation.isValid && itemSearchHotkeyValidation.isValid;
+
+  useEffect(() => {
+    let cancelled = false;
+    void window.electronAPI.getAppInfo().then((info) => {
+      if (!cancelled) setIsStore(info.distribution === 'store');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 「試してみる」の間だけ、起動ホットキーが押されたことを受け取る
   useEffect(() => {
@@ -124,7 +139,12 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     if (!isValid) return;
     setIsLoading(true);
     setSaveFailed(false);
-    const saved = await onComplete({ hotkey, autoLaunch, itemSearchHotkey });
+    const saved = await onComplete({
+      hotkey,
+      autoLaunch,
+      itemSearchHotkey,
+      ...(isStore ? {} : { updateCheckEnabled }),
+    });
     // 保存できたら画面ごと切り替わるので、戻すのは失敗したときだけ
     if (!saved) {
       setIsLoading(false);
@@ -288,6 +308,22 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
                 {t('firstLaunch.autoLaunch')}
               </label>
               <p className="auto-launch-hint">{t('firstLaunch.autoLaunchHint')}</p>
+              {!isStore && (
+                <>
+                  <label className="auto-launch-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={updateCheckEnabled}
+                      onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
+                      disabled={isLoading}
+                      className="auto-launch-checkbox"
+                      data-testid="first-launch-update-check"
+                    />
+                    {t('firstLaunch.updateCheck')}
+                  </label>
+                  <p className="auto-launch-hint">{t('firstLaunch.updateCheckHint')}</p>
+                </>
+              )}
             </div>
 
             {saveFailed && (

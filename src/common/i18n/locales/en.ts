@@ -341,6 +341,8 @@ export const en: LocaleMessages = {
       'To add items, use ➕ at the top. You can also import browser bookmarks and installed apps from there.',
     autoLaunch: 'Start automatically when I sign in to Windows',
     autoLaunchHint: "If it isn't running, the hotkey won't bring it up.",
+    updateCheck: 'Tell me when a new version is out',
+    updateCheckHint: 'Checks GitHub for a new version once a day. You install it yourself.',
     changeLater: 'You can change all of this later in Settings.',
     complete: 'Get started',
     saveFailed: 'Couldn\'t save the settings. Click "Get started" again.',
@@ -464,6 +466,7 @@ export const en: LocaleMessages = {
     },
   },
   tray: {
+    updateAvailable: '⬆ Download new version v{{version}}',
     show: 'Show',
     showAtCenter: 'Show at screen center',
     settings: 'Settings',
@@ -1725,6 +1728,15 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     about: 'ℹ️ About',
     version: 'Version',
     distribution: 'Edition',
+    updateAvailable: 'New version v{{version}} is available',
+    updateToast: 'New version v{{version}} is available. Open it from the tray menu.',
+    openReleasePage: 'Open the download page',
+    checkForUpdates: 'Check now',
+    checkingForUpdates: 'Checking…',
+    upToDate: "You're on the latest version",
+    updateCheckFailed: "Couldn't check. Make sure you're connected to the internet.",
+    updateLastChecked: 'Last checked: {{date}}',
+    updateCheckOff: 'Checking for new versions is off (turn it on in Settings → Basic).',
     distributions: {
       store: 'Microsoft Store',
       portable: 'Portable',
@@ -2529,6 +2541,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       recordLaunchUsage: 'Keep a launch history',
       recordLaunchUsageDescription:
         'Records when and how often you open each item, shown in the Last opened and Times opened columns in Item Manager (saved only in item-usage.json in the settings folder on this PC).',
+      updateCheck: 'Tell me when a new version is out',
+      updateCheckDescription:
+        'Reads the release list on GitHub once a day and tells you with a notification and the tray menu when a new version is out. You install it yourself.',
+      updateCheckIncludeBeta: 'Include beta versions',
+      updateCheckIncludeBetaDescription:
+        "Tells you about beta (pre-release) versions even when you're on a stable version. While you're on a beta, betas are always included.",
       cliDescription:
         'Lets terminals and AI tools work with items and workspaces through the qdl command (adds qdl to PATH; use it from a new terminal window).',
     },

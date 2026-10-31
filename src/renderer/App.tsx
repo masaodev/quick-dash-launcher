@@ -873,12 +873,16 @@ function App(): React.ReactElement {
     hotkey: string;
     autoLaunch: boolean;
     itemSearchHotkey: string;
+    updateCheckEnabled?: boolean;
   }): Promise<boolean> => {
     try {
       await window.electronAPI.setMultipleSettings({
         hotkey: settings.hotkey,
         autoLaunch: settings.autoLaunch,
         itemSearchHotkey: settings.itemSearchHotkey,
+        ...(settings.updateCheckEnabled !== undefined && {
+          updateCheckEnabled: settings.updateCheckEnabled,
+        }),
       });
       await window.electronAPI.changeHotkey(settings.hotkey);
       if (settings.itemSearchHotkey) {

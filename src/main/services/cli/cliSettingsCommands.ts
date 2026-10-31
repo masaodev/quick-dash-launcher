@@ -61,6 +61,8 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   searchIgnoreKana: BOOLEAN,
   searchSortByUsage: BOOLEAN,
   recordLaunchUsage: BOOLEAN,
+  updateCheckEnabled: BOOLEAN,
+  updateCheckIncludeBeta: BOOLEAN,
   showDataFileTabs: BOOLEAN,
   defaultFileTab: { kind: 'dataFile' },
   windowWidth: { kind: 'integer', range: SETTING_NUMBER_RANGES.windowWidth },

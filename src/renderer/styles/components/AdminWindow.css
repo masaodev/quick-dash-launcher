@@ -419,6 +419,26 @@
   font-weight: 500;
 }
 
+/* 更新の知らせ（新しい版・今すぐ確かめる） */
+.app-info-update {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+}
+
+.app-info-update-available {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.app-info-update-note {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
 /* フッター（終了ボタン） */
 .help-footer {
   display: flex;

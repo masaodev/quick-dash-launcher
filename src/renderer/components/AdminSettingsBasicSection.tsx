@@ -34,6 +34,17 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   sectionReset,
 }) => {
   const { t } = useTranslation();
+  // 更新の知らせは Store 版では使わない（Store が更新する）ので、設定も出さない
+  const [isStore, setIsStore] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void window.electronAPI.getAppInfo().then((info) => {
+      if (!cancelled) setIsStore(info.distribution === 'store');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // タブが複数あるときに「複数タブを表示」をオフにするなら、最初のタブだけになると先に知らせる
   const handleDataFileTabsChange = async (checked: boolean): Promise<void> => {
@@ -205,6 +216,38 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             {t('settings.system.recordLaunchUsageDescription')}
           </div>
         </div>
+        {!isStore && (
+          <>
+            <div className="setting-item">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={editedSettings.updateCheckEnabled}
+                  onChange={(e) => handleSettingChange('updateCheckEnabled', e.target.checked)}
+                  disabled={isLoading}
+                />
+                {t('settings.system.updateCheck')}
+              </label>
+              <div className="setting-description">
+                {t('settings.system.updateCheckDescription')}
+              </div>
+            </div>
+            <div className="setting-item">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={editedSettings.updateCheckIncludeBeta}
+                  onChange={(e) => handleSettingChange('updateCheckIncludeBeta', e.target.checked)}
+                  disabled={isLoading || !editedSettings.updateCheckEnabled}
+                />
+                {t('settings.system.updateCheckIncludeBeta')}
+              </label>
+              <div className="setting-description">
+                {t('settings.system.updateCheckIncludeBetaDescription')}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="settings-section">

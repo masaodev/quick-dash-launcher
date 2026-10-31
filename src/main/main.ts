@@ -2,7 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import type { Server } from 'net';
 
-import { app, globalShortcut, session } from 'electron';
+import { app, globalShortcut, net, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
@@ -19,6 +19,7 @@ import { AutoLaunchService } from './services/autoLaunchService.js';
 import {
   createWindow,
   createTray,
+  updateTrayMenu,
   getMainWindow,
   getWindowPinMode,
   setWindowPinMode,
@@ -60,6 +61,8 @@ import { mainI18n } from './services/mainI18n.js';
 import { installNavigationGuard } from './utils/navigationGuard.js';
 import { startFileLogging } from './services/fileLogging.js';
 import { LaunchUsageService } from './services/launchUsageService.js';
+import { UpdateCheckService, fetchGitHubReleases } from './services/updateCheckService.js';
+import { getAppDistribution } from './utils/appDistribution.js';
 import { handleIpc } from './utils/ipcWrapper';
 
 // 多重起動時に完全に独立したuserDataを使用
@@ -300,6 +303,39 @@ app.whenReady().then(async () => {
     }
   }
 
+  // 更新の知らせ（起動の 1 分後と 24 時間ごとに GitHub のリリース一覧を読む。Store 版・開発版では動かない）
+  const updateCheckService = new UpdateCheckService({
+    currentVersion: app.getVersion(),
+    distribution: getAppDistribution(),
+    filePath: PathManager.getUpdateCheckFilePath(),
+    getSettings: async () => ({
+      enabled: (await settingsService.get('updateCheckEnabled')) !== false,
+      includeBeta: (await settingsService.get('updateCheckIncludeBeta')) === true,
+    }),
+    fetchReleases: () =>
+      fetchGitHubReleases(
+        (url, init) => net.fetch(url, init),
+        `QuickDashLauncher/${app.getVersion()}`
+      ),
+    notify: (release) => {
+      showToastWindow({
+        message: mainI18n.t('help.updateToast', { version: release.version }),
+        type: 'info',
+        long: true,
+      }).catch((error) => {
+        console.error('新しい版を知らせるトーストの表示でエラー:', error);
+      });
+    },
+    onChange: () => {
+      updateTrayMenu().catch((error) => {
+        console.error('トレイのメニューの更新でエラー:', error);
+      });
+    },
+    allowInDev: process.env.QDL_UPDATE_CHECK_IN_DEV === '1',
+  });
+  UpdateCheckService.setInstance(updateCheckService);
+  updateCheckService.start();
+
   // ブックマーク自動取込の起動時実行
   const bookmarkAutoImportService = new BookmarkAutoImportService();
   bookmarkAutoImportService.executeOnStartup().catch((error) => {
@@ -319,6 +355,7 @@ app.on('before-quit', () => {
 
 app.on('will-quit', () => {
   LaunchUsageService.getInstance()?.flush();
+  UpdateCheckService.getInstance()?.stop();
   cliServer?.close();
   globalShortcut.unregisterAll();
   cancelAllChildWindowCreations();

@@ -27,6 +27,7 @@ import type {
   SetItem,
   AppItem,
   AppInfo,
+  UpdateCheckStatus,
   BrowserInfo,
   Workspace,
   WorkspaceItem,
@@ -315,6 +316,10 @@ export interface ElectronAPI {
   clearSearchHistory: () => Promise<void>;
   // アプリ情報関連API
   getAppInfo: () => Promise<AppInfo>;
+  /** 更新の知らせの状態（ヘルプタブ） */
+  getUpdateStatus: () => Promise<UpdateCheckStatus>;
+  /** 新しい版をすぐに確かめる（ヘルプタブの「今すぐ確かめる」） */
+  checkForUpdates: () => Promise<UpdateCheckStatus>;
   /** http・https の URL を既定のブラウザで開く（それ以外のスキームは開かない） */
   openExternalUrl: (url: string) => Promise<void>;
   /** 存在するフォルダをエクスプローラーで開く（フォルダ以外は開かない） */
