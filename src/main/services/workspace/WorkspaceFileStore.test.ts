@@ -37,6 +37,7 @@ import {
   WorkspaceExternalChangeConflictError,
   WorkspaceFileStore,
   resolveLauncherType,
+  WorkspaceNewerFormatError,
   WorkspaceWriteError,
 } from './WorkspaceFileStore';
 import { WorkspaceUiStateStore } from './WorkspaceUiStateStore';
@@ -250,6 +251,31 @@ describe('WorkspaceFileStore', () => {
     const archived = readJson(paths.archive);
     expect(archived.groups[0]).toHaveProperty('groupFuture', 2);
     expect(archived.items[0]).toHaveProperty('itemFuture', 3);
+  });
+
+  it('新しい版の QDL が保存したファイルは、表示はするが版を直さず、どちらのファイルも書かないこと', async () => {
+    const original = v2File({
+      version: '2.1',
+      // 採番が要る（書き戻しが要る）内容でも書き戻さない
+      items: [{ ...launcher, id: undefined }],
+    });
+    fs.writeFileSync(paths.main, original, 'utf8');
+    const store = createStore();
+    await store.reload();
+
+    expect(store.get('items')).toHaveLength(1);
+    const { files } = store.consumeLoadReports();
+    expect(files[0]).toMatchObject({ newerFormat: true, rewritten: false });
+    expect(files[0].issues.some((i) => i.reason.includes('2.1'))).toBe(false);
+    expect(files[1]).not.toHaveProperty('newerFormat');
+    expect(() => store.set('items', [])).toThrow(WorkspaceNewerFormatError);
+    expect(() => store.updateArchive(() => {})).toThrow(WorkspaceNewerFormatError);
+    expect(fs.readFileSync(paths.main, 'utf8')).toBe(original);
+
+    // 版を戻したファイル（新しい版で戻した・差し替えた）なら、また書ける
+    fs.writeFileSync(paths.main, v2File(), 'utf8');
+    await store.reload();
+    expect(() => store.set('items', store.get('items'))).not.toThrow();
   });
 
   it('QDL の外で変更されたファイルへの書き込みは拒否すること（楽観ロック）', async () => {

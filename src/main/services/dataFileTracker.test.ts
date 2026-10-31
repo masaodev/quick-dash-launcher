@@ -26,11 +26,13 @@ import {
   toDataFileKey,
   writeDataFile,
 } from './dataFileTracker';
+import { getNewerFormatFiles, resetNewerFormatFilesForTesting } from './data/newerFormatFiles';
 
 describe('dataFileTracker', () => {
   beforeEach(() => {
     tempRoot.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-tracker-'));
     resetDataFileTrackerForTesting();
+    resetNewerFormatFilesForTesting();
   });
 
   afterEach(() => {
@@ -155,6 +157,18 @@ describe('dataFileTracker', () => {
       const filePath = writeJson('other.json', { a: 1, extra: 2 });
 
       expect(prepareDataFileContent(filePath, '{"a":1}')).toBe('{"a":1}');
+    });
+
+    it('新しい版の QDL が保存したファイルには書かず、その印を残すこと', () => {
+      const original = { version: '1.1', items: [{ id: 'Aaaaaaa1', type: 'future' }] };
+      const filePath = writeJson('datafiles/data.json', original);
+      const workspace = writeJson('workspace.json', { version: '3.0', workspaces: [] });
+
+      expect(writeDataFile(filePath, '{"version":"1.0","items":[]}')).toBe(false);
+      expect(writeDataFile(workspace, '{"version":"2.0","workspaces":[]}')).toBe(false);
+      expect(readJson(filePath)).toEqual(original);
+      expect(readJson(workspace).version).toBe('3.0');
+      expect(getNewerFormatFiles()).toEqual(['datafiles/data.json', 'workspace.json']);
     });
 
     it('渡した付け直しの元を使うこと（書き始める前に読んだ内容）', () => {

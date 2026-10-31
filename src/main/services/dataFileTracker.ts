@@ -9,6 +9,8 @@ import type { FileFormatKind, UnknownKeySources } from '@common/utils/unknownKey
 
 import { PathManager } from '../config/pathManager.js';
 
+import { isNewerFormatFile, markNewerFormatFile } from './data/newerFormatFiles.js';
+
 /**
  * データファイルの「QDL が最後に読んだ／書いた内容」を覚えておくトラッカー
  *
@@ -151,12 +153,24 @@ export function prepareDataFileContent(
  *
  * QDL 自身によるデータファイルの書き込みは必ずここを通す。
  * 書く前に、ディスク上の今の内容が持っていた知らない項目を付け直す（prepareDataFileContent）。
+ * ディスク上のファイルが新しい版の QDL で保存されたもの（扱える版より新しい）なら書かずに false を返す
+ * （新しい版の形を壊さないため。どのファイルかは newerFormatFiles に残す）。
  */
 export function writeDataFile(
   filePath: string,
   content: string,
   options: WriteDataFileOptions = {}
 ): boolean {
+  const key = toDataFileKey(filePath);
+  const kind = fileFormatKindOf(key);
+  if (kind && isNewerFormatFile(kind, readJsonForCompat(filePath))) {
+    markNewerFormatFile(key);
+    dataLogger.warn(
+      { filePath },
+      '新しい版の QDL で保存されたファイルなので書き込みません（QDL を更新すると書けます）'
+    );
+    return false;
+  }
   const output = prepareDataFileContent(filePath, content, options);
   const ok = FileUtils.safeWriteTextFile(filePath, output);
   if (ok) {

@@ -24,7 +24,11 @@ import {
   rememberDataFileContent,
   writeDataFile,
 } from '../dataFileTracker.js';
-import { buildLoadReport, formatLoadReportToast } from '../loadReportService.js';
+import {
+  buildLoadReport,
+  formatLoadReportToast,
+  formatNewerFormatToast,
+} from '../loadReportService.js';
 import type { LoadReport, LoadReportFile, LoadTrigger } from '../loadReportService.js';
 import { notifyWorkspaceChanged } from '../../ipc/notifications.js';
 import { buildMainItemIndex, setMainItemIndex } from '../workspace/workspaceRefResolver.js';
@@ -40,6 +44,7 @@ import {
   getCorruptedDataFiles,
   markDataFileCorrupted,
 } from './corruptedDataFiles.js';
+import { clearNewerFormatFile, markNewerFormatFile } from './newerFormatFiles.js';
 import { convertJsonItemToAppItems } from './jsonItemConverter.js';
 import {
   buildGroupNameResolver,
@@ -111,6 +116,14 @@ async function loadJsonDataFile(
 
   report.issues = parsed.issues;
   logParseIssues(fileName, parsed.issues);
+
+  // 新しい版の QDL が保存したファイルは、表示はするが書き戻さない（parsed.modified も false になっている）
+  if (parsed.newerFormat) {
+    report.newerFormat = true;
+    markNewerFormatFile(fileName);
+  } else {
+    clearNewerFormatFile(fileName);
+  }
 
   // 採番・補正があれば 1 回だけ書き戻す（次回以降は同じ id で読める）
   let currentContent = content;
@@ -558,6 +571,14 @@ async function reloadConfigFilesInternal(
       type: 'error',
     }).catch((error) => {
       dataLogger.error({ error }, '破損警告トーストの表示に失敗しました');
+    });
+  }
+
+  // 新しい版の QDL が保存したファイルは、変更できないことを知らせる（破損と同じく読み込みのたびに出す）
+  const newerFormatToast = formatNewerFormatToast(report);
+  if (newerFormatToast) {
+    showToastWindow({ message: newerFormatToast, type: 'warning', long: true }).catch((error) => {
+      dataLogger.error({ error }, '新しい版のファイルの警告トーストの表示に失敗しました');
     });
   }
 

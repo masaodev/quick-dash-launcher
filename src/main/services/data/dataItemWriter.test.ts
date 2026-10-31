@@ -27,6 +27,7 @@ vi.mock('../clipboardService.js', () => ({
 }));
 
 import { getCorruptedDataFiles, clearDataFileCorrupted } from './corruptedDataFiles';
+import { resetNewerFormatFilesForTesting } from './newerFormatFiles';
 import {
   deleteItemsById,
   moveItemToFile,
@@ -48,6 +49,7 @@ describe('dataItemWriter', () => {
     tempRoot.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-writer-'));
     fs.mkdirSync(path.join(tempRoot.dir, 'datafiles'));
     for (const f of getCorruptedDataFiles()) clearDataFileCorrupted(f);
+    resetNewerFormatFilesForTesting();
   });
 
   afterEach(() => {
@@ -120,6 +122,35 @@ describe('dataItemWriter', () => {
     expect(file.futureTop).toBe('keep');
     expect(file.items[0]).toMatchObject({ displayName: 'A2', future: 1 });
     expect(file.items[1]).toMatchObject({ displayName: 'C', future: 2 });
+  });
+
+  it('新しい版の QDL が保存したファイルは書き換えず、更新を促すエラーにすること', () => {
+    const original = JSON.stringify({
+      version: '1.1',
+      items: [{ id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe' }],
+    });
+    writeFile('datafiles/data.json', original);
+
+    expect(() =>
+      replaceItemById(tempRoot.dir, {
+        id: 'aaaaaaaa',
+        type: 'item',
+        displayName: 'A2',
+        path: 'C:\\a.exe',
+      })
+    ).toThrow(/新しい版の QDL|newer version/);
+    expect(() =>
+      registerItems(tempRoot.dir, [
+        {
+          displayName: 'B',
+          path: 'C:\\b.exe',
+          type: 'app',
+          targetTab: 'datafiles/data.json',
+          itemCategory: 'item',
+        },
+      ])
+    ).toThrow(/新しい版の QDL|newer version/);
+    expect(fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data.json'), 'utf8')).toBe(original);
   });
 
   it('ID が見つからなければエラーにすること', () => {

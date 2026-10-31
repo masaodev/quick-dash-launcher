@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 
-import { buildLoadReport, formatLoadReportToast } from './loadReportService';
+import {
+  buildLoadReport,
+  formatLoadReportToast,
+  formatNewerFormatToast,
+} from './loadReportService';
 import type { LoadReportFile } from './loadReportService';
 
 function okFile(overrides: Partial<LoadReportFile> = {}): LoadReportFile {
@@ -44,8 +48,20 @@ describe('loadReportService', () => {
       groupsFlattened: 0,
       corruptedFiles: ['datafiles/data3.json'],
       externallyChangedFiles: ['datafiles/data.json'],
+      newerFormatFiles: [],
     });
     expect(report.preChangeSnapshot).toBe('2026-09-21T00-00-00_pre-external');
+  });
+
+  it('新しい版の QDL が保存したファイルを summary に並べ、トーストで知らせること', () => {
+    const report = buildLoadReport(
+      [okFile(), okFile({ file: 'workspace.json', newerFormat: true })],
+      null
+    );
+
+    expect(report.summary.newerFormatFiles).toEqual(['workspace.json']);
+    expect(formatNewerFormatToast(report)).toContain('workspace.json');
+    expect(formatNewerFormatToast(buildLoadReport([okFile()], null))).toBeNull();
   });
 
   it('formatLoadReportToast は問題がなければ null を返すこと', () => {

@@ -20,6 +20,7 @@ import { mainI18n } from '../mainI18n.js';
 import { writeDataFile } from '../dataFileTracker.js';
 
 import { clearDataFileCorrupted, markDataFileCorrupted } from './corruptedDataFiles.js';
+import { getNewerFormatFiles } from './newerFormatFiles.js';
 
 interface DataFileEntry {
   fileName: string;
@@ -56,9 +57,18 @@ function readDataFilesForSearch(configFolder: string): {
   return { files, corrupted };
 }
 
+/** 書けなかったときのエラー（新しい版の QDL が保存したファイルなら、その旨と直し方） */
+function writeFailedError(fileName: string): Error {
+  return new Error(
+    getNewerFormatFiles().includes(fileName)
+      ? mainI18n.t('dataErrors.saveBlockedNewer', { files: fileName })
+      : mainI18n.t('dataErrors.writeFailed', { file: fileName })
+  );
+}
+
 function writeOrThrow(entry: DataFileEntry): void {
   if (!writeDataFile(entry.filePath, serializeJsonDataFile(entry.jsonData))) {
-    throw new Error(mainI18n.t('dataErrors.writeFailed', { file: entry.fileName }));
+    throw writeFailedError(entry.fileName);
   }
 }
 
@@ -296,7 +306,9 @@ function appendToJsonFile(dataPath: string, fileName: string, items: JsonItem[])
   }
 
   jsonData.items.push(...items);
-  writeDataFile(dataPath, serializeJsonDataFile(jsonData));
+  if (!writeDataFile(dataPath, serializeJsonDataFile(jsonData))) {
+    throw writeFailedError(fileName);
+  }
 }
 
 /**
@@ -328,11 +340,11 @@ export function moveItemToFile(
 
   target.items.push(newItem);
   if (!writeDataFile(targetPath, serializeJsonDataFile(target))) {
-    throw new Error(mainI18n.t('dataErrors.writeFailed', { file: targetFile }));
+    throw writeFailedError(targetFile);
   }
   source.items.splice(index, 1);
   if (!writeDataFile(sourcePath, serializeJsonDataFile(source))) {
-    throw new Error(mainI18n.t('dataErrors.writeFailed', { file: sourceFile }));
+    throw writeFailedError(sourceFile);
   }
 }
 

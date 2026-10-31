@@ -407,8 +407,19 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
 
     expect(result.issues).toEqual([]);
     expect(result.modified).toBe(false);
+    expect(result.newerFormat).toBe(false);
     expect(result.validItems).toHaveLength(1);
     expect(result.data.items).toHaveLength(1);
+  });
+
+  it('新しい版の QDL が保存したファイルは newerFormat にし、採番しても書き戻しを求めないこと', () => {
+    const { id: _id, ...noId } = validItem;
+    const result = parseJsonDataFileLenient(fileWith([noId], { version: '1.1' }));
+
+    expect(result.newerFormat).toBe(true);
+    expect(result.modified).toBe(false);
+    expect(result.validItems).toHaveLength(1);
+    expect(result.data.version).toBe('1.1');
   });
 
   it('理由は渡した t の言語で書くこと（省略時は日本語）', () => {

@@ -22,6 +22,7 @@ import { JSON_DATA_VERSION, JSON_ID_LENGTH } from '@common/types';
 import { getFallbackT } from '@common/i18n';
 import type { TFunction } from 'i18next';
 
+import { isNewerFormatVersion } from './formatVersion';
 import {
   hasItemWindowSwitch,
   replaceWindowConfig,
@@ -178,8 +179,13 @@ export interface LenientParseResult {
   validItems: JsonItem[];
   /** 検出した問題の一覧 */
   issues: JsonItemIssue[];
-  /** 採番・補正で内容が変わり、ファイルへの書き戻しが必要 */
+  /** 採番・補正で内容が変わり、ファイルへの書き戻しが必要（newerFormat のときは常に false） */
   modified: boolean;
+  /**
+   * ファイルの version がこの QDL の扱える版より新しい（新しい版の QDL が保存した）。
+   * 読んで表示はするが、書き戻すと新しい版の形を壊すので書かない
+   */
+  newerFormat: boolean;
 }
 
 export interface LenientParseOptions {
@@ -303,11 +309,14 @@ export function parseJsonDataFileLenient(
     }
   }
 
+  const newerFormat = isNewerFormatVersion(version, JSON_DATA_VERSION);
   return {
     data: { version, items },
     validItems,
     issues,
-    modified,
+    // 新しい版のファイルは採番しても書き戻さない（読むたびに採番し直す）
+    modified: modified && !newerFormat,
+    newerFormat,
   };
 }
 

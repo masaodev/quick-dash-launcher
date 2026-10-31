@@ -2030,6 +2030,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     configLoadFailed: '設定ファイルの読み込みに失敗しました（破損の可能性）: {{files}}',
     settingsRecovered:
       'settings.json を読めなかったので、既定の設定で起動しました。元のファイルは設定フォルダの {{file}} に残しています',
+    saveBlockedNewer:
+      '新しい版の QDL で保存されたデータファイルなので、変更できません: {{files}}。QDL を最新の版に更新してください',
+    newerFormatLoaded:
+      '新しい版の QDL で保存されたファイルがあります: {{files}}。表示はしますが、QDL を最新の版に更新するまで変更できません',
+    settingsNewerFormat:
+      'settings.json は新しい版の QDL で保存されています。設定を変えても QDL を終了するまでしか効かず、ファイルには保存しません。QDL を最新の版に更新してください',
   },
   loadReport: {
     accepted_one: '{{count}} 件読み込み',
@@ -2058,6 +2064,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     reloadInProgress: 'ワークスペースを再読み込み中です。もう一度お試しください',
     corrupted:
       '{{file}} が壊れているため書き込めません。ファイルを修復してから F5 で再読み込みしてください',
+    newerFormat:
+      '{{file}} は新しい版の QDL で保存されているため書き込めません。QDL を最新の版に更新してください',
     migrated:
       '旧形式（version なし）から 2.0 に変換しました: id を 8 文字英数字に採番し直し、ウィンドウ操作の座標名とクリップボード/ウィンドウ配置のフィールド名をデータファイルと揃え、グループの折りたたみと切り離しウィンドウの状態を workspace-ui-state.json に移しました',
     migrationNeedsArchive:

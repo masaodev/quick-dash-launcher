@@ -44,6 +44,11 @@ import {
   markDataFileCorrupted,
 } from './corruptedDataFiles.js';
 import { logParseIssues, snapshotExternalChanges } from './dataFileLoader.js';
+import {
+  clearNewerFormatFile,
+  getNewerFormatDataFiles,
+  markNewerFormatFile,
+} from './newerFormatFiles.js';
 
 /**
  * 編集画面用に EditableJsonItem 配列を読み込む
@@ -84,6 +89,8 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
           t: mainI18n.t,
         });
         clearDataFileCorrupted(fileName);
+        if (parsed.newerFormat) markNewerFormatFile(fileName);
+        else clearNewerFormatFile(fileName);
         logParseIssues(fileName, parsed.issues);
 
         // 採番・補正があれば書き戻す（編集画面の保存が id ベースで動くように）
@@ -280,6 +287,14 @@ export async function saveEditableItems(
   if (corruptedFiles.length > 0) {
     throw new Error(
       mainI18n.t('dataErrors.saveBlockedCorrupted', { files: corruptedFiles.join(', ') })
+    );
+  }
+
+  // 新しい版の QDL が保存したファイルは書き換えられない。全量の保存なので、途中まで書いて止まらないよう先に断る
+  const newerFormatFiles = getNewerFormatDataFiles();
+  if (newerFormatFiles.length > 0) {
+    throw new Error(
+      mainI18n.t('dataErrors.saveBlockedNewer', { files: newerFormatFiles.join(', ') })
     );
   }
 
