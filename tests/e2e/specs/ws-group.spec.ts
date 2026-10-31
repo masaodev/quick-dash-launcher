@@ -94,7 +94,7 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       await adminWindow.close();
     }
 
-    await test.step('メインウィンドウで検索すると、グループの色の四角で並ぶ', async () => {
+    await test.step('メインウィンドウで検索すると、窓の形のアイコン（上の帯がグループの色）で並ぶ', async () => {
       await utils.searchFor('E2E');
       const items = mainWindow.locator('.item', { hasText: 'WS: E2E' });
       await expect(items).toHaveCount(2);
