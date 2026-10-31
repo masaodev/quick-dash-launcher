@@ -342,8 +342,9 @@ export const ja = {
       'アイテムの登録は、上の ➕ からできます。ブラウザのブックマークやインストール済みアプリも、ここからまとめて取り込めます。',
     autoLaunch: 'Windows にサインインしたら自動で起動する',
     autoLaunchHint: '起動していないと、キーを押しても出ません。',
-    updateCheck: '新しい版が出たら知らせる',
-    updateCheckHint: '1 日 1 回、GitHub で新しい版を確かめます。入れ替えはご自身で行います。',
+    updateCheck: 'アップデートを自動で確認する',
+    updateCheckHint:
+      '1 日 1 回 GitHub で確認し、新しいバージョンがあれば通知します。インストールは手動です。',
     changeLater: 'どれもあとから「設定」で変えられます',
     complete: '使いはじめる',
     saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
@@ -467,7 +468,7 @@ export const ja = {
     },
   },
   tray: {
-    updateAvailable: '⬆ 新しい版 v{{version}} をダウンロード',
+    updateAvailable: '⬆ 新しいバージョン v{{version}} をダウンロード',
     show: '表示',
     showAtCenter: '画面中央に表示',
     settings: '設定',
@@ -541,7 +542,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
   show [launcher|workspace]                ランチャー（既定）かワークスペースを出す
   check                                    直近の読み込み結果（不正・採番・外部変更）を表示する（読み直さない）
   reload                                   設定ファイルを読み直す（ランチャーの F5 と同じ）
-  status                                   本体の版・設定フォルダなどを表示する
+  status                                   本体のバージョン・設定フォルダなどを表示する
   help                                     この説明を表示する
 
 出力: 成功したら標準出力に JSON。失敗したら標準出力に {"error": {"code", "message", "candidates"?}}、
@@ -549,7 +550,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 書き込むコマンドは --dry-run で、書き込まずに結果だけを確かめられます。
 --ascii を付けると、JSON の日本語などを \\uXXXX で書きます（Windows PowerShell 5.1 で ConvertFrom-Json に渡すと化けるとき）。
 
-終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 やり取りの誤り（CLI と本体の版の不一致・依頼が大きすぎる・読めないなど）
+終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 やり取りの誤り（CLI と本体のバージョンの不一致・依頼が大きすぎる・読めないなど）
 `,
       launcher: `使い方: qdl launcher item <操作> [引数]
         qdl launcher set row <操作> <セット> [引数]
@@ -712,7 +713,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       badJson: '依頼を JSON として読めません',
       badShape: '依頼の形が正しくありません',
       versionMismatch:
-        'CLI と QuickDashLauncher の版が合いません（CLI: {{cli}}、本体: {{app}}）。同じ版の QuickDashLauncher に付属する qdl を使ってください',
+        'CLI と QuickDashLauncher のバージョンが合いません（CLI: {{cli}}、本体: {{app}}）。同じバージョンの QuickDashLauncher に付属する qdl を使ってください',
       badArgv: '依頼の argv が正しくありません',
       tooLarge: '依頼が大きすぎます',
       failed: '処理に失敗しました: {{message}}',
@@ -1025,7 +1026,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       anyTitleHint: 'exe 名だけで探します（タイトルは問いません）',
       titleParts: 'タイトルの一部だけで探す',
       wholeTitle: 'タイトル全体',
-      wholeTitleHint: 'タイトル全体が同じウィンドウだけを探します（版の番号まで同じもの）',
+      wholeTitleHint: 'タイトル全体が同じウィンドウだけを探します（バージョン番号まで同じもの）',
       revertTitle: '↺ 元に戻す',
       matchNone: '今合うウィンドウ: 0 件',
       matchOne: '今合うウィンドウ: 1 件（{{title}}）',
@@ -1730,15 +1731,15 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     about: 'ℹ️ アプリについて',
     version: 'バージョン',
     distribution: '配布形式',
-    updateAvailable: '新しい版 v{{version}} があります',
-    updateToast: '新しい版 v{{version}} があります。トレイのメニューから開けます',
+    updateAvailable: '新しいバージョン v{{version}} があります',
+    updateToast: '新しいバージョン v{{version}} があります。トレイのメニューから開けます',
     openReleasePage: 'ダウンロードのページを開く',
     checkForUpdates: '今すぐ確かめる',
     checkingForUpdates: '確かめています…',
-    upToDate: '最新の版です',
+    upToDate: '最新のバージョンです',
     updateCheckFailed: '確かめられませんでした。ネットへのつながりを確かめてください。',
     updateLastChecked: '最後に確かめた日時: {{date}}',
-    updateCheckOff: '新しい版の確認は切っています（設定タブ → 基本設定で入れられます）',
+    updateCheckOff: 'アップデートの確認はオフです（設定タブ → 基本設定でオンにできます）',
     distributions: {
       store: 'Microsoft Store 版',
       portable: 'ポータブル版',
@@ -2086,11 +2087,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     settingsRecovered:
       'settings.json を読めなかったので、既定の設定で起動しました。元のファイルは設定フォルダの {{file}} に残しています',
     saveBlockedNewer:
-      '新しい版の QDL で保存されたデータファイルなので、変更できません: {{files}}。QDL を最新の版に更新してください',
+      '新しいバージョンの QDL で保存されたデータファイルなので、変更できません: {{files}}。QDL を最新のバージョンに更新してください',
     newerFormatLoaded:
-      '新しい版の QDL で保存されたファイルがあります: {{files}}。表示はしますが、QDL を最新の版に更新するまで変更できません',
+      '新しいバージョンの QDL で保存されたファイルがあります: {{files}}。表示はしますが、QDL を最新のバージョンに更新するまで変更できません',
     settingsNewerFormat:
-      'settings.json は新しい版の QDL で保存されています。設定を変えても QDL を終了するまでしか効かず、ファイルには保存しません。QDL を最新の版に更新してください',
+      'settings.json は新しいバージョンの QDL で保存されています。設定を変えても QDL を終了するまでしか効かず、ファイルには保存しません。QDL を最新のバージョンに更新してください',
   },
   loadReport: {
     accepted_one: '{{count}} 件読み込み',
@@ -2120,7 +2121,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     corrupted:
       '{{file}} が壊れているため書き込めません。ファイルを修復してから F5 で再読み込みしてください',
     newerFormat:
-      '{{file}} は新しい版の QDL で保存されているため書き込めません。QDL を最新の版に更新してください',
+      '{{file}} は新しいバージョンの QDL で保存されているため書き込めません。QDL を最新のバージョンに更新してください',
     migrated:
       '旧形式（version なし）から 2.0 に変換しました: id を 8 文字英数字に採番し直し、ウィンドウ操作の座標名とクリップボード/ウィンドウ配置のフィールド名をデータファイルと揃え、グループの折りたたみと切り離しウィンドウの状態を workspace-ui-state.json に移しました',
     migrationNeedsArchive:
@@ -2519,8 +2520,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     language: {
       heading: '言語',
       label: '表示言語:',
-      description:
-        '画面に使う言語です。変えるとすぐに、開いているすべてのウィンドウに反映されます。',
+      description: '変えるとすぐ、開いているすべてのウィンドウに反映されます。',
       options: {
         auto: '自動（Windows の表示言語に合わせる）',
         ja: '日本語',
@@ -2532,57 +2532,58 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       launcher: 'ランチャー:',
       windowSearch: 'ウィンドウ検索:',
       windowSearchPlaceholder: '設定なし（オプション）',
-      windowSearchDescription:
-        'このホットキーでウィンドウ検索モードとして起動します。設定なしで無効化されます。',
+      windowSearchDescription: 'ウィンドウ検索で開きます。空欄なら使いません。',
       windowSearchSaved: 'ウィンドウ検索の起動ホットキーを設定しました',
       windowSearchSameAsLauncher:
         'ウィンドウ検索の起動ホットキーの設定に失敗しました。ランチャーのホットキーと同じ値は設定できません。',
       windowSearchChangeFailed: 'ウィンドウ検索の起動ホットキーの変更に失敗しました。',
     },
     system: {
-      heading: 'システム',
-      autoLaunch: 'Windows へのサインイン時に起動する',
-      autoLaunchBlockedByPolicy:
-        '組織のポリシーで自動起動が無効になっているため、ここからは有効にできません。',
+      heading: '起動と更新',
+      autoLaunch: 'Windows にサインインしたら起動する',
+      autoLaunchBlockedByPolicy: '組織のポリシーで止められているため、起動しません。',
       autoLaunchBlockedByWindows:
-        'Windows の設定で自動起動が無効になっているため、ここからは有効にできません。Windows の［設定］→［アプリ］→［スタートアップ］で QuickDashLauncher をオンにしてください。',
-      autoLaunchEnabledByPolicy: '組織のポリシーで自動起動が有効になっています。',
+        'Windows のスタートアップ設定でオフになっているため、起動しません。［設定］→［アプリ］→［スタートアップ］でオンにしてください。',
+      autoLaunchEnabledByPolicy: '組織のポリシーでオンになっているため、起動します。',
       autoLaunchEnabledByWindows:
-        'Windows の設定で自動起動が有効になっています。止めるときは、チェックを付けてから外すか、Windows の［設定］→［アプリ］→［スタートアップ］でオフにしてください。',
-      cli: 'QuickDashLauncher CLI を使えるようにする',
-      recordLaunchUsage: '起動の記録を残す',
+        'Windows のスタートアップ設定でオンになっているため、起動します。止めるには［設定］→［アプリ］→［スタートアップ］でオフにしてください。',
+      cli: 'qdl コマンドを使えるようにする',
+      recordLaunchUsage: '起動回数を記録する',
       recordLaunchUsageDescription:
-        'アイテムを起動した日時と回数を記録し、アイテム管理の「最終起動」「起動回数」の列に出します（この PC の設定フォルダの item-usage.json にだけ書きます）。',
-      updateCheck: '新しい版が出たら知らせる',
+        'アイテム管理の「最終起動」「起動回数」の列と、検索結果の並び順に使います。記録はこの PC にだけ残ります。',
+      updateCheck: 'アップデートを自動で確認する',
       updateCheckDescription:
-        '1 日 1 回、GitHub のリリース一覧を読み、新しい版があればトーストとトレイのメニューで知らせます。入れ替えはご自身で行います。',
-      updateCheckIncludeBeta: 'ベータ版も知らせる',
-      updateCheckIncludeBetaDescription:
-        '正式版を使っていても、ベータ版（試験的な版）が出たら知らせます。ベータ版を使っている間は、この設定に関係なく知らせます。',
+        '1 日 1 回 GitHub で確認し、新しいバージョンがあれば通知します。インストールは手動です。',
+      updateCheckIncludeBeta: 'ベータ版も確認する',
+      updateCheckIncludeBetaDescription: 'ベータ版を使っている間は、オフでも確認します。',
       cliDescription:
-        'ターミナルや AI から qdl コマンドで、アイテムやワークスペースを操作できるようにします（qdl を PATH に追加します。新しく開いたターミナルから使えます）。',
+        'ターミナルや AI からアイテムやワークスペースを操作できます。オンにしたあとに開いたターミナルで使えます。',
+    },
+    search: {
+      heading: '検索',
+    },
+    cli: {
+      heading: 'QuickDashLauncher CLI',
     },
     display: {
-      heading: '表示',
-      keyboardHints: '操作のヒントを表示',
+      heading: 'ランチャー',
+      keyboardHints: '操作のヒントを表示する',
       keyboardHintsDescription:
-        'ランチャーの下に、気づきにくいキー操作（F2 で編集、Shift+Enter で親フォルダを開くなど）を表示します。',
-      searchMemo: '検索でメモにも当てる',
-      searchMemoDescription:
-        'ランチャーの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
-      searchIgnoreWidth: '検索で全角と半角を区別しない',
+        'F2 で編集、Shift+Enter で親フォルダを開く、などのキー操作を一覧の下に表示します。',
+      searchMemo: 'メモも検索する',
+      searchIgnoreWidth: '全角と半角を区別しない',
       searchIgnoreWidthDescription:
-        'ランチャーの検索とワークスペースの絞り込みで、「ｃｈｒｏｍｅ」で「Chrome」、「ﾃｽﾄ」で「テスト」が見つかるようにします。',
-      searchIgnoreKana: '検索でひらがなとカタカナを区別しない',
+        '「ﾃｽﾄ」で「テスト」が見つかります。ワークスペースの絞り込みにも効きます。',
+      searchIgnoreKana: 'ひらがなとカタカナを区別しない',
       searchIgnoreKanaDescription:
-        'ランチャーの検索とワークスペースの絞り込みで、「てすと」で「テスト」が見つかるようにします。',
-      searchSortByUsage: '検索結果をよく開く順に並べる',
+        '「てすと」で「テスト」が見つかります。ワークスペースの絞り込みにも効きます。',
+      searchSortByUsage: 'よく使う順に並べる',
       searchSortByUsageDescription:
-        'ランチャーで検索したとき、名前が入力した語で始まるアイテムを上に、その中ではよく開くアイテムを上に並べます。検索欄が空のときと、「起動の記録を残す」がオフのときは今までどおりの順です。',
-      dataFileTabs: '複数タブを表示',
+        '入力した語で始まる名前を上にし、その中でよく使うものを上にします。「起動回数を記録する」がオフのときは効きません。',
+      dataFileTabs: 'タブを表示する',
       dataFileTabsDescription:
-        'ランチャーでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',
-      dataFileTabsOffTitle: '複数タブの表示をやめる',
+        'オフにすると、最初のタブのアイテムだけを表示します。タブはアイテム管理で追加・変更できます。',
+      dataFileTabsOffTitle: 'タブの表示をやめる',
       dataFileTabsOffConfirm:
         'オフにすると、ランチャーには最初のタブ「{{name}}」のアイテムだけが出ます。ほかのタブのアイテムは消えませんが、ランチャーからは開けなくなります。オフにしますか？',
       dataFileTabsOffButton: 'オフにする',
@@ -2698,7 +2699,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       done: '「{{section}}」を既定値に戻しました',
       failed: '設定のリセットに失敗しました。',
       notes: {
-        display: '「複数タブを表示」は変えません。',
+        display: '「タブを表示する」は変えません。',
         savedPosition: '最後に置いた場所として覚えている位置も忘れます。',
       },
       values: {

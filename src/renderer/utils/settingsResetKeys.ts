@@ -18,6 +18,8 @@ export type SettingsCategory = 'basic' | 'window' | 'backup' | 'bookmarkAutoImpo
 export type ResettableSettingsSection =
   | 'system'
   | 'display'
+  | 'search'
+  | 'cli'
   | 'mainWindow'
   | 'workspaceWindow'
   | 'detachedWindow'
@@ -28,27 +30,17 @@ export type ResettableSettingsSection =
  * 枠ごとに「既定値に戻す」で戻す項目
  *
  * タブ構成（dataFileTabs 等）はアイテム管理で、ブックマーク自動取込はそのカテゴリで管理するので含めない。
- * 「複数タブを表示」（showDataFileTabs）も、戻すと作ったタブが急に見えなくなるので含めない。
+ * 「タブを表示する」（showDataFileTabs）も、戻すと作ったタブが急に見えなくなるので含めない。
  * 画面に出ない座標（最後に置いた場所）は、表示する場所と組で戻す。
  */
 export const SETTINGS_RESET_KEYS: Record<
   ResettableSettingsSection,
   ReadonlyArray<keyof AppSettings>
 > = {
-  system: [
-    'autoLaunch',
-    'cliEnabled',
-    'recordLaunchUsage',
-    'updateCheckEnabled',
-    'updateCheckIncludeBeta',
-  ],
-  display: [
-    'showKeyboardHints',
-    'searchMemo',
-    'searchIgnoreWidth',
-    'searchIgnoreKana',
-    'searchSortByUsage',
-  ],
+  system: ['autoLaunch', 'updateCheckEnabled', 'updateCheckIncludeBeta'],
+  display: ['showKeyboardHints', 'recordLaunchUsage'],
+  search: ['searchMemo', 'searchIgnoreWidth', 'searchIgnoreKana', 'searchSortByUsage'],
+  cli: ['cliEnabled'],
   mainWindow: ['windowPositionMode', 'windowFixedPosition', 'windowWidth', 'windowHeight'],
   workspaceWindow: [
     'workspacePositionMode',
@@ -78,6 +70,8 @@ const SAVED_POSITION_KEYS: ReadonlySet<keyof AppSettings> = new Set<keyof AppSet
 const SECTION_HEADING_KEYS: Record<ResettableSettingsSection, ParseKeys> = {
   system: 'settings.system.heading',
   display: 'settings.display.heading',
+  search: 'settings.search.heading',
+  cli: 'settings.cli.heading',
   mainWindow: 'settings.windowPosition.heading',
   workspaceWindow: 'settings.workspace.heading',
   detachedWindow: 'settings.detached.heading',
@@ -127,18 +121,20 @@ function sizeRow(
 const RESET_ROWS: Record<ResettableSettingsSection, ReadonlyArray<ResetRow>> = {
   system: [
     checkRow('autoLaunch', 'settings.system.autoLaunch'),
-    checkRow('cliEnabled', 'settings.system.cli'),
-    checkRow('recordLaunchUsage', 'settings.system.recordLaunchUsage'),
     checkRow('updateCheckEnabled', 'settings.system.updateCheck'),
     checkRow('updateCheckIncludeBeta', 'settings.system.updateCheckIncludeBeta'),
   ],
   display: [
     checkRow('showKeyboardHints', 'settings.display.keyboardHints'),
+    checkRow('recordLaunchUsage', 'settings.system.recordLaunchUsage'),
+  ],
+  search: [
     checkRow('searchMemo', 'settings.display.searchMemo'),
     checkRow('searchIgnoreWidth', 'settings.display.searchIgnoreWidth'),
     checkRow('searchIgnoreKana', 'settings.display.searchIgnoreKana'),
     checkRow('searchSortByUsage', 'settings.display.searchSortByUsage'),
   ],
+  cli: [checkRow('cliEnabled', 'settings.system.cli')],
   mainWindow: [
     {
       keys: ['windowPositionMode'],

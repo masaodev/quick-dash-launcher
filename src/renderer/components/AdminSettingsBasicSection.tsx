@@ -190,32 +190,6 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             </div>
           )}
         </div>
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.cliEnabled}
-              onChange={(e) => handleSettingChange('cliEnabled', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.system.cli')}
-          </label>
-          <div className="setting-description">{t('settings.system.cliDescription')}</div>
-        </div>
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.recordLaunchUsage}
-              onChange={(e) => handleSettingChange('recordLaunchUsage', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.system.recordLaunchUsage')}
-          </label>
-          <div className="setting-description">
-            {t('settings.system.recordLaunchUsageDescription')}
-          </div>
-        </div>
         {!isStore && (
           <>
             <div className="setting-item">
@@ -232,7 +206,7 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
                 {t('settings.system.updateCheckDescription')}
               </div>
             </div>
-            <div className="setting-item">
+            <div className="setting-item setting-item-child">
               <label>
                 <input
                   type="checkbox"
@@ -288,13 +262,36 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           <label>
             <input
               type="checkbox"
+              checked={editedSettings.recordLaunchUsage}
+              onChange={(e) => handleSettingChange('recordLaunchUsage', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.system.recordLaunchUsage')}
+          </label>
+          <div className="setting-description">
+            {t('settings.system.recordLaunchUsageDescription')}
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <SettingsSectionHeader
+          title={t('settings.search.heading')}
+          section="search"
+          editedSettings={editedSettings}
+          isLoading={isLoading}
+          {...sectionReset}
+        />
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
               checked={editedSettings.searchMemo ?? false}
               onChange={(e) => handleSettingChange('searchMemo', e.target.checked)}
               disabled={isLoading}
             />
             {t('settings.display.searchMemo')}
           </label>
-          <div className="setting-description">{t('settings.display.searchMemoDescription')}</div>
         </div>
         <div className="setting-item">
           <label>
@@ -337,6 +334,28 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           <div className="setting-description">
             {t('settings.display.searchSortByUsageDescription')}
           </div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <SettingsSectionHeader
+          title={t('settings.cli.heading')}
+          section="cli"
+          editedSettings={editedSettings}
+          isLoading={isLoading}
+          {...sectionReset}
+        />
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.cliEnabled}
+              onChange={(e) => handleSettingChange('cliEnabled', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.system.cli')}
+          </label>
+          <div className="setting-description">{t('settings.system.cliDescription')}</div>
         </div>
       </div>
     </>

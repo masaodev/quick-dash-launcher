@@ -42,7 +42,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | コマンド | 何が起きるか |
 | --- | --- |
 | `help`（引数なし、`--help`、`-h` も同じ） | 使い方とコマンドの一覧を出す（JSON ではない） |
-| `status` | 本体の版・`qdl.exe` の版・本体のプロセス ID・設定フォルダの場所を返す。何も変えない |
+| `status` | 本体のバージョン・`qdl.exe` のバージョン・本体のプロセス ID・設定フォルダの場所を返す。何も変えない |
 | `reload` | 設定ファイルを読み直す（ランチャーの F5 と同じ再読み込み）。読み込み結果を返す |
 | `check` | 読み直さずに、直近の読み込み（起動時・F5・`reload`・CLI の書き込み前）の結果を返す |
 | `open <id か表示名>` | ランチャーのアイテムを開く（画面で選んで Enter を押したのと同じ。トーストを出し、起動の記録にも数える）。セット・クリップボードアイテムも開ける。返り値は `{"opened": {"id", "name", "type"}}`。フォルダ取込の行と、そこから並ぶアイテムは開けない（`invalid`）。開くのに失敗したら `unavailable` |
@@ -143,8 +143,8 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | 表示 | `language` | `auto`・`ja`・`en` |
 | 表示 | `showKeyboardHints`・`showDataFileTabs`・`searchMemo`・`searchIgnoreWidth`・`searchIgnoreKana`・`searchSortByUsage` | `true`・`false` |
 | 表示 | `defaultFileTab` | 起動したときに開くタブの、データファイル（`data2.json` など）。どれかのタブに入っているものだけ |
-| システム | `recordLaunchUsage` | `true`・`false`（起動の記録を残す） |
-| システム | `updateCheckEnabled`・`updateCheckIncludeBeta` | `true`・`false`（新しい版が出たら知らせる・ベータ版も知らせる） |
+| システム | `recordLaunchUsage` | `true`・`false`（起動回数を記録する） |
+| システム | `updateCheckEnabled`・`updateCheckIncludeBeta` | `true`・`false`（アップデートを自動で確認する・ベータ版も確認する） |
 | ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
 | メイン | `windowWidth`・`windowHeight` | 400〜2000・300〜1200 |
 | メイン | `windowPositionMode` | `center`・`cursor`・`cursorMonitorCenter`・`fixed` |
@@ -212,7 +212,7 @@ JSON は UTF-8 で出します。どのコマンドにも `--ascii` を付けら
 2. データファイルとワークスペースファイルを読み直し、読み込みレポートを作り直す
 3. 開いているすべての画面に、データが変わったことを知らせる（各画面が表示を読み直す）
 
-標準出力の JSON には、読み込んだ日時・件数の集計・外部変更の検知時に作ったスナップショットのフォルダ名と、問題のあったファイル（読めなかった、スキップ・採番・補正があった、QDL の外で変更されていた、書き戻した、新しい版の QDL が保存したので書き込まない）の詳しい結果だけが入ります（形式は [データファイル形式 - 読み込みレポートの形式](../architecture/file-formats/data-format.md#読み込みレポートの形式)）。`check` は読み直さずに、直近の読み込みの同じ結果を返します。
+標準出力の JSON には、読み込んだ日時・件数の集計・外部変更の検知時に作ったスナップショットのフォルダ名と、問題のあったファイル（読めなかった、スキップ・採番・補正があった、QDL の外で変更されていた、書き戻した、新しいバージョンの QDL が保存したので書き込まない）の詳しい結果だけが入ります（形式は [データファイル形式 - 読み込みレポートの形式](../architecture/file-formats/data-format.md#読み込みレポートの形式)）。`check` は読み直さずに、直近の読み込みの同じ結果を返します。
 
 ## 終了コード
 

@@ -93,7 +93,7 @@ describe('SetupFirstLaunch', () => {
     const onComplete = vi.fn(async () => true);
     render(<SetupFirstLaunch onComplete={onComplete} />);
     await goToTryStep();
-    await screen.findByText('新しい版が出たら知らせる');
+    await screen.findByText('アップデートを自動で確認する');
     const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
     expect(checkboxes.map((c) => c.checked)).toEqual([true, true]);
 
@@ -115,7 +115,7 @@ describe('SetupFirstLaunch', () => {
     render(<SetupFirstLaunch onComplete={onComplete} />);
     await goToTryStep();
     await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(1));
-    expect(screen.queryByText('新しい版が出たら知らせる')).toBeNull();
+    expect(screen.queryByText('アップデートを自動で確認する')).toBeNull();
 
     act(() => firePressed?.());
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));

@@ -138,7 +138,7 @@ describe('dataItemWriter', () => {
         displayName: 'A2',
         path: 'C:\\a.exe',
       })
-    ).toThrow(/新しい版の QDL|newer version/);
+    ).toThrow(/新しいバージョンの QDL|newer version/);
     expect(() =>
       registerItems(tempRoot.dir, [
         {
@@ -149,7 +149,7 @@ describe('dataItemWriter', () => {
           itemCategory: 'item',
         },
       ])
-    ).toThrow(/新しい版の QDL|newer version/);
+    ).toThrow(/新しいバージョンの QDL|newer version/);
     expect(fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data.json'), 'utf8')).toBe(original);
   });
 
