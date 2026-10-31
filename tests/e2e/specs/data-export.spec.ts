@@ -115,14 +115,18 @@ test.describe('QuickDashLauncher - データのエクスポートとインポー
         const dialog = adminWindow.getByTestId('confirm-dialog');
         await expect(dialog).toBeVisible();
         await expect(dialog).toContainText('インポート');
-        await expect(dialog).toContainText('でエクスポートしたデータをインポートし、再起動します');
+        await expect(dialog).toContainText('エクスポートしたデータをインポートして、再起動します');
         await expect(adminWindow.getByTestId('confirm-dialog-warning')).toContainText(
           '今のデータはすべて置き換わります'
         );
         const details = adminWindow.getByTestId('confirm-dialog-details');
         await expect(details).toContainText('アイテム');
-        await expect(details.locator('tr').first()).toContainText(`1`);
-        await expect(details.locator('tr').first()).toContainText(`${exportedCount}`);
+        await expect(
+          details.locator('tr', { hasText: 'アイテム（今 → インポート後）' })
+        ).toContainText(`1`);
+        await expect(
+          details.locator('tr', { hasText: 'アイテム（今 → インポート後）' })
+        ).toContainText(`${exportedCount}`);
       });
 
       await test.step('「インポートして再起動」で置き換え、今のデータをスナップショットに残して再起動する', async () => {

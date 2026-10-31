@@ -2179,10 +2179,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   },
   dataImport: {
     confirmTitle: 'インポート',
-    confirmMessage:
-      '{{date}} に QuickDashLauncher {{version}}（{{distribution}}）でエクスポートしたデータをインポートし、再起動します。',
-    confirmWarning: '今のデータはすべて置き換わります（元のデータはスナップショットに残します）。',
-    detailItems: 'アイテム',
+    confirmMessage: 'エクスポートしたデータをインポートして、再起動します。',
+    confirmWarning: '今のデータはすべて置き換わります。\n元のデータはスナップショットに残します。',
+    detailSource: 'エクスポート元',
+    sourceValue: 'QuickDashLauncher {{version}}（{{distribution}}）',
+    detailExportedAt: 'エクスポートした日時',
+    detailItems: 'アイテム（今 → インポート後）',
     detailWorkspaceItems: 'ワークスペースのアイテム',
     confirmButton: 'インポートして再起動',
     notExport: 'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません',

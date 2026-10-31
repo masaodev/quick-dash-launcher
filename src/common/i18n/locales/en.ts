@@ -2177,11 +2177,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   },
   dataImport: {
     confirmTitle: 'Import',
-    confirmMessage:
-      'Imports the data exported on {{date}} from QuickDashLauncher {{version}} ({{distribution}}), then restarts.',
+    confirmMessage: 'Imports the exported data, then restarts.',
     confirmWarning:
-      'All of your current data will be replaced (your original data is kept in a snapshot).',
-    detailItems: 'Items',
+      'All of your current data will be replaced.\nYour original data is kept in a snapshot.',
+    detailSource: 'Exported from',
+    sourceValue: 'QuickDashLauncher {{version}} ({{distribution}})',
+    detailExportedAt: 'Exported on',
+    detailItems: 'Items (now → after import)',
     detailWorkspaceItems: 'Workspace items',
     confirmButton: 'Import and restart',
     notExport: "This file wasn't exported from QuickDashLauncher, so it can't be imported",

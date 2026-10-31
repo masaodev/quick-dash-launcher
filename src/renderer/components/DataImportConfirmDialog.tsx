@@ -26,7 +26,7 @@ const DataImportConfirmDialog: React.FC<DataImportConfirmDialogProps> = ({
   const exportedAt = new Date(summary.exportedAt);
   const date = Number.isNaN(exportedAt.getTime())
     ? summary.exportedAt
-    : exportedAt.toLocaleString(i18n.language);
+    : exportedAt.toLocaleString(i18n.language, { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
     <ConfirmDialog
@@ -34,13 +34,17 @@ const DataImportConfirmDialog: React.FC<DataImportConfirmDialogProps> = ({
       onClose={onClose}
       onConfirm={onConfirm}
       title={t('dataImport.confirmTitle')}
-      message={t('dataImport.confirmMessage', {
-        date,
-        version: summary.appVersion,
-        distribution: t(`help.distributions.${summary.distribution}`),
-      })}
+      message={t('dataImport.confirmMessage')}
       warning={t('dataImport.confirmWarning')}
       details={[
+        {
+          label: t('dataImport.detailSource'),
+          after: t('dataImport.sourceValue', {
+            version: summary.appVersion,
+            distribution: t(`help.distributions.${summary.distribution}`),
+          }),
+        },
+        { label: t('dataImport.detailExportedAt'), after: date },
         {
           label: t('dataImport.detailItems'),
           before: String(summary.items.before),
