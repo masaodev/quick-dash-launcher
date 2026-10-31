@@ -111,6 +111,10 @@ export const en: LocaleMessages = {
       otherTabsHaveWindows: 'Other tabs have matching windows.',
       switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
+      corrupted: "Couldn't read {{files}} (it may be corrupted)",
+      corruptedHint:
+        "Fix the file, then press F5 to reload. QDL won't overwrite the file until then",
+      openConfigFolder: '📂 Open settings folder',
       add: '📄 Add item',
       importBookmarks: '🔖 From bookmarks',
       importApps: '💻 From apps',

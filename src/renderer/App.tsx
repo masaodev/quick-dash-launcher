@@ -40,6 +40,7 @@ import { findNoMatchElsewhere } from './utils/noMatchElsewhere';
 import { debugLog, logError } from './utils/debug';
 import { indexById, setEntryNames } from './utils/setEditing';
 import { loadItemIcons } from './utils/customIcons';
+import { getActiveTabFiles } from './utils/tabFiles';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useSearchBoxContextMenu } from './hooks/useSearchBoxContextMenu';
@@ -72,6 +73,8 @@ function App(): React.ReactElement {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<AppItem[]>([]);
+  // 直近の読み込みで読めなかったデータファイル（そのタブには空の代わりに案内を出す）
+  const [corruptedDataFiles, setCorruptedDataFiles] = useState<string[]>([]);
   /** セットのツールチップで行の名前を引く（絞り込みの外のアイテムも引けるよう、全アイテムから） */
   const nameOfMainItem = useMemo(() => {
     const byId = indexById(mainItems);
@@ -335,6 +338,11 @@ function App(): React.ReactElement {
   // アプリ内の操作に伴う再読込は 'internal'（先行の再読込があれば結果を共有する）
   const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
+    // 読み込みのついでに判定済みの結果を受け取るだけ（ファイルは読み直さない）
+    window.electronAPI
+      .getCorruptedDataFiles()
+      .then(setCorruptedDataFiles)
+      .catch((error) => logError('読めなかったデータファイルの取得に失敗しました:', error));
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
@@ -536,6 +544,14 @@ function App(): React.ReactElement {
   const tabFilteredItems = useMemo(
     () => getTabFilteredItems(mainItems),
     [getTabFilteredItems, mainItems]
+  );
+  // 今のタブのデータファイルのうち、読めなかったもの
+  const activeTabCorruptedFiles = useMemo(
+    () =>
+      getActiveTabFiles(dataFileTabs, activeTab).filter((file) =>
+        corruptedDataFiles.includes(file)
+      ),
+    [dataFileTabs, activeTab, corruptedDataFiles]
   );
 
   // Ctrl+P でウィンドウを固定（全デスクトップに表示）してよいか。非対応と分かっているときだけ止める
@@ -999,11 +1015,14 @@ function App(): React.ReactElement {
                 elsewhere: noMatchElsewhere,
               }
             : searchMode === 'normal'
-              ? { kind: 'emptyTab' }
+              ? activeTabCorruptedFiles.length > 0
+                ? { kind: 'corrupted', files: activeTabCorruptedFiles }
+                : { kind: 'emptyTab' }
               : null
         }
         onAddItem={() => void openRegisterWindow()}
         onAddFolderImport={() => void openFolderImportWindow()}
+        onOpenConfigFolder={() => void window.electronAPI.openConfigFolder()}
         onBlankContextMenu={
           searchMode === 'normal'
             ? () => void window.electronAPI.showLauncherBlankContextMenu()
