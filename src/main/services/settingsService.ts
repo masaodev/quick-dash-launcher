@@ -87,6 +87,8 @@ export class SettingsService {
     detachedPositionMode: 'mainDisplay',
     windowSnapEnabled: true,
     recordLaunchUsage: true,
+    updateCheckEnabled: true,
+    updateCheckIncludeBeta: false,
     adminItemColumns: { visible: {}, widths: {} },
   };
 

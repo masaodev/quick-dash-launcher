@@ -144,6 +144,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | 表示 | `showKeyboardHints`・`showDataFileTabs`・`searchMemo`・`searchIgnoreWidth`・`searchIgnoreKana`・`searchSortByUsage` | `true`・`false` |
 | 表示 | `defaultFileTab` | 起動したときに開くタブの、データファイル（`data2.json` など）。どれかのタブに入っているものだけ |
 | システム | `recordLaunchUsage` | `true`・`false`（起動の記録を残す） |
+| システム | `updateCheckEnabled`・`updateCheckIncludeBeta` | `true`・`false`（新しい版が出たら知らせる・ベータ版も知らせる） |
 | ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
 | メイン | `windowWidth`・`windowHeight` | 400〜2000・300〜1200 |
 | メイン | `windowPositionMode` | `center`・`cursor`・`cursorMonitorCenter`・`fixed` |

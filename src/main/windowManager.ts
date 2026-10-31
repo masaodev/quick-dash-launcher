@@ -10,6 +10,7 @@ import {
   screen,
   dialog,
   Rectangle,
+  type MenuItemConstructorOptions,
 } from 'electron';
 import { IPC_CHANNELS, type IpcChannelName } from '@common/ipcChannels';
 import { windowLogger } from '@common/logger';
@@ -18,6 +19,7 @@ import { PerformanceTimer } from '@common/utils/performanceTimer';
 
 import { HotkeyService } from './services/hotkeyService.js';
 import { SettingsService } from './services/settingsService.js';
+import { UpdateCheckService } from './services/updateCheckService.js';
 import { mainI18n } from './services/mainI18n.js';
 import { showAdminWindowWithTab } from './adminWindowManager.js';
 import PathManager from './config/pathManager.js';
@@ -324,8 +326,8 @@ export async function createTray(): Promise<void> {
   });
 }
 
-/** トレイの右クリックメニューを今の表示言語・ホットキーで作り直す */
-async function updateTrayMenu(): Promise<void> {
+/** トレイの右クリックメニューを今の表示言語・ホットキー・更新の知らせで作り直す */
+export async function updateTrayMenu(): Promise<void> {
   if (!tray || tray.isDestroyed()) return;
   const t = mainI18n.t.bind(mainI18n);
 
@@ -336,7 +338,22 @@ async function updateTrayMenu(): Promise<void> {
   const hotkey = await settingsService.get('hotkey');
   const hotkeyLabel = hotkey ? ` (${hotkey})` : '';
 
+  // 新しい版があれば先頭に出す（押すとリリースのページを開く。入れ替えは人が行う）
+  const available = await UpdateCheckService.getInstance()?.getAvailableRelease();
+  const updateItems: MenuItemConstructorOptions[] = available
+    ? [
+        {
+          label: t('tray.updateAvailable', { version: available.version }),
+          click: () => {
+            void shell.openExternal(available.url);
+          },
+        },
+        { type: 'separator' },
+      ]
+    : [];
+
   const contextMenu = Menu.buildFromTemplate([
+    ...updateItems,
     {
       label: `QuickDashLauncher v${version}`,
       enabled: false,

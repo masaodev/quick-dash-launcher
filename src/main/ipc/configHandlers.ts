@@ -6,6 +6,7 @@ import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { getAppDistribution } from '../utils/appDistribution';
+import { UpdateCheckService } from '../services/updateCheckService.js';
 import { handleIpc } from '../utils/ipcWrapper';
 
 const DEFAULT_APP_INFO = {
@@ -64,6 +65,20 @@ export function setupConfigHandlers(configFolder: string): void {
       repository: pkg.repository?.url || DEFAULT_APP_INFO.repository,
       distribution: getAppDistribution(),
     };
+  });
+
+  const unsupportedStatus = {
+    supported: false,
+    enabled: false,
+    lastCheckedAt: null,
+    available: null,
+    failed: false,
+  };
+  handleIpc(IPC_CHANNELS.GET_UPDATE_STATUS, async () => {
+    return (await UpdateCheckService.getInstance()?.getStatus()) ?? unsupportedStatus;
+  });
+  handleIpc(IPC_CHANNELS.CHECK_FOR_UPDATES, async () => {
+    return (await UpdateCheckService.getInstance()?.checkNow()) ?? unsupportedStatus;
   });
 
   handleIpc(IPC_CHANNELS.OPEN_EXTERNAL_URL, async (_event, url: string) => {

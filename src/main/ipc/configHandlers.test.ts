@@ -25,6 +25,9 @@ vi.mock('electron', () => ({
 vi.mock('@common/logger', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
+vi.mock('../services/updateCheckService.js', () => ({
+  UpdateCheckService: { getInstance: () => null },
+}));
 
 import { setupConfigHandlers } from './configHandlers';
 

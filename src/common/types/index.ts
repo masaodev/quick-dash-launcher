@@ -188,7 +188,7 @@ export type { SearchHistoryEntry, SearchHistoryState, SearchMode } from './searc
 export type { WindowInfo, VirtualDesktopInfo, WindowState, Bounds, AdminTab } from './window';
 
 // アプリケーション情報
-export type { AppInfo, AppDistribution } from './app';
+export type { AppInfo, AppDistribution, AvailableUpdate, UpdateCheckStatus } from './app';
 
 // 登録関連の型
 export type {

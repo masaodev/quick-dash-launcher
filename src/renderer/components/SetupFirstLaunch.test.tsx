@@ -5,12 +5,14 @@ import { SetupFirstLaunch } from './SetupFirstLaunch';
 
 const changeHotkey = vi.fn();
 const isItemSearchHotkeyAvailable = vi.fn();
+let distribution = 'portable';
 let firePressed: (() => void) | null = null;
 
 beforeEach(() => {
   changeHotkey.mockReset().mockResolvedValue(true);
   isItemSearchHotkeyAvailable.mockReset().mockResolvedValue(true);
   firePressed = null;
+  distribution = 'portable';
   Object.defineProperty(window, 'electronAPI', {
     configurable: true,
     value: {
@@ -18,6 +20,7 @@ beforeEach(() => {
       isItemSearchHotkeyAvailable,
       validateHotkey: vi.fn(async () => ({ isValid: true })),
       setHotkeyRecording: vi.fn(async () => undefined),
+      getAppInfo: vi.fn(async () => ({ distribution })),
       onFirstLaunchHotkeyPressed: (callback: () => void) => {
         firePressed = callback;
         return () => {
@@ -86,11 +89,33 @@ describe('SetupFirstLaunch', () => {
     expect(start.disabled).toBe(false);
   });
 
-  it('自動起動は既定でオンのまま「使いはじめる」で渡す', async () => {
+  it('自動起動と更新の知らせは既定でオンのまま「使いはじめる」で渡す', async () => {
     const onComplete = vi.fn(async () => true);
     render(<SetupFirstLaunch onComplete={onComplete} />);
     await goToTryStep();
-    expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true);
+    await screen.findByText('新しい版が出たら知らせる');
+    const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
+    expect(checkboxes.map((c) => c.checked)).toEqual([true, true]);
+
+    act(() => firePressed?.());
+    fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
+    await waitFor(() =>
+      expect(onComplete).toHaveBeenCalledWith({
+        hotkey: 'Alt+Space',
+        autoLaunch: true,
+        itemSearchHotkey: 'Ctrl+Alt+Space',
+        updateCheckEnabled: true,
+      })
+    );
+  });
+
+  it('Store 版では更新の知らせを出さず、設定も渡さない', async () => {
+    distribution = 'store';
+    const onComplete = vi.fn(async () => true);
+    render(<SetupFirstLaunch onComplete={onComplete} />);
+    await goToTryStep();
+    await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(1));
+    expect(screen.queryByText('新しい版が出たら知らせる')).toBeNull();
 
     act(() => firePressed?.());
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
@@ -133,7 +158,9 @@ describe('SetupFirstLaunch', () => {
     expect((screen.getByRole('button', { name: '戻る' }) as HTMLButtonElement).disabled).toBe(
       false
     );
-    expect((screen.getByRole('checkbox') as HTMLInputElement).disabled).toBe(false);
+    for (const checkbox of screen.getAllByRole('checkbox') as HTMLInputElement[]) {
+      expect(checkbox.disabled).toBe(false);
+    }
 
     // もう一度押せば保存し直す
     onComplete.mockResolvedValue(true);

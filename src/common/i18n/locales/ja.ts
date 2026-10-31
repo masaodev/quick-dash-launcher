@@ -342,6 +342,8 @@ export const ja = {
       'アイテムの登録は、上の ➕ からできます。ブラウザのブックマークやインストール済みアプリも、ここからまとめて取り込めます。',
     autoLaunch: 'Windows にサインインしたら自動で起動する',
     autoLaunchHint: '起動していないと、キーを押しても出ません。',
+    updateCheck: '新しい版が出たら知らせる',
+    updateCheckHint: '1 日 1 回、GitHub で新しい版を確かめます。入れ替えはご自身で行います。',
     changeLater: 'どれもあとから「設定」で変えられます',
     complete: '使いはじめる',
     saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
@@ -465,6 +467,7 @@ export const ja = {
     },
   },
   tray: {
+    updateAvailable: '⬆ 新しい版 v{{version}} をダウンロード',
     show: '表示',
     showAtCenter: '画面中央に表示',
     settings: '設定',
@@ -1727,6 +1730,15 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     about: 'ℹ️ アプリについて',
     version: 'バージョン',
     distribution: '配布形式',
+    updateAvailable: '新しい版 v{{version}} があります',
+    updateToast: '新しい版 v{{version}} があります。トレイのメニューから開けます',
+    openReleasePage: 'ダウンロードのページを開く',
+    checkForUpdates: '今すぐ確かめる',
+    checkingForUpdates: '確かめています…',
+    upToDate: '最新の版です',
+    updateCheckFailed: '確かめられませんでした。ネットへのつながりを確かめてください。',
+    updateLastChecked: '最後に確かめた日時: {{date}}',
+    updateCheckOff: '新しい版の確認は切っています（設定タブ → 基本設定で入れられます）',
     distributions: {
       store: 'Microsoft Store 版',
       portable: 'ポータブル版',
@@ -2543,6 +2555,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       recordLaunchUsage: '起動の記録を残す',
       recordLaunchUsageDescription:
         'アイテムを起動した日時と回数を記録し、アイテム管理の「最終起動」「起動回数」の列に出します（この PC の設定フォルダの item-usage.json にだけ書きます）。',
+      updateCheck: '新しい版が出たら知らせる',
+      updateCheckDescription:
+        '1 日 1 回、GitHub のリリース一覧を読み、新しい版があればトーストとトレイのメニューで知らせます。入れ替えはご自身で行います。',
+      updateCheckIncludeBeta: 'ベータ版も知らせる',
+      updateCheckIncludeBetaDescription:
+        '正式版を使っていても、ベータ版（試験的な版）が出たら知らせます。ベータ版を使っている間は、この設定に関係なく知らせます。',
       cliDescription:
         'ターミナルや AI から qdl コマンドで、アイテムやワークスペースを操作できるようにします（qdl を PATH に追加します。新しく開いたターミナルから使えます）。',
     },

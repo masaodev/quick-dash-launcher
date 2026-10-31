@@ -74,6 +74,8 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "detachedPositionMode": "mainDisplay",
   "windowSnapEnabled": true,
   "recordLaunchUsage": true,
+  "updateCheckEnabled": true,
+  "updateCheckIncludeBeta": false,
   "adminItemColumns": {
     "visible": {},
     "widths": {}
@@ -270,6 +272,8 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 | **searchIgnoreKana** | boolean | false | メインウィンドウの検索とワークスペースの絞り込みで、ひらがなとカタカナを区別しないか（`てすと` で `テスト`） |
 | **searchSortByUsage** | boolean | false | メインウィンドウの検索（通常モード）で、検索語があるとき、名前が最初の語で始まるもの → 開いた回数（`item-usage.json`）の多いもの → 今の順（名前順）に並べるか |
 | **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「システム」にある「起動の記録を残す」 |
+| **updateCheckEnabled** | boolean | true | 新しい版が出たら知らせるか（[ファイル形式一覧 - 更新の知らせ](README.md#更新の知らせ)）。設定画面では基本設定の「システム」にある「新しい版が出たら知らせる」。初回設定の画面でも選べる。Store 版では使わない（画面にも出さない） |
+| **updateCheckIncludeBeta** | boolean | false | 正式版を使っていても、ベータ版を知らせるか。ベータ版を使っている間は、この値に関係なくベータ版も知らせる。設定画面では「ベータ版も知らせる」（「新しい版が出たら知らせる」がオフの間は押せない） |
 | **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`lastLaunched`・`launchCount`・`updatedAt`。`memo`・`link`・`lastLaunched`・`launchCount` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`）の `widths` は使わない。`pathAndArgs` は `widths` が無ければ残りの幅を使う。画面の見出しの右クリックと見出しの右端のドラッグ・ダブルクリックで変わり、設定画面にはない |
 
 ---

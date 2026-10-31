@@ -73,6 +73,8 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       await expect(mainWindow.locator('.first-launch-try-waiting')).toBeVisible();
       expect(await mainWindow.isChecked('.auto-launch-checkbox')).toBe(true);
       await expect(mainWindow.locator('.auto-launch-hint')).toBeVisible();
+      // 更新の知らせも既定でオン（E2E は開発版なので Store 版の扱いにはならない）
+      expect(await mainWindow.isChecked('[data-testid="first-launch-update-check"]')).toBe(true);
     });
 
     await test.step('ホットキーを押すまで「使いはじめる」は押せず、押すと ✓ が出て押せる', async () => {

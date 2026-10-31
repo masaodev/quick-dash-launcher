@@ -35,7 +35,13 @@ export const SETTINGS_RESET_KEYS: Record<
   ResettableSettingsSection,
   ReadonlyArray<keyof AppSettings>
 > = {
-  system: ['autoLaunch', 'cliEnabled', 'recordLaunchUsage'],
+  system: [
+    'autoLaunch',
+    'cliEnabled',
+    'recordLaunchUsage',
+    'updateCheckEnabled',
+    'updateCheckIncludeBeta',
+  ],
   display: [
     'showKeyboardHints',
     'searchMemo',
@@ -123,6 +129,8 @@ const RESET_ROWS: Record<ResettableSettingsSection, ReadonlyArray<ResetRow>> = {
     checkRow('autoLaunch', 'settings.system.autoLaunch'),
     checkRow('cliEnabled', 'settings.system.cli'),
     checkRow('recordLaunchUsage', 'settings.system.recordLaunchUsage'),
+    checkRow('updateCheckEnabled', 'settings.system.updateCheck'),
+    checkRow('updateCheckIncludeBeta', 'settings.system.updateCheckIncludeBeta'),
   ],
   display: [
     checkRow('showKeyboardHints', 'settings.display.keyboardHints'),
