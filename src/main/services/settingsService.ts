@@ -101,6 +101,28 @@ export class SettingsService {
     );
   }
 
+  /**
+   * settings.json を設定として読めるか（JSON のオブジェクトか。ファイルが無ければ読める＝既定値で作る）
+   *
+   * 起動した後に QDL の外で壊すと、get は読むたびに失敗して既定値を返す。そのまま F5 で副作用
+   * （自動起動・CLI・ホットキー）を適用し直すと、既定値で OS 側の設定を書き換えてしまうので、先に確かめる
+   */
+  public static isSettingsFileReadable(): boolean {
+    const settingsFilePath = path.join(PathManager.getConfigFolder(), 'settings.json');
+    let text: string;
+    try {
+      text = fs.readFileSync(settingsFilePath, 'utf-8');
+    } catch {
+      return !fs.existsSync(settingsFilePath);
+    }
+    try {
+      const parsed: unknown = JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
+      return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed);
+    } catch {
+      return false;
+    }
+  }
+
   /** 既定値の写し（設定画面で「既定値のままか」と戻すと何が変わるかを示すため） */
   public static getDefaults(): AppSettings {
     return structuredClone(SettingsService.DEFAULT_SETTINGS);
