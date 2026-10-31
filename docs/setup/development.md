@@ -37,6 +37,19 @@ Rust は CLI に触るとき・配布物を作るときだけ要る（`npm run d
 winget install --id Rustlang.Rustup --source winget
 ```
 
+### アプリアイコン
+
+アプリのアイコンは `assets/` に置く。元になるのは `icon.svg` で、ほかのファイルはそこから作る。
+
+| ファイル | 中身 | 使われる場所 |
+| --- | --- | --- |
+| `icon.svg` | 元のデザイン（256×256 の viewBox） | README の表示、Store 版のロゴの生成（`npm run dist:appx`） |
+| `icon.ico` | 16・20・24・32・40・48・64・256px の画像を 1 つにまとめたもの | exe・インストーラー（`package.json` の `build.win.icon`）、本番のウィンドウとトレイ |
+| `icon.png` | 256px | `package.json` の `build.icon`、開発用アイコンの元 |
+| `icon-dev.ico`・`icon-dev.png` | 開発用（256px） | 開発モードのウィンドウとトレイ |
+
+デザインを変えるときは、`icon.svg` を直してから `icon.png` と `icon.ico` を書き出し直し、`npm run create-dev-icon` で開発用アイコンを作り直す。Store 版のロゴは `npm run dist:appx` のたびに `icon.svg` から作るので、手で作り直さなくてよい。
+
 ### 開発モード用アイコン
 
 v0.5.20以降、開発モード実行時には赤い「DEV」オーバーレイ付きアイコンが適用されます。これにより、本番環境と視覚的に区別できます。
@@ -44,8 +57,9 @@ v0.5.20以降、開発モード実行時には赤い「DEV」オーバーレイ�
 **アイコンの仕組み**:
 
 - 開発用アイコンは`assets/icon-dev.ico`、`assets/icon-dev.png`に配置済み
+- `npm run create-dev-icon`（`scripts/create-dev-icon.ps1`）が `assets/icon.png` を赤みがかった色に変え、中央に「DEV」の文字を重ねて作る。透明な部分（角丸の外）は透明のまま残る
 - `PathManager.getAppIconPath()`が環境に応じて`assets/`ディレクトリのアイコンを選択
-- 全ウィンドウ（メイン、トレイ、スプラッシュ、ワークスペース、管理）に適用
+- 全ウィンドウ（メイン、トレイ、スプラッシュ、ワークスペース、切り離し、管理）に適用
 
 **App User Model ID**:
 
