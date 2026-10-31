@@ -39,6 +39,7 @@ import { getHwnd, moveWindowToCurrentDesktop } from './utils/virtualDesktop/inde
 import { registerChildWindowOpener } from './services/childWindowService.js';
 import { isPositionOnScreen } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
+import { registerSnapTarget } from './utils/windowSnap.js';
 import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
 import { suppressSystemContextMenu } from './utils/systemContextMenu.js';
 
@@ -233,6 +234,8 @@ export async function createWindow(): Promise<BrowserWindow> {
   registerMainWindowBoundsProvider(() =>
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : null
   );
+  // ワークスペース・切り離しウィンドウの吸着先にする（メインウィンドウ自体は吸着しない）
+  registerSnapTarget(mainWindow);
 
   mainWindow.on('show', () => {
     windowShownAt = Date.now();

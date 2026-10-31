@@ -426,7 +426,7 @@ export const ja = {
       restore: '↩️ ワークスペースへ復元',
       deleteFromArchive: '🗑️ アーカイブから削除',
       detach: '🪟 別のウィンドウに切り離す',
-      showDetached: '🪟 切り離しウィンドウを表示',
+      closeDetached: '📥 切り離しウィンドウを閉じる',
       reattach: '📥 ワークスペースに戻す',
       addSubgroup: '➕ サブグループを追加',
       addItem: '➕ アイテムを追加',
@@ -2577,9 +2577,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     windowOther: {
       heading: 'その他',
       snap: '吸着:',
-      windowSnap: 'ディスプレイの端に近づけたら吸着する',
+      windowSnap: 'ディスプレイの端やほかのウィンドウに近づけたら吸着する',
       windowSnapDescription:
-        'ワークスペースウィンドウと切り離しウィンドウを、ディスプレイの端にぴったり寄せます',
+        'ワークスペースウィンドウと切り離しウィンドウを、ディスプレイの端や、メイン・ワークスペース・切り離しウィンドウの辺にぴったり寄せます',
       adminWindowSize: '管理ウィンドウ:',
     },
     backup: {

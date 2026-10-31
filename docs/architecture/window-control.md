@@ -327,7 +327,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 - 記録にあるグループのうち、サブグループ（切り離した後でサブグループにしたものなど）と、もう無いグループは開き直さず、`workspace-ui-state.json` から記録を消す（サブグループは切り離さないため）
 - 復元より先にホットキーでメインウィンドウを出していたときは、復元が終わったところで、隠したまま作った 📌 なしのウィンドウもメインと一緒に出す（`syncCompanionWindowsWithMain()`、`src/main/windowManager.ts`）。次のホットキーまで隠れたままにしないため
 
-切り離しウィンドウは枠がないので、グループの見出しを掴むとレンダラーが `window:start-move` を送り、メインプロセスが `WM_SYSCOMMAND`（`SC_MOVE` に `HTCAPTION` を足した値）を送って、タイトルバーを掴んだときと同じ移動を始める（`startWindowMove()`、`src/main/utils/nativeWindowControl.ts`）。Windows が動かすので、画面端への吸着と `moved` イベントも同じに働く。掴む所のダブルクリックで最大化しないよう、`maximizable: false` で作る。
+切り離しウィンドウは枠がないので、グループの見出しを掴むとレンダラーが `window:start-move` を送り、メインプロセスが `WM_SYSCOMMAND`（`SC_MOVE` に `HTCAPTION` を足した値）を送って、タイトルバーを掴んだときと同じ移動を始める（`startWindowMove()`、`src/main/utils/nativeWindowControl.ts`）。Windows が動かすので、[吸着](#吸着スナップ)と `moved` イベントも同じに働く。掴む所のダブルクリックで最大化しないよう、`maximizable: false` で作る。
 
 位置は「載っているディスプレイの作業領域に対する位置」（`MonitorAnchor`）として覚える。計算は純粋関数（`src/main/utils/monitorAnchor.ts`）。
 
@@ -338,6 +338,16 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 - QDL が位置を当て直したことによる移動・サイズ変更は保存しない。当て直した先と同じ bounds のとき、または当て直した直後 300ms（拡大率の違うディスプレイへ移す途中の大きさ）のときがそれに当たる。それ以外は人の操作として扱う（`isProgrammaticMove()`）
 - 覚えた位置は `workspace-ui-state.json` の `anchor` に保存する（[ワークスペースファイル形式 4](file-formats/workspace-format.md#4-workspace-ui-statejson)）。無いとき（古いファイル）は今の位置から求める
 - 座標・サイズは Electron の DIP（拡大率を除いた単位）で扱う。拡大率の違うディスプレイへの移し方はワークスペースウィンドウと同じ（`setBoundsAcrossDisplays()`）
+
+### 吸着（スナップ）
+
+ワークスペースウィンドウと切り離しウィンドウは、動かし終えたとき（`WM_EXITSIZEMOVE`）に、近くの辺へ位置を寄せる（`attachSnapHandler()`、`src/main/utils/windowSnap.ts`）。設定 `windowSnapEnabled` がオフなら寄せない。
+
+- 吸着先は、全ディスプレイの作業領域と、表示中のメインウィンドウ・ワークスペースウィンドウ・ほかの切り離しウィンドウ。メインウィンドウは吸着先になるだけで、動かしても吸着しない（`registerSnapTarget()`）。最小化・非表示のウィンドウは吸着先にしない
+- 作業領域には、内側の同じ辺どうし（左端と左端など）を揃える
+- ほかのウィンドウには、外側の辺どうしをくっつける（自分の右端を相手の左端に、など）か、同じ辺どうし（上端と上端など）を揃える。相手と縦の範囲が重なるか 20px 未満の距離にあるときだけ横に、横の範囲が重なるか近いときだけ縦に吸着する
+- 横と縦は別々に、20px 未満でいちばん近い候補へ寄せる。計算は純粋関数（`computeSnappedPosition()`、`src/main/utils/snapPosition.ts`）
+- 3 つのウィンドウはどれも枠なしなので、`getBounds()` の辺が見た目の辺と一致する
 
 ### アイテム編集ウィンドウ（独立した子ウィンドウ）
 
