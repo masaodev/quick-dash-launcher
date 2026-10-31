@@ -101,6 +101,7 @@
     "clipboard-files": "^3.0.0",
     "electron-store": "^12.0.0",
     "extract-file-icon": "^0.3.2",
+    "fflate": "^0.8.3",
     "i18next": "^26.5.12",
     "koffi": "^3.3.5",
     "minimatch": "^11.0.3",

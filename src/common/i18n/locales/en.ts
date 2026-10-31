@@ -2134,6 +2134,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     deleteFailed: "Couldn't delete",
     preMigrationCopyFailed: "Couldn't copy {{file}} to the pre-migration snapshot",
   },
+  dataExport: {
+    exportTitle: 'Export all QuickDashLauncher data',
+  },
   clipboardService: {
     imagePreview: 'Image ({{width}}x{{height}})',
     filesPreview_one: '{{count}} file: {{first}}…',
@@ -2653,6 +2656,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       lastBackup: 'Last backup: {{time}}',
       neverBackedUp: 'None',
       openSnapshots: 'Snapshots',
+      transferHeading: 'Export and import data',
+      transferDescription:
+        'Exports your items, workspace, settings, and more into a single zip file. Use it to move to another PC or another edition of QuickDashLauncher.',
+      exportAll: 'Export all…',
+      exported_one: 'Exported {{count}} file: {{path}}',
+      exported_other: 'Exported {{count}} files: {{path}}',
+      exportFailed: "Couldn't export: {{error}}",
     },
     snapshots: {
       title: 'Snapshots',

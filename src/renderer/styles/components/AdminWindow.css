@@ -209,6 +209,11 @@
   min-width: 200px;
 }
 
+/* 設定の節に置くボタン（縦並びの .setting-item の中で横いっぱいに伸ばさない） */
+.setting-item-button {
+  align-self: flex-start;
+}
+
 .setting-item label {
   font-weight: 500;
   color: var(--text-secondary);

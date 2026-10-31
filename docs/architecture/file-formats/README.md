@@ -102,6 +102,25 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 - **ウィンドウ切り替え変換前スナップショット**: データファイル・ワークスペースファイルの単一アイテムの旧形式 `windowConfig` を新しいキーに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-window-migration/` を作成（セットへの変換も要るときは `_pre-set-migration` の 1 回で済ませ、これは作らない。`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つは `backupRetention` で数えずに残す
 - **同じ秒に作ったとき**: サフィックス付き（`_pre-restore`・`_pre-external`・`_pre-migration`・`_pre-set-migration`・`_pre-window-migration`）のフォルダは、同じ名前がすでにあれば `YYYY-MM-DDTHH-MM-SS-2_pre-external/` のように連番を付けて別に作る（上書きしない）。一覧では連番の大きい方を新しいものとして並べる
 
+### 一括エクスポート
+
+設定タブの「すべて書き出す…」（[管理ウィンドウ 5.5.2](../../screens/admin-window.md#552-すべて書き出す)）で作る zip。別の PC や別の配布形式の QDL へデータを移すときに使う（`src/main/services/dataExportService.ts`）。
+
+- **ファイル**: 利用者が選んだ場所の `QuickDashLauncher-export-YYYY-MM-DD.zip`（既定の名前。ローカル時刻の日付）
+- **中の並び**: 設定フォルダと同じ並び。先頭に中身の説明 `manifest.json` を置く
+- **入れるもの**: `settings.json`、`datafiles/data*.json`、`workspace.json`、`workspace-archive.json`、`workspace-ui-state.json`、`clipboard-data/*.json`、`icon-cache/custom/`（自分で設定したアイコン。取り直せない）、`item-usage.json`、`search-history.json`。バックアップの設定（`backupIncludeClipboard`）に関係なく、クリップボードアイテムの実データも入れる
+- **入れないもの**: `icon-cache/` の `apps`・`favicons`・`extensions`（読み込んだあとに取り直せる）、`backup/`・`logs/`、`path-type-cache.json`・`update-check.json`（その PC だけのメモ）、壊れて退避したファイル（`*.broken-*`）
+- **manifest.json**:
+
+  | キー | 内容 |
+  | --- | --- |
+  | `format` | `"quick-dash-launcher-export"`（ほかの zip と見分ける目印） |
+  | `formatVersion` | zip の形式の版（今は `1`）。中の並び・manifest の項目を変えたら上げる |
+  | `appVersion` | 書き出した QDL の版 |
+  | `distribution` | 書き出した QDL の配布形式（`store`・`portable`・`installer`・`dev`） |
+  | `exportedAt` | 書き出した日時（ISO 8601。UTC） |
+  | `files` | 入れたファイル（設定フォルダからの相対パス。区切りは `/`） |
+
 ### ログ
 
 - **フォルダ**: `config/logs/`
