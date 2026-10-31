@@ -73,7 +73,10 @@ export function useDataImport({ onProblem, onApplied }: UseDataImportOptions) {
     setIsBusy(false);
   }, [onApplied, onProblem, pending, t]);
 
-  const cancel = useCallback(() => setPending(null), []);
+  const cancel = useCallback(() => {
+    setPending(null);
+    window.electronAPI.backupAPI.cancelImport().catch(() => {});
+  }, []);
 
   return { start, confirm, cancel, pending, isBusy };
 }

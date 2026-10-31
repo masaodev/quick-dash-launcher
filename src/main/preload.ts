@@ -600,6 +600,7 @@ const electronAPI: ElectronAPI = {
     exportAll: () => ipcInvoke(IPC_CHANNELS.BACKUP_EXPORT_ALL),
     inspectImport: () => ipcInvoke(IPC_CHANNELS.BACKUP_IMPORT_INSPECT),
     applyImport: (token) => ipcInvoke(IPC_CHANNELS.BACKUP_IMPORT_APPLY, token),
+    cancelImport: () => ipcInvoke(IPC_CHANNELS.BACKUP_IMPORT_CANCEL),
   },
 };
 
