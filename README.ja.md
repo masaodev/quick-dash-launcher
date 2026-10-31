@@ -162,7 +162,7 @@ winget install masaodev.quick-dash-launcher
 [Releases](https://github.com/masaodev/quick-dash-launcher/releases) からダウンロードします。
 
 - インストーラー版: `QuickDashLauncher.Setup.x.x.x.exe` を実行します。インストールが終わると起動します。
-- ポータブル版: `QuickDashLauncher.x.x.x.exe` を好きなフォルダに置いて実行します（インストール不要）。
+- ポータブル版: `QuickDashLauncher-x.x.x-portable.zip` を好きなフォルダに展開し、`QuickDashLauncher.exe` を実行します（インストール不要）。設定とデータは exe の横の `QuickDashLauncher-data` フォルダに保存されるので、フォルダごと USB メモリで持ち歩けます。新しい版にするときは、新しい ZIP を別のフォルダに展開し、`QuickDashLauncher-data` をそちらへ移します。
 
 インストーラー版・ポータブル版は署名していないため、初回の実行時に Windows SmartScreen の警告が出ることがあります。そのときは「詳細情報」→「実行」で起動できます。
 

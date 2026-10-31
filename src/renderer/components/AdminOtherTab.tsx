@@ -128,6 +128,18 @@ const AdminOtherTab: React.FC = () => {
                     {appInfo ? t(`help.distributions.${appInfo.distribution}`) : t('help.loading')}
                   </span>
                 </div>
+                {appInfo?.distribution === 'portable' && (
+                  <div className="app-info-item">
+                    <span className="app-info-label">{t('help.dataLocation')}</span>
+                    <span className="app-info-value">
+                      {t(
+                        appInfo.portableData
+                          ? 'help.dataLocations.portable'
+                          : 'help.dataLocations.appData'
+                      )}
+                    </span>
+                  </div>
+                )}
                 {updateStatus?.supported && (
                   <div className="app-info-update" data-testid="help-update-status">
                     {updateStatus.available ? (

@@ -53,7 +53,8 @@ jobs:
           GYP_MSVS_VERSION: '2022'
 
       # アプリケーションのビルドとWindowsインストーラーの作成
-      # npm run dist は内部で npm run build を実行し、その prebuild でライセンスファイルも生成される
+      # npm run dist は内部で npm run build を実行し、その prebuild でライセンスファイルも生成される。
+      # 続けて postdist がポータブル版の ZIP（release/win-unpacked に印とデータフォルダを添えたもの）を作る
       - name: Build and package
         run: npm run dist -- --publish never
         env:
@@ -104,7 +105,8 @@ jobs:
           Download and run \`QuickDashLauncher.Setup.$VERSION.exe\`.
 
           ### Portable
-          Download \`QuickDashLauncher.$VERSION.exe\` and put it in any folder. No installation is needed.
+          Download \`QuickDashLauncher-$VERSION-portable.zip\`, extract it to any folder, and run \`QuickDashLauncher.exe\`. No installation is needed. Settings and data are saved in the \`QuickDashLauncher-data\` folder next to the exe.
+          To update, extract the new ZIP to another folder and move \`QuickDashLauncher-data\` into it.
 
           ## License
           This software is released under the MIT License.
@@ -119,7 +121,8 @@ jobs:
           \`QuickDashLauncher.Setup.$VERSION.exe\` をダウンロードして実行してください。
 
           ### ポータブル版
-          \`QuickDashLauncher.$VERSION.exe\` をダウンロードして任意の場所に配置してください。インストール不要で直接実行できます。
+          \`QuickDashLauncher-$VERSION-portable.zip\` をダウンロードし、好きなフォルダに展開して \`QuickDashLauncher.exe\` を実行してください。インストールは要りません。設定とデータは exe の横の \`QuickDashLauncher-data\` フォルダに保存されます。
+          新しい版にするときは、新しい ZIP を別のフォルダに展開し、\`QuickDashLauncher-data\` をそちらへ移してください。
 
           ## ライセンス情報
           このソフトウェアはMITライセンスの下で公開されています。
@@ -145,6 +148,7 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             release/*.exe
+            release/*-portable.zip
             release/*.exe.blockmap
             release/latest.yml
             THIRD-PARTY-NOTICES.md

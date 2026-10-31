@@ -1730,6 +1730,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     about: 'ℹ️ アプリについて',
     version: 'バージョン',
     distribution: '配布形式',
+    dataLocation: 'データの保存先',
+    dataLocations: {
+      portable: 'exe の横の QuickDashLauncher-data',
+      appData: '%APPDATA%',
+    },
     updateAvailable: '新しい版 v{{version}} があります',
     updateToast: '新しい版 v{{version}} があります。トレイのメニューから開けます',
     openReleasePage: 'ダウンロードのページを開く',
@@ -2091,6 +2096,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       '新しい版の QDL で保存されたファイルがあります: {{files}}。表示はしますが、QDL を最新の版に更新するまで変更できません',
     settingsNewerFormat:
       'settings.json は新しい版の QDL で保存されています。設定を変えても QDL を終了するまでしか効かず、ファイルには保存しません。QDL を最新の版に更新してください',
+    portableDataUnwritable:
+      'データフォルダに書き込めないため、%APPDATA% にデータを保存します: {{dir}}。書き込めるフォルダに QDL を置き直してください',
   },
   loadReport: {
     accepted_one: '{{count}} 件読み込み',

@@ -161,7 +161,7 @@ To update, run `winget upgrade masaodev.quick-dash-launcher`. Only stable releas
 Download them from [Releases](https://github.com/masaodev/quick-dash-launcher/releases).
 
 - Installer: Run `QuickDashLauncher.Setup.x.x.x.exe`. The app starts when the installation finishes.
-- Portable: Put `QuickDashLauncher.x.x.x.exe` in any folder and run it (no installation needed).
+- Portable: Extract `QuickDashLauncher-x.x.x-portable.zip` to any folder and run `QuickDashLauncher.exe` (no installation needed). Settings and data are saved in the `QuickDashLauncher-data` folder next to the exe, so you can carry the whole folder on a USB drive. To update, extract the new ZIP to another folder and move `QuickDashLauncher-data` into it.
 
 The installer and portable versions aren't signed, so Windows SmartScreen may show a warning the first time you run them. If it does, select **More info** > **Run anyway**.
 
