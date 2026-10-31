@@ -294,7 +294,8 @@ describe('WindowPlacementFields（📍 ウィンドウ位置を更新）', () =>
       win(3, 'メモ帳', { processName: 'notepad.exe' }),
     ]);
     fireEvent.click(button());
-    // 全件を流して重いときは 1 秒（既定）で出ないことがあるので待ちを長めにする
+    // 全件を流して重いときは 1 秒（既定）で出ないことがあるので待ちを長めにする。
+    // 開いた直後に選んでも先頭へ戻らないこと（以前は useEffect で戻していて、ときどき落ちた）も兼ねて確かめる
     const dialog = await screen.findByRole(
       'dialog',
       { name: 'どのウィンドウの位置を記録しますか' },
