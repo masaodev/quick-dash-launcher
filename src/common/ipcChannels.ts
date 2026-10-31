@@ -16,6 +16,7 @@ export const IPC_CHANNELS = {
 
   // データ操作
   LOAD_DATA_FILES: 'load-data-files',
+  GET_CORRUPTED_DATA_FILES: 'get-corrupted-data-files',
   LOAD_EDITABLE_ITEMS: 'load-editable-items',
   SAVE_EDITABLE_ITEMS: 'save-editable-items',
   REGISTER_ITEMS: 'register-items',

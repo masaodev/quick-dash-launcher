@@ -2,14 +2,56 @@ import { describe, it, expect } from 'vitest';
 
 import {
   CliError,
+  escapeNonAscii,
   expectPositionals,
   optionFlag,
   optionInt,
   optionString,
   parseArgs,
+  takeAsciiFlag,
+  wantsHelp,
 } from './cliArgs';
 
 const spec = { values: ['name', 'position'], flags: ['dry-run'], allowSet: true } as const;
+
+describe('wantsHelp', () => {
+  it.each([
+    [['item', '--help'], true],
+    [['-h'], true],
+    [['item', 'add', '--dry-run', '--help'], true],
+    [['item', 'add', '--name=x', '-h'], true],
+    [['item', 'add', '--args', '-h'], false],
+    [['item', 'add', '--memo', '--help'], false],
+    [['item', 'add', '--set', '-h'], false],
+    [['item', 'add', '--name', 'x'], false],
+  ])('%j は %s', (args, expected) => {
+    expect(wantsHelp(args)).toBe(expected);
+  });
+});
+
+describe('takeAsciiFlag', () => {
+  it.each([
+    [['--ascii', 'launcher', 'item', 'list'], true, ['launcher', 'item', 'list']],
+    [['launcher', 'item', 'list', '--ascii'], true, ['launcher', 'item', 'list']],
+    [['item', 'add', '--dry-run', '--ascii'], true, ['item', 'add', '--dry-run']],
+    // 値を取るオプションの直後は、その値として残す
+    [['item', 'add', '--memo', '--ascii'], false, ['item', 'add', '--memo', '--ascii']],
+    [['status'], false, ['status']],
+  ])('%j', (argv, ascii, rest) => {
+    expect(takeAsciiFlag(argv)).toEqual({ ascii, argv: rest });
+  });
+});
+
+describe('escapeNonAscii', () => {
+  it('ASCII 以外を \\uXXXX にし、絵文字はサロゲートの 2 つで書く。読み戻すと元に戻る', () => {
+    const text = JSON.stringify({ name: 'メモ帳', icon: '📁', plain: 'a"b' });
+    const escaped = escapeNonAscii(text);
+    expect([...escaped].every((c) => c.charCodeAt(0) < 0x7f)).toBe(true);
+    // 絵文字は上位・下位サロゲートを別々に書く（JSON の決まり）
+    expect(escaped).toContain(['', 'ud83d', 'udcc1'].join('\\'));
+    expect(JSON.parse(escaped)).toEqual(JSON.parse(text));
+  });
+});
 
 function errorOf(fn: () => unknown): CliError {
   try {

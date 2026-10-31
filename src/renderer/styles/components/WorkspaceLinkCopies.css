@@ -1,0 +1,236 @@
+/*
+ * メインウィンドウのアイテムとつなぐ（WorkspaceLinkCopiesPage）
+ * 枠・ボタンの並びは SetEditor.css の set-picker-* を使い、ここでは中身だけを描く
+ */
+
+/* 上の説明: 「ワークスペース 🔗 メインウィンドウ」の図と、つなぐと何が変わるかの 1 文 */
+.link-copies-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--bg-info-light);
+  border-radius: var(--border-radius-xl);
+}
+
+.link-copies-diagram {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.link-copies-box {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  background-color: var(--bg-app);
+  border: var(--border-light);
+  border-radius: var(--border-radius-lg);
+}
+
+.link-copies-chain {
+  font-size: var(--font-size-2xl);
+}
+
+.link-copies-hero-title {
+  margin: 0 0 var(--spacing-xxs);
+  font-size: var(--font-size-lg);
+}
+
+.link-copies-hero-body {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* 区分ごとに並べる一覧（枠は付けず、行をカードにする） */
+.link-copies-list {
+  flex: 1;
+  min-height: 160px;
+  overflow-y: auto;
+  padding-right: var(--spacing-xs);
+}
+
+.link-copies-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0 var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.link-copies-section.ok {
+  color: var(--text-success);
+}
+
+.link-copies-section.warn {
+  color: var(--text-warning);
+}
+
+.link-copies-count {
+  padding: 0 var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background-color: var(--color-gray-300);
+  border-radius: var(--border-radius-xl);
+}
+
+.link-copies-section-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+}
+
+.link-copies-section-actions button {
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: normal;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.link-copies-section-actions button:hover {
+  background-color: var(--color-primary-50);
+}
+
+/* 行: チェック・ワークスペース側・🔗・メインウィンドウ側 */
+.link-copies-columns,
+.link-copies-pair {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 28px minmax(0, 1fr);
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.link-copies-columns {
+  padding: 0 var(--spacing-md) var(--spacing-xxs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.link-copies-pair {
+  margin-bottom: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-app);
+  border: var(--border-light);
+  border-radius: var(--border-radius-xl);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+div.link-copies-pair {
+  cursor: default;
+}
+
+.link-copies-pair.checked {
+  background-color: var(--bg-selected);
+  border-color: var(--color-primary-50);
+}
+
+/* つなぐ先をまだ選んでいない行は、点線の枠で目立たせる */
+.link-copies-pair.need {
+  border: 1px dashed var(--color-warning-dark);
+}
+
+.link-copies-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+  min-width: 0;
+}
+
+.link-copies-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.link-copies-name.main {
+  font-weight: normal;
+}
+
+.link-copies-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-copies-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: var(--font-size-sm);
+}
+
+.link-copies-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.link-copies-chip {
+  padding: 0 var(--spacing-xs);
+  background-color: var(--color-gray-300);
+  border-radius: var(--border-radius);
+}
+
+.link-copies-chip.warn {
+  color: var(--text-warning);
+  background-color: var(--bg-warning-light);
+}
+
+.link-copies-link {
+  font-size: var(--font-size-xl);
+  text-align: center;
+  opacity: 0.4;
+}
+
+.link-copies-pair.checked .link-copies-link {
+  opacity: 1;
+}
+
+.link-copies-choice {
+  width: 100%;
+  padding: var(--spacing-xxs) var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background-color: var(--bg-app);
+  border: 1px solid var(--color-warning-dark);
+  border-radius: var(--border-radius);
+}
+
+/* 一覧に出ないアイテムの説明（開いたときだけ読む） */
+.link-copies-more {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.link-copies-more summary {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.link-copies-actions {
+  align-items: center;
+}
+
+.link-copies-status {
+  margin-right: auto;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}

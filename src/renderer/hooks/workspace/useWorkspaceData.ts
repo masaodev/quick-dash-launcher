@@ -43,7 +43,8 @@ function hasCustomIconOnly(item: WorkspaceItem): item is WorkspaceClipboardItem 
   return item.type === 'clipboard' || item.type === 'set';
 }
 
-async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise<T[]> {
+/** アイコンの無いアイテムに、キャッシュ済みのアイコンとカスタムアイコンを当てる（アーカイブの読み込みでも使う） */
+export async function mergeIconsFromCache<T extends WorkspaceItem>(items: T[]): Promise<T[]> {
   const itemsNeedingIcons = items.filter(
     (item): item is T & WorkspaceLauncherItem => !item.icon && isLauncherItem(item)
   );
@@ -222,15 +223,22 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
     return newCollapsed;
   }
 
-  function setAllGroupsCollapsedLocal(collapsed: boolean): void {
+  /**
+   * 指定したグループの collapsed 状態をまとめて変える（画面には即時反映）
+   *
+   * 永続化は toggleGroupCollapsed と同じく、切り離しウィンドウならここで、それ以外は呼び出し側が行う。
+   * 対象を ids に絞るのは、ほかのタブのグループを画面だけ変えて保存しない食い違いを避けるため
+   */
+  function setGroupsCollapsedLocal(ids: string[], collapsed: boolean): void {
+    const targets = new Set(ids);
     collapseGeneration.current++;
-    for (const g of groupsRef.current) {
-      pendingCollapsed.current.set(g.id, collapsed);
+    for (const id of targets) {
+      pendingCollapsed.current.set(id, collapsed);
     }
-    setGroups((prev) => prev.map((g) => ({ ...g, collapsed })));
+    setGroups((prev) => prev.map((g) => (targets.has(g.id) ? { ...g, collapsed } : g)));
     if (isDetached) {
-      for (const g of groupsRef.current) {
-        detachedCollapsedOverrides.current.set(g.id, collapsed);
+      for (const id of targets) {
+        detachedCollapsedOverrides.current.set(id, collapsed);
       }
       saveDetachedCollapsedStates();
     }
@@ -273,6 +281,6 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
     setActiveWorkspaceId,
     loadAllDataWithLoading,
     toggleGroupCollapsed,
-    setAllGroupsCollapsedLocal,
+    setGroupsCollapsedLocal,
   };
 }

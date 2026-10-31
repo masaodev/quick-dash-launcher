@@ -279,7 +279,7 @@ function settingsDiffer(copy: WorkspaceItem, main: ReferenceableAppItem): boolea
 }
 
 /**
- * 「メインウィンドウと同じアイテムを参照に変える」の一覧を作る（そのワークスペースのコピーのうち、
+ * 「メインウィンドウのアイテムとつなぐ」の一覧を作る（そのワークスペースのコピーのうち、
  * パスと引数が同じメインウィンドウのアイテムがあるもの）
  */
 export async function previewLinkCopies(workspaceId: string): Promise<WorkspaceLinkCopiesPreview> {
@@ -316,6 +316,15 @@ export async function previewLinkCopies(workspaceId: string): Promise<WorkspaceL
         item.displayName !== main.displayName && { alias: item.displayName }),
       memo,
       settingsDiffer: mains.length === 1 && settingsDiffer(item, main),
+      ...(isLauncherItem(main) && {
+        iconItem: {
+          displayName: main.displayName,
+          path: main.path,
+          type: main.type,
+          customIcon: main.customIcon,
+          originalPath: main.originalPath,
+        },
+      }),
     });
   }
   return {

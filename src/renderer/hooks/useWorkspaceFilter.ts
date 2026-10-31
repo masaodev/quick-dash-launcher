@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { WorkspaceGroup, WorkspaceItem } from '@common/types';
 import { getAncestorGroupIds, getDescendantGroupIds } from '@common/utils/groupTreeUtils';
 
-import { parseKeywords } from '../utils/dataParser';
+import { normalizeForSearch, parseKeywords } from '../utils/dataParser';
 
 export type FilterScope = 'all' | 'group' | 'item';
 
@@ -13,7 +13,7 @@ interface FilterResult {
 
 /** 文がすべての語を含むか（メインウィンドウの検索と同じく、スペース区切りの AND） */
 function includesAll(text: string, keywords: readonly string[]): boolean {
-  const lower = text.toLowerCase();
+  const lower = normalizeForSearch(text);
   return keywords.every((keyword) => lower.includes(keyword));
 }
 
@@ -28,7 +28,9 @@ export function useWorkspaceFilter(
   groups: WorkspaceGroup[],
   items: WorkspaceItem[],
   filterText: string,
-  filterScope: FilterScope
+  filterScope: FilterScope,
+  /** 検索で区別しない違いの設定（parseKeywords・normalizeForSearch が読む）。変わったら絞り直すためだけに受け取る */
+  searchNormalization = ''
 ): FilterResult {
   return useMemo(() => {
     if (!filterText.trim()) {
@@ -111,5 +113,6 @@ export function useWorkspaceFilter(
       visibleGroupIds: visibleGroupIds.size > 0 ? visibleGroupIds : null,
       itemVisibility,
     };
-  }, [groups, items, filterText, filterScope]);
+    // searchNormalization は parseKeywords・normalizeForSearch の中で読む設定。変わったら絞り直す
+  }, [groups, items, filterText, filterScope, searchNormalization]);
 }

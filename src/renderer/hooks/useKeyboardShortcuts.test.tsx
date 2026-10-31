@@ -389,3 +389,47 @@ describe('useKeyboardShortcuts', () => {
     });
   });
 });
+
+describe('useKeyboardShortcuts（PageUp・PageDown・Ctrl+Home・Ctrl+End）', () => {
+  const items = Array.from({ length: 25 }, (_, i) =>
+    launcherItem('app', `tool${i}.exe`)
+  ) as AppItem[];
+
+  /** setSelectedIndex に渡した更新関数を、今の位置に当てた結果 */
+  function nextIndex(params: { setSelectedIndex: unknown }, current: number): number {
+    const mock = params.setSelectedIndex as ReturnType<typeof vi.fn>;
+    const arg = mock.mock.lastCall?.[0] as number | ((prev: number) => number);
+    return typeof arg === 'function' ? arg(current) : arg;
+  }
+
+  it('PageDown・PageUp は 1 画面分動き、端で止まる（一覧を測れないときは 10 行）', async () => {
+    const { params, press } = setup(items);
+    await press(keyEvent('PageDown'));
+    expect(nextIndex(params, 0)).toBe(10);
+    expect(nextIndex(params, 20)).toBe(24);
+    await press(keyEvent('PageUp'));
+    expect(nextIndex(params, 15)).toBe(5);
+    expect(nextIndex(params, 3)).toBe(0);
+  });
+
+  it('Ctrl+Home・Ctrl+End は先頭・末尾へ。Home・End だけは検索欄のカーソル移動に残す', async () => {
+    const { params, press } = setup(items, 'normal', 12);
+    await press(keyEvent('End', { ctrlKey: true }));
+    expect(nextIndex(params, 12)).toBe(24);
+    await press(keyEvent('Home', { ctrlKey: true }));
+    expect(nextIndex(params, 12)).toBe(0);
+
+    const plainEnd = keyEvent('End');
+    const calls = (params.setSelectedIndex as ReturnType<typeof vi.fn>).mock.calls.length;
+    await press(plainEnd);
+    expect(plainEnd.preventDefault).not.toHaveBeenCalled();
+    expect((params.setSelectedIndex as ReturnType<typeof vi.fn>).mock.calls.length).toBe(calls);
+  });
+
+  it('一覧が空なら何もしない', async () => {
+    const { params, press } = setup([]);
+    await press(keyEvent('PageDown'));
+    await press(keyEvent('End', { ctrlKey: true }));
+    expect(params.setSelectedIndex).not.toHaveBeenCalled();
+  });
+});

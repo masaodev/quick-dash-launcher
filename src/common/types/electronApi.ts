@@ -101,6 +101,8 @@ export interface ElectronAPI {
    * 'internal' = 変更通知・画面内の一覧取得
    */
   loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
+  /** 直近の読み込みで読めなかった（壊れている可能性がある）データファイル（例: 'datafiles/data2.json'） */
+  getCorruptedDataFiles: () => Promise<string[]>;
   /** options.trial＝登録・編集フォームで試しに開く（起動の記録に数えない） */
   openItem: (item: LauncherItem, options?: LaunchOptions) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
@@ -359,7 +361,7 @@ export interface ElectronAPI {
     moveToMain: (id: string, file?: string) => Promise<boolean>;
     /** コピーの指す先の候補（パスと引数が同じメインウィンドウのアイテム） */
     findLinkCandidates: (id: string) => Promise<WorkspaceLinkCandidate[]>;
-    /** 「メインウィンドウと同じアイテムを参照に変える」の一覧 */
+    /** 「メインウィンドウのアイテムとつなぐ」の一覧 */
     previewLinkCopies: (workspaceId: string) => Promise<WorkspaceLinkCopiesPreview>;
     /** 一覧で選んだコピーを参照に変える（choices＝候補が 2 件以上のコピーで選んだ指す先。コピーの id → メインウィンドウのアイテムの id） */
     applyLinkCopies: (
@@ -422,7 +424,7 @@ export interface ElectronAPI {
     openItemPicker: (groupId: string) => Promise<void>;
     /** アイテムが指すメインウィンドウのアイテムを選ぶウィンドウを開く（参照の指し直し・コピーを参照にする） */
     openLinkPicker: (itemId: string) => Promise<void>;
-    /** 「メインウィンドウと同じアイテムを参照に変える」のウィンドウを開く */
+    /** 「メインウィンドウのアイテムとつなぐ」のウィンドウを開く */
     openLinkCopies: (workspaceId: string) => Promise<void>;
     /** グループに新しいアイテムを入力して追加するウィンドウを開く */
     openNewItemEditor: (groupId: string) => Promise<void>;

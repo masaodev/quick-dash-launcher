@@ -73,6 +73,15 @@
   border-left: 2px solid var(--color-primary);
 }
 
+/* 長いタブ名は省略する（全体はツールチップで見える）。タブは縦並び（中央寄せ）なので block にして幅を抑える */
+.tab-name {
+  display: block;
+  max-width: var(--data-tab-name-max-width);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tab-count {
   font-size: var(--font-size-xxs);
   opacity: 0.7;

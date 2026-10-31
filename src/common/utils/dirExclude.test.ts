@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { minimatch } from 'minimatch';
 
-import { appendExcludeName, escapeExcludeName } from './dirExclude';
+import { appendExcludeName, escapeExcludeName, matchesDirPattern } from './dirExclude';
+
+describe('matchesDirPattern', () => {
+  it.each([
+    ['SCAN.PDF', '*.pdf', true],
+    ['App.LNK', '*.lnk', true],
+    ['readme.md', 'README*', true],
+    ['a.txt', '*.pdf', false],
+  ])('%s と %s は %s（大文字・小文字を区別しない）', (name, pattern, expected) => {
+    expect(matchesDirPattern(name, pattern)).toBe(expected);
+  });
+});
 
 describe('appendExcludeName（フォルダ取込の除外にファイル名を足す）', () => {
   it('空ならそのファイル名だけになる', () => {

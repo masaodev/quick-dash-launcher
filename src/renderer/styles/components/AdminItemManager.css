@@ -1192,6 +1192,16 @@
   cursor: default;
 }
 
+/* 長いタブ名は省略する（全体はツールチップで見える） */
+.admin-tab-name {
+  display: inline-block;
+  max-width: var(--data-tab-name-max-width);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .admin-tab-name-input {
   width: 140px;
   padding: var(--spacing-xxs) var(--spacing-xs);

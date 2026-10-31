@@ -37,7 +37,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 
 ## コマンド一覧
 
-コマンドは「画面 → もの → 操作」の順に書きます（例: `qdl workspace item add`）。同じ `item`・`group` という語でも、メイン画面のアイテムとワークスペースのアイテムのように画面ごとに中身が違い、1 語では区別できないためです。各段で `--help` を付けると、その段の説明を出します（`qdl launcher --help`、`qdl workspace --help`）。
+コマンドは「画面 → もの → 操作」の順に書きます（例: `qdl workspace item add`）。同じ `item`・`group` という語でも、メイン画面のアイテムとワークスペースのアイテムのように画面ごとに中身が違い、1 語では区別できないためです。各段で `--help` を付けると、その段の説明を出します（`qdl launcher --help`、`qdl workspace --help`）。値を取るオプションの直後の `-h`・`--help` は、説明の求めではなくその値として読みます（`--args -h` は引数 `-h` を登録する）。
 
 | コマンド | 何が起きるか |
 | --- | --- |
@@ -47,7 +47,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `check` | 読み直さずに、直近の読み込み（起動時・F5・`reload`・CLI の書き込み前）の結果を返す |
 | `open <id か表示名>` | メイン画面のアイテムを開く（画面で選んで Enter を押したのと同じ。トーストを出し、起動の記録にも数える）。セット・クリップボードアイテムも開ける。返り値は `{"opened": {"id", "name", "type"}}`。フォルダ取込の行と、そこから並ぶアイテムは開けない（`invalid`）。開くのに失敗したら `unavailable` |
 | `show [main\|workspace]` | メイン画面（既定）かワークスペースを出す。返り値は `{"shown": "main"}` など。AutoHotkey・Stream Deck・タスクスケジューラーから呼ぶ用途 |
-| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る。`--with-text` でクリップボードアイテムの本文も返す |
+| `launcher item list` | メイン画面のアイテムの一覧。`--file <data2.json>` か `--tab <タブ名>`、`--grep <語>` で絞る（無いデータファイル・タブは `not_found`）。`--with-text` でクリップボードアイテムの本文も返す |
 | `launcher item add` | メイン画面にアイテムを足す |
 | `launcher item update <id か表示名>` | メイン画面のアイテムを変える・別のタブ（データファイル）へ移す |
 | `launcher item remove <id か表示名>` | メイン画面のアイテムを消す |
@@ -92,7 +92,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--label` | launcher item add（`--type set`）、set row add、launcher tab add、tab file add／update | セットでは行の名前。タブではデータファイルの名前（省略時は「<タブ名>用データファイル」） |
 | `--existing` | launcher tab file add | タブに入れる既存のデータファイル（`data5.json` など。`tab list` の `unassignedFiles`） |
 | `--memo` | item add／update | メモ |
-| `--text` `--text-file` | item add（`--type clipboard`。どちらか必須）／update | クリップボードアイテムの本文。`--text-file` は UTF-8 のテキストファイル（1 MB まで。相対パスは `qdl` を実行したフォルダが基準）。どちらか一方だけ |
+| `--text` `--text-file` | item add（`--type clipboard`。どちらか必須）／update | クリップボードアイテムの本文。`--text-file` は UTF-8（BOM の有無を問わない）か、BOM 付きの UTF-16 のテキストファイル（Windows PowerShell 5.1 の `>`・`Out-File` の既定は UTF-16。1 MB まで。相対パスは `qdl` を実行したフォルダが基準）。UTF-8 として読めないもの（`Set-Content` の既定の Shift_JIS など）は、化けたまま保存せずに `invalid` で断る。どちらか一方だけ |
 | `--with-text` | item list | 中身がテキストだけのクリップボードアイテムに、本文 `text` を付ける |
 | `--file` `--tab` | launcher item add／update、workspace item move-to-main | 足す（update・move-to-main では移す）データファイル、またはタブ（その先頭のデータファイル）。add・move-to-main で省略したときは `datafiles/data.json` |
 | `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ。廃止した `window`（ウィンドウ操作）を渡すと `usage` で断り、代わりに `--set window='{"processName":"notepad.exe","title":"…"}'` でパスの無い単一アイテムを作るよう案内する |
@@ -130,7 +130,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **メインウィンドウのアイテムを足す**: `workspace item add --from <id か表示名>` は、メインウィンドウの右クリックの「⭐ ワークスペースに追加」と同じく、既定で参照を足す（[ワークスペース機能 - 参照とコピー](./workspace.md#参照とコピー)）。`--name` はワークスペースでの表示名になる。`--dry-run` は `type: "ref"`・`refItemId` の形を返す。参照できないアイテム（id が無い・フォルダ取込で展開した・データファイルで重複して一覧に出ないなど）は、画面と同じくコピーで足し、結果に `fellBackToCopy: true` を付ける（`--dry-run` も同じ。`--copy` を付けたときは付けない）。フォルダ取込は参照もコピーもできない（`conflict`。中のファイルは `--path` で足す）。読み込みで不正とされたアイテムは `invalid`。表示名が複数に当たれば、タブつきの候補を返して `ambiguous`
 - **コピーで足す**: `--copy` を付けると、右クリックの「📄 ワークスペースにコピーを追加」と同じ中身を写して足す（.lnk はリンク先を読んだ形）。セットの行はメインウィンドウのアイテムを id で指したままにする。クリップボードアイテムは実データを複製し、ワークスペース側に自分のファイルを持たせる（複製できなければ元の参照のまま）。写した後に中身を変えるときは `workspace item update`
 - **参照**: `workspace item list` と各コマンドの結果は、参照をメインウィンドウのアイテムの中身で埋めた形（指す先の `type`）で返し、`ref`（指す先の `itemId`・ワークスペースでの表示名 `alias`・`status`（`ok`／`missing`／`unsupported`）・`mainDisplayName`・`tabName` など）を付ける。元のアイテムが見つからない参照は `type: "ref"` のまま返す。`workspace item update` で参照に使えるのは `--name`（ワークスペースでの表示名。`""` でメインウィンドウの表示名に戻す）・`--group`・`--workspace`・`--position` だけで、`--path`・`--args`・`--memo`・`--text`・`--text-file`・`--set`・`--unset` は `conflict`（中身は `qdl launcher item update <指す先の id>` で直すよう案内する）
-- **参照とコピーを行き来する**: `workspace item convert <id か表示名> --to copy` は参照をコピーにする（画面の「📄 コピーにする」と同じ）。参照でないもの・元のアイテムが見つからない参照は `conflict`。`--to ref` はコピーを参照にする（参照なら指し直す。画面の「🔁 別のアイテムを指す…」・一括の「🔗 メインウィンドウと同じアイテムを参照に変える…」と同じく、表示名が違えばワークスペースでの表示名にし、メモはメインウィンドウのアイテムにメモが無ければ移す）。指す先は `--from <id か表示名>`（フォルダ取込は `conflict`）。`--from` を省くと、パスと引数が同じメインウィンドウのアイテムが 1 件のときだけそれを指し、0 件なら `not_found`、2 件以上なら `ambiguous`。`--dry-run` は `before`・`to`（`ref` なら指す先の `refItemId` も）を返す
+- **参照とコピーを行き来する**: `workspace item convert <id か表示名> --to copy` は参照をコピーにする（画面の「📄 コピーにする」と同じ）。参照でないもの・元のアイテムが見つからない参照は `conflict`。`--to ref` はコピーを参照にする（参照なら指し直す。画面の「🔁 別のアイテムを指す…」・一括の「🔗 メインウィンドウのアイテムとつなぐ…」と同じく、表示名が違えばワークスペースでの表示名にし、メモはメインウィンドウのアイテムにメモが無ければ移す）。指す先は `--from <id か表示名>`（フォルダ取込は `conflict`）。`--from` を省くと、パスと引数が同じメインウィンドウのアイテムが 1 件のときだけそれを指し、0 件なら `not_found`、2 件以上なら `ambiguous`。`--dry-run` は `before`・`to`（`ref` なら指す先の `refItemId` も）を返す
 - **メインウィンドウへ移す**: `workspace item move-to-main <id か表示名>` は、画面の「🚀 メインウィンドウへ移して参照にする」と同じく、コピーを移す先のデータファイルの末尾に足し、ワークスペース側をその参照に変える（[ワークスペース機能 - メインウィンドウへ移す](./workspace.md#メインウィンドウへ移す)）。移す先に、パスと引数・ウィンドウ切り替え・カスタムアイコンが同じ通常アイテムが既にあれば、新しく作らずにそれを指す（結果の `reused: true`）。参照・元のアイテムが見つからない参照は `conflict`。`--dry-run` は `before`・移す先の `file` を返す（既にあるアイテムを指すかは返さない）
 - **参照されているアイテムを消す**: `launcher item remove` は、ワークスペースの参照（アーカイブを含む）があっても消し、参照は消さない（「元のアイテムが見つかりません」になる）。結果に参照の件数 `workspaceRefs` を付ける（`--dry-run` でも）
 
@@ -141,7 +141,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | 分類 | キー | 値 |
 | --- | --- | --- |
 | 表示 | `language` | `auto`・`ja`・`en` |
-| 表示 | `showKeyboardHints`・`showDataFileTabs`・`searchMemo` | `true`・`false` |
+| 表示 | `showKeyboardHints`・`showDataFileTabs`・`searchMemo`・`searchIgnoreWidth`・`searchIgnoreKana`・`searchSortByUsage` | `true`・`false` |
 | 表示 | `defaultFileTab` | 起動したときに開くタブの、データファイル（`data2.json` など）。どれかのタブに入っているものだけ |
 | システム | `recordLaunchUsage` | `true`・`false`（起動の記録を残す） |
 | ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
@@ -180,7 +180,9 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - `tab add`・`tab update`: `{ "tab": 足した・変えた後のタブ }`（update は `before` も）。`tab remove` は `{ "removed", "deletedFiles" }`、`tab file add` は `{ "file": { file, label, itemCount, created }, "tab" }`、`tab file update` は `{ "before", "file" }`、`tab file remove` は `{ "removed", "deleted", "tab" }`
 - `set row list`・`set row add`・`set row remove`: `{ "set": { id, displayName, file, tab }, "entries": [ 行 ] }`（変えた後の全部の行）。各行に行番号 `index` と行の名前 `name` を付け、指しているアイテムが見つからない行には `"missing": true` を付ける
 - `settings get <キー>`: `{ "key", "value", "writable" }`（キーを省くと `{ "settings", "writable" }`）
-- `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので `id` は無い）
+- `--dry-run`: 上の形に `"dryRun": true` を付けたもの（足す前なので、足すものの `id` は `null`）
+
+JSON は UTF-8 で出します。どのコマンドにも `--ascii` を付けられ（コマンドの前でも後ろでもよい。値を取るオプションの直後はその値として読む）、付けると JSON の ASCII 以外の文字（日本語・絵文字）を `\uXXXX` で書きます（失敗のときの JSON も。標準エラーの文と `--help` の説明はそのまま）。Windows PowerShell 5.1 は、パイプで受け取る文字を既定で Shift_JIS として読むので、`qdl launcher item list | ConvertFrom-Json` の日本語が化けます。`--ascii` を付けるか、先に `[Console]::OutputEncoding = [Text.Encoding]::UTF8` を実行してください。
 
 失敗したら、標準出力に次の形の JSON、標準エラーに人向けの文を出します。`code` は固定の英単語で、文言を変えても変えません。
 

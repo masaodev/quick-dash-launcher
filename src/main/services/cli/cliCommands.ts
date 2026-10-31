@@ -1,7 +1,14 @@
 import type { LoadReport } from '../loadReportService.js';
 import { mainI18n } from '../mainI18n.js';
 
-import { CliError, expectPositionals, parseArgs } from './cliArgs.js';
+import {
+  CliError,
+  escapeNonAscii,
+  expectPositionals,
+  parseArgs,
+  takeAsciiFlag,
+  wantsHelp,
+} from './cliArgs.js';
 import type { CliErrorCode } from './cliArgs.js';
 import { CLI_EXIT, cliResponse } from './cliProtocol.js';
 import type { CliRequest, CliResponse } from './cliProtocol.js';
@@ -66,11 +73,17 @@ const EXIT_BY_CODE: Record<CliErrorCode, number> = {
   internal: CLI_EXIT.failure,
 };
 
-function json(value: unknown): CliResponse {
-  return cliResponse(CLI_EXIT.ok, JSON.stringify(value, null, 2) + '\n');
+/** 出力する JSON の文字列にする（`--ascii` なら ASCII 以外を `\uXXXX` で書く） */
+function jsonText(value: unknown, ascii: boolean): string {
+  const text = JSON.stringify(value, null, 2) + '\n';
+  return ascii ? escapeNonAscii(text) : text;
 }
 
-function errorResponse(error: CliError): CliResponse {
+function json(value: unknown, ascii: boolean): CliResponse {
+  return cliResponse(CLI_EXIT.ok, jsonText(value, ascii));
+}
+
+function errorResponse(error: CliError, ascii: boolean): CliResponse {
   const body = {
     error: {
       code: error.code,
@@ -88,11 +101,7 @@ function errorResponse(error: CliError): CliResponse {
     );
   }
   if (error.code === 'usage') lines.push(mainI18n.t('cli.help.seeHelp'));
-  return cliResponse(
-    EXIT_BY_CODE[error.code],
-    JSON.stringify(body, null, 2) + '\n',
-    lines.join('\n') + '\n'
-  );
+  return cliResponse(EXIT_BY_CODE[error.code], jsonText(body, ascii), lines.join('\n') + '\n');
 }
 
 function isHelp(word: string | undefined): boolean {
@@ -104,15 +113,21 @@ function noArgs(args: readonly string[]): void {
 }
 
 export async function runCliCommand(req: CliRequest, ctx: CliContext): Promise<CliResponse> {
-  const [command, ...rest] = req.argv;
+  // --ascii: Windows PowerShell 5.1 はパイプの文字を既定で Shift_JIS として読むので、
+  // JSON の日本語を \uXXXX で書いて化けないようにする（説明の文は人が読むのでそのまま）
+  const { ascii, argv } = takeAsciiFlag(req.argv);
+  const [command, ...rest] = argv;
   if (isHelp(command)) return cliResponse(CLI_EXIT.ok, mainI18n.t('cli.help.main'));
 
   try {
-    return json(await dispatch(command, rest, req, ctx));
+    return json(await dispatch(command, rest, req, ctx), ascii);
   } catch (error) {
     if (error instanceof HelpResult) return cliResponse(CLI_EXIT.ok, error.text);
-    if (error instanceof CliError) return errorResponse(error);
-    return errorResponse(new CliError('internal', (error as Error)?.message ?? String(error)));
+    if (error instanceof CliError) return errorResponse(error, ascii);
+    return errorResponse(
+      new CliError('internal', (error as Error)?.message ?? String(error)),
+      ascii
+    );
   }
 }
 
@@ -123,7 +138,7 @@ async function dispatch(
   ctx: CliContext
 ): Promise<unknown> {
   // 「qdl launcher --help」「qdl workspace item --help」はそれぞれの説明
-  const wantsHelp = rest.some((a) => a === '--help' || a === '-h');
+  const helpRequested = wantsHelp(rest);
 
   switch (command) {
     case 'status':
@@ -150,7 +165,7 @@ async function dispatch(
 
     case 'launcher': {
       const [noun, verb, ...args] = rest;
-      if (wantsHelp || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.launcher'));
+      if (helpRequested || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.launcher'));
       const launcherCtx = {
         store: ctx.launcher,
         cwd: req.cwd,
@@ -176,7 +191,7 @@ async function dispatch(
 
     case 'workspace': {
       const [noun, verb, ...args] = rest;
-      if (wantsHelp || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.workspace'));
+      if (helpRequested || noun === undefined) throw helpAsResult(mainI18n.t('cli.help.workspace'));
       return runWorkspaceCommand(noun, verb, args, {
         store: ctx.workspace,
         cwd: req.cwd,
@@ -192,7 +207,7 @@ async function dispatch(
     }
 
     case 'open': {
-      if (wantsHelp) throw helpAsResult(mainI18n.t('cli.help.main'));
+      if (helpRequested) throw helpAsResult(mainI18n.t('cli.help.main'));
       const parsed = parseArgs(rest, {});
       const [key] = expectPositionals(parsed, [mainI18n.t('cli.args.idOrName')]);
       const entry = await findLauncherEntry(key, ctx.launcher);
@@ -203,7 +218,7 @@ async function dispatch(
     }
 
     case 'show': {
-      if (wantsHelp) throw helpAsResult(mainI18n.t('cli.help.main'));
+      if (helpRequested) throw helpAsResult(mainI18n.t('cli.help.main'));
       const parsed = parseArgs(rest, {});
       const target = parsed.positionals[0] ?? 'main';
       if (parsed.positionals.length > 1 || (target !== 'main' && target !== 'workspace')) {
@@ -215,7 +230,7 @@ async function dispatch(
 
     case 'settings': {
       const [verb, ...args] = rest;
-      if (wantsHelp || verb === undefined) throw helpAsResult(mainI18n.t('cli.help.settings'));
+      if (helpRequested || verb === undefined) throw helpAsResult(mainI18n.t('cli.help.settings'));
       return runSettingsCommand(verb, args, {
         store: ctx.settings,
         changed: (message) => ctx.changed('settings', message),

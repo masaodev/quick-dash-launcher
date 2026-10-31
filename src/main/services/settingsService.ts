@@ -10,6 +10,7 @@ import logger from '@common/logger';
 
 import PathManager from '../config/pathManager.js';
 
+import { brokenFilePath } from './jsonFileStore.js';
 import { mainI18n } from './mainI18n.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,6 +32,8 @@ type StoreInstance = {
  */
 export class SettingsService {
   private store: StoreInstance | null = null;
+  /** 起動時に壊れていて退避した settings.json の行き先（退避しなかったら null） */
+  private recoveredBrokenFile: string | null = null;
   private static instance: SettingsService;
 
   private static readonly DEFAULT_SETTINGS: AppSettings = {
@@ -64,6 +67,9 @@ export class SettingsService {
     backupIncludeClipboard: false,
     showKeyboardHints: true,
     searchMemo: false,
+    searchIgnoreWidth: false,
+    searchIgnoreKana: false,
+    searchSortByUsage: false,
     itemSearchHotkey: 'Ctrl+Alt+Space',
     bookmarkAutoImport: DEFAULT_BOOKMARK_AUTO_IMPORT_SETTINGS,
     detachedPositionMode: 'mainDisplay',
@@ -94,19 +100,43 @@ export class SettingsService {
 
     const configFolder = PathManager.getConfigFolder();
     const settingsFilePath = path.join(configFolder, 'settings.json');
-    const isNewFile = !fs.existsSync(settingsFilePath);
+    let isNewFile = !fs.existsSync(settingsFilePath);
 
-    this.store = new Store({
+    const storeOptions = {
       name: 'settings',
       cwd: configFolder,
       defaults: SettingsService.DEFAULT_SETTINGS,
-    }) as StoreInstance;
+      // 手で直して BOM 付きで保存しても読めるよう、先頭の BOM を外してから読む
+      deserialize: (text: string) =>
+        JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text),
+    };
+    try {
+      this.store = new Store(storeOptions) as StoreInstance;
+    } catch (error) {
+      // 手で直して JSON を壊すと electron-store が例外を投げ、起動がそこで止まる（画面もトレイも出ない）。
+      // 壊れたファイルを別名で退避して、既定値で起動する（元に戻す手がかりを残す）
+      if (!(error instanceof SyntaxError) || !fs.existsSync(settingsFilePath)) throw error;
+      const dest = brokenFilePath(settingsFilePath);
+      fs.renameSync(settingsFilePath, dest);
+      this.recoveredBrokenFile = dest;
+      logger.warn(
+        { error, brokenFile: dest },
+        'settings.json を読めないため別名で退避し、既定値で起動します'
+      );
+      this.store = new Store(storeOptions) as StoreInstance;
+      isNewFile = true;
+    }
 
     if (isNewFile) {
       this.setCreatedWithVersion();
     }
 
     logger.info(`SettingsService initialized successfully at ${configFolder}`);
+  }
+
+  /** 起動時に壊れていて退避した settings.json の行き先（退避しなかったら null。起動時の知らせに使う） */
+  public getRecoveredBrokenFile(): string | null {
+    return this.recoveredBrokenFile;
   }
 
   /** ストアが初期化されていることを保証し、インスタンスを返す */

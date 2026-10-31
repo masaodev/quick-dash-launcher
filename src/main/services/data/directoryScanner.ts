@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { shell } from 'electron';
-import { minimatch } from 'minimatch';
+import { matchesDirPattern } from '@common/utils/dirExclude';
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import type { DirOptionsForProcessing, JsonDirOptions } from '@common/types/json-data';
@@ -150,11 +150,11 @@ async function scanDirectory(
       const isDirectory = stat.isDirectory();
       const itemName = path.basename(itemPath);
 
-      if (options.exclude && minimatch(itemName, options.exclude)) {
+      if (options.exclude && matchesDirPattern(itemName, options.exclude)) {
         continue;
       }
 
-      if (options.filter && !minimatch(itemName, options.filter)) {
+      if (options.filter && !matchesDirPattern(itemName, options.filter)) {
         if (!isDirectory) {
           continue;
         }
@@ -162,7 +162,7 @@ async function scanDirectory(
 
       if (isDirectory) {
         if (options.types === 'folder' || options.types === 'both') {
-          if (!options.filter || minimatch(itemName, options.filter)) {
+          if (!options.filter || matchesDirPattern(itemName, options.filter)) {
             results.push(
               processItem(
                 itemPath,

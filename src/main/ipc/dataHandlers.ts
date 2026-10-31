@@ -16,6 +16,7 @@ import { getDefaultBrowser, getFileHandler } from '../utils/defaultBrowser.js';
 import { selectItemPath } from '../utils/itemPathDialog.js';
 import type { LoadTrigger } from '../services/loadReportService.js';
 import { reloadConfigFiles } from '../services/data/dataFileLoader.js';
+import { getCorruptedDataFiles } from '../services/data/corruptedDataFiles.js';
 import { loadEditableItems, saveEditableItems } from '../services/data/editableItemsStore.js';
 import {
   registerItems,
@@ -53,6 +54,9 @@ export function setupDataHandlers(configFolder: string) {
   handleIpc(IPC_CHANNELS.LOAD_DATA_FILES, (_event, trigger?: LoadTrigger) =>
     reloadConfigFiles(configFolder, trigger)
   );
+
+  // 読み込みのついでに覚えた、読めなかったデータファイル（ファイルは読み直さない。そのタブに空の代わりの案内を出す）
+  handleIpc(IPC_CHANNELS.GET_CORRUPTED_DATA_FILES, () => getCorruptedDataFiles());
 
   handleIpc(IPC_CHANNELS.REGISTER_ITEMS, async (_event, items: RegisterItem[]) => {
     const marked = await Promise.all(

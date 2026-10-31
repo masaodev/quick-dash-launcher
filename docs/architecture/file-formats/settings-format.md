@@ -14,11 +14,13 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
 
 ### 1.2. 文字エンコーディング
 
-ファイルは **UTF-8（BOMなし）** で保存されます。
+ファイルは **UTF-8（BOMなし）** で保存されます。手で直して BOM 付きで保存しても読めます（読むときに先頭の BOM を外す）。
 
 ### 1.3. 管理ライブラリ
 
 設定ファイルは **electron-store** ライブラリを使用して管理されます。アプリケーションから直接ファイルを編集する必要はありません。
+
+手で直して JSON として読めなくなったときは、起動時に `settings.broken-YYYYMMDDTHHmmss.json` へ退避し、既定値で起動します（既定値は起動ホットキーが空なので、初回設定の画面が出ます）。退避したときは、起動の後に「settings.json を読めなかったので、既定の設定で起動しました。元のファイルは設定フォルダの settings.broken-….json に残しています」とトースト（警告・長め）で知らせます（`src/main/main.ts`）。退避したファイルは消さないので、直してから `settings.json` に戻せます（`src/main/services/settingsService.ts`）。
 
 ---
 
@@ -59,6 +61,9 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "detachedVisibleOnAllDesktops": true,
   "showKeyboardHints": true,
   "searchMemo": false,
+  "searchIgnoreWidth": false,
+  "searchIgnoreKana": false,
+  "searchSortByUsage": false,
   "itemSearchHotkey": "Ctrl+Alt+Space",
   "backupIncludeClipboard": false,
   "bookmarkAutoImport": {
@@ -257,6 +262,9 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 | --- | --- | --- | --- |
 | **showKeyboardHints** | boolean | true | メインウィンドウの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
 | **searchMemo** | boolean | false | メインウィンドウの検索（通常モード）で、表示名に加えてメモにも当てるか（パスには当てない） |
+| **searchIgnoreWidth** | boolean | false | メインウィンドウの検索とワークスペースの絞り込みで、全角と半角を区別しないか（NFKC でそろえる。`ｃｈｒｏｍｅ` で `Chrome`、`ﾃｽﾄ` で `テスト`） |
+| **searchIgnoreKana** | boolean | false | メインウィンドウの検索とワークスペースの絞り込みで、ひらがなとカタカナを区別しないか（`てすと` で `テスト`） |
+| **searchSortByUsage** | boolean | false | メインウィンドウの検索（通常モード）で、検索語があるとき、名前が最初の語で始まるもの → 開いた回数（`item-usage.json`）の多いもの → 今の順（名前順）に並べるか |
 | **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「システム」にある「起動の記録を残す」 |
 | **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`lastLaunched`・`launchCount`・`updatedAt`。`memo`・`link`・`lastLaunched`・`launchCount` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`）の `widths` は使わない。`pathAndArgs` は `widths` が無ければ残りの幅を使う。画面の見出しの右クリックと見出しの右端のドラッグ・ダブルクリックで変わり、設定画面にはない |
 

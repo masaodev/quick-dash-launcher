@@ -104,6 +104,36 @@ describe('runCliCommand', () => {
     expect(workspace.stdout).toContain('qdl workspace item add');
   });
 
+  it('オプションの値としての -h・--help は説明の求めとみなさない（何も足さずに成功を返さない）', async () => {
+    const res = await runCliCommand(
+      request([
+        'launcher',
+        'item',
+        'add',
+        '--name',
+        't',
+        '--path',
+        'tool.exe',
+        '--args',
+        '-h',
+        '--dry-run',
+      ]),
+      context()
+    );
+    // 説明ではなく、コマンドを実行した結果（ここではストアの無い文脈なのでエラー）の JSON が返る
+    expect(res.stdout).not.toContain('qdl launcher item');
+    expect(() => JSON.parse(res.stdout)).not.toThrow();
+  });
+
+  it('フラグの後ろの --help は説明の求め', async () => {
+    const res = await runCliCommand(
+      request(['launcher', 'item', 'add', '--dry-run', '--help']),
+      context()
+    );
+    expect(res.exitCode).toBe(CLI_EXIT.ok);
+    expect(res.stdout).toContain('qdl launcher item');
+  });
+
   it('status は版と設定フォルダを JSON で返す', async () => {
     const res = await runCliCommand(request(['status']), context());
     expect(res.exitCode).toBe(CLI_EXIT.ok);
@@ -207,6 +237,19 @@ describe('runCliCommand（open・show）', () => {
 
     const byId = await runCliCommand(request(['open', 'Item0000']), ctx);
     expect(JSON.parse(byId.stdout).opened.name).toBe('メモ帳');
+  });
+
+  it('--ascii を付けると、JSON の日本語を \\uXXXX で書く（エラーの JSON も。stderr の文はそのまま）', async () => {
+    const openLauncherEntry = vi.fn(async () => ({ type: 'app' }));
+    const ctx = context({ launcher: launcherWith('メモ帳'), openLauncherEntry });
+    const ok = await runCliCommand(request(['--ascii', 'open', 'メモ帳']), ctx);
+    expect([...ok.stdout].every((c) => c.charCodeAt(0) < 0x7f)).toBe(true);
+    expect(JSON.parse(ok.stdout).opened.name).toBe('メモ帳');
+
+    const ng = await runCliCommand(request(['open', '無いもの', '--ascii']), ctx);
+    expect(ng.stdout).not.toContain('無いもの');
+    expect(JSON.parse(ng.stdout).error.code).toBe('not_found');
+    expect(ng.stderr).toContain('無いもの');
   });
 
   it('open は見つからない・複数当たる・引数が無いときに開かずエラーを返す', async () => {

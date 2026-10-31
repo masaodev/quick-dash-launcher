@@ -183,17 +183,40 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<string |
     return openPathOrLog(target, logger, logContext);
   }
 
-  // 引数ありの場合はspawnを使用（コマンドインジェクション防止）
-  const args = parseArgs(item.args);
-  const needsShell = /\.(cmd|bat)$/i.test(item.path);
+  const cwd = getWorkingDirectory(item.path);
+  // .bat・.cmd は cmd.exe 経由でしか動かない。パスだけを引用符で囲み、引数欄の文字は書いたとおりに
+  // 後ろへ付けた 1 本のコマンドにして渡す（コマンドプロンプトに打つのと同じ。管理者として実行・
+  // エクスプローラーで開いたときも、Windows は同じ形で cmd.exe に渡す）
+  if (/\.(cmd|bat)$/i.test(item.path)) {
+    return spawnDetached(
+      buildCmdCommandLine(item.path, item.args),
+      [],
+      { shell: true, cwd },
+      logger,
+      { ...logContext, args: item.args },
+      'アイテムの起動に失敗しました (spawn)'
+    );
+  }
+  // それ以外は引数を分けて spawn に渡す（シェルを通さないので、記号がコマンドとして動かない）
   return spawnDetached(
     item.path,
-    args,
-    { shell: needsShell, cwd: getWorkingDirectory(item.path) },
+    parseArgs(item.args),
+    { shell: false, cwd },
     logger,
     { ...logContext, args: item.args },
     'アイテムの起動に失敗しました (spawn)'
   );
+}
+
+/**
+ * .bat・.cmd を cmd.exe に渡すコマンドを組み立てる
+ *
+ * パスだけを `"` で囲み、引数は書いたとおりに付ける。`&` `^` `=` などはコマンドプロンプトと同じく
+ * cmd.exe が読むので、1 つの引数として渡したいときは引数欄で `"` で囲む
+ */
+export function buildCmdCommandLine(batPath: string, args: string): string {
+  const trimmed = args.trim();
+  return trimmed ? `"${batPath}" ${trimmed}` : `"${batPath}"`;
 }
 
 /**

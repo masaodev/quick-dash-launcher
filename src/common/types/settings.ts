@@ -158,6 +158,12 @@ export interface AppSettings {
   showKeyboardHints: boolean;
   /** メインウィンドウの検索で、表示名に加えてメモにも当てる（デフォルト: false） */
   searchMemo: boolean;
+  /** 検索で全角と半角を区別しない（デフォルト: false） */
+  searchIgnoreWidth: boolean;
+  /** 検索でひらがなとカタカナを区別しない（デフォルト: false） */
+  searchIgnoreKana: boolean;
+  /** 検索結果を、名前が最初の語で始まるもの → よく開くものの順に並べる（デフォルト: false） */
+  searchSortByUsage: boolean;
   /** ウィンドウ検索で起動のホットキー（デフォルト: 'Ctrl+Alt+Space'、空の場合は無効） */
   itemSearchHotkey: string;
   /** クリップボードデータもバックアップに含めるか（デフォルト: false） */

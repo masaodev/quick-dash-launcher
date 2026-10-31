@@ -124,7 +124,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
         const count = tabItemCounts[index];
         const countClass = getCountClass(count);
         const representativeFile = getRepresentativeFile(tabConfig);
-        // ツールチップにデータファイル名と物理ファイル名を表示
+        // ツールチップにタブ名（長いと省略して出すため）と、データファイル名・物理ファイル名を表示
         const filesTitle = tabConfig.files
           .map((fileName) => {
             const label = dataFileLabels[fileName] || fileName;
@@ -138,7 +138,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
             className={`tab-button ${countClass} ${isTabActive(tabConfig) ? 'active' : ''}`}
             onClick={() => onTabClick(representativeFile)}
             onContextMenu={(e) => handleContextMenu(e, index)}
-            title={filesTitle}
+            title={`${tabConfig.name}\n${filesTitle}`}
           >
             {editingTabIndex === index ? (
               <input
@@ -152,7 +152,7 @@ const LauncherFileTabBar: React.FC<FileTabBarProps> = ({
                 className="tab-name-input"
               />
             ) : (
-              tabConfig.name
+              <span className="tab-name">{tabConfig.name}</span>
             )}
             <span className={`tab-count ${countClass}`}>({count})</span>
           </button>

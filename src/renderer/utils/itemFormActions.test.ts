@@ -2,7 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { TFunction } from 'i18next';
 import type { RegisterItem } from '@common/types';
 
-import { commitClipboardContent, resolvePathChange, validateItemForm } from './itemFormActions';
+import {
+  commitClipboardContent,
+  normalizePathInput,
+  resolvePathChange,
+  validateItemForm,
+  withNormalizedPath,
+} from './itemFormActions';
 
 const t = ((key: string) => key) as unknown as TFunction;
 const notify = { showWarning: vi.fn(), showError: vi.fn() };
@@ -32,7 +38,42 @@ afterEach(() => {
   Reflect.deleteProperty(window, 'electronAPI');
 });
 
+describe('normalizePathInput', () => {
+  it.each([
+    ['"C:\\Program Files\\a.exe"', 'C:\\Program Files\\a.exe'],
+    ['  C:\\Windows\\notepad.exe   ', 'C:\\Windows\\notepad.exe'],
+    ['   https://example.com/', 'https://example.com/'],
+    [' " C:\\a b " ', 'C:\\a b'],
+    ['C:\\a "b".txt', 'C:\\a "b".txt'],
+    // 引数までパス欄に入れたものは、どこまでがパスか分からないので触らない
+    ['"C:\\a.exe" "arg"', '"C:\\a.exe" "arg"'],
+    // 全角スペースで終わるフォルダ名は Windows で作れるので残す
+    ['C:\\メモ\u3000', 'C:\\メモ\u3000'],
+    ['""', '""'],
+    ['', ''],
+  ])('%j は %j', (input, expected) => {
+    expect(normalizePathInput(input)).toBe(expected);
+  });
+});
+
+describe('withNormalizedPath', () => {
+  it('パスを整える。変わらなければ同じオブジェクトを返す', () => {
+    expect(withNormalizedPath({ ...baseItem, path: '"C:\\x.exe"' }).path).toBe('C:\\x.exe');
+    expect(withNormalizedPath(baseItem)).toBe(baseItem);
+  });
+
+  it('クリップボードは触らない', () => {
+    const clip = { ...baseItem, itemCategory: 'clipboard' as const, path: ' x ' };
+    expect(withNormalizedPath(clip)).toBe(clip);
+  });
+});
+
 describe('resolvePathChange', () => {
+  it('引用符・空白付きのパスは整えて欄にも入れ、整えたパスで種別を決める', async () => {
+    const apply = await resolvePathChange({ ...baseItem, path: '  https://example.com  ' });
+    expect(apply?.(baseItem)).toMatchObject({ path: 'https://example.com', type: 'url' });
+  });
+
   it('パスに合う種別にし、キャッシュにあるアイコンを当てる', async () => {
     loadCachedIcons.mockResolvedValueOnce({ 'https://example.com': 'data:icon' });
     const apply = await resolvePathChange({ ...baseItem, path: 'https://example.com' });

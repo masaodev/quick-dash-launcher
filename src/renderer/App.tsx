@@ -34,11 +34,13 @@ import { SetupFirstLaunch } from './components/SetupFirstLaunch';
 import AlertDialog from './components/AlertDialog';
 import ConfirmDialog from './components/ConfirmDialog';
 import { filterItems } from './utils/dataParser';
+import { sortByUsage } from './utils/searchUsageOrder';
 import { filterWindowsByDesktopTab } from './utils/windowFilter';
 import { findNoMatchElsewhere } from './utils/noMatchElsewhere';
 import { debugLog, logError } from './utils/debug';
 import { indexById, setEntryNames } from './utils/setEditing';
 import { loadItemIcons } from './utils/customIcons';
+import { getActiveTabFiles } from './utils/tabFiles';
 import { useIconProgress } from './hooks/useIconProgress';
 import { useSearchHistory } from './hooks/useSearchHistory';
 import { useSearchBoxContextMenu } from './hooks/useSearchBoxContextMenu';
@@ -47,6 +49,8 @@ import { useItemActions } from './hooks/useItemActions';
 import { useDataFileTabs } from './hooks/useDataFileTabs';
 import { useShowKeyboardHints } from './hooks/useShowKeyboardHints';
 import { useSearchMemo } from './hooks/useSearchMemo';
+import { useSearchNormalization } from './hooks/useSearchNormalization';
+import { useSearchUsageOrder } from './hooks/useSearchUsageOrder';
 import { useIconFetcher } from './hooks/useIconFetcher';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -69,6 +73,8 @@ function App(): React.ReactElement {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [mainItems, setMainItems] = useState<AppItem[]>([]);
+  // 直近の読み込みで読めなかったデータファイル（そのタブには空の代わりに案内を出す）
+  const [corruptedDataFiles, setCorruptedDataFiles] = useState<string[]>([]);
   /** セットのツールチップで行の名前を引く（絞り込みの外のアイテムも引けるよう、全アイテムから） */
   const nameOfMainItem = useMemo(() => {
     const byId = indexById(mainItems);
@@ -143,6 +149,10 @@ function App(): React.ReactElement {
   const showKeyboardHints = useShowKeyboardHints();
   // 検索でメモにも当てるか（変わったら一覧を絞り直す）
   const searchMemo = useSearchMemo();
+  // 検索で全角・半角、ひらがな・カタカナを区別しないか（変わったら一覧を絞り直す）
+  const searchNormalization = useSearchNormalization();
+  // 検索結果をよく開く順に並べるか（オフなら null。オンなら開いた回数を引く関数）
+  const usageCountOf = useSearchUsageOrder();
 
   // ワークスペースからドラッグされたアイテム。選んでいるタブ（の先頭のファイル）へ移し、ワークスペース側を参照にする
   // （結果はメインプロセスがトーストで知らせる）。参照はもうメインウィンドウにあるので、移さずに知らせる
@@ -328,6 +338,11 @@ function App(): React.ReactElement {
   // アプリ内の操作に伴う再読込は 'internal'（先行の再読込があれば結果を共有する）
   const loadItems = async (trigger?: 'explicit' | 'full' | 'internal'): Promise<AppItem[]> => {
     const items = await window.electronAPI.loadDataFiles(trigger);
+    // 読み込みのついでに判定済みの結果を受け取るだけ（ファイルは読み直さない）
+    window.electronAPI
+      .getCorruptedDataFiles()
+      .then(setCorruptedDataFiles)
+      .catch((error) => logError('読めなかったデータファイルの取得に失敗しました:', error));
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
@@ -530,6 +545,14 @@ function App(): React.ReactElement {
     () => getTabFilteredItems(mainItems),
     [getTabFilteredItems, mainItems]
   );
+  // 今のタブのデータファイルのうち、読めなかったもの
+  const activeTabCorruptedFiles = useMemo(
+    () =>
+      getActiveTabFiles(dataFileTabs, activeTab).filter((file) =>
+        corruptedDataFiles.includes(file)
+      ),
+    [dataFileTabs, activeTab, corruptedDataFiles]
+  );
 
   // Ctrl+P でウィンドウを固定（全デスクトップに表示）してよいか。非対応と分かっているときだけ止める
   //（読み込み前は固定を試し、失敗すればそのトーストが出る）。ヒントは対応と分かってから出す
@@ -547,9 +570,22 @@ function App(): React.ReactElement {
       searchMode === 'window'
         ? filterWindowsByDesktopTab(windowList, activeDesktopTab)
         : tabFilteredItems;
-    return filterItems(itemsToFilter, searchQuery, searchMode);
-    // searchMemo は filterItems の中で読む設定。変わったら絞り直す
-  }, [searchMode, windowList, activeDesktopTab, tabFilteredItems, searchQuery, searchMemo]);
+    const matched = filterItems(itemsToFilter, searchQuery, searchMode);
+    // 通常検索で設定がオンなら、名前が最初の語で始まるもの → よく開くものを上へ
+    return searchMode === 'normal' && usageCountOf
+      ? sortByUsage(matched, searchQuery, usageCountOf)
+      : matched;
+    // searchMemo・searchNormalization は filterItems の中で読む設定。変わったら絞り直す
+  }, [
+    searchMode,
+    windowList,
+    activeDesktopTab,
+    tabFilteredItems,
+    searchQuery,
+    searchMemo,
+    searchNormalization,
+    usageCountOf,
+  ]);
 
   // 検索で 0 件のとき、他のタブや通常の検索に合うものがあるか（一覧が空の案内に使う）
   const noMatchElsewhere = useMemo(
@@ -979,11 +1015,14 @@ function App(): React.ReactElement {
                 elsewhere: noMatchElsewhere,
               }
             : searchMode === 'normal'
-              ? { kind: 'emptyTab' }
+              ? activeTabCorruptedFiles.length > 0
+                ? { kind: 'corrupted', files: activeTabCorruptedFiles }
+                : { kind: 'emptyTab' }
               : null
         }
         onAddItem={() => void openRegisterWindow()}
         onAddFolderImport={() => void openFolderImportWindow()}
+        onOpenConfigFolder={() => void window.electronAPI.openConfigFolder()}
         onBlankContextMenu={
           searchMode === 'normal'
             ? () => void window.electronAPI.showLauncherBlankContextMenu()

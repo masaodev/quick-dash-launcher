@@ -128,6 +128,17 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
     return currentIndex;
   }
 
+  /**
+   * PageUp・PageDown で動かす行数（一覧に見えている行数より 1 少なく、前の画面の行が 1 つ残る）。
+   * 一覧の大きさはウィンドウの大きさで変わるので、押したときに測る。測れないときは 10
+   */
+  function visibleRowCount(): number {
+    const list = document.querySelector<HTMLElement>('.item-list');
+    const row = list?.querySelector<HTMLElement>('.item-row-wrapper');
+    if (!list || !row || row.offsetHeight === 0) return 10;
+    return Math.max(1, Math.floor(list.clientHeight / row.offsetHeight) - 1);
+  }
+
   /** Tab で切り替えられるタブがあるか */
   function canSwitchTab(): boolean {
     return searchMode === 'window' ? desktopCount > 1 : showDataFileTabs && dataFileTabs.length > 1;
@@ -401,6 +412,29 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
           e.stopPropagation();
           windowSelection.resetAnchor();
           setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : 0));
+        }
+        return;
+
+      // PageUp・PageDown: 1 画面分動かす（端で止まる）
+      case 'PageUp':
+      case 'PageDown': {
+        e.preventDefault();
+        e.stopPropagation();
+        if (filteredItems.length === 0) return;
+        windowSelection.resetAnchor();
+        const step = e.key === 'PageDown' ? visibleRowCount() : -visibleRowCount();
+        setSelectedIndex((prev) => Math.min(filteredItems.length - 1, Math.max(0, prev + step)));
+        return;
+      }
+
+      // Ctrl+Home・Ctrl+End: 先頭・末尾へ（Home・End だけは検索欄のカーソル移動のまま）
+      case 'Home':
+      case 'End':
+        if (e.ctrlKey && filteredItems.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          windowSelection.resetAnchor();
+          setSelectedIndex(e.key === 'Home' ? 0 : filteredItems.length - 1);
         }
         return;
 

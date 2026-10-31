@@ -114,6 +114,10 @@ export const ja = {
       otherTabsHaveWindows: '他のタブに合うウィンドウがあります。',
       switchTab: 'タブを切り替える',
       emptyTab: 'このタブにはまだアイテムがありません',
+      corrupted: '{{files}} を読めませんでした（壊れている可能性があります）',
+      corruptedHint:
+        'ファイルを直してから F5 で読み直してください。直すまで、QDL はこのファイルを書き換えません',
+      openConfigFolder: '📂 設定フォルダを開く',
       add: '📄 アイテムを追加',
       importBookmarks: '🔖 ブックマークから',
       importApps: '💻 アプリから',
@@ -438,7 +442,7 @@ export const ja = {
     },
     tab: {
       rename: '✏️ 名前を変更',
-      linkCopies: '🔗 メインウィンドウと同じアイテムを参照に変える…',
+      linkCopies: '🔗 メインウィンドウのアイテムとつなぐ…',
       delete: '🗑️ 削除',
     },
     window: {
@@ -536,6 +540,7 @@ QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼し�
 出力: 成功したら標準出力に JSON。失敗したら標準出力に {"error": {"code", "message", "candidates"?}}、
 標準エラーに説明。code は usage / not_found / ambiguous / invalid / conflict / unavailable / internal。
 書き込むコマンドは --dry-run で、書き込まずに結果だけを確かめられます。
+--ascii を付けると、JSON の日本語などを \\uXXXX で書きます（Windows PowerShell 5.1 で ConvertFrom-Json に渡すと化けるとき）。
 
 終了コード: 0 成功 / 1 失敗 / 2 コマンドの誤り・対象の指定の誤り / 3 本体に接続できない / 4 やり取りの誤り（CLI と本体の版の不一致・依頼が大きすぎる・読めないなど）
 `,
@@ -756,6 +761,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       textAndTextFile: '--text と --text-file はどちらか一方を指定してください',
       textFileNotFound: '--text-file のファイルが見つかりません: {{file}}',
       textFileTooLarge: '--text-file のファイルが大きすぎます（1 MB まで）: {{file}}',
+      textFileNotUtf8:
+        '--text-file のファイルを UTF-8 として読めません。UTF-8 か UTF-16（BOM 付き）で保存してください: {{file}}',
       emptyText: '本文が空です',
       needText: '本文を --text か --text-file で指定してください',
       textOnlyClipboard:
@@ -2021,6 +2028,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     fileUnreadable: 'ファイルを読み込めませんでした',
     convertFailed: '変換に失敗: {{error}}',
     configLoadFailed: '設定ファイルの読み込みに失敗しました（破損の可能性）: {{files}}',
+    settingsRecovered:
+      'settings.json を読めなかったので、既定の設定で起動しました。元のファイルは設定フォルダの {{file}} に残しています',
   },
   loadReport: {
     accepted_one: '{{count}} 件読み込み',
@@ -2398,29 +2407,40 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       notFound: 'ワークスペースのアイテムが見つかりません（削除された可能性があります）。',
     },
     linkCopies: {
-      title: 'メインウィンドウと同じアイテムを参照に変える',
-      banner:
-        'ワークスペース「{{workspace}}」のコピーのうち、パスと引数が同じメインウィンドウのアイテムが見つかったものです。チェックしたものを参照に変えます。',
-      target: '→ {{name}}',
-      tab: '（タブ: {{tab}}）',
-      alias: '「{{name}}」をワークスペースでの表示名にする',
-      memoMove: 'メモをメインウィンドウへ移す',
-      memoConflict: '⚠ メモが両方にあって違う（参照にするとコピーのメモは消えます）',
+      title: 'メインウィンドウのアイテムとつなぐ',
+      heroTitle_one: '同じアイテムが {{count}} 件、メインウィンドウにもあります',
+      heroTitle_other: '同じアイテムが {{count}} 件、メインウィンドウにもあります',
+      heroBody:
+        'つなぐと、メインウィンドウで直したパスやメモがワークスペース「{{workspace}}」にも反映されます。ワークスペースでの名前と並び順はそのままです。',
+      workspaceSide: 'ワークスペース',
+      mainSide: 'メインウィンドウ',
+      needChoice: '✋ どれとつなぐか選んでください',
+      ready: '✓ そのままつなげます',
+      selectAll: 'すべて選ぶ',
+      selectNone: 'すべて外す',
+      nameKept: '名前はそのまま',
+      nameSame: '名前もメインウィンドウと同じ',
+      tab: 'タブ: {{tab}}',
+      memoMove: '📝 メモをメインウィンドウへ移す',
+      memoConflict: '⚠ メモが両方にあって違う（つなぐとこのメモは消えます）',
       settingsDiffer:
-        '⚠ ウィンドウ切り替え・アイコン・管理者として実行がメインウィンドウと違う（参照にするとメインウィンドウのものになります）',
-      ambiguous_one: '⚠ 候補が {{count}} 件。指す先を選んでください',
-      ambiguous_other: '⚠ 候補が {{count}} 件。指す先を選んでください',
-      choose: '指す先を選ぶ…',
-      chooseLabel: '「{{name}}」が指すメインウィンドウのアイテム',
-      notMatchable_one:
-        'クリップボード・セット・パスの無い単一アイテム {{count}} 件は、パスで比べられないので対象外です。',
-      notMatchable_other:
-        'クリップボード・セット・パスの無い単一アイテム {{count}} 件は、パスで比べられないので対象外です。',
-      empty: '参照に変えられるコピーはありません。',
-      apply_one: '{{count}} 件を参照に変える',
-      apply_other: '{{count}} 件を参照に変える',
-      done_one: '{{count}} 件を参照に変えました',
-      done_other: '{{count}} 件を参照に変えました',
+        '⚠ ウィンドウ切り替え・アイコン・管理者として実行が違う（つなぐとメインウィンドウのものになります）',
+      candidates_one: 'メインウィンドウに候補が {{count}} つ',
+      candidates_other: 'メインウィンドウに候補が {{count}} つ',
+      choose: 'どれとつなぐ？',
+      chooseLabel: '「{{name}}」とつなぐメインウィンドウのアイテム',
+      candidateOption: '{{name}}（タブ: {{tab}}）',
+      unchosen_one: '選んでいない {{count}} 件はつなぎません',
+      unchosen_other: '選んでいない {{count}} 件はつなぎません',
+      notMatchableSummary_one: 'ここに出ないアイテム（{{count}} 件）',
+      notMatchableSummary_other: 'ここに出ないアイテム（{{count}} 件）',
+      notMatchableBody:
+        'クリップボード・セット・パスの無い単一アイテムは、メインウィンドウのどれと同じかを見分けられないので出していません。1 件ずつつなぐときは、アイテムの右クリックの「🚀 メインウィンドウへ移して参照にする」を使います。',
+      empty: 'メインウィンドウとつなげるアイテムはありません。',
+      apply_one: '{{count}} 件をつなぐ',
+      apply_other: '{{count}} 件をつなぐ',
+      done_one: '{{count}} 件をメインウィンドウのアイテムとつなぎました',
+      done_other: '{{count}} 件をメインウィンドウのアイテムとつなぎました',
       notFound: 'ワークスペースが見つかりません（削除された可能性があります）。',
     },
   },
@@ -2483,6 +2503,15 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       searchMemo: '検索でメモにも当てる',
       searchMemoDescription:
         'メインウィンドウの検索で、表示名に加えてメモに入っている語でもアイテムを探します。オフのときは表示名だけで探します。',
+      searchIgnoreWidth: '検索で全角と半角を区別しない',
+      searchIgnoreWidthDescription:
+        'メインウィンドウの検索とワークスペースの絞り込みで、「ｃｈｒｏｍｅ」で「Chrome」、「ﾃｽﾄ」で「テスト」が見つかるようにします。',
+      searchIgnoreKana: '検索でひらがなとカタカナを区別しない',
+      searchIgnoreKanaDescription:
+        'メインウィンドウの検索とワークスペースの絞り込みで、「てすと」で「テスト」が見つかるようにします。',
+      searchSortByUsage: '検索結果をよく開く順に並べる',
+      searchSortByUsageDescription:
+        'メインウィンドウで検索したとき、名前が入力した語で始まるアイテムを上に、その中ではよく開くアイテムを上に並べます。検索欄が空のときと、「起動の記録を残す」がオフのときは今までどおりの順です。',
       dataFileTabs: '複数タブを表示',
       dataFileTabsDescription:
         'メインウィンドウでタブを切り替えて、別のデータファイルのアイテムを表示します。タブとデータファイルの追加・変更は「アイテム管理」で行います。',

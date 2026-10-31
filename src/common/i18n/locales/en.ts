@@ -111,6 +111,10 @@ export const en: LocaleMessages = {
       otherTabsHaveWindows: 'Other tabs have matching windows.',
       switchTab: 'Switch tabs',
       emptyTab: 'This tab has no items yet',
+      corrupted: "Couldn't read {{files}} (it may be corrupted)",
+      corruptedHint:
+        "Fix the file, then press F5 to reload. QDL won't overwrite the file until then",
+      openConfigFolder: '📂 Open settings folder',
       add: '📄 Add item',
       importBookmarks: '🔖 From bookmarks',
       importApps: '💻 From apps',
@@ -437,7 +441,7 @@ export const en: LocaleMessages = {
     },
     tab: {
       rename: '✏️ Rename',
-      linkCopies: '🔗 Link copies to matching launcher items…',
+      linkCopies: '🔗 Link to launcher items…',
       delete: '🗑️ Delete',
     },
     window: {
@@ -535,6 +539,7 @@ Commands:
 Output: On success, JSON on standard output. On failure, {"error": {"code", "message", "candidates"?}} on
 standard output and a description on standard error. code is usage / not_found / ambiguous / invalid / conflict / unavailable / internal.
 Commands that write accept --dry-run to check the result without writing.
+Add --ascii to write non-ASCII characters in the JSON as \\uXXXX (use it when Windows PowerShell 5.1 garbles them in ConvertFrom-Json).
 
 Exit codes: 0 success / 1 failure / 2 wrong command or target / 3 can't connect to the app / 4 communication error (CLI and app versions don't match, the request is too large or can't be read, and so on)
 `,
@@ -753,6 +758,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       textAndTextFile: 'Specify either --text or --text-file, not both',
       textFileNotFound: "Couldn't find the --text-file file: {{file}}",
       textFileTooLarge: 'The --text-file file is too large (1 MB at most): {{file}}',
+      textFileNotUtf8:
+        'The --text-file file is not valid UTF-8. Save it as UTF-8 or UTF-16 with a BOM: {{file}}',
       emptyText: 'The text is empty',
       needText: 'Specify the text with --text or --text-file',
       textOnlyClipboard: '--text and --text-file can only be used with clipboard items (clipboard)',
@@ -2021,6 +2028,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     fileUnreadable: "Couldn't read the file",
     convertFailed: 'Conversion failed: {{error}}',
     configLoadFailed: "Couldn't load the settings files (they may be corrupted): {{files}}",
+    settingsRecovered:
+      "Couldn't read settings.json, so QuickDashLauncher started with the default settings. The original file is kept as {{file}} in the settings folder",
   },
   loadReport: {
     accepted_one: '{{count}} item loaded',
@@ -2396,29 +2405,40 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       notFound: 'The workspace item was not found. It may have been deleted.',
     },
     linkCopies: {
-      title: 'Link copies to matching launcher items',
-      banner:
-        'These copies in the workspace "{{workspace}}" have launcher items with the same path and arguments. The selected copies will become links.',
-      target: '→ {{name}}',
-      tab: '(tab: {{tab}})',
-      alias: 'Keep "{{name}}" as the workspace name',
-      memoMove: 'Move the note to the launcher',
-      memoConflict: '⚠ Both have different notes (the copy note will be removed)',
+      title: 'Link to launcher items',
+      heroTitle_one: '{{count}} item is also in the launcher',
+      heroTitle_other: '{{count}} items are also in the launcher',
+      heroBody:
+        'Once linked, changes to the path or note in the launcher also appear in the workspace "{{workspace}}". Names and order in the workspace stay the same.',
+      workspaceSide: 'Workspace',
+      mainSide: 'Launcher',
+      needChoice: '✋ Choose which item to link to',
+      ready: '✓ Ready to link',
+      selectAll: 'Select all',
+      selectNone: 'Clear all',
+      nameKept: 'Keeps its name',
+      nameSame: 'Same name as in the launcher',
+      tab: 'Tab: {{tab}}',
+      memoMove: '📝 Moves the note to the launcher',
+      memoConflict: '⚠ Both have different notes (this note will be removed)',
       settingsDiffer:
-        '⚠ Window switching, icon, or run as administrator differs from the launcher item (the launcher settings will be used)',
-      ambiguous_one: '⚠ {{count}} candidate. Choose which one to link to',
-      ambiguous_other: '⚠ {{count}} candidates. Choose which one to link to',
-      choose: 'Choose the item to link to…',
-      chooseLabel: 'Launcher item that "{{name}}" links to',
-      notMatchable_one:
-        "{{count}} clipboard item, set, or item without a path can't be compared by path, so it isn't included.",
-      notMatchable_other:
-        "{{count}} clipboard items, sets, or items without a path can't be compared by path, so they aren't included.",
-      empty: 'There are no copies to link.',
+        '⚠ Window switching, icon, or run as administrator differs (the launcher settings will be used)',
+      candidates_one: '{{count}} candidate in the launcher',
+      candidates_other: '{{count}} candidates in the launcher',
+      choose: 'Link to which item?',
+      chooseLabel: 'Launcher item to link "{{name}}" to',
+      candidateOption: '{{name}} (tab: {{tab}})',
+      unchosen_one: "{{count}} item without a choice won't be linked",
+      unchosen_other: "{{count}} items without a choice won't be linked",
+      notMatchableSummary_one: '{{count}} item not shown here',
+      notMatchableSummary_other: '{{count}} items not shown here',
+      notMatchableBody:
+        'Clipboard items, sets, and items without a path can\'t be matched to a launcher item, so they aren\'t shown. To link one at a time, right-click the item and use "🚀 Move to the launcher and link".',
+      empty: 'There are no items to link to the launcher.',
       apply_one: 'Link {{count}} item',
       apply_other: 'Link {{count}} items',
-      done_one: 'Linked {{count}} item',
-      done_other: 'Linked {{count}} items',
+      done_one: 'Linked {{count}} item to the launcher',
+      done_other: 'Linked {{count}} items to the launcher',
       notFound: 'The workspace was not found. It may have been deleted.',
     },
   },
@@ -2470,6 +2490,15 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       searchMemo: 'Search notes too',
       searchMemoDescription:
         'When you search in the launcher, also finds items whose note contains the words. When off, only display names are searched.',
+      searchIgnoreWidth: 'Ignore full-width and half-width in search',
+      searchIgnoreWidthDescription:
+        'In the launcher search and the workspace filter, "ｃｈｒｏｍｅ" finds "Chrome" and half-width katakana finds full-width katakana.',
+      searchIgnoreKana: 'Ignore hiragana and katakana in search',
+      searchIgnoreKanaDescription:
+        'In the launcher search and the workspace filter, a word typed in hiragana also finds names written in katakana.',
+      searchSortByUsage: 'Sort search results by how often you open them',
+      searchSortByUsageDescription:
+        'When you search in the launcher, items whose name starts with the typed word come first, and among them the ones you open most often. The order stays as before when the search box is empty or when "Keep a launch history" is off.',
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
         'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
