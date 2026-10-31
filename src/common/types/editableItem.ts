@@ -171,6 +171,16 @@ export function validateEditableItem(item: JsonItem, t: TFunction): ValidationRe
       return { isValid: true };
     }
 
+    case 'wsgroup': {
+      if (item.scope === 'selected' && (!item.groupIds || item.groupIds.length === 0)) {
+        return {
+          isValid: false,
+          error: t('validation.emptyTypedField', { type: 'wsgroup', field: 'groupIds' }),
+        };
+      }
+      return { isValid: true };
+    }
+
     default:
       return {
         isValid: false,

@@ -139,6 +139,7 @@ Change the type in the Add item window to do more than open files and URLs. For 
 | --- | --- |
 | [Set](docs/features/set.md) | Open several items or paths at once, and optionally move their windows to recorded positions |
 | Clipboard item | Save text or images and copy them back to the clipboard when you select them |
+| WS group | List workspace groups in the launcher and in search, and open a group in a detached window when you select it (add one from the ▼ next to "+ Add item" in Manage items) |
 | [Bookmark import](docs/features/bookmark-import.md) | Import your browser bookmarks, and optionally keep them up to date automatically |
 
 ---

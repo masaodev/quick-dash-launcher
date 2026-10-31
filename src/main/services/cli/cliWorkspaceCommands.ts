@@ -668,6 +668,12 @@ async function addFromLauncher(
   if (entry.item.type === 'dir') {
     throw new CliError('conflict', mainI18n.t('cli.errors.fromDir', { name: source.displayName }));
   }
+  if (entry.item.type === 'wsgroup') {
+    throw new CliError(
+      'conflict',
+      mainI18n.t('cli.errors.fromWsGroup', { name: source.displayName })
+    );
+  }
   if (entry.invalid) {
     throw new CliError(
       'invalid',
@@ -1051,6 +1057,9 @@ async function convertItem(
   let mainId: string;
   if (from !== undefined) {
     const entry = await findLauncherEntry(from, ctx.launcher);
+    if (entry.item.type === 'wsgroup') {
+      throw new CliError('conflict', mainI18n.t('cli.errors.fromWsGroup', { name: from }));
+    }
     if (!entry.item.id || entry.item.type === 'dir') {
       throw new CliError('conflict', mainI18n.t('cli.errors.fromDir', { name: from }));
     }

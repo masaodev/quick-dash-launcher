@@ -4,7 +4,7 @@
  * 型アサーションを安全に置き換えるための型ガード関数を提供します。
  */
 
-import type { AppItem, LauncherItem, ClipboardItem, SetItem } from './launcher';
+import type { AppItem, LauncherItem, ClipboardItem, SetItem, WsGroupItem } from './launcher';
 import type { WindowInfo } from './window';
 import type { PinLevel } from './settings';
 
@@ -49,7 +49,12 @@ export function isWindowInfo(item: AppItem): item is WindowInfo {
  * }
  */
 export function isLauncherItem(item: AppItem): item is LauncherItem {
-  return !isWindowInfo(item) && item.type !== 'clipboard' && item.type !== 'set';
+  return (
+    !isWindowInfo(item) &&
+    item.type !== 'clipboard' &&
+    item.type !== 'set' &&
+    item.type !== 'wsgroup'
+  );
 }
 
 /**
@@ -77,4 +82,14 @@ export function isClipboardItem(item: AppItem): item is ClipboardItem {
  */
 export function isSetItem(item: AppItem): item is SetItem {
   return !isWindowInfo(item) && item.type === 'set';
+}
+
+/**
+ * WsGroupItem（WSグループから展開したアイテム）かどうかを判定する型ガード
+ *
+ * @param item - 判定対象のAppItem
+ * @returns WsGroupItemの場合true
+ */
+export function isWsGroupItem(item: AppItem): item is WsGroupItem {
+  return !isWindowInfo(item) && item.type === 'wsgroup';
 }

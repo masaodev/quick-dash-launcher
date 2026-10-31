@@ -13,6 +13,7 @@ export const IPC_CHANNELS = {
   OPEN_PARENT_FOLDER: 'open-parent-folder',
   RUN_ITEM_AS_ADMIN: 'run-item-as-admin',
   EXECUTE_SET: 'execute-set',
+  OPEN_WS_GROUP: 'open-ws-group',
 
   // データ操作
   LOAD_DATA_FILES: 'load-data-files',

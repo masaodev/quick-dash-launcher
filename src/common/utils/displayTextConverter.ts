@@ -74,6 +74,16 @@ export function jsonItemToDisplayText(item: JsonItem): string {
       return `set,${escapeDisplayTextField(item.displayName)},${escapeDisplayTextField(JSON.stringify(item.entries))}`;
     }
 
+    case 'wsgroup': {
+      const parts = ['wsgroup', item.scope];
+      if (item.scope === 'selected') parts.push((item.groupIds ?? []).join(';'));
+      const opts = (['prefix', 'suffix'] as const)
+        .filter((key) => item.options?.[key])
+        .map((key) => `${key}=${item.options![key]}`);
+      if (opts.length > 0) parts.push(opts.join(';'));
+      return parts.map(escapeDisplayTextField).join(',');
+    }
+
     default:
       throw new Error(`Unknown item type: ${(item as JsonItem).type}`);
   }

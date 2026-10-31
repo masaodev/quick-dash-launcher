@@ -20,7 +20,7 @@ import type {
   WorkspaceItem,
   WorkspaceItemUpdate,
 } from '../types';
-import { isClipboardItem, isSetItem, isWindowInfo } from '../types/guards';
+import { isClipboardItem, isSetItem, isWindowInfo, isWsGroupItem } from '../types/guards';
 import type { SetEntry } from '../types/launcher';
 import type { RegisterItem } from '../types/register';
 
@@ -93,6 +93,8 @@ export function appItemToWorkspaceItemBody(item: AppItem): WorkspaceItemUpdate {
   }
   if (isClipboardItem(item)) return clipboardBody(item);
   if (isSetItem(item)) return setBody(item);
+  // WSグループのアイテムはグループを開くだけで中身を持たない（画面・CLI の側で追加させない）
+  if (isWsGroupItem(item)) throw new Error('WS group items cannot be added to a workspace');
   return launcherBody(item);
 }
 

@@ -147,6 +147,7 @@ export const ja = {
       groupCount_one: '（{{count}} 件）',
       groupCount_other: '（{{count}} 件）',
       setPlacedBadge: 'ウィンドウ位置のある行があります',
+      wsGroupBadge: 'ワークスペースグループ',
       windowSearchBadge: 'ウィンドウ検索: {{title}}',
       showNote: 'メモを表示',
     },
@@ -194,6 +195,7 @@ export const ja = {
       dataFile: 'データファイル: {{value}}',
       id: 'ID: {{value}}',
       expandedFromId: '取込元 ID: {{value}}',
+      wsGroup: 'ワークスペースのグループ（選ぶと切り離しウィンドウで開きます）',
       lineNumber: '行番号: {{value}}',
       expandedFrom: '取込元: {{value}}',
       expandedOptions: '設定: {{value}}',
@@ -242,6 +244,8 @@ export const ja = {
       virtualDesktopUnsupported: 'この環境は仮想デスクトップに対応していません',
       noContainingFolder: 'このアイテムには親フォルダがありません',
       noContainingFolderNamed: '「{{name}}」には親フォルダがありません',
+      wsGroupNotFound:
+        '「{{name}}」のグループが見つかりません（ワークスペースで消した可能性があります）',
       launchFailed: '「{{name}}」を開けませんでした: {{error}}',
       appNotFoundInPath: 'PATH にアプリが見つかりません',
       clipboardDataMissing: 'クリップボードのデータが見つかりません',
@@ -679,6 +683,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       unknownCommand: '不明なコマンドです: {{command}}',
       cannotOpenDir:
         'フォルダ取込の行は開けません（中に並ぶアイテムも CLI からは開けません）: {{name}}',
+      cannotOpenWsGroup:
+        'WSグループの行は開けません（並ぶグループは、ワークスペースの切り離しで開いてください）: {{name}}',
       cannotOpen: 'このアイテムは開けません: {{name}}',
       openFailed: '開けませんでした: {{name}}（{{error}}）',
       unknownShowTarget: '出すものは main か workspace です: {{target}}',
@@ -772,6 +778,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '--from と一緒に --{{option}} は指定できません（中身を変えるときは、写した後に workspace item update で）',
       fromDir:
         'フォルダ取込「{{name}}」はワークスペースに写せません（中のファイルは --path で 1 件ずつ足してください）',
+      fromWsGroup: 'WSグループ「{{name}}」はワークスペースに写せません',
       fromInvalid: '「{{name}}」は読み込みで不正とされたので写せません: {{reason}}',
       clipboardNotText:
         'このクリップボードアイテムはテキスト以外（{{formats}}）を含むので、本文を書き換えられません（名前・メモ・移動はできます。中身を変えるときは画面で操作してください）',
@@ -1127,11 +1134,35 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     discardAndClose: '破棄して閉じる',
   },
   itemManager: {
+    wsGroup: {
+      titleAdd: 'ワークスペースのグループを検索に出す',
+      titleEdit: 'WSグループを編集',
+      lead: '選んだグループが、このタブの一覧と検索に 1 件ずつ並びます。選ぶと、そのグループの切り離しウィンドウが開きます',
+      scopeLabel: '並べるグループ',
+      scopeAll: 'すべてのグループ',
+      scopeSelected: '選んだグループ',
+      allNote: 'あとで増やしたグループも自動で並びます。並び順はワークスペースと同じです',
+      selectedNote: 'いちばん上の階層のグループだけを選べます（サブグループは並べません）',
+      noGroups: 'ワークスペースにグループがありません',
+      missing_one:
+        '⚠ 見つからないグループが {{count}} 件あります（消えたグループ）。反映すると外れます',
+      missing_other:
+        '⚠ 見つからないグループが {{count}} 件あります（消えたグループ）。反映すると外れます',
+      affixLabel: '表示名の前後に付ける文字（任意）',
+      prefixPlaceholder: '前に付ける文字',
+      suffixPlaceholder: '後ろに付ける文字',
+      previewLabel: 'メインウィンドウでの見え方',
+      previewEmpty: '（並ぶグループがありません）',
+      memoLabel: 'メモ（任意）',
+      confirmAdd: '追加',
+      confirmEdit: '反映',
+    },
     types: {
       item: '単一アイテム',
       dir: 'フォルダ取込',
       clipboard: 'クリップボード',
       set: 'セット',
+      wsgroup: 'WSグループ',
       unknown: '不明',
     },
     noName: '（名前なし）',
@@ -1146,6 +1177,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setRowsPlaced_one: '{{count}} 行（ウィンドウ位置のある行 {{placed}}）',
       setRowsPlaced_other: '{{count}} 行（ウィンドウ位置のある行 {{placed}}）',
       unknownType: '（不明な型）',
+      wsGroupAll: 'すべてのグループ',
+      wsGroupSelected_one: '選んだグループ {{count}} 件',
+      wsGroupSelected_other: '選んだグループ {{count}} 件',
     },
     toolbar: {
       importCsv: '📄 CSV から取り込む',
@@ -1159,6 +1193,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       addFolder: '🗂️ フォルダ取込を追加',
       addFolderTitle:
         'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
+      addWsGroup: '🪟 ワークスペースのグループを検索に出す',
+      addWsGroupTitle:
+        '選んだグループをこのタブの一覧と検索に並べ、選ぶと切り離しウィンドウで開きます（種別「WSグループ」の行を追加します）',
       removeFilter: '「{{name}}」の絞り込みを外す',
       deleteSelected: '削除',
       deleteSelectedTitle: 'チェックしたアイテムをまとめて削除します',
@@ -1215,6 +1252,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         dir: 'フォルダ取込',
         set: 'セット',
         clipboard: 'クリップボード',
+        wsgroup: 'WSグループ',
       },
       link: {
         missing: '⚠ 見つからない',
@@ -1276,6 +1314,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       typeSelectTitle:
         '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
+      wsGroupHasNoName: 'WSグループは名前を持ちません（メインウィンドウではグループの名前で表示）',
+      wsGroupNameAll: 'すべてのワークスペースグループ',
+      wsGroupNameSelected_one: '選んだワークスペースグループ（{{count}} 件）',
+      wsGroupNameSelected_other: '選んだワークスペースグループ（{{count}} 件）',
+      wsGroupTypeFixed: 'WSグループはほかの種別に変えられません',
       namePlaceholder: '名前を入力（Enter でパスへ）',
       invalid: '入力に不備があります: {{error}}',
       editNameTitle: 'クリックして名前を編集',

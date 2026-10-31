@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import {
   isJsonLauncherItem,
   type DuplicateHandlingOption,
+  type JsonItem,
   type RegisterItem,
   type ScannedAppItem,
   type SimpleBookmarkItem,
@@ -23,6 +24,7 @@ import {
   removeItems,
   replaceItem,
   reorderItemNumbers,
+  toEditableItem,
   type InlineItemType,
   type RebaseConflict,
 } from '../utils/editableItemOperations';
@@ -227,6 +229,16 @@ export function useAdminItemEditing(
     [updateWorking]
   );
 
+  /** 中身の決まったアイテムを先頭に追加する（WSグループのダイアログから） */
+  const addItem = useCallback(
+    (sourceFile: string, jsonItem: JsonItem) => {
+      updateWorking((working) =>
+        reorderItemNumbers([toEditableItem(jsonItem, sourceFile), ...working])
+      );
+    },
+    [updateWorking]
+  );
+
   const importBookmarks = useCallback(
     (
       bookmarks: SimpleBookmarkItem[],
@@ -364,6 +376,7 @@ export function useAdminItemEditing(
     deleteItems,
     duplicateItems,
     addBlankItem,
+    addItem,
     importBookmarks,
     importApps,
     applyCsvImport,

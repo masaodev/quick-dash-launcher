@@ -7,7 +7,7 @@ import type {
   ClipboardItem,
   DirOptionsForProcessing,
 } from '@common/types';
-import { isWindowInfo, isClipboardItem, isSetItem } from '@common/types/guards';
+import { isWindowInfo, isClipboardItem, isSetItem, isWsGroupItem } from '@common/types/guards';
 import { PathUtils } from '@common/utils/pathUtils';
 import { describeWindowMatch, isPathlessItem } from '@common/utils/itemWindowConversion';
 
@@ -210,6 +210,12 @@ export function getTooltipText(
 
   if (isClipboardItem(item)) {
     return getClipboardItemTooltip(item);
+  }
+
+  if (isWsGroupItem(item)) {
+    const lines = [t('launcher.tooltip.wsGroup')];
+    appendMetaInfo(lines, { sourceFile: item.sourceFile, expandedFromId: item.expandedFromId });
+    return lines.join('\n');
   }
 
   return getLauncherItemTooltip(item as LauncherItem);

@@ -5,7 +5,14 @@ import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
 import { describePathAndArgs } from './editableItemOperations';
 
 /** 種類の絞り込みの選択肢（単一アイテムは URL とそれ以外に分ける） */
-export const TYPE_FILTER_KEYS = ['itemUrl', 'itemOther', 'dir', 'set', 'clipboard'] as const;
+export const TYPE_FILTER_KEYS = [
+  'itemUrl',
+  'itemOther',
+  'dir',
+  'set',
+  'clipboard',
+  'wsgroup',
+] as const;
 export type TypeFilterKey = (typeof TYPE_FILTER_KEYS)[number];
 
 /** 文字の列（名前・パスと引数・メモ）の絞り込み */

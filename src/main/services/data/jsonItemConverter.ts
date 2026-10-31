@@ -8,14 +8,30 @@ import {
   isJsonDirItem,
   isJsonClipboardItem,
   isJsonSetItem,
+  isJsonWsGroupItem,
 } from '@common/types';
 import type { JsonItem } from '@common/types';
 import { isPathlessItem, pickItemWindowSwitch } from '@common/utils/itemWindowConversion';
 import { pickRunAsAdmin } from '@common/utils/runAsAdmin';
+import {
+  expandWsGroupItem,
+  listWsGroupCandidates,
+  type WsGroupCandidate,
+} from '@common/utils/wsGroupExpansion';
 
 import { refineItemType } from '../../utils/folderPathProbe.js';
 
 import { processDirectoryItem, processShortcut } from './directoryScanner.js';
+
+/**
+ * WSグループで選べるグループを読む
+ * WorkspaceService は WSグループの行があるときだけ読み込む（データファイルの読み込みのたびに起こさない）
+ */
+async function loadWsGroupCandidates(): Promise<WsGroupCandidate[]> {
+  const { WorkspaceService } = await import('../workspace/WorkspaceService.js');
+  const service = await WorkspaceService.getInstance();
+  return listWsGroupCandidates(await service.loadWorkspaces(), await service.loadGroups());
+}
 
 /**
  * JsonItemをAppItem（複数の場合あり）に変換
@@ -118,6 +134,11 @@ export async function convertJsonItemToAppItems(
       isEdited: false,
       memo: jsonItem.memo,
     });
+  } else if (isJsonWsGroupItem(jsonItem)) {
+    // グループは重複を除かない（同じグループを 2 回並べる指定は、そのとおり 2 回並べる）
+    items.push(
+      ...expandWsGroupItem(jsonItem, await loadWsGroupCandidates(), sourceFile, lineNumber)
+    );
   } else if (isJsonSetItem(jsonItem)) {
     items.push({
       type: 'set',

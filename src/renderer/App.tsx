@@ -16,7 +16,13 @@ import type {
   IconFetchErrorRecord,
   WorkspaceItem,
 } from '@common/types';
-import { isWindowInfo, isClipboardItem, isSetItem, isLauncherItem } from '@common/types/guards';
+import {
+  isWindowInfo,
+  isClipboardItem,
+  isSetItem,
+  isLauncherItem,
+  isWsGroupItem,
+} from '@common/types/guards';
 import { formatImportSummary, summarizeImportResults } from '@common/utils/bookmarkImportUtils';
 import { PathUtils } from '@common/utils/pathUtils';
 import { canRunAsAdmin } from '@common/utils/runAsAdmin';
@@ -61,6 +67,7 @@ import { useToast } from './hooks/useToast';
 import { useLatestRef } from './hooks/useLatestRef';
 import { useAlertDialog } from './hooks/useDialogManager';
 import { useLauncherItemDelete } from './hooks/useLauncherItemDelete';
+import { useWsGroupReload } from './hooks/useWsGroupReload';
 import { classifyPastedText } from './utils/pasteClassifier';
 import { ipcErrorMessage } from './utils/ipcError';
 
@@ -346,7 +353,7 @@ function App(): React.ReactElement {
 
     // Load cached icons (LauncherItemのみ)
     const launcherItems = items.filter(
-      (item) => !isWindowInfo(item) && !isSetItem(item)
+      (item) => !isWindowInfo(item) && !isSetItem(item) && !isWsGroupItem(item)
     ) as LauncherItem[];
     const [iconCache, customIcons] = await loadItemIcons(
       launcherItems,
@@ -438,6 +445,15 @@ function App(): React.ReactElement {
           itemNames: setEntryNames(item.entries, mainItems).slice(0, 3),
         });
         await window.electronAPI.executeSet(item, mainItems);
+      } else if (isWsGroupItem(item)) {
+        // 切り離しウィンドウが出ること自体が結果なので、成功のトーストは出さない
+        const result = await window.electronAPI.openWsGroup(item.groupId);
+        if (!result.success) {
+          await window.electronAPI.showToastWindow({
+            type: 'warning',
+            message: t('launcher.messages.wsGroupNotFound', { name: item.displayName }),
+          });
+        }
       } else if (isLauncherItem(item)) {
         await window.electronAPI.showToastWindow({
           type: 'success',
@@ -628,6 +644,12 @@ function App(): React.ReactElement {
     (item: AppItem) => {
       if (isWindowInfo(item)) return;
 
+      // WSグループの行は登録画面でなく、管理ウィンドウのアイテム管理で直す
+      if (isWsGroupItem(item)) {
+        void window.electronAPI.openEditWindowWithTab('edit');
+        return;
+      }
+
       if (isSetItem(item)) {
         void openEditWindow({
           ...item,
@@ -816,6 +838,8 @@ function App(): React.ReactElement {
       cleanupChildResult();
     };
   }, []);
+
+  useWsGroupReload(mainItems, () => loadItems('internal'));
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
