@@ -13,6 +13,11 @@ async function getWorkspaceWindow(electronApp: ElectronApplication): Promise<Pag
   return electronApp.waitForEvent('window', { predicate: isWorkspace, timeout: 10000 });
 }
 
+/** 管理ウィンドウに出ているトースト（react-hot-toast）の文言をつないだもの */
+async function toastText(adminWindow: Page): Promise<string> {
+  return (await adminWindow.locator('[role="status"]').allTextContents()).join(' / ');
+}
+
 /**
  * 表示言語の切り替え
  * - settings.json の language を変えて F5 すると、ランチャー（検索欄・ヒント行）がその言語になる
@@ -85,6 +90,20 @@ test.describe('QuickDashLauncher - 表示言語', () => {
         '絞り込み'
       );
       expect(configHelper.readSettings().language).toBe('ja');
+      // 保存の知らせは切り替えた後の言語で出る（前は英語のまま「Settings saved」と出ていた）
+      await expect
+        .poll(() => toastText(adminWindow), { timeout: 10000 })
+        .toContain('設定を保存しました');
+    });
+
+    await test.step('English に切り替えると、保存の知らせも英語で出る', async () => {
+      const adminWindow = electronApp.windows().find((win) => win.url().includes('admin.html'));
+      if (!adminWindow) throw new Error('管理ウィンドウが見つかりません');
+      await adminWindow.locator('select#language').selectOption('en');
+      await expect(adminWindow.locator('label[for="language"]')).toHaveText('Display language:');
+      await expect
+        .poll(() => toastText(adminWindow), { timeout: 10000 })
+        .toContain('Settings saved');
     });
   });
 });
