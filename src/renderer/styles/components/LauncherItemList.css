@@ -244,25 +244,6 @@
   gap: var(--spacing-xs);
 }
 
-/* WSグループ: グループの色の四角に、右上の小さな枠（切り離しウィンドウの印） */
-.ws-group-item-icon {
-  position: relative;
-  width: 16px;
-  height: 16px;
-  border-radius: var(--border-radius);
-}
-
-.ws-group-item-icon::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 6px;
-  height: 6px;
-  border: 1.5px solid var(--color-white);
-  border-radius: 1px;
-}
-
 /* WSグループ: 表示名の右の「ワークスペース」の札（普通のアイテムと見分ける） */
 .ws-group-badge {
   margin-left: var(--spacing-xs);

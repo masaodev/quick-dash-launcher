@@ -15,6 +15,7 @@ import {
 
 import { logError } from '../utils/debug';
 
+import { WsGroupIcon } from './WsGroupIcon';
 import { Button } from './ui';
 import '../styles/components/Modal.css';
 import '../styles/components/WsGroupEditModal.css';
@@ -207,11 +208,7 @@ const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm,
             ) : (
               targets.map(({ group }) => (
                 <li key={group.id}>
-                  <span
-                    className="ws-group-swatch"
-                    style={{ background: resolveGroupColorCss(group.color) }}
-                    aria-hidden="true"
-                  />
+                  <WsGroupIcon color={group.color} />
                   {`${prefix}${group.displayName}${suffix}`}
                 </li>
               ))

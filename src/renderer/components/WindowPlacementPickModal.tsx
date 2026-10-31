@@ -2,7 +2,7 @@
  * 画面: ウィンドウ位置を記録するウィンドウを選ぶ（「📍 ウィンドウ位置を更新」で、合うウィンドウが 2 つ以上あるとき）
  * 画面仕様: docs/screens/set-editor-modals.md#55-ウィンドウ位置を更新
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import type { WindowInfo } from '@common/types';
@@ -37,7 +37,13 @@ const WindowPlacementPickModal: React.FC<WindowPlacementPickModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const isOpen = windows.length > 0;
   const [selected, setSelected] = useState(0);
-  useEffect(() => setSelected(0), [windows]);
+  // 選べるウィンドウが変わったら先頭を選び直す。useEffect で戻すと、開いた直後に選んだものが
+  // 後から走る effect で先頭に戻ることがある（単体テストを全件流して重いときに起きた）ので、描画中に戻す
+  const [shownWindows, setShownWindows] = useState(windows);
+  if (windows !== shownWindows) {
+    setShownWindows(windows);
+    setSelected(0);
+  }
   useModalKeyboard({ isOpen, modalRef, onClose });
 
   if (!isOpen) return null;

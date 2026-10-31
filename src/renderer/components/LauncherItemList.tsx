@@ -11,7 +11,6 @@ import {
 import { LauncherItem, AppItem, WindowInfo, type WorkspaceTarget } from '@common/types';
 import { windowInfoToPathlessItem } from '@common/utils/windowInfoConverter';
 import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
-import { resolveGroupColorCss } from '@common/groupColors';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
@@ -19,6 +18,7 @@ import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 import type { NoMatchElsewhere } from '../utils/noMatchElsewhere';
 import { openAppImport, openBookmarkImport } from '../utils/importEntrances';
 
+import { WsGroupIcon } from './WsGroupIcon';
 import MemoViewModal from './MemoViewModal';
 import { Button } from './ui';
 import '../styles/components/MemoViewModal.css';
@@ -357,15 +357,9 @@ const LauncherItemList: React.FC<ItemListProps> = ({
       return '🪟';
     }
 
-    // WSグループ: グループの色の四角に、切り離しウィンドウの印
+    // WSグループ: 窓の形で、上の帯（タイトルバー）だけをグループの色にする
     if (isWsGroupItem(item)) {
-      return (
-        <span
-          className="ws-group-item-icon"
-          style={{ background: resolveGroupColorCss(item.color) }}
-          aria-hidden="true"
-        />
-      );
+      return <WsGroupIcon color={item.color} />;
     }
 
     return ITEM_TYPE_ICONS[item.type] || '❓';

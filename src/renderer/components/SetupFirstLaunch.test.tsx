@@ -41,6 +41,9 @@ async function goToTryStep() {
   fireEvent.click(screen.getByRole('button', { name: '次へ' }));
   fireEvent.click(screen.getByRole('button', { name: '次へ' }));
   await screen.findByText('準備ができました');
+  // 画面が出ても、ホットキーの受け取りを登録する useEffect はまだ走っていないことがある
+  // （全件を並列で流して重いとき）。登録されるまで待たないと、押した合図が空振りする
+  await waitFor(() => expect(firePressed).not.toBeNull());
 }
 
 describe('SetupFirstLaunch', () => {

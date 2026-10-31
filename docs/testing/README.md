@@ -57,6 +57,7 @@ npx playwright test -g "新規アイテムを登録できる"                   
 - **セットアップ**: `tests/unit/setup.ts`（`renderer` だけ。React Testing Library のクリーンアップと `window.matchMedia`・`electronAPI` のモックを設定）
 - **ヘルパー**: `src/test/helpers/pathTestHelper.ts`
 - **実行**: `npm run test:unit`
+- **useEffect を待つ**: `findBy*` は画面に出た時点で戻るので、`useEffect` がまだ走っていないことがあります（全件を並列で流して重いときに起きます）。`useEffect` で登録するコールバックを呼ぶテストは、登録されるまで `waitFor` で待ちます。`useEffect` で状態を戻すコンポーネントは、テストの操作が後から上書きされるので、描画中に戻す形にします（2026-10-31。`SetupFirstLaunch` と `WindowPlacementPickModal` でときどき落ちていました）
 
 ### 2. E2Eテスト（Playwright）
 
