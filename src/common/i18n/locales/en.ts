@@ -344,9 +344,6 @@ export const en: LocaleMessages = {
     updateCheck: 'Tell me when a new version is out',
     updateCheckHint: 'Checks GitHub for a new version once a day. You install it yourself.',
     changeLater: 'You can change all of this later in Settings.',
-    importData: 'Import data from a previous QuickDashLauncher…',
-    importDataHint:
-      'Start with the zip file you exported from QuickDashLauncher on another PC or another edition.',
     complete: 'Get started',
     saveFailed: 'Couldn\'t save the settings. Click "Get started" again.',
     defaultTabName: 'Main',
@@ -2140,11 +2137,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       "Couldn't copy {{file}} to the pre-import snapshot, so the import was canceled",
   },
   dataExport: {
-    exportTitle: 'Export all QuickDashLauncher data',
-    importTitle: 'Import from an exported file',
-    importExpired: "The file you checked wasn't found. Choose the file again.",
+    exportTitle: 'Export',
+    importTitle: 'Choose a file to import',
+    importExpired: "The file you chose wasn't found. Import it again.",
     applyFailed:
-      'The import failed partway. Your data from before the import is in the snapshot ({{snapshot}}): {{error}}',
+      'The import failed partway. Your original data is in the snapshot ({{snapshot}}): {{error}}',
   },
   clipboardService: {
     imagePreview: 'Image ({{width}}x{{height}})',
@@ -2179,22 +2176,20 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     iconFailed: "Couldn't extract the icon",
   },
   dataImport: {
-    button: 'Import from an exported file…',
-    confirmTitle: 'Import data',
+    confirmTitle: 'Import',
     confirmMessage:
-      'Imports the data exported on {{date}} from QuickDashLauncher {{version}} ({{distribution}}). QuickDashLauncher restarts after the import.',
+      'Imports the data exported on {{date}} from QuickDashLauncher {{version}} ({{distribution}}), then restarts.',
     confirmWarning:
-      'All of your current data will be replaced. Your current data is kept in a snapshot.',
+      'All of your current data will be replaced (your original data is kept in a snapshot).',
     detailItems: 'Items',
     detailWorkspaceItems: 'Workspace items',
     confirmButton: 'Import and restart',
     notExport: "This file wasn't exported from QuickDashLauncher, so it can't be imported",
     newerVersion:
-      'This file was exported from a newer version of QuickDashLauncher. Update QuickDashLauncher to the latest version, then import it.',
-    invalidFile:
-      "{{file}} in the file can't be read, so it can't be imported (your current data wasn't changed)",
+      'This file was exported from a newer version of QuickDashLauncher. Update QuickDashLauncher, then import it.',
+    invalidFile: "{{file}} in the file can't be read, so it can't be imported",
     failed: "Couldn't import: {{error}}",
-    restarting: 'Imported. Restarting QuickDashLauncher…',
+    restarting: 'Imported. Restarting…',
   },
   itemCsv: {
     replanned:
@@ -2683,12 +2678,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       lastBackup: 'Last backup: {{time}}',
       neverBackedUp: 'None',
       openSnapshots: 'Snapshots',
-      transferHeading: 'Export and import data',
-      transferDescription:
-        'Exports your items, workspace, settings, and more into a single zip file that you can import into QuickDashLauncher on another PC or another edition. Importing replaces all of your current data.',
-      exportAll: 'Export all…',
-      exported_one: 'Exported {{count}} file: {{path}}',
-      exported_other: 'Exported {{count}} files: {{path}}',
+      transferHeading: 'Export and import',
+      transferDescription: 'Move your data and settings to another PC as a single file.',
+      exportAll: 'Export…',
+      importAll: 'Import…',
+      exported: 'Exported: {{path}}',
       exportFailed: "Couldn't export: {{error}}",
     },
     snapshots: {

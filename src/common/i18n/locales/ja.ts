@@ -345,9 +345,6 @@ export const ja = {
     updateCheck: '新しい版が出たら知らせる',
     updateCheckHint: '1 日 1 回、GitHub で新しい版を確かめます。入れ替えはご自身で行います。',
     changeLater: 'どれもあとから「設定」で変えられます',
-    importData: '以前の QuickDashLauncher のデータを読み込む…',
-    importDataHint:
-      '別の PC や別の配布形式の QuickDashLauncher で書き出した zip ファイルから、そのまま使いはじめられます。',
     complete: '使いはじめる',
     saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
     defaultTabName: 'メイン',
@@ -2142,11 +2139,11 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       '読み込みの前のスナップショットに {{file}} をコピーできなかったので、読み込みをやめました',
   },
   dataExport: {
-    exportTitle: 'QuickDashLauncher のデータをすべて書き出す',
-    importTitle: '書き出したファイルから読み込む',
-    importExpired: '確かめたファイルが見つかりません。もう一度ファイルを選んでください',
+    exportTitle: 'エクスポート',
+    importTitle: 'インポートするファイルを選ぶ',
+    importExpired: '選んだファイルが見つかりません。もう一度インポートしてください',
     applyFailed:
-      '読み込みの途中で失敗しました。読み込む前のデータはスナップショット（{{snapshot}}）に残っています: {{error}}',
+      'インポートの途中で失敗しました。元のデータはスナップショット（{{snapshot}}）に残っています: {{error}}',
   },
   clipboardService: {
     imagePreview: '画像（{{width}}×{{height}}）',
@@ -2181,21 +2178,19 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     iconFailed: 'アイコン抽出に失敗しました',
   },
   dataImport: {
-    button: '書き出したファイルから読み込む…',
-    confirmTitle: 'データの読み込み',
+    confirmTitle: 'インポート',
     confirmMessage:
-      '{{date}} に QuickDashLauncher {{version}}（{{distribution}}）で書き出したデータを読み込みます。読み込んだあと、QuickDashLauncher を再起動します。',
-    confirmWarning: '今のデータはすべて置き換わります。今のデータはスナップショットに残します。',
+      '{{date}} に QuickDashLauncher {{version}}（{{distribution}}）でエクスポートしたデータをインポートし、再起動します。',
+    confirmWarning: '今のデータはすべて置き換わります（元のデータはスナップショットに残します）。',
     detailItems: 'アイテム',
     detailWorkspaceItems: 'ワークスペースのアイテム',
-    confirmButton: '読み込んで再起動する',
-    notExport: 'QuickDashLauncher で書き出したファイルではないため、読み込めません',
+    confirmButton: 'インポートして再起動',
+    notExport: 'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません',
     newerVersion:
-      '新しい版の QuickDashLauncher で書き出したファイルです。QuickDashLauncher を最新の版に更新してから読み込んでください',
-    invalidFile:
-      'ファイルの中の {{file}} を読めないため、読み込めません（今のデータは変えていません）',
-    failed: '読み込みに失敗しました: {{error}}',
-    restarting: '読み込みました。QuickDashLauncher を再起動します…',
+      '新しい版の QuickDashLauncher でエクスポートしたファイルです。QuickDashLauncher を最新の版にしてからインポートしてください',
+    invalidFile: 'ファイルの中の {{file}} を読めないため、インポートできません',
+    failed: 'インポートに失敗しました: {{error}}',
+    restarting: 'インポートしました。再起動します…',
   },
   itemCsv: {
     replanned:
@@ -2692,13 +2687,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       lastBackup: '最終バックアップ: {{time}}',
       neverBackedUp: 'なし',
       openSnapshots: 'スナップショット一覧',
-      transferHeading: 'データの書き出しと読み込み',
-      transferDescription:
-        'アイテム・ワークスペース・設定などをまとめて 1 つの zip ファイルに書き出し、別の PC や別の配布形式の QuickDashLauncher で読み込めます。読み込むと、今のデータはすべて置き換わります。',
-      exportAll: 'すべて書き出す…',
-      exported_one: '{{count}} 個のファイルを書き出しました: {{path}}',
-      exported_other: '{{count}} 個のファイルを書き出しました: {{path}}',
-      exportFailed: '書き出しに失敗しました: {{error}}',
+      transferHeading: 'エクスポートとインポート',
+      transferDescription: 'データと設定を 1 つのファイルにまとめて、別の PC などへ移せます。',
+      exportAll: 'エクスポート…',
+      importAll: 'インポート…',
+      exported: 'エクスポートしました: {{path}}',
+      exportFailed: 'エクスポートに失敗しました: {{error}}',
     },
     snapshots: {
       title: 'スナップショット一覧',

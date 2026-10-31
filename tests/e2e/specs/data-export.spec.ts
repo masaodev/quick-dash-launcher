@@ -8,18 +8,18 @@ import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
 /**
- * 設定タブ「💾 バックアップ」の「すべて書き出す…」「書き出したファイルから読み込む…」
+ * 設定タブ「💾 バックアップ」の「エクスポート…」「インポート…」
  *
  * ネイティブのダイアログは操作できないので、メインプロセスの dialog.showSaveDialog・showOpenDialog を差し替える。
- * 読み込みのあとの再起動（app.relaunch・app.exit）も、テストのアプリが終わらないよう記録だけにする
+ * インポートのあとの再起動（app.relaunch・app.exit）も、テストのアプリが終わらないよう記録だけにする
  */
-test.describe('QuickDashLauncher - データの一括エクスポートと読み込み', () => {
-  test('バックアップ機能がオフでも、設定フォルダの中身を zip 1 つに書き出せる', async ({
+test.describe('QuickDashLauncher - データのエクスポートとインポート', () => {
+  test('バックアップ機能がオフでも、設定フォルダの中身を zip 1 つにエクスポートできる', async ({
     electronApp,
     mainWindow,
     configHelper,
   }) => {
-    // 設定フォルダの外に書く（書き出しの対象に入らないように）
+    // 設定フォルダの外に書く（エクスポートの対象に入らないように）
     const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-export-e2e-'));
     const zipPath = path.join(outDir, 'export.zip');
     // 入れないもの（取り直せるアイコン）と入れるもの（自分で設定したアイコン）を置いておく
@@ -47,7 +47,7 @@ test.describe('QuickDashLauncher - データの一括エクスポートと読み
       ).not.toBeChecked();
 
       await adminWindow.getByTestId('export-all-data').click();
-      await expect(adminWindow.getByText('個のファイルを書き出しました')).toBeVisible();
+      await expect(adminWindow.getByText('エクスポートしました')).toBeVisible();
 
       const entries = unzipSync(fs.readFileSync(zipPath));
       const names = Object.keys(entries);
@@ -72,7 +72,7 @@ test.describe('QuickDashLauncher - データの一括エクスポートと読み
     }
   });
 
-  test('書き出したファイルから読み込むと、確認のあとにまるごと置き換えて再起動する', async ({
+  test('インポートすると、確認のあとにまるごと置き換えて再起動する', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -99,23 +99,23 @@ test.describe('QuickDashLauncher - データの一括エクスポートと読み
     try {
       await adminWindow.locator('.menu-item', { hasText: 'バックアップ' }).click();
       await adminWindow.getByTestId('export-all-data').click();
-      await expect(adminWindow.getByText('個のファイルを書き出しました')).toBeVisible();
+      await expect(adminWindow.getByText('エクスポートしました')).toBeVisible();
       const exportedData = fs.readFileSync(dataPath, 'utf8');
       const exportedCount = JSON.parse(exportedData).items.length;
 
-      await test.step('書き出したあとにデータを変える（アイテムを減らし、データファイルを足す）', async () => {
+      await test.step('エクスポートしたあとにデータを変える（アイテムを減らし、データファイルを足す）', async () => {
         const data = JSON.parse(exportedData);
         data.items = data.items.slice(0, 1);
         fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
         fs.writeFileSync(extraPath, JSON.stringify({ version: '1.0', items: [] }));
       });
 
-      await test.step('確認ダイアログに書き出した版・アイテムの数（今 → 読み込んだ後）を出す', async () => {
+      await test.step('確認ダイアログにエクスポートした版・アイテムの数（今 → インポートした後）を出す', async () => {
         await adminWindow.getByTestId('import-data').click();
         const dialog = adminWindow.getByTestId('confirm-dialog');
         await expect(dialog).toBeVisible();
-        await expect(dialog).toContainText('データの読み込み');
-        await expect(dialog).toContainText('で書き出したデータを読み込みます');
+        await expect(dialog).toContainText('インポート');
+        await expect(dialog).toContainText('でエクスポートしたデータをインポートし、再起動します');
         await expect(adminWindow.getByTestId('confirm-dialog-warning')).toContainText(
           '今のデータはすべて置き換わります'
         );
@@ -125,11 +125,9 @@ test.describe('QuickDashLauncher - データの一括エクスポートと読み
         await expect(details.locator('tr').first()).toContainText(`${exportedCount}`);
       });
 
-      await test.step('「読み込んで再起動する」で置き換え、今のデータをスナップショットに残して再起動する', async () => {
-        await adminWindow.getByRole('button', { name: '読み込んで再起動する' }).click();
-        await expect(
-          adminWindow.getByText('読み込みました。QuickDashLauncher を再起動します')
-        ).toBeVisible();
+      await test.step('「インポートして再起動」で置き換え、今のデータをスナップショットに残して再起動する', async () => {
+        await adminWindow.getByRole('button', { name: 'インポートして再起動' }).click();
+        await expect(adminWindow.getByText('インポートしました。再起動します')).toBeVisible();
 
         expect(fs.readFileSync(dataPath, 'utf8')).toBe(exportedData);
         expect(fs.existsSync(extraPath)).toBe(false);
@@ -151,7 +149,7 @@ test.describe('QuickDashLauncher - データの一括エクスポートと読み
     }
   });
 
-  test('QDL が書き出したものでないファイルは読み込まず、今のデータを変えない', async ({
+  test('QDL がエクスポートしたものでないファイルはインポートせず、今のデータを変えない', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -172,7 +170,9 @@ test.describe('QuickDashLauncher - データの一括エクスポートと読み
       await adminWindow.locator('.menu-item', { hasText: 'バックアップ' }).click();
       await adminWindow.getByTestId('import-data').click();
       await expect(
-        adminWindow.getByText('QuickDashLauncher で書き出したファイルではないため、読み込めません')
+        adminWindow.getByText(
+          'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません'
+        )
       ).toBeVisible();
       await expect(adminWindow.getByTestId('confirm-dialog')).toHaveCount(0);
       expect(fs.readFileSync(dataPath, 'utf8')).toBe(before);

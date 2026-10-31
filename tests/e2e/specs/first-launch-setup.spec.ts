@@ -1,9 +1,4 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-
 import type { ElectronApplication, Page } from '@playwright/test';
-import { zipSync, strToU8 } from 'fflate';
 
 import { test, expect } from '../fixtures/first-launch-app';
 import { TestUtils } from '../helpers/test-utils';
@@ -113,65 +108,6 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       // セキュリティのため、レンダラープロセスでNode.jsのAPIは利用できないはず
       expect(hasNodeIntegration).toBe(false);
     });
-  });
-
-  test('ようこそから、以前の QDL で書き出したデータを読み込んで始められる', async ({
-    configHelper,
-    electronApp,
-    mainWindow,
-  }) => {
-    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-first-import-e2e-'));
-    const zipPath = path.join(outDir, 'export.zip');
-    const settings = { settingsVersion: 1, hotkey: 'Ctrl+Alt+K' };
-    const data = {
-      version: '1.0',
-      items: [
-        { id: 'a1', type: 'item', displayName: '移したアイテム', path: 'https://example.com' },
-      ],
-    };
-    fs.writeFileSync(
-      zipPath,
-      zipSync({
-        'manifest.json': strToU8(
-          JSON.stringify({
-            format: 'quick-dash-launcher-export',
-            formatVersion: 1,
-            appVersion: '0.8.0',
-            distribution: 'portable',
-            exportedAt: '2026-10-31T12:34:56.000Z',
-            files: ['settings.json', 'datafiles/data.json'],
-          })
-        ),
-        'settings.json': strToU8(JSON.stringify(settings)),
-        'datafiles/data.json': strToU8(JSON.stringify(data)),
-      })
-    );
-    await electronApp.evaluate(({ app, dialog }, p) => {
-      dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [p] })) as never;
-      app.relaunch = (() => undefined) as never;
-      app.exit = (() => undefined) as never;
-    }, zipPath);
-
-    try {
-      const utils = new TestUtils(mainWindow);
-      await utils.waitForPageLoad();
-      await mainWindow.getByTestId('first-launch-import').click();
-      const dialog = mainWindow.getByTestId('confirm-dialog');
-      await expect(dialog).toContainText('ポータブル版');
-      await mainWindow.getByRole('button', { name: '読み込んで再起動する' }).click();
-      await expect(
-        mainWindow.getByText('読み込みました。QuickDashLauncher を再起動します')
-      ).toBeVisible();
-
-      expect(configHelper.readSettings().hotkey).toBe('Ctrl+Alt+K');
-      expect(
-        JSON.parse(
-          fs.readFileSync(path.join(configHelper.getConfigDir(), 'datafiles', 'data.json'), 'utf8')
-        )
-      ).toEqual(data);
-    } finally {
-      fs.rmSync(outDir, { recursive: true, force: true });
-    }
   });
 
   test('デフォルト設定で完了するとsettings.jsonに正しく保存される', async ({

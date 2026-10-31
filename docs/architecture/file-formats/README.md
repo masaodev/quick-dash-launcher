@@ -96,16 +96,16 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 - **作成タイミング**: 起動時に1日1回（ローカル時刻の日付で判定）、変更がある場合のみ（`backupEnabled` が無効なら作らない）
 - **保持件数**: 設定可能（`backupRetention`、既定値は設定ファイルを参照）。超えた古いものから消す。`_pre-external` と、`_pre-set-migration`・`_pre-window-migration` それぞれの新しい 2 つは数えない（消さない）
 - **復元前の自動バックアップ**: 復元の実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
-- **読み込み前の自動バックアップ**: 一括エクスポートの読み込みで置き換える前に、置き換わるファイル（[一括エクスポート](#一括エクスポート) の「入れるもの」）を `YYYY-MM-DDTHH-MM-SS_pre-import/` に保存（`backupEnabled` に関係なく作る。作れなければ読み込まない）
+- **インポート前の自動バックアップ**: インポートで置き換える前に、置き換わるファイル（[エクスポート](#エクスポート) の「入れるもの」）を `YYYY-MM-DDTHH-MM-SS_pre-import/` に保存（`backupEnabled` に関係なく作る。作れなければインポートしない）
 - **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
 - **セット変換前スナップショット**: データファイル・ワークスペースファイルの旧グループ・旧ウィンドウ配置をセットに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-set-migration/` を作成（`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つ（データファイル用とワークスペース用）は前の版に戻すときの拠り所なので `backupRetention` で数えずに残し、3 つ目より古いものは通常のスナップショットと一緒に数える（`src/main/services/backupService.ts` の `cleanupOldSnapshots`）
 - **ウィンドウ切り替え変換前スナップショット**: データファイル・ワークスペースファイルの単一アイテムの旧形式 `windowConfig` を新しいキーに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-window-migration/` を作成（セットへの変換も要るときは `_pre-set-migration` の 1 回で済ませ、これは作らない。`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つは `backupRetention` で数えずに残す
 - **同じ秒に作ったとき**: サフィックス付き（`_pre-restore`・`_pre-import`・`_pre-external`・`_pre-migration`・`_pre-set-migration`・`_pre-window-migration`）のフォルダは、同じ名前がすでにあれば `YYYY-MM-DDTHH-MM-SS-2_pre-external/` のように連番を付けて別に作る（上書きしない）。一覧では連番の大きい方を新しいものとして並べる
 
-### 一括エクスポート
+### エクスポート
 
-設定タブの「すべて書き出す…」（[管理ウィンドウ 5.5.2](../../screens/admin-window.md#552-すべて書き出す)）で作る zip。別の PC や別の配布形式の QDL へデータを移すときに使う（`src/main/services/dataExportService.ts`）。
+設定タブの「エクスポート…」（[管理ウィンドウ 5.5.2](../../screens/admin-window.md#552-エクスポート)）で作る zip。別の PC や別の配布形式の QDL へデータを移すときに使う（`src/main/services/dataExportService.ts`）。
 
 - **ファイル**: 利用者が選んだ場所の `QuickDashLauncher-export-YYYY-MM-DD.zip`（既定の名前。ローカル時刻の日付）
 - **中の並び**: 設定フォルダと同じ並び。先頭に中身の説明 `manifest.json` を置く
@@ -117,12 +117,12 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
   | --- | --- |
   | `format` | `"quick-dash-launcher-export"`（ほかの zip と見分ける目印） |
   | `formatVersion` | zip の形式の版（今は `1`）。中の並び・manifest の項目を変えたら上げる |
-  | `appVersion` | 書き出した QDL の版 |
-  | `distribution` | 書き出した QDL の配布形式（`store`・`portable`・`installer`・`dev`） |
-  | `exportedAt` | 書き出した日時（ISO 8601。UTC） |
+  | `appVersion` | エクスポートした QDL の版 |
+  | `distribution` | エクスポートした QDL の配布形式（`store`・`portable`・`installer`・`dev`） |
+  | `exportedAt` | エクスポートした日時（ISO 8601。UTC） |
   | `files` | 入れたファイル（設定フォルダからの相対パス。区切りは `/`） |
 
-- **読み込むとき**（[管理ウィンドウ 5.5.3](../../screens/admin-window.md#553-書き出したファイルから読み込む)。`src/main/services/dataImportService.ts`）: 書き込む前に次をすべて確かめ、1 つでも外れたら何も書かない
+- **インポートするとき**（[管理ウィンドウ 5.5.3](../../screens/admin-window.md#553-インポート)。`src/main/services/dataImportService.ts`）: 書き込む前に次をすべて確かめ、1 つでも外れたら何も書かない
   - `manifest.json` があり、`format` が合っている
   - `formatVersion` と、中のファイルの版（`settings.json` の `settingsVersion`、データファイル・ワークスペースファイル・`item-usage.json`・`search-history.json`・`workspace-ui-state.json` の `version`）が、この QDL の扱える版より新しくない（[形式の版と互換](#形式の版と互換)）
   - 中のファイルの名前が「入れるもの」の規則に合う（`..`・絶対パス・`\` を含むものは拒む。設定フォルダの外へ書かせない）

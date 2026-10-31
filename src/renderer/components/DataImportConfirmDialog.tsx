@@ -1,6 +1,6 @@
 /**
- * 画面: データの読み込みの確認（一括エクスポートのファイルから読み込む前）
- * 画面仕様: docs/screens/admin-window.md#553-書き出したファイルから読み込む
+ * 画面: インポートの確認（エクスポートしたファイルで置き換える前）
+ * 画面仕様: docs/screens/admin-window.md#553-インポート
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ interface DataImportConfirmDialogProps {
   onClose: () => void;
 }
 
-/** 書き出した日時・版・配布形式と、アイテムの数（今 → 読み込んだ後）を見せて、置き換えてよいかを聞く */
+/** エクスポートした日時・版・配布形式と、アイテムの数（今 → インポートした後）を見せて、置き換えてよいかを聞く */
 const DataImportConfirmDialog: React.FC<DataImportConfirmDialogProps> = ({
   summary,
   onConfirm,

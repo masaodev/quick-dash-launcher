@@ -7,10 +7,6 @@ import { useTranslation } from 'react-i18next';
 
 import '../styles/components/SetupFirstLaunch.css';
 
-import { useDataImport } from '../hooks/useDataImport';
-import { useToast } from '../hooks/useToast';
-
-import DataImportConfirmDialog from './DataImportConfirmDialog';
 import { HotkeyInput } from './HotkeyInput';
 import { Button } from './ui';
 
@@ -84,9 +80,6 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
   // Store 版は Store が更新するので「新しい版が出たら知らせる」を出さない
   const [isStore, setIsStore] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
-  // Store 版に移った人・PC を替えた人が、書き出したデータからそのまま始められるように
-  const { showWarning, showInfo } = useToast();
-  const dataImport = useDataImport({ onProblem: showWarning, onApplied: showInfo });
 
   const isValid = hotkeyValidation.isValid && itemSearchHotkeyValidation.isValid;
 
@@ -194,26 +187,11 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
                 </li>
               ))}
             </ul>
-            <p className="first-launch-import-hint">{t('firstLaunch.importDataHint')}</p>
-            <div className="first-launch-actions first-launch-actions-split">
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={dataImport.start}
-                disabled={dataImport.isBusy}
-                data-testid="first-launch-import"
-              >
-                {t('firstLaunch.importData')}
-              </Button>
+            <div className="first-launch-actions">
               <Button variant="primary" type="button" onClick={() => setStep('hotkey')}>
                 {t('firstLaunch.next')}
               </Button>
             </div>
-            <DataImportConfirmDialog
-              summary={dataImport.pending?.summary ?? null}
-              onConfirm={dataImport.confirm}
-              onClose={dataImport.cancel}
-            />
           </>
         )}
 

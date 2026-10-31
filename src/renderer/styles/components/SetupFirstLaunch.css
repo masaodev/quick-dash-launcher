@@ -230,13 +230,6 @@
   justify-content: space-between;
 }
 
-/* ようこそ: 書き出したデータから始める人への案内（「以前のデータを読み込む…」の上） */
-.first-launch-import-hint {
-  margin: 0 0 var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-}
-
 .first-launch-change-later {
   font-size: var(--font-size-sm);
   color: var(--text-muted);

@@ -55,10 +55,7 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
     try {
       const result = await window.electronAPI.backupAPI.exportAll();
       if (!result) return;
-      showSuccess(
-        t('settings.backup.exported', { count: result.fileCount, path: result.filePath }),
-        { long: true }
-      );
+      showSuccess(t('settings.backup.exported', { path: result.filePath }), { long: true });
     } catch (error) {
       logError('データの書き出しに失敗:', error);
       showWarning(
@@ -162,14 +159,13 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
         />
       </div>
 
-      {/* 書き出しはバックアップ機能のオン・オフに関係なく使える */}
+      {/* エクスポート・インポートはバックアップ機能のオン・オフに関係なく使える */}
       <div className="settings-section">
         <h3>{t('settings.backup.transferHeading')}</h3>
         <p className="settings-section-description">{t('settings.backup.transferDescription')}</p>
-        <div className="setting-item">
+        <div className="setting-item-buttons">
           <Button
             variant="secondary"
-            className="setting-item-button"
             onClick={handleExportAll}
             disabled={isLoading || isExporting}
             data-testid="export-all-data"
@@ -178,12 +174,11 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
           </Button>
           <Button
             variant="secondary"
-            className="setting-item-button"
             onClick={dataImport.start}
             disabled={isLoading || dataImport.isBusy}
             data-testid="import-data"
           >
-            {t('dataImport.button')}
+            {t('settings.backup.importAll')}
           </Button>
         </div>
       </div>

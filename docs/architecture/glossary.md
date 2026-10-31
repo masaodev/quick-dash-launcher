@@ -138,8 +138,8 @@
 | パスの確認（列） | Path check | リンク（列の名前として。link はワークスペースの「参照」の訳と重なる） | アイテム管理で「リンク切れを確認」の結果（⚠ 見つかりません・✓・?）を出す列 | `link`（列の id） |
 | 既定 | default | デフォルト | 何も選ばないときに使う値 | — |
 | スナップショット | snapshot | — | バックアップで残した、ある時点のファイル一式 | — |
-| 書き出したファイルから読み込む | import | — | 「すべて書き出す」で作った zip で、設定フォルダをまるごと置き換えること（読み込んだあと再起動する） | `readDataImport`・`backupAPI.applyImport` |
-| すべて書き出す | export all | エクスポート | QDL のデータ（アイテム・ワークスペース・設定など）をまとめて zip 1 つにすること。別の PC や別の配布形式の QDL へ移すときに使う | `buildDataExport`・`backupAPI.exportAll` |
+| エクスポート | export | — | データと設定（アイテム・ワークスペース・設定など）をまとめて zip 1 つにすること。別の PC や別の配布形式の QDL へ移すときに使う。CSV は「CSV に書き出す」と呼び、分ける | `buildDataExport`・`backupAPI.exportAll` |
+| インポート | import | — | エクスポートした zip で、設定フォルダをまるごと置き換えること（そのあと再起動する）。アイテムを足す「取込」（ブックマーク取込・アプリ取込・CSV から取り込む）とは分ける | `readDataImport`・`backupAPI.applyImport` |
 | 設定フォルダ | settings folder | 設定ディレクトリ、config folder | 設定とデータを保存するフォルダ | `PathManager.getConfigFolder()` |
 | トースト | notification | トースト通知、toast | 画面の下に少しの間だけ出る知らせ | `showToastWindow` |
 | QuickDashLauncher CLI | QuickDashLauncher CLI | コマンドライン（qdl を指す意味で） | ターミナルや AI から使う `qdl` コマンド | `qdl.exe` |
