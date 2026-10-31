@@ -2136,6 +2136,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     deleteFailed: '削除に失敗しました',
     preMigrationCopyFailed: '移行前スナップショットに {{file}} をコピーできませんでした',
   },
+  dataExport: {
+    exportTitle: 'QuickDashLauncher のデータをすべて書き出す',
+  },
   clipboardService: {
     imagePreview: '画像（{{width}}×{{height}}）',
     filesPreview_one: '{{count}} 個のファイル: {{first}}…',
@@ -2663,6 +2666,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       lastBackup: '最終バックアップ: {{time}}',
       neverBackedUp: 'なし',
       openSnapshots: 'スナップショット一覧',
+      transferHeading: 'データの書き出しと読み込み',
+      transferDescription:
+        'アイテム・ワークスペース・設定などをまとめて 1 つの zip ファイルに書き出します。別の PC や別の配布形式の QuickDashLauncher に移すときに使います。',
+      exportAll: 'すべて書き出す…',
+      exported_one: '{{count}} 個のファイルを書き出しました: {{path}}',
+      exported_other: '{{count}} 個のファイルを書き出しました: {{path}}',
+      exportFailed: '書き出しに失敗しました: {{error}}',
     },
     snapshots: {
       title: 'スナップショット一覧',

@@ -597,6 +597,7 @@ const electronAPI: ElectronAPI = {
     restoreSnapshot: (timestamp) => ipcInvoke(IPC_CHANNELS.BACKUP_RESTORE_SNAPSHOT, timestamp),
     deleteSnapshot: (timestamp) => ipcInvoke(IPC_CHANNELS.BACKUP_DELETE_SNAPSHOT, timestamp),
     getStatus: () => ipcInvoke(IPC_CHANNELS.BACKUP_GET_STATUS),
+    exportAll: () => ipcInvoke(IPC_CHANNELS.BACKUP_EXPORT_ALL),
   },
 };
 

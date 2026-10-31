@@ -66,6 +66,7 @@ import type {
   BookmarkAutoImportResult,
   BookmarkWithFolder,
   SnapshotInfo,
+  DataExportResult,
   BackupStatus,
   MixedOrderEntry,
   MainChildWindowRequest,
@@ -657,5 +658,7 @@ export interface ElectronAPI {
     restoreSnapshot: (timestamp: string) => Promise<{ success: boolean; error?: string }>;
     deleteSnapshot: (timestamp: string) => Promise<{ success: boolean; error?: string }>;
     getStatus: () => Promise<BackupStatus>;
+    /** QDL のデータをまるごと zip 1 つに書き出す（保存先はダイアログで選ぶ。やめたら null） */
+    exportAll: () => Promise<DataExportResult | null>;
   };
 }

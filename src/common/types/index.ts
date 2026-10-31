@@ -226,7 +226,8 @@ export type { ConfirmWindowRequest, ConfirmWindowResult } from './confirmWindow'
 export type { ToastItemType, ToastEventData, NotificationType, ToastOptions } from './toast';
 
 // バックアップ関連の型
-export type { SnapshotInfo, BackupStatus } from './backup';
+export type { SnapshotInfo, BackupStatus, DataExportManifest, DataExportResult } from './backup';
+export { DATA_EXPORT_FORMAT, DATA_EXPORT_FORMAT_VERSION } from './backup';
 
 // 型ガード関数
 export { isWindowInfo, isLauncherItem, isClipboardItem, isSetItem, isWsGroupItem } from './guards';
