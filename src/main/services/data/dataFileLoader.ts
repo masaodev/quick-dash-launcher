@@ -8,7 +8,7 @@ import {
   convertLegacyWindowConfigs,
   hasLegacyWindowConfig,
 } from '@common/utils/itemWindowConversion';
-import { isJsonLauncherItem } from '@common/types';
+import { isJsonLauncherItem, isJsonWsGroupItem } from '@common/types';
 import type { AppItem, DataFileTab, JsonDataFile, JsonItem } from '@common/types';
 import { isLauncherItem, isRecord, isWindowInfo } from '@common/types/guards';
 
@@ -46,6 +46,7 @@ import {
 } from './corruptedDataFiles.js';
 import { clearNewerFormatFile, markNewerFormatFile } from './newerFormatFiles.js';
 import { convertJsonItemToAppItems } from './jsonItemConverter.js';
+import { setHasWsGroupRows } from './wsGroupRows.js';
 import {
   buildGroupNameResolver,
   convertLegacySetItems,
@@ -73,6 +74,8 @@ async function loadJsonDataFile(
   previousContent: string | null;
   /** 読み終えた時点のファイルの内容（書き戻したらその内容。読めなければ null） */
   content: string | null;
+  /** WSグループの行があったか（展開が 0 件でも true） */
+  hasWsGroupRows?: boolean;
 }> {
   const items: AppItem[] = [];
   const report: LoadReportFile = {
@@ -169,7 +172,13 @@ async function loadJsonDataFile(
     }
   }
 
-  return { items, report, previousContent, content: currentContent };
+  return {
+    items,
+    report,
+    previousContent,
+    content: currentContent,
+    hasWsGroupRows: parsed.validItems.some(isJsonWsGroupItem),
+  };
 }
 
 /**
@@ -265,6 +274,7 @@ async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesL
   // 旧形式の変換で読み直さないよう、読み込んだ内容を残しておく
   const loadedFiles: Array<{ filePath: string; content: string | null }> = [];
 
+  let wsGroupRowFound = false;
   for (const fileName of allFiles) {
     const tabIndex = fileToTabMap.get(fileName) ?? -1;
 
@@ -280,6 +290,7 @@ async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesL
     items.push(...result.items);
     fileReports.push(result.report);
     loadedFiles.push({ filePath, content: result.content });
+    if (result.hasWsGroupRows) wsGroupRowFound = true;
     if (result.previousContent !== null) {
       externallyChanged.push({ relativePath: fileName, content: result.previousContent });
     }
@@ -325,6 +336,7 @@ async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesL
     'データ読み込み完了（タブ別統計）'
   );
 
+  setHasWsGroupRows(wsGroupRowFound);
   return { items, fileReports, externallyChanged };
 }
 

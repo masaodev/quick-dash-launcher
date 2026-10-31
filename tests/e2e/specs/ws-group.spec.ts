@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 import type { ElectronApplication } from '@playwright/test';
 import type { JsonItem } from '@common/types';
 
@@ -122,6 +125,24 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       expect(await isMainWindowVisible(electronApp)).toBe(true);
     });
 
+    await test.step('開くと、WSグループの行の id で起動の記録が残る', async () => {
+      const rowId = configHelper
+        .readDataFile('data.json')
+        .items.find((item: JsonItem) => item.type === 'wsgroup')?.id;
+      expect(rowId).toBeTruthy();
+      const usagePath = path.join(configHelper.getConfigDir(), 'item-usage.json');
+      await expect
+        .poll(
+          () => {
+            if (!fs.existsSync(usagePath)) return 0;
+            const usage = JSON.parse(fs.readFileSync(usagePath, 'utf8'));
+            return usage.byId?.[rowId as string]?.count ?? 0;
+          },
+          { timeout: 10000 }
+        )
+        .toBe(1);
+    });
+
     await test.step('グループを改名すると、ランチャーの名前も変わる', async () => {
       await mainWindow.evaluate(
         (id) => window.electronAPI.workspaceAPI.updateGroup(id, { displayName: 'E2E 副業' }),
@@ -130,6 +151,28 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       await utils.searchFor('E2E');
       await expect(mainWindow.locator('.item', { hasText: 'WS: E2E 副業' })).toHaveCount(1);
       await expect(mainWindow.locator('.item', { hasText: 'WS: E2E 趣味' })).toHaveCount(0);
+    });
+  });
+
+  test('グループが 1 つも無いときに足した「すべてのグループ」の行も、グループを作ると F5 なしで並ぶ', async ({
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    configHelper.addItemToFile('data.json', {
+      id: 'wsgall01',
+      type: 'wsgroup',
+      scope: 'all',
+      options: { prefix: 'WS: ' },
+    } as JsonItem);
+    await utils.reloadWithF5();
+    await utils.searchFor('WS:');
+    await expect(mainWindow.locator('.item', { hasText: 'WS:' })).toHaveCount(0);
+
+    await mainWindow.evaluate(() => window.electronAPI.workspaceAPI.createGroup('E2E 後から'));
+    await expect(mainWindow.locator('.item', { hasText: 'WS: E2E 後から' })).toHaveCount(1, {
+      timeout: 5000,
     });
   });
 });

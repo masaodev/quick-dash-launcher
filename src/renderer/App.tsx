@@ -447,7 +447,7 @@ function App(): React.ReactElement {
         await window.electronAPI.executeSet(item, mainItems);
       } else if (isWsGroupItem(item)) {
         // 切り離しウィンドウが出ること自体が結果なので、成功のトーストは出さない
-        const result = await window.electronAPI.openWsGroup(item.groupId);
+        const result = await window.electronAPI.openWsGroup(item.groupId, item.expandedFromId);
         if (!result.success) {
           await window.electronAPI.showToastWindow({
             type: 'warning',

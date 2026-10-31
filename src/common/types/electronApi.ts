@@ -104,6 +104,8 @@ export interface ElectronAPI {
   loadDataFiles: (trigger?: 'explicit' | 'full' | 'internal') => Promise<AppItem[]>;
   /** 直近の読み込みで読めなかった（壊れている可能性がある）データファイル（例: 'datafiles/data2.json'） */
   getCorruptedDataFiles: () => Promise<string[]>;
+  /** 最後に読み込んだデータファイルに WSグループの行があったか（展開が 0 件の行も数える） */
+  hasWsGroupRows: () => Promise<boolean>;
   /** options.trial＝登録・編集フォームで試しに開く（起動の記録に数えない） */
   openItem: (item: LauncherItem, options?: LaunchOptions) => Promise<void>;
   openParentFolder: (item: LauncherItem) => Promise<void>;
@@ -112,7 +114,8 @@ export interface ElectronAPI {
   /** セットを実行する。行の itemId は allItems（全タブのアイテム）から探す */
   executeSet: (item: SetItem, allItems: AppItem[]) => Promise<void>;
   /** WSグループのアイテムを開く（そのグループの切り離しウィンドウを開く。ランチャーは隠さない）。グループが無ければ success: false */
-  openWsGroup: (groupId: string) => Promise<{ success: boolean }>;
+  /** WSグループを開く（expandedFromId＝展開元の行の id。開けたら起動の記録に残す） */
+  openWsGroup: (groupId: string, expandedFromId?: string) => Promise<{ success: boolean }>;
   openConfigFolder: () => Promise<void>;
   fetchFavicon: (url: string) => Promise<string | null>;
   extractIcon: (filePath: string) => Promise<string | null>;
