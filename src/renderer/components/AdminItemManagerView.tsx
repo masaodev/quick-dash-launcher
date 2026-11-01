@@ -428,6 +428,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   useEffect(() => {
     if (!hasUnsavedChanges) importedFileRef.current = null;
   }, [hasUnsavedChanges]);
+  // 管理ウィンドウを隠したら忘れる（中身が変わらない取込のあと、別の保存で取込先と知らせないように）
+  useEffect(() => {
+    importedFileRef.current = null;
+  }, [importModalCloseSignal]);
 
   const runSave = async () => {
     // 保存すると未保存の変更が無くなり、上の effect が先に戻すことがあるので、保存の前に読んでおく

@@ -178,9 +178,12 @@ export async function showAdminWindowWithTab(tab: AdminTab): Promise<void> {
 export async function showAdminWindowWithImportModal(modal: ImportModalType): Promise<void> {
   const existed = isWindowValid();
   // 前から開いていたなら、その人は管理ウィンドウを自分で使っていたので、閉じてもランチャーは出さない（A3-237）
-  if (!(existed && adminWindow!.isVisible())) returnToMain = { savedFile: null };
+  const wasVisible = existed && adminWindow!.isVisible();
   pendingImportModal = modal;
   await showAdminWindowWithTab('edit');
+  // 開けたときだけ印を付ける（作るのに失敗したまま残ると、別の経路で開いて閉じたときにランチャーが出てしまう）
+  if (!wasVisible && isWindowValid() && adminWindow!.isVisible())
+    returnToMain = { savedFile: null };
 
   // 既存ウィンドウの場合のみイベントで即座に通知（新規作成時はレンダラー初期化時にpendingImportModalから取得）
   if (existed && isWindowValid()) {

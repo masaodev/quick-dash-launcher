@@ -28,6 +28,7 @@ import {
   getPendingRevealItem,
   notifyImportSaved,
   setReturnToMainHandler,
+  getAdminWindow,
 } from '../adminWindowManager.js';
 import {
   toggleWorkspaceWindow,
@@ -182,9 +183,13 @@ export function setupWindowHandlers(
 
   handleIpc(IPC_CHANNELS.GET_INITIAL_TAB, () => getInitialTab());
   handleIpc(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => getPendingImportModal());
-  ipcMain.on(IPC_CHANNELS.NOTIFY_IMPORT_SAVED, (_event, fileName: string) =>
-    notifyImportSaved(fileName)
-  );
+  // 知らせてよいのは管理ウィンドウだけ（ほかの画面からの値は使わない）
+  ipcMain.on(IPC_CHANNELS.NOTIFY_IMPORT_SAVED, (event, fileName: unknown) => {
+    const adminWindow = getAdminWindow();
+    if (!adminWindow || event.sender !== adminWindow.webContents) return;
+    if (typeof fileName !== 'string' || fileName === '') return;
+    notifyImportSaved(fileName);
+  });
   // ランチャーの取込の入口から開いた管理ウィンドウを閉じたら、ランチャーを出す。
   // 取り込んで保存していれば、そのデータファイルのタブを選ぶ（A3-237）
   setReturnToMainHandler((savedFile) => {
@@ -193,6 +198,11 @@ export function setupWindowHandlers(
       if (!mainWindow || mainWindow.isDestroyed()) return;
       if (savedFile) {
         mainWindow.webContents.send(IPC_CHANNELS.EVENT_SELECT_DATA_FILE_TAB, savedFile);
+      }
+      // ピン留めなどで出たままなら、位置を動かさず前に出すだけにする（showMainWindow は位置を決め直す）
+      if (mainWindow.isVisible() && !mainWindow.isMinimized()) {
+        mainWindow.focus();
+        return;
       }
       await showMainWindow();
     })();
