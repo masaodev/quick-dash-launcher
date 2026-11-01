@@ -516,7 +516,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 - 標準の環境に無いセッションごとの値（`SESSIONNAME`・`CLIENTNAME`）は、QuickDashLauncher の環境から足す
 - QuickDashLauncher 自身の環境（`process.env`）は書き換えない。書き換えると、トレイの「再起動」（`app.relaunch`）で `APP_INSTANCE`・`QUICK_DASH_CONFIG_DIR`・`PORTABLE_EXECUTABLE_FILE` が消え、開発用のインスタンスが本番のデータを開くおそれがあるため
-- 設定 `launchInheritEnvironment` が `true` のとき（従来の動き）と、標準の環境を作れなかったとき（ログに残す）は、`env` を渡さず QuickDashLauncher の環境を引き継ぐ
+- 設定 `launchInheritEnvironment` が `true` のとき（従来の動き）と、標準の環境を作れなかったとき（ログに残す）は、`env` を渡さず QuickDashLauncher の環境を引き継ぐ（ShellExecute の経路は Electron の `shell.openPath`・`shell.openExternal` で開く）
 - ファイル名だけのパス（`wt.exe` など）を PATH から探すとき（`resolveFromPath()`）も、同じ環境の PATH で探す
 
 経路ごとの扱い:
@@ -524,9 +524,15 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 | 経路 | 対象 | 環境変数 |
 | --- | --- | --- |
 | spawn | 引数ありのアプリ、.bat・.cmd、ストアアプリ（`explorer.exe shell:AppsFolder\…`） | 標準の環境を渡す |
-| `shell.openPath` | 引数なしのアプリ、ショートカット、ファイル、フォルダ | Electron の API が環境を受け取らないので、今は QuickDashLauncher の環境のまま |
-| `shell.openExternal` | URL、カスタム URI | 同上 |
+| ShellExecute（`qdl.exe` の補助コマンド） | 引数なしのアプリ、ショートカット、ファイル、フォルダ（作業フォルダはその親）、URL、カスタム URI | 標準の環境で `qdl.exe __shell-open <開くもの> [作業フォルダ]` を起動し、`qdl.exe` が `ShellExecuteExW` を呼ぶ。開いたアプリは `qdl.exe` の環境を受け継ぐ |
 | 管理者として実行（`ShellExecuteExW` の `runas`） | 「常に管理者として実行」のアプリ | Windows が親の環境を渡さない（昇格したプロセスは標準の環境で始まる）ので、何もしない |
+
+ShellExecute の経路を補助コマンドにしたのは、Electron の `shell.openPath`・`shell.openExternal` が開いたアプリに渡す環境変数を選べないため（QuickDashLauncher 自身の環境を一時的に差し替える方法は、上の理由で採らない）。補助コマンドは `src/main/utils/shellOpenHelper.ts` と `cli/src/shell_open.rs`。
+
+- `qdl.exe` の場所: パッケージ版は `resources\bin\qdl.exe`（`extraResources`。どの配布形式にも入る）、開発版は `cli\target\release\qdl.exe`（`npm run build:cli` で作る）。無ければ、また起動できなければ（ログに残す）Electron で開く
+- 結果: `qdl.exe` の終了コードが `ShellExecuteExW` の結果（0＝開いた、それ以外は Win32 のエラーコード）。見つからない（2・3）は「ファイルが見つかりません」、UAC の確認で「いいえ」（1223）は知らせない取りやめ、ほかはエラーコードを添えて知らせる。`qdl.exe` は失敗のダイアログを出さない（`SEE_MASK_FLAG_NO_UI`）
+- 前面化: 開いたアプリは QuickDashLauncher から 2 段目になるので、QuickDashLauncher と `qdl.exe` の両方で `AllowSetForegroundWindow(ASFW_ANY)` を呼んでから開く
+- `qdl.exe` は、本体とのパイプを使わずに自分で開く（CLI の「中継するだけ」の例外。利用者が打つコマンドではないので、ヘルプにも出さない）
 
 ### 仮想デスクトップ移動機能
 

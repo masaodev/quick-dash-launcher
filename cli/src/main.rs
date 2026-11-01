@@ -6,6 +6,10 @@
 //! やり取り（1 回の接続で 1 往復。どちらも JSON 1 行）:
 //!   依頼: {"protocol":1,"argv":[...],"cwd":"...","cliVersion":"..."}
 //!   応答: {"protocol":1,"exitCode":0,"stdout":"...","stderr":"..."}
+//!
+//! 例外は本体が使う補助コマンド `__shell-open` だけ（shell_open.rs。パイプを使わずこの exe で開く）。
+
+mod shell_open;
 
 use std::env;
 use std::fs::{File, OpenOptions};
@@ -234,6 +238,14 @@ fn run() -> Result<u8, (u8, String)> {
 }
 
 fn main() -> ExitCode {
+    let args: Vec<String> = env::args_os()
+        .skip(1)
+        .map(|a| a.to_string_lossy().into_owned())
+        .collect();
+    if args.first().map(String::as_str) == Some(shell_open::COMMAND) {
+        // Win32 のエラーコードは 255 を超えるので、ExitCode（u8）ではなく exit で返す
+        std::process::exit(shell_open::run(&args[1..]));
+    }
     match run() {
         Ok(code) => ExitCode::from(code),
         Err((code, message)) => {

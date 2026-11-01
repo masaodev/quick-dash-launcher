@@ -315,7 +315,7 @@ CLI でできることは [QuickDashLauncher CLI](../features/cli.md) を参照�
 
 - **オフ**: スタートメニューから開いたときと同じ、ユーザーの標準の環境変数でアプリを起動する。QuickDashLauncher を Claude Code や開発用のターミナルから起動しても、そこで足された環境変数は届かない
 - **オン**: 従来の動き。QuickDashLauncher 自身の環境変数（QuickDashLauncher を起動したターミナルで設定したものを含む）をそのまま渡す
-- 今は、引数を指定したアプリ・.bat・.cmd・ストアアプリに効く。引数なしのアプリ・ショートカット・ファイル・フォルダ・URL は、オフでも QuickDashLauncher の環境変数のまま開く（仕組み＝[起動するアプリの環境変数](../architecture/window-control.md#起動するアプリの環境変数)）
+- アプリ・ショートカット・ファイル・フォルダ・URL のどれを開くときも効く。「常に管理者として実行」のアプリは、Windows が親の環境変数を渡さないので、オン・オフに関係なく標準の環境変数で起動する（仕組み＝[起動するアプリの環境変数](../architecture/window-control.md#起動するアプリの環境変数)）
 
 ### 5.5. バックアップ設定を変更
 

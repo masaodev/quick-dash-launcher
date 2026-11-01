@@ -154,6 +154,8 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 
 `npm run dev:test` は CLI の待ち受けをしないので試せない。開発モードの本体は起動情報（`cli-launcher.json`）を書かないため、本体が起動していないと `qdl.exe` は起動する exe を見つけられない。先に `npm run dev` を起動しておくか、`QDL_NO_LAUNCH=1` で起動させないようにする。
 
+開発版の本体は、ShellExecute で開くもの（引数なしのアプリ・ファイル・フォルダ・URL）を `cli/target/release/qdl.exe` の補助コマンドで開く。`npm run build:cli` をしていないと、Electron の `shell.openPath`・`shell.openExternal` で開く（本体の環境変数が開いたアプリに届く。[起動するアプリの環境変数](../architecture/window-control.md#起動するアプリの環境変数)）。
+
 `qdl.exe` が読む環境変数は次のとおり（本体は読まない。`cli/src/main.rs`）。
 
 | 環境変数 | 説明 | 例 |

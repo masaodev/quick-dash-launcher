@@ -17,6 +17,7 @@ import { noteLaunchedPath } from './folderPathProbe.js';
 import { getLaunchEnvironment, type LaunchEnvironment } from './launchEnvironment.js';
 import { isBareFileName, resolveFromPath } from './pathResolver.js';
 import { shellExecuteRunAs, type RunAsRequest } from './shellExecuteRunAs.js';
+import { openWithShellHelper, resolveShellOpenHelper } from './shellOpenHelper.js';
 
 /**
  * 起動可能なアイテムの最小インターフェース
@@ -53,26 +54,31 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
     switch (item.type) {
       case 'url':
       case 'customUri':
-        await shell.openExternal(item.path);
-        return { success: true };
-
-      case 'file':
-      case 'folder': {
-        const error = await openPathOrLog(item.path, logger, {
+        return openTarget(item.path, 'external', await getLaunchEnvironment(logger), logger, {
           path: item.path,
           name: item.displayName,
         });
+
+      case 'file':
+      case 'folder': {
+        const result = await openTarget(
+          item.path,
+          'path',
+          await getLaunchEnvironment(logger),
+          logger,
+          { path: item.path, name: item.displayName }
+        );
         // 拡張子の無いパスは、ファイルかどうかを確かめて次の読み込みの種別に反映する（起動は待たせない）
         void noteLaunchedPath(item.path).catch((error) => {
           logger.warn({ error, path: item.path }, '起動したパスの種類を確かめられませんでした');
         });
-        return toResult(error);
+        return result;
       }
 
       case 'app':
         if (shouldRunAsAdmin(item))
           return adminResultToLaunchResult(await launchItemAsAdmin(item, logger));
-        return toResult(await launchApp(item, logger));
+        return launchApp(item, logger);
 
       case 'clipboard':
         return toResult(await restoreClipboard(item, logger));
@@ -143,53 +149,105 @@ function spawnDetached(
 }
 
 /**
- * shell.openPath で開き、開けなかったらログに残す
- * shell.openPath は失敗しても例外を投げず、エラーメッセージを返すため
- * @returns 失敗の理由（開けたら undefined）
+ * ShellExecute で開くもの（引数なしのアプリ・ショートカット・ファイル・フォルダ・URL）を開く
+ *
+ * 起動するアプリに渡す環境変数があり、同梱の qdl.exe があれば、qdl.exe の補助コマンドで開く
+ *（Electron の shell.openPath・openExternal は環境変数を選べないため。shellOpenHelper.ts）。
+ * 環境変数を作らないとき（引き継ぐ設定・作れなかった）と、qdl.exe が無い・起動できないときは Electron で開く
+ *
+ * @param kind path はファイル・フォルダ・アプリ（作業フォルダはその親）、external は URL・カスタム URI
  */
-async function openPathOrLog(
+async function openTarget(
   target: string,
+  kind: 'path' | 'external',
+  env: LaunchEnvironment | undefined,
   logger: Logger,
   logContext: Record<string, unknown>
-): Promise<string | undefined> {
+): Promise<LaunchResult> {
+  const helper = env ? resolveShellOpenHelper() : null;
+  if (env && helper) {
+    let code: number | undefined;
+    try {
+      code = await openWithShellHelper(
+        helper,
+        target,
+        kind === 'path' ? getWorkingDirectory(target) : undefined,
+        env
+      );
+    } catch (error) {
+      logger.warn(
+        { ...logContext, helper, error: error instanceof Error ? error.message : String(error) },
+        'qdl.exe を起動できなかったので、QuickDashLauncher の環境変数のまま開きます'
+      );
+    }
+    if (code === 0) return { success: true };
+    if (code === ERROR_CANCELLED) {
+      // 管理者の権限を求めるアプリで、UAC の確認に「いいえ」を押した（知らせない）
+      logger.info(logContext, 'UAC の確認で取りやめました');
+      return { success: false, error: '', cancelled: true };
+    }
+    if (code !== undefined) {
+      logger.error({ ...logContext, code }, 'アイテムの起動に失敗しました');
+      return { success: false, error: describeShellExecuteError(code) };
+    }
+  }
+  return openWithElectron(target, kind, logger, logContext);
+}
+
+/**
+ * Electron の shell.openPath・openExternal で開く（QuickDashLauncher の環境変数を引き継ぐ）
+ *
+ * shell.openPath は失敗しても例外を投げず、エラーメッセージを返す
+ */
+async function openWithElectron(
+  target: string,
+  kind: 'path' | 'external',
+  logger: Logger,
+  logContext: Record<string, unknown>
+): Promise<LaunchResult> {
+  if (kind === 'external') {
+    await shell.openExternal(target);
+    return { success: true };
+  }
   const error = await shell.openPath(target);
   if (error) {
     logger.error({ ...logContext, error }, 'アイテムの起動に失敗しました');
-    return error;
+    return { success: false, error };
   }
-  return undefined;
+  return { success: true };
 }
 
-/** @returns 失敗の理由（起動できたら undefined） */
-async function launchApp(item: LaunchableItem, logger: Logger): Promise<string | undefined> {
+async function launchApp(item: LaunchableItem, logger: Logger): Promise<LaunchResult> {
   const logContext = { path: item.path, name: item.displayName };
   // 起動するアプリに渡す環境変数（ユーザーの標準の環境。docs/architecture/window-control.md「起動するアプリの環境変数」）
   const env = await getLaunchEnvironment(logger);
 
   // 登録アプリ（shell:AppsFolder\パス）の場合はexplorer.exe経由で起動
   if (item.path.startsWith('shell:AppsFolder\\')) {
-    return spawnDetached(
-      'explorer.exe',
-      [item.path],
-      { env },
-      logger,
-      logContext,
-      '登録アプリの起動に失敗しました'
+    return toResult(
+      await spawnDetached(
+        'explorer.exe',
+        [item.path],
+        { env },
+        logger,
+        logContext,
+        '登録アプリの起動に失敗しました'
+      )
     );
   }
 
   // ショートカットファイルまたは引数なしの場合
   if (/\.lnk$/i.test(item.path) || !item.args) {
-    // shell.openPath はフルパスでないと開けないので、ファイル名だけ（calc.exe など）は PATH から探す
+    // ShellExecute はフルパスでないと開けないので、ファイル名だけ（calc.exe など）は PATH から探す
     //（引数ありで spawn するときと同じく、起動するアプリに渡す環境の PATH で探す）
     const target = isBareFileName(item.path)
       ? await resolveFromPath(item.path, env ?? process.env)
       : item.path;
     if (!target) {
       logger.error(logContext, 'PATH にアプリが見つからないため起動できません');
-      return mainI18n.t('launcher.messages.appNotFoundInPath');
+      return { success: false, error: mainI18n.t('launcher.messages.appNotFoundInPath') };
     }
-    return openPathOrLog(target, logger, logContext);
+    return openTarget(target, 'path', env, logger, logContext);
   }
 
   const cwd = getWorkingDirectory(item.path);
@@ -197,23 +255,27 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<string |
   // 後ろへ付けた 1 本のコマンドにして渡す（コマンドプロンプトに打つのと同じ。管理者として実行・
   // エクスプローラーで開いたときも、Windows は同じ形で cmd.exe に渡す）
   if (/\.(cmd|bat)$/i.test(item.path)) {
-    return spawnDetached(
-      buildCmdCommandLine(item.path, item.args),
-      [],
-      { shell: true, cwd, env },
-      logger,
-      { ...logContext, args: item.args },
-      'アイテムの起動に失敗しました (spawn)'
+    return toResult(
+      await spawnDetached(
+        buildCmdCommandLine(item.path, item.args),
+        [],
+        { shell: true, cwd, env },
+        logger,
+        { ...logContext, args: item.args },
+        'アイテムの起動に失敗しました (spawn)'
+      )
     );
   }
   // それ以外は引数を分けて spawn に渡す（シェルを通さないので、記号がコマンドとして動かない）
-  return spawnDetached(
-    item.path,
-    parseArgs(item.args),
-    { shell: false, cwd, env },
-    logger,
-    { ...logContext, args: item.args },
-    'アイテムの起動に失敗しました (spawn)'
+  return toResult(
+    await spawnDetached(
+      item.path,
+      parseArgs(item.args),
+      { shell: false, cwd, env },
+      logger,
+      { ...logContext, args: item.args },
+      'アイテムの起動に失敗しました (spawn)'
+    )
   );
 }
 
@@ -271,8 +333,8 @@ function adminResultToLaunchResult(result: AdminLaunchResult): LaunchResult {
   return { success: false, error: result.error };
 }
 
-/** ShellExecuteExW のエラーコードを、利用者に見せる理由にする */
-function describeRunAsError(code: number): string {
+/** ShellExecuteExW のエラーコードを、利用者に見せる理由にする（管理者として実行・qdl.exe の補助コマンド） */
+function describeShellExecuteError(code: number): string {
   if (code === ERROR_FILE_NOT_FOUND || code === ERROR_PATH_NOT_FOUND) {
     return mainI18n.t('launcher.messages.fileNotFound');
   }
@@ -304,7 +366,7 @@ export async function launchItemAsAdmin(
       return { status: 'cancelled' };
     }
     logger.error({ ...logContext, code }, '管理者として起動できませんでした');
-    return { status: 'failed', error: describeRunAsError(code) };
+    return { status: 'failed', error: describeShellExecuteError(code) };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error({ ...logContext, error: message }, '管理者として起動できませんでした');

@@ -1,5 +1,5 @@
 import type { Logger } from 'pino';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // 起動できたら spawn、起動できなければ error が来る。spawnError を入れると error にする
 const spawnState = vi.hoisted(() => ({ spawnError: undefined as Error | undefined }));
@@ -47,6 +47,15 @@ const launchEnvState = vi.hoisted(() => ({
 }));
 vi.mock('./launchEnvironment.js', () => ({
   getLaunchEnvironment: vi.fn(async () => launchEnvState.env),
+}));
+// qdl.exe の補助コマンド。helper を null にすると qdl.exe が無い扱い（Electron で開く）
+const shellHelperState = vi.hoisted(() => ({ helper: null as string | null, code: 0 }));
+const openWithShellHelperMock = vi.hoisted(() =>
+  vi.fn(async (..._args: unknown[]): Promise<number> => shellHelperState.code)
+);
+vi.mock('./shellOpenHelper.js', () => ({
+  resolveShellOpenHelper: vi.fn(() => shellHelperState.helper),
+  openWithShellHelper: openWithShellHelperMock,
 }));
 // koffi を読み込まないよう、ShellExecuteExW を呼ぶ関数は差し替える（テストでは引数で渡す）
 vi.mock('./shellExecuteRunAs.js', () => ({ shellExecuteRunAs: vi.fn() }));
@@ -228,6 +237,130 @@ describe('launchItem（file・folder）', () => {
       );
     }
   );
+});
+
+describe('launchItem（qdl.exe の補助コマンドで開く）', () => {
+  const HELPER = 'C:\\QDL\\resources\\bin\\qdl.exe';
+
+  beforeEach(() => {
+    shellHelperState.helper = HELPER;
+    shellHelperState.code = 0;
+    openWithShellHelperMock.mockClear();
+    shellMock.openPath.mockClear();
+    shellMock.openExternal.mockClear();
+    resolveFromPathMock.mockClear();
+    vi.mocked(logger.error).mockClear();
+    vi.mocked(logger.warn).mockClear();
+    launchEnvState.env = { Path: 'C:\\Windows\\System32', SystemRoot: 'C:\\Windows' };
+  });
+
+  afterEach(() => {
+    shellHelperState.helper = null;
+  });
+
+  it('ファイル・フォルダは、親フォルダを作業フォルダにして、起動するアプリに渡す環境で開く', async () => {
+    const result = await launchItem({ type: 'file', path: 'C:\\Docs\\a.xlsx' }, logger);
+
+    expect(result).toEqual({ success: true });
+    expect(openWithShellHelperMock).toHaveBeenCalledWith(
+      HELPER,
+      'C:\\Docs\\a.xlsx',
+      'C:\\Docs',
+      launchEnvState.env
+    );
+    expect(shellMock.openPath).not.toHaveBeenCalled();
+  });
+
+  it('URL・カスタム URI は、作業フォルダなしで開く', async () => {
+    await launchItem({ type: 'url', path: 'https://example.com/' }, logger);
+    await launchItem({ type: 'customUri', path: 'ms-todo:' }, logger);
+
+    expect(openWithShellHelperMock).toHaveBeenNthCalledWith(
+      1,
+      HELPER,
+      'https://example.com/',
+      undefined,
+      launchEnvState.env
+    );
+    expect(openWithShellHelperMock).toHaveBeenNthCalledWith(
+      2,
+      HELPER,
+      'ms-todo:',
+      undefined,
+      launchEnvState.env
+    );
+    expect(shellMock.openExternal).not.toHaveBeenCalled();
+  });
+
+  it('引数なしのアプリ・ショートカットも補助コマンドで開く（ファイル名だけは PATH から探してから）', async () => {
+    await launchItem({ type: 'app', path: 'C:\\Tools\\Tool.lnk', args: '--x' }, logger);
+    await launchItem({ type: 'app', path: 'calc.exe' }, logger);
+
+    expect(openWithShellHelperMock.mock.calls.map((call) => call[1])).toEqual([
+      'C:\\Tools\\Tool.lnk',
+      'C:\\Windows\\System32\\calc.exe',
+    ]);
+    expect(shellMock.openPath).not.toHaveBeenCalled();
+  });
+
+  it('見つからない（2・3）は「ファイルが見つかりません」、ほかはエラーコードを理由にする', async () => {
+    shellHelperState.code = 2;
+    const missing = await launchItem({ type: 'file', path: 'C:\\Docs\\gone.txt' }, logger);
+    shellHelperState.code = 5;
+    const denied = await launchItem({ type: 'file', path: 'C:\\Docs\\locked.txt' }, logger);
+
+    expect(missing).toEqual({ success: false, error: 'launcher.messages.fileNotFound' });
+    expect(denied).toEqual({
+      success: false,
+      error: 'launcher.messages.windowsError:{"code":5}',
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'C:\\Docs\\gone.txt', code: 2 }),
+      'アイテムの起動に失敗しました'
+    );
+  });
+
+  it('UAC の確認で「いいえ」（1223）は、知らせない取りやめにする', async () => {
+    shellHelperState.code = ERROR_CANCELLED;
+
+    const result = await launchItem({ type: 'app', path: 'C:\\Tools\\admin.exe' }, logger);
+
+    expect(result).toEqual({ success: false, error: '', cancelled: true });
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it('環境変数を作らないとき（引き継ぐ設定・作れなかった）は、Electron で開く', async () => {
+    launchEnvState.env = undefined;
+
+    await launchItem({ type: 'file', path: 'C:\\Docs\\a.xlsx' }, logger);
+    await launchItem({ type: 'url', path: 'https://example.com/' }, logger);
+
+    expect(openWithShellHelperMock).not.toHaveBeenCalled();
+    expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Docs\\a.xlsx');
+    expect(shellMock.openExternal).toHaveBeenCalledWith('https://example.com/');
+  });
+
+  it('qdl.exe が無ければ Electron で開く', async () => {
+    shellHelperState.helper = null;
+
+    await launchItem({ type: 'folder', path: 'C:\\Docs' }, logger);
+
+    expect(openWithShellHelperMock).not.toHaveBeenCalled();
+    expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Docs');
+  });
+
+  it('qdl.exe を起動できなければ、ログに残して Electron で開く', async () => {
+    openWithShellHelperMock.mockRejectedValueOnce(new Error('spawn EACCES'));
+
+    const result = await launchItem({ type: 'file', path: 'C:\\Docs\\a.xlsx' }, logger);
+
+    expect(result).toEqual({ success: true });
+    expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Docs\\a.xlsx');
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ helper: HELPER, error: 'spawn EACCES' }),
+      expect.stringContaining('qdl.exe を起動できなかった')
+    );
+  });
 });
 
 describe('launchItem の結果', () => {
