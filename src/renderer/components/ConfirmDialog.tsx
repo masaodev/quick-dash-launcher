@@ -67,9 +67,22 @@ function ConfirmDialog({
       e.stopPropagation();
       if (e.key === 'Escape') {
         onClose();
-      } else {
-        onConfirm();
+        return;
       }
+      // 押しっぱなしの Enter で、開いた直後のダイアログまで確定しない
+      if (e.repeat) return;
+      // Tab で「キャンセル」などほかのボタンへ移していたら、そのボタンを押したことにする
+      //（どこにフォーカスがあっても確定すると、削除の確認でキャンセルを選んでも実行されてしまう）
+      const focused = document.activeElement;
+      if (
+        focused instanceof HTMLButtonElement &&
+        focused.dataset.testid !== 'confirm-dialog-confirm-button' &&
+        focused.closest('[data-testid="confirm-dialog"]')
+      ) {
+        focused.click();
+        return;
+      }
+      onConfirm();
     }
 
     window.addEventListener('keydown', handleKeyDown, true);

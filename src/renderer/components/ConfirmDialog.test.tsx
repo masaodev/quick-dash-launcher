@@ -76,6 +76,26 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it('Tab でキャンセルに移して Enter を押すと、確定せずにキャンセルする（A3-238）', () => {
+    const { onClose, onConfirm } = renderDialog({ danger: true });
+    screen.getByTestId('confirm-dialog-cancel-button').focus();
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    // 確定ボタンにフォーカスがあるときは今までどおり確定する
+    screen.getByTestId('confirm-dialog-confirm-button').focus();
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('押しっぱなしの Enter（repeat）では確定しない', () => {
+    const { onConfirm } = renderDialog();
+    fireEvent.keyDown(window, { key: 'Enter', repeat: true });
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it.each(['Escape', 'Enter'])('%s キーを後ろの画面のキー処理には渡さない', (key) => {
     // 後ろの画面の入力欄（ランチャーの検索欄など）がフォーカスを持ち、自分のキー処理で Enter を受ける状況
     const behind = vi.fn();
