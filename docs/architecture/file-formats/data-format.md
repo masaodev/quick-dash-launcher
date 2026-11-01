@@ -49,7 +49,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 ショートカットの `{name}` は `.lnk` を除いたファイル名です（リンク先が `.lnk` のときはそちらの名前。`src/main/utils/iconCacheKeys.ts`）。
 
-データファイルの `customIcon` フィールドは `icon-cache/custom/` 内のファイル名を指定します。
+データファイルの `customIcon` フィールドは `icon-cache/custom/` 内のファイル名を指定します。ファイル名だけを受け付け、`\` `/` `:` を含む名前や `..` はアイコンとして使わない（読まない・消さない。`src/main/services/icon/customIconStore.ts`）。
 
 ### 1.3. 文字エンコーディング
 

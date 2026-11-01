@@ -51,9 +51,29 @@ export async function saveCustomIcon(
   return customIconFileName;
 }
 
+/**
+ * カスタムアイコンのファイルのパス。名前がフォルダの外を指すとき（`..\datafiles\data.json` など）は null
+ *
+ * 名前はデータファイルの customIcon から来る。共有・取り込みで渡ってきたデータファイルの値で、
+ * 設定フォルダのほかのファイルを読んだり消したりしないよう、ファイル名だけを受け付ける
+ */
+export function resolveCustomIconPath(customIconFileName: string): string | null {
+  if (
+    !customIconFileName ||
+    customIconFileName === '.' ||
+    customIconFileName === '..' ||
+    /[\\/:]/.test(customIconFileName)
+  ) {
+    iconLogger.warn({ customIconFileName }, 'カスタムアイコンの名前が正しくないので使いません');
+    return null;
+  }
+  return path.join(PathManager.getCustomIconsFolder(), customIconFileName);
+}
+
 /** カスタムアイコンを削除 */
 export async function deleteCustomIcon(customIconFileName: string): Promise<void> {
-  const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
+  const customIconPath = resolveCustomIconPath(customIconFileName);
+  if (!customIconPath) return;
 
   if (fs.existsSync(customIconPath)) {
     await fs.promises.unlink(customIconPath);
@@ -63,6 +83,7 @@ export async function deleteCustomIcon(customIconFileName: string): Promise<void
 
 /** カスタムアイコンをbase64で取得 */
 export function getCustomIcon(customIconFileName: string): string | null {
-  const customIconPath = path.join(PathManager.getCustomIconsFolder(), customIconFileName);
+  const customIconPath = resolveCustomIconPath(customIconFileName);
+  if (!customIconPath) return null;
   return FileUtils.readCachedBinaryAsBase64(customIconPath);
 }
