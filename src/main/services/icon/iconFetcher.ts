@@ -1,5 +1,3 @@
-import * as path from 'path';
-
 import type { BrowserWindow } from 'electron';
 import { iconLogger } from '@common/logger';
 import type { LauncherItem } from '@common/types';
@@ -20,6 +18,7 @@ import {
 import { mainI18n } from '../mainI18n.js';
 
 import { readFirstExistingFileAsBase64 } from './iconFileCache.js';
+import { resolveCustomIconPath } from './customIconStore.js';
 import {
   extractCustomUriIcon,
   extractFileIconByExtension,
@@ -73,9 +72,8 @@ export async function loadCachedIcons(
     try {
       // カスタムアイコンを最優先、なければ自動取得アイコンの候補を順に試す
       const candidates: string[] = [];
-      if (item.customIcon) {
-        candidates.push(path.join(PathManager.getCustomIconsFolder(), item.customIcon));
-      }
+      const customIconPath = item.customIcon ? resolveCustomIconPath(item.customIcon) : null;
+      if (customIconPath) candidates.push(customIconPath);
       candidates.push(...getCachedIconCandidates(item, folders));
 
       const icon = await readFirstExistingFileAsBase64(candidates);
