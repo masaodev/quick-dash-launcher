@@ -346,14 +346,10 @@ export const ja = {
     gettingStartedAdd:
       'アイテムの登録は、上の ➕ からできます。ブラウザのブックマークやインストール済みアプリも、ここからまとめて取り込めます。',
     autoLaunch: 'Windows にサインインしたら自動で起動する',
-    autoLaunchHint: '起動していないと、キーを押しても出ません。',
     updateCheck: 'アップデートを自動で確認する',
-    updateCheckHint:
-      '1 日 1 回 GitHub で確認し、新しいバージョンがあれば通知します。インストールは手動です。',
     portableMode: 'データを exe の横に保存する（ポータブルモード）',
-    portableModeHint:
-      'USB メモリなどに入れて持ち歩くときに。ふだんはオフのままで大丈夫です（あとから「設定」では変えられません）。',
     changeLater: 'どれもあとから「設定」で変えられます',
+    changeLaterExceptPortable: 'ポータブルモード以外は、あとから「設定」で変えられます',
     complete: '使いはじめる',
     saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
     defaultTabName: 'メイン',

@@ -315,38 +315,31 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
                 />
                 {t('firstLaunch.autoLaunch')}
               </label>
-              <p className="auto-launch-hint">{t('firstLaunch.autoLaunchHint')}</p>
               {!isStore && (
-                <>
-                  <label className="auto-launch-checkbox-label update-check-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={updateCheckEnabled}
-                      onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
-                      disabled={isLoading}
-                      className="update-check-checkbox"
-                      data-testid="first-launch-update-check"
-                    />
-                    {t('firstLaunch.updateCheck')}
-                  </label>
-                  <p className="update-check-hint">{t('firstLaunch.updateCheckHint')}</p>
-                </>
+                <label className="auto-launch-checkbox-label update-check-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={updateCheckEnabled}
+                    onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
+                    disabled={isLoading}
+                    className="update-check-checkbox"
+                    data-testid="first-launch-update-check"
+                  />
+                  {t('firstLaunch.updateCheck')}
+                </label>
               )}
               {portableModeAvailable && (
-                <>
-                  <label className="auto-launch-checkbox-label portable-mode-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={portableMode}
-                      onChange={(e) => setPortableMode(e.target.checked)}
-                      disabled={isLoading}
-                      className="portable-mode-checkbox"
-                      data-testid="first-launch-portable-mode"
-                    />
-                    {t('firstLaunch.portableMode')}
-                  </label>
-                  <p className="portable-mode-hint">{t('firstLaunch.portableModeHint')}</p>
-                </>
+                <label className="auto-launch-checkbox-label portable-mode-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={portableMode}
+                    onChange={(e) => setPortableMode(e.target.checked)}
+                    disabled={isLoading}
+                    className="portable-mode-checkbox"
+                    data-testid="first-launch-portable-mode"
+                  />
+                  {t('firstLaunch.portableMode')}
+                </label>
               )}
             </div>
 
@@ -365,7 +358,13 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               >
                 {t('firstLaunch.back')}
               </Button>
-              <span className="first-launch-change-later">{t('firstLaunch.changeLater')}</span>
+              <span className="first-launch-change-later">
+                {t(
+                  portableModeAvailable
+                    ? 'firstLaunch.changeLaterExceptPortable'
+                    : 'firstLaunch.changeLater'
+                )}
+              </span>
               <Button
                 variant="primary"
                 type="button"
