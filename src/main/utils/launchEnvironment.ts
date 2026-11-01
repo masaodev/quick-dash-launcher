@@ -11,7 +11,7 @@
  * APP_INSTANCE・QUICK_DASH_CONFIG_DIR・PORTABLE_EXECUTABLE_FILE が消え、開発用のインスタンスが
  * 本番のデータを開くおそれがあるため。
  *
- * 設定の launchInheritEnvironment が true のとき（従来の動き）と、標準の環境を作れなかったときは
+ * 設定の launchInheritEnvironment が true のとき（既定。従来の動き）と、標準の環境を作れなかったときは
  * undefined を返す（spawn に env を渡さず、QuickDashLauncher の環境を引き継ぐ）。
  */
 import type { Logger } from 'pino';
@@ -66,9 +66,10 @@ export function buildLaunchEnvironment(
 async function readInheritSetting(): Promise<boolean> {
   try {
     const settings = await SettingsService.getInstance();
-    return (await settings.get('launchInheritEnvironment')) === true;
+    return (await settings.get('launchInheritEnvironment')) !== false;
   } catch {
-    return false;
+    // 読めなければ既定（引き継ぐ）に従う
+    return true;
   }
 }
 

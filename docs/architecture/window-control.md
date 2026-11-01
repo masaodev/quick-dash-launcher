@@ -524,11 +524,11 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 子のプロセスは親の環境変数をそのまま受け継ぐ。そのため QuickDashLauncher を Claude Code・開発用のターミナル・`qdl` コマンドの自動起動（QuickDashLauncher が動いていないと起動する）などから起動すると、そこで足された変数が、QuickDashLauncher から起動するアプリにまで届く。例: Claude Code の `CLAUDECODE`・`CLAUDE_CODE_CHILD_SESSION`（届いた claude は自分を子のセッションとみなし、会話の記録を残さない）、開発中の `NODE_ENV`・`APP_INSTANCE`、ポータブル版の `PORTABLE_EXECUTABLE_FILE`、Git Bash が足した PATH。QuickDashLauncher を起動した後に足した PATH が届かない、という問題も同じ根。
 
-そこで、アプリを起動するたびに Windows の `CreateEnvironmentBlock`（`bInherit = FALSE`）で、ログオン直後の新しいプロセスと同じ「ユーザーの標準の環境変数」を作って渡す（`src/main/utils/launchEnvironment.ts`・`standardEnvironment.ts`。数ミリ秒）。
+そこで、設定 `launchInheritEnvironment` をオフにしたときは、アプリを起動するたびに Windows の `CreateEnvironmentBlock`（`bInherit = FALSE`）で、ログオン直後の新しいプロセスと同じ「ユーザーの標準の環境変数」を作って渡す（`src/main/utils/launchEnvironment.ts`・`standardEnvironment.ts`。数ミリ秒）。既定をオン（引き継ぐ）にしているのは、標準の環境で開く経路（`qdl.exe` の補助コマンドなど）の前面化やストア版での動きを確かめ終えるまで、従来の動きを変えないため（2026-11 本人の判断）。
 
 - 標準の環境に無いセッションごとの値（`SESSIONNAME`・`CLIENTNAME`）は、QuickDashLauncher の環境から足す
 - QuickDashLauncher 自身の環境（`process.env`）は書き換えない。書き換えると、トレイの「再起動」（`app.relaunch`）で `APP_INSTANCE`・`QUICK_DASH_CONFIG_DIR`・`PORTABLE_EXECUTABLE_FILE` が消え、開発用のインスタンスが本番のデータを開くおそれがあるため
-- 設定 `launchInheritEnvironment` が `true` のとき（従来の動き）と、標準の環境を作れなかったとき（ログに残す）は、`env` を渡さず QuickDashLauncher の環境を引き継ぐ
+- 設定 `launchInheritEnvironment` が `true` のとき（既定。従来の動き）と、標準の環境を作れなかったとき（ログに残す）は、`env` を渡さず QuickDashLauncher の環境を引き継ぐ
 - ファイル名だけのパス（`wt.exe` など）を PATH から探すとき（`resolveFromPath()`）も、同じ環境の PATH で探す
 
 経路ごとの扱い:
