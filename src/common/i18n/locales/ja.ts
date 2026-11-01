@@ -2618,7 +2618,6 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       heading: 'QuickDashLauncher CLI',
     },
     display: {
-      heading: 'ランチャー',
       keyboardHints: '操作のヒントを表示する',
       keyboardHintsDescription:
         'F2 で編集、Shift+Enter で親フォルダを開く、などのキー操作を一覧の下に表示します。',
@@ -2648,6 +2647,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     windowPosition: {
       heading: 'ランチャー',
       label: '表示する場所:',
+      appearance: '見た目:',
       cursorMonitorCenter: 'マウスカーソルのあるディスプレイの中央（既定）',
       cursorMonitorCenterDescription: 'マウスカーソルがあるディスプレイの中央に表示します',
       cursor: 'マウスカーソルの近く',
@@ -2757,7 +2757,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       done: '「{{section}}」を既定値に戻しました',
       failed: '設定のリセットに失敗しました。',
       notes: {
-        display: '「タブを表示する」は変えません。',
+        dataFileTabs: '「タブを表示する」は変えません。',
         savedPosition: '最後に置いた場所として覚えている位置も忘れます。',
       },
       values: {

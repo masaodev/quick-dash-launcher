@@ -17,7 +17,6 @@ export type SettingsCategory = 'basic' | 'window' | 'backup' | 'bookmarkAutoImpo
  */
 export type ResettableSettingsSection =
   | 'system'
-  | 'display'
   | 'search'
   | 'cli'
   | 'mainWindow'
@@ -30,7 +29,7 @@ export type ResettableSettingsSection =
  * 枠ごとに「既定値に戻す」で戻す項目
  *
  * タブ構成（dataFileTabs 等）はアイテム管理で、ブックマーク自動取込はそのカテゴリで管理するので含めない。
- * 「タブを表示する」（showDataFileTabs）も、戻すと作ったタブが急に見えなくなるので含めない。
+ * 「タブを表示する」（showDataFileTabs）も、戻すと作ったタブが急に見えなくなるので含めない（ランチャーの枠に並ぶが戻さない）。
  * 画面に出ない座標（最後に置いた場所）は、表示する場所と組で戻す。
  */
 export const SETTINGS_RESET_KEYS: Record<
@@ -38,10 +37,21 @@ export const SETTINGS_RESET_KEYS: Record<
   ReadonlyArray<keyof AppSettings>
 > = {
   system: ['autoLaunch', 'updateCheckEnabled', 'updateCheckIncludeBeta'],
-  display: ['showKeyboardHints', 'recordLaunchUsage'],
-  search: ['searchMemo', 'searchIgnoreWidth', 'searchIgnoreKana', 'searchSortByUsage'],
+  search: [
+    'searchMemo',
+    'searchIgnoreWidth',
+    'searchIgnoreKana',
+    'recordLaunchUsage',
+    'searchSortByUsage',
+  ],
   cli: ['cliEnabled'],
-  mainWindow: ['windowPositionMode', 'windowFixedPosition', 'windowWidth', 'windowHeight'],
+  mainWindow: [
+    'windowPositionMode',
+    'windowFixedPosition',
+    'windowWidth',
+    'windowHeight',
+    'showKeyboardHints',
+  ],
   workspaceWindow: [
     'workspacePositionMode',
     'workspaceTargetDisplayIndex',
@@ -69,7 +79,6 @@ const SAVED_POSITION_KEYS: ReadonlySet<keyof AppSettings> = new Set<keyof AppSet
 /** 枠の名前（見出しと同じ文言） */
 const SECTION_HEADING_KEYS: Record<ResettableSettingsSection, ParseKeys> = {
   system: 'settings.system.heading',
-  display: 'settings.display.heading',
   search: 'settings.search.heading',
   cli: 'settings.cli.heading',
   mainWindow: 'settings.windowPosition.heading',
@@ -124,14 +133,11 @@ const RESET_ROWS: Record<ResettableSettingsSection, ReadonlyArray<ResetRow>> = {
     checkRow('updateCheckEnabled', 'settings.system.updateCheck'),
     checkRow('updateCheckIncludeBeta', 'settings.system.updateCheckIncludeBeta'),
   ],
-  display: [
-    checkRow('showKeyboardHints', 'settings.display.keyboardHints'),
-    checkRow('recordLaunchUsage', 'settings.system.recordLaunchUsage'),
-  ],
   search: [
     checkRow('searchMemo', 'settings.display.searchMemo'),
     checkRow('searchIgnoreWidth', 'settings.display.searchIgnoreWidth'),
     checkRow('searchIgnoreKana', 'settings.display.searchIgnoreKana'),
+    checkRow('recordLaunchUsage', 'settings.system.recordLaunchUsage'),
     checkRow('searchSortByUsage', 'settings.display.searchSortByUsage'),
   ],
   cli: [checkRow('cliEnabled', 'settings.system.cli')],
@@ -142,6 +148,7 @@ const RESET_ROWS: Record<ResettableSettingsSection, ReadonlyArray<ResetRow>> = {
       format: (t, s) => t(`settings.windowPosition.${s.windowPositionMode}`),
     },
     sizeRow('windowWidth', 'windowHeight', 'settings.windowSize.heading'),
+    checkRow('showKeyboardHints', 'settings.display.keyboardHints'),
   ],
   workspaceWindow: [
     {
@@ -231,6 +238,6 @@ export function getResetSectionText(
 ): { label: string; note: string } {
   return {
     label: t(SECTION_HEADING_KEYS[section]),
-    note: section === 'display' ? t('settings.reset.notes.display') : '',
+    note: section === 'mainWindow' ? t('settings.reset.notes.dataFileTabs') : '',
   };
 }

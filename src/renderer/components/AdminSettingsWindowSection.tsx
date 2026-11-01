@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { AppSettings, DisplayInfo } from '@common/types';
 
 import type { HandleSettingChange } from '../hooks/useSettingsManager';
+import type { ConfirmOptions } from '../hooks/useDialogManager';
 import { logError } from '../utils/debug';
 
 import AdminSettingsWindowMain from './AdminSettingsWindowMain';
@@ -16,11 +17,12 @@ interface AdminSettingsWindowSectionProps {
   handleSettingChange: HandleSettingChange;
   handleNumberInputChange: <K extends keyof AppSettings>(key: K, value: string) => void;
   handleNumberInputBlur: () => Promise<void>;
+  showConfirm: (message: string, options?: ConfirmOptions) => Promise<boolean>;
   sectionReset: SectionResetProps;
 }
 
 /**
- * 設定画面「ウィンドウ」: ウィンドウごとの節（メイン・ワークスペース・切り離し）と、2 つ以上に効く「その他」
+ * 設定画面「ウィンドウ」: ウィンドウごとの節（ランチャー・ワークスペース・切り離し）と、2 つ以上に効く「その他」
  * どの節も「項目名: 入力欄 説明」の並びで、取込ルールの画面と同じ形
  * 隠れるか残るかは設定ではなく、各ウィンドウの 📌 で決める
  */
@@ -30,6 +32,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
   handleSettingChange,
   handleNumberInputChange,
   handleNumberInputBlur,
+  showConfirm,
   sectionReset,
 }) => {
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
@@ -51,7 +54,7 @@ const AdminSettingsWindowSection: React.FC<AdminSettingsWindowSectionProps> = ({
 
   return (
     <>
-      <AdminSettingsWindowMain {...common} {...numberInput} />
+      <AdminSettingsWindowMain {...common} {...numberInput} showConfirm={showConfirm} />
       <AdminSettingsWindowWorkspace {...common} displays={displays} />
       <AdminSettingsWindowDetached {...common} />
       <AdminSettingsWindowOther {...common} {...numberInput} />

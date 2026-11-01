@@ -149,7 +149,6 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               hotkeyValidation={hotkeyValidation}
               onHotkeyValidation={handleHotkeyValidation}
               onItemSearchHotkeyChange={handleItemSearchHotkeyChange}
-              showConfirm={showConfirm}
               sectionReset={sectionReset}
             />
           )}
@@ -161,6 +160,7 @@ const AdminSettingsTab: React.FC<SettingsTabProps> = ({
               handleSettingChange={handleSettingChange}
               handleNumberInputChange={handleNumberInputChange}
               handleNumberInputBlur={handleNumberInputBlur}
+              showConfirm={showConfirm}
               sectionReset={sectionReset}
             />
           )}
