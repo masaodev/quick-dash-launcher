@@ -49,6 +49,7 @@ Viteベースのビルドシステムを使用:
 CLI は Rust の Cargo プロジェクト（`cli/`）で、本体とは別の実行ファイルになる。本体の Vite ビルド（`npm run build`）には含まれない。
 
 - 出力: `cli/target/release/qdl.exe`（リリースビルドはサイズ優先の設定。`cli/Cargo.toml` の `[profile.release]`）
+- C ランタイム: `cli/.cargo/config.toml` で静的リンク（`+crt-static`）にして、`VCRUNTIME140.dll` に頼らない。Visual C++ 再頒布可能パッケージの無い PC（素の Windows・Windows サンドボックスなど）でも動かすため。Cargo はこの設定を作業フォルダから探すので、`build:cli`・`test:cli` は `cli/` に移ってから cargo を呼ぶ
 - 同梱先: インストーラー版は `<インストール先>\resources\bin\qdl.exe`、ZIP 版は `<展開したフォルダ>\resources\bin\qdl.exe`。ターミナルから `qdl` で呼ぶには、どちらも設定「QuickDashLauncher CLI を使えるようにする」で `%LOCALAPPDATA%\quick-dash-launcher\bin` にコピーしてから PATH で呼ぶ（[CLI](../features/cli.md#qdl-を使えるようにする)）
 - パッケージ版の本体は起動のたびに、`qdl.exe` が本体を起動するときに使う本体の場所を userData の `cli-launcher.json` に書き出す（`src/main/services/cli/cliLauncherInfo.ts`）。ZIP 版のポータブルモードでは userData がデータフォルダになり、`qdl.exe` が見る `%APPDATA%` には書かないので、QDL が起動していないときに `qdl` から起動することはできない（起動中なら使える）
 - やり取りの形を変えたら、本体の `CLI_PROTOCOL_VERSION`（`src/main/services/cli/cliProtocol.ts`）と `cli/src/main.rs` の `PROTOCOL_VERSION` を一緒に上げる
