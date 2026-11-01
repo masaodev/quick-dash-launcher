@@ -181,6 +181,8 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
   }
 
   async function handleKeyDown(e: React.KeyboardEvent): Promise<void> {
+    // 日本語入力の変換中のキー（変換を確定する Enter など）は IME に任せる。アイテムを実行しない
+    if (e.nativeEvent?.isComposing || e.keyCode === 229) return;
     // 2 つ以上を閉じる前の確認の帯: Enter で閉じる、Esc でやめる。ほかのキーは通常どおり
     const pendingClose = windowSelection.pendingClose;
     if (searchMode === 'window' && pendingClose && (e.key === 'Enter' || e.key === 'Escape')) {
@@ -329,7 +331,8 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
       return;
     }
 
-    switch (e.key) {
+    // CapsLock がオンでも Ctrl+E・Ctrl+W が効くよう、1 文字のキーは小文字で比べる
+    switch (e.key.length === 1 ? e.key.toLowerCase() : e.key) {
       case 'Enter':
         e.preventDefault();
         e.stopPropagation();

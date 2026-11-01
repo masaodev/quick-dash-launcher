@@ -296,7 +296,7 @@ const WorkspaceApp: React.FC = () => {
   useEffect(() => {
     if (isDetached) return;
     const handleCtrlF = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'f') {
+      if (e.ctrlKey && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         setIsFilterVisible(true);
         setFocusTrigger((prev) => prev + 1);

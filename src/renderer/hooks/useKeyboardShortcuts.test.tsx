@@ -136,6 +136,30 @@ describe('useKeyboardShortcuts', () => {
     expect(params.handleExecuteItem).toHaveBeenCalledWith(item);
   });
 
+  it('日本語入力の変換を確定する Enter では実行しない（A3-238）', async () => {
+    const item = launcherItem('file', 'C:\Windows\win.ini');
+    const { params, handleKeyDown } = setup([item]);
+
+    await handleKeyDown({
+      ...keyEvent('Enter'),
+      nativeEvent: { isComposing: true },
+    } as unknown as React.KeyboardEvent);
+    await handleKeyDown({ ...keyEvent('Enter'), keyCode: 229 } as unknown as React.KeyboardEvent);
+    expect(params.handleExecuteItem).not.toHaveBeenCalled();
+  });
+
+  it('CapsLock がオンでも Ctrl+E・Ctrl+W が効く（A3-238）', async () => {
+    const toggleEditWindow = vi.fn();
+    const toggleWorkspaceWindow = vi.fn();
+    Object.assign(window.electronAPI, { toggleEditWindow, toggleWorkspaceWindow });
+    const { handleKeyDown } = setup([launcherItem('file', 'C:\Windows\win.ini')]);
+
+    await handleKeyDown(keyEvent('E', { ctrlKey: true }));
+    await handleKeyDown(keyEvent('W', { ctrlKey: true }));
+    expect(toggleEditWindow).toHaveBeenCalledTimes(1);
+    expect(toggleWorkspaceWindow).toHaveBeenCalledTimes(1);
+  });
+
   it('通常モードの F2 で選択中のアイテムの編集画面を開く', async () => {
     const item = launcherItem('file', 'C:\\Windows\\win.ini');
     const { params, handleKeyDown } = setup([item]);
