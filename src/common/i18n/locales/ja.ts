@@ -2206,7 +2206,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     confirmButton: 'インポートして再起動',
     notExport: 'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません',
     newerVersion:
-      '新しい版の QuickDashLauncher でエクスポートしたファイルです。QuickDashLauncher を最新の版にしてからインポートしてください',
+      '新しいバージョンの QuickDashLauncher でエクスポートしたファイルです。QuickDashLauncher を最新バージョンにしてからインポートしてください',
     invalidFile: 'ファイルの中の {{file}} を読めないため、インポートできません',
     failed: 'インポートに失敗しました: {{error}}',
     corrupted: 'ファイルが壊れているため、インポートできません。もう一度エクスポートしてください',

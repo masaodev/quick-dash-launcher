@@ -131,7 +131,9 @@ test.describe('QuickDashLauncher - データのエクスポートとインポー
 
       await test.step('「インポートして再起動」で置き換え、今のデータをスナップショットに残して再起動する', async () => {
         await adminWindow.getByRole('button', { name: 'インポートして再起動' }).click();
-        await expect(adminWindow.getByText('インポートしています。終わると再起動します')).toBeVisible();
+        await expect(
+          adminWindow.getByText('インポートしています。終わると再起動します')
+        ).toBeVisible();
 
         expect(fs.readFileSync(dataPath, 'utf8')).toBe(exportedData);
         expect(fs.existsSync(extraPath)).toBe(false);
