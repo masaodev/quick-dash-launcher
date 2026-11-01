@@ -47,6 +47,38 @@ test.describe('QuickDashLauncher - 読めなかったデータファイルのタ
     });
   });
 
+  test('1 つのタブの一部のファイルだけ読めないときは、一覧の上に帯を出す（A3-229 S8）', async ({
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    // 統合タブ（data.json・data3.json）とサブ1（data2.json）
+    configHelper.loadTemplate('with-multi-file-tabs');
+    await mainWindow.reload();
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const bar = mainWindow.getByTestId('partly-unreadable-bar');
+
+    await test.step('読めるうちは帯を出さない', async () => {
+      await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
+      await expect(bar).toHaveCount(0);
+    });
+
+    await test.step('data3.json だけ壊れると、data.json のアイテムは並べたまま帯で知らせる', async () => {
+      configHelper.writeDataFileRaw('data3.json', '{ "version": "1.0", "items": [ { "id": ');
+      await utils.reloadWithF5();
+      await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
+      await expect(bar).toContainText('datafiles/data3.json を読めなかった');
+      await expect(mainWindow.locator('.item-list-empty')).toHaveCount(0);
+      await utils.attachScreenshot(testInfo, '一部だけ読めないタブ');
+    });
+
+    await test.step('壊れたファイルの無いタブでは帯を出さない', async () => {
+      await mainWindow.keyboard.press('Tab');
+      await expect(mainWindow.locator('.item', { hasText: 'Stack Overflow' })).toBeVisible();
+      await expect(bar).toHaveCount(0);
+    });
+  });
+
   test('アイテム管理は壊れたファイルだけを外し、ほかのタブは編集・保存できる。壊れたファイルは書き換えない', async ({
     electronApp,
     mainWindow,

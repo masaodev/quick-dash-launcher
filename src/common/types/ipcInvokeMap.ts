@@ -82,6 +82,8 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL]: ElectronAPI['openEditWindowWithImportModal'];
   [IPC_CHANNELS.GET_INITIAL_TAB]: ElectronAPI['getInitialTab'];
   [IPC_CHANNELS.GET_PENDING_IMPORT_MODAL]: ElectronAPI['getPendingImportModal'];
+  [IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_ITEM]: ElectronAPI['openEditWindowWithItem'];
+  [IPC_CHANNELS.GET_PENDING_REVEAL_ITEM]: ElectronAPI['getPendingRevealItem'];
   [IPC_CHANNELS.COPY_TO_CLIPBOARD]: ElectronAPI['copyToClipboard'];
   [IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER]: ElectronAPI['readClipboardForRegister'];
   [IPC_CHANNELS.OPEN_MAIN_CHILD_WINDOW]: ElectronAPI['openMainChildWindow'];

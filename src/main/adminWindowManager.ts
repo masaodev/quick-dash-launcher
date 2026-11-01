@@ -25,6 +25,8 @@ let adminWindow: BrowserWindow | null = null;
 let isAdminWindowVisible = false;
 let initialTab: AdminTab = 'settings';
 let pendingImportModal: ImportModalType | null = null;
+/** アイテム管理で見せる行の id（ウィンドウを作った直後に、レンダラーが getPendingRevealItem で受け取る） */
+let pendingRevealItem: string | null = null;
 
 // 閉じた後も非表示で常駐するウィンドウを、放置が続いた場合のみ破棄して
 // レンダラープロセスを解放する（次回表示時に再作成される）
@@ -172,6 +174,22 @@ export async function showAdminWindowWithImportModal(modal: ImportModalType): Pr
 }
 
 /**
+ * アイテム管理を開いて、指定した id の行へスクロールして選ぶ（ランチャーの WSグループの行の F2）
+ *
+ * 届け方はインポートモーダルと同じ。既存のウィンドウにはイベントで、新しく作るウィンドウには
+ * pendingRevealItem に置いてレンダラーの初期化時に渡す
+ */
+export async function showAdminWindowWithItem(itemId: string): Promise<void> {
+  const existed = isWindowValid();
+  pendingRevealItem = existed ? null : itemId;
+  await showAdminWindowWithTab('edit');
+
+  if (existed && isWindowValid()) {
+    adminWindow!.webContents.send(IPC_CHANNELS.EVENT_REVEAL_ITEM, itemId);
+  }
+}
+
+/**
  * 管理ウィンドウを非表示にする
  */
 export function hideAdminWindow(): void {
@@ -221,4 +239,13 @@ export function getPendingImportModal(): ImportModalType | null {
   const modal = pendingImportModal;
   pendingImportModal = null;
   return modal;
+}
+
+/**
+ * 保留中の、アイテム管理で見せる行の id を取得する（取得後にクリア）
+ */
+export function getPendingRevealItem(): string | null {
+  const itemId = pendingRevealItem;
+  pendingRevealItem = null;
+  return itemId;
 }

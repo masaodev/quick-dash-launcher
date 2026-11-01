@@ -155,6 +155,7 @@
 - 指定されたモードに応じてウィンドウを適切な位置に配置します
 - `mode`が省略された場合は、設定ファイルから`windowPositionMode`を読み込みます
 - 実装場所: `src/main/windowManager.ts`
+- 位置だけを動かすモード（`cursorMonitorCenter`・`cursor`・`fixed`）は、`setPosition()` ではなく `moveWindowKeepingSize()`（`src/main/utils/screenPosition.ts`）で動かす。理由は[位置だけを動かすとき](#位置だけを動かすとき)
 
 **関数: `saveWindowPosition()`**
 
@@ -350,6 +351,17 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 - ほかのウィンドウには、外側の辺どうしをくっつける（自分の右端を相手の左端に、など）か、同じ辺どうし（上端と上端など）を揃える。相手と縦の範囲が重なるか 20px 未満の距離にあるときだけ横に、横の範囲が重なるか近いときだけ縦に吸着する
 - 横と縦は別々に、20px 未満でいちばん近い候補へ寄せる。計算は純粋関数（`computeSnappedPosition()`、`src/main/utils/snapPosition.ts`）
 - 3 つのウィンドウはどれも枠なしなので、`getBounds()` の辺が見た目の辺と一致する
+- 寄せるときは大きさを変えずに位置だけを動かす（`moveWindowKeepingSize()`。[位置だけを動かすとき](#位置だけを動かすとき)）
+
+### 位置だけを動かすとき
+
+吸着・ランチャーの表示位置・ワークスペースウィンドウの固定位置のように、大きさを変えずに位置だけを動かすときは `moveWindowKeepingSize()`（`src/main/utils/screenPosition.ts`）を使う。
+
+- Electron の `setPosition()` は、拡大率が 100% でないディスプレイでは、動かすたびに大きさが数 px ずつ増える（DIP の丸めのため）。吸着のたびにウィンドウが広がり、その大きさが覚えられていた
+- そこで、DIP の位置を物理ピクセルに直し（`screen.dipToScreenPoint()`）、`SetWindowPos` に `SWP_NOSIZE` を付けて位置だけを動かす（`setWindowBounds()`、`src/main/utils/nativeWindowControl.ts`）。`GetWindowRect` には見えない枠が入り、Electron の位置には入らないので、今の差を足す
+- 拡大率の違うディスプレイへ移すと、大きさは Windows が拡大率の比で直し、見えない枠の幅も変わる。移った先で位置がずれていれば、もう一度合わせる
+- Win32 で動かせないとき（Windows 以外を含む）は `setPosition()` に任せる
+- `getBounds()` の幅・高さは、100% 以外のディスプレイでは位置によって 1px 前後揺れる（丸めの誤差）。物理ピクセルの大きさは変わらない
 
 ### アイテム編集ウィンドウ（独立した子ウィンドウ）
 
@@ -512,11 +524,11 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
 
 子のプロセスは親の環境変数をそのまま受け継ぐ。そのため QuickDashLauncher を Claude Code・開発用のターミナル・`qdl` コマンドの自動起動（QuickDashLauncher が動いていないと起動する）などから起動すると、そこで足された変数が、QuickDashLauncher から起動するアプリにまで届く。例: Claude Code の `CLAUDECODE`・`CLAUDE_CODE_CHILD_SESSION`（届いた claude は自分を子のセッションとみなし、会話の記録を残さない）、開発中の `NODE_ENV`・`APP_INSTANCE`、ポータブル版の `PORTABLE_EXECUTABLE_FILE`、Git Bash が足した PATH。QuickDashLauncher を起動した後に足した PATH が届かない、という問題も同じ根。
 
-そこで、アプリを起動するたびに Windows の `CreateEnvironmentBlock`（`bInherit = FALSE`）で、ログオン直後の新しいプロセスと同じ「ユーザーの標準の環境変数」を作って渡す（`src/main/utils/launchEnvironment.ts`・`standardEnvironment.ts`。数ミリ秒）。
+そこで、設定 `launchInheritEnvironment` をオフにしたときは、アプリを起動するたびに Windows の `CreateEnvironmentBlock`（`bInherit = FALSE`）で、ログオン直後の新しいプロセスと同じ「ユーザーの標準の環境変数」を作って渡す（`src/main/utils/launchEnvironment.ts`・`standardEnvironment.ts`。数ミリ秒）。既定をオン（引き継ぐ）にしているのは、標準の環境で開く経路（`qdl.exe` の補助コマンドなど）の前面化やストア版での動きを確かめ終えるまで、従来の動きを変えないため（2026-11 本人の判断）。
 
 - 標準の環境に無いセッションごとの値（`SESSIONNAME`・`CLIENTNAME`）は、QuickDashLauncher の環境から足す
 - QuickDashLauncher 自身の環境（`process.env`）は書き換えない。書き換えると、トレイの「再起動」（`app.relaunch`）で `APP_INSTANCE`・`QUICK_DASH_CONFIG_DIR`・`PORTABLE_EXECUTABLE_FILE` が消え、開発用のインスタンスが本番のデータを開くおそれがあるため
-- 設定 `launchInheritEnvironment` が `true` のとき（従来の動き）と、標準の環境を作れなかったとき（ログに残す）は、`env` を渡さず QuickDashLauncher の環境を引き継ぐ（ShellExecute の経路は Electron の `shell.openPath`・`shell.openExternal` で開く）
+- 設定 `launchInheritEnvironment` が `true` のとき（既定。従来の動き）と、標準の環境を作れなかったとき（ログに残す）は、`env` を渡さず QuickDashLauncher の環境を引き継ぐ（ShellExecute の経路は Electron の `shell.openPath`・`shell.openExternal` で開く）
 - ファイル名だけのパス（`wt.exe` など）を PATH から探すとき（`resolveFromPath()`）も、同じ環境の PATH で探す
 
 経路ごとの扱い:

@@ -101,6 +101,8 @@ export const ja = {
         'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
       clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
+    partlyUnreadable:
+      '⚠ {{files}} を読めなかったので、そのアイテムは出ていません。直したら F5 で読み直してください',
     empty: {
       noMatch: '「{{query}}」に合うアイテムはありません',
       noMatchWindow: '「{{query}}」に合うウィンドウはありません',
@@ -2622,7 +2624,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       heading: '詳細',
       launchInheritEnvironment: 'アプリに QuickDashLauncher の環境変数を引き継ぐ',
       launchInheritEnvironmentDescription:
-        'オフのときは、スタートメニューから開いたときと同じ環境変数でアプリを起動します。QuickDashLauncher を起動したターミナルで設定した環境変数を、起動するアプリにも渡したいときだけオンにします。',
+        'オフにすると、スタートメニューから開いたときと同じ環境変数でアプリを起動します。QuickDashLauncher を Claude Code やターミナルから起動することがあり、そこで設定した環境変数を起動するアプリに渡したくないときにオフにします。',
     },
     display: {
       keyboardHints: '操作のヒントを表示する',

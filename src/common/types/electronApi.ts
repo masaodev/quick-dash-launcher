@@ -166,6 +166,8 @@ export interface ElectronAPI {
   /** 管理ウィンドウが隠れたとき（どの経路でも） */
   onAdminHidden: (callback: () => void) => () => void;
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
+  /** 開いている管理ウィンドウに、アイテム管理で見せる行（id）が届いたとき */
+  onRevealItem: (callback: (itemId: string) => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;
   onSettingsChanged: (callback: () => void) => () => void;
   /** ワークスペースが開いているか（⭐ ボタンの押し込み表示） */
@@ -299,6 +301,10 @@ export interface ElectronAPI {
   openEditWindowWithImportModal: (modal: 'bookmark' | 'app') => Promise<void>;
   getInitialTab: () => Promise<AdminTab>;
   getPendingImportModal: () => Promise<'bookmark' | 'app' | null>;
+  /** 管理ウィンドウのアイテム管理を開き、指定した id の行へスクロールして選ぶ */
+  openEditWindowWithItem: (itemId: string) => Promise<void>;
+  /** 管理ウィンドウを作った直後に、見せる行（id）を受け取る（取得後にクリア） */
+  getPendingRevealItem: () => Promise<string | null>;
   copyToClipboard: (text: string) => Promise<boolean>;
   /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
   readClipboardForRegister: () => Promise<{ files: string[]; text: string }>;

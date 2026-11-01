@@ -194,7 +194,7 @@ export interface AppSettings {
   /** 正式版を使っていても、ベータ版を知らせる（デフォルト: false。ベータ版を使っている間は常に知らせる） */
   updateCheckIncludeBeta: boolean;
   /**
-   * アプリを起動するときに QuickDashLauncher の環境変数を引き継ぐ（デフォルト: false。false なら、スタートメニューから
+   * アプリを起動するときに QuickDashLauncher の環境変数を引き継ぐ（デフォルト: true。false なら、スタートメニューから
    * 開いたときと同じユーザーの標準の環境変数で起動する。src/main/utils/launchEnvironment.ts）
    */
   launchInheritEnvironment: boolean;
