@@ -145,12 +145,25 @@ fn stop_inheriting_std_handles() {
     }
 }
 
-fn launch_app(exe: &PathBuf) -> io::Result<()> {
+/// 起動する本体に渡す APP_INSTANCE（None なら渡さず、漏れてきた指定も消す）
+///
+/// 本体はこの値で userData とパイプ名を決める。つなぎ先（QDL_INSTANCE）と同じインスタンスとして
+/// 起動しないと、qdl が待つパイプが開かない
+fn app_instance_for_launch(instance: Option<&str>) -> Option<&str> {
+    instance.filter(|name| !name.is_empty())
+}
+
+fn launch_app(exe: &PathBuf, instance: Option<&str>) -> io::Result<()> {
     use std::os::windows::process::CommandExt;
     stop_inheriting_std_handles();
     const DETACHED_PROCESS: u32 = 0x0000_0008;
     const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
-    Command::new(exe)
+    let mut command = Command::new(exe);
+    match app_instance_for_launch(instance) {
+        Some(name) => command.env("APP_INSTANCE", name),
+        None => command.env_remove("APP_INSTANCE"),
+    };
+    command
         .arg("--launched-by-cli")
         // 本体を Node として起動してしまわないよう、漏れてきた指定を消す
         .env_remove("ELECTRON_RUN_AS_NODE")
@@ -163,7 +176,7 @@ fn launch_app(exe: &PathBuf) -> io::Result<()> {
         .map(|_| ())
 }
 
-fn connect_or_launch(name: &str, base: &str) -> Result<File, String> {
+fn connect_or_launch(name: &str, base: &str, instance: Option<&str>) -> Result<File, String> {
     match connect(name) {
         Ok(pipe) => return Ok(pipe),
         Err(e) if e.raw_os_error() == Some(ERROR_FILE_NOT_FOUND) => {}
@@ -177,7 +190,7 @@ fn connect_or_launch(name: &str, base: &str) -> Result<File, String> {
         "Quick Dash Launcher が起動しておらず、起動する exe も見つかりません。Quick Dash Launcher を起動してから実行してください",
     )?;
     eprintln!("Quick Dash Launcher を起動しています…");
-    launch_app(&exe).map_err(|e| format!("Quick Dash Launcher を起動できません（{}）: {e}", exe.display()))?;
+    launch_app(&exe, instance).map_err(|e| format!("Quick Dash Launcher を起動できません（{}）: {e}", exe.display()))?;
 
     let start = Instant::now();
     while start.elapsed() < LAUNCH_TIMEOUT {
@@ -211,7 +224,7 @@ fn run() -> Result<u8, (u8, String)> {
     let base = instance_base(instance.as_deref());
     let name = pipe_name(&base, &current_user());
 
-    let pipe = connect_or_launch(&name, &base).map_err(|m| (EXIT_NOT_AVAILABLE, m))?;
+    let pipe = connect_or_launch(&name, &base, instance.as_deref()).map_err(|m| (EXIT_NOT_AVAILABLE, m))?;
     let cwd = env::current_dir()
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_default();
@@ -264,6 +277,13 @@ mod tests {
         assert_eq!(instance_base(None), "quick-dash-launcher");
         assert_eq!(instance_base(Some("")), "quick-dash-launcher");
         assert_eq!(instance_base(Some("dev")), "dev-quick-dash-launcher");
+    }
+
+    #[test]
+    fn launch_passes_connecting_instance() {
+        assert_eq!(app_instance_for_launch(None), None);
+        assert_eq!(app_instance_for_launch(Some("")), None);
+        assert_eq!(app_instance_for_launch(Some("dev2")), Some("dev2"));
     }
 
     #[test]
