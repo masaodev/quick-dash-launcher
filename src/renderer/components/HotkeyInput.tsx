@@ -51,6 +51,16 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
   const MODIFIERS = ['Ctrl', 'Alt', 'Shift', 'CmdOrCtrl'];
   const SPECIAL_KEYS = ['Space', 'Enter', 'Tab', 'Escape', 'Delete', 'Backspace'];
 
+  /**
+   * 押したキーの名前。英字・数字は物理キー（event.code）で決める。Shift を押しながらだと event.key が
+   * `!` などの記号になり、Shift+1 のような組み合わせを記録できないため
+   */
+  const keyOf = (event: React.KeyboardEvent<HTMLInputElement>): string => {
+    const physical = /^(?:Key([A-Z])|Digit([0-9]))$/.exec(event.code ?? '');
+    if (physical) return physical[1] ?? physical[2];
+    return normalizeKey(event.key);
+  };
+
   const addKey = (key: string) => {
     setCurrentKeys((prev) => new Set([...prev, key]));
   };
@@ -61,7 +71,7 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
     event.preventDefault();
     event.stopPropagation();
 
-    const key = normalizeKey(event.key);
+    const key = keyOf(event);
 
     if (MODIFIERS.includes(key)) {
       addKey(key);
@@ -99,8 +109,20 @@ export const HotkeyInput: React.FC<HotkeyInputProps> = ({
         setIsRecording(false);
         setCurrentKeys(new Set());
         inputRef.current?.blur();
+        return;
       }
     }
+
+    // 確定しなかったら、離したキーを外す（Ctrl を押して離してから Alt+Space を押したときに、
+    // Ctrl+Alt+Space と記録しないため）
+    const released = keyOf(event);
+    const releasedKey = released.length === 1 ? released.toUpperCase() : released;
+    setCurrentKeys((prev) => {
+      if (!prev.has(releasedKey)) return prev;
+      const next = new Set(prev);
+      next.delete(releasedKey);
+      return next;
+    });
   };
 
   // 録画中は本体に伝え、QDL 自身のホットキーと Windows のウィンドウメニュー（Alt+Space）を止めてもらう。
