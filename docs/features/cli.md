@@ -14,7 +14,7 @@ CLI の実行ファイルは `qdl.exe` です。`qdl.exe` は引数を解釈せ�
 
 ## qdl を使えるようにする
 
-`qdl.exe` は本体に同梱されていますが、そのままではターミナルから `qdl` と打っても見つかりません（ポータブル版は起動のたびに一時フォルダへ展開されて動くので、同梱の場所も毎回変わります）。管理画面の基本設定「QuickDashLauncher CLI を使えるようにする」（設定項目 `cliEnabled`。[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）をオンにすると、次のことが起きます。
+`qdl.exe` は本体に同梱されていますが、そのままではターミナルから `qdl` と打っても見つかりません（以前の 1 ファイルの exe のポータブル版は起動のたびに一時フォルダへ展開されて動くので、同梱の場所も毎回変わりました）。管理画面の基本設定「QuickDashLauncher CLI を使えるようにする」（設定項目 `cliEnabled`。[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）をオンにすると、次のことが起きます。
 
 - 同梱の `qdl.exe` を `%LOCALAPPDATA%\quick-dash-launcher\bin` にコピーし、そのフォルダをユーザーの環境変数 PATH に足す。新しく開いたターミナルから `qdl` で呼べる
 - 本体を起動するたびに、同梱の `qdl.exe` とコピー済みのものを比べ、違えば入れ替える。本体を更新しても、CLI と本体のやり取りの版はずれない
@@ -233,8 +233,8 @@ JSON は UTF-8 で出します。どのコマンドにも `--ascii` を付けら
 - **起動のしかた**: 本体には `--launched-by-cli` を付けて起動します。この印があると、本体はスプラッシュを出しません。本体は `qdl.exe` から切り離して起動し、本体のログが `qdl.exe` の出力に混ざらないよう、標準入出力は引き継ぎません。呼び出し元（AI のシェルなど）のパイプのハンドルも本体に渡さないので、本体が動き続けていても `qdl` の呼び出しはすぐに終わります
 - **起動する本体の探し方**: 次の順に探し、最初に見つかったものを起動します
   1. 環境変数 `QDL_APP_EXE` に書かれたパス
-  2. `%APPDATA%\quick-dash-launcher\cli-launcher.json`（`APP_INSTANCE` があれば `%APPDATA%\<APP_INSTANCE>-quick-dash-launcher\`）に記録された本体の場所。パッケージ版の本体が起動のたびに userData へ書き出します。以前の 1 ファイルの exe のポータブル版は起動のたびに一時フォルダへ展開して動くので、展開先ではなく展開前の exe の場所を記録します。ポータブル版（ZIP）でデータフォルダを使っているときは userData がデータフォルダなので、ここには書かれません
-  3. `qdl.exe` の場所から見たインストール先の `QuickDashLauncher.exe`（`qdl.exe` は `<インストール先>\resources\bin\qdl.exe`、ポータブル版（ZIP）では `<展開したフォルダ>\resources\bin\qdl.exe` に同梱されています）。PATH から呼ぶ `qdl` は `%LOCALAPPDATA%` へのコピーなので、ポータブル版（ZIP）の QDL が起動していないときは、PATH の `qdl` からは起動できません（同梱の `qdl.exe` を直接呼べば起動できます）
+  2. `%APPDATA%\quick-dash-launcher\cli-launcher.json`（`APP_INSTANCE` があれば `%APPDATA%\<APP_INSTANCE>-quick-dash-launcher\`）に記録された本体の場所。パッケージ版の本体が起動のたびに userData へ書き出します。以前の 1 ファイルの exe のポータブル版は起動のたびに一時フォルダへ展開して動くので、展開先ではなく展開前の exe の場所を記録します。ZIP 版のポータブルモード（exe の横のデータフォルダを使う）では userData がデータフォルダなので、ここには書かれません
+  3. `qdl.exe` の場所から見たインストール先の `QuickDashLauncher.exe`（`qdl.exe` は `<インストール先>\resources\bin\qdl.exe`、ZIP 版では `<展開したフォルダ>\resources\bin\qdl.exe` に同梱されています）。PATH から呼ぶ `qdl` は `%LOCALAPPDATA%` へのコピーなので、ポータブルモードの QDL が起動していないときは、PATH の `qdl` からは起動できません（同梱の `qdl.exe` を直接呼べば起動できます）
 - **起動させたくないとき**: 環境変数 `QDL_NO_LAUNCH=1` を指定すると、本体が動いていなければ起動せずに終了コード 3 で終わります
 
 ## 二重起動の防止との関係

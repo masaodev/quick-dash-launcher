@@ -1738,7 +1738,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     distribution: '配布形式',
     dataLocation: 'データの保存先',
     dataLocations: {
-      portable: 'exe の横の QuickDashLauncher-data',
+      portable: 'exe の横の QuickDashLauncher-data（ポータブルモード）',
       appData: '%APPDATA%',
     },
     updateAvailable: '新しいバージョン v{{version}} があります',
@@ -1752,7 +1752,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     updateCheckOff: 'アップデートの確認はオフです（設定タブ → 基本設定でオンにできます）',
     distributions: {
       store: 'Microsoft Store 版',
-      portable: 'ポータブル版',
+      portable: 'ZIP 版',
       installer: 'インストーラー版',
       dev: '開発版',
     },

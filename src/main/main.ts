@@ -73,7 +73,7 @@ if (EnvConfig.hasAppInstance) {
   app.setPath('userData', userDataPath);
 }
 
-// ポータブル版（ZIP）で exe の横にデータフォルダがあれば、Electron のデータも設定フォルダもそこに置く。
+// ZIP 版で exe の横にデータフォルダがあれば（ポータブルモード）、Electron のデータも設定フォルダもそこに置く。
 // userData を使う処理（二重起動の防止・ログ・設定フォルダ）より前に決める
 const portableData = resolvePortableData({
   isPackaged: app.isPackaged,

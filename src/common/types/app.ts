@@ -1,4 +1,4 @@
-/** 配布形式（Store 版・ポータブル版・インストーラー版・開発中） */
+/** 配布形式（Store 版・ZIP 版（portable）・インストーラー版・開発中）。以前の 1 ファイルの exe のポータブル版も portable */
 export type AppDistribution = 'store' | 'portable' | 'installer' | 'dev';
 
 /**
@@ -20,7 +20,7 @@ export interface AppInfo {
   repository: string;
   /** 配布形式 */
   distribution: AppDistribution;
-  /** データを exe の横のデータフォルダに置いている（ポータブル版） */
+  /** データを exe の横のデータフォルダに置いている（ZIP 版のポータブルモード） */
   portableData: boolean;
 }
 

@@ -2,9 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * ポータブル版（ZIP）の判定と、データの置き場所。
- * ZIP には展開済みのアプリと、印のファイル portable.txt・空のデータフォルダ QuickDashLauncher-data が入っている
- * （scripts/make-portable-zip.mjs）。印のある exe で、データフォルダがあれば、Electron のデータ（userData）を
+ * ZIP 版の判定と、ポータブルモードのデータの置き場所。
+ * ZIP には展開済みのアプリと、印のファイル portable.txt が入っている（scripts/make-portable-zip.mjs）。
+ * データフォルダ QuickDashLauncher-data は入れないので、既定ではインストーラー版と同じ %APPDATA% を使う。
+ * 印のある exe の横にデータフォルダがあれば（ポータブルモード）、Electron のデータ（userData）を
  * まるごとそこに置く。設定フォルダは userData の下の config なので、一緒にデータフォルダへ移る
  */
 

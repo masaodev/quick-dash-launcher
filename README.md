@@ -156,14 +156,14 @@ winget install masaodev.quick-dash-launcher
 
 To update, run `winget upgrade masaodev.quick-dash-launcher`. Only stable releases are published to winget (beta versions are available as pre-releases on the Releases page).
 
-### Installer and portable versions
+### Installer and ZIP versions
 
 Download them from [Releases](https://github.com/masaodev/quick-dash-launcher/releases).
 
 - Installer: Run `QuickDashLauncher.Setup.x.x.x.exe`. The app starts when the installation finishes.
-- Portable: Extract `QuickDashLauncher-x.x.x-portable.zip` to any folder and run `QuickDashLauncher.exe` (no installation needed). Settings and data are saved in the `QuickDashLauncher-data` folder next to the exe, so you can carry the whole folder on a USB drive. To update, extract the new ZIP to another folder and move `QuickDashLauncher-data` into it.
+- ZIP: Extract `QuickDashLauncher-x.x.x-portable.zip` to any folder and run `QuickDashLauncher.exe` (no installation needed). Settings and data are saved in `%APPDATA%\quick-dash-launcher`, the same place as the installer, so a new version extracted to another folder uses the same data. To use portable mode, create a `QuickDashLauncher-data` folder next to the exe. Settings and data are then saved in that folder, so you can carry the whole folder on a USB drive (to update, move `QuickDashLauncher-data` into the new folder).
 
-The installer and portable versions aren't signed, so Windows SmartScreen may show a warning the first time you run them. If it does, select **More info** > **Run anyway**.
+The installer and ZIP versions aren't signed, so Windows SmartScreen may show a warning the first time you run them. If it does, select **More info** > **Run anyway**.
 
 When you first start the app, choose the launch hotkey that opens the launcher (Alt+Space by default). For keyboard operations, see [Keyboard shortcuts](docs/features/keyboard-shortcuts.md) (Japanese).
 
