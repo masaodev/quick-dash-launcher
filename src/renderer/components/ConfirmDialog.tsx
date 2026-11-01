@@ -9,10 +9,10 @@ import '../styles/components/Modal.css';
 import '../styles/components/ConfirmDialog.css';
 import { Button } from './ui';
 
-/** 確認ダイアログの表の 1 行（項目名と、変わる前・後の値） */
+/** 確認ダイアログの表の 1 行（項目名と、変わる前・後の値。before が無ければ値だけを出す） */
 export interface ConfirmDetail {
   label: string;
-  before: string;
+  before?: string;
   after: string;
 }
 
@@ -102,10 +102,14 @@ function ConfirmDialog({
                   <tr key={detail.label}>
                     <th scope="row">{detail.label}</th>
                     <td>
-                      {detail.before}
-                      <span className="confirm-details-arrow" aria-hidden="true">
-                        →
-                      </span>
+                      {detail.before !== undefined && (
+                        <>
+                          {detail.before}
+                          <span className="confirm-details-arrow" aria-hidden="true">
+                            →
+                          </span>
+                        </>
+                      )}
                       {detail.after}
                     </td>
                   </tr>

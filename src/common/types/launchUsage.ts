@@ -57,3 +57,6 @@ export function mergeLaunchUsage(
   }
   return merged;
 }
+
+/** item-usage.json の形式の版 */
+export const LAUNCH_USAGE_VERSION = 1;

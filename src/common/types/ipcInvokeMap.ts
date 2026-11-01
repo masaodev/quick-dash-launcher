@@ -198,6 +198,10 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.BACKUP_RESTORE_SNAPSHOT]: ElectronAPI['backupAPI']['restoreSnapshot'];
   [IPC_CHANNELS.BACKUP_DELETE_SNAPSHOT]: ElectronAPI['backupAPI']['deleteSnapshot'];
   [IPC_CHANNELS.BACKUP_GET_STATUS]: ElectronAPI['backupAPI']['getStatus'];
+  [IPC_CHANNELS.BACKUP_EXPORT_ALL]: ElectronAPI['backupAPI']['exportAll'];
+  [IPC_CHANNELS.BACKUP_IMPORT_INSPECT]: ElectronAPI['backupAPI']['inspectImport'];
+  [IPC_CHANNELS.BACKUP_IMPORT_APPLY]: ElectronAPI['backupAPI']['applyImport'];
+  [IPC_CHANNELS.BACKUP_IMPORT_CANCEL]: ElectronAPI['backupAPI']['cancelImport'];
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap;

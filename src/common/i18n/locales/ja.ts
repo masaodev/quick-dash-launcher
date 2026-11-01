@@ -2150,6 +2150,17 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     restoreFailed: '復元に失敗しました',
     deleteFailed: '削除に失敗しました',
     preMigrationCopyFailed: '移行前スナップショットに {{file}} をコピーできませんでした',
+    preImportCopyFailed:
+      '読み込みの前のスナップショットに {{file}} をコピーできなかったので、読み込みをやめました',
+  },
+  dataExport: {
+    exportTitle: 'エクスポート',
+    importTitle: 'インポートするファイルを選ぶ',
+    importExpired: '選んだファイルが見つかりません。もう一度インポートしてください',
+    applyFailed:
+      'インポートの途中で失敗しました。元のデータはスナップショット（{{snapshot}}）に残っています: {{error}}',
+    applyRolledBack:
+      'インポートの途中で失敗したので、元のデータに戻しました（何も変わっていません）: {{error}}',
   },
   clipboardService: {
     imagePreview: '画像（{{width}}×{{height}}）',
@@ -2182,6 +2193,26 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     faviconFailed: 'ファビコン取得に失敗しました',
     iconNotFound: 'アイコンが見つかりませんでした',
     iconFailed: 'アイコン抽出に失敗しました',
+  },
+  dataImport: {
+    confirmTitle: 'インポート',
+    confirmMessage: 'エクスポートしたデータをインポートして、再起動します。',
+    confirmWarning: '今のデータはすべて置き換わります。\n元のデータはスナップショットに残します。',
+    detailSource: 'エクスポート元',
+    sourceValue: 'QuickDashLauncher {{version}}（{{distribution}}）',
+    detailExportedAt: 'エクスポートした日時',
+    detailItems: 'アイテム（今 → インポート後）',
+    detailWorkspaceItems: 'ワークスペースのアイテム',
+    confirmButton: 'インポートして再起動',
+    notExport: 'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません',
+    newerVersion:
+      '新しいバージョンの QuickDashLauncher でエクスポートしたファイルです。QuickDashLauncher を最新バージョンにしてからインポートしてください',
+    invalidFile: 'ファイルの中の {{file}} を読めないため、インポートできません',
+    failed: 'インポートに失敗しました: {{error}}',
+    corrupted: 'ファイルが壊れているため、インポートできません。もう一度エクスポートしてください',
+    corruptedFile:
+      'ファイルの中の {{file}} が壊れているため、インポートできません。もう一度エクスポートしてください',
+    restarting: 'インポートしています。終わると再起動します…',
   },
   itemCsv: {
     replanned:
@@ -2678,6 +2709,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       lastBackup: '最終バックアップ: {{time}}',
       neverBackedUp: 'なし',
       openSnapshots: 'スナップショット一覧',
+      transferHeading: 'エクスポートとインポート',
+      transferDescription: 'データと設定を 1 つのファイルにまとめて、別の PC などへ移せます。',
+      exportAll: 'エクスポート…',
+      importAll: 'インポート…',
+      exported: 'エクスポートしました: {{path}}',
+      exportFailed: 'エクスポートに失敗しました: {{error}}',
     },
     snapshots: {
       title: 'スナップショット一覧',

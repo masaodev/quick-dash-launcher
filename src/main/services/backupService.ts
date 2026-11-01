@@ -14,6 +14,7 @@ import { mainI18n } from './mainI18n.js';
 const PRE_EXTERNAL_SUFFIX = '_pre-external';
 const PRE_SET_MIGRATION_SUFFIX = '_pre-set-migration';
 const PRE_WINDOW_MIGRATION_SUFFIX = '_pre-window-migration';
+const PRE_IMPORT_SUFFIX = '_pre-import';
 /**
  * スナップショットのフォルダ名の規則: `<タイムスタンプ>[-<連番>][_<サフィックス>]`
  * （1: タイムスタンプ 2: 同じ秒に作ったときの連番（2 から） 3: `_pre-restore` などのサフィックス）
@@ -262,6 +263,7 @@ export class BackupService {
    * _pre-external は cleanupPreExternalSnapshots() が別枠で管理するため数に入れない
    * （数に入れると、外部編集を繰り返したときに日次スナップショットが押し出される）。
    * _pre-set-migration・_pre-window-migration は前の版に戻すときの拠り所なので、それぞれ新しい 2 つは消さない
+   * _pre-import もインポートする前に戻す拠り所なので、新しい 2 つは消さない（保持数が少ないと数日で消えていた）
    */
   private async cleanupOldSnapshots(): Promise<void> {
     if (!this.settingsService) return;
@@ -270,7 +272,7 @@ export class BackupService {
     const all = await this.listSnapshotEntries();
     // 変換前のスナップショットは新しい 2 つ（データファイル用とワークスペース用）を残す
     const keptSetMigrations = new Set(
-      [PRE_SET_MIGRATION_SUFFIX, PRE_WINDOW_MIGRATION_SUFFIX].flatMap((suffix) =>
+      [PRE_SET_MIGRATION_SUFFIX, PRE_WINDOW_MIGRATION_SUFFIX, PRE_IMPORT_SUFFIX].flatMap((suffix) =>
         all
           .filter((s) => s.timestamp.endsWith(suffix))
           .slice(0, 2)
@@ -496,6 +498,38 @@ export class BackupService {
       throw new Error(mainI18n.t('backupErrors.preMigrationCopyFailed', { file: 'datafiles' }));
     }
     logger.info('ウィンドウ切り替えの変換前のスナップショットを作成しました');
+  }
+
+  /**
+   * 一括エクスポートの読み込みで置き換える前に、置き換わるファイルをスナップショットに残す（_pre-import）
+   *
+   * 読み込みは元に戻せないので backupEnabled に関係なく作る。1 つでも写せなければフォルダを消して例外を投げ、
+   * 呼び出し側は読み込まない
+   *
+   * @param relPaths - 設定フォルダからの相対パス（区切りは `/`）
+   * @returns 作成したスナップショットのフォルダ名。残すファイルが無ければ null
+   */
+  public async createPreImportSnapshot(relPaths: string[]): Promise<string | null> {
+    if (relPaths.length === 0) return null;
+    const configFolder = PathManager.getConfigFolder();
+    const { timestamp, snapshotFolder } = this.allocateSnapshotFolder(
+      PathManager.getBackupFolder(),
+      PRE_IMPORT_SUFFIX
+    );
+    for (const relPath of relPaths) {
+      const parts = relPath.split('/');
+      const destPath = path.join(snapshotFolder, ...parts);
+      FileUtils.ensureDirectory(path.dirname(destPath));
+      if (!FileUtils.safeCopyFile(path.join(configFolder, ...parts), destPath)) {
+        fs.rmSync(snapshotFolder, { recursive: true, force: true });
+        throw new Error(mainI18n.t('backupErrors.preImportCopyFailed', { file: relPath }));
+      }
+    }
+    logger.info(
+      { snapshotFolder, fileCount: relPaths.length },
+      '読み込みの前のスナップショットを作成しました'
+    );
+    return timestamp;
   }
 
   private async createForcedSnapshot(suffix: string): Promise<string> {

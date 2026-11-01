@@ -4,10 +4,13 @@ import * as path from 'path';
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const paths = vi.hoisted(() => ({ backupFolder: '' }));
+const paths = vi.hoisted(() => ({ backupFolder: '', configFolder: '' }));
 
 vi.mock('../config/pathManager.js', () => ({
-  default: { getBackupFolder: vi.fn(() => paths.backupFolder) },
+  default: {
+    getBackupFolder: vi.fn(() => paths.backupFolder),
+    getConfigFolder: vi.fn(() => paths.configFolder),
+  },
 }));
 
 vi.mock('./settingsService.js', () => ({
@@ -26,6 +29,7 @@ describe('BackupService の変更前スナップショット', () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-backup-test-'));
     paths.backupFolder = path.join(tempDir, 'backup');
+    paths.configFolder = tempDir;
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-13T01:30:00Z'));
   });
@@ -89,5 +93,35 @@ describe('BackupService の変更前スナップショット', () => {
       expect((await service.restoreSnapshot(name)).success).toBe(false);
     }
     expect(fs.existsSync(outside)).toBe(true);
+  });
+
+  it('読み込みの前のスナップショットに、指定したファイルを設定フォルダと同じ並びで残す', async () => {
+    const service = await BackupService.getInstance();
+    fs.writeFileSync(path.join(tempDir, 'settings.json'), '{"hotkey":"x"}');
+    fs.mkdirSync(path.join(tempDir, 'icon-cache', 'custom'), { recursive: true });
+    fs.writeFileSync(path.join(tempDir, 'icon-cache', 'custom', 'a.png'), 'png');
+
+    const name = await service.createPreImportSnapshot([
+      'settings.json',
+      'icon-cache/custom/a.png',
+    ]);
+
+    expect(name).toBe('2026-10-13T01-30-00_pre-import');
+    const read = (...parts: string[]) =>
+      fs.readFileSync(path.join(paths.backupFolder, name!, ...parts), 'utf8');
+    expect(read('settings.json')).toBe('{"hotkey":"x"}');
+    expect(read('icon-cache', 'custom', 'a.png')).toBe('png');
+  });
+
+  it('読み込みの前のスナップショットに写せないファイルがあれば、フォルダを消して例外を投げる', async () => {
+    const service = await BackupService.getInstance();
+    fs.writeFileSync(path.join(tempDir, 'settings.json'), '{}');
+
+    await expect(
+      service.createPreImportSnapshot(['settings.json', 'datafiles/missing.json'])
+    ).rejects.toThrow();
+    expect(fs.existsSync(path.join(paths.backupFolder, '2026-10-13T01-30-00_pre-import'))).toBe(
+      false
+    );
   });
 });

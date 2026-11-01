@@ -66,6 +66,9 @@ import type {
   BookmarkAutoImportResult,
   BookmarkWithFolder,
   SnapshotInfo,
+  DataExportResult,
+  DataImportInspectResult,
+  DataImportApplyResult,
   BackupStatus,
   MixedOrderEntry,
   MainChildWindowRequest,
@@ -660,5 +663,13 @@ export interface ElectronAPI {
     restoreSnapshot: (timestamp: string) => Promise<{ success: boolean; error?: string }>;
     deleteSnapshot: (timestamp: string) => Promise<{ success: boolean; error?: string }>;
     getStatus: () => Promise<BackupStatus>;
+    /** QDL のデータをまるごと zip 1 つに書き出す（保存先はダイアログで選ぶ。やめたら null） */
+    exportAll: () => Promise<DataExportResult | null>;
+    /** 書き出したファイルを選んでもらい、読み込めるかを確かめる（選ぶのをやめたら null） */
+    inspectImport: () => Promise<DataImportInspectResult | null>;
+    /** 確かめたファイルで設定フォルダをまるごと置き換え、QDL を再起動する */
+    applyImport: (token: string) => Promise<DataImportApplyResult>;
+    /** 確認ダイアログでやめたとき、main が持っている展開済みの中身を捨てる */
+    cancelImport: () => Promise<void>;
   };
 }
