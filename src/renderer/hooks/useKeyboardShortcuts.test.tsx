@@ -144,7 +144,6 @@ describe('useKeyboardShortcuts', () => {
       ...keyEvent('Enter'),
       nativeEvent: { isComposing: true },
     } as unknown as React.KeyboardEvent);
-    await handleKeyDown({ ...keyEvent('Enter'), keyCode: 229 } as unknown as React.KeyboardEvent);
     expect(params.handleExecuteItem).not.toHaveBeenCalled();
   });
 

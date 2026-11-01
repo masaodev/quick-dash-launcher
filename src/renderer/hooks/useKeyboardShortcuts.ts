@@ -182,7 +182,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
 
   async function handleKeyDown(e: React.KeyboardEvent): Promise<void> {
     // 日本語入力の変換中のキー（変換を確定する Enter など）は IME に任せる。アイテムを実行しない
-    if (e.nativeEvent?.isComposing || e.keyCode === 229) return;
+    if (e.nativeEvent?.isComposing) return;
     // 2 つ以上を閉じる前の確認の帯: Enter で閉じる、Esc でやめる。ほかのキーは通常どおり
     const pendingClose = windowSelection.pendingClose;
     if (searchMode === 'window' && pendingClose && (e.key === 'Enter' || e.key === 'Escape')) {
