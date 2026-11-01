@@ -2614,7 +2614,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       heading: 'Advanced',
       launchInheritEnvironment: "Pass QuickDashLauncher's environment variables to apps",
       launchInheritEnvironmentDescription:
-        "When off, apps start with the same environment variables as when you open them from the Start menu. Turn this off if you sometimes start QuickDashLauncher from Claude Code or a terminal and don't want apps to get the environment variables set there. For now, this applies to apps with arguments, .bat and .cmd files, and Store apps.",
+        "When off, apps start with the same environment variables as when you open them from the Start menu. Turn this off if you sometimes start QuickDashLauncher from Claude Code or a terminal and don't want apps to get the environment variables set there.",
     },
     display: {
       keyboardHints: 'Show keyboard hints',

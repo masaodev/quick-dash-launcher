@@ -2624,7 +2624,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       heading: '詳細',
       launchInheritEnvironment: 'アプリに QuickDashLauncher の環境変数を引き継ぐ',
       launchInheritEnvironmentDescription:
-        'オフにすると、スタートメニューから開いたときと同じ環境変数でアプリを起動します。QuickDashLauncher を Claude Code やターミナルから起動することがあり、そこで設定した環境変数を起動するアプリに渡したくないときにオフにします。今は、引数を指定したアプリ・.bat・.cmd・ストアアプリに効きます。',
+        'オフにすると、スタートメニューから開いたときと同じ環境変数でアプリを起動します。QuickDashLauncher を Claude Code やターミナルから起動することがあり、そこで設定した環境変数を起動するアプリに渡したくないときにオフにします。',
     },
     display: {
       keyboardHints: '操作のヒントを表示する',
