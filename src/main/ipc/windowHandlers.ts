@@ -22,8 +22,10 @@ import {
   toggleAdminWindow,
   showAdminWindowWithTab,
   showAdminWindowWithImportModal,
+  showAdminWindowWithItem,
   getInitialTab,
   getPendingImportModal,
+  getPendingRevealItem,
 } from '../adminWindowManager.js';
 import {
   toggleWorkspaceWindow,
@@ -173,6 +175,11 @@ export function setupWindowHandlers(
 
   handleIpc(IPC_CHANNELS.GET_INITIAL_TAB, () => getInitialTab());
   handleIpc(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL, () => getPendingImportModal());
+
+  handleIpc(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_ITEM, async (_event, itemId: string) =>
+    showAdminWindowWithItem(itemId)
+  );
+  handleIpc(IPC_CHANNELS.GET_PENDING_REVEAL_ITEM, () => getPendingRevealItem());
 
   handleIpc(IPC_CHANNELS.COPY_TO_CLIPBOARD, async (_event, text: string) => {
     await clipboard.writeText(text);

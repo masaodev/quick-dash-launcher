@@ -101,6 +101,8 @@ export const ja = {
         'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
       clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
+    partlyUnreadable:
+      '⚠ {{files}} を読めなかったので、そのアイテムは出ていません。直したら F5 で読み直してください',
     empty: {
       noMatch: '「{{query}}」に合うアイテムはありません',
       noMatchWindow: '「{{query}}」に合うウィンドウはありません',

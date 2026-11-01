@@ -34,6 +34,8 @@ const AdminApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingImportModal, setPendingImportModal] = useState<'bookmark' | 'app' | null>(null);
+  // アイテム管理で見せる行の id（ランチャーの WSグループの行の F2）。見せたら null に戻す
+  const [pendingRevealItemId, setPendingRevealItemId] = useState<string | null>(null);
   // 管理ウィンドウが隠れるたびに増やし、開いている取込画面を閉じさせる（A3-187）
   const [importModalCloseSignal, setImportModalCloseSignal] = useState(0);
   // 設定タブで開いているカテゴリ。アイテム管理（手動取込）から「ブックマーク自動取込」を直接開けるよう、ここで持つ
@@ -46,14 +48,18 @@ const AdminApp: React.FC = () => {
 
   useEffect(() => {
     async function initialize(): Promise<void> {
-      const [, initialTab, importModal] = await Promise.all([
+      const [, initialTab, importModal, revealItemId] = await Promise.all([
         loadData(),
         window.electronAPI.getInitialTab().catch(() => 'settings' as const),
         window.electronAPI.getPendingImportModal().catch(() => null),
+        window.electronAPI.getPendingRevealItem().catch(() => null),
       ]);
       setActiveTab(initialTab);
       if (importModal) {
         setPendingImportModal(importModal);
+      }
+      if (revealItemId) {
+        setPendingRevealItemId(revealItemId);
       }
     }
     initialize();
@@ -62,6 +68,7 @@ const AdminApp: React.FC = () => {
     const unsubscribeImportModal = window.electronAPI.onOpenImportModal((modal) => {
       setPendingImportModal(modal);
     });
+    const unsubscribeRevealItem = window.electronAPI.onRevealItem(setPendingRevealItemId);
     const unsubscribeData = window.electronAPI.onDataChanged(() => {
       debugInfo('データ変更通知を受信、データを再読み込みします');
       loadData(false);
@@ -85,6 +92,7 @@ const AdminApp: React.FC = () => {
     return () => {
       unsubscribeSetActiveTab?.();
       unsubscribeImportModal?.();
+      unsubscribeRevealItem?.();
       unsubscribeData?.();
       unsubscribeWindow?.();
       unsubscribeClose?.();
@@ -227,6 +235,8 @@ const AdminApp: React.FC = () => {
         dataFileLabels={dataFileLabels}
         pendingImportModal={pendingImportModal}
         onClearPendingImportModal={() => setPendingImportModal(null)}
+        pendingRevealItemId={pendingRevealItemId}
+        onRevealItemHandled={() => setPendingRevealItemId(null)}
         importModalCloseSignal={importModalCloseSignal}
         settingsCategory={settingsCategory}
         onSettingsCategoryChange={setSettingsCategory}

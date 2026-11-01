@@ -68,6 +68,9 @@ interface AdminItemManagerListProps {
   /** 追加直後に名前セルを編集状態にするアイテムの id */
   autoEditItemId: string | null;
   onAutoEditHandled: () => void;
+  /** 見える位置へスクロールする行の id（ランチャーの WSグループの行の F2。選ぶのは呼び出し側） */
+  scrollToItemId?: string | null;
+  onScrolledToItem?: () => void;
   onItemEdit: (item: EditableJsonItem) => void;
   onChangeType: (item: EditableJsonItem, newType: JsonItem['type']) => void;
   onItemSelect: (item: EditableJsonItem, selected: boolean) => void;
@@ -104,6 +107,8 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   usageOf,
   autoEditItemId,
   onAutoEditHandled,
+  scrollToItemId,
+  onScrolledToItem,
   onItemEdit,
   onChangeType,
   onItemSelect,
@@ -195,6 +200,15 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
     }
     onAutoEditHandled();
   }, [autoEditItemId, editableItems]);
+
+  // 指定した行を、一覧の真ん中あたりに見えるようにする
+  useEffect(() => {
+    if (!scrollToItemId) return;
+    const index = editableItems.findIndex((item) => item.item.id === scrollToItemId);
+    if (index === -1) return;
+    rowVirtualizer.scrollToIndex(index, { align: 'center' });
+    onScrolledToItem?.();
+  }, [scrollToItemId, editableItems]);
 
   // 全部の行を描いたところで測り、幅を保存して、見えている行だけを描く状態に戻す。
   // 測るのは今の一覧（今のタブ・絞り込み・検索の後）の行

@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useModalKeyboard } from '../hooks/useModalKeyboard';
-import { parseKeywords } from '../utils/dataParser';
+import { normalizeForSearch, parseKeywords } from '../utils/dataParser';
 import { SET_KIND_ICONS, type SetCatalogItem } from '../utils/setEditing';
 import { toggleInSet } from '../utils/setUtils';
 import '../styles/components/WindowSelectorModal.css';
@@ -49,10 +49,14 @@ interface SetItemPickerModalProps {
   allTab?: boolean;
 }
 
-/** 表示名が検索のキーワードをすべて含むか（ランチャーの検索と同じく、空白で区切った AND） */
+/**
+ * 表示名が検索のキーワードをすべて含むか（ランチャーの検索と同じく、空白で区切った AND）
+ *
+ * キーワード（parseKeywords）と同じく、表示名にも normalizeForSearch をかけてそろえる
+ */
 function matchesKeywords(item: SetCatalogItem, keywords: readonly string[]): boolean {
   if (keywords.length === 0) return true;
-  const name = item.displayName.toLowerCase();
+  const name = normalizeForSearch(item.displayName);
   return keywords.every((keyword) => name.includes(keyword));
 }
 
