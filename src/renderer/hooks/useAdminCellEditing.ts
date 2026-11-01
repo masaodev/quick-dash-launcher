@@ -10,6 +10,7 @@ import {
   withEditedPath,
 } from '../utils/adminItemDisplay';
 import { isCommitEnter, resolveInlineName } from '../utils/inlineName';
+import { normalizePathInput } from '../utils/itemFormActions';
 
 /** 編集中のセル。名前列・パス列・メモ列のどれか */
 export interface EditingCell {
@@ -71,10 +72,10 @@ export function useAdminCellEditing(onItemEdit: (item: EditableJsonItem) => void
     stop();
   }, []);
 
-  /** パスセルの入力を確定する */
+  /** パスセルの入力を確定する（登録・編集画面と同じく、前後の空白と全体を囲む `"` を外す） */
   const commitPathEdit = useCallback((item: EditableJsonItem) => {
     if (!isEditing(item, 'path')) return;
-    const newPath = editingValueRef.current.trim();
+    const newPath = normalizePathInput(editingValueRef.current);
     if (newPath !== getEditablePath(item.item)) {
       // 表示テキスト・検証は onItemEdit 側（useAdminItemEditing.recordEdit）で作り直す
       onItemEditRef.current({ ...item, item: withEditedPath(item.item, newPath) });
