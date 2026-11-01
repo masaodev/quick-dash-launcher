@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -91,6 +92,11 @@ describe('dataExportService', () => {
       distribution: 'portable',
       exportedAt: '2026-10-31T12:34:56.000Z',
       files: ['settings.json', 'datafiles/data.json', 'icon-cache/custom/icon.png'],
+      checksums: {
+        'settings.json': createHash('sha256').update('{"hotkey":"Alt+Space"}').digest('hex'),
+        'datafiles/data.json': createHash('sha256').update('[{"id":"a"}]').digest('hex'),
+        'icon-cache/custom/icon.png': createHash('sha256').update(icon).digest('hex'),
+      },
     });
 
     const entries = unzipSync(zip);
