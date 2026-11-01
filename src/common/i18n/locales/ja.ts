@@ -2117,6 +2117,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     portableDataUnwritable:
       'データフォルダに書き込めないため、%APPDATA% にデータを保存します: {{dir}}。書き込めるフォルダに QDL を置き直してください',
   },
+  startupErrors: {
+    otherInstanceTitle: 'QuickDashLauncher は起動しません',
+    otherInstanceMessage:
+      '別の場所の QuickDashLauncher が、同じデータで動いています。\n\n動いている QDL: {{running}}\nこの QDL: {{self}}\n\n同じデータを使う QDL は、同時に 1 つしか動かせません。動いている QDL を終了してから起動し直してください',
+    otherInstancePortableUnwritable:
+      'この QDL は exe の横のデータフォルダに書き込めないため、%APPDATA% のデータを使おうとしました: {{dir}}。書き込めるフォルダに QDL を置き直してください',
+  },
   loadReport: {
     accepted_one: '{{count}} 件読み込み',
     accepted_other: '{{count}} 件読み込み',

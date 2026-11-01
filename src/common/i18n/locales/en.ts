@@ -2116,6 +2116,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     portableDataUnwritable:
       "Can't write to the data folder, so data is saved in %APPDATA% instead: {{dir}}. Move QDL to a folder you can write to.",
   },
+  startupErrors: {
+    otherInstanceTitle: 'QuickDashLauncher will not start',
+    otherInstanceMessage:
+      'Another QuickDashLauncher from a different location is running with the same data.\n\nRunning QDL: {{running}}\nThis QDL: {{self}}\n\nOnly one QDL can run at a time with the same data. Quit the running QDL, then start this one again.',
+    otherInstancePortableUnwritable:
+      "This QDL can't write to the data folder next to its exe, so it tried to use the data in %APPDATA%: {{dir}}. Move QDL to a folder you can write to.",
+  },
   loadReport: {
     accepted_one: '{{count}} item loaded',
     accepted_other: '{{count}} items loaded',

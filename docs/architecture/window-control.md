@@ -83,6 +83,7 @@
   - **実装場所**: `src/main/windowManager.ts`（`createWindow()` 内の `before-input-event`）
 - **システムトレイ**: クリック（ダブルクリックも）でウィンドウ表示（ホットキーと同じ）、右クリックでメニュー表示
 - **二重起動**: 同じ userData で動いている本体があるときに 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がランチャーを表示する（`src/main/main.ts` の `second-instance` から `showMainWindow()`）。2 つ目が CLI（`qdl.exe`）から `--launched-by-cli` 付きで起動されたものなら表示しない。`QUICK_DASH_CONFIG_DIR` を指定した起動（E2E・`npm run dev:test`）は二重起動の防止の対象外
+  - 動いている側が別の exe の QDL のとき（インストーラー版と ZIP 版が同じ `%APPDATA%` のデータを使う、ZIP 版のデータフォルダに書けず `%APPDATA%` に戻った、など）は、2 つ目が終わる前に「別の場所の QuickDashLauncher が、同じデータで動いています」のダイアログを出し、両方の exe の場所を示す（`src/main/utils/otherInstance.ts`。動いている側が userData に書く `cli-launcher.json` の exe と比べる）。同じ exe の 2 回目と、CLI からの起動では出さない。設定を読む前なので、文の言語は OS の表示言語で決める
 
 ### ウィンドウ非表示時の処理フロー
 

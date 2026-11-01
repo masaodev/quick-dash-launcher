@@ -1,8 +1,13 @@
+import fs from 'fs';
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const electronMock = vi.hoisted(() => ({
   app: { isPackaged: true },
-  shell: { writeShortcutLink: vi.fn(() => true) },
+  shell: {
+    writeShortcutLink: vi.fn(() => true),
+    readShortcutLink: vi.fn<(p: string) => { target: string }>(() => ({ target: '' })),
+  },
 }));
 
 /** Store 版の StartupTask の代わり（state は WinRT の StartupTaskState と同じ数値） */
@@ -25,6 +30,8 @@ const startupTaskMock = vi.hoisted(() => ({
 vi.mock('../winrt/generated/windows/application-model/StartupTask.js', () => ({
   StartupTask: startupTaskMock,
 }));
+
+import { isSameExePath } from '../utils/exePath';
 
 import { AutoLaunchService } from './autoLaunchService';
 
@@ -126,5 +133,81 @@ describe('AutoLaunchService（Store 版）', () => {
   it('TaskId がマニフェストに無く null が返ったときは状態の取得をエラーにする', async () => {
     startupTaskMock.getAsync.mockResolvedValue(null);
     await expect(service.getAutoLaunchStatus()).rejects.toThrow('not declared');
+  });
+});
+
+describe('AutoLaunchService（ショートカット）', () => {
+  const service = AutoLaunchService.getInstance();
+  const ownExe = 'C:\\Program Files\\QuickDashLauncher\\QuickDashLauncher.exe';
+  const savedEnv = {
+    APPDATA: process.env.APPDATA,
+    APP_INSTANCE: process.env.APP_INSTANCE,
+    // QDL から開いたシェルでテストを流すと、QDL のこの値を受け継いでいることがある
+    PORTABLE_EXECUTABLE_FILE: process.env.PORTABLE_EXECUTABLE_FILE,
+  };
+  const execPath = Object.getOwnPropertyDescriptor(process, 'execPath');
+  let unlink: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setStoreBuild(false);
+    electronMock.app.isPackaged = true;
+    process.env.APPDATA = 'C:\\Users\\u\\AppData\\Roaming';
+    delete process.env.APP_INSTANCE;
+    delete process.env.PORTABLE_EXECUTABLE_FILE;
+    Object.defineProperty(process, 'execPath', { value: ownExe, configurable: true });
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    unlink = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => undefined);
+    electronMock.shell.readShortcutLink.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (execPath) Object.defineProperty(process, 'execPath', execPath);
+    for (const [key, value] of Object.entries(savedEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    if (original.platform) Object.defineProperty(process, 'platform', original.platform);
+    if (original.windowsStore) {
+      Object.defineProperty(process, 'windowsStore', original.windowsStore);
+    } else {
+      delete (process as { windowsStore?: boolean }).windowsStore;
+    }
+  });
+
+  it('オフにすると、自分の exe を指すショートカットを消す（大文字・小文字の違いは同じとみなす）', async () => {
+    electronMock.shell.readShortcutLink.mockReturnValue({ target: ownExe.toLowerCase() });
+    await service.setAutoLaunch(false);
+    expect(unlink).toHaveBeenCalledTimes(1);
+  });
+
+  it('オフにしても、別の QDL の exe を指すショートカットは消さない', async () => {
+    electronMock.shell.readShortcutLink.mockReturnValue({
+      target: 'D:\\tools\\QuickDashLauncher\\QuickDashLauncher.exe',
+    });
+    await service.setAutoLaunch(false);
+    expect(unlink).not.toHaveBeenCalled();
+  });
+
+  it('行き先が読めないショートカットは自分のものとして消す', async () => {
+    electronMock.shell.readShortcutLink.mockImplementation(() => {
+      throw new Error('broken');
+    });
+    await service.setAutoLaunch(false);
+    expect(unlink).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('isSameExePath', () => {
+  it('大文字・小文字と区切り文字の違いは同じとみなす', () => {
+    expect(
+      isSameExePath('C:/Apps/QDL/QuickDashLauncher.exe', 'c:\\apps\\qdl\\quickdashlauncher.exe')
+    ).toBe(true);
+  });
+
+  it('別のフォルダの exe は違うとみなす', () => {
+    expect(
+      isSameExePath('C:\\Apps\\QDL\\QuickDashLauncher.exe', 'D:\\QDL\\QuickDashLauncher.exe')
+    ).toBe(false);
   });
 });
