@@ -30,14 +30,18 @@ interface FirstLaunchSetupProps {
   onComplete: (settings: FirstLaunchSettings) => Promise<boolean>;
 }
 
-type SetupStep = 'welcome' | 'hotkey' | 'try';
+type SetupStep = 'welcome' | 'hotkey' | 'try' | 'finish';
 
-const STEPS: SetupStep[] = ['welcome', 'hotkey', 'try'];
+const STEPS: SetupStep[] = ['welcome', 'hotkey', 'try', 'finish'];
+
+/** 試してみるで ✓ を出してから、仕上げへ自動で進むまでの時間 */
+export const FINISH_DELAY_MS = 1200;
 
 const STEP_LABEL_KEYS = {
   welcome: 'firstLaunch.stepWelcome',
   hotkey: 'firstLaunch.stepHotkey',
   try: 'firstLaunch.stepTry',
+  finish: 'firstLaunch.stepFinish',
 } as const;
 
 const FEATURES = [
@@ -58,9 +62,12 @@ const HotkeyKeys: React.FC<{ hotkey: string }> = ({ hotkey }) => (
   </div>
 );
 
+/** 見出しの文中に入れる形（「Alt+Space」→「Alt + Space」） */
+const formatHotkey = (hotkey: string) => hotkey.split('+').join(' + ');
+
 /**
  * 初回起動時の設定画面コンポーネント
- * 「ようこそ → ホットキー → 試してみる」の 3 ステップで、起動ホットキーと自動起動を決める
+ * 「ようこそ → ホットキー → 試してみる → 仕上げ」の 4 ステップで、起動ホットキーと自動起動を決める
  */
 export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }) => {
   const { t } = useTranslation();
@@ -106,6 +113,13 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
     setHotkeyPressed(false);
     return window.electronAPI.onFirstLaunchHotkeyPressed(() => setHotkeyPressed(true));
   }, [step]);
+
+  // 呼び出せたら、✓ を少し見せてから仕上げへ進む
+  useEffect(() => {
+    if (step !== 'try' || !hotkeyPressed) return;
+    const timer = setTimeout(() => setStep('finish'), FINISH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [step, hotkeyPressed]);
 
   const handleHotkeyChange = (newHotkey: string) => {
     setHotkey(newHotkey);
@@ -282,66 +296,106 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
 
         {step === 'try' && (
           <>
-            <h1 className="first-launch-title">{t('firstLaunch.tryTitle')}</h1>
-            <p className="first-launch-description">{t('firstLaunch.tryDescription')}</p>
+            <h1 className="first-launch-title">
+              {t('firstLaunch.tryTitle', { hotkey: formatHotkey(hotkey) })}
+            </h1>
             <div className={`first-launch-try ${hotkeyPressed ? 'pressed' : ''}`}>
               <HotkeyKeys hotkey={hotkey} />
               {hotkeyPressed ? (
-                <div className="first-launch-try-ok">{t('firstLaunch.tryOk')}</div>
+                <div className="first-launch-try-ok" role="status">
+                  {t('firstLaunch.tryOk')}
+                </div>
               ) : (
-                <>
-                  <div className="first-launch-try-waiting">{t('firstLaunch.tryWaiting')}</div>
-                  <div className="hotkey-hint">{t('firstLaunch.tryNotWorking')}</div>
-                </>
+                <div className="first-launch-try-waiting">
+                  <span className="first-launch-try-dot" aria-hidden="true" />
+                  {t('firstLaunch.tryWaiting')}
+                </div>
               )}
             </div>
+            <p className="hotkey-hint first-launch-center">{t('firstLaunch.tryNotWorking')}</p>
 
-            <div className="first-launch-getting-started">
-              <div className="first-launch-getting-started-label">
-                {t('firstLaunch.gettingStartedLabel')}
+            <div className="first-launch-actions first-launch-actions-split">
+              <Button variant="secondary" type="button" onClick={() => setStep('hotkey')}>
+                {t('firstLaunch.back')}
+              </Button>
+              {hotkeyPressed ? (
+                <Button variant="primary" type="button" onClick={() => setStep('finish')}>
+                  {t('firstLaunch.next')}
+                </Button>
+              ) : (
+                <Button variant="secondary" type="button" onClick={() => setStep('finish')}>
+                  {t('firstLaunch.trySkip')}
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+
+        {step === 'finish' && (
+          <>
+            <h1 className="first-launch-title">{t('firstLaunch.finishTitle')}</h1>
+            {!hotkeyPressed && (
+              <p className="first-launch-not-tried first-launch-center">
+                {t('firstLaunch.finishNotTried', { hotkey: formatHotkey(hotkey) })}
+              </p>
+            )}
+
+            <section className="first-launch-section">
+              <h2 className="first-launch-section-label">{t('firstLaunch.startupLabel')}</h2>
+              <div className="auto-launch-setup-section">
+                <label className="auto-launch-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={autoLaunch}
+                    onChange={(e) => setAutoLaunch(e.target.checked)}
+                    disabled={isLoading}
+                    className="auto-launch-checkbox"
+                  />
+                  {t('firstLaunch.autoLaunch')}
+                </label>
+                {!isStore && (
+                  <label className="auto-launch-checkbox-label update-check-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={updateCheckEnabled}
+                      onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
+                      disabled={isLoading}
+                      className="update-check-checkbox"
+                      data-testid="first-launch-update-check"
+                    />
+                    {t('firstLaunch.updateCheck')}
+                  </label>
+                )}
+                {portableModeAvailable && (
+                  <label className="auto-launch-checkbox-label portable-mode-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={portableMode}
+                      onChange={(e) => setPortableMode(e.target.checked)}
+                      disabled={isLoading}
+                      className="portable-mode-checkbox"
+                      data-testid="first-launch-portable-mode"
+                    />
+                    {t('firstLaunch.portableMode')}
+                  </label>
+                )}
               </div>
-              <p>{t('firstLaunch.gettingStartedSamples')}</p>
-              <p>{t('firstLaunch.gettingStartedAdd')}</p>
-            </div>
+              <p className="first-launch-change-later">
+                {t(
+                  portableModeAvailable
+                    ? 'firstLaunch.changeLaterExceptPortable'
+                    : 'firstLaunch.changeLater'
+                )}
+              </p>
+            </section>
 
-            <div className="auto-launch-setup-section">
-              <label className="auto-launch-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={autoLaunch}
-                  onChange={(e) => setAutoLaunch(e.target.checked)}
-                  disabled={isLoading}
-                  className="auto-launch-checkbox"
-                />
-                {t('firstLaunch.autoLaunch')}
-              </label>
-              {!isStore && (
-                <label className="auto-launch-checkbox-label update-check-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={updateCheckEnabled}
-                    onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
-                    disabled={isLoading}
-                    className="update-check-checkbox"
-                    data-testid="first-launch-update-check"
-                  />
-                  {t('firstLaunch.updateCheck')}
-                </label>
-              )}
-              {portableModeAvailable && (
-                <label className="auto-launch-checkbox-label portable-mode-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={portableMode}
-                    onChange={(e) => setPortableMode(e.target.checked)}
-                    disabled={isLoading}
-                    className="portable-mode-checkbox"
-                    data-testid="first-launch-portable-mode"
-                  />
-                  {t('firstLaunch.portableMode')}
-                </label>
-              )}
-            </div>
+            <section className="first-launch-section">
+              <h2 className="first-launch-section-label">{t('firstLaunch.gettingStartedLabel')}</h2>
+              <ul className="first-launch-getting-started">
+                <li>{t('firstLaunch.gettingStartedSamples')}</li>
+                <li>{t('firstLaunch.gettingStartedAdd')}</li>
+              </ul>
+            </section>
 
             {saveFailed && (
               <p className="validation-error first-launch-center" role="alert">
@@ -353,24 +407,16 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               <Button
                 variant="secondary"
                 type="button"
-                onClick={() => setStep('hotkey')}
+                onClick={() => setStep('try')}
                 disabled={isLoading}
               >
                 {t('firstLaunch.back')}
               </Button>
-              <span className="first-launch-change-later">
-                {t(
-                  portableModeAvailable
-                    ? 'firstLaunch.changeLaterExceptPortable'
-                    : 'firstLaunch.changeLater'
-                )}
-              </span>
               <Button
                 variant="primary"
                 type="button"
                 onClick={handleComplete}
-                // キーで呼び出せたことを確かめてから使いはじめる（出ないときは「戻る」で選び直す）
-                disabled={isLoading || !isValid || !hotkeyPressed}
+                disabled={isLoading || !isValid}
               >
                 {t('firstLaunch.complete')}
               </Button>
