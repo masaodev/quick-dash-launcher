@@ -197,14 +197,68 @@ export function countImportItems(content: DataImportContent) {
  */
 export function applyDataImport(configFolder: string, content: DataImportContent): void {
   const toPath = (relPath: string) => path.join(configFolder, ...relPath.split('/'));
+  // 途中で失敗したら（読み取り専用・ロック・空き容量）元に戻せるよう、今の中身を覚えておく。
+  // 戻さないと新旧が混ざったまま動き続け、次の保存で古い内容も書き戻される
+  const originals = new Map<string, Buffer>();
   for (const relPath of collectExportFiles(configFolder)) {
-    if (!content.files.has(relPath)) fs.rmSync(toPath(relPath), { force: true });
+    try {
+      originals.set(relPath, fs.readFileSync(toPath(relPath)));
+    } catch {
+      // 読めないファイルは戻せないが、置き換えは続ける（スナップショットには残っている）
+    }
   }
-  for (const [relPath, bytes] of content.files) {
-    const filePath = toPath(relPath);
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, bytes);
+  try {
+    for (const relPath of originals.keys()) {
+      if (!content.files.has(relPath)) fs.rmSync(toPath(relPath), { force: true });
+    }
+    for (const [relPath, bytes] of content.files) {
+      const filePath = toPath(relPath);
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, bytes);
+    }
+  } catch (error) {
+    throw new DataImportApplyError(error, rollBack(toPath, content, originals));
   }
+}
+
+/** 置き換えの途中で失敗した。rolledBack＝元の中身に戻せたか（戻せなければスナップショットから戻してもらう） */
+export class DataImportApplyError extends Error {
+  constructor(
+    readonly cause: unknown,
+    readonly rolledBack: boolean
+  ) {
+    super(cause instanceof Error ? cause.message : String(cause));
+    this.name = 'DataImportApplyError';
+  }
+}
+
+/** 置き換えの途中で失敗したとき、足したファイルを消し、元の中身を書き戻す（すべて戻せたら true） */
+function rollBack(
+  toPath: (relPath: string) => string,
+  content: DataImportContent,
+  originals: Map<string, Buffer>
+): boolean {
+  let ok = true;
+  for (const relPath of content.files.keys()) {
+    if (originals.has(relPath)) continue;
+    try {
+      fs.rmSync(toPath(relPath), { force: true });
+    } catch {
+      ok = false;
+    }
+  }
+  for (const [relPath, bytes] of originals) {
+    try {
+      const filePath = toPath(relPath);
+      // 書き換わっていないもの（書けなかったファイル自身など）は触らない
+      if (fs.existsSync(filePath) && fs.readFileSync(filePath).equals(bytes)) continue;
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, bytes);
+    } catch {
+      ok = false;
+    }
+  }
+  return ok;
 }
 
 function parseJson(bytes: Uint8Array): unknown {

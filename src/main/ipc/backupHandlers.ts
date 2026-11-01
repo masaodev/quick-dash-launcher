@@ -26,12 +26,14 @@ import {
 } from '../services/dataExportService.js';
 import {
   applyDataImport,
+  DataImportApplyError,
   countCurrentItems,
   countImportItems,
   readDataImport,
   type DataImportContent,
 } from '../services/dataImportService.js';
 import { mainI18n } from '../services/mainI18n.js';
+import { markAppQuitting } from '../utils/managedWindow.js';
 import { getAppDistribution } from '../utils/appDistribution.js';
 import { handleIpc } from '../utils/ipcWrapper';
 
@@ -137,6 +139,11 @@ export function setupBackupHandlers(): void {
     }
   );
 
+  // 読み込みをやめた: 展開した中身（最大 1GB）を次のインポートか終了まで持ち続けないよう捨てる
+  handleIpc(IPC_CHANNELS.BACKUP_IMPORT_CANCEL, () => {
+    pendingImport = null;
+  });
+
   // 読み込み 2: 今のファイルをスナップショットに残してから置き換え、QDL を再起動する
   handleIpc(
     IPC_CHANNELS.BACKUP_IMPORT_APPLY,
@@ -166,13 +173,14 @@ export function setupBackupHandlers(): void {
       try {
         applyDataImport(configFolder, content);
       } catch (error) {
-        logger.error({ error, snapshot }, '読み込みの途中で失敗しました');
+        const rolledBack = error instanceof DataImportApplyError && error.rolledBack;
+        logger.error({ error, snapshot, rolledBack }, '読み込みの途中で失敗しました');
+        const message = error instanceof Error ? error.message : String(error);
         return {
           success: false,
-          error: mainI18n.t('dataExport.applyFailed', {
-            snapshot: snapshot ?? '-',
-            error: error instanceof Error ? error.message : String(error),
-          }),
+          error: rolledBack
+            ? mainI18n.t('dataExport.applyRolledBack', { error: message })
+            : mainI18n.t('dataExport.applyFailed', { snapshot: snapshot ?? '-', error: message }),
         };
       }
       logger.info(
@@ -183,6 +191,9 @@ export function setupBackupHandlers(): void {
       if (!EnvConfig.isDevelopment) {
         app.relaunch({ args: process.argv.slice(1).filter((arg) => arg !== CLI_LAUNCH_ARG) });
       }
+      // exit では before-quit が来ないので、終わるところだと先に知らせる。知らせないと、閉じる切り離し
+      // ウィンドウが「× で閉じた」と見なして、読み込んだばかりの workspace-ui-state.json から自分の記録を消す
+      markAppQuitting();
       app.exit(0);
       return { success: true };
     }

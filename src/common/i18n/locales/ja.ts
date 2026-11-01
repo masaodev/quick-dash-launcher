@@ -2144,6 +2144,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     importExpired: '選んだファイルが見つかりません。もう一度インポートしてください',
     applyFailed:
       'インポートの途中で失敗しました。元のデータはスナップショット（{{snapshot}}）に残っています: {{error}}',
+    applyRolledBack:
+      'インポートの途中で失敗したので、元のデータに戻しました（何も変わっていません）: {{error}}',
   },
   clipboardService: {
     imagePreview: '画像（{{width}}×{{height}}）',

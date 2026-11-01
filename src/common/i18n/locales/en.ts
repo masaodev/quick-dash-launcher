@@ -2142,6 +2142,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     importExpired: "The file you chose wasn't found. Import it again.",
     applyFailed:
       'The import failed partway. Your original data is in the snapshot ({{snapshot}}): {{error}}',
+    applyRolledBack:
+      'The import failed partway, so your original data was put back (nothing changed): {{error}}',
   },
   clipboardService: {
     imagePreview: 'Image ({{width}}x{{height}})',

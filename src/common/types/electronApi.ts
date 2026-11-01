@@ -666,5 +666,7 @@ export interface ElectronAPI {
     inspectImport: () => Promise<DataImportInspectResult | null>;
     /** 確かめたファイルで設定フォルダをまるごと置き換え、QDL を再起動する */
     applyImport: (token: string) => Promise<DataImportApplyResult>;
+    /** 確認ダイアログでやめたとき、main が持っている展開済みの中身を捨てる */
+    cancelImport: () => Promise<void>;
   };
 }
