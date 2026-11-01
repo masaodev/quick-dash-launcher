@@ -90,6 +90,8 @@ async function fetchIcons(main: Page): Promise<void> {
   const notice = main.locator('.missing-icon-notice button', {
     hasText: MESSAGES.launcher.missingIcons.fetch,
   });
+  // 案内は起動の少し後に出ることがあるので、出るまで待ってから確かめる
+  await notice.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
   if (!(await notice.isVisible().catch(() => false))) return;
   await notice.click();
   await main

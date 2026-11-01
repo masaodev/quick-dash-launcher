@@ -104,6 +104,8 @@ test('メインデモ', async () => {
     const notice = win.locator('.missing-icon-notice button', {
       hasText: MESSAGES.launcher.missingIcons.fetch,
     });
+    // 案内は起動の少し後に出ることがあるので、出るまで待ってから確かめる（すぐ確かめると取得を飛ばして、アイコンの無い GIF になる）
+    await notice.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
     if (await notice.isVisible().catch(() => false)) {
       await notice.click();
       await win
