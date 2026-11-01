@@ -39,6 +39,7 @@ import {
 } from './workspaceWindowManager.js';
 import { getHwnd, moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
+import { showToastWindow } from './services/overlayWindowService.js';
 import { isPositionOnScreen, moveWindowKeepingSize } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
 import { registerSnapTarget } from './utils/windowSnap.js';
@@ -454,6 +455,19 @@ export async function registerGlobalShortcut(): Promise<void> {
 
     if (!success) {
       windowLogger.warn('ホットキーの登録に失敗しました');
+      // 押しても何も起きない理由が分かるよう知らせる（ほかのアプリが先に取っているなど）
+      for (const { type, hotkey } of hotkeyService.getFailedHotkeys()) {
+        showToastWindow({
+          message: mainI18n.t('hotkey.startupRegisterFailed', {
+            label: mainI18n.t(type === 'main' ? 'hotkey.launchLabel' : 'hotkey.windowSearchLabel'),
+            hotkey,
+          }),
+          type: 'warning',
+          long: true,
+        }).catch((error) => {
+          windowLogger.warn({ error }, 'ホットキーの登録失敗を知らせられませんでした');
+        });
+      }
     }
   } catch (error) {
     windowLogger.error({ error }, 'ホットキーサービスの初期化に失敗しました');

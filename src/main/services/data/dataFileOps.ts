@@ -44,13 +44,20 @@ export function createDataFile(configFolder: string, fileName: string): CreateDa
   dataLogger.info(`create-data-file called: ${fileName} at ${filePath}`);
 
   if (FileUtils.exists(filePath)) {
-    dataLogger.warn(`File already exists: ${filePath}`);
+    // 起動のたびにタブのファイルを確かめに来るので、既にあるのは普通のこと（警告にしない）
+    dataLogger.debug(`File already exists: ${filePath}`);
     return { success: false, error: mainI18n.t('dataFile.alreadyExists'), alreadyExists: true };
   }
 
   try {
     const emptyData = serializeJsonDataFile(createEmptyJsonDataFile());
-    writeDataFile(filePath, emptyData);
+    // 書けなかったとき（読み取り専用のフォルダなど）は、タブだけ増えてファイルが無い状態にしない
+    if (!writeDataFile(filePath, emptyData)) {
+      return {
+        success: false,
+        error: mainI18n.t('dataFile.createFailed', { error: fileName }),
+      };
+    }
     dataLogger.info(`File created successfully: ${filePath}`);
     // 編集画面は読み込み時のハッシュ表を持つので、ファイル構成の変化も知らせる
     notifyDataChanged();

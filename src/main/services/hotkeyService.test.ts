@@ -118,5 +118,16 @@ describe('HotkeyService.registerHotkey（起動時の登録）', () => {
 
     expect(service.getCurrentHotkey()).toBe('Alt+Space');
     expect(service.getCurrentItemSearchHotkey()).toBe('Ctrl+Alt+Space');
+    expect(service.getFailedHotkeys()).toEqual([]);
+  });
+
+  it('ほかのアプリが先に取っているホットキーは、登録できなかったものとして覚える（起動時に知らせるため）', async () => {
+    settingsValues.hotkey = 'Alt+Space';
+    settingsValues.itemSearchHotkey = 'Ctrl+Alt+Space';
+    registered.set('Alt+Space', () => {}); // ほかのアプリが使っている
+
+    expect(await service.registerHotkey()).toBe(false);
+    expect(service.getFailedHotkeys()).toEqual([{ type: 'main', hotkey: 'Alt+Space' }]);
+    registered.delete('Alt+Space');
   });
 });
