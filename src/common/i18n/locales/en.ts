@@ -2601,7 +2601,6 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       heading: 'QuickDashLauncher CLI',
     },
     display: {
-      heading: 'Launcher',
       keyboardHints: 'Show keyboard hints',
       keyboardHintsDescription:
         'Shows keys such as F2 to edit and Shift+Enter to open the containing folder below the list.',
@@ -2631,6 +2630,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     windowPosition: {
       heading: 'Launcher',
       label: 'Where to show:',
+      appearance: 'Appearance:',
       cursorMonitorCenter: 'Center of the display with the mouse cursor (default)',
       cursorMonitorCenterDescription:
         'Shows it in the center of the display the mouse cursor is on',
@@ -2741,7 +2741,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       done: '{{section}} settings restored to defaults',
       failed: "Couldn't restore the default settings.",
       notes: {
-        display: '"Show tabs" isn\'t changed.',
+        dataFileTabs: '"Show tabs" isn\'t changed.',
         savedPosition: 'The remembered position is also cleared.',
       },
       values: {

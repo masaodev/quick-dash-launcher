@@ -134,7 +134,7 @@ test.describe('QuickDashLauncher - ランチャーの小さな直し', () => {
     await utils.waitForPageLoad();
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
     try {
-      await adminWindow.locator('.menu-item', { hasText: '基本設定' }).click();
+      await adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' }).click();
       const showTabs = adminWindow.locator('label', { hasText: 'タブを表示する' }).locator('input');
       await expect(showTabs).toBeChecked();
 
