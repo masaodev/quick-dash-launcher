@@ -169,6 +169,16 @@ describe('SetupFirstLaunch', () => {
     await goToTryStep();
     await screen.findByText('アップデートを自動で確認する');
     expect(screen.queryByTestId('first-launch-portable-mode')).toBeNull();
+    expect(screen.getByText('どれもあとから「設定」で変えられます')).toBeTruthy();
+  });
+
+  it('ポータブルモードを選べるときは、あとから変えられないことをボタンの間に書く', async () => {
+    portableModeAvailable = true;
+    render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
+    await goToTryStep();
+    await screen.findByTestId('first-launch-portable-mode');
+    expect(screen.getByText('ポータブルモード以外は、あとから「設定」で変えられます')).toBeTruthy();
+    expect(screen.queryByText('どれもあとから「設定」で変えられます')).toBeNull();
   });
 
   it('ウィンドウ検索のキーをほかのアプリが使っていたら、閉じた欄を開いて知らせ、先へ進まない', async () => {
