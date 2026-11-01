@@ -12,6 +12,10 @@ export function dataImportProblemMessage(t: TFunction, problem: DataImportProble
       return t('dataImport.newerVersion');
     case 'invalidFile':
       return t('dataImport.invalidFile', { file: problem.file });
+    case 'corrupted':
+      return problem.file
+        ? t('dataImport.corruptedFile', { file: problem.file })
+        : t('dataImport.corrupted');
   }
 }
 
@@ -59,11 +63,13 @@ export function useDataImport({ onProblem, onApplied }: UseDataImportOptions) {
     const { token } = pending;
     setPending(null);
     setIsBusy(true);
+    // 成功すると main は返事を返す前に終わる（置き換えから終了までの間に古いデータを書き戻させない）ので、
+    // 知らせは先に出す。失敗したら、続けて理由を出す
+    onApplied(t('dataImport.restarting'));
     try {
       const result = await window.electronAPI.backupAPI.applyImport(token);
       if (result.success) {
-        // 成功すると QDL は終わるので、ボタンは押せないままにしておく
-        onApplied(t('dataImport.restarting'));
+        // ボタンは押せないままにしておく（すぐに終わる）
         return;
       }
       onProblem(t('dataImport.failed', { error: result.error }));

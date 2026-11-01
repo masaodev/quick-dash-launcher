@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -62,6 +63,7 @@ export function buildDataExport(
   info: { appVersion: string; distribution: AppDistribution; exportedAt: Date }
 ): { zip: Uint8Array; manifest: DataExportManifest } {
   const files = collectExportFiles(configFolder);
+  const checksums: Record<string, string> = {};
   const manifest: DataExportManifest = {
     format: DATA_EXPORT_FORMAT,
     formatVersion: DATA_EXPORT_FORMAT_VERSION,
@@ -69,14 +71,20 @@ export function buildDataExport(
     distribution: info.distribution,
     exportedAt: info.exportedAt.toISOString(),
     files,
+    checksums,
   };
 
+  const contents = new Map<string, Uint8Array>();
+  for (const relPath of files) {
+    const bytes = fs.readFileSync(path.join(configFolder, ...relPath.split('/')));
+    contents.set(relPath, bytes);
+    // インポートのときに、zip の中身がエクスポートしたときのままかを確かめる
+    checksums[relPath] = createHash('sha256').update(bytes).digest('hex');
+  }
   const entries: Zippable = {
     'manifest.json': strToU8(JSON.stringify(manifest, null, 2)),
   };
-  for (const relPath of files) {
-    entries[relPath] = fs.readFileSync(path.join(configFolder, ...relPath.split('/')));
-  }
+  for (const [relPath, bytes] of contents) entries[relPath] = bytes;
 
   // 日時は書き出した時刻（zip の既定は今の時刻だが、テストで固定できるように渡す）
   return { zip: zipSync(entries, { mtime: info.exportedAt }), manifest };

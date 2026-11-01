@@ -2193,7 +2193,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       'This file was exported from a newer version of QuickDashLauncher. Update QuickDashLauncher, then import it.',
     invalidFile: "{{file}} in the file can't be read, so it can't be imported",
     failed: "Couldn't import: {{error}}",
-    restarting: 'Imported. Restarting…',
+    corrupted: "The file is corrupted, so it can't be imported. Export it again",
+    corruptedFile: "{{file}} in the file is corrupted, so it can't be imported. Export it again",
+    restarting: 'Importing. QuickDashLauncher will restart when done…',
   },
   itemCsv: {
     replanned:

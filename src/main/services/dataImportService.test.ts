@@ -30,6 +30,10 @@ const manifest = (extra: Record<string, unknown> = {}) =>
 
 const json = (value: unknown) => strToU8(JSON.stringify(value));
 
+/** manifest の files を中身に合わせた zip（チェックサムは書かない＝チェックサムの無い書き出しと同じ） */
+const zipWith = (entries: Zippable, extra: Record<string, unknown> = {}) =>
+  zipSync({ 'manifest.json': manifest({ files: Object.keys(entries), ...extra }), ...entries });
+
 describe('dataImportService', () => {
   let tempDir: string;
   let configFolder: string;
@@ -78,6 +82,12 @@ describe('dataImportService', () => {
       'clipboard-data/../x.json',
       'icon-cache/custom/..',
       'icon-cache/custom/a:b.png',
+      'icon-cache/custom/icon.png.',
+      'icon-cache/custom/icon.png ',
+      'icon-cache/custom/CON',
+      'icon-cache/custom/nul.png',
+      'icon-cache/custom/Com1.ico',
+      'clipboard-data/aux.json',
       'icon-cache/apps/app.png',
       'backup/x/settings.json',
       'path-type-cache.json',
@@ -142,15 +152,15 @@ describe('dataImportService', () => {
         ['search-history.json', { version: '9.0', entries: [] }],
       ];
       for (const [name, content] of newer) {
-        expect(
-          readDataImport(zipSync({ 'manifest.json': manifest(), [name]: json(content) }))
-        ).toEqual({ ok: false, problem: { kind: 'newerVersion' } });
+        expect(readDataImport(zipWith({ [name]: json(content) }))).toEqual({
+          ok: false,
+          problem: { kind: 'newerVersion' },
+        });
       }
     });
 
     it('決まった名前以外のファイル・JSON として読めないファイルがあれば、何も読まない', () => {
-      const withEntry = (entries: Zippable) =>
-        readDataImport(zipSync({ 'manifest.json': manifest(), ...entries }));
+      const withEntry = (entries: Zippable) => readDataImport(zipWith(entries));
 
       expect(withEntry({ 'settings.json': json({}), '../evil.json': json({}) })).toEqual({
         ok: false,
@@ -162,10 +172,61 @@ describe('dataImportService', () => {
       });
     });
 
+    it('途中で切れた zip は、壊れているとする', () => {
+      write(configFolder, 'settings.json', '{"settingsVersion":1}');
+      const { zip } = buildDataExport(configFolder, {
+        appVersion: '0.8.0',
+        distribution: 'store',
+        exportedAt: new Date('2026-10-31T12:34:56.000Z'),
+      });
+      expect(readDataImport(zip.slice(0, zip.length - 30))).toEqual({
+        ok: false,
+        problem: { kind: 'corrupted' },
+      });
+    });
+
+    it('manifest に書いたファイルと中身が合わなければ、壊れているとする', () => {
+      const settings = { 'settings.json': json({}) };
+      const withFiles = (files: unknown) =>
+        readDataImport(zipSync({ 'manifest.json': manifest({ files }), ...settings }));
+      expect(withFiles(['settings.json', 'workspace.json'])).toEqual({
+        ok: false,
+        problem: { kind: 'corrupted', file: 'workspace.json' },
+      });
+      expect(withFiles([])).toEqual({
+        ok: false,
+        problem: { kind: 'corrupted', file: 'settings.json' },
+      });
+      expect(withFiles('x')).toEqual({ ok: false, problem: { kind: 'notExport' } });
+    });
+
+    it('中身がエクスポートしたときと違えば（チェックサムが合わない）、壊れているとする', () => {
+      write(configFolder, 'settings.json', '{"settingsVersion":1,"hotkey":"Alt+Space"}');
+      write(configFolder, 'datafiles/data.json', '{"version":"1.0","items":[]}');
+      const { zip, manifest: written } = buildDataExport(configFolder, {
+        appVersion: '0.8.0',
+        distribution: 'store',
+        exportedAt: new Date('2026-10-31T12:34:56.000Z'),
+      });
+      expect(Object.keys(written.checksums ?? {})).toEqual([
+        'settings.json',
+        'datafiles/data.json',
+      ]);
+      expect(readDataImport(zip).ok).toBe(true);
+
+      const tampered = zipSync({
+        'manifest.json': strToU8(JSON.stringify(written)),
+        'settings.json': strToU8('{"settingsVersion":1,"hotkey":"Ctrl+Space"}'),
+        'datafiles/data.json': strToU8('{"version":"1.0","items":[]}'),
+      });
+      expect(readDataImport(tampered)).toEqual({
+        ok: false,
+        problem: { kind: 'corrupted', file: 'settings.json' },
+      });
+    });
+
     it('BOM 付きの JSON も読める', () => {
-      const result = readDataImport(
-        zipSync({ 'manifest.json': manifest(), 'settings.json': strToU8('\uFEFF{"hotkey":"x"}') })
-      );
+      const result = readDataImport(zipWith({ 'settings.json': strToU8('\uFEFF{"hotkey":"x"}') }));
       expect(result.ok).toBe(true);
     });
   });
@@ -181,8 +242,7 @@ describe('dataImportService', () => {
       expect(countCurrentItems(configFolder)).toEqual({ items: 4, workspaceItems: 0 });
 
       const result = readDataImport(
-        zipSync({
-          'manifest.json': manifest(),
+        zipWith({
           'settings.json': strToU8('{"hotkey":"new"}'),
           'datafiles/data.json': strToU8('{"version":"1.0","items":[]}'),
           'datafiles/data2.json': strToU8('{"version":"1.0","items":[{}]}'),
@@ -215,8 +275,7 @@ describe('dataImportService', () => {
       fs.chmodSync(locked, 0o444);
       try {
         const result = readDataImport(
-          zipSync({
-            'manifest.json': manifest(),
+          zipWith({
             'settings.json': strToU8('{"hotkey":"new"}'),
             'datafiles/data.json': strToU8('{"version":"1.0","items":[]}'),
             'datafiles/data2.json': strToU8('{"version":"1.0","items":[{}]}'),

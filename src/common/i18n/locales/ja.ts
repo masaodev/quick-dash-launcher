@@ -2194,7 +2194,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       '新しい版の QuickDashLauncher でエクスポートしたファイルです。QuickDashLauncher を最新の版にしてからインポートしてください',
     invalidFile: 'ファイルの中の {{file}} を読めないため、インポートできません',
     failed: 'インポートに失敗しました: {{error}}',
-    restarting: 'インポートしました。再起動します…',
+    corrupted: 'ファイルが壊れているため、インポートできません。もう一度エクスポートしてください',
+    corruptedFile:
+      'ファイルの中の {{file}} が壊れているため、インポートできません。もう一度エクスポートしてください',
+    restarting: 'インポートしています。終わると再起動します…',
   },
   itemCsv: {
     replanned:

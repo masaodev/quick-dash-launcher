@@ -44,6 +44,8 @@ export interface DataExportManifest {
   exportedAt: string;
   /** 入れたファイル（設定フォルダからの相対パス。区切りは `/`） */
   files: string[];
+  /** 入れたファイルの中身の SHA-256（16 進）。インポートのときに壊れていないかを確かめる */
+  checksums?: Record<string, string>;
 }
 
 /** 一括エクスポートの結果（保存をやめたときは null を返す） */
@@ -59,7 +61,9 @@ export type DataImportProblem =
   /** 新しい版の QDL で書き出したもの（この QDL では読めない） */
   | { kind: 'newerVersion' }
   /** 中のファイルが読めない・決まった名前でない・大きすぎる */
-  | { kind: 'invalidFile'; file: string };
+  | { kind: 'invalidFile'; file: string }
+  /** zip が途中で切れている・中身がエクスポートしたときと違う（file＝どのファイルか分かるとき） */
+  | { kind: 'corrupted'; file?: string };
 
 /** 読み込みの確認に出す、書き出したデータの説明と件数（今 → 読み込んだ後） */
 export interface DataImportSummary {

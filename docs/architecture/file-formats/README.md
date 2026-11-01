@@ -121,11 +121,14 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
   | `distribution` | エクスポートした QDL の配布形式（`store`・`portable`・`installer`・`dev`） |
   | `exportedAt` | エクスポートした日時（ISO 8601。UTC） |
   | `files` | 入れたファイル（設定フォルダからの相対パス。区切りは `/`） |
+  | `checksums` | 入れたファイルごとの中身の SHA-256（16 進）。インポートのときに、途中で書き換わっていないかを確かめる（無い zip も読む） |
 
 - **インポートするとき**（[管理ウィンドウ 5.5.3](../../screens/admin-window.md#553-インポート)。`src/main/services/dataImportService.ts`）: 書き込む前に次をすべて確かめ、1 つでも外れたら何も書かない
   - `manifest.json` があり、`format` が合っている
   - `formatVersion` と、中のファイルの版（`settings.json` の `settingsVersion`、データファイル・ワークスペースファイル・`item-usage.json`・`search-history.json`・`workspace-ui-state.json` の `version`）が、この QDL の扱える版より新しくない（[形式の版と互換](#形式の版と互換)）
-  - 中のファイルの名前が「入れるもの」の規則に合う（`..`・絶対パス・`\` を含むものは拒む。設定フォルダの外へ書かせない）
+  - zip として最後まで読める（途中で切れた zip は「壊れている」とする）
+  - `files` と zip の中のファイルがちょうど合い、`checksums` があれば中身の SHA-256 も合う（zip の展開では CRC を確かめないので、ここで見る）
+  - 中のファイルの名前が「入れるもの」の規則に合う（`..`・絶対パス・`\` を含むものは拒む。設定フォルダの外へ書かせない。末尾がドット・空白の名前と、`CON`・`NUL`・`COM1` などの予約名も拒む）
   - 1 ファイル 100MB・合計 1GB を超えない（展開する前に大きさを見る）
   - `.json` がすべて JSON として読める（先頭の BOM は外して読む）
 

@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -56,6 +57,9 @@ const ROOT_FILES = new Set([
   'search-history.json',
 ]);
 
+/** Windows で予約されている名前（拡張子が付いていても作れない・別の装置を指す） */
+const RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
+
 /**
  * zip の中で読み込んでよい名前か（書き出しで入れるものと同じ規則）。
  * 決まった名前以外・`..`・絶対パス・区切りの `\` は拒む（設定フォルダの外へ書かせない）
@@ -66,6 +70,8 @@ export function isImportablePath(name: string): boolean {
   if (!match) return false;
   const [, folder, fileName] = match;
   if (fileName === '.' || fileName === '..' || fileName.includes('.broken-')) return false;
+  // 末尾がドット・空白の名前と予約名（CON・NUL など）は、Windows が名前を変えて書く・書けない
+  if (/[. ]$/.test(fileName) || RESERVED_NAME.test(fileName)) return false;
   if (folder === 'datafiles') return fileName.startsWith('data') && fileName.endsWith('.json');
   if (folder === 'clipboard-data') return /^[A-Za-z0-9_-]+\.json$/.test(fileName);
   // 自分で設定したアイコン: Windows のファイル名に使えない文字は拒む
@@ -106,7 +112,9 @@ export function readDataImport(
       },
     });
   } catch {
-    return { ok: false, problem: { kind: 'notExport' } };
+    // zip の目印（PK）で始まるのに読めない＝途中で切れた・書き換わった zip
+    const looksLikeZip = zip.length >= 2 && zip[0] === 0x50 && zip[1] === 0x4b;
+    return { ok: false, problem: looksLikeZip ? { kind: 'corrupted' } : { kind: 'notExport' } };
   }
   if (problem) return { ok: false, problem };
 
@@ -122,6 +130,8 @@ export function readDataImport(
   if (manifest.formatVersion > DATA_EXPORT_FORMAT_VERSION) {
     return { ok: false, problem: { kind: 'newerVersion' } };
   }
+  const integrity = checkIntegrity(manifest, entries);
+  if (integrity) return { ok: false, problem: integrity };
 
   const files = new Map<string, Uint8Array>();
   for (const [name, bytes] of Object.entries(entries)) {
@@ -151,10 +161,46 @@ export function readDataImport(
         distribution: toDistribution(manifest.distribution),
         exportedAt: typeof manifest.exportedAt === 'string' ? manifest.exportedAt : '',
         files: [...files.keys()],
+        checksums: isRecord(manifest.checksums)
+          ? (manifest.checksums as Record<string, string>)
+          : undefined,
       },
       files,
     },
   };
+}
+
+/**
+ * manifest に書いたファイルと zip の中身が合うか、中身がエクスポートしたときのままか（SHA-256）を確かめる。
+ * zip の展開では CRC を確かめないので、途中で書き換わったファイルもここで見つける
+ */
+function checkIntegrity(
+  manifest: Record<string, unknown>,
+  entries: Record<string, Uint8Array>
+): DataImportProblem | null {
+  const listedFiles = manifest.files;
+  if (!Array.isArray(listedFiles) || !listedFiles.every((f) => typeof f === 'string')) {
+    return { kind: 'notExport' };
+  }
+  const listed = new Set<string>(listedFiles);
+  const names = Object.keys(entries).filter((n) => n !== 'manifest.json' && !n.endsWith('/'));
+  const missing = [...listed].find((name) => !entries[name]);
+  if (missing) return { kind: 'corrupted', file: missing };
+  const extra = names.find((name) => !listed.has(name));
+  if (extra) return { kind: 'corrupted', file: extra };
+
+  const checksums = manifest.checksums;
+  if (checksums === undefined) return null;
+  if (!isRecord(checksums)) return { kind: 'corrupted' };
+  for (const name of names) {
+    if (checksums[name] !== sha256(entries[name])) return { kind: 'corrupted', file: name };
+  }
+  return null;
+}
+
+/** 中身の SHA-256（16 進） */
+export function sha256(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex');
 }
 
 /** アイテム（データファイルの items）とワークスペースのアイテムの数 */
