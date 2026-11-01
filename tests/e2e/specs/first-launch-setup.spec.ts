@@ -48,7 +48,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       await utils.waitForPageLoad();
 
       await expect(mainWindow.locator('.first-launch-title')).toHaveText(
-        'QuickDashLauncher へようこそ'
+        'Quick Dash Launcher へようこそ'
       );
       await expect(mainWindow.locator('.first-launch-description')).toContainText(
         'キーワードを打って開くランチャーです'
@@ -142,7 +142,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
         .poll(() =>
           electronApp.evaluate(({ BrowserWindow }) => {
             const win = BrowserWindow.getAllWindows().find(
-              (w) => w.getTitle() === 'QuickDashLauncher' && w.getParentWindow() === null
+              (w) => w.getTitle() === 'Quick Dash Launcher' && w.getParentWindow() === null
             );
             const bounds = win?.getBounds();
             return bounds ? `${bounds.width}x${bounds.height}` : null;
@@ -249,7 +249,7 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(configHelper.fileExists('data2.json')).toBe(true);
       // 使い方は名前の頭の 📖 で、メインのタブの先頭に来る
       await expect(mainWindow.locator('.item-name').first()).toContainText(
-        'QuickDashLauncher の使い方'
+        'Quick Dash Launcher の使い方'
       );
     });
 

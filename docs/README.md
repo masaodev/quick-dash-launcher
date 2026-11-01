@@ -1,6 +1,6 @@
 # ドキュメント
 
-QuickDashLauncherプロジェクトのドキュメント一覧です。
+Quick Dash Launcher プロジェクトのドキュメント一覧です。
 
 ## ドキュメント体系
 

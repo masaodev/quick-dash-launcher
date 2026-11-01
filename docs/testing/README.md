@@ -1,6 +1,6 @@
 # テストガイド
 
-QuickDashLauncherのテスト関連ドキュメントです。
+Quick Dash Launcher のテスト関連ドキュメントです。
 
 ## クイックスタート
 
@@ -80,7 +80,7 @@ npx playwright test -g "新規アイテムを登録できる"                   
 
 ### 3. ブラウザ自動操作（Playwright MCP）
 
-Claude Code から、起動中の QuickDashLauncher を MCP 経由でその場で操作する仕組みです。画面のスナップショット（アクセシビリティツリー）の取得、クリック・文字入力、タブ切り替え、スクリーンショット撮影ができます。テストコードを書いて繰り返し実行する E2E テストとは別物で、変更の動作確認や不具合の再現に使います。
+Claude Code から、起動中の Quick Dash Launcher を MCP 経由でその場で操作する仕組みです。画面のスナップショット（アクセシビリティツリー）の取得、クリック・文字入力、タブ切り替え、スクリーンショット撮影ができます。テストコードを書いて繰り返し実行する E2E テストとは別物で、変更の動作確認や不具合の再現に使います。
 
 **つなぎ方**: リポジトリ直下の `.mcp.json` に MCP サーバー `electron-playwright` が定義されています。中身は `npx @playwright/mcp@latest --cdp-endpoint http://localhost:9222` で、ポート 9222 のリモートデバッグ（Chrome DevTools Protocol）に接続して Electron の画面を操作します。Chrome MCP（claude-in-chrome）は Chrome の拡張機能経由で動くため、Electron アプリは操作できません。
 

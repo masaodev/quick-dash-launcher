@@ -329,7 +329,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
       for (let i = 0; i < 2; i++) {
         await electronApp.evaluate(({ BrowserWindow }) => {
           const main = BrowserWindow.getAllWindows().find(
-            (w) => w.getTitle() === 'QuickDashLauncher'
+            (w) => w.getTitle() === 'Quick Dash Launcher'
           );
           main?.show();
         });
@@ -354,7 +354,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
     // 起動するとランチャーは隠れるので、管理ウィンドウを開く前に出し直す
     await electronApp.evaluate(({ BrowserWindow }) => {
       BrowserWindow.getAllWindows()
-        .find((w) => w.getTitle() === 'QuickDashLauncher')
+        .find((w) => w.getTitle() === 'Quick Dash Launcher')
         ?.show();
     });
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');

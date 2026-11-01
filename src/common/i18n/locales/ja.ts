@@ -308,7 +308,7 @@ export const ja = {
     dataFileCorrupted: 'データファイルが破損している可能性があるため取込を中止しました: {{file}}',
   },
   firstLaunch: {
-    title: 'QuickDashLauncher へようこそ',
+    title: 'Quick Dash Launcher へようこそ',
     description:
       'アプリ・ファイル・フォルダ・URL を登録して、キーワードを打って開くランチャーです。',
     stepWelcome: 'ようこそ',
@@ -325,7 +325,7 @@ export const ja = {
     next: '次へ',
     back: '戻る',
     hotkeyTitle: 'ホットキーを決めましょう',
-    hotkeyDescription: 'このキーを押すと、どの画面からでも QuickDashLauncher が出ます。',
+    hotkeyDescription: 'このキーを押すと、どの画面からでも Quick Dash Launcher が出ます。',
     hotkeyKeepDefault: '迷ったら、このままで大丈夫です。',
     hotkeyChangeLabel: '別のキーにする：ここをクリックして、使いたいキーを押す',
     hotkeyHint: 'Ctrl・Alt・Shift のどれかと、ほかのキーを一緒に押します（例: Ctrl+Alt+Q）。',
@@ -361,7 +361,7 @@ export const ja = {
     validationFailed: 'ホットキーの検証に失敗しました',
   },
   splash: {
-    windowTitle: 'QuickDashLauncher - 起動中…',
+    windowTitle: 'Quick Dash Launcher - 起動中…',
     subtitle: '素早いアクセスを実現するランチャーアプリ',
     starting: '起動中',
     loadingSettings: '設定を読み込み中',
@@ -530,7 +530,7 @@ export const ja = {
     help: {
       main: `使い方: qdl <コマンド> [引数]
 
-QuickDashLauncher CLI。起動中の QuickDashLauncher（本体）に依頼します。起動していなければ起動します。
+Quick Dash Launcher CLI。起動中の Quick Dash Launcher（本体）に依頼します。起動していなければ起動します。
 
 コマンド:
   launcher item list|add|update|remove     ランチャーのアイテム（qdl launcher --help）
@@ -639,7 +639,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
                   defaultFileTab（起動したときに開くタブのデータファイル。例 data2.json）
   検索            searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
   更新            updateCheckEnabled updateCheckIncludeBeta
-  起動            launchInheritEnvironment（アプリに QuickDashLauncher の環境変数を引き継ぐ）
+  起動            launchInheritEnvironment（アプリに Quick Dash Launcher の環境変数を引き継ぐ）
   ホットキー      hotkey itemSearchHotkey（登録できるか確かめてから変える。itemSearchHotkey は "" で無効）
   ランチャー      windowWidth（400〜2000）windowHeight（300〜1200）
                   windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
@@ -720,7 +720,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       badJson: '依頼を JSON として読めません',
       badShape: '依頼の形が正しくありません',
       versionMismatch:
-        'CLI と QuickDashLauncher のバージョンが合いません（CLI: {{cli}}、本体: {{app}}）。同じバージョンの QuickDashLauncher に付属する qdl を使ってください',
+        'CLI と Quick Dash Launcher のバージョンが合いません（CLI: {{cli}}、本体: {{app}}）。同じバージョンの Quick Dash Launcher に付属する qdl を使ってください',
       badArgv: '依頼の argv が正しくありません',
       tooLarge: '依頼が大きすぎます',
       failed: '処理に失敗しました: {{message}}',
@@ -850,9 +850,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setEntryRemoved: 'CLI: セット「{{set}}」から「{{name}}」の行を削除しました',
     },
     enabled:
-      'QuickDashLauncher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます',
+      'Quick Dash Launcher CLI を使えるようにしました。新しく開いたターミナルから qdl で使えます',
     disabled:
-      'QuickDashLauncher CLI を使えないようにしました（qdl コマンドを PATH から外しました）',
+      'Quick Dash Launcher CLI を使えないようにしました（qdl コマンドを PATH から外しました）',
   },
   display: {
     label: 'ディスプレイ {{number}}',
@@ -1125,7 +1125,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     deleteFailed: 'ファイルの削除に失敗しました: {{error}}',
   },
   admin: {
-    windowTitle: 'QuickDashLauncher - 管理ウィンドウ',
+    windowTitle: 'Quick Dash Launcher - 管理ウィンドウ',
     tabs: {
       settings: '⚙️ 設定',
       itemManager: '✏️ アイテム管理',
@@ -1779,7 +1779,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     dataDescription: '設定ファイルやデータファイルが保存されているフォルダを開きます。',
     openSettingsFolder: '📂 設定フォルダを開く',
     cliNote:
-      'AI エージェントにアイテムやワークスペースを変えさせるときは、ファイルを直接書かせずに CLI（qdl）を使わせてください（基本設定の「QuickDashLauncher CLI を使えるようにする」をオンにします）。',
+      'AI エージェントにアイテムやワークスペースを変えさせるときは、ファイルを直接書かせずに CLI（qdl）を使わせてください（基本設定の「Quick Dash Launcher CLI を使えるようにする」をオンにします）。',
     quit: '🚪 アプリを終了',
     quitConfirm: 'アプリを終了しますか？',
     quitConfirmButton: '終了する',
@@ -2125,9 +2125,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       'データフォルダに書き込めないため、%APPDATA% にデータを保存します: {{dir}}。書き込めるフォルダに QDL を置き直してください',
   },
   startupErrors: {
-    otherInstanceTitle: 'QuickDashLauncher は起動しません',
+    otherInstanceTitle: 'Quick Dash Launcher は起動しません',
     otherInstanceMessage:
-      '別の場所の QuickDashLauncher が、同じデータで動いています。\n\n動いている QDL: {{running}}\nこの QDL: {{self}}\n\n同じデータを使う QDL は、同時に 1 つしか動かせません。動いている QDL を終了してから起動し直してください',
+      '別の場所の Quick Dash Launcher が、同じデータで動いています。\n\n動いている QDL: {{running}}\nこの QDL: {{self}}\n\n同じデータを使う QDL は、同時に 1 つしか動かせません。動いている QDL を終了してから起動し直してください',
     otherInstancePortableUnwritable:
       'この QDL は exe の横のデータフォルダに書き込めないため、%APPDATA% のデータを使おうとしました: {{dir}}。書き込めるフォルダに QDL を置き直してください',
   },
@@ -2223,14 +2223,14 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     confirmMessage: 'エクスポートしたデータをインポートして、再起動します。',
     confirmWarning: '今のデータはすべて置き換わります。\n元のデータはスナップショットに残します。',
     detailSource: 'エクスポート元',
-    sourceValue: 'QuickDashLauncher {{version}}（{{distribution}}）',
+    sourceValue: 'Quick Dash Launcher {{version}}（{{distribution}}）',
     detailExportedAt: 'エクスポートした日時',
     detailItems: 'アイテム（今 → インポート後）',
     detailWorkspaceItems: 'ワークスペースのアイテム',
     confirmButton: 'インポートして再起動',
-    notExport: 'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません',
+    notExport: 'Quick Dash Launcher でエクスポートしたファイルではないため、インポートできません',
     newerVersion:
-      '新しいバージョンの QuickDashLauncher でエクスポートしたファイルです。QuickDashLauncher を最新バージョンにしてからインポートしてください',
+      '新しいバージョンの Quick Dash Launcher でエクスポートしたファイルです。Quick Dash Launcher を最新バージョンにしてからインポートしてください',
     invalidFile: 'ファイルの中の {{file}} を読めないため、インポートできません',
     failed: 'インポートに失敗しました: {{error}}',
     corrupted: 'ファイルが壊れているため、インポートできません。もう一度エクスポートしてください',
@@ -2295,7 +2295,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     /** 初回起動で Web のアイテムを分けて入れる 2 つ目のタブの名前 */
     webTabName: 'Web',
     readme: {
-      name: '📖 QuickDashLauncher の使い方（README）',
+      name: '📖 Quick Dash Launcher の使い方（README）',
       url: 'https://github.com/masaodev/quick-dash-launcher#readme',
     },
     google: { name: 'Google 検索（google）', url: 'https://www.google.com/' },
@@ -2635,13 +2635,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       heading: '検索',
     },
     cli: {
-      heading: 'QuickDashLauncher CLI',
+      heading: 'Quick Dash Launcher CLI',
     },
     advanced: {
       heading: '詳細',
-      launchInheritEnvironment: 'アプリに QuickDashLauncher の環境変数を引き継ぐ',
+      launchInheritEnvironment: 'アプリに Quick Dash Launcher の環境変数を引き継ぐ',
       launchInheritEnvironmentDescription:
-        'オフにすると、スタートメニューから開いたときと同じ環境変数でアプリを起動します。QuickDashLauncher を Claude Code やターミナルから起動することがあり、そこで設定した環境変数を起動するアプリに渡したくないときにオフにします。',
+        'オフにすると、スタートメニューから開いたときと同じ環境変数でアプリを起動します。Quick Dash Launcher を Claude Code やターミナルから起動することがあり、そこで設定した環境変数を起動するアプリに渡したくないときにオフにします。',
     },
     display: {
       keyboardHints: '操作のヒントを表示する',

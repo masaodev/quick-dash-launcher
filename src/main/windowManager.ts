@@ -303,7 +303,7 @@ export async function createTray(): Promise<void> {
   const icon = nativeImage.createFromPath(iconPath);
 
   tray = new Tray(icon);
-  tray.setToolTip('QuickDashLauncher');
+  tray.setToolTip('Quick Dash Launcher');
   await updateTrayMenu();
 
   // 表示言語が変わったらメニューを作り直す（トレイを作り直しても登録は 1 回だけ）
@@ -355,7 +355,7 @@ export async function updateTrayMenu(): Promise<void> {
   const contextMenu = Menu.buildFromTemplate([
     ...updateItems,
     {
-      label: `QuickDashLauncher v${version}`,
+      label: `Quick Dash Launcher v${version}`,
       enabled: false,
     },
     { type: 'separator' },

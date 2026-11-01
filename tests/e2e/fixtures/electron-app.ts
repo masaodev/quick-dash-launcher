@@ -138,11 +138,11 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
         return title === 'Workspace' || url.includes('workspace.html') || url === 'about:blank';
       };
 
-      // タイトルで判定（QuickDashLauncherがランチャー）
+      // タイトルで判定（Quick Dash Launcher がランチャー）
       for (const win of windows) {
         if (await isWorkspaceWindow(win)) continue;
         const title = await win.title();
-        if (title === 'QuickDashLauncher') {
+        if (title === 'Quick Dash Launcher') {
           return win;
         }
       }

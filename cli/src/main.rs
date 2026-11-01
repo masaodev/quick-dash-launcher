@@ -167,17 +167,17 @@ fn connect_or_launch(name: &str, base: &str) -> Result<File, String> {
     match connect(name) {
         Ok(pipe) => return Ok(pipe),
         Err(e) if e.raw_os_error() == Some(ERROR_FILE_NOT_FOUND) => {}
-        Err(e) => return Err(format!("QuickDashLauncher に接続できません: {e}")),
+        Err(e) => return Err(format!("Quick Dash Launcher に接続できません: {e}")),
     }
 
     if env::var("QDL_NO_LAUNCH").is_ok_and(|v| v == "1") {
-        return Err("QuickDashLauncher が起動していません".to_string());
+        return Err("Quick Dash Launcher が起動していません".to_string());
     }
     let exe = find_app_exe(base).ok_or(
-        "QuickDashLauncher が起動しておらず、起動する exe も見つかりません。QuickDashLauncher を起動してから実行してください",
+        "Quick Dash Launcher が起動しておらず、起動する exe も見つかりません。Quick Dash Launcher を起動してから実行してください",
     )?;
-    eprintln!("QuickDashLauncher を起動しています…");
-    launch_app(&exe).map_err(|e| format!("QuickDashLauncher を起動できません（{}）: {e}", exe.display()))?;
+    eprintln!("Quick Dash Launcher を起動しています…");
+    launch_app(&exe).map_err(|e| format!("Quick Dash Launcher を起動できません（{}）: {e}", exe.display()))?;
 
     let start = Instant::now();
     while start.elapsed() < LAUNCH_TIMEOUT {
@@ -186,7 +186,7 @@ fn connect_or_launch(name: &str, base: &str) -> Result<File, String> {
             return Ok(pipe);
         }
     }
-    Err("QuickDashLauncher を起動しましたが、応答がありません".to_string())
+    Err("Quick Dash Launcher を起動しましたが、応答がありません".to_string())
 }
 
 fn exchange(mut pipe: File, request: &Request) -> Result<Response, String> {
@@ -226,7 +226,7 @@ fn run() -> Result<u8, (u8, String)> {
         return Err((
             EXIT_PROTOCOL,
             format!(
-                "CLI と QuickDashLauncher のバージョンが合いません（CLI: {PROTOCOL_VERSION}、本体: {}）。同じバージョンの QuickDashLauncher に付属する qdl を使ってください",
+                "CLI と Quick Dash Launcher のバージョンが合いません（CLI: {PROTOCOL_VERSION}、本体: {}）。同じバージョンの Quick Dash Launcher に付属する qdl を使ってください",
                 response.protocol
             ),
         ));

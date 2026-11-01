@@ -17,7 +17,7 @@ async function getMainWindowBounds(
 ): Promise<{ x: number; y: number; width: number; height: number } | null> {
   return electronApp.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows().find(
-      (w) => w.getTitle() === 'QuickDashLauncher' && w.getParentWindow() === null
+      (w) => w.getTitle() === 'Quick Dash Launcher' && w.getParentWindow() === null
     );
     return win ? win.getBounds() : null;
   });
