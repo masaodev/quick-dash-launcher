@@ -23,6 +23,12 @@ function firstName(candidates: string[]): string | undefined {
   return candidates[0]?.split('\\').pop();
 }
 
+/** `*` をパスの識別子（16 進 8 桁）として、ファイル名を照合する正規表現にする */
+function namePattern(name: string): RegExp {
+  const escaped = name.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace('*', '[0-9a-f]{8}');
+  return new RegExp(`^${escaped}$`);
+}
+
 /** 候補すべてのファイル名を取り出す */
 function names(candidates: string[]): string[] {
   return candidates.map((c) => c.split('\\').pop()!);
@@ -82,7 +88,9 @@ describe('getCachedIconCandidates', () => {
   it('ショートカットは_lnk_icon優先、_iconにフォールバックする', () => {
     const candidates = getCachedIconCandidates({ type: 'app', path: 'C:\\x\\MyApp.lnk' }, FOLDERS);
 
-    expect(names(candidates)).toEqual(['MyApp_lnk_icon.png', 'MyApp_icon.png']);
+    const [lnk, file] = names(candidates);
+    expect(lnk).toMatch(namePattern('MyApp_*_lnk_icon.png'));
+    expect(file).toMatch(namePattern('MyApp_*_icon.png'));
   });
 
   it('リンク先がショートカットならそちらの名前を使う', () => {
@@ -91,7 +99,7 @@ describe('getCachedIconCandidates', () => {
       FOLDERS
     );
 
-    expect(firstName(candidates)).toBe('Link_lnk_icon.png');
+    expect(firstName(candidates)).toMatch(namePattern('Link_*_lnk_icon.png'));
   });
 
   it('カスタムURIはスキーマ優先、拡張子にフォールバックする', () => {
@@ -130,14 +138,14 @@ describe('取得方法と読み出し候補の対応', () => {
       kind: 'executable',
       item: { type: 'app', path: 'C:\\x\\tool.exe' },
       folder: 'icons',
-      name: 'tool_icon.png',
+      name: 'tool_*_icon.png',
     },
     {
       // 実行ファイル以外の拡張子もファイル名ベース（extractIconの保存先と一致させる）
       kind: 'executable',
       item: { type: 'app', path: 'C:\\x\\tool.ps1' },
       folder: 'icons',
-      name: 'tool_icon.png',
+      name: 'tool_*_icon.png',
     },
     {
       kind: 'fileExtension',
@@ -149,7 +157,23 @@ describe('取得方法と読み出し候補の対応', () => {
     const candidates = getCachedIconCandidates(item, FOLDERS);
 
     expect(candidates[0]).toContain(FOLDERS[folder as keyof typeof FOLDERS]);
-    expect(firstName(candidates)).toBe(name);
+    expect(firstName(candidates)).toMatch(namePattern(name));
+  });
+
+  it('別のフォルダの同じ名前の exe・ショートカットは、別のキャッシュを読む（A3-238）', () => {
+    const a = getCachedIconCandidates({ type: 'app', path: 'C:\\AppA\\setup.exe' }, FOLDERS);
+    const b = getCachedIconCandidates({ type: 'app', path: 'C:\\AppB\\setup.exe' }, FOLDERS);
+    const sameUpper = getCachedIconCandidates(
+      { type: 'app', path: 'C:\\APPA\\SETUP.exe' },
+      FOLDERS
+    );
+    expect(firstName(a)).not.toBe(firstName(b));
+    // 大文字・小文字の違いは同じパスとみなす
+    expect(names(a)[0].split('_')[1]).toBe(names(sameUpper)[0].split('_')[1]);
+
+    const lnkA = getCachedIconCandidates({ type: 'app', path: 'C:\\AppA\\Uninstall.lnk' }, FOLDERS);
+    const lnkB = getCachedIconCandidates({ type: 'app', path: 'C:\\AppB\\Uninstall.lnk' }, FOLDERS);
+    expect(firstName(lnkA)).not.toBe(firstName(lnkB));
   });
 });
 

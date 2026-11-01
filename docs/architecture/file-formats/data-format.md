@@ -37,8 +37,8 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 | サブフォルダ | 説明 | ファイル名形式 |
 | --- | --- | --- |
-| `icon-cache/apps/` | EXEファイルのアイコン | `{basename}_icon.png` |
-| `icon-cache/apps/` | ショートカット（.lnk）のアイコン | `{name}_lnk_icon.png` |
+| `icon-cache/apps/` | EXEファイルのアイコン | `{basename}_{id}_icon.png` |
+| `icon-cache/apps/` | ショートカット（.lnk）のアイコン | `{name}_{id}_lnk_icon.png` |
 | `icon-cache/apps/` | カスタムURIスキームのアイコン | `uri_{scheme}_icon.png` |
 | `icon-cache/apps/` | 登録アプリ（UWP）のアイコン | `uwp_{PackageFamilyName}_icon.png` |
 | `icon-cache/favicons/` | WebサイトのFavicon | URL由来のファイル名 |
@@ -47,7 +47,7 @@ CSV 形式（`data*.txt`）は v0.6.1 で廃止しました。経緯は v0.6.1 �
 
 サブフォルダは起動時に作ります。起動中に消されても、アイコンを保存する直前に無ければ作り直します。
 
-ショートカットの `{name}` は `.lnk` を除いたファイル名です（リンク先が `.lnk` のときはそちらの名前。`src/main/utils/iconCacheKeys.ts`）。
+ショートカットの `{name}` は `.lnk` を除いたファイル名です（リンク先が `.lnk` のときはそちらの名前）。`{id}` はフォルダまで含めたパス（大文字・小文字は区別しない）の MD5 の先頭 8 桁で、別のフォルダの同じ名前の exe・ショートカット（`setup.exe`・`Uninstall.lnk` など）を区別する（`src/main/utils/iconCacheKeys.ts`）。v0.8.0-beta.34 までは `{id}` が無く、同じ名前のものが同じアイコンを使っていた。古い名前のキャッシュは読まないので、更新した後の最初の 1 回だけ exe・ショートカットのアイコンを取り直す（ランチャーの「アイコンがまだ無いアイテム」の「取得する」）
 
 データファイルの `customIcon` フィールドは `icon-cache/custom/` 内のファイル名を指定します。ファイル名だけを受け付け、`\` `/` `:` を含む名前や `..` はアイコンとして使わない（読まない・消さない。`src/main/services/icon/customIconStore.ts`）。
 

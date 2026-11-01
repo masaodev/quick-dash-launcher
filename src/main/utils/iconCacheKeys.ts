@@ -6,6 +6,7 @@
  * 別のキーを探しにいって表示されない、という食い違いが起きるため、
  * 判定と候補パスの組み立てをこのファイルへ集約している。
  */
+import * as crypto from 'crypto';
 import * as path from 'path';
 
 import { iconLogger } from '@common/logger';
@@ -86,6 +87,26 @@ export function resolveShortcutPath(item: IconTargetItem): string {
   return PathUtils.isShortcutFile(item.originalPath) ? item.originalPath! : item.path;
 }
 
+/**
+ * パスの短い識別子（大文字・小文字を区別しない）
+ *
+ * ファイル名だけでキャッシュ名を決めると、別のフォルダの同じ名前の exe・ショートカット
+ * （setup.exe・Uninstall.lnk など）が同じアイコンを使ってしまうので、フォルダまで含めたパスで区別する（A3-238）
+ */
+function pathCacheId(filePath: string): string {
+  return crypto.createHash('md5').update(filePath.toLowerCase()).digest('hex').slice(0, 8);
+}
+
+/** exe などファイルから取り出したアイコンのキャッシュのファイル名（`<名前>_<識別子>_icon.png`） */
+export function fileIconCacheName(filePath: string): string {
+  return `${path.basename(filePath, path.extname(filePath))}_${pathCacheId(filePath)}_icon.png`;
+}
+
+/** ショートカット（.lnk）のアイコンのキャッシュのファイル名（`<名前>_<識別子>_lnk_icon.png`） */
+export function shortcutIconCacheName(lnkPath: string): string {
+  return `${path.basename(lnkPath, '.lnk')}_${pathCacheId(lnkPath)}_lnk_icon.png`;
+}
+
 /** 拡張子アイコンのキャッシュパスを組み立てる */
 function getExtensionIconPath(extensionsFolder: string, ext: string): string {
   return path.join(extensionsFolder, `ext_${ext.replace('.', '')}_icon.png`);
@@ -140,10 +161,10 @@ export function getCachedIconCandidates(item: IconTargetItem, folders: IconFolde
     }
 
     case 'shortcut': {
-      const shortcutName = path.basename(resolveShortcutPath(item), '.lnk');
+      const lnkPath = resolveShortcutPath(item);
       return [
-        path.join(folders.icons, `${shortcutName}_lnk_icon.png`),
-        path.join(folders.icons, `${shortcutName}_icon.png`),
+        path.join(folders.icons, shortcutIconCacheName(lnkPath)),
+        path.join(folders.icons, fileIconCacheName(lnkPath)),
       ];
     }
 
@@ -154,8 +175,7 @@ export function getCachedIconCandidates(item: IconTargetItem, folders: IconFolde
 
     case 'executable': {
       if (!item.path) return [];
-      const iconName = path.basename(item.path, path.extname(item.path)) + '_icon.png';
-      return [path.join(folders.icons, iconName)];
+      return [path.join(folders.icons, fileIconCacheName(item.path))];
     }
 
     case 'customUri': {
