@@ -162,7 +162,8 @@ winget install masaodev.quick-dash-launcher
 [Releases](https://github.com/masaodev/quick-dash-launcher/releases) からダウンロードします。
 
 - インストーラー版: `QuickDashLauncher.Setup.x.x.x.exe` を実行します。インストールが終わると起動します。
-- ZIP 版: `QuickDashLauncher-x.x.x-portable.zip` を好きなフォルダに展開し、`QuickDashLauncher.exe` を実行します（インストール不要）。設定とデータはインストーラー版と同じ `%APPDATA%\quick-dash-launcher` に保存されるので、新しいバージョンの ZIP を別のフォルダに展開しても同じデータを使えます。exe の横に `QuickDashLauncher-data` フォルダを作るとポータブルモードになり、設定とデータをそのフォルダに保存します（フォルダごと USB メモリで持ち歩けます。新しいバージョンにするときは `QuickDashLauncher-data` を新しいフォルダへ移します）。
+- ZIP 版: `QuickDashLauncher-x.x.x-portable.zip` を好きなフォルダに展開し、`QuickDashLauncher.exe` を実行します（インストール不要）。設定とデータはインストーラー版と同じ `%APPDATA%\quick-dash-launcher` に保存されるので、新しいバージョンの ZIP を別のフォルダに展開しても同じデータを使えます。初回設定画面でポータブルモードにチェックを付けるか、exe の横に `QuickDashLauncher-data` フォルダを作るとポータブルモードになり、設定とデータをそのフォルダに保存します（フォルダごと USB メモリで持ち歩けます。新しいバージョンにするときは `QuickDashLauncher-data` を新しいフォルダへ移します）。
+  - 正式版とベータ版を同じ PC で使い分けるときは、ベータ版をポータブルモードにしてください。既定のままだと両方が同じデータを読み、同時には起動できません。
 
 インストーラー版・ZIP 版は署名していないため、初回の実行時に Windows SmartScreen の警告が出ることがあります。そのときは「詳細情報」→「実行」で起動できます。
 
