@@ -14,7 +14,7 @@ import { TestUtils } from '../e2e/helpers/test-utils';
 import { demoContent, demoLang, writeDemoData } from './demo-data';
 
 /**
- * README の「画面」に載せる画面イメージ（登録画面・管理画面）を撮る
+ * README の「登録と管理の画面」に載せる画面イメージ（登録画面・管理画面）を撮る
  *
  * メインデモ GIF と同じデモデータ（demo-data.ts）で起動し、docs/images/readme-*.png に保存する。
  * 環境変数 DEMO_LANG=en で英語の画面とデータで撮り、docs/images/readme-*-en.png に保存する。
