@@ -9,7 +9,7 @@ function describeText(filter: TextFilter): string {
 }
 
 /**
- * ツールバーの下のチップに出す、1 つの列の絞り込みの文言（例:「種類: 単一アイテム（URL）」）
+ * ツールバーの下のチップに出す、1 つの列の絞り込みの文言（例:「種別: 単一アイテム（URL）」）
  *
  * @param ruleNames ルール id → ルール名（取込元の絞り込みにルールを選んだとき）
  */
