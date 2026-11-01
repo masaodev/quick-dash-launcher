@@ -300,6 +300,8 @@ export class WorkspaceFileStore {
     items: [],
   };
   private corruptedFiles = new Set<string>();
+  /** 読めてはいるが、もう片方が読めないので読み込みを見送ったファイル（画面では「壊れている」と出さない） */
+  private deferredFiles = new Set<string>();
   /** 新しい版の QDL が保存したファイル（表示はするが、どちらのファイルも書かない） */
   private newerFormatFiles = new Set<string>();
   private pendingReports: LoadReportFile[] = [];
@@ -337,6 +339,7 @@ export class WorkspaceFileStore {
     const before = this.loaded ? JSON.stringify([this.main, this.archive]) : null;
     this.pendingReports = [];
     this.pendingExternalChanges = [];
+    this.deferredFiles.clear();
 
     const mainReport = this.newReport(WORKSPACE_FILE_KEY);
     const archiveReport = this.newReport(WORKSPACE_ARCHIVE_FILE_KEY);
@@ -538,6 +541,7 @@ export class WorkspaceFileStore {
         archiveReport.error = mainI18n.t('workspaceErrors.archiveDeferred', {
           file: WORKSPACE_FILE_KEY,
         });
+        this.deferredFiles.add(WORKSPACE_ARCHIVE_FILE_KEY);
       }
       this.corruptedFiles.add(WORKSPACE_ARCHIVE_FILE_KEY);
     }
@@ -573,6 +577,12 @@ export class WorkspaceFileStore {
 
   isCorrupted(): boolean {
     return this.corruptedFiles.size > 0;
+  }
+
+  /** 読めなかった（壊れている）ファイルの、設定フォルダからの相対パス（画面で知らせるため） */
+  getCorruptedFiles(): string[] {
+    const files = [...this.corruptedFiles].filter((file) => !this.deferredFiles.has(file));
+    return files.length > 0 ? files : [...this.corruptedFiles];
   }
 
   /** 直近の reload() の結果がまだ consumeLoadReports() で取り出されていないか */

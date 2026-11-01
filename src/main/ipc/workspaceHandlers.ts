@@ -538,6 +538,13 @@ export function setupWorkspaceHandlers(): void {
     }, 'Failed to load workspaces')
   );
 
+  handleIpc(IPC_CHANNELS.WORKSPACE_GET_CORRUPTED_FILES, () =>
+    withWorkspaceService(
+      async (service) => service.getCorruptedFiles(),
+      'Failed to get corrupted workspace files'
+    )
+  );
+
   handleIpc(IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE, (_event, name: string) =>
     withWorkspaceService(
       async (service) => {

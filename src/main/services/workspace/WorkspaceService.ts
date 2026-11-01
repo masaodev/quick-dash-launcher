@@ -200,6 +200,11 @@ export class WorkspaceService {
     return this.store?.isCorrupted() ?? false;
   }
 
+  /** 読めなかった workspace.json・workspace-archive.json（読み込み済みのときだけ。読み直さない） */
+  public getCorruptedFiles(): string[] {
+    return this.store?.getCorruptedFiles() ?? [];
+  }
+
   // --- ワークスペース（タブ）管理 ---
 
   public async loadWorkspaces(): Promise<Workspace[]> {

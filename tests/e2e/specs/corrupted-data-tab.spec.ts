@@ -1,3 +1,8 @@
+import fs from 'fs';
+import path from 'path';
+
+import type { Page } from '@playwright/test';
+
 import { test, expect } from '../fixtures/electron-app';
 import { TestUtils } from '../helpers/test-utils';
 
@@ -119,5 +124,39 @@ test.describe('QuickDashLauncher - 読めなかったデータファイルのタ
         .toBe(true);
       expect(configHelper.readDataFileRaw('data2.json')).toBe(broken);
     });
+  });
+});
+
+/**
+ * 読めなかった workspace.json（A3-238）
+ * 空の案内（押しても書き込めない［＋ グループを追加］）の代わりに、読めなかったことと直し方を出す
+ */
+test.describe('QuickDashLauncher - 読めなかったワークスペースのファイル', () => {
+  test('壊れた workspace.json は「空です」ではなく読めなかったと出し、ファイルは書き換えない', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const broken = '{"version":"2.0","workspaces":[';
+    fs.writeFileSync(path.join(configHelper.getConfigDir(), 'workspace.json'), broken);
+    await utils.reloadWithF5();
+
+    await mainWindow.evaluate(() => window.electronAPI.toggleWorkspaceWindow());
+    const isWorkspace = async (win: Page) => (await win.title()) === 'Workspace';
+    let workspaceWindow: Page | undefined;
+    for (const win of electronApp.windows()) {
+      if (await isWorkspace(win)) workspaceWindow = win;
+    }
+    workspaceWindow ??= await electronApp.waitForEvent('window', { predicate: isWorkspace });
+
+    const notice = workspaceWindow.getByTestId('workspace-corrupted');
+    await expect(notice).toContainText('workspace.json を読めませんでした');
+    await expect(notice.getByRole('button', { name: '📂 設定フォルダを開く' })).toBeVisible();
+    await expect(workspaceWindow.getByRole('button', { name: '＋ グループを追加' })).toHaveCount(0);
+    expect(fs.readFileSync(path.join(configHelper.getConfigDir(), 'workspace.json'), 'utf8')).toBe(
+      broken
+    );
   });
 });

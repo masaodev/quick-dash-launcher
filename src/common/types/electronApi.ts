@@ -350,6 +350,8 @@ export interface ElectronAPI {
   workspaceAPI: {
     // ワークスペース（タブ）管理
     loadWorkspaces: () => Promise<Workspace[]>;
+    /** 読めなかった（壊れている）workspace.json・workspace-archive.json の相対パス */
+    getCorruptedFiles: () => Promise<string[]>;
     createWorkspace: (name: string) => Promise<Workspace>;
     renameWorkspace: (id: string, name: string) => Promise<{ success: boolean }>;
     deleteWorkspace: (id: string) => Promise<{ success: boolean }>;
