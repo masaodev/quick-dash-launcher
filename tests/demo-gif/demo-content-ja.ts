@@ -116,6 +116,7 @@ function dailyItems(root: string): DemoItem[] {
     item('Google カレンダー', 'https://calendar.google.com/'),
     item('Gmail', 'https://mail.google.com/'),
     item('Google ドライブ', 'https://drive.google.com/'),
+    item('Google Maps', 'https://www.google.co.jp/maps'),
     item('Slack', 'https://slack.com/'),
     item('Zoom', 'https://zoom.us/'),
     item('翻訳（DeepL）', 'https://www.deepl.com/translator'),
@@ -329,6 +330,8 @@ export const jaContent: DemoContent = {
     apps: appItems(),
   }),
   demo: {
+    quick: 'goo',
+    quickRefine: ' map',
     search: 'db',
     refine: ' ec',
     minutes: '09-30',
@@ -336,6 +339,7 @@ export const jaContent: DemoContent = {
     otherTab: 'TypeS',
     captions: {
       intro: 'フォルダも資料も Web もアプリも、ここから開く',
+      quick: '名前の一部を打てば、すぐ絞り込める',
       tabs: '案件・ブックマーク・アプリは、タブで分けて整理',
       search: '名前の一部を打つと、候補が絞られる',
       refine: 'スペースで区切れば、さらに絞れる',

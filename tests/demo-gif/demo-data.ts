@@ -40,13 +40,16 @@ export interface DemoContent {
   };
   /** メインデモ GIF で打つ言葉と、画面下の説明文（DEMO_CAPTIONS=1 のときだけ出す） */
   demo: {
+    /** 最初の場面で打つ言葉（README の検索の例と同じ。quick で並び、quickRefine を足すと 1 件に絞れる） */
+    quick: string;
+    quickRefine: string;
     search: string;
     refine: string;
     minutes: string;
     chat: string;
     otherTab: string;
     captions: Record<
-      'intro' | 'tabs' | 'search' | 'refine' | 'open' | 'minutes' | 'chat' | 'otherTab',
+      'intro' | 'quick' | 'tabs' | 'search' | 'refine' | 'open' | 'minutes' | 'chat' | 'otherTab',
       string
     >;
   };

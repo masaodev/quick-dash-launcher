@@ -184,6 +184,15 @@ test('メインデモ', async () => {
     await win.waitForTimeout(1500);
     const startSec = Math.max(0, (Date.now() - recordStart) / 1000 - 0.7);
 
+    // 0. まず README の検索の例と同じ「goo」→「goo map」で、名前の一部で並び、足すと 1 件に絞れるのを見せる
+    await caption(win, CONTENT.demo.captions.quick);
+    await win.keyboard.type(CONTENT.demo.quick, { delay: TYPE_DELAY_MS });
+    await win.waitForTimeout(1200);
+    await win.keyboard.type(CONTENT.demo.quickRefine, { delay: TYPE_DELAY_MS });
+    await win.waitForTimeout(1600);
+    await clearSearch(win);
+    await win.waitForTimeout(500);
+
     // 1. メインタブ → タブを一巡して、案件・ブックマーク・アプリに整理されている様子を見せる
     await caption(win, CONTENT.demo.captions.tabs);
     for (let i = 0; i < 5; i++) {
