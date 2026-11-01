@@ -1,6 +1,6 @@
 /**
  * アイテム管理: 今のタブのデータファイルが JSON として読めなかったときの知らせ
- * 画面仕様: docs/screens/admin-window.md（アイテム管理の「読めなかったデータファイル」）
+ * 画面仕様: docs/screens/admin-window.md#512-変更を保存ボタンをクリック（「読めなかったデータファイルがある状態」）
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';

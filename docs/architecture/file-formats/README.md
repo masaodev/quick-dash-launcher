@@ -96,7 +96,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 - **作成タイミング**: 起動時に1日1回（ローカル時刻の日付で判定）、変更がある場合のみ（`backupEnabled` が無効なら作らない）
 - **保持件数**: 設定可能（`backupRetention`、既定値は設定ファイルを参照）。超えた古いものから消す。`_pre-external` と、`_pre-set-migration`・`_pre-window-migration`・`_pre-import` それぞれの新しい 2 つは数えない（消さない）
 - **復元前の自動バックアップ**: 復元の実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
-- **インポート前の自動バックアップ**: インポートで置き換える前に、置き換わるファイル（[エクスポート](#エクスポート) の「入れるもの」）を `YYYY-MM-DDTHH-MM-SS_pre-import/` に保存（`backupEnabled` に関係なく作る。作れなければインポートしない）。インポートする前に戻す拠り所なので、新しい 2 つは `backupRetention` で数えずに残す。復元するときは、インポートと同じく設定フォルダをまるごと置き換えて再起動する（ほかのスナップショットは上書きだけ。[管理ウィンドウ 5.5.1](../../screens/admin-window.md#551-スナップショット一覧)）。その前の今のファイルも、新しい `_pre-import` に残す
+- **インポート前の自動バックアップ**: インポートで置き換える前に、置き換わるファイル（[エクスポート](#エクスポート) の「入れるもの」）を `YYYY-MM-DDTHH-MM-SS_pre-import/` に保存（`backupEnabled` に関係なく作る。作れなければインポートしない）。インポートする前に戻す拠り所なので、新しい 2 つは `backupRetention` で数えずに残す。復元するときは、インポートと同じく設定フォルダをまるごと置き換えて再起動する（ほかのスナップショットは上書きだけ。管理ウィンドウ 5.5.1）。その前の今のファイルも、新しい `_pre-import` に残す
 - **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
 - **セット変換前スナップショット**: データファイル・ワークスペースファイルの旧グループ・旧ウィンドウ配置をセットに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-set-migration/` を作成（`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つ（データファイル用とワークスペース用）は前の版に戻すときの拠り所なので `backupRetention` で数えずに残し、3 つ目より古いものは通常のスナップショットと一緒に数える（`src/main/services/backupService.ts` の `cleanupOldSnapshots`）
@@ -105,7 +105,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 
 ### エクスポート
 
-設定タブの「エクスポート…」（[管理ウィンドウ 5.5.2](../../screens/admin-window.md#552-エクスポート)）で作る zip。別の PC や別の配布形式の QDL へデータを移すときに使う（`src/main/services/dataExportService.ts`）。
+設定タブの「エクスポート…」（管理ウィンドウ 5.5.2）で作る zip。別の PC や別の配布形式の QDL へデータを移すときに使う（`src/main/services/dataExportService.ts`）。
 
 - **ファイル**: 利用者が選んだ場所の `QuickDashLauncher-export-YYYY-MM-DD.zip`（既定の名前。ローカル時刻の日付）
 - **中の並び**: 設定フォルダと同じ並び。先頭に中身の説明 `manifest.json` を置く
@@ -123,7 +123,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
   | `files` | 入れたファイル（設定フォルダからの相対パス。区切りは `/`） |
   | `checksums` | 入れたファイルごとの中身の SHA-256（16 進）。インポートのときに、途中で書き換わっていないかを確かめる（無い zip も読む） |
 
-- **インポートするとき**（[管理ウィンドウ 5.5.3](../../screens/admin-window.md#553-インポート)。`src/main/services/dataImportService.ts`）: 書き込む前に次をすべて確かめ、1 つでも外れたら何も書かない
+- **インポートするとき**（管理ウィンドウ 5.5.3。`src/main/services/dataImportService.ts`）: 書き込む前に次をすべて確かめ、1 つでも外れたら何も書かない
   - `manifest.json` があり、`format` が合っている
   - `formatVersion` と、中のファイルの版（`settings.json` の `settingsVersion`、データファイル・ワークスペースファイル・`item-usage.json`・`search-history.json`・`workspace-ui-state.json` の `version`）が、この QDL の扱える版より新しくない（[形式の版と互換](#形式の版と互換)）
   - zip として最後まで読める（途中で切れた zip は「壊れている」とする）
@@ -179,7 +179,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 - **項目を足すだけなら版を上げない**。古い版は知らない項目として残すので、版を上げると古い版で書けなくなるだけ損になる
 - **版を上げるのは、古い版の QDL に書かせると困る変更のとき**（項目の意味や形を変える、入れ子の中に項目を足す、要素の並びや参照の規則を変える）。上げた版より古い QDL は、そのファイルを読むだけになる
 - 型（`src/common/types/json-data.ts`・`json-workspace.ts`）に項目を足したら、`unknownKeys.ts` の知っている項目の一覧にも足す（足し忘れは型チェックで止まる）。項目をやめるときも一覧には残す
-- CLI（`qdl`）のコマンド・出力の互換は、別に決めている（[CLI - 互換の決まり](../../features/cli.md#互換の決まり)）
+- CLI（`qdl`）のコマンド・出力の互換は、別に決めている（CLI の仕様書の「互換の決まり」）
 
 ---
 
