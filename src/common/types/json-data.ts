@@ -255,6 +255,12 @@ export interface JsonSetItem extends JsonItemBase {
 /** WSグループで並べるグループの範囲: all＝すべて／selected＝groupIds で選んだもの */
 export type WsGroupScope = 'all' | 'selected';
 
+/**
+ * scope が all のとき、アーカイブしたグループをどう扱うか:
+ * exclude＝並べない（省略時）／include＝今あるグループの後ろに並べる／only＝アーカイブしたグループだけ
+ */
+export type WsGroupArchivedFilter = 'exclude' | 'include' | 'only';
+
 /** WSグループのオプション */
 export interface JsonWsGroupOptions {
   /** 表示名のプレフィックス（オプション） */
@@ -273,8 +279,10 @@ export interface JsonWsGroupItem extends JsonItemBase {
   type: 'wsgroup';
   /** 並べるグループの範囲 */
   scope: WsGroupScope;
-  /** 並べるグループの id（scope が selected のときだけ使う。並びはワークスペースの順） */
+  /** 並べるグループの id（scope が selected のときだけ使う。並びはワークスペースの順。アーカイブしたグループも指せる） */
   groupIds?: string[];
+  /** アーカイブしたグループの扱い（scope が all のときだけ使う。省略時は exclude） */
+  archived?: WsGroupArchivedFilter;
   /** オプション */
   options?: JsonWsGroupOptions;
 }

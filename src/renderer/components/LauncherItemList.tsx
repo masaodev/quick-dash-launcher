@@ -551,6 +551,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const isSet = isSetItem(item);
             const isClipboard = isClipboardItem(item);
             const isWsGroup = isWsGroupItem(item);
+            const isArchivedWsGroup = isWsGroup && item.archived === true;
             // WSグループはグループを開くだけで中身を持たないので、ワークスペースへドラッグさせない
             const isDraggable = !isWsGroupItem(item);
             const isDragging = draggedItemIndex === index;
@@ -578,6 +579,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               isClipboard && 'clipboard-item',
               isDragging && 'dragging',
               isMarked && 'marked',
+              isArchivedWsGroup && 'archived-ws-group',
             ]
               .filter(Boolean)
               .join(' ');
@@ -629,8 +631,19 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                     </span>
                   )}
                   {isWsGroup && (
-                    <span className="ws-group-badge" title={t('launcher.tooltip.wsGroup')}>
-                      {t('launcher.list.wsGroupBadge')}
+                    <span
+                      className="ws-group-badge"
+                      title={t(
+                        isArchivedWsGroup
+                          ? 'launcher.tooltip.wsGroupArchived'
+                          : 'launcher.tooltip.wsGroup'
+                      )}
+                    >
+                      {t(
+                        isArchivedWsGroup
+                          ? 'launcher.list.wsGroupArchivedBadge'
+                          : 'launcher.list.wsGroupBadge'
+                      )}
                     </span>
                   )}
                   {isLauncherItem(item) && hasItemWindowSwitch(item) && (

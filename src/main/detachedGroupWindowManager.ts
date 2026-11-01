@@ -731,7 +731,11 @@ export async function restoreDetachedWindows(options?: {
     const openGroupIds = await workspaceService.loadOpenDetachedGroupIds();
     if (openGroupIds.length === 0) return;
 
-    const groups = await workspaceService.loadGroups();
+    // アーカイブしたグループの切り離しウィンドウも、アーカイブのまま開き直す（A3-227）
+    const groups = [
+      ...(await workspaceService.loadGroups()),
+      ...(await workspaceService.loadArchivedGroups()),
+    ];
     // サブグループは切り離さない（以前に切り離したもの・後でサブグループにしたものは、開くと空になる）
     const topLevelGroupIds = new Set(groups.filter((g) => !g.parentGroupId).map((g) => g.id));
 

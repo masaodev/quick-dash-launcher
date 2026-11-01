@@ -213,7 +213,9 @@ export function getTooltipText(
   }
 
   if (isWsGroupItem(item)) {
-    const lines = [t('launcher.tooltip.wsGroup')];
+    const lines = [
+      t(item.archived ? 'launcher.tooltip.wsGroupArchived' : 'launcher.tooltip.wsGroup'),
+    ];
     appendMetaInfo(lines, { sourceFile: item.sourceFile, expandedFromId: item.expandedFromId });
     return lines.join('\n');
   }

@@ -776,7 +776,11 @@ export function setupWorkspaceHandlers(): void {
 
   handleIpc(IPC_CHANNELS.WORKSPACE_DELETE_ARCHIVED_GROUP, (_event, groupId: string) =>
     withWorkspaceChange(
-      (service) => service.deleteArchivedGroup(groupId),
+      async (service) => {
+        // アーカイブのまま開いている切り離しウィンドウ（A3-227）は、消す前に閉じる
+        closeDetachedGroupWindow(groupId);
+        await service.deleteArchivedGroup(groupId);
+      },
       'Deleted archived workspace group permanently',
       'Failed to delete archived workspace group',
       { groupId },

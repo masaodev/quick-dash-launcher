@@ -167,7 +167,11 @@ describe('useAdminItemListView の WSグループの行（A3-224）', () => {
       configurable: true,
       value: {
         checkPathsExist,
-        workspaceAPI: { loadWorkspaces: vi.fn().mockResolvedValue(workspaces), loadGroups },
+        workspaceAPI: {
+          loadWorkspaces: vi.fn().mockResolvedValue(workspaces),
+          loadGroups,
+          loadArchivedGroups: vi.fn().mockResolvedValue([]),
+        },
         onWorkspaceChanged: (callback: () => void) => {
           workspaceChanged = callback;
           return () => {};

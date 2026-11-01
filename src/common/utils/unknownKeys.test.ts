@@ -180,7 +180,7 @@ describe('restoreUnknownKeys（ワークスペース）', () => {
     const archive = {
       version: '2.0',
       groups: [],
-      items: [{ id: 'Iiiiiii1', type: 'item', displayName: 'A', path: 'p', archived: 'x' }],
+      items: [{ id: 'Iiiiiii1', type: 'item', displayName: 'A', path: 'p', futureKey: 'x' }],
     };
     const next = {
       version: '2.0',
@@ -190,6 +190,6 @@ describe('restoreUnknownKeys（ワークスペース）', () => {
     };
 
     expect(restoreUnknownKeys('workspace', next, { target: main, others: [archive] })).toBe(true);
-    expect(next.items[0]).toHaveProperty('archived', 'x');
+    expect(next.items[0]).toHaveProperty('futureKey', 'x');
   });
 });

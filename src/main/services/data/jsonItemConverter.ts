@@ -30,7 +30,11 @@ import { processDirectoryItem, processShortcut } from './directoryScanner.js';
 async function loadWsGroupCandidates(): Promise<WsGroupCandidate[]> {
   const { WorkspaceService } = await import('../workspace/WorkspaceService.js');
   const service = await WorkspaceService.getInstance();
-  return listWsGroupCandidates(await service.loadWorkspaces(), await service.loadGroups());
+  return listWsGroupCandidates(
+    await service.loadWorkspaces(),
+    await service.loadGroups(),
+    await service.loadArchivedGroups()
+  );
 }
 
 /**

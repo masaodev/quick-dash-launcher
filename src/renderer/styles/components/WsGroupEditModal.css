@@ -127,3 +127,25 @@
   align-items: center;
   gap: var(--spacing-sm);
 }
+
+/* アーカイブしたグループ（一覧・プレビュー）は薄く出し、「アーカイブ済み」の札を付ける */
+.ws-group-modal-groups label.is-archived,
+.ws-group-modal-preview li.is-archived {
+  color: var(--text-muted);
+}
+
+.ws-group-modal-tag {
+  margin-left: var(--spacing-xs);
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+}
+
+.ws-group-modal-archived {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+  margin-top: var(--spacing-xs);
+}

@@ -583,6 +583,13 @@ function validateJsonWsGroupItem(obj: Record<string, unknown>): JsonWsGroupItem 
     item.groupIds = obj.groupIds as string[];
   }
 
+  if (obj.archived !== undefined) {
+    if (obj.archived !== 'exclude' && obj.archived !== 'include' && obj.archived !== 'only') {
+      throw new Error('archived must be "exclude", "include" or "only"');
+    }
+    item.archived = obj.archived;
+  }
+
   if (obj.options !== undefined) {
     if (!isRecord(obj.options)) {
       throw new Error('options must be an object');

@@ -108,3 +108,46 @@ describe('expandWsGroupItem', () => {
     expect(isLauncherItem(expanded)).toBe(false);
   });
 });
+
+describe('アーカイブしたグループ（A3-227）', () => {
+  function archived(id: string, workspaceId: string, extra: Partial<WorkspaceGroup> = {}) {
+    return { ...group(id, workspaceId, 0, extra), archivedAt: 100, originalOrder: 0, itemCount: 0 };
+  }
+  // x は元のワークスペースがある、y は元のワークスペースが無くなった、ysub は一緒にしまったサブグループ
+  const archivedGroups = [
+    archived('x', 'w1'),
+    archived('y', 'gone'),
+    archived('ysub', 'gone', { parentGroupId: 'y' }),
+  ];
+  const candidates = listWsGroupCandidates(workspaces, groups, archivedGroups);
+  const ids = (item: JsonWsGroupItem) =>
+    resolveWsGroupTargets(item, candidates).map((c) => c.group.id);
+
+  it('今あるグループの後ろに、しまった単位の最上位だけを並べること（元のワークスペースが無くても並べる）', () => {
+    expect(candidates.map((c) => c.group.id)).toEqual(['c', 'b', 'a', 'x', 'y']);
+    expect(candidates.find((c) => c.group.id === 'x')?.workspace?.id).toBe('w1');
+    expect(candidates.find((c) => c.group.id === 'y')?.workspace).toBeUndefined();
+  });
+
+  it('scope が all なら、archived の指定で並べるものを選ぶこと（省略時は並べない）', () => {
+    expect(ids(wsGroup({}))).toEqual(['c', 'b', 'a']);
+    expect(ids(wsGroup({ archived: 'exclude' }))).toEqual(['c', 'b', 'a']);
+    expect(ids(wsGroup({ archived: 'include' }))).toEqual(['c', 'b', 'a', 'x', 'y']);
+    expect(ids(wsGroup({ archived: 'only' }))).toEqual(['x', 'y']);
+  });
+
+  it('selected で選んだアーカイブしたグループは並べ、見つからない id に数えないこと', () => {
+    const item = wsGroup({ scope: 'selected', groupIds: ['x', 'a', 'deleted'] });
+    expect(ids(item)).toEqual(['a', 'x']);
+    expect(findMissingWsGroupIds(item, candidates)).toEqual(['deleted']);
+  });
+
+  it('展開したアイテムに archived を付けること（今あるグループには付けない）', () => {
+    const item = wsGroup({ scope: 'selected', groupIds: ['x', 'a'] });
+    const expanded = expandWsGroupItem(item, candidates, 'data.json', 1);
+    expect(expanded.map((e) => [e.groupId, e.archived])).toEqual([
+      ['a', undefined],
+      ['x', true],
+    ]);
+  });
+});
