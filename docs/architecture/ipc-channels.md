@@ -194,7 +194,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### 読めなかったワークスペースのファイル
 
-ワークスペース画面は一覧を読むたびに続けて `workspace:get-corrupted-files` を呼び、読めなかった `workspace.json`・`workspace-archive.json` の名前を受け取る。読み込みのときに覚えた結果を返すだけで、ファイルは読み直さない。片方が読めないとき、もう片方は読み込みを見送るだけなので名前に入れない（`src/main/services/workspace/WorkspaceFileStore.ts` の `getCorruptedFiles`）。名前があれば QDL は両方とも書き込まないので、空の案内の代わりに読めなかったことを出す（[ワークスペースの仕様書](../screens/workspace-window.md)）。
+ワークスペース画面は一覧を読むたびに続けて `workspace:get-corrupted-files` を呼び、読めなかった `workspace.json`・`workspace-archive.json` の名前を受け取る。読み込みのときに覚えた結果を返すだけで、ファイルは読み直さない。片方が読めないとき、もう片方は読み込みを見送るだけなので名前に入れない（`src/main/services/workspace/WorkspaceFileStore.ts` の `getCorruptedFiles`）。名前があれば QDL は両方とも書き込まないので、空の案内の代わりに読めなかったことを出す（ワークスペースの仕様書の「読めなかったときの表示」）。
 
 ### 参照アイテム
 
