@@ -2094,6 +2094,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       "These data files were saved by a newer version of QDL, so they can't be changed: {{files}}. Update QDL to the latest version.",
     newerFormatLoaded:
       "Some files were saved by a newer version of QDL: {{files}}. They're shown, but can't be changed until you update QDL to the latest version.",
+    settingsUnreadableOnReload:
+      "Couldn't read settings.json, so settings weren't reloaded (startup, CLI, and hotkeys stay as they are). Fix the file, then press F5.",
     settingsNewerFormat:
       "settings.json was saved by a newer version of QDL. Changes to settings last only until you quit QDL and aren't saved to the file. Update QDL to the latest version.",
     portableDataUnwritable:

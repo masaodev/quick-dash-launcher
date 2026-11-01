@@ -44,3 +44,36 @@ test.describe('QuickDashLauncher - 壊れた settings.json', () => {
     await expect.poll(toastText, { timeout: 10000 }).toContain(broken[0]);
   });
 });
+
+/**
+ * 起動した後に settings.json を壊して F5 を押しても、既定値で自動起動・CLI・ホットキーを
+ * 書き換えない（読むたびに失敗して既定値が返るため、以前はそのまま適用し直していた。A3-221）
+ */
+test.describe('QuickDashLauncher - 起動後に壊れた settings.json', () => {
+  test('F5 では設定を適用し直さず、読めなかったことをトーストで知らせる', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+
+    const settingsPath = configHelper.getSettingsPath();
+    const original = fs.readFileSync(settingsPath, 'utf8');
+    fs.writeFileSync(settingsPath, original.replace(/\}\s*$/, ''));
+    await utils.reloadWithF5();
+
+    const toastText = async () => {
+      for (const win of electronApp.windows()) {
+        const toast = win.locator('#toast');
+        if ((await toast.count()) > 0) return (await toast.textContent()) ?? '';
+      }
+      return '';
+    };
+    await expect
+      .poll(toastText, { timeout: 10000 })
+      .toContain('settings.json を読めないため、設定を読み直しませんでした');
+    // 壊れたファイルは退避も上書きもせず、そのまま残す（直してもらう）
+    expect(fs.readFileSync(settingsPath, 'utf8')).toBe(original.replace(/\}\s*$/, ''));
+  });
+});

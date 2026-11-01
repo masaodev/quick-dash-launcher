@@ -2095,6 +2095,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       '新しいバージョンの QDL で保存されたデータファイルなので、変更できません: {{files}}。QDL を最新のバージョンに更新してください',
     newerFormatLoaded:
       '新しいバージョンの QDL で保存されたファイルがあります: {{files}}。表示はしますが、QDL を最新のバージョンに更新するまで変更できません',
+    settingsUnreadableOnReload:
+      'settings.json を読めないため、設定を読み直しませんでした（自動起動・CLI・ホットキーは今のまま）。ファイルを直してから F5 を押してください',
     settingsNewerFormat:
       'settings.json は新しいバージョンの QDL で保存されています。設定を変えても QDL を終了するまでしか効かず、ファイルには保存しません。QDL を最新のバージョンに更新してください',
     portableDataUnwritable:
