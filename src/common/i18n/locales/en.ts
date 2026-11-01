@@ -97,6 +97,9 @@ export const en: LocaleMessages = {
       addFolderImportTitle:
         'Adds an item (folder import) that lists the files in a folder each time you open it',
       clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",
+      itemManagerSection: 'Opens Item Manager',
+      itemManagerImportTitle:
+        'Opens Item Manager. Check the imported items in the list, and then select "Save changes" to keep them.',
     },
     partlyUnreadable:
       "⚠ Couldn't read {{files}}, so its items aren't shown. Fix it, then press F5 to reload",

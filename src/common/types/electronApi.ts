@@ -166,6 +166,10 @@ export interface ElectronAPI {
   /** 管理ウィンドウが隠れたとき（どの経路でも） */
   onAdminHidden: (callback: () => void) => () => void;
   onOpenImportModal: (callback: (modal: 'bookmark' | 'app') => void) => () => void;
+  /** アイテム管理で取り込んだ分を保存したことを知らせる（ランチャーの取込の入口から開いていたときに使う。A3-237） */
+  notifyImportSaved: (fileName: string) => void;
+  /** ランチャーで、指定したデータファイルのタブを選ぶよう頼まれたとき（取込の後に管理ウィンドウから戻ったとき） */
+  onSelectDataFileTab: (callback: (fileName: string) => void) => () => void;
   /** 開いている管理ウィンドウに、アイテム管理で見せる行（id）が届いたとき */
   onRevealItem: (callback: (itemId: string) => void) => () => void;
   onDataChanged: (callback: () => void) => () => void;

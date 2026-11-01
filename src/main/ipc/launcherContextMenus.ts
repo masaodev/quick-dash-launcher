@@ -244,6 +244,10 @@ function setupLauncherBlankContextMenuHandler(): void {
       )
     );
     menu.append(createSeparator());
+    // 下の 2 つは管理ウィンドウで開く。押せない見出しで ➕ のメニューと同じく分ける（A3-237）
+    menu.append(
+      new MenuItem({ label: t('launcher.registerMenu.itemManagerSection'), enabled: false })
+    );
     menu.append(
       new MenuItem({
         label: t('launcher.registerMenu.addBookmarks'),

@@ -223,6 +223,15 @@
   margin: var(--spacing-xs) 0;
 }
 
+/* メニュー内の小見出し（押せない。➕ の「アイテム管理が開きます」。A3-237） */
+.settings-dropdown .dropdown-section-label {
+  padding: var(--spacing-xs) var(--spacing-lg) var(--spacing-xxs);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: default;
+}
+
 /* 検索情報バー（タブ表示OFF時のアイテム数表示用） */
 .search-info-bar {
   padding: 0 var(--spacing-lg);

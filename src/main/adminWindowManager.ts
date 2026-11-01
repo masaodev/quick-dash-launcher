@@ -27,6 +27,12 @@ let initialTab: AdminTab = 'settings';
 let pendingImportModal: ImportModalType | null = null;
 /** アイテム管理で見せる行の id（ウィンドウを作った直後に、レンダラーが getPendingRevealItem で受け取る） */
 let pendingRevealItem: string | null = null;
+/**
+ * ランチャーの取込の入口で、隠れていた管理ウィンドウを開いたときだけ持つ。隠したらランチャーを出す（A3-237）。
+ * savedFile は、その間に取り込んで保存したデータファイル（ランチャーでそのタブを選ぶ。保存しなければ null）
+ */
+let returnToMain: { savedFile: string | null } | null = null;
+let returnToMainHandler: ((savedFile: string | null) => void) | null = null;
 
 // 閉じた後も非表示で常駐するウィンドウを、放置が続いた場合のみ破棄して
 // レンダラープロセスを解放する（次回表示時に再作成される）
@@ -100,6 +106,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   adminWindow.on('closed', () => {
     adminWindow = null;
     isAdminWindowVisible = false;
+    returnToMain = null;
     idleDestroyer.cancel();
   });
 
@@ -110,6 +117,12 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   adminWindow.on('hide', () => {
     isAdminWindowVisible = false;
     idleDestroyer.schedule();
+    // ランチャーの取込の入口から開いていたら、閉じた後に何も残らないのでランチャーへ戻す（A3-237）
+    if (returnToMain && !isAppQuitting()) {
+      const { savedFile } = returnToMain;
+      returnToMain = null;
+      returnToMainHandler?.(savedFile);
+    }
   });
 
   attachCommonKeyHandlers(adminWindow);
@@ -164,13 +177,34 @@ export async function showAdminWindowWithTab(tab: AdminTab): Promise<void> {
  */
 export async function showAdminWindowWithImportModal(modal: ImportModalType): Promise<void> {
   const existed = isWindowValid();
+  // 前から開いていたなら、その人は管理ウィンドウを自分で使っていたので、閉じてもランチャーは出さない（A3-237）
+  const wasVisible = existed && adminWindow!.isVisible();
   pendingImportModal = modal;
   await showAdminWindowWithTab('edit');
+  // 開けたときだけ印を付ける（作るのに失敗したまま残ると、別の経路で開いて閉じたときにランチャーが出てしまう）
+  if (!wasVisible && isWindowValid() && adminWindow!.isVisible())
+    returnToMain = { savedFile: null };
 
   // 既存ウィンドウの場合のみイベントで即座に通知（新規作成時はレンダラー初期化時にpendingImportModalから取得）
   if (existed && isWindowValid()) {
     adminWindow!.webContents.send(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, modal);
   }
+}
+
+/**
+ * ランチャーの取込の入口から開いた管理ウィンドウを隠したときの処理を登録する（ランチャーを出す。A3-237）
+ * windowManager を直接読むと循環するので、IPC の登録側から渡す
+ */
+export function setReturnToMainHandler(handler: (savedFile: string | null) => void): void {
+  returnToMainHandler = handler;
+}
+
+/**
+ * アイテム管理で、取り込んだ分を保存した（同期のルールでの取込はその場で保存される）。
+ * ランチャーの取込の入口から開いていたら、閉じたときにランチャーでこのデータファイルのタブを選ぶ（A3-237）
+ */
+export function notifyImportSaved(fileName: string): void {
+  if (returnToMain) returnToMain.savedFile = fileName;
 }
 
 /**
