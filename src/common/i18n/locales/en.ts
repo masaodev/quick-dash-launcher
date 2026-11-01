@@ -2755,6 +2755,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
         'Restores your data from the selected snapshot ({{timestamp}}). Your current data is backed up automatically first. Continue?',
       restoreConfirmButton: 'Restore',
       restored: 'Restored. Restart the app to apply all settings.',
+      restoreWholeConfirm:
+        'Restores all your data to how it was before the import ({{timestamp}}), then restarts.',
+      restoreWholeWarning:
+        'All of your current data will be replaced.\nYour current data is kept in a snapshot.',
+      restoreWholeButton: 'Restore and restart',
+      restoringWhole: 'Restoring. QuickDashLauncher will restart when done…',
       restoreFailed: "Couldn't restore: {{error}}",
       restoreError: 'An error occurred while restoring',
       deleteTitle: 'Delete snapshot',

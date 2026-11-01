@@ -139,19 +139,21 @@ const AdminSettingsBackupSection: React.FC<AdminSettingsBackupSectionProps> = ({
                 </div>
               </div>
             )}
-
-            <div className="setting-item indent">
-              <Button
-                variant="secondary"
-                className="setting-item-button"
-                onClick={() => setShowSnapshotModal(true)}
-                disabled={isLoading}
-              >
-                {t('settings.backup.openSnapshots')}
-              </Button>
-            </div>
           </>
         )}
+
+        {/* バックアップを切っていても、インポートの前のスナップショットは作るので、一覧はいつでも開ける */}
+        <div className={`setting-item${editedSettings.backupEnabled ? ' indent' : ''}`}>
+          <Button
+            variant="secondary"
+            className="setting-item-button"
+            onClick={() => setShowSnapshotModal(true)}
+            disabled={isLoading}
+            data-testid="open-snapshots"
+          >
+            {t('settings.backup.openSnapshots')}
+          </Button>
+        </div>
 
         <BackupSnapshotModal
           isOpen={showSnapshotModal}

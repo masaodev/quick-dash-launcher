@@ -9,10 +9,11 @@ import {
   type SaveDialogOptions,
 } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
-import type {
-  DataExportResult,
-  DataImportApplyResult,
-  DataImportInspectResult,
+import {
+  isPreImportSnapshot,
+  type DataExportResult,
+  type DataImportApplyResult,
+  type DataImportInspectResult,
 } from '@common/types';
 import logger from '@common/logger';
 
@@ -48,9 +49,15 @@ export function setupBackupHandlers(): void {
 
   handleIpc(IPC_CHANNELS.BACKUP_LIST_SNAPSHOTS, async () => (await getService()).listSnapshots());
 
-  handleIpc(IPC_CHANNELS.BACKUP_RESTORE_SNAPSHOT, async (_e, timestamp: string) =>
-    (await getService()).restoreSnapshot(timestamp)
-  );
+  handleIpc(IPC_CHANNELS.BACKUP_RESTORE_SNAPSHOT, async (_e, timestamp: string) => {
+    const service = await getService();
+    if (!isPreImportSnapshot(timestamp)) return service.restoreSnapshot(timestamp);
+    // インポートの前のスナップショットは、インポートと同じくまるごと置き換えて再起動する
+    // （上書きだけだと、インポートで増えた data4.json などが残ってアイテムが混ざる）
+    const files = service.readPreImportSnapshot(timestamp);
+    if (!files) return { success: false, error: mainI18n.t('backupErrors.snapshotNotFound') };
+    return replaceConfigAndRestart(files, 'restore');
+  });
 
   handleIpc(IPC_CHANNELS.BACKUP_DELETE_SNAPSHOT, async (_e, timestamp: string) =>
     (await getService()).deleteSnapshot(timestamp)
@@ -153,49 +160,67 @@ export function setupBackupHandlers(): void {
       }
       const { content } = pendingImport;
       pendingImport = null;
-      const configFolder = PathManager.getConfigFolder();
-
-      let snapshot: string | null;
-      try {
-        snapshot = await (
-          await getService()
-        ).createPreImportSnapshot(collectExportFiles(configFolder));
-      } catch (error) {
-        logger.error(
-          { error },
-          '読み込みの前のスナップショットを作れなかったので、読み込みをやめました'
-        );
-        return { success: false, error: error instanceof Error ? error.message : String(error) };
-      }
-
-      // ここから再起動までは同期で行う（ほかの処理が古い内容を書き戻さないように。
-      // 終了時の保存も走らせないよう、quit ではなく exit で終わる）
-      try {
-        applyDataImport(configFolder, content);
-      } catch (error) {
-        const rolledBack = error instanceof DataImportApplyError && error.rolledBack;
-        logger.error({ error, snapshot, rolledBack }, '読み込みの途中で失敗しました');
-        const message = error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          error: rolledBack
-            ? mainI18n.t('dataExport.applyRolledBack', { error: message })
-            : mainI18n.t('dataExport.applyFailed', { snapshot: snapshot ?? '-', error: message }),
-        };
-      }
-      logger.info(
-        { fileCount: content.files.size, snapshot },
-        '書き出したデータを読み込みました。再起動します'
-      );
-      // 開発中は vite の開発サーバーが要るので再起動せずに終わる（起動し直しは手で行う）
-      if (!EnvConfig.isDevelopment) {
-        app.relaunch({ args: process.argv.slice(1).filter((arg) => arg !== CLI_LAUNCH_ARG) });
-      }
-      // exit では before-quit が来ないので、終わるところだと先に知らせる。知らせないと、閉じる切り離し
-      // ウィンドウが「× で閉じた」と見なして、読み込んだばかりの workspace-ui-state.json から自分の記録を消す
-      markAppQuitting();
-      app.exit(0);
-      return { success: true };
+      return replaceConfigAndRestart(content.files, 'import');
     }
   );
+
+  /**
+   * 設定フォルダを files でまるごと置き換えて、QDL を再起動する（インポートと、インポートの前のスナップショットへの復元）。
+   * 置き換える前に、今のファイルを `_pre-import` のスナップショットに残す（作れなければ何もしない）
+   */
+  async function replaceConfigAndRestart(
+    files: Map<string, Uint8Array>,
+    kind: 'import' | 'restore'
+  ): Promise<DataImportApplyResult> {
+    const configFolder = PathManager.getConfigFolder();
+
+    let snapshot: string | null;
+    try {
+      snapshot = await (
+        await getService()
+      ).createPreImportSnapshot(collectExportFiles(configFolder));
+    } catch (error) {
+      logger.error(
+        { error },
+        '置き換える前のスナップショットを作れなかったので、置き換えをやめました'
+      );
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+
+    // ここから再起動までは同期で行う（ほかの処理が古い内容を書き戻さないように。
+    // 終了時の保存も走らせないよう、quit ではなく exit で終わる）
+    try {
+      applyDataImport(configFolder, { files });
+    } catch (error) {
+      const rolledBack = error instanceof DataImportApplyError && error.rolledBack;
+      logger.error({ error, snapshot, rolledBack }, '置き換えの途中で失敗しました');
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        error: rolledBack
+          ? mainI18n.t('dataExport.applyRolledBack', { error: message })
+          : mainI18n.t('dataExport.applyFailed', { snapshot: snapshot ?? '-', error: message }),
+      };
+    }
+    if (kind === 'import') {
+      logger.info(
+        { fileCount: files.size, snapshot },
+        '書き出したデータを読み込みました。再起動します'
+      );
+    } else {
+      logger.info(
+        { fileCount: files.size, snapshot },
+        'スナップショットからまるごと戻しました。再起動します'
+      );
+    }
+    // 開発中は vite の開発サーバーが要るので再起動せずに終わる（起動し直しは手で行う）
+    if (!EnvConfig.isDevelopment) {
+      app.relaunch({ args: process.argv.slice(1).filter((arg) => arg !== CLI_LAUNCH_ARG) });
+    }
+    // exit では before-quit が来ないので、終わるところだと先に知らせる。知らせないと、閉じる切り離し
+    // ウィンドウが「× で閉じた」と見なして、読み込んだばかりの workspace-ui-state.json から自分の記録を消す
+    markAppQuitting();
+    app.exit(0);
+    return { success: true };
+  }
 }

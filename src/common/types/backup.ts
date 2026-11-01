@@ -32,6 +32,14 @@ export const DATA_EXPORT_FORMAT = 'quick-dash-launcher-export';
 /** 一括エクスポートの zip の形式の版。中の並び・manifest の項目を変えたら上げる */
 export const DATA_EXPORT_FORMAT_VERSION = 1;
 
+/** インポートの前に作るスナップショットのフォルダ名の末尾 */
+export const PRE_IMPORT_SNAPSHOT_SUFFIX = '_pre-import';
+
+/** インポートの前に作ったスナップショットか（復元はまるごと置き換えて再起動する） */
+export function isPreImportSnapshot(timestamp: string): boolean {
+  return timestamp.endsWith(PRE_IMPORT_SNAPSHOT_SUFFIX);
+}
+
 /** 一括エクスポートの zip の先頭に置く中身の説明（manifest.json） */
 export interface DataExportManifest {
   format: typeof DATA_EXPORT_FORMAT;

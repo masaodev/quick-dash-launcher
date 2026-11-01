@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SnapshotInfo } from '@common/types';
+import { isPreImportSnapshot, type SnapshotInfo } from '@common/types';
 
 import '../styles/components/Modal.css';
 import '../styles/components/BackupSnapshotModal.css';
@@ -99,6 +99,25 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
     }
   };
 
+  // インポートの前のスナップショットは、まるごと置き換えて再起動する（成功すると返事の前に終わるので、知らせは先に出す）
+  const restoresWhole = selectedTimestamp !== null && isPreImportSnapshot(selectedTimestamp);
+  const handleRestoreWhole = async () => {
+    if (!selectedTimestamp) return;
+    setConfirmAction(null);
+    setIsLoading(true);
+    setMessage(t('settings.snapshots.restoringWhole'));
+    try {
+      const result = await window.electronAPI.backupAPI.restoreSnapshot(selectedTimestamp);
+      if (result.success) return;
+      setMessage(t('settings.snapshots.restoreFailed', { error: result.error ?? '' }));
+    } catch (error) {
+      setMessage(t('settings.snapshots.restoreError'));
+      logError('スナップショットの復元に失敗:', error);
+    }
+    setIsLoading(false);
+    await loadSnapshots();
+  };
+
   const handleRestore = () =>
     executeSnapshotAction(
       () => window.electronAPI.backupAPI.restoreSnapshot(selectedTimestamp!),
@@ -187,10 +206,20 @@ const BackupSnapshotModal: React.FC<BackupSnapshotModalProps> = ({ isOpen, onClo
         <ConfirmDialog
           isOpen={confirmAction === 'restore'}
           onClose={() => setConfirmAction(null)}
-          onConfirm={handleRestore}
+          onConfirm={restoresWhole ? handleRestoreWhole : handleRestore}
           title={t('settings.snapshots.restoreTitle')}
-          message={t('settings.snapshots.restoreConfirm', { timestamp: selectedTimestamp ?? '' })}
-          confirmText={t('settings.snapshots.restoreConfirmButton')}
+          message={
+            restoresWhole
+              ? t('settings.snapshots.restoreWholeConfirm', { timestamp: selectedTimestamp ?? '' })
+              : t('settings.snapshots.restoreConfirm', { timestamp: selectedTimestamp ?? '' })
+          }
+          warning={restoresWhole ? t('settings.snapshots.restoreWholeWarning') : undefined}
+          danger={restoresWhole}
+          confirmText={
+            restoresWhole
+              ? t('settings.snapshots.restoreWholeButton')
+              : t('settings.snapshots.restoreConfirmButton')
+          }
           cancelText={t('common.cancel')}
         />
 

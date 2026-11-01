@@ -149,6 +149,32 @@ test.describe('QuickDashLauncher - データのエクスポートとインポー
         );
         expect(calls).toContain('exit');
       });
+
+      await test.step('インポートの前のスナップショットから復元すると、まるごと戻して再起動する（増えたファイルは消える）', async () => {
+        // インポートした後に足したファイル（インポートの前には無かったもの）
+        const addedPath = path.join(configDir, 'datafiles', 'data4.json');
+        fs.writeFileSync(addedPath, JSON.stringify({ version: '1.0', items: [] }));
+
+        // バックアップ機能がオフでも一覧は開ける
+        await adminWindow.getByTestId('open-snapshots').click();
+        await adminWindow
+          .locator('.backup-snapshot-item', { hasText: '_pre-import' })
+          .first()
+          .click();
+        await adminWindow.getByRole('button', { name: '復元', exact: true }).click();
+        const dialog = adminWindow.getByTestId('confirm-dialog');
+        await expect(dialog).toContainText('まるごと戻して再起動します');
+        await adminWindow.getByRole('button', { name: '戻して再起動' }).click();
+        await expect(adminWindow.getByText('戻しています。終わると再起動します')).toBeVisible();
+
+        await expect.poll(() => fs.existsSync(extraPath)).toBe(true);
+        expect(JSON.parse(fs.readFileSync(dataPath, 'utf8')).items).toHaveLength(1);
+        expect(fs.existsSync(addedPath)).toBe(false);
+        const calls = await electronApp.evaluate(
+          () => (globalThis as { __restartCalls?: string[] }).__restartCalls
+        );
+        expect(calls?.filter((c) => c === 'exit')).toHaveLength(2);
+      });
     } finally {
       await adminWindow.close();
       fs.rmSync(outDir, { recursive: true, force: true });
