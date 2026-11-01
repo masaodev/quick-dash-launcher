@@ -118,3 +118,33 @@ describe('SettingsService の形式の版（settingsVersion）', () => {
     expect(fs.readFileSync(settingsPath(), 'utf8')).toBe(original);
   });
 });
+
+describe('SettingsService の範囲のある数値の設定', () => {
+  beforeEach(() => {
+    tempRoot.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-settings-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempRoot.dir, { recursive: true, force: true });
+  });
+
+  it('手で直して範囲の外・数値でない値にしても、範囲の端か既定値で読み、ファイルは書き換えないこと', async () => {
+    fs.writeFileSync(
+      settingsPath(),
+      JSON.stringify({
+        settingsVersion: 1,
+        windowWidth: 99999,
+        windowHeight: -5,
+        editModeWidth: 'wide',
+      })
+    );
+    const service = await freshService();
+
+    expect(await service.get('windowWidth')).toBe(2000);
+    expect(await service.get('windowHeight')).toBe(300);
+    expect(await service.get('editModeWidth')).toBe(1200);
+    const all = await service.getAll();
+    expect(all).toMatchObject({ windowWidth: 2000, windowHeight: 300, editModeWidth: 1200 });
+    expect(readSettings()).toMatchObject({ windowWidth: 99999, windowHeight: -5 });
+  });
+});
