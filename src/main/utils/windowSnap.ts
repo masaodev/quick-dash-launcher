@@ -2,6 +2,12 @@ import { BrowserWindow, screen } from 'electron';
 import { windowLogger } from '@common/logger';
 
 import { computeSnappedPosition, type Rect } from './snapPosition.js';
+import {
+  getCurrentDesktopNumber,
+  getHwnd,
+  isPinnedWindow,
+  isWindowOnDesktopNumber,
+} from './virtualDesktop/index.js';
 
 const WM_EXITSIZEMOVE = 0x0232;
 
@@ -20,12 +26,28 @@ export function registerSnapTarget(win: BrowserWindow): void {
   win.once('closed', () => snapTargets.delete(win));
 }
 
-/** 動かしたウィンドウの吸着先にする、表示中のほかのウィンドウの位置と大きさ */
-function getTargetRects(self: BrowserWindow): Rect[] {
+/**
+ * 今の仮想デスクトップに見えているか（ほかの仮想デスクトップのウィンドウも isVisible は true を返す）。
+ * すべての仮想デスクトップに表示（固定）しているものは見えている。仮想デスクトップを調べられないときは見えているとする
+ */
+function isOnCurrentDesktop(win: BrowserWindow): boolean {
+  const current = getCurrentDesktopNumber();
+  if (current < 1) return true;
+  try {
+    const hwnd = getHwnd(win);
+    return isPinnedWindow(hwnd) || isWindowOnDesktopNumber(hwnd, current);
+  } catch {
+    return true;
+  }
+}
+
+/** 動かしたウィンドウの吸着先にする、今の仮想デスクトップに表示中のほかのウィンドウの位置と大きさ */
+export function getTargetRects(self: BrowserWindow): Rect[] {
   const rects: Rect[] = [];
   for (const target of snapTargets) {
     if (target === self || target.isDestroyed()) continue;
     if (!target.isVisible() || target.isMinimized()) continue;
+    if (!isOnCurrentDesktop(target)) continue;
     rects.push(target.getBounds());
   }
   return rects;
