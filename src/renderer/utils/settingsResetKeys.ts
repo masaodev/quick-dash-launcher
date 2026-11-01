@@ -19,6 +19,7 @@ export type ResettableSettingsSection =
   | 'system'
   | 'search'
   | 'cli'
+  | 'advanced'
   | 'mainWindow'
   | 'workspaceWindow'
   | 'detachedWindow'
@@ -45,6 +46,7 @@ export const SETTINGS_RESET_KEYS: Record<
     'searchSortByUsage',
   ],
   cli: ['cliEnabled'],
+  advanced: ['launchInheritEnvironment'],
   mainWindow: [
     'windowPositionMode',
     'windowFixedPosition',
@@ -81,6 +83,7 @@ const SECTION_HEADING_KEYS: Record<ResettableSettingsSection, ParseKeys> = {
   system: 'settings.system.heading',
   search: 'settings.search.heading',
   cli: 'settings.cli.heading',
+  advanced: 'settings.advanced.heading',
   mainWindow: 'settings.windowPosition.heading',
   workspaceWindow: 'settings.workspace.heading',
   detachedWindow: 'settings.detached.heading',
@@ -141,6 +144,7 @@ const RESET_ROWS: Record<ResettableSettingsSection, ReadonlyArray<ResetRow>> = {
     checkRow('searchSortByUsage', 'settings.display.searchSortByUsage'),
   ],
   cli: [checkRow('cliEnabled', 'settings.system.cli')],
+  advanced: [checkRow('launchInheritEnvironment', 'settings.advanced.launchInheritEnvironment')],
   mainWindow: [
     {
       keys: ['windowPositionMode'],

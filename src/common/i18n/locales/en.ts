@@ -639,6 +639,7 @@ Keys you can change:
                defaultFileTab (the data file of the tab to open at startup, e.g. data2.json)
   Search       searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
   Updates      updateCheckEnabled updateCheckIncludeBeta
+  Launching    launchInheritEnvironment (pass QuickDashLauncher's environment variables to apps)
   Hotkeys      hotkey itemSearchHotkey (checked before changing; "" turns off itemSearchHotkey)
   Launcher     windowWidth (400-2000) windowHeight (300-1200)
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
@@ -2606,6 +2607,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     },
     cli: {
       heading: 'QuickDashLauncher CLI',
+    },
+    advanced: {
+      heading: 'Advanced',
+      launchInheritEnvironment: "Pass QuickDashLauncher's environment variables to apps",
+      launchInheritEnvironmentDescription:
+        'When off, apps start with the same environment variables as when you open them from the Start menu. Turn this on only if apps should also get environment variables you set in the terminal that started QuickDashLauncher. For now, this applies to apps with arguments, .bat and .cmd files, and Store apps.',
     },
     display: {
       keyboardHints: 'Show keyboard hints',

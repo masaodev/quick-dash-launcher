@@ -122,7 +122,7 @@
 | --- | --- | --- | --- | --- |
 | 管理ウィンドウ | settings window | 管理画面、設定画面、設定・管理、admin window | 設定・アイテム管理・ヘルプのタブを持つウィンドウ | `AdminApp.tsx` |
 | 設定（タブ） | Settings | 基本設定タブ | 管理ウィンドウの設定のタブ。左のメニューで基本設定・ウィンドウ・バックアップ・ブックマーク自動取込を切り替える | `AdminSettingsTab` |
-| 基本設定 | General | — | 設定タブの最初のカテゴリ（言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI） | `AdminSettingsBasicSection` |
+| 基本設定 | General | — | 設定タブの最初のカテゴリ（言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI・詳細） | `AdminSettingsBasicSection` |
 | アイテム管理 | Item Manager | 編集画面、編集モード、アイテム編集 | 管理ウィンドウでアイテムとタブを編集するタブ（Ctrl+E） | `AdminItemManagerView` |
 | 起動ホットキー | launch hotkey | ショートカットキー、hot key | ランチャーを出すキーの組み合わせ | `hotkey` |
 | 表示言語 | display language | — | 画面に使う言語（自動・日本語・English） | `language` |

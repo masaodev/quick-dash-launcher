@@ -63,6 +63,7 @@ const WRITABLE: Partial<Record<keyof AppSettings, Rule>> = {
   recordLaunchUsage: BOOLEAN,
   updateCheckEnabled: BOOLEAN,
   updateCheckIncludeBeta: BOOLEAN,
+  launchInheritEnvironment: BOOLEAN,
   showDataFileTabs: BOOLEAN,
   defaultFileTab: { kind: 'dataFile' },
   windowWidth: { kind: 'integer', range: SETTING_NUMBER_RANGES.windowWidth },

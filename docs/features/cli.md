@@ -145,6 +145,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | 表示 | `defaultFileTab` | 起動したときに開くタブの、データファイル（`data2.json` など）。どれかのタブに入っているものだけ |
 | システム | `recordLaunchUsage` | `true`・`false`（起動回数を記録する） |
 | システム | `updateCheckEnabled`・`updateCheckIncludeBeta` | `true`・`false`（アップデートを自動で確認する・ベータ版も確認する） |
+| システム | `launchInheritEnvironment` | `true`・`false`（アプリに QuickDashLauncher の環境変数を引き継ぐ） |
 | ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
 | メイン | `windowWidth`・`windowHeight` | 400〜2000・300〜1200 |
 | メイン | `windowPositionMode` | `center`・`cursor`・`cursorMonitorCenter`・`fixed` |

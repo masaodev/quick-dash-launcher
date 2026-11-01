@@ -18,7 +18,7 @@ interface AdminSettingsBasicSectionProps {
   sectionReset: SectionResetProps;
 }
 
-/** 設定画面「基本設定」: 言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI */
+/** 設定画面「基本設定」: 言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI・詳細 */
 const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   editedSettings,
   isLoading,
@@ -297,6 +297,30 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             {t('settings.system.cli')}
           </label>
           <div className="setting-description">{t('settings.system.cliDescription')}</div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <SettingsSectionHeader
+          title={t('settings.advanced.heading')}
+          section="advanced"
+          editedSettings={editedSettings}
+          isLoading={isLoading}
+          {...sectionReset}
+        />
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.launchInheritEnvironment ?? false}
+              onChange={(e) => handleSettingChange('launchInheritEnvironment', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.advanced.launchInheritEnvironment')}
+          </label>
+          <div className="setting-description">
+            {t('settings.advanced.launchInheritEnvironmentDescription')}
+          </div>
         </div>
       </div>
     </>

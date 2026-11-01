@@ -40,6 +40,14 @@ vi.mock('../services/mainI18n.js', () => ({
       params ? `${key}:${JSON.stringify(params)}` : key,
   },
 }));
+// 起動するアプリに渡す環境変数（undefined にすると QuickDashLauncher の環境を引き継ぐ扱い）
+const launchEnvState = vi.hoisted(() => ({
+  env: { Path: 'C:\\Windows\\System32', SystemRoot: 'C:\\Windows' } as
+    Record<string, string> | undefined,
+}));
+vi.mock('./launchEnvironment.js', () => ({
+  getLaunchEnvironment: vi.fn(async () => launchEnvState.env),
+}));
 // koffi を読み込まないよう、ShellExecuteExW を呼ぶ関数は差し替える（テストでは引数で渡す）
 vi.mock('./shellExecuteRunAs.js', () => ({ shellExecuteRunAs: vi.fn() }));
 
@@ -92,6 +100,7 @@ describe('launchItem（app）', () => {
     resolveFromPathMock.mockClear();
     shellMock.openPath.mockClear();
     vi.mocked(logger.error).mockClear();
+    launchEnvState.env = { Path: 'C:\\Windows\\System32', SystemRoot: 'C:\\Windows' };
   });
 
   it('引数ありの exe は、exe のフォルダを作業フォルダにして起動する', async () => {
@@ -120,6 +129,33 @@ describe('launchItem（app）', () => {
     );
   });
 
+  it('spawn には、起動するアプリに渡す環境変数（ユーザーの標準の環境）を渡す', async () => {
+    await launchItem({ type: 'app', path: 'wt.exe', args: '-p "Git Bash" claude' }, logger);
+    await launchItem({ type: 'app', path: 'C:\\Tools\\run.bat', args: 'x' }, logger);
+    await launchItem(
+      { type: 'app', path: 'shell:AppsFolder\\Microsoft.WindowsCalculator' },
+      logger
+    );
+
+    expect(spawnMock).toHaveBeenCalledTimes(3);
+    for (const call of spawnMock.mock.calls as unknown as Array<
+      [string, string[], { env?: unknown }]
+    >) {
+      expect(call[2].env).toBe(launchEnvState.env);
+    }
+  });
+
+  it('環境変数を作らないとき（引き継ぐ設定・作れなかった）は env を渡さず、PATH は今の環境で探す', async () => {
+    launchEnvState.env = undefined;
+
+    await launchItem({ type: 'app', path: 'C:\\Tools\\tool.exe', args: 'x' }, logger);
+    await launchItem({ type: 'app', path: 'calc.exe' }, logger);
+
+    const options = (spawnMock.mock.calls as unknown as Array<[string, string[], object]>)[0][2];
+    expect(options).not.toHaveProperty('env');
+    expect(resolveFromPathMock).toHaveBeenCalledWith('calc.exe', process.env);
+  });
+
   it('ショートカットは拡張子の大文字・小文字を問わず、引数があっても shell.openPath で開く', async () => {
     await launchItem({ type: 'app', path: 'C:\\Tools\\Tool.LNK', args: '--x' }, logger);
 
@@ -137,7 +173,7 @@ describe('launchItem（app）', () => {
   it('引数なしでファイル名だけ（calc.exe）は、PATH から探したフルパスを shell.openPath で開く', async () => {
     await launchItem({ type: 'app', path: 'calc.exe' }, logger);
 
-    expect(resolveFromPathMock).toHaveBeenCalledWith('calc.exe');
+    expect(resolveFromPathMock).toHaveBeenCalledWith('calc.exe', launchEnvState.env);
     expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Windows\\System32\\calc.exe');
     expect(spawnMock).not.toHaveBeenCalled();
   });

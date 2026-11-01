@@ -638,6 +638,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
                   defaultFileTab（起動したときに開くタブのデータファイル。例 data2.json）
   検索            searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
   更新            updateCheckEnabled updateCheckIncludeBeta
+  起動            launchInheritEnvironment（アプリに QuickDashLauncher の環境変数を引き継ぐ）
   ホットキー      hotkey itemSearchHotkey（登録できるか確かめてから変える。itemSearchHotkey は "" で無効）
   ランチャー      windowWidth（400〜2000）windowHeight（300〜1200）
                   windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
@@ -2616,6 +2617,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     cli: {
       heading: 'QuickDashLauncher CLI',
+    },
+    advanced: {
+      heading: '詳細',
+      launchInheritEnvironment: 'アプリに QuickDashLauncher の環境変数を引き継ぐ',
+      launchInheritEnvironmentDescription:
+        'オフのときは、スタートメニューから開いたときと同じ環境変数でアプリを起動します。QuickDashLauncher を起動したターミナルで設定した環境変数を、起動するアプリにも渡したいときだけオンにします。今は、引数を指定したアプリ・.bat・.cmd・ストアアプリに効きます。',
     },
     display: {
       keyboardHints: '操作のヒントを表示する',
