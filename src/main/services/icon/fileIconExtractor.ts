@@ -11,7 +11,11 @@ import { FileUtils } from '@common/utils/fileUtils';
 import { PathUtils } from '@common/utils/pathUtils';
 
 import PathManager from '../../config/pathManager.js';
-import { extractExtensionFromUri } from '../../utils/iconCacheKeys.js';
+import {
+  extractExtensionFromUri,
+  fileIconCacheName,
+  shortcutIconCacheName,
+} from '../../utils/iconCacheKeys.js';
 import { isBareFileName, resolveFromPath } from '../../utils/pathResolver.js';
 
 import { cacheAndConvertIcon, expandEnvironmentVariables } from './iconFileCache.js';
@@ -30,9 +34,7 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
     }
 
     // ショートカット専用のキャッシュファイル名を生成
-    const shortcutName = path.basename(lnkPath, '.lnk');
-    const lnkIconName = `${shortcutName}_lnk_icon.png`;
-    const lnkIconPath = path.join(iconsFolder, lnkIconName);
+    const lnkIconPath = path.join(iconsFolder, shortcutIconCacheName(lnkPath));
 
     // ショートカットのアイコンがすでにキャッシュされているか確認
     const cachedIcon = FileUtils.readCachedBinaryAsBase64(lnkIconPath);
@@ -97,6 +99,10 @@ async function extractShortcutIcon(lnkPath: string, iconsFolder: string): Promis
     if (shortcutDetails && shortcutDetails.target && FileUtils.exists(shortcutDetails.target)) {
       const targetIcon = await extractIcon(shortcutDetails.target, iconsFolder);
       if (targetIcon) {
+        // 次からショートカットの名前で見つかるよう、ショートカットのキャッシュにも写す
+        //（写さないと、読み出し側はショートカットの名前で探すので、起動のたびに取り直していた）
+        const base64 = targetIcon.split(',')[1];
+        if (base64) cacheAndConvertIcon(Buffer.from(base64, 'base64'), lnkIconPath);
         iconLogger.info(
           `ターゲットファイルからアイコンを抽出成功: ${lnkPath} -> ${shortcutDetails.target}`
         );
@@ -175,8 +181,7 @@ export async function extractIcon(filePath: string, iconsFolder: string): Promis
     }
 
     // キャッシュ用ファイル名を生成（元のfilePathを使用してキャッシュキーを生成）
-    const iconName = path.basename(filePath, path.extname(filePath)) + '_icon.png';
-    const iconPath = path.join(iconsFolder, iconName);
+    const iconPath = path.join(iconsFolder, fileIconCacheName(filePath));
 
     // アイコンがすでにキャッシュされているか確認
     const cachedIcon = FileUtils.readCachedBinaryAsBase64(iconPath);

@@ -9,8 +9,8 @@ Quick Dash Launcher のアイコン処理システムは、様々な種類のア
 | アイコン種類 | 保存場所 | ファイル名形式 | サイズ |
 | --- | --- | --- | --- |
 | **ファビコン** | `config/icon-cache/favicons/` | `{domain}_favicon_{size}.png` | 64px（推奨）/ 32px（互換） |
-| **EXEアイコン** | `config/icon-cache/apps/` | `{basename}_icon.png` | 32px |
-| **ショートカットアイコン** | `config/icon-cache/apps/` | `{basename}_lnk_icon.png` | 32px |
+| **EXEアイコン** | `config/icon-cache/apps/` | `{basename}_{id}_icon.png` | 32px |
+| **ショートカットアイコン** | `config/icon-cache/apps/` | `{basename}_{id}_lnk_icon.png` | 32px |
 | **カスタムURIアイコン** | `config/icon-cache/apps/` | `uri_{schema}_icon.png` | 32px |
 | **登録アプリアイコン** | `config/icon-cache/apps/` | `uwp_{PFN}_icon.png` | マニフェスト依存 |
 | **拡張子アイコン** | `config/icon-cache/extensions/` | `ext_{extension}_icon.png` | 32px |
@@ -24,6 +24,15 @@ Quick Dash Launcher のアイコン処理システムは、様々な種類のア
 {domain}_favicon_{size}.png
 例: github.com_favicon_64.png
 ```
+
+**EXE・ショートカットのアイコン:**
+
+```
+{basename}_{id}_icon.png / {basename}_{id}_lnk_icon.png
+例: setup_1a2b3c4d_icon.png
+```
+
+`{id}` はフォルダまで含めたパス（大文字・小文字は区別しない）の MD5 の先頭 8 桁です。別のフォルダの同じ名前の exe・ショートカット（`setup.exe`・`Uninstall.lnk` など）が、同じアイコンにならないようにしています。v0.8.0-beta.34 までの名前（`{id}` なし）は読まないので、更新した後の最初の 1 回だけ取り直しになります。
 
 **カスタムURIアイコン:**
 
@@ -54,9 +63,9 @@ uwp_{PackageFamilyName}_icon.png
 | --- | --- | --- |
 | `url` | - | `favicons/{domain}_favicon_64.png` |
 | `app` | 1. 登録アプリ（`shell:AppsFolder\`で始まる） | `apps/uwp_{PFN}_icon.png` |
-| | 2. ショートカット（`originalPath`か`path`が`.lnk`） | `apps/{basename}_lnk_icon.png` |
+| | 2. ショートカット（`originalPath`か`path`が`.lnk`） | `apps/{basename}_{id}_lnk_icon.png` |
 | | 3. スクリプト系（`.bat` / `.cmd` / `.com`） | `extensions/ext_{extension}_icon.png` |
-| | 4. その他（`.exe`を含む） | `apps/{basename}_icon.png` |
+| | 4. その他（`.exe`を含む） | `apps/{basename}_{id}_icon.png` |
 | `customUri` | 1. スキーマから解決 | `apps/uri_{schema}_icon.png` |
 | | 2. 拡張子へフォールバック | `extensions/ext_{extension}_icon.png` |
 | `file` | - | `extensions/ext_{extension}_icon.png` |
