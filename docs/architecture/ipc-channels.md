@@ -192,6 +192,10 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 - `workspace:add-item`（`item, groupId?, workspaceId?, options?: { copy?: boolean }`）は、参照できるランチャーのアイテム（id を持ち、今のデータファイルにあるもの）なら参照アイテムを足す。`options.freshClipboardData`（ワークスペースの Ctrl+V で取り込んだばかりの保存データ）なら保存データを複製しない。`options.copy` のときと、参照できないもの（フォルダ取込で展開したアイテム・ウィンドウ検索の結果など）はコピーを足す。展開したアイテムを参照で足そうとしてコピーにしたときは、トーストで知らせる（`src/main/services/workspace/workspaceRefOperations.ts` の `addAppItemToWorkspace`）。コピーのクリップボードアイテムは、保存データ（`clipboard-data/<id>.json`）を `ClipboardService.duplicateClipboardData` で複製し、複製を指すアイテムとして足す（ランチャーと 1 つのファイルを共有しない。複製できなければ元の参照のまま）。逆向き（`workspace:move-to-main`）は複製せず、ランチャーへ移したアイテムが保存データを引き継ぐ
 - データファイルを読み直したあと、ワークスペースに参照アイテムがあれば、ワークスペースの内容が変わっていなくても送る（参照の中身はランチャーのアイテムのものなので）
 
+### 読めなかったワークスペースのファイル
+
+ワークスペース画面は一覧を読むたびに続けて `workspace:get-corrupted-files` を呼び、読めなかった `workspace.json`・`workspace-archive.json` の名前を受け取る。読み込みのときに覚えた結果を返すだけで、ファイルは読み直さない。片方が読めないとき、もう片方は読み込みを見送るだけなので名前に入れない（`src/main/services/workspace/WorkspaceFileStore.ts` の `getCorruptedFiles`）。名前があれば QDL は両方とも書き込まないので、空の案内の代わりに読めなかったことを出す（[ワークスペースの仕様書](../screens/workspace-window.md)）。
+
 ### 参照アイテム
 
 ワークスペースの参照アイテム（[ワークスペースファイル形式 2.6](file-formats/workspace-format.md#26-参照アイテムtype-ref)）は、メインプロセスが解決してからレンダラー・CLI に渡す（`src/main/services/workspace/workspaceRefResolver.ts`）。

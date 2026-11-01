@@ -280,6 +280,7 @@ const electronAPI: ElectronAPI = {
   workspaceAPI: {
     // ワークスペース（タブ）管理
     loadWorkspaces: () => ipcInvoke(IPC_CHANNELS.WORKSPACE_LOAD_WORKSPACES),
+    getCorruptedFiles: () => ipcInvoke(IPC_CHANNELS.WORKSPACE_GET_CORRUPTED_FILES),
     createWorkspace: (name) => ipcInvoke(IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE, name),
     renameWorkspace: (id, name) => ipcInvoke(IPC_CHANNELS.WORKSPACE_RENAME_WORKSPACE, id, name),
     deleteWorkspace: (id) => ipcInvoke(IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE, id),

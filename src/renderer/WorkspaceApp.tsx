@@ -73,6 +73,7 @@ const WorkspaceApp: React.FC = () => {
     items,
     groups,
     workspaces,
+    corruptedFiles,
     activeWorkspaceId: storedActiveWorkspaceId,
     setActiveWorkspaceId,
     loadAllDataWithLoading,
@@ -647,6 +648,7 @@ const WorkspaceApp: React.FC = () => {
       >
         <WorkspaceGroupedList
           contentRef={contentRef}
+          corruptedFiles={corruptedFiles}
           data={detachedData}
           handlers={commonHandlers}
           ui={{
@@ -728,6 +730,7 @@ const WorkspaceApp: React.FC = () => {
       <WorkspaceGroupedList
         contentRef={contentRef}
         workspaces={workspaces}
+        corruptedFiles={corruptedFiles}
         data={{ groups: displayGroups, items: displayItems }}
         handlers={{
           ...commonHandlers,

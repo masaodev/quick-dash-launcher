@@ -76,6 +76,8 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [groups, setGroups] = useState<WorkspaceGroupView[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  /** 読めなかった（壊れている）ワークスペースのファイル。あれば空の案内の代わりに知らせる */
+  const [corruptedFiles, setCorruptedFiles] = useState<string[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceIdState] = useState<string>(() => {
     // 無効な id は loadWorkspaces() で先頭のワークスペースにフォールバックする
     return localStorage.getItem('activeWorkspaceId') || '';
@@ -259,8 +261,18 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
     }
   }
 
+  async function loadCorruptedFiles(): Promise<void> {
+    try {
+      setCorruptedFiles(await window.electronAPI.workspaceAPI.getCorruptedFiles());
+    } catch (error) {
+      logError('Failed to load corrupted workspace files:', error);
+    }
+  }
+
   async function loadAllData(): Promise<void> {
     await Promise.all([loadItems(), loadGroups(), loadWorkspaces()]);
+    // 読み込みのついでに判定済みの結果を受け取るだけ（ファイルは読み直さない）
+    await loadCorruptedFiles();
   }
 
   async function loadAllDataWithLoading(): Promise<void> {
@@ -277,6 +289,7 @@ export function useWorkspaceData(detachedGroupId?: string | null) {
     items,
     groups,
     workspaces,
+    corruptedFiles,
     activeWorkspaceId,
     setActiveWorkspaceId,
     loadAllDataWithLoading,

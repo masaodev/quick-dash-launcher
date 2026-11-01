@@ -26,6 +26,7 @@ beforeEach(() => {
       workspaceAPI: {
         loadItems: async () => [],
         loadWorkspaces: async () => [],
+        getCorruptedFiles: async () => [],
         loadGroups: () =>
           new Promise<WorkspaceGroup[]>((resolve) => pendingGroupLoads.push(resolve)),
       },

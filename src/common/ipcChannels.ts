@@ -232,6 +232,7 @@ export const IPC_CHANNELS = {
 
   // ワークスペース - ワークスペース（タブ）管理
   WORKSPACE_LOAD_WORKSPACES: 'workspace:load-workspaces',
+  WORKSPACE_GET_CORRUPTED_FILES: 'workspace:get-corrupted-files',
   WORKSPACE_CREATE_WORKSPACE: 'workspace:create-workspace',
   WORKSPACE_RENAME_WORKSPACE: 'workspace:rename-workspace',
   WORKSPACE_DELETE_WORKSPACE: 'workspace:delete-workspace',

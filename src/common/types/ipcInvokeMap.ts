@@ -114,6 +114,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.SHOW_TOAST_WINDOW]: ElectronAPI['showToastWindow'];
   [IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW]: ElectronAPI['toggleWorkspaceWindow'];
   [IPC_CHANNELS.WORKSPACE_LOAD_WORKSPACES]: ElectronAPI['workspaceAPI']['loadWorkspaces'];
+  [IPC_CHANNELS.WORKSPACE_GET_CORRUPTED_FILES]: ElectronAPI['workspaceAPI']['getCorruptedFiles'];
   [IPC_CHANNELS.WORKSPACE_CREATE_WORKSPACE]: ElectronAPI['workspaceAPI']['createWorkspace'];
   [IPC_CHANNELS.WORKSPACE_RENAME_WORKSPACE]: ElectronAPI['workspaceAPI']['renameWorkspace'];
   [IPC_CHANNELS.WORKSPACE_DELETE_WORKSPACE]: ElectronAPI['workspaceAPI']['deleteWorkspace'];

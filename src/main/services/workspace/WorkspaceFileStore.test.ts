@@ -310,6 +310,8 @@ describe('WorkspaceFileStore', () => {
     const { files } = store.consumeLoadReports();
     expect(files[0].status).toBe('corrupted');
     expect(files[1].status).toBe('unreadable');
+    // 画面で「読めなかった」と出すのは壊れた方だけ（読み込みを見送ったアーカイブは出さない）
+    expect(store.getCorruptedFiles()).toEqual(['workspace.json']);
     expect(store.get('items')).toEqual([]);
     expect(() => store.set('items', [])).toThrow(WorkspaceCorruptedError);
     expect(() => store.updateArchive(() => {})).toThrow(WorkspaceCorruptedError);

@@ -73,6 +73,11 @@ const OPEN_ALL_INTERVAL_MS = 300;
 interface WorkspaceGroupedListProps {
   contentRef?: React.Ref<HTMLDivElement>;
   workspaces?: Workspace[];
+  /**
+   * 読めなかった（壊れている）workspace.json・workspace-archive.json。あれば QDL は両方とも書き込まないので、
+   * 空の案内（［＋ グループを追加］）の代わりに知らせ、一覧があるときは上に帯を出す
+   */
+  corruptedFiles?: string[];
   data: {
     groups: WorkspaceGroupView[];
     items: WorkspaceItem[];
@@ -118,6 +123,7 @@ interface WorkspaceGroupedListProps {
 const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
   contentRef,
   workspaces,
+  corruptedFiles = [],
   data,
   handlers,
   ui,
@@ -874,6 +880,26 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     onBlankContextMenu();
   };
 
+  // 壊れたファイルの知らせ（ランチャーの「読めなかったデータファイル」と同じ文言）
+  const corruptedMessage =
+    corruptedFiles.length > 0
+      ? t('launcher.empty.corrupted', { files: corruptedFiles.join(t('common.listSeparator')) })
+      : null;
+  const openConfigFolder = () => void window.electronAPI.openConfigFolder();
+
+  // 読めないファイルがあって何も出せないとき: 空の案内（［＋ グループを追加］は押しても書き込めない）の代わり
+  if (corruptedMessage && items.length === 0 && groups.length === 0) {
+    return (
+      <div className="workspace-empty" role="alert" data-testid="workspace-corrupted">
+        <p>{corruptedMessage}</p>
+        <p className="workspace-empty-hint">{t('launcher.empty.corruptedHint')}</p>
+        <Button variant="secondary" size="sm" onClick={openConfigFolder}>
+          {t('launcher.empty.openConfigFolder')}
+        </Button>
+      </div>
+    );
+  }
+
   // アイテムが1つもない場合
   if (items.length === 0 && groups.length === 0) {
     return (
@@ -891,6 +917,11 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
 
   return (
     <div className="workspace-item-list" onContextMenu={handleBlankContextMenu}>
+      {corruptedMessage && (
+        <div className="workspace-corrupted-notice" role="alert" data-testid="workspace-corrupted">
+          {corruptedMessage} {t('launcher.empty.corruptedHint')}
+        </div>
+      )}
       <div ref={contentRef} className="workspace-item-list-content">
         {/* ツリー構造でグループをレンダリング */}
         {groupTree.map((node) => renderGroupNode(node))}
