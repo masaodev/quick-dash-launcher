@@ -8,6 +8,7 @@ import {
   type ChildWindowHtml,
   type ChildWindowOpenerKey,
 } from '../services/childWindowService.js';
+import PathManager from '../config/pathManager.js';
 
 import { DEFAULT_WEB_PREFERENCES } from './managedWindow.js';
 
@@ -91,6 +92,8 @@ export class ModalChildWindows {
     const options: BrowserWindowConstructorOptions = {
       ...bounds,
       title,
+      // 指定しないとタイトルバーに Electron の既定のアイコンが出る
+      icon: PathManager.getAppIconPath(),
       frame: true,
       resizable: true,
       minimizable: false,

@@ -3,6 +3,24 @@ import type { ElectronApplication } from '@playwright/test';
 /** 撮る範囲で、ウィンドウの周りに取る余白（論理ピクセル） */
 export const BACKDROP_MARGIN = 24;
 
+/**
+ * 敷くウィンドウを撮る範囲より外へ広げる幅（論理ピクセル）
+ *
+ * 枠なしのウィンドウにも Windows 11 は角の丸みと縁を付けるので、範囲ぴったりに敷くと、撮った画像の端（特に上）に
+ * 数ピクセル、壁紙が写る。範囲より広く敷いて、端と角を撮る範囲の外に出す
+ */
+export const BACKDROP_BLEED = 16;
+
+/** 撮る範囲を BACKDROP_BLEED だけ広げた範囲（敷くウィンドウの位置と大きさ） */
+export function bleed(bounds: Bounds): Bounds {
+  return {
+    x: bounds.x - BACKDROP_BLEED,
+    y: bounds.y - BACKDROP_BLEED,
+    width: bounds.width + BACKDROP_BLEED * 2,
+    height: bounds.height + BACKDROP_BLEED * 2,
+  };
+}
+
 export interface Bounds {
   x: number;
   y: number;
@@ -39,6 +57,6 @@ export async function showBackdrop(
         .find((bw) => bw.getTitle() === title)
         ?.focus();
     },
-    { b: bounds, title: focusTitle }
+    { b: bleed(bounds), title: focusTitle }
   );
 }

@@ -11,7 +11,7 @@ import { ja } from '../../src/common/i18n/locales/ja';
 import { ConfigFileHelper } from '../e2e/helpers/config-file-helper';
 import { TestUtils } from '../e2e/helpers/test-utils';
 
-import { BACKDROP_MARGIN } from './demo-backdrop';
+import { BACKDROP_BLEED, BACKDROP_MARGIN } from './demo-backdrop';
 import { demoContent, demoLang, writeDemoData } from './demo-data';
 
 /**
@@ -109,7 +109,7 @@ async function shotWindow(app: ElectronApplication, page: Page, file: string): P
   const title = await page.title();
   await page.mouse.move(5, 5);
   const { rect } = await app.evaluate(
-    ({ BrowserWindow, screen }, { t, margin }) => {
+    ({ BrowserWindow, screen }, { t, margin, pad }) => {
       const win = BrowserWindow.getAllWindows().find((w) => w.isVisible() && w.getTitle() === t);
       if (!win) throw new Error(`ウィンドウが見つかりません: ${t}`);
       const b = win.getBounds();
@@ -119,8 +119,12 @@ async function shotWindow(app: ElectronApplication, page: Page, file: string): P
         width: b.width + margin * 2,
         height: b.height + margin * 2,
       };
+      // 敷くウィンドウは撮る範囲より pad だけ広げ、角の丸みと縁を範囲の外に出す（demo-backdrop.ts の BACKDROP_BLEED）
       const backdrop = new BrowserWindow({
-        ...area,
+        x: area.x - pad,
+        y: area.y - pad,
+        width: area.width + pad * 2,
+        height: area.height + pad * 2,
         frame: false,
         resizable: false,
         focusable: false,
@@ -145,7 +149,7 @@ async function shotWindow(app: ElectronApplication, page: Page, file: string): P
         },
       };
     },
-    { t: title, margin: BACKDROP_MARGIN }
+    { t: title, margin: BACKDROP_MARGIN, pad: BACKDROP_BLEED }
   );
   try {
     // ウィンドウと敷いた背景の描画が落ち着くのを待つ
