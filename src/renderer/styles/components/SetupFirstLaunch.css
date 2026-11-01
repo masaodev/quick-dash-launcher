@@ -180,41 +180,108 @@
   margin: var(--spacing-sm) 0 0 0;
 }
 
-/* ステップ 3: 試してみる */
+/* ステップ 3: 試してみる。押すのを待つ間は点線の枠をゆっくり明滅させ、押せたら緑の実線にする */
 .first-launch-try {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
   text-align: center;
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-xl) var(--spacing-md);
+  margin: var(--spacing-md) 0 var(--spacing-sm) 0;
   background: var(--color-primary-50);
-  border-radius: var(--border-radius);
+  border: 2px dashed var(--color-primary);
+  border-radius: var(--border-radius-lg);
+  animation: first-launch-try-breathe 2.2s ease-in-out infinite;
+}
+
+.first-launch-try .first-launch-keys {
+  font-size: var(--font-size-3xl);
+}
+
+.first-launch-try.pressed {
+  background: var(--bg-success-light);
+  border-style: solid;
+  border-color: var(--color-success);
+  animation: none;
 }
 
 .first-launch-try-waiting {
-  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-primary);
+}
+
+.first-launch-try-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: first-launch-try-blink 1.2s ease-in-out infinite;
 }
 
 .first-launch-try-ok {
   color: var(--color-success);
   font-weight: 600;
+  font-size: var(--font-size-xl);
+}
+
+@keyframes first-launch-try-breathe {
+  50% {
+    border-color: var(--color-primary-50);
+  }
+}
+
+@keyframes first-launch-try-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .first-launch-try,
+  .first-launch-try-dot {
+    animation: none;
+  }
+}
+
+/* ステップ 4: 仕上げ。「起動の設定」と「使いはじめたら」を見出しで分ける */
+.first-launch-not-tried {
+  font-size: var(--font-size-sm);
+  color: var(--notify-warning);
+}
+
+.first-launch-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.first-launch-section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.first-launch-section-label::after {
+  content: '';
+  flex: 1;
+  border-top: var(--border-light);
+}
+
+.first-launch-section .auto-launch-setup-section {
+  margin-bottom: var(--spacing-xs);
 }
 
 .first-launch-getting-started {
-  padding: var(--spacing-sm) var(--spacing-md);
-  margin-bottom: var(--spacing-md);
-  border: var(--border-light);
-  border-radius: var(--border-radius);
+  margin: 0;
+  padding-left: var(--spacing-lg);
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.first-launch-getting-started-label {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.first-launch-getting-started p {
-  margin: 0;
+  line-height: 1.6;
 }
 
 .first-launch-actions {

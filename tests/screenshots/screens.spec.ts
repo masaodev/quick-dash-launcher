@@ -247,7 +247,7 @@ firstLaunchTest.describe('初回設定', () => {
   // ファイル全体の test.use（screenshots）が効くと初回設定にならないので、ここで戻す
   firstLaunchTest.use({ configTemplate: 'first-launch' });
 
-  firstLaunchTest('初回設定画面', async ({ mainWindow }) => {
+  firstLaunchTest('初回設定画面', async ({ electronApp, mainWindow }) => {
     await mainWindow.locator('.first-launch-setup').waitFor({ state: 'visible' });
     await shot(mainWindow, 'first-launch-setup');
 
@@ -258,5 +258,14 @@ firstLaunchTest.describe('初回設定', () => {
     await mainWindow.getByRole('button', { name: '次へ' }).click();
     await mainWindow.locator('.first-launch-try').waitFor({ state: 'visible' });
     await shot(mainWindow, 'first-launch-setup-try');
+
+    // 起動ホットキーを押したことにして（本物は登録しないので、メインプロセスの知らせを直接送る）仕上げへ進む
+    await electronApp.evaluate(({ BrowserWindow }) => {
+      BrowserWindow.getAllWindows().forEach((w) =>
+        w.webContents.send('first-launch-hotkey-pressed')
+      );
+    });
+    await mainWindow.locator('.first-launch-section').first().waitFor({ state: 'visible' });
+    await shot(mainWindow, 'first-launch-setup-finish');
   });
 });

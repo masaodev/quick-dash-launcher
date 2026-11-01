@@ -335,11 +335,15 @@ export const en: LocaleMessages = {
     windowSearchHotkeyInUse:
       'Another app or the launch hotkey is already using these keys. Choose different keys or click "Don\'t use".',
     notSet: 'Not set',
-    tryTitle: "You're all set",
-    tryDescription: 'Try pressing the hotkey you chose.',
-    tryWaiting: 'A ✓ appears here when you press it',
+    tryTitle: 'Press {{hotkey}} now',
+    tryWaiting: 'Waiting for you to press it…',
     tryNotWorking: 'If nothing happens, select Back and choose different keys.',
     tryOk: '✓ It works',
+    trySkip: 'Try it later',
+    stepFinish: 'Finish',
+    finishTitle: "You're all set",
+    finishNotTried: "You haven't tried the hotkey yet. Press {{hotkey}} once you get started.",
+    startupLabel: 'Startup',
     gettingStartedLabel: 'Getting started',
     gettingStartedSamples: 'A few sample items (Notepad, Calculator, and more) are already added.',
     gettingStartedAdd:

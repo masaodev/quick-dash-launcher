@@ -14,7 +14,7 @@ async function goToHotkeyStep(mainWindow: Page): Promise<void> {
 /** ホットキー → 試してみるへ進む（「次へ」でホットキーを登録する） */
 async function goToTryStep(mainWindow: Page): Promise<void> {
   await mainWindow.getByRole('button', { name: '次へ' }).click();
-  await expect(mainWindow.locator('.first-launch-title')).toHaveText('準備ができました');
+  await expect(mainWindow.locator('.first-launch-title')).toContainText('を押してみてください');
 }
 
 /**
@@ -26,18 +26,27 @@ async function simulateHotkeyPressed(electronApp: ElectronApplication): Promise<
   });
 }
 
-/** ホットキーを押したことにして「使いはじめる」を押す */
-async function pressHotkeyAndStart(
+/** ホットキーを押したことにして、仕上げへ自動で進むのを待つ */
+async function pressHotkeyAndFinish(
   electronApp: ElectronApplication,
   mainWindow: Page
 ): Promise<void> {
   await simulateHotkeyPressed(electronApp);
   await expect(mainWindow.locator('.first-launch-try-ok')).toBeVisible();
+  await expect(mainWindow.locator('.first-launch-title')).toHaveText('準備ができました');
+}
+
+/** ホットキーを押したことにして、仕上げで「使いはじめる」を押す */
+async function pressHotkeyAndStart(
+  electronApp: ElectronApplication,
+  mainWindow: Page
+): Promise<void> {
+  await pressHotkeyAndFinish(electronApp, mainWindow);
   await mainWindow.getByRole('button', { name: '使いはじめる' }).click();
 }
 
 test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
-  test('3 ステップの表示・ESC・自動起動のチェック・セキュリティ設定', async ({
+  test('4 ステップの表示・ESC・自動起動のチェック・セキュリティ設定', async ({
     electronApp,
     mainWindow,
   }) => {
@@ -68,20 +77,25 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(await mainWindow.getByRole('button', { name: '次へ' }).isDisabled()).toBe(false);
     });
 
-    await test.step('「試してみる」では自動起動が既定でオンになっている', async () => {
+    await test.step('「試してみる」は押すのを待ち、「使いはじめる」を置かない', async () => {
       await goToTryStep(mainWindow);
+      await expect(mainWindow.locator('.first-launch-title')).toHaveText(
+        'いま Alt + Space を押してみてください'
+      );
       await expect(mainWindow.locator('.first-launch-try-waiting')).toBeVisible();
-      expect(await mainWindow.isChecked('.auto-launch-checkbox')).toBe(true);
-      // 更新の知らせも既定でオン（E2E は開発版なので Store 版の扱いにはならない）
-      expect(await mainWindow.isChecked('[data-testid="first-launch-update-check"]')).toBe(true);
+      await expect(mainWindow.getByRole('button', { name: '使いはじめる' })).toHaveCount(0);
     });
 
-    await test.step('ホットキーを押すまで「使いはじめる」は押せず、押すと ✓ が出て押せる', async () => {
-      const start = mainWindow.getByRole('button', { name: '使いはじめる' });
-      await expect(start).toBeDisabled();
-      await simulateHotkeyPressed(electronApp);
-      await expect(mainWindow.locator('.first-launch-try-ok')).toBeVisible();
-      await expect(start).toBeEnabled();
+    await test.step('ホットキーを押すと ✓ が出て、仕上げへ自動で進む', async () => {
+      await pressHotkeyAndFinish(electronApp, mainWindow);
+      await expect(mainWindow.locator('.first-launch-step.current')).toContainText('仕上げ');
+      await expect(mainWindow.getByRole('button', { name: '使いはじめる' })).toBeEnabled();
+    });
+
+    await test.step('「仕上げ」では自動起動と更新の知らせが既定でオンになっている', async () => {
+      expect(await mainWindow.isChecked('.auto-launch-checkbox')).toBe(true);
+      // E2E は開発版なので Store 版の扱いにはならない
+      expect(await mainWindow.isChecked('[data-testid="first-launch-update-check"]')).toBe(true);
     });
 
     await test.step('自動起動のチェックボックスをクリックして状態を変更できる', async () => {
@@ -89,7 +103,9 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
       expect(await mainWindow.isChecked('.auto-launch-checkbox')).toBe(false);
     });
 
-    await test.step('「戻る」でホットキーへ戻れる', async () => {
+    await test.step('「戻る」で試してみる、もう一度「戻る」でホットキーへ戻れる', async () => {
+      await mainWindow.getByRole('button', { name: '戻る' }).click();
+      await expect(mainWindow.locator('.first-launch-try-waiting')).toBeVisible();
       await mainWindow.getByRole('button', { name: '戻る' }).click();
       await expect(mainWindow.locator('.first-launch-title')).toHaveText(
         'ホットキーを決めましょう'
@@ -188,11 +204,12 @@ test.describe('QuickDashLauncher - 初回起動設定画面テスト', () => {
     await utils.waitForPageLoad();
     await goToHotkeyStep(mainWindow);
     await goToTryStep(mainWindow);
+    await pressHotkeyAndFinish(electronApp, mainWindow);
 
     await mainWindow.click('.auto-launch-checkbox');
     expect(await mainWindow.isChecked('.auto-launch-checkbox')).toBe(false);
 
-    await pressHotkeyAndStart(electronApp, mainWindow);
+    await mainWindow.getByRole('button', { name: '使いはじめる' }).click();
     await expect(mainWindow.locator('.first-launch-title')).toHaveCount(0);
 
     const settings = configHelper.readSettings();

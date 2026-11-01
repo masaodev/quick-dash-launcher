@@ -42,10 +42,17 @@ afterEach(() => {
 async function goToTryStep() {
   fireEvent.click(screen.getByRole('button', { name: '次へ' }));
   fireEvent.click(screen.getByRole('button', { name: '次へ' }));
-  await screen.findByText('準備ができました');
+  await screen.findByText('いま Alt + Space を押してみてください');
   // 画面が出ても、ホットキーの受け取りを登録する useEffect はまだ走っていないことがある
   // （全件を並列で流して重いとき）。登録されるまで待たないと、押した合図が空振りする
   await waitFor(() => expect(firePressed).not.toBeNull());
+}
+
+/** 試してみるでホットキーを押して、仕上げへ自動で進むのを待つ */
+async function goToFinishStep() {
+  await goToTryStep();
+  act(() => firePressed?.());
+  await screen.findByText('準備ができました', undefined, { timeout: 3000 });
 }
 
 describe('SetupFirstLaunch', () => {
@@ -58,7 +65,7 @@ describe('SetupFirstLaunch', () => {
     expect(changeHotkey).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: '次へ' }));
-    await screen.findByText('準備ができました');
+    await screen.findByText('いま Alt + Space を押してみてください');
     expect(changeHotkey).toHaveBeenCalledWith('Alt+Space');
   });
 
@@ -72,34 +79,55 @@ describe('SetupFirstLaunch', () => {
     expect(screen.getByText('ホットキーを決めましょう')).toBeTruthy();
   });
 
-  it('試してみるでホットキーが押されたら ✓ を出す', async () => {
+  it('試してみるでホットキーが押されたら ✓ を出し、少しして仕上げへ進む', async () => {
     render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
     await goToTryStep();
-    expect(screen.getByText('押すと、ここに ✓ が出ます')).toBeTruthy();
+    expect(screen.getByText('押すのを待っています…')).toBeTruthy();
+    // 試してみるには「使いはじめる」を置かない
+    expect(screen.queryByRole('button', { name: '使いはじめる' })).toBeNull();
 
     act(() => firePressed?.());
     expect(screen.getByText('✓ 呼び出せました')).toBeTruthy();
+    await screen.findByText('準備ができました', undefined, { timeout: 3000 });
+    expect(screen.queryByText(/キーはまだ試していません/)).toBeNull();
+    expect(
+      (screen.getByRole('button', { name: '使いはじめる' }) as HTMLButtonElement).disabled
+    ).toBe(false);
   });
 
-  it('ホットキーを押すまで「使いはじめる」は押せない', async () => {
+  it('「あとで試す」で仕上げへ進み、まだ試していないことを知らせる', async () => {
     render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
     await goToTryStep();
-    const start = screen.getByRole('button', { name: '使いはじめる' }) as HTMLButtonElement;
-    expect(start.disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'あとで試す' }));
 
-    act(() => firePressed?.());
-    expect(start.disabled).toBe(false);
+    expect(screen.getByText('準備ができました')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'キーはまだ試していません。使いはじめてから Alt + Space を押してみてください。'
+      )
+    ).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: '使いはじめる' }) as HTMLButtonElement).disabled
+    ).toBe(false);
+  });
+
+  it('仕上げの「戻る」で試してみるへ戻り、✓ は消える', async () => {
+    render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
+    await goToFinishStep();
+    fireEvent.click(screen.getByRole('button', { name: '戻る' }));
+
+    expect(screen.getByText('いま Alt + Space を押してみてください')).toBeTruthy();
+    expect(screen.getByText('押すのを待っています…')).toBeTruthy();
   });
 
   it('自動起動と更新の知らせは既定でオンのまま「使いはじめる」で渡す', async () => {
     const onComplete = vi.fn(async () => true);
     render(<SetupFirstLaunch onComplete={onComplete} />);
-    await goToTryStep();
+    await goToFinishStep();
     await screen.findByText('アップデートを自動で確認する');
     const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
     expect(checkboxes.map((c) => c.checked)).toEqual([true, true]);
 
-    act(() => firePressed?.());
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
     await waitFor(() =>
       expect(onComplete).toHaveBeenCalledWith({
@@ -115,11 +143,10 @@ describe('SetupFirstLaunch', () => {
     distribution = 'store';
     const onComplete = vi.fn(async () => true);
     render(<SetupFirstLaunch onComplete={onComplete} />);
-    await goToTryStep();
+    await goToFinishStep();
     await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(1));
     expect(screen.queryByText('アップデートを自動で確認する')).toBeNull();
 
-    act(() => firePressed?.());
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
     await waitFor(() =>
       expect(onComplete).toHaveBeenCalledWith({
@@ -134,11 +161,10 @@ describe('SetupFirstLaunch', () => {
     portableModeAvailable = true;
     const onComplete = vi.fn(async () => true);
     render(<SetupFirstLaunch onComplete={onComplete} />);
-    await goToTryStep();
+    await goToFinishStep();
     const portable = (await screen.findByTestId('first-launch-portable-mode')) as HTMLInputElement;
     expect(portable.checked).toBe(false);
 
-    act(() => firePressed?.());
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
     await waitFor(() =>
       expect(onComplete).toHaveBeenCalledWith({
@@ -154,10 +180,9 @@ describe('SetupFirstLaunch', () => {
     portableModeAvailable = true;
     const onComplete = vi.fn(async () => true);
     render(<SetupFirstLaunch onComplete={onComplete} />);
-    await goToTryStep();
+    await goToFinishStep();
     fireEvent.click(await screen.findByTestId('first-launch-portable-mode'));
 
-    act(() => firePressed?.());
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
     await waitFor(() =>
       expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({ portableMode: true }))
@@ -166,16 +191,16 @@ describe('SetupFirstLaunch', () => {
 
   it('ポータブルモードを選べないときはチェックを出さない', async () => {
     render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
-    await goToTryStep();
+    await goToFinishStep();
     await screen.findByText('アップデートを自動で確認する');
     expect(screen.queryByTestId('first-launch-portable-mode')).toBeNull();
     expect(screen.getByText('どれもあとから「設定」で変えられます')).toBeTruthy();
   });
 
-  it('ポータブルモードを選べるときは、あとから変えられないことをボタンの間に書く', async () => {
+  it('ポータブルモードを選べるときは、あとから変えられないことを設定の下に書く', async () => {
     portableModeAvailable = true;
     render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
-    await goToTryStep();
+    await goToFinishStep();
     await screen.findByTestId('first-launch-portable-mode');
     expect(screen.getByText('ポータブルモード以外は、あとから「設定」で変えられます')).toBeTruthy();
     expect(screen.queryByText('どれもあとから「設定」で変えられます')).toBeNull();
@@ -198,8 +223,7 @@ describe('SetupFirstLaunch', () => {
   it('保存に失敗したら知らせて、「使いはじめる」「戻る」・自動起動のチェックを押せる状態に戻す', async () => {
     const onComplete = vi.fn(async () => false);
     render(<SetupFirstLaunch onComplete={onComplete} />);
-    await goToTryStep();
-    act(() => firePressed?.());
+    await goToFinishStep();
     fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
 
     await screen.findByText(
