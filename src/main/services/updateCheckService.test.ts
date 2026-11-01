@@ -150,6 +150,33 @@ describe('UpdateCheckService', () => {
     expect(deps.notify).toHaveBeenCalledTimes(1);
   });
 
+  it('確かめ直しは 1 時間後の 1 回だけで、それも失敗したら 24 時間待つ', async () => {
+    const { service, deps } = makeService({
+      fetchReleases: vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    });
+    await service.checkNow();
+    expect(deps.fetchReleases).toHaveBeenCalledTimes(1);
+
+    // 1 時間後に 1 回だけ確かめ直す
+    now += 61 * 60 * 1000;
+    await service.checkIfDue();
+    expect(deps.fetchReleases).toHaveBeenCalledTimes(2);
+
+    // それも失敗したら、1 時間ごとの見回りでは問い合わせない
+    for (let hour = 1; hour < 24; hour++) {
+      now += 60 * 60 * 1000;
+      await service.checkIfDue();
+    }
+    expect(deps.fetchReleases).toHaveBeenCalledTimes(2);
+
+    // 2 回目の失敗から 24 時間たてば、また確かめる
+    now += 61 * 60 * 1000;
+    await service.checkIfDue();
+    expect(deps.fetchReleases).toHaveBeenCalledTimes(3);
+  });
+
   it('「ベータ版も知らせる」を切ったら、前に見つけたベータ版を出さずに確かめ直す', async () => {
     let includeBeta = true;
     const { service, deps } = makeService({

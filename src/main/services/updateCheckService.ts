@@ -28,6 +28,8 @@ const FIRST_CHECK_DELAY_MS = 60 * 1000;
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 /** 間隔が来たかを見る周期（スリープから戻ったときに取りこぼさないよう、24 時間のタイマーにはしない） */
 const TICK_MS = 60 * 60 * 1000;
+/** 確かめられなかったとき、1 回だけ確かめ直すまで（何度も問い合わせないよう、2 回続けて失敗したら 24 時間待つ） */
+const RETRY_DELAY_MS = 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 15 * 1000;
 
 interface UpdateCheckFile {
@@ -70,8 +72,10 @@ export class UpdateCheckService {
   private newerFormat = false;
   private checking: Promise<UpdateCheckStatus> | null = null;
   private lastError = false;
-  /** 最後に確かめられなかった日時（失敗したら 24 時間を待たず、1 時間ごとの見回りで確かめ直す） */
+  /** 最後に確かめられなかった日時 */
   private lastFailedAt: number | null = null;
+  /** 続けて確かめられなかった回数（1 回目の後だけ 1 時間で確かめ直し、2 回続いたら 24 時間待つ） */
+  private failureCount = 0;
   /** 最後に確かめたときの「ベータ版も知らせる」（変わったら確かめ直す） */
   private checkedWithBeta: boolean | null = null;
   private timers: ReturnType<typeof setTimeout>[] = [];
@@ -162,11 +166,15 @@ export class UpdateCheckService {
     if (!(await this.deps.getSettings()).enabled) return;
     const now = this.now();
     const last = this.state.lastCheckedAt;
-    // 失敗した後は、1 時間たつまで確かめ直さない（設定を変えるたびに問い合わせないように）
-    if (this.lastFailedAt !== null && now - this.lastFailedAt < TICK_MS && now >= this.lastFailedAt)
+    if (this.lastFailedAt !== null) {
+      // 確かめられなかった後は、1 時間後に 1 回だけ確かめ直す。それも失敗したら 24 時間待つ
+      // （つながらない間に何度も問い合わせない。設定を変えるたびにも問い合わせない）
+      const wait = this.failureCount >= 2 ? CHECK_INTERVAL_MS : RETRY_DELAY_MS;
+      if (now - this.lastFailedAt < wait && now >= this.lastFailedAt) return;
+    } else if (last !== undefined && now - last < CHECK_INTERVAL_MS && now >= last) {
+      // 時計が戻った（未来の日時が入っている）ときも確かめ直す
       return;
-    // 時計が戻った（未来の日時が入っている）ときも確かめ直す
-    if (last !== undefined && now - last < CHECK_INTERVAL_MS && now >= last) return;
+    }
     await this.checkNow();
   }
 
@@ -193,14 +201,16 @@ export class UpdateCheckService {
       });
       this.lastError = false;
       this.lastFailedAt = null;
+      this.failureCount = 0;
       this.checkedWithBeta = includeBeta;
       this.state.lastCheckedAt = this.now();
     } catch (error) {
-      // ネットにつながらない・GitHub が応えないときは知らせず、1 時間ごとの見回りでまた確かめる。
+      // ネットにつながらない・GitHub が応えないときは知らせず、1 時間後に 1 回だけ確かめ直す（checkIfDue）。
       // 「最後に確かめた日時」は確かめられた日時のまま残す（進めると 24 時間確かめず、確かめられたようにも見える）
       updateLogger.info({ error }, '新しい版を確かめられませんでした');
       this.lastError = true;
       this.lastFailedAt = this.now();
+      this.failureCount += 1;
     }
 
     const available = await this.getAvailableRelease();
