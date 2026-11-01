@@ -344,6 +344,9 @@ export const en: LocaleMessages = {
     updateCheck: 'Check for updates automatically',
     updateCheckHint:
       'Checks GitHub once a day and lets you know when a new version is out. You install it yourself.',
+    portableMode: 'Save data next to the exe (portable mode)',
+    portableModeHint:
+      "For carrying QDL on a USB drive. Leave it off if you're not sure (you can't change this later in Settings).",
     changeLater: 'You can change all of this later in Settings.',
     complete: 'Get started',
     saveFailed: 'Couldn\'t save the settings. Click "Get started" again.',
@@ -1740,7 +1743,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     distribution: 'Edition',
     dataLocation: 'Data location',
     dataLocations: {
-      portable: 'QuickDashLauncher-data next to the exe',
+      portable: 'QuickDashLauncher-data next to the exe (portable mode)',
       appData: '%APPDATA%',
     },
     updateAvailable: 'New version v{{version}} is available',
@@ -1754,7 +1757,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     updateCheckOff: 'Automatic update checks are off (turn them on in Settings → Basic).',
     distributions: {
       store: 'Microsoft Store',
-      portable: 'Portable',
+      portable: 'ZIP',
       installer: 'Installer',
       dev: 'Development',
     },

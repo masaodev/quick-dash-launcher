@@ -206,6 +206,8 @@ const electronAPI: ElectronAPI = {
   getAutoLaunchStatus: () => ipcInvoke(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS),
   getLanguage: () => ipcInvoke(IPC_CHANNELS.SETTINGS_GET_LANGUAGE),
   isFirstLaunch: () => ipcInvoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
+  switchToPortableOnFirstLaunch: (settings) =>
+    ipcInvoke(IPC_CHANNELS.FIRST_LAUNCH_SWITCH_TO_PORTABLE, settings),
   // 編集ウィンドウ関連API
   hideEditWindow: () => ipcInvoke(IPC_CHANNELS.HIDE_EDIT_WINDOW),
   toggleEditWindow: () => ipcInvoke(IPC_CHANNELS.TOGGLE_EDIT_WINDOW),

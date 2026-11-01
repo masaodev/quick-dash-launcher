@@ -127,8 +127,10 @@
 | 起動ホットキー | launch hotkey | ショートカットキー、hot key | ランチャーを出すキーの組み合わせ | `hotkey` |
 | 表示言語 | display language | — | 画面に使う言語（自動・日本語・English） | `language` |
 | 自動起動 | start with Windows | スタートアップ起動 | Windows の起動時に QuickDashLauncher を起動すること | `autoLaunch` |
-| バージョン | version | 新しい版、最新の版 | QDL 本体や qdl.exe のバージョン（v0.8.0 など）。「ベータ版」「ポータブル版」「Store 版」のような種類の名前の「版」はそのまま使う | `version` |
+| バージョン | version | 新しい版、最新の版 | QDL 本体や qdl.exe のバージョン（v0.8.0 など）。「ベータ版」「ZIP 版」「Store 版」のような種類の名前の「版」はそのまま使う | `version` |
 | アップデートの確認 | update check | 更新の知らせ（設定の名前として） | 1 日 1 回 GitHub で新しいバージョンを確かめ、あれば知らせること。インストールはしない | `updateCheckEnabled` |
+| ZIP 版 | ZIP | ポータブル版（ZIP 版を指すとき） | ZIP を展開して使う配布形式。データの置き場は既定で %APPDATA%（インストーラー版と同じ）。以前の 1 ファイルの exe は「以前の 1 ファイルの exe のポータブル版」と書く | `portable`（`AppDistribution`） |
+| ポータブルモード | portable mode | — | ZIP 版で、exe の横の QuickDashLauncher-data フォルダにデータを置く使い方。フォルダが無ければ %APPDATA% に置く | `portableData`・`resolvePortableData` |
 | ブックマーク取込 | bookmark import | ブックマークインポート、ブックマーク取り込み | ブラウザのブックマークをアイテムにすること | — |
 | アプリ取込 | app import | アプリインポート、アプリ取り込み | インストール済みのアプリをアイテムにすること | — |
 | バックアップ | backup | — | 設定フォルダのファイルを残しておく機能 | `BackupService` |

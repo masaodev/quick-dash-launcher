@@ -1,11 +1,12 @@
 /**
- * ポータブル版の ZIP を作る。electron-builder が作った release/win-unpacked（展開済みのアプリのフォルダ）に、
- * ポータブル版の印（portable.txt）と空のデータフォルダ（QuickDashLauncher-data）を添えて 1 つの ZIP にまとめる。
- * 展開した人は、そのフォルダの QuickDashLauncher.exe を起動するだけで、データをフォルダの中に置いて使える
- * （判定は src/main/utils/portableMode.ts）
+ * ZIP 版を作る。electron-builder が作った release/win-unpacked（展開済みのアプリのフォルダ）に、
+ * ZIP 版の印（portable.txt）を添えて 1 つの ZIP にまとめる。
+ * データフォルダ（QuickDashLauncher-data）は入れない。既定ではインストーラー版と同じ %APPDATA% にデータを置くので、
+ * 新しいバージョンの ZIP を別のフォルダに展開しても、前のデータをそのまま読む。
+ * exe の横にデータフォルダを作るとポータブルモードになる（判定は src/main/utils/portableMode.ts）
  *
  * 使い方: node scripts/make-portable-zip.mjs（npm run dist から electron-builder の後に呼ばれる）
- * ZIP は Windows 標準の tar.exe（bsdtar）で作る。空のフォルダも ZIP に入る
+ * ZIP は Windows 標準の tar.exe（bsdtar）で作る
  */
 import { execFileSync } from 'child_process';
 import fs from 'fs';
@@ -24,17 +25,27 @@ const zipPath = path.join(releaseDir, `QuickDashLauncher-${version}-portable.zip
 const MARKER_FILE = 'portable.txt';
 const DATA_DIR = 'QuickDashLauncher-data';
 const MARKER_TEXT = [
-  'QuickDashLauncher portable edition',
+  'QuickDashLauncher (ZIP)',
   '',
-  `Settings and data are saved in the ${DATA_DIR} folder next to QuickDashLauncher.exe.`,
-  `To update, extract the new ZIP to another folder and move ${DATA_DIR} into it.`,
-  `If you delete ${DATA_DIR}, data is saved in %APPDATA%\\quick-dash-launcher instead.`,
+  'Settings and data are saved in %APPDATA%\\quick-dash-launcher, the same place as the installer.',
+  'To update, extract the new ZIP to another folder. It uses the same data.',
   '',
-  'QuickDashLauncher ポータブル版',
+  `Portable mode: create a folder named ${DATA_DIR} next to QuickDashLauncher.exe`,
+  'to save settings and data in that folder instead (for example, to carry QDL on a USB drive).',
+  'You can also turn it on the first time you start QDL (the setup screen).',
+  `To update in portable mode, move ${DATA_DIR} into the new folder.`,
+  'To move existing data, export it in the settings window and import it after switching.',
   '',
-  `設定とデータは、QuickDashLauncher.exe の横の ${DATA_DIR} フォルダに保存されます。`,
-  `新しい版にするときは、新しい ZIP を別のフォルダに展開し、${DATA_DIR} をそちらへ移してください。`,
-  `${DATA_DIR} を消すと、%APPDATA%\\quick-dash-launcher に保存します。`,
+  'QuickDashLauncher（ZIP 版）',
+  '',
+  '設定とデータは、インストーラー版と同じ %APPDATA%\\quick-dash-launcher に保存されます。',
+  '新しいバージョンにするときは、新しい ZIP を別のフォルダに展開してください。同じデータを使います。',
+  '',
+  `ポータブルモード：QuickDashLauncher.exe の横に ${DATA_DIR} というフォルダを作ると、`,
+  '設定とデータをそのフォルダに保存します（USB メモリに入れて持ち歩くときなど）。',
+  '初めて起動したときの初回設定画面でも選べます。',
+  `ポータブルモードで新しいバージョンにするときは、${DATA_DIR} を新しいフォルダへ移してください。`,
+  '今のデータを移すときは、管理ウィンドウでエクスポートし、切り替えた後でインポートしてください。',
   '',
 ].join('\r\n');
 
@@ -49,7 +60,6 @@ fs.rmSync(stageRoot, { recursive: true, force: true });
 fs.rmSync(zipPath, { force: true });
 fs.cpSync(unpackedDir, stageDir, { recursive: true });
 fs.writeFileSync(path.join(stageDir, MARKER_FILE), MARKER_TEXT, 'utf8');
-fs.mkdirSync(path.join(stageDir, DATA_DIR));
 
 // Git Bash などで GNU tar が先に見つかると ZIP を作れないので、Windows 標準の tar.exe を名指しする
 const tarExe = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe');
@@ -59,4 +69,4 @@ execFileSync(tarExe, ['-a', '-c', '-f', zipPath, '-C', stageRoot, folderName], {
 fs.rmSync(stageRoot, { recursive: true, force: true });
 
 const sizeMb = (fs.statSync(zipPath).size / 1024 / 1024).toFixed(1);
-console.log(`ポータブル版の ZIP を作りました: ${path.relative(root, zipPath)}（${sizeMb}MB）`);
+console.log(`ZIP 版を作りました: ${path.relative(root, zipPath)}（${sizeMb}MB）`);

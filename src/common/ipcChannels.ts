@@ -129,6 +129,7 @@ export const IPC_CHANNELS = {
 
   // 設定
   SETTINGS_IS_FIRST_LAUNCH: 'settings:is-first-launch',
+  FIRST_LAUNCH_SWITCH_TO_PORTABLE: 'first-launch:switch-to-portable',
   SETTINGS_GET: 'settings:get',
   SETTINGS_GET_DEFAULTS: 'settings:get-defaults',
   SETTINGS_SET_MULTIPLE: 'settings:set-multiple',

@@ -878,7 +878,16 @@ function App(): React.ReactElement {
     autoLaunch: boolean;
     itemSearchHotkey: string;
     updateCheckEnabled?: boolean;
+    portableMode?: boolean;
   }): Promise<boolean> => {
+    if (settings.portableMode) {
+      // exe の横にデータフォルダを作り、選んだ設定を書いて再起動する（%APPDATA% には保存しない）。
+      // 成功すると再起動するので、返ってくるのは失敗したときだけ
+      const { portableMode: _portableMode, ...rest } = settings;
+      const result = await window.electronAPI.switchToPortableOnFirstLaunch(rest);
+      if (!result.success) logError('ポータブルモードにできませんでした:', result.error);
+      return result.success;
+    }
     try {
       await window.electronAPI.setMultipleSettings({
         hotkey: settings.hotkey,

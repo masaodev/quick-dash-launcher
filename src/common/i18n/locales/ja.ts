@@ -345,6 +345,9 @@ export const ja = {
     updateCheck: 'アップデートを自動で確認する',
     updateCheckHint:
       '1 日 1 回 GitHub で確認し、新しいバージョンがあれば通知します。インストールは手動です。',
+    portableMode: 'データを exe の横に保存する（ポータブルモード）',
+    portableModeHint:
+      'USB メモリなどに入れて持ち歩くときに。ふだんはオフのままで大丈夫です（あとから「設定」では変えられません）。',
     changeLater: 'どれもあとから「設定」で変えられます',
     complete: '使いはじめる',
     saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
@@ -1742,7 +1745,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     distribution: '配布形式',
     dataLocation: 'データの保存先',
     dataLocations: {
-      portable: 'exe の横の QuickDashLauncher-data',
+      portable: 'exe の横の QuickDashLauncher-data（ポータブルモード）',
       appData: '%APPDATA%',
     },
     updateAvailable: '新しいバージョン v{{version}} があります',
@@ -1756,7 +1759,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     updateCheckOff: 'アップデートの確認はオフです（設定タブ → 基本設定でオンにできます）',
     distributions: {
       store: 'Microsoft Store 版',
-      portable: 'ポータブル版',
+      portable: 'ZIP 版',
       installer: 'インストーラー版',
       dev: '開発版',
     },

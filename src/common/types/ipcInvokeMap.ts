@@ -75,6 +75,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS]: ElectronAPI['getAutoLaunchStatus'];
   [IPC_CHANNELS.SETTINGS_GET_LANGUAGE]: ElectronAPI['getLanguage'];
   [IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH]: ElectronAPI['isFirstLaunch'];
+  [IPC_CHANNELS.FIRST_LAUNCH_SWITCH_TO_PORTABLE]: ElectronAPI['switchToPortableOnFirstLaunch'];
   [IPC_CHANNELS.HIDE_EDIT_WINDOW]: ElectronAPI['hideEditWindow'];
   [IPC_CHANNELS.TOGGLE_EDIT_WINDOW]: ElectronAPI['toggleEditWindow'];
   [IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB]: ElectronAPI['openEditWindowWithTab'];
