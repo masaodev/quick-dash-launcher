@@ -137,7 +137,7 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('日本語入力の変換を確定する Enter では実行しない（A3-238）', async () => {
-    const item = launcherItem('file', 'C:\Windows\win.ini');
+    const item = launcherItem('file', 'C:\\Windows\\win.ini');
     const { params, handleKeyDown } = setup([item]);
 
     await handleKeyDown({
@@ -151,7 +151,7 @@ describe('useKeyboardShortcuts', () => {
     const toggleEditWindow = vi.fn();
     const toggleWorkspaceWindow = vi.fn();
     Object.assign(window.electronAPI, { toggleEditWindow, toggleWorkspaceWindow });
-    const { handleKeyDown } = setup([launcherItem('file', 'C:\Windows\win.ini')]);
+    const { handleKeyDown } = setup([launcherItem('file', 'C:\\Windows\\win.ini')]);
 
     await handleKeyDown(keyEvent('E', { ctrlKey: true }));
     await handleKeyDown(keyEvent('W', { ctrlKey: true }));
