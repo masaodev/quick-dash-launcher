@@ -2,7 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import type { Server } from 'net';
 
-import { app, globalShortcut, net, session } from 'electron';
+import { app, dialog, globalShortcut, net, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
@@ -70,6 +70,7 @@ import {
   setPortableModeAvailable,
 } from './utils/portableMode.js';
 import { handleIpc } from './utils/ipcWrapper';
+import { findOtherRunningExe, isJapaneseSystemLocale } from './utils/otherInstance.js';
 
 // 多重起動時に完全に独立したuserDataを使用
 if (EnvConfig.hasAppInstance) {
@@ -112,6 +113,24 @@ const cliInstanceBase = EnvConfig.hasAppInstance
 const CLI_LAUNCH_ARG = '--launched-by-cli';
 const launchedByCli = process.argv.includes(CLI_LAUNCH_ARG);
 
+/**
+ * 二重起動の防止で終わるとき、同じデータで動いているのが別の exe の QDL（インストーラー版と ZIP 版など）なら、
+ * 理由をダイアログで知らせる（A3-230 U12）。動いている側はランチャーを出すだけなので、黙って終わると
+ * 「ZIP 版を起動したのにインストーラー版が出た」ように見える。同じ exe の 2 回目と、CLI からの起動では出さない
+ */
+function notifyOtherInstanceRunning(): void {
+  if (!app.isPackaged || launchedByCli) return;
+  const self = resolveAppExePath(process.execPath, process.env, os.tmpdir());
+  const running = findOtherRunningExe(app.getPath('userData'), self);
+  if (!running) return;
+  const t = mainI18n.getFixedT(isJapaneseSystemLocale() ? 'ja' : 'en');
+  const lines: string[] = [t('startupErrors.otherInstanceMessage', { running, self })];
+  if (portableData.kind === 'unwritable') {
+    lines.push(t('startupErrors.otherInstancePortableUnwritable', { dir: portableData.dataDir }));
+  }
+  dialog.showErrorBox(t('startupErrors.otherInstanceTitle'), lines.join('\n\n'));
+}
+
 // 二重起動の防止（userData ごと）。E2E と dev:test は userData を変えずに設定フォルダだけを
 // 差し替えて起動するため、本番の QDL と同時に動かせるよう対象外にする
 const useSingleInstance = !EnvConfig.customConfigDir;
@@ -121,6 +140,7 @@ if (useSingleInstance && !app.requestSingleInstanceLock()) {
     `QuickDashLauncher は同じ userData（${app.getPath('userData')}）で既に起動しているため終了します。` +
       '同時に動かすには APP_INSTANCE を変えて起動してください'
   );
+  notifyOtherInstanceRunning();
   app.exit(0);
 } else {
   // ログをファイルにも残す（1MB で回し、古いものは 2 世代まで）。起動直後のログも残るよう、

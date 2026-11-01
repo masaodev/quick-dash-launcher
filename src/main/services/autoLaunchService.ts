@@ -7,6 +7,7 @@ import type { AutoLaunchStatus, StoreAutoLaunchState } from '@common/types';
 
 import { EnvConfig } from '../config/envConfig.js';
 import { getAppDistribution } from '../utils/appDistribution.js';
+import { isSameExePath } from '../utils/exePath.js';
 import type { StartupTask as StartupTaskType } from '../winrt/generated/windows/application-model/StartupTask.js';
 import type { StartupTaskState } from '../winrt/generated/windows/application-model/StartupTaskState.js';
 
@@ -24,7 +25,7 @@ const STARTUP_TASK_STATES: Record<StartupTaskState, StoreAutoLaunchState> = {
 
 /**
  * 自動起動機能を管理するサービスクラス（Windows専用）
- * - ポータブル版・インストーラー版: スタートアップフォルダにショートカットを作る
+ * - ポータブル版・インストーラー版: スタートアップフォルダにショートカットを作る（消すのは自分の exe を指すものだけ）
  * - Store 版（MSIX）: マニフェストの StartupTask を WinRT の API（dynwinrt 経由）で切り替える
  */
 export class AutoLaunchService {
@@ -162,10 +163,28 @@ export class AutoLaunchService {
       }
       logger.info(`Auto launch enabled: shortcut created at ${shortcutPath} -> ${target}`);
     } else {
-      if (fs.existsSync(shortcutPath)) {
-        fs.unlinkSync(shortcutPath);
-        logger.info(`Auto launch disabled: shortcut removed from ${shortcutPath}`);
+      if (!fs.existsSync(shortcutPath)) return;
+      // ショートカットの名前は版によらず 1 つなので、同じ PC の別の QDL（インストーラー版と ZIP 版など）が
+      // 作ったものかもしれない。自分の exe を指すときだけ消す（A3-230 U1）
+      const target = this.readShortcutTarget(shortcutPath);
+      if (target !== null && !isSameExePath(target, this.getTargetPath())) {
+        logger.info(
+          `Auto launch disabled: kept ${shortcutPath} because it points to another QuickDashLauncher (${target})`
+        );
+        return;
       }
+      fs.unlinkSync(shortcutPath);
+      logger.info(`Auto launch disabled: shortcut removed from ${shortcutPath}`);
+    }
+  }
+
+  /** ショートカットの行き先。読めない・行き先が空なら null（壊れたショートカットは自分のものとして消してよい） */
+  private readShortcutTarget(shortcutPath: string): string | null {
+    try {
+      const { target } = shell.readShortcutLink(shortcutPath);
+      return target ? target : null;
+    } catch {
+      return null;
     }
   }
 
