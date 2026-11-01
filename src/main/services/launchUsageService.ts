@@ -100,7 +100,8 @@ export class LaunchUsageService {
       return null;
     }
     try {
-      const raw = JSON.parse(text) as Partial<LaunchUsageFile>;
+      // 手で直して BOM 付きで保存しても、壊れたと見なして記録を数え直さない
+      const raw = JSON.parse(FileUtils.stripBom(text)) as Partial<LaunchUsageFile>;
       this.newerFormat = isNewerFormatVersion(raw.version, LAUNCH_USAGE_VERSION);
       if (this.newerFormat) {
         itemLogger.warn(
