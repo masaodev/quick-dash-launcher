@@ -61,6 +61,8 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
   // 楽観ロック用: 読み込んだ時点の内容ハッシュ。保存時に一致しなければ外部で変更されている
   const fileHashes: Record<string, string> = {};
 
+  const corruptedFiles: string[] = [];
+
   try {
     const dataFiles = PathManager.getDataFiles();
     const knownIds = new Set<string>();
@@ -127,19 +129,17 @@ export async function loadEditableItems(configFolder: string): Promise<LoadEdita
           });
         }
       } catch (error) {
+        // 壊れたファイルだけを外し、ほかのファイルは編集できるようにする（保存でもこのファイルは書かない）
         dataLogger.error({ error, fileName }, 'JSONファイルのパースに失敗しました');
         markDataFileCorrupted(fileName);
-        return {
-          items: [],
-          error: mainI18n.t('dataErrors.jsonParseFailed', { file: fileName }),
-        };
+        corruptedFiles.push(fileName);
       }
     }
 
     await resolveLauncherTypes(items);
     await snapshotExternalChanges(externallyChanged);
 
-    return { items, fileHashes };
+    return { items, fileHashes, ...(corruptedFiles.length > 0 && { corruptedFiles }) };
   } catch (error) {
     dataLogger.error({ error }, 'EditableJsonItemの読み込みに失敗しました');
     return {
@@ -282,12 +282,14 @@ export async function saveEditableItems(
   editableItems: EditableJsonItem[],
   expectedHashes?: Record<string, string>
 ): Promise<SaveEditableItemsResult> {
-  // 破損ファイルがあると読み込めなかったアイテムを空データで上書きしてしまうため保存を拒否する
+  // 破損ファイルは読み込めなかったアイテムを空データで上書きしてしまうので書かない。
+  // そのファイルへアイテムを移した（足した）ときは、書かずに消えてしまうので保存を断る
   const corruptedFiles = getCorruptedDataFiles();
-  if (corruptedFiles.length > 0) {
-    throw new Error(
-      mainI18n.t('dataErrors.saveBlockedCorrupted', { files: corruptedFiles.join(', ') })
-    );
+  const blocked = corruptedFiles.filter((fileName) =>
+    editableItems.some((item) => item.meta.sourceFile === fileName)
+  );
+  if (blocked.length > 0) {
+    throw new Error(mainI18n.t('dataErrors.saveBlockedCorrupted', { files: blocked.join(', ') }));
   }
 
   // 新しい版の QDL が保存したファイルは書き換えられない。全量の保存なので、途中まで書いて止まらないよう先に断る
@@ -298,7 +300,7 @@ export async function saveEditableItems(
     );
   }
 
-  const dataFiles = PathManager.getDataFiles();
+  const dataFiles = PathManager.getDataFiles().filter((f) => !corruptedFiles.includes(f));
 
   if (expectedHashes) {
     assertNoExternalChange(configFolder, dataFiles, expectedHashes);
