@@ -2729,6 +2729,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       restoreConfirm:
         '選択したスナップショット（{{timestamp}}）からデータを復元します。復元前に現在の状態が自動バックアップされます。続行しますか？',
       restoreConfirmButton: '復元する',
+      restoreWholeConfirm:
+        'インポートする前のデータ（{{timestamp}}）に、まるごと戻して再起動します。',
+      restoreWholeWarning:
+        '今のデータはすべて置き換わります。\n置き換える前のデータは、スナップショットに残します。',
+      restoreWholeButton: '戻して再起動',
+      restoringWhole: '戻しています。終わると再起動します…',
       restored: '復元が完了しました。設定を反映するためにアプリの再起動を推奨します。',
       restoreFailed: '復元に失敗しました: {{error}}',
       restoreError: '復元中にエラーが発生しました',

@@ -96,7 +96,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 - **作成タイミング**: 起動時に1日1回（ローカル時刻の日付で判定）、変更がある場合のみ（`backupEnabled` が無効なら作らない）
 - **保持件数**: 設定可能（`backupRetention`、既定値は設定ファイルを参照）。超えた古いものから消す。`_pre-external` と、`_pre-set-migration`・`_pre-window-migration`・`_pre-import` それぞれの新しい 2 つは数えない（消さない）
 - **復元前の自動バックアップ**: 復元の実行時に `YYYY-MM-DDTHH-MM-SS_pre-restore/` フォルダを自動作成（`backupEnabled` に関係なく作る）
-- **インポート前の自動バックアップ**: インポートで置き換える前に、置き換わるファイル（[エクスポート](#エクスポート) の「入れるもの」）を `YYYY-MM-DDTHH-MM-SS_pre-import/` に保存（`backupEnabled` に関係なく作る。作れなければインポートしない）。インポートする前に戻す拠り所なので、新しい 2 つは `backupRetention` で数えずに残す
+- **インポート前の自動バックアップ**: インポートで置き換える前に、置き換わるファイル（[エクスポート](#エクスポート) の「入れるもの」）を `YYYY-MM-DDTHH-MM-SS_pre-import/` に保存（`backupEnabled` に関係なく作る。作れなければインポートしない）。インポートする前に戻す拠り所なので、新しい 2 つは `backupRetention` で数えずに残す。復元するときは、インポートと同じく設定フォルダをまるごと置き換えて再起動する（ほかのスナップショットは上書きだけ。[管理ウィンドウ 5.5.1](../../screens/admin-window.md#551-スナップショット一覧)）。その前の今のファイルも、新しい `_pre-import` に残す
 - **外部変更前スナップショット**: データファイル・ワークスペースファイルが QDL 外で変更されたことを読み込み時に検知すると、変更前の内容を `YYYY-MM-DDTHH-MM-SS_pre-external/` に保存（`backupEnabled` が無効なら作らない。変更されたファイルのみ。`backupRetention` とは別枠で最新 10 件を保持。QDL 起動中の編集のみ検知し、終了中の編集は対象外）
 - **移行前スナップショット**: ワークスペースファイルを旧形式から 2.0 に変換する前に `YYYY-MM-DDTHH-MM-SS_pre-migration/` を作成（`backupEnabled` に関係なく作る）
 - **セット変換前スナップショット**: データファイル・ワークスペースファイルの旧グループ・旧ウィンドウ配置をセットに変換する前に `YYYY-MM-DDTHH-MM-SS_pre-set-migration/` を作成（`backupEnabled` に関係なく作る。作れなければ変換しない）。新しい 2 つ（データファイル用とワークスペース用）は前の版に戻すときの拠り所なので `backupRetention` で数えずに残し、3 つ目より古いものは通常のスナップショットと一緒に数える（`src/main/services/backupService.ts` の `cleanupOldSnapshots`）

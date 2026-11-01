@@ -2,11 +2,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import logger from '@common/logger';
-import type { SnapshotInfo, BackupStatus } from '@common/types/backup';
+import {
+  isPreImportSnapshot,
+  PRE_IMPORT_SNAPSHOT_SUFFIX,
+  type SnapshotInfo,
+  type BackupStatus,
+} from '@common/types/backup';
 import { FileUtils } from '@common/utils/fileUtils';
 
 import PathManager from '../config/pathManager.js';
 
+import { collectExportFiles } from './dataExportService.js';
 import { SettingsService } from './settingsService.js';
 import { mainI18n } from './mainI18n.js';
 
@@ -14,7 +20,7 @@ import { mainI18n } from './mainI18n.js';
 const PRE_EXTERNAL_SUFFIX = '_pre-external';
 const PRE_SET_MIGRATION_SUFFIX = '_pre-set-migration';
 const PRE_WINDOW_MIGRATION_SUFFIX = '_pre-window-migration';
-const PRE_IMPORT_SUFFIX = '_pre-import';
+const PRE_IMPORT_SUFFIX = PRE_IMPORT_SNAPSHOT_SUFFIX;
 /**
  * スナップショットのフォルダ名の規則: `<タイムスタンプ>[-<連番>][_<サフィックス>]`
  * （1: タイムスタンプ 2: 同じ秒に作ったときの連番（2 から） 3: `_pre-restore` などのサフィックス）
@@ -530,6 +536,23 @@ export class BackupService {
       '読み込みの前のスナップショットを作成しました'
     );
     return timestamp;
+  }
+
+  /**
+   * インポートの前に作ったスナップショットの中身を読む（復元でまるごと置き換えるため）。
+   * 中は設定フォルダと同じ並びなので、エクスポートの対象と同じ規則で集める
+   *
+   * @returns 設定フォルダからの相対パス → 中身。スナップショットが無ければ null
+   */
+  public readPreImportSnapshot(timestamp: string): Map<string, Uint8Array> | null {
+    if (!isPreImportSnapshot(timestamp)) return null;
+    const snapshotFolder = this.resolveSnapshotFolder(timestamp);
+    if (!snapshotFolder || !FileUtils.exists(snapshotFolder)) return null;
+    const files = new Map<string, Uint8Array>();
+    for (const relPath of collectExportFiles(snapshotFolder)) {
+      files.set(relPath, fs.readFileSync(path.join(snapshotFolder, ...relPath.split('/'))));
+    }
+    return files;
   }
 
   private async createForcedSnapshot(suffix: string): Promise<string> {

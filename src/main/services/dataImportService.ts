@@ -241,7 +241,10 @@ export function countImportItems(content: DataImportContent) {
  *
  * 書いている間にほかの処理が割り込まないよう、すべて同期で行う
  */
-export function applyDataImport(configFolder: string, content: DataImportContent): void {
+export function applyDataImport(
+  configFolder: string,
+  content: Pick<DataImportContent, 'files'>
+): void {
   const toPath = (relPath: string) => path.join(configFolder, ...relPath.split('/'));
   // 途中で失敗したら（読み取り専用・ロック・空き容量）元に戻せるよう、今の中身を覚えておく。
   // 戻さないと新旧が混ざったまま動き続け、次の保存で古い内容も書き戻される
@@ -281,7 +284,7 @@ export class DataImportApplyError extends Error {
 /** 置き換えの途中で失敗したとき、足したファイルを消し、元の中身を書き戻す（すべて戻せたら true） */
 function rollBack(
   toPath: (relPath: string) => string,
-  content: DataImportContent,
+  content: Pick<DataImportContent, 'files'>,
   originals: Map<string, Buffer>
 ): boolean {
   let ok = true;

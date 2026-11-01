@@ -111,6 +111,13 @@ describe('BackupService の変更前スナップショット', () => {
       fs.readFileSync(path.join(paths.backupFolder, name!, ...parts), 'utf8');
     expect(read('settings.json')).toBe('{"hotkey":"x"}');
     expect(read('icon-cache', 'custom', 'a.png')).toBe('png');
+
+    // 復元（まるごと置き換え）のために読み戻せる。インポートの前のもの以外は読まない
+    const files = service.readPreImportSnapshot(name!);
+    expect([...(files?.keys() ?? [])]).toEqual(['settings.json', 'icon-cache/custom/a.png']);
+    expect(Buffer.from(files!.get('settings.json')!).toString()).toBe('{"hotkey":"x"}');
+    expect(service.readPreImportSnapshot('2026-10-13T01-30-00')).toBeNull();
+    expect(service.readPreImportSnapshot('2026-10-13T01-30-00-9_pre-import')).toBeNull();
   });
 
   it('読み込みの前のスナップショットに写せないファイルがあれば、フォルダを消して例外を投げる', async () => {

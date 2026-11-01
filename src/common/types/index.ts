@@ -236,7 +236,12 @@ export type {
   DataImportInspectResult,
   DataImportApplyResult,
 } from './backup';
-export { DATA_EXPORT_FORMAT, DATA_EXPORT_FORMAT_VERSION } from './backup';
+export {
+  DATA_EXPORT_FORMAT,
+  DATA_EXPORT_FORMAT_VERSION,
+  PRE_IMPORT_SNAPSHOT_SUFFIX,
+  isPreImportSnapshot,
+} from './backup';
 
 // 型ガード関数
 export { isWindowInfo, isLauncherItem, isClipboardItem, isSetItem, isWsGroupItem } from './guards';
