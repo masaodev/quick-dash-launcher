@@ -8,7 +8,7 @@
 
 **A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword.**
 
-Only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Work," "Personal," or "Client A."
+Only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project.
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
@@ -18,7 +18,7 @@ Only what you've added shows up. A keyword can be any part of the name you gave 
 
 <p align="center">
   <a href="#installation">Installation</a> ·
-  <a href="#screenshots">Screenshots</a> ·
+  <a href="#adding-and-managing-items">Adding and managing items</a> ·
   <a href="#workspace">Workspace</a> ·
   <a href="docs/README.md">Documentation (Japanese)</a> ·
   <a href="https://github.com/masaodev/quick-dash-launcher/releases">Releases</a>
@@ -30,25 +30,12 @@ Only what you've added shows up. A keyword can be any part of the name you gave 
 
 <!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->
 
-## Features
+## Who it's for
 
-- **Open everything from one place**
-  - Open apps, folders, files, and websites, plus links such as Teams chats, from the same window.
-  - Save snippets of text or images and copy them back to the clipboard when you need them.
-  - Keep the things you use most in the [workspace](#workspace), a window that stays at the edge of your screen.
-- **Add what you use and organize it with tabs**
-  - Add items one at a time with drag and drop, or import apps from the Start menu and your browser bookmarks in bulk.
-  - Create whatever tabs you like, such as "Work," "Personal," or "Client A."
-  - Only the items you've added show up, so the list stays tidy.
-  - Give each item any name you like, so long paths and URLs open by the name you actually use, such as "Timesheet" or "Expenses."
-- **Import a whole folder**
-  - Point to a folder, and the files in it show up in the list. You can choose whether to include subfolders.
-  - Use wildcards to choose what to include and what to skip, such as "Excel files only (`*.xlsx`)" or "skip old versions (`Old*`)."
-  - When files are added to the folder later, there's no need to add them again.
-- **Matches appear as you type, ready to open**
-  - Type part of a name, and the list narrows with each character. The match doesn't have to be at the start, and you can narrow it further with more words separated by spaces, such as "basic design screen."
-  - Select what you want and press Enter to open it.
-  - If a match is in another tab, the number of matches shows on that tab, and you can press Tab to switch to it.
+- You juggle several projects and keep searching for the same folders, documents, and web admin pages.
+- You click through deep shared-folder paths every time.
+- You open apps or bookmarks just to find a Teams chat or a webpage you use often.
+- You don't want apps and files you never use showing up in the results.
 
 It's free and open source (MIT). Try it right away with winget (for other ways, see [Installation](#installation)).
 
@@ -58,13 +45,26 @@ winget install masaodev.quick-dash-launcher
 
 ---
 
+## Features
+
+- **Open everything from one place**
+  - Open apps, folders, files, and websites, plus links such as Teams chats, from the same window.
+  - Save snippets of text or images, and copy them back to the clipboard when you select them.
+- **Name items and sort them into tabs**
+  - Long paths and URLs open by the name you actually use, such as "Timesheet" or "Expenses."
+  - Create whatever tabs you like, such as "Daily," one per project, or "Bookmarks."
+- **Import many at once**
+  - Pick apps from the Start menu and your browser bookmarks from a list and import them.
+  - Point to a folder, and the files in it show up in the list. When files are added later, there's no need to add them again (you can also choose, for example, "`*.xlsx` only" or "skip `Old*`").
+- **Matches appear as you type, ready to open**
+  - Type part of a name, and the list narrows with each character. Press Enter to open it. Type "goo" to list your Google services, then add "map" after a space ("goo map") to narrow it to Google Maps.
+  - If a match is in another tab, press Tab to switch to it.
+
+---
+
 ## Why you add items yourself
 
-Many launchers, such as PowerToys Run, index every installed app and file automatically. Things you never use end up in the results, and you still have to hunt for what you want. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there.
-
-Adding items one at a time takes effort, so there are ways to add many at once. Point to a folder, and the files in it show up in the list (folder import). You can also pick apps from the Start menu and your browser bookmarks from a list and import them.
-
-Everything you've added appears in a list in the [settings window](#screenshots), where you can edit it all together.
+Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. [Importing many at once](#features) keeps the setup effort low.
 
 | | Search-based launchers (PowerToys Run and others) | Quick Dash Launcher |
 | --- | --- | --- |
@@ -74,16 +74,9 @@ Everything you've added appears in a list in the [settings window](#screenshots)
 | Names | App and file names as they are | Names you choose |
 | Files inside folders | Not shown | Shown once you import the folder |
 
-### Who it's for
-
-- You juggle several projects and keep searching for the same folders, documents, and web admin pages.
-- You click through deep shared-folder paths every time.
-- You open apps or bookmarks just to find a Teams chat or a webpage you use often.
-- You don't want apps and files you never use showing up in the results.
-
 ---
 
-## Screenshots
+## Adding and managing items
 
 ### Item Manager
 
@@ -139,8 +132,10 @@ Change the type in the Add item window to do more than open files and URLs. For 
 | --- | --- |
 | [Set](docs/features/set.md) | Open several items or paths at once, and optionally move their windows to recorded positions |
 | Clipboard item | Save text or images and copy them back to the clipboard when you select them |
-| WS group | List workspace groups in the launcher and in search, and open a group in a detached window when you select it (add one from the ▼ next to "+ Add item" in Manage items) |
+| WS group | List workspace groups in the launcher and in search, and open a group in a detached window when you select it (add one from the ▼ next to "+ Add item" in Item Manager) |
 | [Bookmark import](docs/features/bookmark-import.md) | Import your browser bookmarks, and optionally keep them up to date automatically |
+| [Window search](docs/screens/main-window.md#526-ウィンドウ検索モード) | Find an open window by name and switch to it, including windows on other virtual desktops (press `Ctrl+Alt+Space` to open it directly) |
+| [Command line (qdl)](docs/features/cli.md) | Add and change items, workspace groups, and settings with the `qdl` command. Results come back as JSON, so scripts and AI agents (such as Claude Code) can use it too. Turn it on in the basic settings |
 
 ---
 
@@ -161,8 +156,18 @@ To update, run `winget upgrade masaodev.quick-dash-launcher`. Only stable releas
 Download them from [Releases](https://github.com/masaodev/quick-dash-launcher/releases).
 
 - Installer: Run `QuickDashLauncher.Setup.x.x.x.exe`. The app starts when the installation finishes.
-- ZIP: Extract `QuickDashLauncher-x.x.x-portable.zip` to any folder and run `QuickDashLauncher.exe` (no installation needed). Settings and data are saved in `%APPDATA%\quick-dash-launcher`, the same place as the installer, so a new version extracted to another folder uses the same data. To use portable mode, check the portable mode option on the first-run setup screen, or create a `QuickDashLauncher-data` folder next to the exe. Settings and data are then saved in that folder, so you can carry the whole folder on a USB drive (to update, move `QuickDashLauncher-data` into the new folder).
-  - If you use both a stable version and a beta version on the same PC, run the beta in portable mode. Otherwise both read the same data and can't run at the same time.
+- ZIP: Extract `QuickDashLauncher-x.x.x-portable.zip` to any folder and run `QuickDashLauncher.exe` (no installation needed).
+
+<details>
+<summary>Where the ZIP version saves data, and portable mode</summary>
+
+Settings and data are saved in `%APPDATA%\quick-dash-launcher`, the same place as the installer, so a new version extracted to another folder uses the same data.
+
+To use portable mode, check the portable mode option on the first-run setup screen, or create a `QuickDashLauncher-data` folder next to the exe. Settings and data are then saved in that folder, so you can carry the whole folder on a USB drive (to update, move `QuickDashLauncher-data` into the new folder).
+
+If you use both a stable version and a beta version on the same PC, run the beta in portable mode. Otherwise both read the same data and can't run at the same time.
+
+</details>
 
 The installer and ZIP versions aren't signed, so Windows SmartScreen may show a warning the first time you run them. If it does, select **More info** > **Run anyway**.
 
@@ -176,7 +181,7 @@ If something isn't working, see [Troubleshooting](docs/features/troubleshooting.
 
 Please report bugs and request features in [GitHub Issues](https://github.com/masaodev/quick-dash-launcher/issues). Issues in English are welcome, and so are pull requests.
 
-To build from source, you need Node.js, plus Visual Studio Build Tools (C++) and Python to compile native modules. For details, see the [development guide](docs/setup/development.md). For design and testing, see the [docs](docs/README.md). The documentation is in Japanese.
+Quick Dash Launcher is built with Electron, React, and TypeScript (the `qdl.exe` CLI is written in Rust). To build from source, you need Node.js, plus Visual Studio Build Tools (C++) and Python to compile native modules. For details, see the [development guide](docs/setup/development.md). For design and testing, see the [docs](docs/README.md). The documentation is in Japanese.
 
 ```bash
 git clone https://github.com/masaodev/quick-dash-launcher.git
