@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import type { SetCatalogItem } from '../utils/setEditing';
+import { setSearchNormalization } from '../utils/dataParser';
 
 import SetItemPickerModal from './SetItemPickerModal';
 
@@ -64,6 +65,18 @@ describe('SetItemPickerModal', () => {
     expect(screen.getByText('Git Bash ai-workspace')).toBeTruthy();
     expect(screen.queryByText('Git Bash stock_calc')).toBeNull();
     expect(screen.queryByText('ai-workspace フォルダ')).toBeNull();
+  });
+
+  it('検索で区別しない違いの設定は、検索語だけでなくアイテム名の側にもかかる', () => {
+    setSearchNormalization({ ignoreWidth: true, ignoreKana: true });
+    try {
+      renderPicker([item('a', 'テスト ﾂｰﾙ', 'メイン'), item('b', 'メモ帳', 'メイン')]);
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ﾃｽﾄ つーる' } });
+      expect(screen.getByText('テスト ﾂｰﾙ')).toBeTruthy();
+      expect(screen.queryByText('メモ帳')).toBeNull();
+    } finally {
+      setSearchNormalization({ ignoreWidth: false, ignoreKana: false });
+    }
   });
 
   it('検索欄で Tab を押すと次のタブ、Shift+Tab で前のタブに切り替わり、フォーカスは検索欄のまま', () => {

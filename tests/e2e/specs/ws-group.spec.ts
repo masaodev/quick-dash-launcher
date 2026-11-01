@@ -203,6 +203,71 @@ test.describe('QuickDashLauncher - WSグループ', () => {
     }
   });
 
+  test('ランチャーで WSグループの行に F2 を押すと、アイテム管理でその行へスクロールして編集ダイアログを開く（A3-229 W8）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.evaluate(() => window.electronAPI.workspaceAPI.createGroup('E2E 仕事'));
+    // 行が一覧の下の方（最初は見えない位置）に来るよう、前にアイテムを並べる
+    const fillers: JsonItem[] = Array.from({ length: 60 }, (_, i) => ({
+      id: `wsgf2${String(i).padStart(3, '0')}`,
+      type: 'item',
+      displayName: `埋め草 ${i}`,
+      path: `https://example.com/${i}`,
+    }));
+    configHelper.writeDataFile('data.json', {
+      version: '1.0',
+      items: [
+        ...fillers,
+        { id: 'wsgf2row', type: 'wsgroup', scope: 'all', options: { prefix: 'WS: ' } } as JsonItem,
+      ],
+    });
+    await utils.reloadWithF5();
+    const row = (page: typeof mainWindow) =>
+      page.locator('tbody tr', { hasText: 'すべてのワークスペースグループ' });
+
+    const [adminWindow] = await test.step('初めて開くとき（管理ウィンドウを作る）', async () => {
+      await utils.searchFor('WS: E2E');
+      await expect(mainWindow.locator('.item', { hasText: 'WS: E2E 仕事' })).toBeVisible();
+      return Promise.all([
+        electronApp.waitForEvent('window', {
+          predicate: (window) => window.url().includes('admin.html'),
+          timeout: 10000,
+        }),
+        mainWindow.keyboard.press('F2'),
+      ]);
+    });
+    const modal = adminWindow.getByTestId('ws-group-modal');
+    const closeModal = async () => {
+      await modal.getByRole('button', { name: 'キャンセル' }).click();
+      await expect(modal).toHaveCount(0);
+    };
+    try {
+      await test.step('その行の編集ダイアログが開き、閉じるとその行が見えている（選びはしない）', async () => {
+        await expect(modal).toBeVisible();
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, 'F2 で開いた WSグループの編集');
+        await closeModal();
+        await expect(row(adminWindow)).toBeInViewport();
+        await expect(adminWindow.locator('tbody input[type="checkbox"]:checked')).toHaveCount(0);
+      });
+
+      await test.step('開いているアイテム管理で検索して行が隠れていても、検索を外して見せる', async () => {
+        await adminWindow.locator('.toolbar-search input').fill('埋め草 1');
+        await expect(row(adminWindow)).toHaveCount(0);
+        await mainWindow.evaluate(() => window.electronAPI.openEditWindowWithItem('wsgf2row'));
+        await expect(modal).toBeVisible();
+        await expect(adminWindow.locator('.toolbar-search input')).toHaveValue('');
+        await closeModal();
+        await expect(row(adminWindow)).toBeInViewport();
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   test('グループが 1 つも無いときに足した「すべてのグループ」の行も、グループを作ると F5 なしで並ぶ', async ({
     mainWindow,
     configHelper,

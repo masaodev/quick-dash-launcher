@@ -44,7 +44,11 @@ import {
   getCorruptedDataFiles,
   markDataFileCorrupted,
 } from './corruptedDataFiles.js';
-import { clearNewerFormatFile, markNewerFormatFile } from './newerFormatFiles.js';
+import {
+  clearNewerFormatFile,
+  isNewerFormatFile,
+  markNewerFormatFile,
+} from './newerFormatFiles.js';
 import { convertJsonItemToAppItems } from './jsonItemConverter.js';
 import { setHasWsGroupRows } from './wsGroupRows.js';
 import {
@@ -369,6 +373,9 @@ async function migrateLegacyItemsInDataFiles(
     }
     try {
       const raw: unknown = JSON.parse(content);
+      // 新しい版の QDL が保存したファイルは書き戻せない（writeDataFile が断る）ので変換しない。
+      // 対象に入れると、変換できないまま読み込みのたびに変換前のスナップショットだけを作ってしまう
+      if (isNewerFormatFile('data', raw)) continue;
       if (
         isRecord(raw) &&
         Array.isArray(raw.items) &&

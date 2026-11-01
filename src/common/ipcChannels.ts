@@ -106,6 +106,9 @@ export const IPC_CHANNELS = {
   OPEN_EDIT_WINDOW_WITH_TAB: 'open-edit-window-with-tab',
   OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL: 'open-edit-window-with-import-modal',
   GET_PENDING_IMPORT_MODAL: 'get-pending-import-modal',
+  /** アイテム管理を開いて、指定した id の行へスクロールし編集画面を開く（ランチャーの WSグループの行の F2。A3-229 W8） */
+  OPEN_EDIT_WINDOW_WITH_ITEM: 'window:open-admin-with-item',
+  GET_PENDING_REVEAL_ITEM: 'window:get-pending-reveal-item',
   GET_INITIAL_TAB: 'get-initial-tab',
   GET_ALL_WINDOWS: 'get-all-windows',
   GET_ALL_WINDOWS_ALL_DESKTOPS: 'get-all-windows-all-desktops',
@@ -267,6 +270,7 @@ export const IPC_CHANNELS = {
   /** 管理ウィンドウを隠した（× のほか Ctrl+E の切り替えなど、どの経路でも。開いている取込画面を閉じる。A3-187） */
   EVENT_ADMIN_HIDDEN: 'admin-hidden',
   EVENT_OPEN_IMPORT_MODAL: 'open-import-modal',
+  EVENT_REVEAL_ITEM: 'window:reveal-item-requested',
   EVENT_ICON_PROGRESS_START: 'icon-progress-start',
   EVENT_ICON_PROGRESS_UPDATE: 'icon-progress-update',
   EVENT_ICON_PROGRESS_COMPLETE: 'icon-progress-complete',

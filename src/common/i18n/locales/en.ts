@@ -98,6 +98,8 @@ export const en: LocaleMessages = {
         'Adds an item (folder import) that lists the files in a folder each time you open it',
       clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",
     },
+    partlyUnreadable:
+      "⚠ Couldn't read {{files}}, so its items aren't shown. Fix it, then press F5 to reload",
     empty: {
       noMatch: 'No items match "{{query}}"',
       noMatchWindow: 'No windows match "{{query}}"',
