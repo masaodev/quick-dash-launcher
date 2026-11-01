@@ -51,7 +51,7 @@ async function goToTryStep() {
 describe('SetupFirstLaunch', () => {
   it('ようこそ → ホットキー → 試してみるの順に進み、ホットキーは「次へ」で登録する', async () => {
     render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
-    expect(screen.getByText('QuickDashLauncher へようこそ')).toBeTruthy();
+    expect(screen.getByText('Quick Dash Launcher へようこそ')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: '次へ' }));
     expect(screen.getByText('ホットキーを決めましょう')).toBeTruthy();

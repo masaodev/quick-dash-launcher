@@ -45,7 +45,7 @@ test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作
     await test.step('実行前はランチャーが表示されている', async () => {
       const visible = await electronApp.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows().some(
-          (win) => win.getTitle() === 'QuickDashLauncher' && win.isVisible()
+          (win) => win.getTitle() === 'Quick Dash Launcher' && win.isVisible()
         )
       );
       expect(visible).toBe(true);
@@ -64,7 +64,7 @@ test.describe('QuickDashLauncher - アイテム実行時のウィンドウ動作
           async () =>
             electronApp.evaluate(({ BrowserWindow }) =>
               BrowserWindow.getAllWindows().some(
-                (win) => win.getTitle() === 'QuickDashLauncher' && win.isVisible()
+                (win) => win.getTitle() === 'Quick Dash Launcher' && win.isVisible()
               )
             ),
           { timeout: LAUNCH_DELAY_MS / 2, message: 'ランチャーが閉じませんでした' }

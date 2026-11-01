@@ -1,10 +1,10 @@
 # 用語集（画面の言葉と英訳）
 
-画面・README・Store の掲載文に出る QuickDashLauncher の言葉と、その英訳の正本です。日本語の辞書（`src/common/i18n/locales/ja.ts`）・英語の辞書（`en.ts`）・docs は、この表の言葉にそろえます。
+画面・README・Store の掲載文に出る Quick Dash Launcher の言葉と、その英訳の正本です。日本語の辞書（`src/common/i18n/locales/ja.ts`）・英語の辞書（`en.ts`）・docs は、この表の言葉にそろえます。
 
 ## この表に載せる言葉
 
-- 画面・README・Store の掲載文に出てくる言葉のうち、QuickDashLauncher 特有のもの、または表記がゆれやすいもの
+- 画面・README・Store の掲載文に出てくる言葉のうち、Quick Dash Launcher 特有のもの、または表記がゆれやすいもの
 - 「保存」「キャンセル」のような一般的な言葉は載せない
 - 型・フィールド・ファイルの説明は載せない（正本は型定義のコメントと各仕様書。「コード上の名前」の列は探すときの手がかりとして名前だけ書く）
 
@@ -21,6 +21,13 @@
 - 和文の区切りは「、」か「・」（「, 」を使わない）
 - 1 文だけのトースト・エラーは句点を付けない。2 文以上なら付ける
 - ラベルの末尾にコロンを付けるのは、登録・編集画面のフォルダ取込のオプションと、設定タブの欄だけ
+
+### アプリの名前
+
+- 画面・README・docs・Store の掲載文では、単語をスペースで区切って「Quick Dash Launcher」と書く。略すときは「QDL」
+- インストーラー版のスタートメニューのショートカットとアプリの一覧の名前も「Quick Dash Launcher」（package.json の `nsis.shortcutName`・`nsis.uninstallDisplayName`）。Store の掲載名は `appx.displayName`
+- 名前を変えると既存の利用者に響く識別子は、つなげた「QuickDashLauncher」のまま残す: exe 名（`build.productName`）・自動起動のショートカット `QuickDashLauncher.lnk`・データフォルダ `QuickDashLauncher-data`・エクスポートと配布物のファイル名・Store の `identityName`・CLI の応答の `app`・ログの名前・User-Agent。設定フォルダ `%APPDATA%\quick-dash-launcher` は package.json の `name` から決まる
+- タスク マネージャーや Windows の［設定］→［アプリ］→［スタートアップ］には exe 側の名前（QuickDashLauncher）が出るので、そこを案内する文はつなげた名前で書く
 
 ### ウィンドウまわりの言葉の決め方
 
@@ -122,11 +129,11 @@
 | --- | --- | --- | --- | --- |
 | 管理ウィンドウ | settings window | 管理画面、設定画面、設定・管理、admin window | 設定・アイテム管理・ヘルプのタブを持つウィンドウ | `AdminApp.tsx` |
 | 設定（タブ） | Settings | 基本設定タブ | 管理ウィンドウの設定のタブ。左のメニューで基本設定・ウィンドウ・バックアップ・ブックマーク自動取込を切り替える | `AdminSettingsTab` |
-| 基本設定 | General | — | 設定タブの最初のカテゴリ（言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI・詳細） | `AdminSettingsBasicSection` |
+| 基本設定 | General | — | 設定タブの最初のカテゴリ（言語・起動ホットキー・起動と更新・検索・Quick Dash Launcher CLI・詳細） | `AdminSettingsBasicSection` |
 | アイテム管理 | Item Manager | 編集画面、編集モード、アイテム編集 | 管理ウィンドウでアイテムとタブを編集するタブ（Ctrl+E） | `AdminItemManagerView` |
 | 起動ホットキー | launch hotkey | ショートカットキー、hot key | ランチャーを出すキーの組み合わせ | `hotkey` |
 | 表示言語 | display language | — | 画面に使う言語（自動・日本語・English） | `language` |
-| 自動起動 | start with Windows | スタートアップ起動 | Windows の起動時に QuickDashLauncher を起動すること | `autoLaunch` |
+| 自動起動 | start with Windows | スタートアップ起動 | Windows の起動時に Quick Dash Launcher を起動すること | `autoLaunch` |
 | バージョン | version | 新しい版、最新の版 | QDL 本体や qdl.exe のバージョン（v0.8.0 など）。「ベータ版」「ZIP 版」「Store 版」のような種類の名前の「版」はそのまま使う | `version` |
 | アップデートの確認 | update check | 更新の知らせ（設定の名前として） | 1 日 1 回 GitHub で新しいバージョンを確かめ、あれば知らせること。インストールはしない | `updateCheckEnabled` |
 | ZIP 版 | ZIP | ポータブル版（ZIP 版を指すとき） | ZIP を展開して使う配布形式。データの置き場は既定で %APPDATA%（インストーラー版と同じ）。以前の 1 ファイルの exe は「以前の 1 ファイルの exe のポータブル版」と書く | `portable`（`AppDistribution`） |
@@ -146,7 +153,7 @@
 | インポート | import | — | エクスポートした zip で、設定フォルダをまるごと置き換えること（そのあと再起動する）。アイテムを足す「取込」（ブックマーク取込・アプリ取込・CSV から取り込む）とは分ける | `readDataImport`・`backupAPI.applyImport` |
 | 設定フォルダ | settings folder | 設定ディレクトリ、config folder | 設定とデータを保存するフォルダ | `PathManager.getConfigFolder()` |
 | トースト | notification | トースト通知、toast | 画面の下に少しの間だけ出る知らせ | `showToastWindow` |
-| QuickDashLauncher CLI | QuickDashLauncher CLI | コマンドライン（qdl を指す意味で） | ターミナルや AI から使う `qdl` コマンド | `qdl.exe` |
+| Quick Dash Launcher CLI | Quick Dash Launcher CLI | コマンドライン（qdl を指す意味で） | ターミナルや AI から使う `qdl` コマンド | `qdl.exe` |
 
 ## 直すとき
 

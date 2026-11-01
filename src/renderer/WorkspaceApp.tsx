@@ -289,8 +289,8 @@ const WorkspaceApp: React.FC = () => {
     const groupName = source.find((g) => g.id === detachedGroupId)?.displayName;
     if (!groupName) return;
     document.title = isArchiveMode
-      ? `${groupName} (${t('workspace.detached.archivedBadge')}) - QuickDashLauncher`
-      : `${groupName} - QuickDashLauncher`;
+      ? `${groupName} (${t('workspace.detached.archivedBadge')}) - Quick Dash Launcher`
+      : `${groupName} - Quick Dash Launcher`;
   }, [isDetached, isArchiveMode, detachedGroupId, groups, archivedGroups, t]);
 
   useEffect(() => {

@@ -203,7 +203,7 @@ test.describe('QuickDashLauncher - データのエクスポートとインポー
       await adminWindow.getByTestId('import-data').click();
       await expect(
         adminWindow.getByText(
-          'QuickDashLauncher でエクスポートしたファイルではないため、インポートできません'
+          'Quick Dash Launcher でエクスポートしたファイルではないため、インポートできません'
         )
       ).toBeVisible();
       await expect(adminWindow.getByTestId('confirm-dialog')).toHaveCount(0);

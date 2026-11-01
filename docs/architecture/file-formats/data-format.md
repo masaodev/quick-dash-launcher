@@ -1,12 +1,12 @@
 # データファイル形式仕様
 
-QuickDashLauncherのデータファイル形式の完全な仕様です。
+Quick Dash Launcher のデータファイル形式の完全な仕様です。
 
 ## 1. ファイル概要
 
 ### 1.1. 対象ファイル
 
-QuickDashLauncherは複数のJSON形式のデータファイルをサポートしています：
+Quick Dash Launcher は複数のJSON形式のデータファイルをサポートしています：
 
 - **data.json**: メインのデータファイル（必須、削除不可）
 - **data2.json, data3.json, data4.json...**: 追加のデータファイル（オプション）
@@ -645,7 +645,7 @@ v0.8.0-beta.12 までは、既にあるウィンドウを探して前面に出�
 
 ## 4. 重複排除ルール
 
-QuickDashLauncherは、アイテムの重複を自動的に排除します。
+Quick Dash Launcher は、アイテムの重複を自動的に排除します。
 
 ### 4.1. 重複判定の基準
 

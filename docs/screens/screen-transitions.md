@@ -1,6 +1,6 @@
 # 画面遷移図
 
-QuickDashLauncherの全画面の遷移関係を示します。
+Quick Dash Launcher の全画面の遷移関係を示します。
 
 ## 画面遷移フロー
 

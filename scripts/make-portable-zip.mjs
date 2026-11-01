@@ -25,7 +25,7 @@ const zipPath = path.join(releaseDir, `QuickDashLauncher-${version}-portable.zip
 const MARKER_FILE = 'portable.txt';
 const DATA_DIR = 'QuickDashLauncher-data';
 const MARKER_TEXT = [
-  'QuickDashLauncher (ZIP)',
+  'Quick Dash Launcher (ZIP)',
   '',
   'Settings and data are saved in %APPDATA%\\quick-dash-launcher, the same place as the installer.',
   'To update, extract the new ZIP to another folder. It uses the same data.',
@@ -36,7 +36,7 @@ const MARKER_TEXT = [
   `To update in portable mode, move ${DATA_DIR} into the new folder.`,
   'To move existing data, export it in the settings window and import it after switching.',
   '',
-  'QuickDashLauncher（ZIP 版）',
+  'Quick Dash Launcher（ZIP 版）',
   '',
   '設定とデータは、インストーラー版と同じ %APPDATA%\\quick-dash-launcher に保存されます。',
   '新しいバージョンにするときは、新しい ZIP を別のフォルダに展開してください。同じデータを使います。',

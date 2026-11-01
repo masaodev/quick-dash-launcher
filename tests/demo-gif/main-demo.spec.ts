@@ -139,7 +139,7 @@ test('メインデモ', async () => {
         scale: screen.getDisplayMatching(b).scaleFactor,
       };
     }, BACKDROP_MARGIN);
-    await showBackdrop(app, area, 'QuickDashLauncher');
+    await showBackdrop(app, area, 'Quick Dash Launcher');
     const rect = {
       logicalWidth: area.width,
       x: Math.round(area.x * scale),

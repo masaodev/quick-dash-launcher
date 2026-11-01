@@ -2,7 +2,7 @@
   <img src="assets/icon.svg" width="96" alt="" />
 </p>
 
-<h1 align="center">QuickDashLauncher</h1>
+<h1 align="center">Quick Dash Launcher</h1>
 
 <p align="center"><b>English</b> | <a href="README.ja.md">日本語</a></p>
 
@@ -25,7 +25,7 @@ Only what you've added shows up. A keyword can be any part of the name you gave 
 </p>
 
 <p align="center">
-  <img src="docs/images/demo-main-en.gif" alt="QuickDashLauncher demo" />
+  <img src="docs/images/demo-main-en.gif" alt="Quick Dash Launcher demo" />
 </p>
 
 <!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->
@@ -60,13 +60,13 @@ winget install masaodev.quick-dash-launcher
 
 ## Why you add items yourself
 
-Many launchers, such as PowerToys Run, index every installed app and file automatically. Things you never use end up in the results, and you still have to hunt for what you want. The author built QuickDashLauncher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there.
+Many launchers, such as PowerToys Run, index every installed app and file automatically. Things you never use end up in the results, and you still have to hunt for what you want. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there.
 
 Adding items one at a time takes effort, so there are ways to add many at once. Point to a folder, and the files in it show up in the list (folder import). You can also pick apps from the Start menu and your browser bookmarks from a list and import them.
 
 Everything you've added appears in a list in the [settings window](#screenshots), where you can edit it all together.
 
-| | Search-based launchers (PowerToys Run and others) | QuickDashLauncher |
+| | Search-based launchers (PowerToys Run and others) | Quick Dash Launcher |
 | --- | --- | --- |
 | What shows up | Everything installed | Only what you've added |
 | Setup effort | None (added automatically) | Import folders, apps, and bookmarks in bulk |

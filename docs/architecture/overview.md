@@ -1,6 +1,6 @@
 # システム概要
 
-QuickDashLauncherのアーキテクチャ概要とデータフローを説明します。
+Quick Dash Launcher のアーキテクチャ概要とデータフローを説明します。
 
 ## プロセス構造
 
