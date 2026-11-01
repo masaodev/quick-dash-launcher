@@ -1336,6 +1336,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setRowsMissing_one: '⚠ {{count}} 行見つかりません',
       setRowsMissing_other: '⚠ {{count}} 行見つかりません',
       setRowsMissingTitle: '見つからない行（パスが無い・指すアイテムが消えた）:\n{{rows}}',
+      wsGroupsMissing_one: '⚠ グループ {{count}} 件が見つかりません',
+      wsGroupsMissing_other: '⚠ グループ {{count}} 件が見つかりません',
+      wsGroupsMissingTitle:
+        '選んだグループのうち、ワークスペースに見つからないものがあります（消えたグループ・サブグループになったもの）。ランチャーには並びません。✏️ 詳細編集で「反映」すると外れます',
       dirPathPlaceholder: 'フォルダのパスを入力',
       pathPlaceholder: 'パスまたは URL を入力',
       detailOnly: '{{type}}は ✏️ 詳細編集から編集します（ダブルクリックで開く）',

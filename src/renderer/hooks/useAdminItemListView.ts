@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { EditableJsonItem, PathExistenceStatus } from '@common/types/editableItem';
 import type { LaunchUsageRecord } from '@common/types/launchUsage';
+import { isJsonWsGroupItem } from '@common/types';
+import { findMissingWsGroupIds } from '@common/utils/wsGroupExpansion';
 
 import {
   activeFilterColumns,
@@ -22,7 +24,9 @@ import {
   useAdminPathExistence,
   evaluateItemPathCheck,
   type ItemPathCheck,
+  type PathCheckSummary,
 } from './useAdminPathExistence';
+import { useWsGroupCandidates } from './useWsGroupCandidates';
 
 interface UseAdminItemListViewOptions {
   /** 未保存の編集を含む全データファイルのアイテム */
@@ -85,27 +89,74 @@ export function useAdminItemListView({
     }
     return map;
   }, [workingItems, workingItemIds, pathCheck.hasChecked, pathCheck.checkedIds, pathCheck.results]);
+
+  // WSグループの行が指すグループ（A3-224）。グループはすぐ確かめられるので、
+  // 「リンク切れを確認」を押さなくても、見つからないグループのある行に印を出す
+  const hasWsGroupRows = useMemo(
+    () => workingItems.some((item) => isJsonWsGroupItem(item.item)),
+    [workingItems]
+  );
+  const wsGroupCandidates = useWsGroupCandidates(hasWsGroupRows);
+  /** WSグループの行（全データファイル）→ 見つからないグループの数（0 件の行は入れない） */
+  const missingWsGroupCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!wsGroupCandidates) return map;
+    for (const item of workingItems) {
+      if (!isJsonWsGroupItem(item.item)) continue;
+      const count = findMissingWsGroupIds(item.item, wsGroupCandidates).length;
+      if (count > 0) map.set(getItemKey(item), count);
+    }
+    return map;
+  }, [workingItems, wsGroupCandidates]);
+  /** WSグループの行の見つからないグループの数（WSグループ以外・見つかる行は 0） */
+  const missingWsGroupCountOf = useCallback(
+    (item: EditableJsonItem): number => missingWsGroupCounts.get(getItemKey(item)) ?? 0,
+    [missingWsGroupCounts]
+  );
+
   const linkStatusOf = useCallback(
-    (item: EditableJsonItem): PathExistenceStatus | undefined =>
-      pathChecks.get(getItemKey(item))?.status,
-    [pathChecks]
+    (item: EditableJsonItem): PathExistenceStatus | undefined => {
+      const key = getItemKey(item);
+      if (missingWsGroupCounts.has(key)) return 'missing';
+      // 見つかる WSグループの行は、ほかの行と同じく確認したあとだけ ✓ を出す
+      if (isJsonWsGroupItem(item.item)) {
+        return wsGroupCandidates && pathCheck.checkedIds.has(item.item.id) ? 'exists' : undefined;
+      }
+      return pathChecks.get(key)?.status;
+    },
+    [pathChecks, missingWsGroupCounts, wsGroupCandidates, pathCheck.checkedIds]
   );
   /** セットの行のうち見つからない行の名前（A3-79 #8。セット以外・確認していなければ空） */
   const missingSetRowsOf = useCallback(
     (item: EditableJsonItem): string[] => pathChecks.get(getItemKey(item))?.missingSetRows ?? [],
     [pathChecks]
   );
+  /** 表示中のデータファイルの、見つからない行（下の帯の「リンク切れ: N 件」と行の印） */
   const missingIds = useMemo(() => {
     const ids = new Set<string>();
     for (const [key, check] of pathChecks) {
       if (check.status === 'missing') ids.add(key);
     }
+    for (const item of workingItems) {
+      if (item.meta.sourceFile !== selectedDataFile) continue;
+      const key = getItemKey(item);
+      if (missingWsGroupCounts.has(key)) ids.add(key);
+    }
     return ids;
-  }, [pathChecks]);
-  /** 「リンク切れを確認」を実行する（表示中のデータファイルのアイテムを確かめる） */
+  }, [pathChecks, workingItems, selectedDataFile, missingWsGroupCounts]);
+  /** 「リンク切れを確認」を実行する（表示中のデータファイルのアイテムを確かめる。WSグループの行も数える） */
   const runPathCheck = useCallback(
-    (items: EditableJsonItem[]) => pathCheck.runCheck(items, workingItemIds),
-    [pathCheck, workingItemIds]
+    async (items: EditableJsonItem[]): Promise<PathCheckSummary> => {
+      const summary = await pathCheck.runCheck(items, workingItemIds);
+      if (!wsGroupCandidates) return summary;
+      for (const item of items) {
+        if (!isJsonWsGroupItem(item.item)) continue;
+        summary.checked++;
+        if (findMissingWsGroupIds(item.item, wsGroupCandidates).length > 0) summary.missing++;
+      }
+      return summary;
+    },
+    [pathCheck, workingItemIds, wsGroupCandidates]
   );
 
   // 読み込み・保存で確認の結果が捨てられたら、リンクの絞り込みも解く
@@ -197,6 +248,7 @@ export function useAdminItemListView({
     pathCheck,
     linkStatusOf,
     missingSetRowsOf,
+    missingWsGroupCountOf,
     missingIds,
     runPathCheck,
     filteredItems,

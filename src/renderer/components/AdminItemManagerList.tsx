@@ -61,6 +61,8 @@ interface AdminItemManagerListProps {
   linkStatusOf: (item: EditableJsonItem) => PathExistenceStatus | undefined;
   /** セットの行のうち見つからない行の名前（セット以外・確認していなければ空） */
   missingSetRowsOf: (item: EditableJsonItem) => string[];
+  /** WSグループの行の見つからないグループの数（A3-224。WSグループ以外は 0） */
+  missingWsGroupCountOf: (item: EditableJsonItem) => number;
   /** 起動の記録（記録が無ければ undefined） */
   usageOf: (item: EditableJsonItem) => LaunchUsageRecord | undefined;
   /** 追加直後に名前セルを編集状態にするアイテムの id */
@@ -98,6 +100,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
   filterOptions,
   linkStatusOf,
   missingSetRowsOf,
+  missingWsGroupCountOf,
   usageOf,
   autoEditItemId,
   onAutoEditHandled,
@@ -260,6 +263,7 @@ const AdminItemManagerList: React.FC<AdminItemManagerListProps> = ({
                 pathMissing={missingIds.has(itemKey)}
                 linkStatus={linkStatusOf(item)}
                 missingSetRows={missingSetRowsOf(item)}
+                missingWsGroupCount={missingWsGroupCountOf(item)}
                 lastLaunchedAt={usageOf(item)?.lastLaunchedAt}
                 launchCount={usageOf(item)?.count}
                 iconData={getAdminItemIcon(itemIcons, jsonItem)}

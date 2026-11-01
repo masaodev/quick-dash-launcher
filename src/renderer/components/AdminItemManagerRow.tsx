@@ -37,6 +37,8 @@ export interface AdminItemManagerRowProps {
   linkStatus?: PathExistenceStatus;
   /** セットの行のうち見つからない行の名前（A3-79 #8。セット以外は空） */
   missingSetRows?: string[];
+  /** WSグループの行の見つからないグループの数（A3-224。WSグループ以外は 0） */
+  missingWsGroupCount?: number;
   /** 最後に起動した日時と回数（記録が無ければ undefined） */
   lastLaunchedAt?: number;
   launchCount?: number;
@@ -87,6 +89,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   pathMissing,
   linkStatus,
   missingSetRows = [],
+  missingWsGroupCount = 0,
   lastLaunchedAt,
   launchCount,
   editingColumn,
@@ -237,19 +240,32 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
     </span>
   );
 
+  /** WSグループの見つからないグループの印（「⚠ グループ N 件が見つかりません」。A3-224） */
+  const renderWsGroupsMissingLabel = () => (
+    <span
+      className="missing-path-label"
+      data-testid="ws-group-row-missing"
+      title={t('itemManager.row.wsGroupsMissingTitle')}
+    >
+      {t('itemManager.row.wsGroupsMissing', { count: missingWsGroupCount })}
+    </span>
+  );
+
+  /** 見つからないものの印（セットは行の数、WSグループはグループの数、ほかはパス） */
+  const renderMissingLabel = () => {
+    if (missingSetRows.length > 0) return renderSetRowsMissingLabel();
+    if (missingWsGroupCount > 0) return renderWsGroupsMissingLabel();
+    return (
+      <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
+        {t('itemManager.row.pathMissing')}
+      </span>
+    );
+  };
+
   const renderPathCell = () => {
     const text = describePathAndArgs(jsonItem);
-    // パスの確認の列を隠しているときは、パスの列の先頭に同じ印を付ける（セットは行の数と名前）
-    const missingBadge =
-      pathMissing && !showsLinkColumn ? (
-        missingSetRows.length > 0 ? (
-          renderSetRowsMissingLabel()
-        ) : (
-          <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
-            {t('itemManager.row.pathMissing')}
-          </span>
-        )
-      ) : null;
+    // パスの確認の列を隠しているときは、パスの列の先頭に同じ印を付ける（セットは行の数と名前、WSグループはグループの数）
+    const missingBadge = pathMissing && !showsLinkColumn ? renderMissingLabel() : null;
 
     if (editingColumn === 'path') {
       return (
@@ -323,16 +339,7 @@ const AdminItemManagerRow: React.FC<AdminItemManagerRowProps> = ({
   };
 
   const renderLinkCell = () => {
-    if (linkStatus === 'missing' && missingSetRows.length > 0) {
-      return renderSetRowsMissingLabel();
-    }
-    if (linkStatus === 'missing') {
-      return (
-        <span className="missing-path-label" title={t('itemManager.row.pathMissingTitle')}>
-          {t('itemManager.row.pathMissing')}
-        </span>
-      );
-    }
+    if (linkStatus === 'missing') return renderMissingLabel();
     if (linkStatus === 'exists') {
       return (
         <span className="link-exists" title={t('itemManager.row.linkExistsTitle')}>

@@ -1333,6 +1333,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       setRowsMissing_other: '⚠ {{count}} rows not found',
       setRowsMissingTitle:
         'Rows not found (the path is missing or the item was deleted):\n{{rows}}',
+      wsGroupsMissing_one: '⚠ {{count}} group not found',
+      wsGroupsMissing_other: '⚠ {{count}} groups not found',
+      wsGroupsMissingTitle:
+        'Some selected groups were not found in the workspace (deleted, or moved under another group). They are not listed in the launcher. Apply in ✏️ Edit details to remove them',
       dirPathPlaceholder: 'Enter a folder path',
       pathPlaceholder: 'Enter a path or URL',
       detailOnly: 'Edit {{type}} items in ✏️ Edit details (double-click to open)',
