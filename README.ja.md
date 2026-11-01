@@ -8,7 +8,7 @@
 
 **アプリ・ファイル・フォルダ・URL を登録して、キーワードを打って開くランチャーです。**
 
-候補に出るのは、自分で登録したものだけ。キーワードは付けた名前の一部でよく、「毎日使うもの」「案件ごと」のように自由にタブで分けられます。
+検索すると、似た名前のファイルや関係のないファイルまで出てきてうんざりしたことはありませんか。Quick Dash Launcher の候補に出るのは、自分で登録したものだけです。キーワードは付けた名前の一部でよく、「毎日使うもの」「案件ごと」のように自由にタブで分けられます。
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
@@ -29,13 +29,6 @@
 </p>
 
 <!-- 日本語版が正本。英語版（README.md）は訳で、同じ PR で両方を直す。メインデモ GIF は `npm run docs:demo-gif` で撮り直す（英語版は docs:demo-gif:en。デモデータ＝tests/demo-gif/demo-content-ja.ts と tests/e2e/templates/demo/） -->
-
-## こんな人に
-
-- いくつもの仕事を並行して進めていて、フォルダ・資料・Web の管理画面を開くたびに探している
-- 共有フォルダの深い階層を毎回たどっている
-- Teams のチャットやよく使う Web ページを、アプリやブックマークを開いて探している
-- 使わないアプリやファイルが候補に出てくるのを避けたい
 
 無料のオープンソース（MIT）です。winget ですぐに試せます（ほかの入れ方は[インストール](#インストール)）。
 

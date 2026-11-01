@@ -8,7 +8,7 @@
 
 **A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword.**
 
-Only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project.
+Tired of searches that bring up files with similar names, or files that have nothing to do with what you want? In Quick Dash Launcher, only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project.
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
@@ -29,13 +29,6 @@ Only what you've added shows up. A keyword can be any part of the name you gave 
 </p>
 
 <!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->
-
-## Who it's for
-
-- You juggle several projects and keep searching for the same folders, documents, and web admin pages.
-- You click through deep shared-folder paths every time.
-- You open apps or bookmarks just to find a Teams chat or a webpage you use often.
-- You don't want apps and files you never use showing up in the results.
 
 It's free and open source (MIT). Try it right away with winget (for other ways, see [Installation](#installation)).
 
