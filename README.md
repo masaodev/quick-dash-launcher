@@ -186,6 +186,10 @@ npm run test:unit    # Run unit tests
 
 ---
 
+## Privacy
+
+Quick Dash Launcher does not send your information to the author or anyone else. All data is stored on your PC. For details, see the [Privacy Policy](./PRIVACY.md).
+
 ## License
 
 Released under the [MIT License](./LICENSE).

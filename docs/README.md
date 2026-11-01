@@ -57,6 +57,7 @@ docs/
 | npm scripts・環境変数・開発手順の変更 | setup/development.md |
 | ビルド・配布の変更 | setup/build-deploy.md |
 | テスト構成・テストコマンドの変更 | testing/README.md（リポジトリ直下の tests/README.md・tests/e2e/README.md も） |
+| 外部との通信、または PC の中で読む情報（ブックマーク・クリップボードなど）の追加・変更 | リポジトリ直下の PRIVACY.ja.md（日本語。正本）と PRIVACY.md（英語の訳）。施行日も改める |
 | リポジトリ直下の README.ja.md（日本語。正本）の変更 | README.md（英語の訳）。用語は architecture/glossary.md の English にそろえる。片方だけの変更は PR のチェック（README sync）で止まる |
 
 直し漏れは、リリース前の `/docs-check`（前回の点検以降に変わったコードに触れている文書の照合）でも拾う。
@@ -76,6 +77,7 @@ docs/
 | 文書 | 役割 |
 | --- | --- |
 | [README.md](../README.md) | 利用者向けの入口（紹介・画面・インストール）。細かい説明は features/ に置き、README からリンクする |
+| [PRIVACY.md](../PRIVACY.md)・[PRIVACY.ja.md](../PRIVACY.ja.md) | プライバシーポリシー（英語・日本語。日本語が正本）。Microsoft Store の提出で URL を入れる。外への通信や PC の中で読む情報を変えたら直す |
 | [CLAUDE.md](../CLAUDE.md) | Claude Code 向けの作業指示 |
 | [tests/README.md](../tests/README.md) ほか tests/ 配下の各 README | そのフォルダの案内（テストの正本は [テスト](testing/README.md)） |
 | [scripts/README.md](../scripts/README.md) | 開発用スクリプトの説明 |
