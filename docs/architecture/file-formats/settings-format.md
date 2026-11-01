@@ -127,6 +127,8 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 | **editModeWidth** | number | 1200 | 管理ウィンドウの幅（ピクセル） |
 | **editModeHeight** | number | 1000 | 管理ウィンドウの高さ（ピクセル） |
 
+範囲は幅 400〜2000・高さ 300〜1200（管理ウィンドウは幅 800〜2000・高さ 600〜1200。`src/common/settingRanges.ts`）。手で直して範囲の外にした値は範囲の端に、数値でない値は既定値に読み替える（`workspaceOpacity`・`backupRetention` も同じ。ファイルは書き換えず、設定画面で保存すると直る。`src/main/services/settingsService.ts`）。
+
 ### 3.4. 自動起動・CLI 設定
 
 | フィールド | 型 | 既定値 | 説明 |

@@ -10,6 +10,7 @@ import {
 import type { AppSettings } from '@common/types';
 import { validateHotkey } from '@common/utils/hotkeyValidator';
 import { isNewerFormatVersion } from '@common/utils/formatVersion';
+import { SETTING_NUMBER_RANGES } from '@common/settingRanges';
 import { DEFAULT_LANGUAGE_SETTING } from '@common/i18n/languages';
 import logger from '@common/logger';
 
@@ -238,11 +239,45 @@ export class SettingsService {
     return SettingsService.instance;
   }
 
+  /**
+   * 範囲のある数値の設定を、使える値にして返す（ファイルは書き換えない）
+   *
+   * settings.json を手で直して範囲の外（`windowHeight: -5` など）や数値でない値にすると、
+   * そのまま使えば高さ 39px のランチャーのような使えない画面になる。数値でなければ既定値に、
+   * 範囲の外なら範囲の端に寄せる。設定画面で保存し直せばファイルも直る
+   */
+  private static sanitizeValue<K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K]
+  ): AppSettings[K] {
+    if (!Object.prototype.hasOwnProperty.call(SETTING_NUMBER_RANGES, key)) return value;
+    const { min, max } = SETTING_NUMBER_RANGES[key as keyof typeof SETTING_NUMBER_RANGES];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return SettingsService.DEFAULT_SETTINGS[key];
+    }
+    return Math.min(max, Math.max(min, value)) as AppSettings[K];
+  }
+
+  /** getAll の結果の、範囲のある数値の設定を使える値にする（範囲の中なら同じオブジェクトを返す） */
+  private static sanitizeAll(settings: AppSettings): AppSettings {
+    let result: AppSettings | null = null;
+    for (const key of Object.keys(SETTING_NUMBER_RANGES) as (keyof AppSettings)[]) {
+      const next = SettingsService.sanitizeValue(key, settings[key]);
+      if (next !== settings[key]) {
+        result ??= { ...settings };
+        (result as unknown as Record<string, unknown>)[key] = next;
+      }
+    }
+    return result ?? settings;
+  }
+
   public async get<K extends keyof AppSettings>(key: K): Promise<AppSettings[K]> {
     const store = await this.ensureStore();
     try {
-      if (this.newerFormat) return this.readWithoutSaving(store, key);
-      return store.get(key);
+      if (this.newerFormat) {
+        return SettingsService.sanitizeValue(key, this.readWithoutSaving(store, key));
+      }
+      return SettingsService.sanitizeValue(key, store.get(key));
     } catch (error) {
       logger.error({ error, key }, 'Failed to get setting');
       return SettingsService.DEFAULT_SETTINGS[key];
@@ -329,13 +364,13 @@ export class SettingsService {
     const store = await this.ensureStore();
     try {
       if (this.newerFormat) {
-        return {
+        return SettingsService.sanitizeAll({
           ...structuredClone(SettingsService.DEFAULT_SETTINGS),
           ...store.store,
           ...this.sessionOverrides,
-        };
+        });
       }
-      return store.store;
+      return SettingsService.sanitizeAll(store.store);
     } catch (error) {
       logger.error({ error }, 'Failed to get all settings');
       return SettingsService.DEFAULT_SETTINGS;
