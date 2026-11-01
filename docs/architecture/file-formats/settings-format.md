@@ -78,6 +78,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "recordLaunchUsage": true,
   "updateCheckEnabled": true,
   "updateCheckIncludeBeta": false,
+  "launchInheritEnvironment": false,
   "adminItemColumns": {
     "visible": {},
     "widths": {}
@@ -276,6 +277,7 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 | **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「検索」にある「起動回数を記録する」 |
 | **updateCheckEnabled** | boolean | true | 新しいバージョンを確認して知らせるか（[ファイル形式一覧 - 更新の知らせ](README.md#更新の知らせ)）。設定画面では基本設定の「起動と更新」にある「アップデートを自動で確認する」。初回設定の画面でも選べる。Store 版では使わない（画面にも出さない） |
 | **updateCheckIncludeBeta** | boolean | false | 正式版を使っていても、ベータ版を知らせるか。ベータ版を使っている間は、この値に関係なくベータ版も知らせる。設定画面では「ベータ版も確認する」（「アップデートを自動で確認する」がオフの間は押せない） |
+| **launchInheritEnvironment** | boolean | false | アプリを起動するときに QuickDashLauncher の環境変数を引き継ぐか。`false` なら、スタートメニューから開いたときと同じユーザーの標準の環境変数で起動する（[起動するアプリの環境変数](../window-control.md#起動するアプリの環境変数)）。`true` は従来の動きで、QuickDashLauncher を起動したターミナルで設定した環境変数も届く。設定画面では基本設定の「詳細」にある「アプリに QuickDashLauncher の環境変数を引き継ぐ」 |
 | **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`lastLaunched`・`launchCount`・`updatedAt`。`memo`・`link`・`lastLaunched`・`launchCount` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`）の `widths` は使わない。`pathAndArgs` は `widths` が無ければ残りの幅を使う。画面の見出しの右クリックと見出しの右端のドラッグ・ダブルクリックで変わり、設定画面にはない |
 
 ---

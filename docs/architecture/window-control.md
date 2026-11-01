@@ -494,6 +494,7 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
    - アイテムタイプに応じた起動処理を統一
    - URL、ファイル、フォルダ、アプリ、カスタムURI、クリップボード（書き戻し）をサポート
    - `launchItem()` は失敗しても例外を投げず、ログに残して `LaunchResult` を返す。利用者への通知は呼び出し側（`notifyLaunchFailure()`、`itemOpener.ts`）が行う
+   - アプリを spawn で起動するときは、ユーザーの標準の環境変数を渡す（[起動するアプリの環境変数](#起動するアプリの環境変数)）
    - コマンドインジェクション対策を実装
 
 4. **windowMatcher.ts**
@@ -506,6 +507,26 @@ Escape はページに届き、セル編集の取り消しや確認ダイアロ�
    - Windows API（`SetWindowPos`, `ShowWindow`）を使用
    - `holdForeground()` は前面のウィンドウを控え、操作で対象に前面を取られたら元に戻す関数を返す（前面に出さない操作を挟むため）
    - 仮想スクリーン座標系でマルチモニタ対応
+
+### 起動するアプリの環境変数
+
+子のプロセスは親の環境変数をそのまま受け継ぐ。そのため QuickDashLauncher を Claude Code・開発用のターミナル・`qdl` コマンドの自動起動（QuickDashLauncher が動いていないと起動する）などから起動すると、そこで足された変数が、QuickDashLauncher から起動するアプリにまで届く。例: Claude Code の `CLAUDECODE`・`CLAUDE_CODE_CHILD_SESSION`（届いた claude は自分を子のセッションとみなし、会話の記録を残さない）、開発中の `NODE_ENV`・`APP_INSTANCE`、ポータブル版の `PORTABLE_EXECUTABLE_FILE`、Git Bash が足した PATH。QuickDashLauncher を起動した後に足した PATH が届かない、という問題も同じ根。
+
+そこで、アプリを起動するたびに Windows の `CreateEnvironmentBlock`（`bInherit = FALSE`）で、ログオン直後の新しいプロセスと同じ「ユーザーの標準の環境変数」を作って渡す（`src/main/utils/launchEnvironment.ts`・`standardEnvironment.ts`。数ミリ秒）。
+
+- 標準の環境に無いセッションごとの値（`SESSIONNAME`・`CLIENTNAME`）は、QuickDashLauncher の環境から足す
+- QuickDashLauncher 自身の環境（`process.env`）は書き換えない。書き換えると、トレイの「再起動」（`app.relaunch`）で `APP_INSTANCE`・`QUICK_DASH_CONFIG_DIR`・`PORTABLE_EXECUTABLE_FILE` が消え、開発用のインスタンスが本番のデータを開くおそれがあるため
+- 設定 `launchInheritEnvironment` が `true` のとき（従来の動き）と、標準の環境を作れなかったとき（ログに残す）は、`env` を渡さず QuickDashLauncher の環境を引き継ぐ
+- ファイル名だけのパス（`wt.exe` など）を PATH から探すとき（`resolveFromPath()`）も、同じ環境の PATH で探す
+
+経路ごとの扱い:
+
+| 経路 | 対象 | 環境変数 |
+| --- | --- | --- |
+| spawn | 引数ありのアプリ、.bat・.cmd、ストアアプリ（`explorer.exe shell:AppsFolder\…`） | 標準の環境を渡す |
+| `shell.openPath` | 引数なしのアプリ、ショートカット、ファイル、フォルダ | Electron の API が環境を受け取らないので、今は QuickDashLauncher の環境のまま |
+| `shell.openExternal` | URL、カスタム URI | 同上 |
+| 管理者として実行（`ShellExecuteExW` の `runas`） | 「常に管理者として実行」のアプリ | Windows が親の環境を渡さない（昇格したプロセスは標準の環境で始まる）ので、何もしない |
 
 ### 仮想デスクトップ移動機能
 

@@ -14,6 +14,7 @@ import { ClipboardService } from '../services/clipboardService.js';
 import { mainI18n } from '../services/mainI18n.js';
 
 import { noteLaunchedPath } from './folderPathProbe.js';
+import { getLaunchEnvironment, type LaunchEnvironment } from './launchEnvironment.js';
 import { isBareFileName, resolveFromPath } from './pathResolver.js';
 import { shellExecuteRunAs, type RunAsRequest } from './shellExecuteRunAs.js';
 
@@ -103,12 +104,14 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
 
 /**
  * spawn でプロセスを起動し、起動できたか（spawn か error のどちらかが来るまで）を待つ
+ *
+ * env が undefined なら QuickDashLauncher の環境変数を引き継ぐ。ファイル名だけのコマンドは env の PATH から探される
  * @returns 失敗の理由（起動できたら undefined）
  */
 function spawnDetached(
   command: string,
   args: string[],
-  options: { shell?: boolean; cwd?: string },
+  options: { shell?: boolean; cwd?: string; env: LaunchEnvironment | undefined },
   logger: Logger,
   logContext: Record<string, unknown>,
   errorMessage: string
@@ -118,6 +121,7 @@ function spawnDetached(
     stdio: 'ignore',
     shell: options.shell,
     cwd: options.cwd,
+    ...(options.env && { env: options.env }),
   });
   child.unref();
   return new Promise((resolve) => {
@@ -159,13 +163,15 @@ async function openPathOrLog(
 /** @returns 失敗の理由（起動できたら undefined） */
 async function launchApp(item: LaunchableItem, logger: Logger): Promise<string | undefined> {
   const logContext = { path: item.path, name: item.displayName };
+  // 起動するアプリに渡す環境変数（ユーザーの標準の環境。docs/architecture/window-control.md「起動するアプリの環境変数」）
+  const env = await getLaunchEnvironment(logger);
 
   // 登録アプリ（shell:AppsFolder\パス）の場合はexplorer.exe経由で起動
   if (item.path.startsWith('shell:AppsFolder\\')) {
     return spawnDetached(
       'explorer.exe',
       [item.path],
-      {},
+      { env },
       logger,
       logContext,
       '登録アプリの起動に失敗しました'
@@ -175,7 +181,10 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<string |
   // ショートカットファイルまたは引数なしの場合
   if (/\.lnk$/i.test(item.path) || !item.args) {
     // shell.openPath はフルパスでないと開けないので、ファイル名だけ（calc.exe など）は PATH から探す
-    const target = isBareFileName(item.path) ? await resolveFromPath(item.path) : item.path;
+    //（引数ありで spawn するときと同じく、起動するアプリに渡す環境の PATH で探す）
+    const target = isBareFileName(item.path)
+      ? await resolveFromPath(item.path, env ?? process.env)
+      : item.path;
     if (!target) {
       logger.error(logContext, 'PATH にアプリが見つからないため起動できません');
       return mainI18n.t('launcher.messages.appNotFoundInPath');
@@ -191,7 +200,7 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<string |
     return spawnDetached(
       buildCmdCommandLine(item.path, item.args),
       [],
-      { shell: true, cwd },
+      { shell: true, cwd, env },
       logger,
       { ...logContext, args: item.args },
       'アイテムの起動に失敗しました (spawn)'
@@ -201,7 +210,7 @@ async function launchApp(item: LaunchableItem, logger: Logger): Promise<string |
   return spawnDetached(
     item.path,
     parseArgs(item.args),
-    { shell: false, cwd },
+    { shell: false, cwd, env },
     logger,
     { ...logContext, args: item.args },
     'アイテムの起動に失敗しました (spawn)'

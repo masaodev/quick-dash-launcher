@@ -21,6 +21,7 @@ const defaults = {
   recordLaunchUsage: true,
   updateCheckEnabled: true,
   updateCheckIncludeBeta: false,
+  launchInheritEnvironment: false,
   showKeyboardHints: true,
   searchMemo: false,
   searchIgnoreWidth: false,
