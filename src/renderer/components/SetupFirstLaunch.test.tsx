@@ -6,6 +6,7 @@ import { SetupFirstLaunch } from './SetupFirstLaunch';
 const changeHotkey = vi.fn();
 const isItemSearchHotkeyAvailable = vi.fn();
 let distribution = 'portable';
+let portableModeAvailable = false;
 let firePressed: (() => void) | null = null;
 
 beforeEach(() => {
@@ -13,6 +14,7 @@ beforeEach(() => {
   isItemSearchHotkeyAvailable.mockReset().mockResolvedValue(true);
   firePressed = null;
   distribution = 'portable';
+  portableModeAvailable = false;
   Object.defineProperty(window, 'electronAPI', {
     configurable: true,
     value: {
@@ -20,7 +22,7 @@ beforeEach(() => {
       isItemSearchHotkeyAvailable,
       validateHotkey: vi.fn(async () => ({ isValid: true })),
       setHotkeyRecording: vi.fn(async () => undefined),
-      getAppInfo: vi.fn(async () => ({ distribution })),
+      getAppInfo: vi.fn(async () => ({ distribution, portableModeAvailable })),
       onFirstLaunchHotkeyPressed: (callback: () => void) => {
         firePressed = callback;
         return () => {
@@ -126,6 +128,47 @@ describe('SetupFirstLaunch', () => {
         itemSearchHotkey: 'Ctrl+Alt+Space',
       })
     );
+  });
+
+  it('ポータブルモードを選べるときだけチェックを出し、既定はオフで渡さない', async () => {
+    portableModeAvailable = true;
+    const onComplete = vi.fn(async () => true);
+    render(<SetupFirstLaunch onComplete={onComplete} />);
+    await goToTryStep();
+    const portable = (await screen.findByTestId('first-launch-portable-mode')) as HTMLInputElement;
+    expect(portable.checked).toBe(false);
+
+    act(() => firePressed?.());
+    fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
+    await waitFor(() =>
+      expect(onComplete).toHaveBeenCalledWith({
+        hotkey: 'Alt+Space',
+        autoLaunch: true,
+        itemSearchHotkey: 'Ctrl+Alt+Space',
+        updateCheckEnabled: true,
+      })
+    );
+  });
+
+  it('ポータブルモードにチェックを付けたら portableMode: true を渡す', async () => {
+    portableModeAvailable = true;
+    const onComplete = vi.fn(async () => true);
+    render(<SetupFirstLaunch onComplete={onComplete} />);
+    await goToTryStep();
+    fireEvent.click(await screen.findByTestId('first-launch-portable-mode'));
+
+    act(() => firePressed?.());
+    fireEvent.click(screen.getByRole('button', { name: '使いはじめる' }));
+    await waitFor(() =>
+      expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({ portableMode: true }))
+    );
+  });
+
+  it('ポータブルモードを選べないときはチェックを出さない', async () => {
+    render(<SetupFirstLaunch onComplete={vi.fn(async () => true)} />);
+    await goToTryStep();
+    await screen.findByText('アップデートを自動で確認する');
+    expect(screen.queryByTestId('first-launch-portable-mode')).toBeNull();
   });
 
   it('ウィンドウ検索のキーをほかのアプリが使っていたら、閉じた欄を開いて知らせ、先へ進まない', async () => {

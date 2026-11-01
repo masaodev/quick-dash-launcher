@@ -22,6 +22,8 @@ export interface AppInfo {
   distribution: AppDistribution;
   /** データを exe の横のデータフォルダに置いている（ZIP 版のポータブルモード） */
   portableData: boolean;
+  /** 初回設定画面でポータブルモードを選べる（ZIP 版で、まだデータフォルダが無い） */
+  portableModeAvailable: boolean;
 }
 
 /** 更新の知らせで見つけた、今の版より新しい版 */

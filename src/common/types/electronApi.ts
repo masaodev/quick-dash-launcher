@@ -245,6 +245,16 @@ export interface ElectronAPI {
   /** 今の表示言語（設定と Windows の表示言語から決めたもの） */
   getLanguage: () => Promise<AppLanguage>;
   isFirstLaunch: () => Promise<boolean>;
+  /**
+   * 初回設定の終わりにポータブルモードにする（ZIP 版だけ）。exe の横にデータフォルダを作って今の設定フォルダを写し、
+   * 選んだ設定を書き足して再起動する。成功すると再起動するので、返ってくるのは失敗したときだけ
+   */
+  switchToPortableOnFirstLaunch: (settings: {
+    hotkey: string;
+    autoLaunch: boolean;
+    itemSearchHotkey: string;
+    updateCheckEnabled?: boolean;
+  }) => Promise<{ success: boolean; error?: string }>;
   updateItemById: (request: { id: string; newItem: LauncherItem }) => Promise<{ success: boolean }>;
   /** keepClipboardDataRefs＝消さずに残すクリップボードの実データ（保存先を変える編集で、同じ実データを使い続けるとき） */
   deleteItemsById: (
