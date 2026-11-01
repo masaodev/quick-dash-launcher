@@ -30,7 +30,15 @@ export function useWsGroupEditor({ editing, dataFile, beforeAdd }: UseWsGroupEdi
     (fields: WsGroupFields) => {
       const target = state?.target;
       if (target && isJsonWsGroupItem(target.item)) {
-        const item: JsonWsGroupItem = { id: target.item.id, type: 'wsgroup', ...fields };
+        // 中身はダイアログの値で作り直す（外した groupIds・options を残さない）。更新日は引き継ぐ
+        // （何も変えずに「反映」すると保存で変更なしと扱われ、更新日を付け直さないため）
+        const { updatedAt } = target.item;
+        const item: JsonWsGroupItem = {
+          id: target.item.id,
+          type: 'wsgroup',
+          ...fields,
+          ...(updatedAt !== undefined ? { updatedAt } : {}),
+        };
         editing.recordEdit({ ...target, item });
       } else {
         beforeAdd?.();

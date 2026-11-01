@@ -6,6 +6,7 @@ import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { getAppDistribution } from '../utils/appDistribution';
+import { getPortableDataState } from '../utils/portableMode.js';
 import { UpdateCheckService } from '../services/updateCheckService.js';
 import { handleIpc } from '../utils/ipcWrapper';
 
@@ -53,7 +54,10 @@ export function setupConfigHandlers(configFolder: string): void {
     const version = app.getVersion();
     const packageJsonPath = path.join(__dirname, '../../package.json');
     const content = await fs.readFile(packageJsonPath, 'utf-8').catch(() => null);
-    if (!content) return { ...DEFAULT_APP_INFO, version, distribution: getAppDistribution() };
+    const portableData = getPortableDataState().kind === 'active';
+    if (!content) {
+      return { ...DEFAULT_APP_INFO, version, distribution: getAppDistribution(), portableData };
+    }
 
     const pkg = JSON.parse(content);
     return {
@@ -64,6 +68,7 @@ export function setupConfigHandlers(configFolder: string): void {
       license: pkg.license,
       repository: pkg.repository?.url || DEFAULT_APP_INFO.repository,
       distribution: getAppDistribution(),
+      portableData,
     };
   });
 

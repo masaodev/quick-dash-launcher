@@ -3,6 +3,7 @@ import { setTabManagerTranslator } from '@common/utils/tabManager';
 import type { TabManagerTranslate } from '@common/utils/tabManager';
 import { createChildLogger } from '@common/logger';
 import type { AppItem, WindowInfo } from '@common/types';
+import type { LoadEditableItemsResult } from '@common/types/editableItem';
 import { isLauncherItem, isWindowInfo } from '@common/types/guards';
 import { screen } from 'electron';
 
@@ -52,6 +53,21 @@ import type { CliContext } from './cliCommands.js';
 const cliLogger = createChildLogger('cli');
 
 /**
+ * 読めなかったデータファイルがあれば、CLI では今までどおり断る
+ * （編集画面はそのファイルを外して続けるが、CLI は件数やアイテムの有無で判断するので、欠けたまま答えない）
+ */
+function throwIfUnavailable(result: LoadEditableItemsResult): void {
+  if (result.error) throw new CliError('unavailable', result.error);
+  const [corrupted] = result.corruptedFiles ?? [];
+  if (corrupted) {
+    throw new CliError(
+      'unavailable',
+      mainI18n.t('dataErrors.jsonParseFailed', { file: corrupted })
+    );
+  }
+}
+
+/**
  * ランチャーのアイテムの読み書きを、本体の既存の処理につなぐ
  * （登録画面・編集画面と同じ書き込み経路。トラッカー・破損ファイルの扱いもそのまま）
  */
@@ -59,7 +75,7 @@ function createLauncherStore(configFolder: string): LauncherStore {
   return {
     async load() {
       const result = await loadEditableItems(configFolder);
-      if (result.error) throw new CliError('unavailable', result.error);
+      throwIfUnavailable(result);
       return result.items.map((e) => ({
         item: e.item,
         file: e.meta.sourceFile,
@@ -101,7 +117,7 @@ function createTabStore(configFolder: string): TabStore {
     filesOnDisk: () => PathManager.getDataFiles(),
     async countItems() {
       const result = await loadEditableItems(configFolder);
-      if (result.error) throw new CliError('unavailable', result.error);
+      throwIfUnavailable(result);
       const counts = new Map<string, number>();
       for (const entry of result.items) {
         counts.set(entry.meta.sourceFile, (counts.get(entry.meta.sourceFile) ?? 0) + 1);

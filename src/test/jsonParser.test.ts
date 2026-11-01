@@ -422,6 +422,15 @@ describe('jsonParser: 寛容パース（parseJsonDataFileLenient）', () => {
     expect(result.data.version).toBe('1.1');
   });
 
+  it('版が数値でも、新しい版なら newerFormat にし、書き戻しを求めないこと（1 は "1.0" と同じ版）', () => {
+    const newer = parseJsonDataFileLenient(fileWith([validItem], { version: 2 }));
+    expect(newer.newerFormat).toBe(true);
+    expect(newer.modified).toBe(false);
+
+    const same = parseJsonDataFileLenient(fileWith([validItem], { version: 1 }));
+    expect(same.newerFormat).toBe(false);
+  });
+
   it('理由は渡した t の言語で書くこと（省略時は日本語）', () => {
     const { id: _id, ...noId } = validItem;
     const content = fileWith([noId]);

@@ -122,11 +122,13 @@
 | --- | --- | --- | --- | --- |
 | 管理ウィンドウ | settings window | 管理画面、設定画面、設定・管理、admin window | 設定・アイテム管理・ヘルプのタブを持つウィンドウ | `AdminApp.tsx` |
 | 設定（タブ） | Settings | 基本設定タブ | 管理ウィンドウの設定のタブ。左のメニューで基本設定・ウィンドウ・バックアップ・ブックマーク自動取込を切り替える | `AdminSettingsTab` |
-| 基本設定 | General | — | 設定タブの最初のカテゴリ（表示言語・起動ホットキー・システム・表示） | `AdminSettingsBasicSection` |
+| 基本設定 | General | — | 設定タブの最初のカテゴリ（言語・起動ホットキー・起動と更新・ランチャー・検索・QuickDashLauncher CLI） | `AdminSettingsBasicSection` |
 | アイテム管理 | Item Manager | 編集画面、編集モード、アイテム編集 | 管理ウィンドウでアイテムとタブを編集するタブ（Ctrl+E） | `AdminItemManagerView` |
 | 起動ホットキー | launch hotkey | ショートカットキー、hot key | ランチャーを出すキーの組み合わせ | `hotkey` |
 | 表示言語 | display language | — | 画面に使う言語（自動・日本語・English） | `language` |
 | 自動起動 | start with Windows | スタートアップ起動 | Windows の起動時に QuickDashLauncher を起動すること | `autoLaunch` |
+| バージョン | version | 新しい版、最新の版 | QDL 本体や qdl.exe のバージョン（v0.8.0 など）。「ベータ版」「ポータブル版」「Store 版」のような種類の名前の「版」はそのまま使う | `version` |
+| アップデートの確認 | update check | 更新の知らせ（設定の名前として） | 1 日 1 回 GitHub で新しいバージョンを確かめ、あれば知らせること。インストールはしない | `updateCheckEnabled` |
 | ブックマーク取込 | bookmark import | ブックマークインポート、ブックマーク取り込み | ブラウザのブックマークをアイテムにすること | — |
 | アプリ取込 | app import | アプリインポート、アプリ取り込み | インストール済みのアプリをアイテムにすること | — |
 | バックアップ | backup | — | 設定フォルダのファイルを残しておく機能 | `BackupService` |

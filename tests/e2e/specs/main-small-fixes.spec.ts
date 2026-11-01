@@ -11,7 +11,7 @@ import { TestUtils } from '../helpers/test-utils';
  * ランチャーまわりの小さな直し（A3-158・A3-159・A3-162）
  * - フォルダ取込で並んだアイテムの右クリック「この取込から外す…」で、元の取込の編集画面を除外フィルタ入りで開く
  * - クリップボード・ドロップから開いた登録画面でも、パスを書き換えられる
- * - 「複数タブを表示」を切り替えたら最初のタブに戻り、タブが複数あるときにオフにするなら確認を出す
+ * - 「タブを表示する」を切り替えたら最初のタブに戻り、タブが複数あるときにオフにするなら確認を出す
  */
 
 /** 次に出るネイティブメニューで、指定の項目を押す（押せなければラベルの一覧を返す） */
@@ -102,7 +102,7 @@ test.describe('QuickDashLauncher - ランチャーの小さな直し', () => {
     await utils.pressEscapeToCloseRegisterModal();
   });
 
-  test('「複数タブを表示」をオフにすると最初のタブに戻り、まとめたファイルも出る', async ({
+  test('「タブを表示する」をオフにすると最初のタブに戻り、まとめたファイルも出る', async ({
     mainWindow,
     configHelper,
   }) => {
@@ -123,7 +123,7 @@ test.describe('QuickDashLauncher - ランチャーの小さな直し', () => {
     await expect(mainWindow.locator('.item', { hasText: 'Qiita' })).toBeVisible();
   });
 
-  test('タブが複数あるときに「複数タブを表示」をオフにするなら、確認を出す', async ({
+  test('タブが複数あるときに「タブを表示する」をオフにするなら、確認を出す', async ({
     electronApp,
     mainWindow,
     configHelper,
@@ -135,7 +135,7 @@ test.describe('QuickDashLauncher - ランチャーの小さな直し', () => {
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
     try {
       await adminWindow.locator('.menu-item', { hasText: '基本設定' }).click();
-      const showTabs = adminWindow.locator('label', { hasText: '複数タブを表示' }).locator('input');
+      const showTabs = adminWindow.locator('label', { hasText: 'タブを表示する' }).locator('input');
       await expect(showTabs).toBeChecked();
 
       await showTabs.click();

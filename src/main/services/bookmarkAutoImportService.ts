@@ -42,6 +42,7 @@ import { notifyDataChanged } from '../ipc/notifications.js';
 
 import { detectInstalledBrowsers, parseBrowserBookmarksWithFolders } from './bookmarkReader.js';
 import { writeDataFile } from './dataFileTracker.js';
+import { writeFailedError } from './data/dataItemWriter.js';
 import { SettingsService } from './settingsService.js';
 import { showToastWindow } from './overlayWindowService.js';
 import { mainI18n } from './mainI18n.js';
@@ -156,7 +157,10 @@ export class BookmarkAutoImportService {
       // 変わったときだけ保存して画面に知らせる
       if (counts.added > 0 || counts.updated > 0 || counts.deleted > 0) {
         jsonData.items = items;
-        writeDataFile(dataFilePath, serializeJsonDataFile(jsonData));
+        // 書けなかった（新しい版の QDL が保存したファイル・権限がないなど）のに成功と残さない
+        if (!writeDataFile(dataFilePath, serializeJsonDataFile(jsonData))) {
+          throw writeFailedError(rule.targetFile);
+        }
         notifyDataChanged();
       }
 
@@ -218,7 +222,7 @@ export class BookmarkAutoImportService {
 
     if (deletedCount > 0) {
       const content = serializeJsonDataFile(jsonData);
-      writeDataFile(dataFilePath, content);
+      if (!writeDataFile(dataFilePath, content)) throw writeFailedError(targetFile);
       notifyDataChanged();
     }
 

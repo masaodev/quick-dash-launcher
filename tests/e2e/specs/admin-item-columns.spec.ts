@@ -237,7 +237,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
     }
   });
 
-  test('見出しの ▾ で種類・名前・メモを絞り込み、条件はチップで外せる。取込元の列に「手動」と出る', async ({
+  test('見出しの ▾ で種別・名前・メモを絞り込み、条件はチップで外せる。取込元の列に「手動」と出る', async ({
     electronApp,
     mainWindow,
   }, testInfo) => {
@@ -265,7 +265,7 @@ test.describe('QuickDashLauncher - アイテム管理の列', () => {
         await adminWindow.keyboard.press('Escape');
         await expect(filterMenu).toHaveCount(0);
         await expect(rows).toHaveCount(3); // GitHub・Google・Wikipedia
-        await expect(chips).toContainText('種類: 単一アイテム（URL）');
+        await expect(chips).toContainText('種別: 単一アイテム（URL）');
       });
 
       await test.step('名前の ▾ で「goo」を含むものに絞る（種類と AND）', async () => {

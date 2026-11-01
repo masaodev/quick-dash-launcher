@@ -61,13 +61,13 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 
 - **ファイル**: `item-usage.json`
 - **形式**: `{ "version": 1, "since": <記録を始めた日時>, "byId": { "<id>": { "lastLaunchedAt": <日時>, "count": <回数> } }, "byPath": { "<パス>": { ... } }, "pausedAt": <記録を切った日時。切っている間だけ> }`（日時は Unix ミリ秒）
-- **内容**: アイテムを開いた記録（QDL 管理）。ランチャー・セットから開いたものは `byId`（データファイルの id）、ワークスペースの参照アイテムから開いたものは指すランチャーのアイテムの `byId`、ワークスペースのそれ以外のアイテムから開いたものは `byPath`（パスは前後の空白と末尾の区切り文字を除いて小文字にする。引数は含めない）。フォルダ取込で展開したアイテムは、フォルダ取込の行の id で `byId` に数える。登録・編集画面の「試しに実行」は数えない。初めて読んだときに `since` を書いておく。中身が壊れて読めないファイルは `item-usage.json.broken-<日時>` に移してから記録を始め直す（移せないときと、ロックなどで読めないときは、上書きしないよう次に読めるまで記録しない）。アイテム管理は、単一アイテム・セット・クリップボードの行には `byId` と同じパスの `byPath` を足したもの、フォルダ取込の行には `byId` を最終起動・起動回数に出す。設定の `recordLaunchUsage` が `false` の間は記録しない（切った日時を `pausedAt` に残し、入れ直したら `since` をその日に進める）。新しい版の QDL が書いたファイルは読んで使うが、上書きしない（[形式の版と互換](#形式の版と互換)）
+- **内容**: アイテムを開いた記録（QDL 管理）。ランチャー・セットから開いたものは `byId`（データファイルの id）、ワークスペースの参照アイテムから開いたものは指すランチャーのアイテムの `byId`、ワークスペースのそれ以外のアイテムから開いたものは `byPath`（パスは前後の空白と末尾の区切り文字を除いて小文字にする。引数は含めない）。フォルダ取込で展開したアイテムは、フォルダ取込の行の id で `byId` に数える。WSグループも同じく、WSグループの行の id で数える。登録・編集画面の「試しに実行」は数えない。初めて読んだときに `since` を書いておく。中身が壊れて読めないファイルは `item-usage.json.broken-<日時>` に移してから記録を始め直す（移せないときと、ロックなどで読めないときは、上書きしないよう次に読めるまで記録しない）。アイテム管理は、単一アイテム・セット・クリップボードの行には `byId` と同じパスの `byPath` を足したもの、フォルダ取込の行には `byId` を最終起動・起動回数に出す。設定の `recordLaunchUsage` が `false` の間は記録しない（切った日時を `pausedAt` に残し、入れ直したら `since` をその日に進める）。新しい版の QDL が書いたファイルは読んで使うが、上書きしない（[形式の版と互換](#形式の版と互換)）
 
 ### 更新の知らせ
 
 - **ファイル**: `update-check.json`
 - **形式**: `{ "version": 1, "lastCheckedAt": <最後に確かめた日時>, "latest": { "version": "0.8.1", "url": "https://github.com/masaodev/quick-dash-launcher/releases/tag/v0.8.1" }, "notifiedVersion": "0.8.1" }`（日時は Unix ミリ秒。`latest` は今の版より新しい版が無ければ `null`）
-- **内容**: 新しい版の確認の状態（QDL 管理。`src/main/services/updateCheckService.ts`）。GitHub の releases API（`https://api.github.com/repos/masaodev/quick-dash-launcher/releases`。ログインなし）を起動の 1 分後と、前回から 24 時間たったら（1 時間ごとに見る）読み、今の版より新しい版を `latest` に残す。下書きは除き、ベータ版は設定の `updateCheckIncludeBeta` か、今の版がベータ版のときだけ含める。初めて見つけた版はトーストで 1 回知らせ（`notifiedVersion`）、新しい版がある間はトレイのメニューの先頭と、管理ウィンドウのヘルプタブに出す。リリースのページを開くだけで、入れ替えはしない。つながらない・GitHub が応えないときは何も出さず、ログに残して次の回に確かめ直す（失敗した回も `lastCheckedAt` を進める）。設定の `updateCheckEnabled` が `false` の間は読まず、知らせも出さない。Store 版（Store が更新する）と開発版では動かない（開発版で試すときは環境変数 `QDL_UPDATE_CHECK_IN_DEV=1`）。壊れたファイルは無視して初めからやり直す。新しい版の QDL が書いたファイルは上書きしない（[形式の版と互換](#形式の版と互換)）。バックアップの対象ではない
+- **内容**: 新しい版の確認の状態（QDL 管理。`src/main/services/updateCheckService.ts`）。GitHub の releases API（`https://api.github.com/repos/masaodev/quick-dash-launcher/releases`。ログインなし）を起動の 1 分後と、前回から 24 時間たったら（1 時間ごとに見る）読み、今の版より新しい版を `latest` に残す。下書きは除き、ベータ版は設定の `updateCheckIncludeBeta` か、今の版がベータ版のときだけ含める。初めて見つけた版はトーストで 1 回知らせ（`notifiedVersion`）、新しい版がある間はトレイのメニューの先頭と、管理ウィンドウのヘルプタブに出す。リリースのページを開くだけで、入れ替えはしない。つながらない・GitHub が応えないときは何も出さず、ログに残して 1 時間後に 1 回だけ確かめ直す。それも失敗したら、次は 24 時間後（つながらない間に何度も問い合わせない。`lastCheckedAt` は確かめられたときだけ進めるので、ヘルプタブの「最後に確かめた日時」は確かめられた日時のまま）。「ベータ版も確認する」を変えたら、24 時間を待たずに確かめ直す。それを切っていて今の版が正式版なら、前に見つけて `latest` に残っているベータ版は知らせない（正式版へ上げた直後も同じ）。設定の `updateCheckEnabled` が `false` の間は読まず、知らせも出さない。Store 版（Store が更新する）と開発版では動かない（開発版で試すときは環境変数 `QDL_UPDATE_CHECK_IN_DEV=1`）。壊れたファイルは無視して初めからやり直す。新しい版の QDL が書いたファイルは上書きしない（[形式の版と互換](#形式の版と互換)）。バックアップの対象ではない
 
 ### 拡張子の無いファイルのメモ
 
@@ -199,6 +199,7 @@ v0.8.0-beta.5 までの QDL は、直接編集する人・AI 向けに `config/R
 1. 環境変数 `QUICK_DASH_CONFIG_DIR` があれば、そのフォルダ。Windows のシステムフォルダ（`C:\Windows`・`C:\Program Files` など）を指したときは無視して既定に戻す
 2. なければ、userData フォルダの下の `config\`。userData は既定で `%APPDATA%\quick-dash-launcher\`（`package.json` の `name`。Store 版で新しく作る場合はパッケージ専用の場所に振り替えられる。[ビルドとデプロイ - Store 版（MSIX）](../../setup/build-deploy.md#store-版msix)）なので、設定フォルダは `%APPDATA%\quick-dash-launcher\config\`
 3. 多重起動用の環境変数 `APP_INSTANCE` があると、userData が `%APPDATA%\<APP_INSTANCE>-quick-dash-launcher\` に変わり、設定フォルダもその下の `config\` になる（`npm run dev` は `APP_INSTANCE=dev` なので `%APPDATA%\dev-quick-dash-launcher\config\`）
+4. ポータブル版（ZIP）で、exe の横にデータフォルダ `QuickDashLauncher-data\` があれば、userData がそのフォルダになり、設定フォルダは `QuickDashLauncher-data\config\` になる（`APP_INSTANCE` が付いているときは使わない。書き込めないときは `%APPDATA%` を使い、起動時にトーストで知らせる。[ビルドとデプロイ - ポータブル版（ZIP）](../../setup/build-deploy.md#ポータブル版zip)）
 
 データファイル・ワークスペースファイル・バックアップなど、このページに出てくるファイルとフォルダはすべて設定フォルダの下に置かれる。パスの組み立ては `PathManager` にまとまっている。
 

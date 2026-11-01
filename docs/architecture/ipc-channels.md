@@ -79,6 +79,8 @@ const settings = await window.electronAPI.getSettings();
 
 ランチャーは読み込みのたびに続けて `get-corrupted-data-files` を呼び、JSON として読めなかったデータファイルの名前（例: `datafiles/data2.json`）を受け取る。読み込みのときに覚えた結果を返すだけで、ファイルは読み直さない（`src/main/services/data/corruptedDataFiles.ts`）。今のタブのファイルが入っていれば、空のタブの案内の代わりに読めなかったことを出す（ランチャーの仕様書の「一覧が空のときの案内」）。
 
+同じく `has-ws-group-rows` は、最後の読み込みで WSグループの行があったか（展開が 0 件の行も含む）を返す。ランチャーはワークスペースの変更を受けたとき、一覧に WSグループが無ければこれを聞き、行があれば一覧を読み直す（`src/main/services/data/wsGroupRows.ts`・`src/renderer/hooks/useWsGroupReload.ts`）。
+
 F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-files` を `explicit` で呼ぶ。ファイル監視はしないので、QDL の外で編集したファイルが反映されるのは F5 か再起動のときだけ。QDL の外での変更への備えは[データファイル形式](file-formats/data-format.md#53-qdl-の外での変更への備え)を参照。
 
 ### `load-editable-items` / `save-editable-items`

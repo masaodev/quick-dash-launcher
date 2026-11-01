@@ -480,7 +480,7 @@ export class ClipboardService {
     if (!id) return null;
     const filePath = PathManager.getClipboardDataFilePath(id);
     if (!fs.existsSync(filePath)) return null;
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return JSON.parse(FileUtils.stripBom(fs.readFileSync(filePath, 'utf8')));
   }
 
   async restoreClipboard(dataFileRef: string): Promise<ClipboardRestoreResult> {
@@ -496,7 +496,7 @@ export class ClipboardService {
       }
 
       const content = fs.readFileSync(filePath, 'utf8');
-      const data: SerializableClipboard = JSON.parse(content);
+      const data: SerializableClipboard = JSON.parse(FileUtils.stripBom(content));
 
       const restoredFormats: ClipboardFormat[] = [];
       const writeData: Record<string, string | Blob> = {};
@@ -577,7 +577,9 @@ export class ClipboardService {
         return null;
       }
 
-      const data: SerializableClipboard = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const data: SerializableClipboard = JSON.parse(
+        FileUtils.stripBom(fs.readFileSync(filePath, 'utf8'))
+      );
       const newRef = this.saveClipboardDataToFile(data);
       logger.info({ from: dataFileRef, to: newRef }, 'クリップボードデータを複製しました');
       return newRef;

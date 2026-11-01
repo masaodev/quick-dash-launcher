@@ -28,10 +28,13 @@ import AppImportModal from './AppImportModal';
 import AdminItemCsvImportModal from './AdminItemCsvImportModal';
 import ConfirmDialog from './ConfirmDialog';
 import WsGroupEditModal from './WsGroupEditModal';
+import CorruptedFilesNotice from './CorruptedFilesNotice';
 
 interface EditModeViewProps {
   editing: AdminItemEditing;
   loadError: string | null;
+  /** JSON として読めなかったデータファイル（今のタブに入っていれば知らせを出す） */
+  corruptedFiles: string[];
   searchQuery: string;
   onSearchChange: (query: string) => void;
   dataFileTabs: DataFileTab[];
@@ -76,6 +79,7 @@ function isTextInputTarget(target: EventTarget | null): boolean {
 const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   editing,
   loadError,
+  corruptedFiles,
   searchQuery,
   onSearchChange,
   dataFileTabs,
@@ -695,6 +699,11 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
         onSave={handleSaveChanges}
       />
 
+      <CorruptedFilesNotice
+        files={(dataFileTabs[selectedTabIndex]?.files ?? []).filter((f) =>
+          corruptedFiles.includes(f)
+        )}
+      />
       {loadError ? (
         <div className="edit-mode-load-error" data-testid="edit-mode-load-error">
           {t('itemManager.loadError')}

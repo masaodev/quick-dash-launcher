@@ -63,6 +63,7 @@ import { startFileLogging } from './services/fileLogging.js';
 import { LaunchUsageService } from './services/launchUsageService.js';
 import { UpdateCheckService, fetchGitHubReleases } from './services/updateCheckService.js';
 import { getAppDistribution } from './utils/appDistribution.js';
+import { resolvePortableData, setPortableDataState } from './utils/portableMode.js';
 import { handleIpc } from './utils/ipcWrapper';
 
 // 多重起動時に完全に独立したuserDataを使用
@@ -71,6 +72,24 @@ if (EnvConfig.hasAppInstance) {
   const userDataPath = path.join(app.getPath('appData'), appName);
   app.setPath('userData', userDataPath);
 }
+
+// ポータブル版（ZIP）で exe の横にデータフォルダがあれば、Electron のデータも設定フォルダもそこに置く。
+// userData を使う処理（二重起動の防止・ログ・設定フォルダ）より前に決める
+const portableData = resolvePortableData({
+  isPackaged: app.isPackaged,
+  isStore: process.windowsStore === true,
+  hasAppInstance: EnvConfig.hasAppInstance,
+  execPath: process.execPath,
+});
+setPortableDataState(portableData);
+if (portableData.kind === 'active') {
+  app.setPath('userData', portableData.dataDir);
+}
+
+/** CLI のパイプ名に使う名前。qdl.exe と同じ決め方（APP_INSTANCE だけで決まり、ポータブル版でも変えない） */
+const cliInstanceBase = EnvConfig.hasAppInstance
+  ? `${EnvConfig.appInstance}-quick-dash-launcher`
+  : 'quick-dash-launcher';
 
 // CLI（qdl.exe）が本体を起動したときの印。スプラッシュを出さず、二重起動時もウィンドウを出さない
 const CLI_LAUNCH_ARG = '--launched-by-cli';
@@ -135,18 +154,15 @@ app.whenReady().then(async () => {
       appVersion: app.getVersion(),
       pid: process.pid,
     });
-    cliServer = await startCliServer(
-      getCliPipeName(path.basename(app.getPath('userData')), userName),
-      async (req) => {
-        await Promise.race([
-          appReady,
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('本体の初期化が終わりません')), 60_000)
-          ),
-        ]);
-        return runCliCommand(req, cliContext);
-      }
-    );
+    cliServer = await startCliServer(getCliPipeName(cliInstanceBase, userName), async (req) => {
+      await Promise.race([
+        appReady,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('本体の初期化が終わりません')), 60_000)
+        ),
+      ]);
+      return runCliCommand(req, cliContext);
+    });
     if (app.isPackaged) {
       try {
         writeCliLauncherInfo(
@@ -280,6 +296,17 @@ app.whenReady().then(async () => {
       long: true,
     }).catch((error) => {
       console.error('設定の退避を知らせるトーストの表示でエラー:', error);
+    });
+  }
+
+  // ポータブル版のデータフォルダに書き込めなければ、%APPDATA% を使っていることを知らせる
+  if (portableData.kind === 'unwritable') {
+    showToastWindow({
+      message: mainI18n.t('dataErrors.portableDataUnwritable', { dir: portableData.dataDir }),
+      type: 'warning',
+      long: true,
+    }).catch((error) => {
+      console.error('データフォルダに書き込めないことを知らせるトーストの表示でエラー:', error);
     });
   }
 

@@ -63,6 +63,12 @@ export interface LoadEditableItemsResult {
    */
   fileHashes?: Record<string, string>;
 
+  /**
+   * JSON として読めなかった（壊れている可能性がある）データファイル。そのファイルのアイテムは items に入らず、
+   * 保存でも書き換えない。ほかのファイルのアイテムは今までどおり編集・保存できる
+   */
+  corruptedFiles?: string[];
+
   /** エラーメッセージ（エラーがある場合のみ） */
   error?: string;
 }

@@ -42,22 +42,24 @@ export function useSettingsManager({
   showToast,
   defaultSettings = null,
 }: UseSettingsManagerProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [hotkeyValidation, setHotkeyValidation] = useState<{ isValid: boolean; reason?: string }>({
     isValid: true,
   });
   const [isLoading, setIsLoading] = useState(false);
 
   const saveSettings = useCallback(
-    async (settings: AppSettings, successMessage?: string): Promise<void> => {
+    async (settings: AppSettings, successMessage?: string): Promise<boolean> => {
       try {
         await onSave(settings);
         if (successMessage) {
           showToast?.(successMessage);
         }
+        return true;
       } catch (error) {
         logError('設定の保存に失敗しました:', error);
         showAlert(t('settings.saveFailed'), 'error');
+        return false;
       }
     },
     [onSave, showAlert, showToast, t]
@@ -71,9 +73,16 @@ export function useSettingsManager({
     ): Promise<void> => {
       const newSettings = { ...editedSettings, [key]: value };
       setEditedSettings(newSettings);
+      if (key === 'language' && !options?.silent) {
+        // 保存の知らせは切り替えた後の言語で出す（今の t で作ると前の言語のまま出る）
+        if (!(await saveSettings(newSettings))) return;
+        const language = await window.electronAPI.getLanguage().catch(() => null);
+        showToast?.(language ? i18n.getFixedT(language)('settings.saved') : t('settings.saved'));
+        return;
+      }
       await saveSettings(newSettings, options?.silent ? undefined : t('settings.saved'));
     },
-    [editedSettings, setEditedSettings, saveSettings, t]
+    [editedSettings, setEditedSettings, saveSettings, showToast, i18n, t]
   );
 
   const handleNumberInputChange = useCallback(

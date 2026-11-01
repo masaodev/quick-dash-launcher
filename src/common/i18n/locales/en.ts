@@ -341,8 +341,9 @@ export const en: LocaleMessages = {
       'To add items, use ➕ at the top. You can also import browser bookmarks and installed apps from there.',
     autoLaunch: 'Start automatically when I sign in to Windows',
     autoLaunchHint: "If it isn't running, the hotkey won't bring it up.",
-    updateCheck: 'Tell me when a new version is out',
-    updateCheckHint: 'Checks GitHub for a new version once a day. You install it yourself.',
+    updateCheck: 'Check for updates automatically',
+    updateCheckHint:
+      'Checks GitHub once a day and lets you know when a new version is out. You install it yourself.',
     changeLater: 'You can change all of this later in Settings.',
     complete: 'Get started',
     saveFailed: 'Couldn\'t save the settings. Click "Get started" again.',
@@ -633,6 +634,8 @@ Works with the app settings (settings.json). Keys are the same names as in setti
 Keys you can change:
   Display      language (auto / ja / en) showKeyboardHints showDataFileTabs
                defaultFileTab (the data file of the tab to open at startup, e.g. data2.json)
+  Search       searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
+  Updates      updateCheckEnabled updateCheckIncludeBeta
   Hotkeys      hotkey itemSearchHotkey (checked before changing; "" turns off itemSearchHotkey)
   Launcher     windowWidth (400-2000) windowHeight (300-1200)
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
@@ -1140,7 +1143,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       scopeLabel: 'Groups to show',
       scopeAll: 'All groups',
       scopeSelected: 'Selected groups',
-      allNote: 'Groups you add later appear automatically, in the same order as the workspace',
+      allNote:
+        'Groups you add later appear automatically. In the launcher, they are sorted by name like other items',
       selectedNote: 'Only top-level groups can be chosen (subgroups are not shown)',
       noGroups: 'The workspace has no groups',
       missing_one: '⚠ {{count}} group was not found (it was deleted). It is removed when you apply',
@@ -1352,6 +1356,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       unsavedDeleted: ', {{count}} deleted',
     },
     loadError: "Couldn't load the data file. Fix the file, and then reopen this window.",
+    corruptedTab:
+      "Couldn't read {{files}} (it may be damaged). Its items aren't shown, and QDL won't change the file until it's fixed. You can still edit the other tabs. After fixing it, reopen this window.",
     missingCheck: {
       nothingToCheck: 'No local paths to check (URLs, shell:, and command names are skipped)',
       unknownNote_one: ', {{count}} no response',
@@ -1728,6 +1734,11 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     about: 'ℹ️ About',
     version: 'Version',
     distribution: 'Edition',
+    dataLocation: 'Data location',
+    dataLocations: {
+      portable: 'QuickDashLauncher-data next to the exe',
+      appData: '%APPDATA%',
+    },
     updateAvailable: 'New version v{{version}} is available',
     updateToast: 'New version v{{version}} is available. Open it from the tray menu.',
     openReleasePage: 'Open the download page',
@@ -1736,7 +1747,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     upToDate: "You're on the latest version",
     updateCheckFailed: "Couldn't check. Make sure you're connected to the internet.",
     updateLastChecked: 'Last checked: {{date}}',
-    updateCheckOff: 'Checking for new versions is off (turn it on in Settings → Basic).',
+    updateCheckOff: 'Automatic update checks are off (turn them on in Settings → Basic).',
     distributions: {
       store: 'Microsoft Store',
       portable: 'Portable',
@@ -2088,8 +2099,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       "These data files were saved by a newer version of QDL, so they can't be changed: {{files}}. Update QDL to the latest version.",
     newerFormatLoaded:
       "Some files were saved by a newer version of QDL: {{files}}. They're shown, but can't be changed until you update QDL to the latest version.",
+    settingsUnreadableOnReload:
+      "Couldn't read settings.json, so settings weren't reloaded (startup, CLI, and hotkeys stay as they are). Fix the file, then press F5.",
     settingsNewerFormat:
       "settings.json was saved by a newer version of QDL. Changes to settings last only until you quit QDL and aren't saved to the file. Update QDL to the latest version.",
+    portableDataUnwritable:
+      "Can't write to the data folder, so data is saved in %APPDATA% instead: {{dir}}. Move QDL to a folder you can write to.",
   },
   loadReport: {
     accepted_one: '{{count}} item loaded',
@@ -2559,48 +2574,50 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       windowSearchChangeFailed: "Couldn't change the window search hotkey.",
     },
     system: {
-      heading: 'System',
-      autoLaunch: 'Start with Windows',
-      autoLaunchBlockedByPolicy:
-        "Your organization's policy turns off startup, so you can't turn it on here.",
+      heading: 'Startup and updates',
+      autoLaunch: 'Start when you sign in to Windows',
+      autoLaunchBlockedByPolicy: "Your organization's policy turns this off, so it won't start.",
       autoLaunchBlockedByWindows:
-        "Startup is turned off in Windows settings, so you can't turn it on here. Turn on QuickDashLauncher in Windows Settings > Apps > Startup.",
-      autoLaunchEnabledByPolicy: "Your organization's policy turns on startup.",
+        "Startup is off in Windows settings, so it won't start. Turn it on in Settings > Apps > Startup.",
+      autoLaunchEnabledByPolicy: "Your organization's policy turns this on, so it starts.",
       autoLaunchEnabledByWindows:
-        'Startup is turned on in Windows settings. To stop it, select this check box and clear it again, or turn it off in Windows Settings > Apps > Startup.',
-      cli: 'Enable QuickDashLauncher CLI',
-      recordLaunchUsage: 'Keep a launch history',
+        'Startup is on in Windows settings, so it starts. To stop it, turn it off in Settings > Apps > Startup.',
+      cli: 'Turn on the qdl command',
+      recordLaunchUsage: 'Count launches',
       recordLaunchUsageDescription:
-        'Records when and how often you open each item, shown in the Last opened and Times opened columns in Item Manager (saved only in item-usage.json in the settings folder on this PC).',
-      updateCheck: 'Tell me when a new version is out',
+        'Used for the Last opened and Times opened columns in Item Manager and for sorting search results. Kept only on this PC.',
+      updateCheck: 'Check for updates automatically',
       updateCheckDescription:
-        'Reads the release list on GitHub once a day and tells you with a notification and the tray menu when a new version is out. You install it yourself.',
+        'Checks GitHub once a day and lets you know when a new version is out. You install it yourself.',
       updateCheckIncludeBeta: 'Include beta versions',
-      updateCheckIncludeBetaDescription:
-        "Tells you about beta (pre-release) versions even when you're on a stable version. While you're on a beta, betas are always included.",
+      updateCheckIncludeBetaDescription: "While you're on a beta, betas are always included.",
       cliDescription:
-        'Lets terminals and AI tools work with items and workspaces through the qdl command (adds qdl to PATH; use it from a new terminal window).',
+        'Lets terminals and AI tools work with items and workspaces. Works in terminals opened after you turn it on.',
+    },
+    search: {
+      heading: 'Search',
+    },
+    cli: {
+      heading: 'QuickDashLauncher CLI',
     },
     display: {
-      heading: 'Display',
+      heading: 'Launcher',
       keyboardHints: 'Show keyboard hints',
       keyboardHintsDescription:
-        'Shows easy-to-miss keys at the bottom of the launcher (such as F2 to edit, or Shift+Enter to open the containing folder).',
+        'Shows keys such as F2 to edit and Shift+Enter to open the containing folder below the list.',
       searchMemo: 'Search notes too',
-      searchMemoDescription:
-        'When you search in the launcher, also finds items whose note contains the words. When off, only display names are searched.',
-      searchIgnoreWidth: 'Ignore full-width and half-width in search',
+      searchIgnoreWidth: 'Ignore full-width and half-width',
       searchIgnoreWidthDescription:
-        'In the launcher search and the workspace filter, "ｃｈｒｏｍｅ" finds "Chrome" and half-width katakana finds full-width katakana.',
-      searchIgnoreKana: 'Ignore hiragana and katakana in search',
+        '"ｃｈｒｏｍｅ" finds "Chrome". Also applies to the workspace filter.',
+      searchIgnoreKana: 'Ignore hiragana and katakana',
       searchIgnoreKanaDescription:
-        'In the launcher search and the workspace filter, a word typed in hiragana also finds names written in katakana.',
-      searchSortByUsage: 'Sort search results by how often you open them',
+        'Hiragana also finds katakana names. Also applies to the workspace filter.',
+      searchSortByUsage: 'Sort by how often you use them',
       searchSortByUsageDescription:
-        'When you search in the launcher, items whose name starts with the typed word come first, and among them the ones you open most often. The order stays as before when the search box is empty or when "Keep a launch history" is off.',
+        'Names that start with the typed word come first, then the ones you use most. Has no effect when "Count launches" is off.',
       dataFileTabs: 'Show tabs',
       dataFileTabsDescription:
-        'Shows tabs in the launcher so you can switch to items in other data files. Add and change tabs and data files in Item Manager.',
+        'When off, only the items in the first tab are shown. Add and change tabs in Item Manager.',
       dataFileTabsOffTitle: 'Stop showing tabs',
       dataFileTabsOffConfirm:
         'When this is off, the launcher shows only the items in the first tab, "{{name}}". Items in other tabs are kept, but you can\'t open them from the launcher. Turn it off?',

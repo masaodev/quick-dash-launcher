@@ -77,7 +77,7 @@ QuickDashLauncherのアーキテクチャ概要とデータフローを説明し
 - **ワークスペース**: `WorkspaceService` はファサードで、ファイルの読み書き（`WorkspaceFileStore`）・UI 状態（`WorkspaceUiStateStore`）・アイテム／グループ／アーカイブの各マネージャーに分割されている（`src/main/services/workspace/`）。ランチャーのアイテムを指す参照アイテムは、データファイルを読み直すたびに作るランチャーのアイテムの表（`workspaceRefResolver.ts`）で、画面・CLI・起動に渡すときに中身を埋める。ファイル形式は[ワークスペースファイル形式](file-formats/workspace-format.md)を参照
 - **トースト通知**: トーストとセットの進み具合は 1 枚のオーバーレイウィンドウを共用し、`overlayWindowService.ts` が管理する
 - **子ウィンドウ**: メインのレンダラーを共有する子ウィンドウは `childWindowService.ts` で開く（[ウィンドウとレンダラープロセスの対応](#ウィンドウとレンダラープロセスの対応)）
-- **配布形式**: 開発版・Store 版・ポータブル版・インストーラー版の判定は `utils/appDistribution.ts`。自動起動はこれで分かれ、Store 版は WinRT の StartupTask、それ以外はスタートアップフォルダのショートカットを使う（`services/autoLaunchService.ts`）
+- **配布形式**: 開発版・Store 版・ポータブル版・インストーラー版の判定は `utils/appDistribution.ts`（ポータブル版は ZIP に入れた印のファイル `portable.txt`。データフォルダの判定は `utils/portableMode.ts`）。自動起動はこれで分かれ、Store 版は WinRT の StartupTask、それ以外はスタートアップフォルダのショートカットを使う（`services/autoLaunchService.ts`）
 - **CLI の組み込み**: 設定 `cliEnabled` が有効なら、起動のたびに同梱の `qdl.exe` を置き場へ入れ替えて PATH を保つ（`services/cli/cliInstallService.ts`）
 - **多言語化**: 辞書（`src/common/i18n/locales/`）を main と renderer で共有する。main は `i18nService.ts` が設定と Windows の表示言語から言語を決めて `mainI18n.ts` のインスタンスを切り替え、renderer は各入口（`src/renderer/i18n.ts`）で `settings:get-language` から言語を取って初期化する。書き方は[開発ガイド](../setup/development.md#多言語化画面の文言)
 

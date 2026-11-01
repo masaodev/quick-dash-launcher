@@ -47,6 +47,22 @@ describe('useAdminCellEditing', () => {
     expect(onItemEdit).not.toHaveBeenCalled();
   });
 
+  it('パスセルの確定で、前後の空白と全体を囲む引用符を外し、末尾の全角スペースは残すこと', () => {
+    const onItemEdit = vi.fn();
+    const item = launcher('a1', 'メモ帳', 'notepad.exe');
+    const { result } = renderHook(() => useAdminCellEditing(onItemEdit));
+
+    act(() => result.current.startPathEdit(item));
+    act(() => result.current.setEditingValue('  "C:\\Windows\\notepad.exe" '));
+    act(() => result.current.commitPathEdit(item));
+    expect(onItemEdit.mock.calls[0][0].item).toMatchObject({ path: 'C:\\Windows\\notepad.exe' });
+
+    act(() => result.current.startPathEdit(item));
+    act(() => result.current.setEditingValue('C:\\フォルダ　'));
+    act(() => result.current.commitPathEdit(item));
+    expect(onItemEdit.mock.calls[1][0].item).toMatchObject({ path: 'C:\\フォルダ　' });
+  });
+
   it('名前セルの Enter で確定し、同じ行のパスセルの編集に進むこと', () => {
     const onItemEdit = vi.fn();
     const item = launcher('a1', '', '');
