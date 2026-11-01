@@ -1,4 +1,4 @@
-import { BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
 import type { AppSettings, DisplayInfo } from '@common/types';
 import type { ScreenArea } from '@common/utils/placementLabel';
 import logger from '@common/logger';
@@ -25,6 +25,9 @@ import { applyLanguageSetting, mainI18n } from '../services/i18nService.js';
 import { LaunchUsageService } from '../services/launchUsageService.js';
 import { UpdateCheckService } from '../services/updateCheckService.js';
 import { handleIpc } from '../utils/ipcWrapper';
+import PathManager from '../config/pathManager.js';
+import { markAppQuitting } from '../utils/managedWindow.js';
+import { getPortableModeAvailable, switchToPortableMode } from '../utils/portableMode.js';
 
 export function notifySettingsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -283,6 +286,36 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
     logger.info(`Is first launch request: ${isFirstLaunch}`);
     return isFirstLaunch;
   });
+
+  handleIpc(
+    IPC_CHANNELS.FIRST_LAUNCH_SWITCH_TO_PORTABLE,
+    async (
+      _event,
+      settings: Pick<AppSettings, 'hotkey' | 'autoLaunch' | 'itemSearchHotkey'> &
+        Partial<Pick<AppSettings, 'updateCheckEnabled'>>
+    ) => {
+      if (!getPortableModeAvailable()) {
+        return { success: false, error: 'portable mode is not available' };
+      }
+      try {
+        const dataDir = switchToPortableMode({
+          execPath: process.execPath,
+          configFolder: PathManager.getConfigFolder(),
+          settings: { ...settings },
+        });
+        logger.info({ dataDir }, 'ポータブルモードにしました。再起動します');
+      } catch (error) {
+        logger.error({ error }, 'ポータブルモードにできませんでした');
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+      }
+      // 置き場は起動の最初に決めるので、再起動してデータフォルダから読み直す。
+      // %APPDATA% 側の設定に書き戻さないよう、quit ではなく exit で終わる
+      app.relaunch({ args: process.argv.slice(1).filter((arg) => arg !== '--launched-by-cli') });
+      markAppQuitting();
+      app.exit(0);
+      return { success: true };
+    }
+  );
 
   handleIpc(IPC_CHANNELS.SETTINGS_GET, async () => {
     const settingsService = await SettingsService.getInstance();

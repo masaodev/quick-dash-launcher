@@ -63,7 +63,12 @@ import { startFileLogging } from './services/fileLogging.js';
 import { LaunchUsageService } from './services/launchUsageService.js';
 import { UpdateCheckService, fetchGitHubReleases } from './services/updateCheckService.js';
 import { getAppDistribution } from './utils/appDistribution.js';
-import { resolvePortableData, setPortableDataState } from './utils/portableMode.js';
+import {
+  isPortableModeAvailable,
+  resolvePortableData,
+  setPortableDataState,
+  setPortableModeAvailable,
+} from './utils/portableMode.js';
 import { handleIpc } from './utils/ipcWrapper';
 
 // 多重起動時に完全に独立したuserDataを使用
@@ -85,6 +90,18 @@ setPortableDataState(portableData);
 if (portableData.kind === 'active') {
   app.setPath('userData', portableData.dataDir);
 }
+// 初回設定画面で「データを exe の横に保存する（ポータブルモード）」を出せるか
+setPortableModeAvailable(
+  isPortableModeAvailable({
+    isPackaged: app.isPackaged,
+    isStore: process.windowsStore === true,
+    hasAppInstance: EnvConfig.hasAppInstance,
+    execPath: process.execPath,
+    hasCustomConfigDir: !!EnvConfig.customConfigDir,
+    isLegacyPortableExe: !!process.env.PORTABLE_EXECUTABLE_FILE,
+    state: portableData,
+  })
+);
 
 /** CLI のパイプ名に使う名前。qdl.exe と同じ決め方（APP_INSTANCE だけで決まり、ポータブル版でも変えない） */
 const cliInstanceBase = EnvConfig.hasAppInstance
