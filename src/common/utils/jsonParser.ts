@@ -310,7 +310,11 @@ export function parseJsonDataFileLenient(
     }
   }
 
-  const newerFormat = isNewerFormatVersion(version, JSON_DATA_VERSION);
+  // 数値の版（2 など）は "1.0" に置き換える前の値で比べる（"1.0"・1・"1" は同じ版。数値の新しい版を見落とさない）
+  const newerFormat = isNewerFormatVersion(
+    typeof obj.version === 'number' ? obj.version : version,
+    JSON_DATA_VERSION
+  );
   return {
     data: { version, items },
     validItems,
