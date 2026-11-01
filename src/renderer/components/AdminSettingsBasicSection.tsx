@@ -312,7 +312,7 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           <label>
             <input
               type="checkbox"
-              checked={editedSettings.launchInheritEnvironment ?? false}
+              checked={editedSettings.launchInheritEnvironment ?? true}
               onChange={(e) => handleSettingChange('launchInheritEnvironment', e.target.checked)}
               disabled={isLoading}
             />
