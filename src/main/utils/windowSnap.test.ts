@@ -13,6 +13,7 @@ const desktop = vi.hoisted(() => ({
 
 vi.mock('electron', () => ({ BrowserWindow: class {}, screen: {} }));
 vi.mock('@common/logger', () => ({ windowLogger: { info: vi.fn() } }));
+vi.mock('./screenPosition.js', () => ({ moveWindowKeepingSize: vi.fn() }));
 vi.mock('./virtualDesktop/index.js', () => ({
   getCurrentDesktopNumber: () => desktop.current,
   getHwnd: (win: { hwnd: bigint }) => win.hwnd,
