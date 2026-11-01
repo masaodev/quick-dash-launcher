@@ -325,6 +325,8 @@ export const enContent: DemoContent = {
     apps: appItems(),
   }),
   demo: {
+    quick: 'goo',
+    quickRefine: ' map',
     search: 'bas des',
     refine: ' scr',
     minutes: '09-30',
@@ -332,6 +334,7 @@ export const enContent: DemoContent = {
     otherTab: 'TypeS',
     captions: {
       intro: 'Open folders, files, websites, and apps from one place',
+      quick: 'Type part of a name to find it right away',
       tabs: 'Organize projects, bookmarks, and apps into tabs',
       search: 'Type part of a name to narrow the list',
       refine: 'Add words separated by spaces to narrow it further',

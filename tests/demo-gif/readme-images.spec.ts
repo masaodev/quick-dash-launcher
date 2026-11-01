@@ -11,6 +11,7 @@ import { ja } from '../../src/common/i18n/locales/ja';
 import { ConfigFileHelper } from '../e2e/helpers/config-file-helper';
 import { TestUtils } from '../e2e/helpers/test-utils';
 
+import { BACKDROP_BLEED, BACKDROP_MARGIN } from './demo-backdrop';
 import { demoContent, demoLang, writeDemoData } from './demo-data';
 
 /**
@@ -89,12 +90,103 @@ async function fetchIcons(main: Page): Promise<void> {
   const notice = main.locator('.missing-icon-notice button', {
     hasText: MESSAGES.launcher.missingIcons.fetch,
   });
+  // 案内は起動の少し後に出ることがあるので、出るまで待ってから確かめる
+  await notice.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
   if (!(await notice.isVisible().catch(() => false))) return;
   await notice.click();
   await main
     .locator(`button[aria-label="${MESSAGES.common.showDetails}"]`)
     .waitFor({ state: 'visible', timeout: 240000 });
   await main.locator('.progress-close-btn').click();
+}
+
+/**
+ * ウィンドウを枠（タイトルバーと閉じるボタン）ごと撮る
+ *
+ * Playwright の screenshot はウィンドウの中身しか写さないので、メインデモ GIF と同じく画面を ffmpeg（gdigrab）で 1 枚撮る。
+ * ウィンドウの周りに BACKDROP_MARGIN の余白を取り、そこに GIF と同じ色の無地のウィンドウを敷いて、壁紙や他のアプリを写さない。
+ * 撮る間はウィンドウを最前面に固定し、撮り終えたら戻して敷いたウィンドウを閉じる
+ */
+async function shotWindow(app: ElectronApplication, page: Page, file: string): Promise<void> {
+  const title = await page.title();
+  await page.mouse.move(5, 5);
+  const { rect } = await app.evaluate(
+    ({ BrowserWindow, screen }, { t, margin, pad }) => {
+      const win = BrowserWindow.getAllWindows().find((w) => w.isVisible() && w.getTitle() === t);
+      if (!win) throw new Error(`ウィンドウが見つかりません: ${t}`);
+      const b = win.getBounds();
+      const area = {
+        x: b.x - margin,
+        y: b.y - margin,
+        width: b.width + margin * 2,
+        height: b.height + margin * 2,
+      };
+      // 敷くウィンドウは撮る範囲より pad だけ広げ、角の丸みと縁を範囲の外に出す（demo-backdrop.ts の BACKDROP_BLEED）
+      const backdrop = new BrowserWindow({
+        x: area.x - pad,
+        y: area.y - pad,
+        width: area.width + pad * 2,
+        height: area.height + pad * 2,
+        frame: false,
+        resizable: false,
+        focusable: false,
+        skipTaskbar: true,
+        backgroundColor: '#d5deea',
+        show: false,
+      });
+      (globalThis as { __readmeBackdrop?: { destroy(): void } }).__readmeBackdrop = backdrop;
+      // 登録画面の後ろのランチャー（最前面のウィンドウ）も隠れるよう、背景も最前面にしてから、撮るウィンドウをその上に出す
+      backdrop.setAlwaysOnTop(true, 'screen-saver');
+      backdrop.show();
+      win.setAlwaysOnTop(true, 'screen-saver');
+      win.moveTop();
+      win.focus();
+      const scale = screen.getDisplayMatching(b).scaleFactor;
+      return {
+        rect: {
+          x: Math.round(area.x * scale),
+          y: Math.round(area.y * scale),
+          width: Math.round(area.width * scale),
+          height: Math.round(area.height * scale),
+        },
+      };
+    },
+    { t: title, margin: BACKDROP_MARGIN, pad: BACKDROP_BLEED }
+  );
+  try {
+    // ウィンドウと敷いた背景の描画が落ち着くのを待つ
+    await page.waitForTimeout(800);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    execFileSync('ffmpeg', [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'gdigrab',
+      '-draw_mouse',
+      '0',
+      '-offset_x',
+      String(rect.x),
+      '-offset_y',
+      String(rect.y),
+      '-video_size',
+      `${rect.width}x${rect.height}`,
+      '-i',
+      'desktop',
+      '-frames:v',
+      '1',
+      file,
+    ]);
+  } finally {
+    await app.evaluate(({ BrowserWindow }, t) => {
+      BrowserWindow.getAllWindows()
+        .find((w) => w.isVisible() && w.getTitle() === t)
+        ?.setAlwaysOnTop(false);
+      const g = globalThis as { __readmeBackdrop?: { destroy(): void } };
+      g.__readmeBackdrop?.destroy();
+      g.__readmeBackdrop = undefined;
+    }, title);
+  }
 }
 
 /** 撮るウィンドウの高さを変える（下の余白を詰めて撮るため）。ウィンドウはタイトルで探す */
@@ -162,7 +254,7 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await preview.locator('.dir-preview-item').first().waitFor({ state: 'visible' });
     await shot(register, path.join(ALT_DIR, 'register-dir-full.png'));
     await resizeWindow(app, register, 760);
-    await shot(register, imagePath('readme-register-dir'));
+    await shotWindow(app, register, imagePath('readme-register-dir'));
 
     // 登録画面（単一アイテム）: 日本語は名前にローマ字を添える例
     await selects.nth(0).selectOption({ label: item.tab });
@@ -175,7 +267,7 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     });
     if ((await optionsToggle.textContent())?.includes('▼')) await optionsToggle.click();
     await resizeWindow(app, register, 540);
-    await shot(register, imagePath('readme-register-item'));
+    await shotWindow(app, register, imagePath('readme-register-item'));
     await register.close();
 
     // 管理画面（アイテム管理）: 案件 A のタブ。フォルダ取込・URL・Teams のチャットが並ぶ
@@ -186,7 +278,7 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     await admin.locator('.raw-item-row').first().waitFor({ state: 'visible' });
     await shot(admin, path.join(ALT_DIR, 'admin-a-full.png'));
     await resizeWindow(app, admin, 560);
-    await shot(admin, imagePath('readme-admin'));
+    await shotWindow(app, admin, imagePath('readme-admin'));
   } finally {
     await app.close().catch(() => {});
   }
