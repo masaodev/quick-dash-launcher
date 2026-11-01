@@ -39,7 +39,7 @@ import {
 } from './workspaceWindowManager.js';
 import { getHwnd, moveWindowToCurrentDesktop } from './utils/virtualDesktop/index.js';
 import { registerChildWindowOpener } from './services/childWindowService.js';
-import { isPositionOnScreen } from './utils/screenPosition.js';
+import { isPositionOnScreen, moveWindowKeepingSize } from './utils/screenPosition.js';
 import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
 import { registerSnapTarget } from './utils/windowSnap.js';
 import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
@@ -610,7 +610,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
         bounds.height,
         display.workArea
       );
-      mainWindow.setPosition(x, y);
+      moveWindowKeepingSize(mainWindow, x, y);
       windowLogger.info(`ウィンドウをカーソル位置に配置しました: (${x}, ${y})`);
       break;
     }
@@ -632,7 +632,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
         bounds.height,
         displayBounds
       );
-      mainWindow.setPosition(x, y);
+      moveWindowKeepingSize(mainWindow, x, y);
       windowLogger.info(`ウィンドウをカーソルのモニター中央に配置しました: (${x}, ${y})`);
       break;
     }
@@ -656,7 +656,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
           );
         }
       } else {
-        mainWindow.setPosition(saved.x, saved.y);
+        moveWindowKeepingSize(mainWindow, saved.x, saved.y);
         windowLogger.info(`ウィンドウを固定位置に配置しました: (${saved.x}, ${saved.y})`);
       }
       break;
