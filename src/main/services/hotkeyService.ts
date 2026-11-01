@@ -17,6 +17,8 @@ export class HotkeyService {
   private settingsService!: SettingsService;
   private currentHotkey: string | null = null;
   private currentItemSearchHotkey: string | null = null;
+  /** 直近の registerHotkey() で登録できなかったホットキー（起動時に知らせるため） */
+  private failedHotkeys: { type: HotkeyType; hotkey: string }[] = [];
   private readonly getMainWindow: () => BrowserWindow | null;
   private readonly showWindowCallback: (startTime?: number) => Promise<void>;
   private readonly hideWindowCallback: () => Promise<void>;
@@ -69,6 +71,7 @@ export class HotkeyService {
    * 環境変数HOTKEYが設定されている場合は、それを優先
    */
   public async registerHotkey(): Promise<boolean> {
+    this.failedHotkeys = [];
     try {
       await this.initializeSettingsService();
 
@@ -80,6 +83,7 @@ export class HotkeyService {
       }
 
       const mainSuccess = this.registerHotkeyInternal(hotkey, 'main');
+      if (!mainSuccess) this.failedHotkeys.push({ type: 'main', hotkey });
 
       // ランチャーのホットキーが未設定（初回設定の画面を出している間）は、ウィンドウ検索のホットキーも
       // 登録しない。ウィンドウ検索には既定値があるので、登録すると初回設定の途中で開いてしまう。
@@ -91,12 +95,20 @@ export class HotkeyService {
 
       const itemSearchHotkey = await this.settingsService.get('itemSearchHotkey');
       const itemSearchSuccess = this.registerHotkeyInternal(itemSearchHotkey, 'itemSearch');
+      if (!itemSearchSuccess) {
+        this.failedHotkeys.push({ type: 'itemSearch', hotkey: itemSearchHotkey });
+      }
 
       return mainSuccess && itemSearchSuccess;
     } catch (error) {
       logger.error({ error }, 'Failed to register hotkey from settings');
       return false;
     }
+  }
+
+  /** 直近の registerHotkey() で登録できなかったホットキー */
+  public getFailedHotkeys(): { type: HotkeyType; hotkey: string }[] {
+    return [...this.failedHotkeys];
   }
 
   private unregisterHotkeyInternal(type: HotkeyType): void {

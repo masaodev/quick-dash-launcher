@@ -527,6 +527,8 @@ export const en: LocaleMessages = {
     notSet: 'not set',
     registerFailed:
       'Couldn\'t register the {{label}} "{{desired}}" ({{reason}}). Keeping "{{current}}".',
+    startupRegisterFailed:
+      'Couldn\'t register the {{label}} "{{hotkey}}" (another app may be using it). Right-click the tray icon, choose "Settings", and pick a different key.',
   },
   cli: {
     candidateLocation: '  ({{location}})',

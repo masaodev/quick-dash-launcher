@@ -2,7 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import type { Server } from 'net';
 
-import { app, dialog, globalShortcut, net, session } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, net, session } from 'electron';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { setupIPCHandlers } from './ipc';
@@ -171,6 +171,9 @@ if (EnvConfig.isDevelopment) {
   const debugPort = isTestMode ? '9222' : '0'; // 0 = 自動的に空いているポートを割り当て
   app.commandLine.appendSwitch('--remote-debugging-port', debugPort);
 }
+
+// 起動処理（下の whenReady）で投げた例外は受け皿が無く、unhandledRejection になる
+process.on('unhandledRejection', handleStartupFailure);
 
 app.whenReady().then(async () => {
   // 画面がページ側から別の URL へ移らないようにする（ウィンドウを作る前に付ける）
@@ -406,6 +409,23 @@ app.whenReady().then(async () => {
     console.error('ブックマーク自動取込の起動時実行でエラー:', error);
   });
 });
+
+/**
+ * 起動処理が途中で失敗したとき（設定フォルダに書けない・settings.json がロックされているなど）
+ *
+ * 画面がまだ 1 つも無いと、ウィンドウもトレイも出ないままプロセスと二重起動のロックだけが残り、
+ * 起動し直しても何も出なくなる。理由を知らせて終わる。画面が出た後の失敗は、使える部分を残して記録だけする
+ */
+function handleStartupFailure(error: unknown): void {
+  console.error('処理されなかったエラー:', error);
+  if (BrowserWindow.getAllWindows().length > 0) return;
+  const detail = error instanceof Error ? error.message : String(error);
+  dialog.showErrorBox(
+    'Quick Dash Launcher',
+    `Quick Dash Launcher を起動できませんでした。\nQuick Dash Launcher couldn't start.\n\n${detail}`
+  );
+  app.exit(1);
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

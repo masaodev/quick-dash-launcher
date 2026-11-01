@@ -528,6 +528,8 @@ export const ja = {
     notSet: '未設定',
     registerFailed:
       '{{label}}「{{desired}}」を登録できません（{{reason}}）。「{{current}}」を維持します',
+    startupRegisterFailed:
+      '{{label}}「{{hotkey}}」を登録できませんでした（他のアプリで使用中の可能性）。トレイのアイコンの右クリック →「設定」で別のキーに変えてください',
   },
   cli: {
     candidateLocation: '  （{{location}}）',
