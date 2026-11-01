@@ -8,7 +8,7 @@
 
 **アプリ・ファイル・フォルダ・URL を登録して、キーワードを打って開くランチャーです。**
 
-検索すると、似た名前のファイルや関係のないファイルまで出てきてうんざりしたことはありませんか。Quick Dash Launcher の候補に出るのは、自分で登録したものだけです。キーワードは付けた名前の一部でよく、「毎日使うもの」「案件ごと」のように自由にタブで分けられます。
+検索すると、似た名前のファイルや関係のないファイルまで出てきてうんざりしたことはありませんか。Quick Dash Launcher の候補に出るのは、自分で登録したものだけです。キーワードは付けた名前の一部でよく、「毎日使うもの」「案件ごと」のように自由にタブで分けて、使いながら育てていけます。
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
