@@ -683,7 +683,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       runAsAdminNotApp:
         'runAsAdmin はアプリ（exe・.lnk・.bat/.cmd など）のアイテムだけに付けられます',
       unknownFields:
-        '種類 {{type}} には無いキーです: {{fields}}（docs の設定ファイルの形式を確認してください）',
+        '種別 {{type}} には無いキーです: {{fields}}（docs の設定ファイルの形式を確認してください）',
       notFound: '{{what}}「{{key}}」が見つかりません（id か表示名の完全一致で指定します）',
       ambiguous: '{{what}}「{{key}}」が {{count}} 件あります。id で指定してください',
       unknownCommand: '不明なコマンドです: {{command}}',
@@ -742,7 +742,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setArgsWithItem:
         '--args は --path の行だけに指定できます（--item の行の引数はアイテムのもの）',
       setItemType:
-        '種類 {{type}} のアイテムはセットの行にできません（{{types}} のみ。フォルダ取込の中身は --path で）',
+        '種別 {{type}} のアイテムはセットの行にできません（{{types}} のみ。フォルダ取込の中身は --path で）',
       setRowUnknownKeys:
         '行 {{index}} に知らないキーがあります: {{keys}}（itemId・open・label・window・placement・ifOpen・activateWindow・waitSeconds・pinToAllDesktops）',
       setRowEmpty:
@@ -755,9 +755,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setLastEntry:
         'セットの最後の行は消せません。セットごと消すときは qdl launcher item remove を使ってください',
       typeNotEditable:
-        '種類 {{type}} のアイテムは CLI では変更できません（画面で操作してください）',
+        '種別 {{type}} のアイテムは CLI では変更できません（画面で操作してください）',
       needChanges: '変えるものを指定してください（{{options}}）',
-      noPath: '種類 {{type}} は --path を持ちません',
+      noPath: '種別 {{type}} は --path を持ちません',
       noWorkspace: 'ワークスペースがありません',
       groupRequired:
         'ワークスペース「{{workspace}}」にはグループがあるので、--group で入れるグループを指定してください',
@@ -893,7 +893,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     },
     errors: {
       itemNotFound: 'アイテムが見つかりません',
-      unsupportedType: 'この種類のアイテムはセットから開けません',
+      unsupportedType: 'この種別のアイテムはセットから開けません',
       someFailed_one: '{{count}} 件を開けませんでした: {{names}}',
       someFailed_other: '{{count}} 件を開けませんでした: {{names}}',
     },
@@ -1194,7 +1194,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
         '書き出した CSV を直して取り込みます（id で照合し、取り込む前に変更を確かめられます）',
       addItem: '＋ アイテムを追加',
       addItemTitle:
-        '単一アイテムを先頭に追加します。種類は「種類」列で、引数やメモは ✏️ 詳細編集で変えられます',
+        '単一アイテムを先頭に追加します。種別は「種別」列で、引数やメモは ✏️ 詳細編集で変えられます',
       addMenu: 'ほかの追加のしかた（ブックマーク取込・アプリ取込など）',
       addOne: '📝 一覧に行を追加',
       addFolder: '🗂️ フォルダ取込を追加',
@@ -1234,8 +1234,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       checkMissingTitle:
         '表示中のデータファイルのローカルパスが実在するかを確認します（URL・shell:・コマンド名は対象外。押したときだけ確認します）',
       dedupe: '重複を削除',
-      dedupeDesc: '種類・名前・パスが同じものを 1 件にまとめます',
-      dedupeTitle: '種類・名前・パスが同じアイテムを、先にある 1 件を残して削除します',
+      dedupeDesc: '種別・名前・パスが同じものを 1 件にまとめます',
+      dedupeTitle: '種別・名前・パスが同じアイテムを、先にある 1 件を残して削除します',
       cleanClipboardData: '使われていないクリップボードの中身を削除',
       cleanClipboardDataDesc: 'どのアイテムからも使われていない、保存した中身を消します',
     },
@@ -1288,7 +1288,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       sortHint:
         '並べ替えは見出しをクリックしたときと読み込み時にだけ適用されます（編集中に行は動きません）',
       actions: '操作',
-      type: '種類',
+      type: '種別',
       name: '名前',
       pathAndArgs: 'パスと引数',
       pathAndArgsTitle: 'パスはクリックして編集できます。引数は ✏️ 詳細編集から',
@@ -1319,7 +1319,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       memoPlaceholder: 'メモ',
       memoEditHint: 'Enter で改行・Ctrl+Enter で確定・Esc で取り消し',
       typeSelectTitle:
-        '種類を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
+        '種別を変更します。単一アイテム・フォルダ取込はその場で切り替わり、セット（複数のアイテムをまとめて開き、決まった位置に並べる）・クリップボードは詳細編集が開きます',
       dirHasNoName: 'フォルダ取込は名前を持ちません（取り込んだファイル名で表示）',
       wsGroupHasNoName: 'WSグループは名前を持ちません（ランチャーではグループの名前で表示）',
       wsGroupNameAll: 'すべてのワークスペースグループ',
@@ -1342,7 +1342,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       pathTitle: '{{text}}\n{{missing}}クリックしてパスを編集。引数は ✏️ 詳細編集から',
       pathTitleMissing: 'パスが見つかりません。',
       unsaved: '未保存の変更があります',
-      detailEditTitle: '詳細編集（種類・引数・メモ・保存先など、すべての設定を編集）',
+      detailEditTitle: '詳細編集（種別・引数・メモ・保存先など、すべての設定を編集）',
       delete: '削除',
     },
     status: {
@@ -1385,9 +1385,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     discarded: '変更を破棄しました',
     noDuplicates: '重複するアイテムはありません',
     dedupeConfirm_one:
-      '{{file}} に、種類・名前・パスが同じアイテムが {{count}} 件あります。先にある 1 件を残して削除しますか？（保存で確定）',
+      '{{file}} に、種別・名前・パスが同じアイテムが {{count}} 件あります。先にある 1 件を残して削除しますか？（保存で確定）',
     dedupeConfirm_other:
-      '{{file}} に、種類・名前・パスが同じアイテムが {{count}} 件あります。先にある 1 件を残して削除しますか？（保存で確定）',
+      '{{file}} に、種別・名前・パスが同じアイテムが {{count}} 件あります。先にある 1 件を残して削除しますか？（保存で確定）',
     deduped_one: '重複 {{count}} 件を削除しました',
     deduped_other: '重複 {{count}} 件を削除しました',
     noUnusedClipboardData: '使われていない、保存したクリップボードの中身はありません',
