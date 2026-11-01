@@ -78,6 +78,7 @@ QuickDashLauncherのアプリケーション設定ファイルの形式を説明
   "recordLaunchUsage": true,
   "updateCheckEnabled": true,
   "updateCheckIncludeBeta": false,
+  "launchInheritEnvironment": true,
   "adminItemColumns": {
     "visible": {},
     "widths": {}
@@ -133,7 +134,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 | **autoLaunch** | boolean | true | Windows起動時にアプリを自動起動するか（2026-10 に既定を true にし、初回設定画面のチェックの既定と合わせた。それより前に初回起動した人の設定ファイルには false が書き込まれているので変わらない） |
 | **cliEnabled** | boolean | false | QuickDashLauncher CLI（`qdl` コマンド）を PATH から使えるようにするか |
 
-OS への登録はポータブル版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない。初回起動の間（初回設定画面を終えるまで）は、起動時に OS へ反映しない。初回設定画面で選んだ値を保存したときに反映する。
+OS への登録は ZIP 版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない。初回起動の間（初回設定画面を終えるまで）は、起動時に OS へ反映しない。初回設定画面で選んだ値を保存したときに反映する。
 
 ショートカット（`QuickDashLauncher.lnk`）はインスタンスを区別しない 1 つだけなので、パッケージ版でも `APP_INSTANCE` を付けて起動したインスタンスは自動起動の登録に触らず、この設定は効きません（試験用のインスタンスの設定で、本番のショートカットを作り直したり消したりしないため）。`cliEnabled` も、PATH と `qdl.exe` のコピー先がインスタンスを区別しない 1 つだけなので、同じく `APP_INSTANCE` 付きの起動とパッケージ化されていない起動では効きません。
 
@@ -149,7 +150,7 @@ OS への登録はポータブル版・インストーラー版ではスター�
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面では基本設定の「ランチャー」にある「タブを表示する」 |
+| **showDataFileTabs** | boolean | true | タブ表示の有効/無効<br>設定画面ではウィンドウの「ランチャー」にある「タブを表示する」 |
 | **defaultFileTab** | string | "datafiles/data.json" | ランチャーを開いたとき（隠したあとも）に選ぶデータファイル。`dataFileTabs` のどれかに含まれていないときは `datafiles/data.json`、それもなければ最初のファイルになる<br>タブ表示が OFF のときは、このファイルのアイテムだけを表示する<br>設定画面に入力欄はなく、`settings.json` を直接書いたときだけ変わる |
 | **dataFileTabs** | DataFileTab[] | `[{files: ["datafiles/data.json"], name: "メイン"}]` | データファイルタブの設定。初回起動でデータファイル（`data.json`）を作ったときは、ウィンドウを作る前に表示言語の名前（英語なら `Main`）で書き直す。お試し用の Web のアイテムを `datafiles/data2.json` に分けたときは、2 つ目のタブ「Web」も足す |
 | **dataFileLabels** | Record<string, string> | `{"datafiles/data.json": "メイン用データファイル"}` | データファイルの名前定義（物理ファイル名 → 表示名）。初回起動でデータファイルを作ったときは、タブと同じときに表示言語の名前（「〈タブ名〉用データファイル」）で書き直す |
@@ -268,14 +269,15 @@ v0.8.0-beta.17 より前の版に戻すと、次の値は消える（前の版�
 
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
-| **showKeyboardHints** | boolean | true | ランチャーの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方） |
+| **showKeyboardHints** | boolean | true | ランチャーの下に、気づきにくいキー操作のヒントを表示するか（通常モード・ウィンドウ検索モードの両方）。設定画面ではウィンドウの「ランチャー」にある「操作のヒントを表示する」 |
 | **searchMemo** | boolean | false | ランチャーの検索（通常モード）で、表示名に加えてメモにも当てるか（パスには当てない） |
 | **searchIgnoreWidth** | boolean | false | ランチャーの検索とワークスペースの絞り込みで、全角と半角を区別しないか（NFKC でそろえる。`ｃｈｒｏｍｅ` で `Chrome`、`ﾃｽﾄ` で `テスト`） |
 | **searchIgnoreKana** | boolean | false | ランチャーの検索とワークスペースの絞り込みで、ひらがなとカタカナを区別しないか（`てすと` で `テスト`） |
 | **searchSortByUsage** | boolean | false | ランチャーの検索（通常モード）で、検索語があるとき、名前が最初の語で始まるもの → 開いた回数（`item-usage.json`）の多いもの → 今の順（名前順）に並べるか |
-| **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「ランチャー」にある「起動回数を記録する」 |
+| **recordLaunchUsage** | boolean | true | アイテムを開いた日時と回数を `item-usage.json` に記録するか（アイテム管理の最終起動・起動回数の列）。設定画面では基本設定の「検索」にある「起動回数を記録する」 |
 | **updateCheckEnabled** | boolean | true | 新しいバージョンを確認して知らせるか（[ファイル形式一覧 - 更新の知らせ](README.md#更新の知らせ)）。設定画面では基本設定の「起動と更新」にある「アップデートを自動で確認する」。初回設定の画面でも選べる。Store 版では使わない（画面にも出さない） |
 | **updateCheckIncludeBeta** | boolean | false | 正式版を使っていても、ベータ版を知らせるか。ベータ版を使っている間は、この値に関係なくベータ版も知らせる。設定画面では「ベータ版も確認する」（「アップデートを自動で確認する」がオフの間は押せない） |
+| **launchInheritEnvironment** | boolean | true | アプリを起動するときに QuickDashLauncher の環境変数を引き継ぐか。`true`（既定）は従来の動きで、QuickDashLauncher を起動したターミナルで設定した環境変数も届く。`false` なら、スタートメニューから開いたときと同じユーザーの標準の環境変数で起動する（[起動するアプリの環境変数](../window-control.md#起動するアプリの環境変数)）。設定画面では基本設定の「詳細」にある「アプリに QuickDashLauncher の環境変数を引き継ぐ」 |
 | **adminItemColumns** | object | `{"visible": {}, "widths": {}}` | アイテム管理の一覧の列の表示と幅。`visible` は列の id → 出すか（`true`／`false`）、`widths` は列の id → ドラッグで変えた幅（px）。書かれていない列は既定のまま。列の id は `type`・`icon`・`name`・`pathAndArgs`・`memo`・`source`・`link`・`lastLaunched`・`launchCount`・`updatedAt`。`memo`・`link`・`lastLaunched`・`launchCount` は既定で隠す（ほかは出す）。隠せない列（`name`・`pathAndArgs`）の `visible` と、幅を変えられない列（`icon`）の `widths` は使わない。`pathAndArgs` は `widths` が無ければ残りの幅を使う。画面の見出しの右クリックと見出しの右端のドラッグ・ダブルクリックで変わり、設定画面にはない |
 
 ---

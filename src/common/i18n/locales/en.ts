@@ -98,6 +98,8 @@ export const en: LocaleMessages = {
         'Adds an item (folder import) that lists the files in a folder each time you open it',
       clipboardEmpty: "The clipboard doesn't have a file, folder, or URL",
     },
+    partlyUnreadable:
+      "⚠ Couldn't read {{files}}, so its items aren't shown. Fix it, then press F5 to reload",
     empty: {
       noMatch: 'No items match "{{query}}"',
       noMatchWindow: 'No windows match "{{query}}"',
@@ -145,6 +147,7 @@ export const en: LocaleMessages = {
       groupCount_other: ' ({{count}} items)',
       setPlacedBadge: 'Some rows have a window position',
       wsGroupBadge: 'Workspace group',
+      wsGroupArchivedBadge: 'Archived',
       windowSearchBadge: 'Window search: {{title}}',
       showNote: 'Show note',
     },
@@ -194,6 +197,8 @@ export const en: LocaleMessages = {
       id: 'ID: {{value}}',
       expandedFromId: 'Imported from ID: {{value}}',
       wsGroup: 'Workspace group (opens in a detached window when you pick it)',
+      wsGroupArchived:
+        'Archived group (opens in a detached window as it is. To change it, restore it in the workspace)',
       lineNumber: 'Line: {{value}}',
       expandedFrom: 'Imported from: {{value}}',
       expandedOptions: 'Options: {{value}}',
@@ -340,11 +345,10 @@ export const en: LocaleMessages = {
     gettingStartedAdd:
       'To add items, use ➕ at the top. You can also import browser bookmarks and installed apps from there.',
     autoLaunch: 'Start automatically when I sign in to Windows',
-    autoLaunchHint: "If it isn't running, the hotkey won't bring it up.",
     updateCheck: 'Check for updates automatically',
-    updateCheckHint:
-      'Checks GitHub once a day and lets you know when a new version is out. You install it yourself.',
+    portableMode: 'Save data next to the exe (portable mode)',
     changeLater: 'You can change all of this later in Settings.',
+    changeLaterExceptPortable: 'You can change all of this except portable mode later in Settings.',
     complete: 'Get started',
     saveFailed: 'Couldn\'t save the settings. Click "Get started" again.',
     defaultTabName: 'Main',
@@ -636,6 +640,7 @@ Keys you can change:
                defaultFileTab (the data file of the tab to open at startup, e.g. data2.json)
   Search       searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
   Updates      updateCheckEnabled updateCheckIncludeBeta
+  Launching    launchInheritEnvironment (pass QuickDashLauncher's environment variables to apps)
   Hotkeys      hotkey itemSearchHotkey (checked before changing; "" turns off itemSearchHotkey)
   Launcher     windowWidth (400-2000) windowHeight (300-1200)
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
@@ -1146,6 +1151,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       allNote:
         'Groups you add later appear automatically. In the launcher, they are sorted by name like other items',
       selectedNote: 'Only top-level groups can be chosen (subgroups are not shown)',
+      archivedLabel: 'Archived groups',
+      archivedExclude: "Don't show",
+      archivedInclude: 'Show them too',
+      archivedOnly: 'Archived groups only',
+      archivedHeading: 'Archived',
+      archivedTag: 'Archived',
       noGroups: 'The workspace has no groups',
       missing_one: '⚠ {{count}} group was not found (it was deleted). It is removed when you apply',
       missing_other:
@@ -1180,6 +1191,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       setRowsPlaced_other: '{{count}} rows ({{placed}} with a window position)',
       unknownType: '(unknown type)',
       wsGroupAll: 'All groups',
+      wsGroupAllWithArchived: 'All groups (including archived)',
+      wsGroupArchivedOnly: 'All archived groups',
       wsGroupSelected_one: '{{count}} selected group',
       wsGroupSelected_other: '{{count}} selected groups',
     },
@@ -1333,6 +1346,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       setRowsMissing_other: '⚠ {{count}} rows not found',
       setRowsMissingTitle:
         'Rows not found (the path is missing or the item was deleted):\n{{rows}}',
+      wsGroupsMissing_one: '⚠ {{count}} group not found',
+      wsGroupsMissing_other: '⚠ {{count}} groups not found',
+      wsGroupsMissingTitle:
+        'Some selected groups were not found in the workspace (deleted, or moved under another group). They are not listed in the launcher. Apply in ✏️ Edit details to remove them',
       dirPathPlaceholder: 'Enter a folder path',
       pathPlaceholder: 'Enter a path or URL',
       detailOnly: 'Edit {{type}} items in ✏️ Edit details (double-click to open)',
@@ -1736,7 +1753,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     distribution: 'Edition',
     dataLocation: 'Data location',
     dataLocations: {
-      portable: 'QuickDashLauncher-data next to the exe',
+      portable: 'QuickDashLauncher-data next to the exe (portable mode)',
       appData: '%APPDATA%',
     },
     updateAvailable: 'New version v{{version}} is available',
@@ -1750,7 +1767,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     updateCheckOff: 'Automatic update checks are off (turn them on in Settings → Basic).',
     distributions: {
       store: 'Microsoft Store',
-      portable: 'Portable',
+      portable: 'ZIP',
       installer: 'Installer',
       dev: 'Development',
     },
@@ -2106,6 +2123,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     portableDataUnwritable:
       "Can't write to the data folder, so data is saved in %APPDATA% instead: {{dir}}. Move QDL to a folder you can write to.",
   },
+  startupErrors: {
+    otherInstanceTitle: 'QuickDashLauncher will not start',
+    otherInstanceMessage:
+      'Another QuickDashLauncher from a different location is running with the same data.\n\nRunning QDL: {{running}}\nThis QDL: {{self}}\n\nOnly one QDL can run at a time with the same data. Quit the running QDL, then start this one again.',
+    otherInstancePortableUnwritable:
+      "This QDL can't write to the data folder next to its exe, so it tried to use the data in %APPDATA%: {{dir}}. Move QDL to a folder you can write to.",
+  },
   loadReport: {
     accepted_one: '{{count}} item loaded',
     accepted_other: '{{count}} items loaded',
@@ -2431,6 +2455,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     detached: {
       close: 'Close',
       closeLabel: 'Close detached window',
+      archivedBadge: 'Archived',
+      archivedBadgeTitle:
+        'This group is archived. You can open its items. To change it, restore it from the workspace archive',
     },
     itemCard: {
       linkTarget: 'Target: {{path}}',
@@ -2600,8 +2627,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     cli: {
       heading: 'QuickDashLauncher CLI',
     },
+    advanced: {
+      heading: 'Advanced',
+      launchInheritEnvironment: "Pass QuickDashLauncher's environment variables to apps",
+      launchInheritEnvironmentDescription:
+        "When off, apps start with the same environment variables as when you open them from the Start menu. Turn this off if you sometimes start QuickDashLauncher from Claude Code or a terminal and don't want apps to get the environment variables set there.",
+    },
     display: {
-      heading: 'Launcher',
       keyboardHints: 'Show keyboard hints',
       keyboardHintsDescription:
         'Shows keys such as F2 to edit and Shift+Enter to open the containing folder below the list.',
@@ -2631,6 +2663,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     windowPosition: {
       heading: 'Launcher',
       label: 'Where to show:',
+      appearance: 'Appearance:',
       cursorMonitorCenter: 'Center of the display with the mouse cursor (default)',
       cursorMonitorCenterDescription:
         'Shows it in the center of the display the mouse cursor is on',
@@ -2747,7 +2780,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       done: '{{section}} settings restored to defaults',
       failed: "Couldn't restore the default settings.",
       notes: {
-        display: '"Show tabs" isn\'t changed.',
+        dataFileTabs: '"Show tabs" isn\'t changed.',
         savedPosition: 'The remembered position is also cleared.',
       },
       values: {

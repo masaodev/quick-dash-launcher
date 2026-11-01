@@ -101,6 +101,7 @@ export type {
   JsonWsGroupItem,
   JsonWsGroupOptions,
   WsGroupScope,
+  WsGroupArchivedFilter,
   DirOptionsForProcessing,
 } from './json-data';
 export {

@@ -15,14 +15,10 @@ interface AdminSettingsBasicSectionProps {
   hotkeyValidation: { isValid: boolean; reason?: string };
   onHotkeyValidation: (isValid: boolean, reason?: string) => void;
   onItemSearchHotkeyChange: (hotkey: string) => void;
-  showConfirm: (
-    message: string,
-    options?: { title?: string; confirmText?: string; cancelText?: string; danger?: boolean }
-  ) => Promise<boolean>;
   sectionReset: SectionResetProps;
 }
 
-/** 設定画面「基本設定」: 言語・起動ホットキー・システム・表示・グループ起動 */
+/** 設定画面「基本設定」: 言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI・詳細 */
 const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   editedSettings,
   isLoading,
@@ -30,7 +26,6 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   hotkeyValidation,
   onHotkeyValidation,
   onItemSearchHotkeyChange,
-  showConfirm,
   sectionReset,
 }) => {
   const { t } = useTranslation();
@@ -46,24 +41,6 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
     };
   }, []);
 
-  // タブが複数あるときに「複数タブを表示」をオフにするなら、最初のタブだけになると先に知らせる
-  const handleDataFileTabsChange = async (checked: boolean): Promise<void> => {
-    const tabs = editedSettings.dataFileTabs || [];
-    if (!checked && tabs.length > 1) {
-      const first =
-        tabs.find((tab) => tab.files.includes(editedSettings.defaultFileTab ?? '')) ?? tabs[0];
-      const ok = await showConfirm(
-        t('settings.display.dataFileTabsOffConfirm', { name: first.name }),
-        {
-          title: t('settings.display.dataFileTabsOffTitle'),
-          confirmText: t('settings.display.dataFileTabsOffButton'),
-          cancelText: t('common.cancel'),
-        }
-      );
-      if (!ok) return;
-    }
-    handleSettingChange('showDataFileTabs', checked);
-  };
   // アイテム検索ホットキーのバリデーション状態
   const [itemSearchHotkeyValidation, setItemSearchHotkeyValidation] = useState<{
     isValid: boolean;
@@ -226,56 +203,6 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
 
       <div className="settings-section">
         <SettingsSectionHeader
-          title={t('settings.display.heading')}
-          section="display"
-          editedSettings={editedSettings}
-          isLoading={isLoading}
-          {...sectionReset}
-        />
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.showKeyboardHints}
-              onChange={(e) => handleSettingChange('showKeyboardHints', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.display.keyboardHints')}
-          </label>
-          <div className="setting-description">
-            {t('settings.display.keyboardHintsDescription')}
-          </div>
-        </div>
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.showDataFileTabs}
-              onChange={(e) => void handleDataFileTabsChange(e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.display.dataFileTabs')}
-          </label>
-          <div className="setting-description">{t('settings.display.dataFileTabsDescription')}</div>
-        </div>
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.recordLaunchUsage}
-              onChange={(e) => handleSettingChange('recordLaunchUsage', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.system.recordLaunchUsage')}
-          </label>
-          <div className="setting-description">
-            {t('settings.system.recordLaunchUsageDescription')}
-          </div>
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <SettingsSectionHeader
           title={t('settings.search.heading')}
           section="search"
           editedSettings={editedSettings}
@@ -325,6 +252,20 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           <label>
             <input
               type="checkbox"
+              checked={editedSettings.recordLaunchUsage}
+              onChange={(e) => handleSettingChange('recordLaunchUsage', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.system.recordLaunchUsage')}
+          </label>
+          <div className="setting-description">
+            {t('settings.system.recordLaunchUsageDescription')}
+          </div>
+        </div>
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
               checked={editedSettings.searchSortByUsage ?? false}
               onChange={(e) => handleSettingChange('searchSortByUsage', e.target.checked)}
               disabled={isLoading}
@@ -356,6 +297,30 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
             {t('settings.system.cli')}
           </label>
           <div className="setting-description">{t('settings.system.cliDescription')}</div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <SettingsSectionHeader
+          title={t('settings.advanced.heading')}
+          section="advanced"
+          editedSettings={editedSettings}
+          isLoading={isLoading}
+          {...sectionReset}
+        />
+        <div className="setting-item">
+          <label>
+            <input
+              type="checkbox"
+              checked={editedSettings.launchInheritEnvironment ?? true}
+              onChange={(e) => handleSettingChange('launchInheritEnvironment', e.target.checked)}
+              disabled={isLoading}
+            />
+            {t('settings.advanced.launchInheritEnvironment')}
+          </label>
+          <div className="setting-description">
+            {t('settings.advanced.launchInheritEnvironmentDescription')}
+          </div>
         </div>
       </div>
     </>

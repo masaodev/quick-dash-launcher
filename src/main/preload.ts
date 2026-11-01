@@ -125,6 +125,7 @@ const electronAPI: ElectronAPI = {
   onAdminHidden: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_HIDDEN, callback),
   onOpenImportModal: (callback) =>
     createEventListener<'bookmark' | 'app'>(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, callback),
+  onRevealItem: (callback) => createEventListener<string>(IPC_CHANNELS.EVENT_REVEAL_ITEM, callback),
   onDataChanged: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_DATA_CHANGED, callback),
   onSettingsChanged: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_SETTINGS_CHANGED, callback),
@@ -206,6 +207,8 @@ const electronAPI: ElectronAPI = {
   getAutoLaunchStatus: () => ipcInvoke(IPC_CHANNELS.SETTINGS_GET_AUTO_LAUNCH_STATUS),
   getLanguage: () => ipcInvoke(IPC_CHANNELS.SETTINGS_GET_LANGUAGE),
   isFirstLaunch: () => ipcInvoke(IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH),
+  switchToPortableOnFirstLaunch: (settings) =>
+    ipcInvoke(IPC_CHANNELS.FIRST_LAUNCH_SWITCH_TO_PORTABLE, settings),
   // 編集ウィンドウ関連API
   hideEditWindow: () => ipcInvoke(IPC_CHANNELS.HIDE_EDIT_WINDOW),
   toggleEditWindow: () => ipcInvoke(IPC_CHANNELS.TOGGLE_EDIT_WINDOW),
@@ -214,6 +217,8 @@ const electronAPI: ElectronAPI = {
     ipcInvoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL, modal),
   getInitialTab: () => ipcInvoke(IPC_CHANNELS.GET_INITIAL_TAB),
   getPendingImportModal: () => ipcInvoke(IPC_CHANNELS.GET_PENDING_IMPORT_MODAL),
+  openEditWindowWithItem: (itemId) => ipcInvoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_ITEM, itemId),
+  getPendingRevealItem: () => ipcInvoke(IPC_CHANNELS.GET_PENDING_REVEAL_ITEM),
   copyToClipboard: (text) => ipcInvoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
   readClipboardForRegister: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_READ_FOR_REGISTER),
   // ランチャーの子ウィンドウ（アイテムの登録・編集、アイコン取得結果）

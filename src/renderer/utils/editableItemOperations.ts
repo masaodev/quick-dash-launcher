@@ -591,11 +591,18 @@ export function describePathAndArgs(jsonItem: JsonItem): string {
         : i18next.t('itemManager.pathSummary.setRows', { count: entries.length });
     }
     case 'wsgroup':
-      return jsonItem.scope === 'all'
-        ? i18next.t('itemManager.pathSummary.wsGroupAll')
-        : i18next.t('itemManager.pathSummary.wsGroupSelected', {
-            count: jsonItem.groupIds?.length ?? 0,
-          });
+      if (jsonItem.scope === 'all') {
+        if (jsonItem.archived === 'include') {
+          return i18next.t('itemManager.pathSummary.wsGroupAllWithArchived');
+        }
+        if (jsonItem.archived === 'only') {
+          return i18next.t('itemManager.pathSummary.wsGroupArchivedOnly');
+        }
+        return i18next.t('itemManager.pathSummary.wsGroupAll');
+      }
+      return i18next.t('itemManager.pathSummary.wsGroupSelected', {
+        count: jsonItem.groupIds?.length ?? 0,
+      });
     default:
       return i18next.t('itemManager.pathSummary.unknownType');
   }

@@ -5,7 +5,7 @@ import { isPortableEdition } from './portableMode.js';
 
 /**
  * 配布形式を判定する。Store 版は process.windowsStore、
- * ポータブル版は ZIP に入れた印のファイル（portable.txt）で見分ける。
+ * ZIP 版は ZIP に入れた印のファイル（portable.txt）で見分ける。
  * 以前の 1 ファイルの exe のポータブル版は、ランチャーが設定する PORTABLE_EXECUTABLE_FILE で見分ける
  */
 export function getAppDistribution(): AppDistribution {

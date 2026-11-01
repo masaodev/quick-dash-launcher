@@ -154,6 +154,120 @@ test.describe('QuickDashLauncher - WSグループ', () => {
     });
   });
 
+  test('選んだグループを消すと、アイテム管理の行に見つからない数が出る（A3-224）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const [work, hobby] = await mainWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const created = [await api.createGroup('E2E 仕事'), await api.createGroup('E2E 趣味')];
+      return created.map((group) => group.id);
+    });
+    configHelper.addItemToFile('data.json', {
+      id: 'wsgsel01',
+      type: 'wsgroup',
+      scope: 'selected',
+      groupIds: [work, hobby],
+    } as JsonItem);
+    await utils.reloadWithF5();
+
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    try {
+      const row = adminWindow.locator('tr', { hasText: '選んだワークスペースグループ（2 件）' });
+      await expect(row).toBeVisible();
+      // 「リンク切れを確認」を押す前から判定するので、全部あるうちは印が無い
+      await expect(adminWindow.getByTestId('ws-group-row-missing')).toHaveCount(0);
+
+      await test.step('グループを 1 つ消すと、開いたままのアイテム管理に印が出る（件数は選んだ数のまま）', async () => {
+        await mainWindow.evaluate((id) => window.electronAPI.workspaceAPI.deleteGroup(id), hobby);
+        await expect(row.getByTestId('ws-group-row-missing')).toHaveText(
+          '⚠ グループ 1 件が見つかりません',
+          { timeout: 5000 }
+        );
+        await expect(row).toContainText('選んだワークスペースグループ（2 件）');
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, '見つからないグループの印');
+      });
+
+      await test.step('「リンク切れを確認」の件数にも入る', async () => {
+        await adminWindow.locator('.organize-dropdown .dropdown-trigger-btn').click();
+        await adminWindow
+          .locator('.organize-dropdown .dropdown-item', { hasText: 'リンク切れを確認' })
+          .click();
+        await expect(adminWindow.locator('.missing-count')).toHaveText('リンク切れ: 1 件');
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
+  test('ランチャーで WSグループの行に F2 を押すと、アイテム管理でその行へスクロールして編集ダイアログを開く（A3-229 W8）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await mainWindow.evaluate(() => window.electronAPI.workspaceAPI.createGroup('E2E 仕事'));
+    // 行が一覧の下の方（最初は見えない位置）に来るよう、前にアイテムを並べる
+    const fillers: JsonItem[] = Array.from({ length: 60 }, (_, i) => ({
+      id: `wsgf2${String(i).padStart(3, '0')}`,
+      type: 'item',
+      displayName: `埋め草 ${i}`,
+      path: `https://example.com/${i}`,
+    }));
+    configHelper.writeDataFile('data.json', {
+      version: '1.0',
+      items: [
+        ...fillers,
+        { id: 'wsgf2row', type: 'wsgroup', scope: 'all', options: { prefix: 'WS: ' } } as JsonItem,
+      ],
+    });
+    await utils.reloadWithF5();
+    const row = (page: typeof mainWindow) =>
+      page.locator('tbody tr', { hasText: 'すべてのワークスペースグループ' });
+
+    const [adminWindow] = await test.step('初めて開くとき（管理ウィンドウを作る）', async () => {
+      await utils.searchFor('WS: E2E');
+      await expect(mainWindow.locator('.item', { hasText: 'WS: E2E 仕事' })).toBeVisible();
+      return Promise.all([
+        electronApp.waitForEvent('window', {
+          predicate: (window) => window.url().includes('admin.html'),
+          timeout: 10000,
+        }),
+        mainWindow.keyboard.press('F2'),
+      ]);
+    });
+    const modal = adminWindow.getByTestId('ws-group-modal');
+    const closeModal = async () => {
+      await modal.getByRole('button', { name: 'キャンセル' }).click();
+      await expect(modal).toHaveCount(0);
+    };
+    try {
+      await test.step('その行の編集ダイアログが開き、閉じるとその行が見えている（選びはしない）', async () => {
+        await expect(modal).toBeVisible();
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, 'F2 で開いた WSグループの編集');
+        await closeModal();
+        await expect(row(adminWindow)).toBeInViewport();
+        await expect(adminWindow.locator('tbody input[type="checkbox"]:checked')).toHaveCount(0);
+      });
+
+      await test.step('開いているアイテム管理で検索して行が隠れていても、検索を外して見せる', async () => {
+        await adminWindow.locator('.toolbar-search input').fill('埋め草 1');
+        await expect(row(adminWindow)).toHaveCount(0);
+        await mainWindow.evaluate(() => window.electronAPI.openEditWindowWithItem('wsgf2row'));
+        await expect(modal).toBeVisible();
+        await expect(adminWindow.locator('.toolbar-search input')).toHaveValue('');
+        await closeModal();
+        await expect(row(adminWindow)).toBeInViewport();
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   test('グループが 1 つも無いときに足した「すべてのグループ」の行も、グループを作ると F5 なしで並ぶ', async ({
     mainWindow,
     configHelper,
@@ -173,6 +287,102 @@ test.describe('QuickDashLauncher - WSグループ', () => {
     await mainWindow.evaluate(() => window.electronAPI.workspaceAPI.createGroup('E2E 後から'));
     await expect(mainWindow.locator('.item', { hasText: 'WS: E2E 後から' })).toHaveCount(1, {
       timeout: 5000,
+    });
+  });
+
+  test('アーカイブしたグループも並べられ、選ぶとアーカイブのまま切り離しウィンドウで開く（A3-227）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const [active, archived] = await mainWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const created = [await api.createGroup('E2E 今ある'), await api.createGroup('E2E しまった')];
+      await api.createItem(
+        { type: 'item', displayName: 'E2E しまったメモ', path: 'https://example.com/' },
+        created[1].id
+      );
+      await api.archiveGroup(created[1].id);
+      return created.map((group) => group.id);
+    });
+    configHelper.addItemToFile('data.json', {
+      id: 'wsgall02',
+      type: 'wsgroup',
+      scope: 'all',
+      archived: 'include',
+      options: { prefix: 'WS: ' },
+    } as JsonItem);
+    configHelper.addItemToFile('data.json', {
+      id: 'wsgsel02',
+      type: 'wsgroup',
+      scope: 'selected',
+      groupIds: [archived],
+      options: { prefix: 'SEL: ' },
+    } as JsonItem);
+    await utils.reloadWithF5();
+
+    await test.step('「一緒に並べる」の行では、今あるグループとアーカイブしたグループが並び、札で見分けられる', async () => {
+      await utils.searchFor('WS: E2E');
+      await expect(mainWindow.locator('.item', { hasText: 'WS: E2E' })).toHaveCount(2);
+      const archivedRow = mainWindow.locator('.item', { hasText: 'WS: E2E しまった' });
+      await expect(archivedRow.locator('.ws-group-badge')).toHaveText('アーカイブ済み');
+      await expect(archivedRow).toHaveClass(/archived-ws-group/);
+      const activeRow = mainWindow.locator('.item', { hasText: 'WS: E2E 今ある' });
+      await expect(activeRow.locator('.ws-group-badge')).toHaveText('ワークスペースグループ');
+      await utils.attachScreenshot(testInfo, 'アーカイブしたグループの WSグループ');
+    });
+
+    await test.step('「選んだグループ」で選んだアーカイブしたグループも並ぶ', async () => {
+      await utils.searchFor('SEL: E2E');
+      await expect(mainWindow.locator('.item', { hasText: 'SEL: E2E しまった' })).toHaveCount(1);
+    });
+
+    await test.step('選ぶと、復元せずにアーカイブのまま切り離しウィンドウで開く', async () => {
+      await utils.searchFor('WS: E2E しまった');
+      await mainWindow.keyboard.press('Enter');
+      await expect
+        .poll(() => hasDetachedWindow(electronApp, archived), { timeout: 10000 })
+        .toBe(true);
+      const pages = electronApp.windows();
+      let detachedPage = pages[0];
+      for (const page of pages) {
+        const name = await page.evaluate(() => window.name).catch(() => '');
+        if (name === `detached-group:${archived}`) detachedPage = page;
+      }
+      await expect(detachedPage.getByTestId('detached-archived-badge')).toBeVisible();
+      await expect(detachedPage.locator('body')).toContainText('E2E しまったメモ');
+      // 復元していない（アーカイブに残っている）
+      const stillArchived = await mainWindow.evaluate(
+        async (id) =>
+          (await window.electronAPI.workspaceAPI.loadArchivedGroups()).some((g) => g.id === id),
+        archived
+      );
+      expect(stillArchived).toBe(true);
+    });
+
+    await test.step('追加のダイアログでは、アーカイブしたグループを見出しで分けて出し、「すべて」で扱いを選べる', async () => {
+      const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+      try {
+        await adminWindow.locator('.toolbar-split-toggle').click();
+        await adminWindow.getByTestId('add-ws-group').click();
+        const list = adminWindow.getByTestId('ws-group-list');
+        await expect(list).toContainText('アーカイブ済み');
+        await expect(adminWindow.getByTestId(`ws-group-check-${active}`)).toBeChecked();
+        // 既定は「並べない」なので、アーカイブしたグループにはチェックが付かない
+        await expect(adminWindow.getByTestId('ws-group-archived-exclude')).toBeChecked();
+        await expect(adminWindow.getByTestId(`ws-group-check-${archived}`)).not.toBeChecked();
+
+        await adminWindow.getByTestId('ws-group-archived-only').check();
+        const preview = adminWindow.getByTestId('ws-group-preview');
+        await expect(preview.locator('li')).toHaveCount(1);
+        await expect(preview.locator('li')).toContainText('E2E しまった');
+        await expect(preview.locator('li')).toContainText('アーカイブ済み');
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, 'アーカイブしたグループの扱い');
+      } finally {
+        await adminWindow.close();
+      }
     });
   });
 });

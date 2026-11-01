@@ -1,6 +1,7 @@
 import { BrowserWindow, screen } from 'electron';
 import { windowLogger } from '@common/logger';
 
+import { moveWindowKeepingSize } from './screenPosition.js';
 import { computeSnappedPosition, type Rect } from './snapPosition.js';
 import {
   getCurrentDesktopNumber,
@@ -72,7 +73,7 @@ export function attachSnapHandler(win: BrowserWindow, getEnabled: () => boolean)
     const workAreas = screen.getAllDisplays().map((display) => display.workArea);
     const { x, y, snapped } = computeSnappedPosition(bounds, workAreas, getTargetRects(win));
     if (snapped) {
-      win.setPosition(x, y);
+      moveWindowKeepingSize(win, x, y);
     }
   });
 

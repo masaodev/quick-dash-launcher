@@ -156,7 +156,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 
 | ファイル | 版の項目（今の版） | 新しい版のときの動き |
 | --- | --- | --- |
-| `datafiles/data*.json` | `version`（`"1.0"`） | 表示はするが書き込まない。採番・旧形式からの変換の書き戻しもしない。アイテムの追加・編集・削除・移動、編集画面の保存は「QDL を最新の版に更新してください」のエラーで止まる |
+| `datafiles/data*.json` | `version`（`"1.0"`） | 表示はするが書き込まない。採番・旧形式からの変換の書き戻しもしない（変換の対象から外すので、変換前のスナップショットも作らない。A3-229 U10）。アイテムの追加・編集・削除・移動、編集画面の保存は「QDL を最新の版に更新してください」のエラーで止まる |
 | `workspace.json`・`workspace-archive.json` | `version`（`"2.0"`） | 表示はするが、片方でも新しい版なら両方とも書き込まない（参照が両ファイルにまたがるため）。版を `"2.0"` に直すこともしない |
 | `settings.json` | `settingsVersion`（`1`） | ファイルには一切書かない（既定値の書き足しもしない）。画面や CLI で変えた設定は QDL を終了するまでだけ効く |
 | `item-usage.json`・`path-type-cache.json` | `version`（`1`） | 上書きしない（起動の記録は読んで使い、足した分は保存しない） |
@@ -179,6 +179,7 @@ JSON ファイルはすべて **UTF-8（BOMなし）** で保存されます。�
 - **項目を足すだけなら版を上げない**。古い版は知らない項目として残すので、版を上げると古い版で書けなくなるだけ損になる
 - **版を上げるのは、古い版の QDL に書かせると困る変更のとき**（項目の意味や形を変える、入れ子の中に項目を足す、要素の並びや参照の規則を変える）。上げた版より古い QDL は、そのファイルを読むだけになる
 - 型（`src/common/types/json-data.ts`・`json-workspace.ts`）に項目を足したら、`unknownKeys.ts` の知っている項目の一覧にも足す（足し忘れは型チェックで止まる）。項目をやめるときも一覧には残す
+- CLI（`qdl`）のコマンド・出力の互換は、別に決めている（[CLI - 互換の決まり](../../features/cli.md#互換の決まり)）
 
 ---
 
@@ -199,7 +200,7 @@ v0.8.0-beta.5 までの QDL は、直接編集する人・AI 向けに `config/R
 1. 環境変数 `QUICK_DASH_CONFIG_DIR` があれば、そのフォルダ。Windows のシステムフォルダ（`C:\Windows`・`C:\Program Files` など）を指したときは無視して既定に戻す
 2. なければ、userData フォルダの下の `config\`。userData は既定で `%APPDATA%\quick-dash-launcher\`（`package.json` の `name`。Store 版で新しく作る場合はパッケージ専用の場所に振り替えられる。[ビルドとデプロイ - Store 版（MSIX）](../../setup/build-deploy.md#store-版msix)）なので、設定フォルダは `%APPDATA%\quick-dash-launcher\config\`
 3. 多重起動用の環境変数 `APP_INSTANCE` があると、userData が `%APPDATA%\<APP_INSTANCE>-quick-dash-launcher\` に変わり、設定フォルダもその下の `config\` になる（`npm run dev` は `APP_INSTANCE=dev` なので `%APPDATA%\dev-quick-dash-launcher\config\`）
-4. ポータブル版（ZIP）で、exe の横にデータフォルダ `QuickDashLauncher-data\` があれば、userData がそのフォルダになり、設定フォルダは `QuickDashLauncher-data\config\` になる（`APP_INSTANCE` が付いているときは使わない。書き込めないときは `%APPDATA%` を使い、起動時にトーストで知らせる。[ビルドとデプロイ - ポータブル版（ZIP）](../../setup/build-deploy.md#ポータブル版zip)）
+4. ZIP 版で、exe の横にデータフォルダ `QuickDashLauncher-data\` があれば（ポータブルモード）、userData がそのフォルダになり、設定フォルダは `QuickDashLauncher-data\config\` になる（`APP_INSTANCE` が付いているときは使わない。書き込めないときは `%APPDATA%` を使い、起動時にトーストで知らせる。[ビルドとデプロイ - ZIP 版](../../setup/build-deploy.md#zip-版)）
 
 データファイル・ワークスペースファイル・バックアップなど、このページに出てくるファイルとフォルダはすべて設定フォルダの下に置かれる。パスの組み立ては `PathManager` にまとまっている。
 

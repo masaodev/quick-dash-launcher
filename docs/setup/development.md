@@ -137,7 +137,7 @@ QUICK_DASH_CONFIG_DIR=./tests/dev/full npm run dev
 
 同じ userData で 2 つ目を起動すると、2 つ目はすぐに終了し、動いている側がランチャーを表示する（`src/main/main.ts` の `app.requestSingleInstanceLock()` と `second-instance`。CLI が `--launched-by-cli` を付けて起動したときは表示しない）。
 
-- 防止は userData ごとなので、`APP_INSTANCE` が違うインスタンス（`dev`・`dev2`・本番）は同時に動かせる。同じ `npm run dev` を 2 回起動すると（別の作業ツリーで同時に起動した場合も）、2 つ目は終了する。終了するときは、理由と userData の場所を標準エラーに出す
+- 防止は userData ごとなので、`APP_INSTANCE` が違うインスタンス（`dev`・`dev2`・本番）は同時に動かせる。同じ `npm run dev` を 2 回起動すると（別の作業ツリーで同時に起動した場合も）、2 つ目は終了する。終了するときは、理由と userData の場所を標準エラーに出す。パッケージ版で、動いている側が別の exe（インストーラー版と ZIP 版など。userData の `cli-launcher.json` に書かれた exe で見分ける）のときは、理由をダイアログでも出す（[ウィンドウ制御 - 二重起動](../architecture/window-control.md)）
 - 作業ツリーを複数使って同時に試すときは、2 つ目を別の `APP_INSTANCE`・`VITE_PORT`・`HOTKEY` で起動する（[カスタムインスタンスの作成](#カスタムインスタンスの作成)）
 - パッケージ版（`release/win-unpacked` など）を手元で試すときも、本番と同時に動かすなら `APP_INSTANCE` を付ける。`APP_INSTANCE` 付きの起動は自動起動のショートカットに触らないので、本番のショートカットは変わらない（[設定ファイル形式 - 自動起動設定](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）
 - `QUICK_DASH_CONFIG_DIR` を指定した起動（`npm run dev:test`・E2E テスト）は対象外で、何個でも同時に動かせる。その代わり CLI の待ち受けもしない
@@ -153,6 +153,8 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 ```
 
 `npm run dev:test` は CLI の待ち受けをしないので試せない。開発モードの本体は起動情報（`cli-launcher.json`）を書かないため、本体が起動していないと `qdl.exe` は起動する exe を見つけられない。先に `npm run dev` を起動しておくか、`QDL_NO_LAUNCH=1` で起動させないようにする。
+
+開発版の本体は、ShellExecute で開くもの（引数なしのアプリ・ファイル・フォルダ・URL）を `cli/target/release/qdl.exe` の補助コマンドで開く。`npm run build:cli` をしていないと、Electron の `shell.openPath`・`shell.openExternal` で開く（本体の環境変数が開いたアプリに届く。[起動するアプリの環境変数](../architecture/window-control.md#起動するアプリの環境変数)）。
 
 `qdl.exe` が読む環境変数は次のとおり（本体は読まない。`cli/src/main.rs`）。
 

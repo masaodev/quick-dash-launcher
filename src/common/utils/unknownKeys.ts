@@ -70,6 +70,7 @@ const DATA_ITEM_KEYS = [
   // WSグループ
   'scope',
   'groupIds',
+  'archived',
   // 旧形式（読み込み時に変換する）
   'itemNames',
   'windowConfig',

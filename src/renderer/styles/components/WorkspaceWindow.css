@@ -913,3 +913,15 @@ html:has(.workspace-window.background-transparent) {
   font-size: 12px;
   -webkit-app-region: no-drag;
 }
+
+/* アーカイブしたグループを開いているときの札（A3-227） */
+.detached-archived-badge {
+  align-self: center;
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  background: var(--bg-app);
+  border: var(--border-light);
+  border-radius: var(--border-radius);
+  white-space: nowrap;
+}

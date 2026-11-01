@@ -13,7 +13,11 @@ import {
   moveWindowToCurrentDesktop,
 } from './utils/virtualDesktop/index.js';
 import { attachSnapHandler } from './utils/windowSnap.js';
-import { isPositionOnScreen, setBoundsAcrossDisplays } from './utils/screenPosition.js';
+import {
+  isPositionOnScreen,
+  moveWindowKeepingSize,
+  setBoundsAcrossDisplays,
+} from './utils/screenPosition.js';
 import { getMainWindowDisplay } from './utils/referenceDisplay.js';
 import {
   DEFAULT_WEB_PREFERENCES,
@@ -503,7 +507,7 @@ export async function setWorkspacePosition(mode?: WorkspacePositionMode): Promis
           windowLogger.info('まだ置いていないので、ワークスペースを右端に配置');
         }
       } else {
-        workspaceWindow.setPosition(saved.x, saved.y);
+        moveWindowKeepingSize(workspaceWindow, saved.x, saved.y);
         windowLogger.info(`ワークスペースを固定位置に配置: (${saved.x}, ${saved.y})`);
       }
       break;

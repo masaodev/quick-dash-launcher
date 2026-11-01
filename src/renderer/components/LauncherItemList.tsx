@@ -47,6 +47,11 @@ interface ItemListProps {
   onAddFolderImport?: () => void;
   /** 読めなかったデータファイルの案内の「設定フォルダを開く」 */
   onOpenConfigFolder?: () => void;
+  /**
+   * 今のタブのうち読めなかったデータファイル（ほかのファイルのアイテムは並んでいるとき）。
+   * 指定があれば一覧の上に細い帯で知らせる（タブが空のときは emptyState の corrupted が知らせるので渡さない）
+   */
+  partlyUnreadableFiles?: string[];
   /** 一覧の余白（アイテムの無い所）の右クリック。未指定なら何も出さない */
   onBlankContextMenu?: () => void;
   /** 他のタブにあるときの案内の「Tab:タブを切り替える」（Tab キーと同じ動き） */
@@ -127,6 +132,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onAddItem,
   onAddFolderImport,
   onOpenConfigFolder,
+  partlyUnreadableFiles,
   onBlankContextMenu,
   onSwitchTab,
 }) => {
@@ -457,6 +463,14 @@ const LauncherItemList: React.FC<ItemListProps> = ({
 
   return (
     <>
+      {/* 一覧の外に置く（スクロールしない・PageUp／PageDown の行数の計算に入らない） */}
+      {partlyUnreadableFiles && partlyUnreadableFiles.length > 0 && (
+        <div className="item-list-unreadable-bar" role="status" data-testid="partly-unreadable-bar">
+          {t('launcher.partlyUnreadable', {
+            files: partlyUnreadableFiles.join(t('common.listSeparator')),
+          })}
+        </div>
+      )}
       <div
         className="item-list"
         ref={listRef}
@@ -537,6 +551,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
             const isSet = isSetItem(item);
             const isClipboard = isClipboardItem(item);
             const isWsGroup = isWsGroupItem(item);
+            const isArchivedWsGroup = isWsGroup && item.archived === true;
             // WSグループはグループを開くだけで中身を持たないので、ワークスペースへドラッグさせない
             const isDraggable = !isWsGroupItem(item);
             const isDragging = draggedItemIndex === index;
@@ -564,6 +579,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
               isClipboard && 'clipboard-item',
               isDragging && 'dragging',
               isMarked && 'marked',
+              isArchivedWsGroup && 'archived-ws-group',
             ]
               .filter(Boolean)
               .join(' ');
@@ -615,8 +631,19 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                     </span>
                   )}
                   {isWsGroup && (
-                    <span className="ws-group-badge" title={t('launcher.tooltip.wsGroup')}>
-                      {t('launcher.list.wsGroupBadge')}
+                    <span
+                      className="ws-group-badge"
+                      title={t(
+                        isArchivedWsGroup
+                          ? 'launcher.tooltip.wsGroupArchived'
+                          : 'launcher.tooltip.wsGroup'
+                      )}
+                    >
+                      {t(
+                        isArchivedWsGroup
+                          ? 'launcher.list.wsGroupArchivedBadge'
+                          : 'launcher.list.wsGroupBadge'
+                      )}
                     </span>
                   )}
                   {isLauncherItem(item) && hasItemWindowSwitch(item) && (

@@ -101,6 +101,8 @@ export const ja = {
         'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
       clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
     },
+    partlyUnreadable:
+      '⚠ {{files}} を読めなかったので、そのアイテムは出ていません。直したら F5 で読み直してください',
     empty: {
       noMatch: '「{{query}}」に合うアイテムはありません',
       noMatchWindow: '「{{query}}」に合うウィンドウはありません',
@@ -148,6 +150,7 @@ export const ja = {
       groupCount_other: '（{{count}} 件）',
       setPlacedBadge: 'ウィンドウ位置のある行があります',
       wsGroupBadge: 'ワークスペースグループ',
+      wsGroupArchivedBadge: 'アーカイブ済み',
       windowSearchBadge: 'ウィンドウ検索: {{title}}',
       showNote: 'メモを表示',
     },
@@ -196,6 +199,8 @@ export const ja = {
       id: 'ID: {{value}}',
       expandedFromId: '取込元 ID: {{value}}',
       wsGroup: 'ワークスペースのグループ（選ぶと切り離しウィンドウで開きます）',
+      wsGroupArchived:
+        'アーカイブしたグループ（選ぶとアーカイブのまま切り離しウィンドウで開きます。変えるときはワークスペースで復元してください）',
       lineNumber: '行番号: {{value}}',
       expandedFrom: '取込元: {{value}}',
       expandedOptions: '設定: {{value}}',
@@ -341,11 +346,10 @@ export const ja = {
     gettingStartedAdd:
       'アイテムの登録は、上の ➕ からできます。ブラウザのブックマークやインストール済みアプリも、ここからまとめて取り込めます。',
     autoLaunch: 'Windows にサインインしたら自動で起動する',
-    autoLaunchHint: '起動していないと、キーを押しても出ません。',
     updateCheck: 'アップデートを自動で確認する',
-    updateCheckHint:
-      '1 日 1 回 GitHub で確認し、新しいバージョンがあれば通知します。インストールは手動です。',
+    portableMode: 'データを exe の横に保存する（ポータブルモード）',
     changeLater: 'どれもあとから「設定」で変えられます',
+    changeLaterExceptPortable: 'ポータブルモード以外は、あとから「設定」で変えられます',
     complete: '使いはじめる',
     saveFailed: '設定を保存できませんでした。もう一度「使いはじめる」を押してください。',
     defaultTabName: 'メイン',
@@ -635,6 +639,7 @@ info secondary purple teal pink indigo orange cyan か #rrggbb。グループは
                   defaultFileTab（起動したときに開くタブのデータファイル。例 data2.json）
   検索            searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
   更新            updateCheckEnabled updateCheckIncludeBeta
+  起動            launchInheritEnvironment（アプリに QuickDashLauncher の環境変数を引き継ぐ）
   ホットキー      hotkey itemSearchHotkey（登録できるか確かめてから変える。itemSearchHotkey は "" で無効）
   ランチャー      windowWidth（400〜2000）windowHeight（300〜1200）
                   windowPositionMode（center / cursor / cursorMonitorCenter / fixed）
@@ -1150,6 +1155,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       allNote:
         'あとで増やしたグループも自動で並びます。ランチャーでは、ほかのアイテムと同じく名前の順に並びます',
       selectedNote: 'いちばん上の階層のグループだけを選べます（サブグループは並べません）',
+      archivedLabel: 'アーカイブしたグループ',
+      archivedExclude: '並べない',
+      archivedInclude: '一緒に並べる',
+      archivedOnly: 'アーカイブしたグループだけ',
+      archivedHeading: 'アーカイブ済み',
+      archivedTag: 'アーカイブ済み',
       noGroups: 'ワークスペースにグループがありません',
       missing_one:
         '⚠ 見つからないグループが {{count}} 件あります（消えたグループ）。反映すると外れます',
@@ -1185,6 +1196,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setRowsPlaced_other: '{{count}} 行（ウィンドウ位置のある行 {{placed}}）',
       unknownType: '（不明な型）',
       wsGroupAll: 'すべてのグループ',
+      wsGroupAllWithArchived: 'すべてのグループ（アーカイブ済みも）',
+      wsGroupArchivedOnly: 'アーカイブしたグループすべて',
       wsGroupSelected_one: '選んだグループ {{count}} 件',
       wsGroupSelected_other: '選んだグループ {{count}} 件',
     },
@@ -1336,6 +1349,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setRowsMissing_one: '⚠ {{count}} 行見つかりません',
       setRowsMissing_other: '⚠ {{count}} 行見つかりません',
       setRowsMissingTitle: '見つからない行（パスが無い・指すアイテムが消えた）:\n{{rows}}',
+      wsGroupsMissing_one: '⚠ グループ {{count}} 件が見つかりません',
+      wsGroupsMissing_other: '⚠ グループ {{count}} 件が見つかりません',
+      wsGroupsMissingTitle:
+        '選んだグループのうち、ワークスペースに見つからないものがあります（消えたグループ・サブグループになったもの）。ランチャーには並びません。✏️ 詳細編集で「反映」すると外れます',
       dirPathPlaceholder: 'フォルダのパスを入力',
       pathPlaceholder: 'パスまたは URL を入力',
       detailOnly: '{{type}}は ✏️ 詳細編集から編集します（ダブルクリックで開く）',
@@ -1738,7 +1755,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     distribution: '配布形式',
     dataLocation: 'データの保存先',
     dataLocations: {
-      portable: 'exe の横の QuickDashLauncher-data',
+      portable: 'exe の横の QuickDashLauncher-data（ポータブルモード）',
       appData: '%APPDATA%',
     },
     updateAvailable: '新しいバージョン v{{version}} があります',
@@ -1752,7 +1769,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     updateCheckOff: 'アップデートの確認はオフです（設定タブ → 基本設定でオンにできます）',
     distributions: {
       store: 'Microsoft Store 版',
-      portable: 'ポータブル版',
+      portable: 'ZIP 版',
       installer: 'インストーラー版',
       dev: '開発版',
     },
@@ -2107,6 +2124,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     portableDataUnwritable:
       'データフォルダに書き込めないため、%APPDATA% にデータを保存します: {{dir}}。書き込めるフォルダに QDL を置き直してください',
   },
+  startupErrors: {
+    otherInstanceTitle: 'QuickDashLauncher は起動しません',
+    otherInstanceMessage:
+      '別の場所の QuickDashLauncher が、同じデータで動いています。\n\n動いている QDL: {{running}}\nこの QDL: {{self}}\n\n同じデータを使う QDL は、同時に 1 つしか動かせません。動いている QDL を終了してから起動し直してください',
+    otherInstancePortableUnwritable:
+      'この QDL は exe の横のデータフォルダに書き込めないため、%APPDATA% のデータを使おうとしました: {{dir}}。書き込めるフォルダに QDL を置き直してください',
+  },
   loadReport: {
     accepted_one: '{{count}} 件読み込み',
     accepted_other: '{{count}} 件読み込み',
@@ -2432,6 +2456,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     detached: {
       close: '閉じる',
       closeLabel: '切り離しウィンドウを閉じる',
+      archivedBadge: 'アーカイブ済み',
+      archivedBadgeTitle:
+        'アーカイブしたグループです。中のアイテムは開けますが、変えるときはワークスペースのアーカイブから復元してください',
     },
     itemCard: {
       linkTarget: 'リンク先: {{path}}',
@@ -2610,8 +2637,13 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     cli: {
       heading: 'QuickDashLauncher CLI',
     },
+    advanced: {
+      heading: '詳細',
+      launchInheritEnvironment: 'アプリに QuickDashLauncher の環境変数を引き継ぐ',
+      launchInheritEnvironmentDescription:
+        'オフにすると、スタートメニューから開いたときと同じ環境変数でアプリを起動します。QuickDashLauncher を Claude Code やターミナルから起動することがあり、そこで設定した環境変数を起動するアプリに渡したくないときにオフにします。',
+    },
     display: {
-      heading: 'ランチャー',
       keyboardHints: '操作のヒントを表示する',
       keyboardHintsDescription:
         'F2 で編集、Shift+Enter で親フォルダを開く、などのキー操作を一覧の下に表示します。',
@@ -2641,6 +2673,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     windowPosition: {
       heading: 'ランチャー',
       label: '表示する場所:',
+      appearance: '見た目:',
       cursorMonitorCenter: 'マウスカーソルのあるディスプレイの中央（既定）',
       cursorMonitorCenterDescription: 'マウスカーソルがあるディスプレイの中央に表示します',
       cursor: 'マウスカーソルの近く',
@@ -2756,7 +2789,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       done: '「{{section}}」を既定値に戻しました',
       failed: '設定のリセットに失敗しました。',
       notes: {
-        display: '「タブを表示する」は変えません。',
+        dataFileTabs: '「タブを表示する」は変えません。',
         savedPosition: '最後に置いた場所として覚えている位置も忘れます。',
       },
       values: {

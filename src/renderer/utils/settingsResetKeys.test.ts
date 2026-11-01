@@ -4,6 +4,7 @@ import type { AppSettings } from '@common/types';
 
 import {
   SETTINGS_RESET_KEYS,
+  getResetSectionText,
   getSectionResetChanges,
   isSectionAtDefault,
   type ResettableSettingsSection,
@@ -20,6 +21,7 @@ const defaults = {
   recordLaunchUsage: true,
   updateCheckEnabled: true,
   updateCheckIncludeBeta: false,
+  launchInheritEnvironment: true,
   showKeyboardHints: true,
   searchMemo: false,
   searchIgnoreWidth: false,
@@ -183,5 +185,35 @@ describe('getSectionResetChanges', () => {
         after: 'settings.reset.values.on',
       },
     ]);
+  });
+
+  it('ランチャーの枠は操作のヒントも戻す（見た目として同じ枠に並ぶため）', () => {
+    const settings = { ...defaults, showKeyboardHints: false };
+    expect(isSectionAtDefault('mainWindow', settings, defaults)).toBe(false);
+    const { changes } = getSectionResetChanges(t, 'mainWindow', settings, defaults);
+    expect(changes).toEqual([
+      {
+        label: 'settings.display.keyboardHints',
+        before: 'settings.reset.values.off',
+        after: 'settings.reset.values.on',
+      },
+    ]);
+  });
+
+  it('検索の枠は起動回数の記録も戻す（よく使う順の並べ替えに使うため）', () => {
+    const settings = { ...defaults, recordLaunchUsage: false };
+    expect(isSectionAtDefault('search', settings, defaults)).toBe(false);
+    const { changes } = getSectionResetChanges(t, 'search', settings, defaults);
+    expect(changes.map((c) => c.label)).toEqual(['settings.system.recordLaunchUsage']);
+  });
+});
+
+describe('getResetSectionText', () => {
+  it('ランチャーの枠だけ「タブを表示する」を変えない注記を出す', () => {
+    expect(getResetSectionText(t, 'mainWindow')).toEqual({
+      label: 'settings.windowPosition.heading',
+      note: 'settings.reset.notes.dataFileTabs',
+    });
+    expect(getResetSectionText(t, 'search').note).toBe('');
   });
 });

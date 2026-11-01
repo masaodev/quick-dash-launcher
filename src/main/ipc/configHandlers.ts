@@ -6,7 +6,7 @@ import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { getAppDistribution } from '../utils/appDistribution';
-import { getPortableDataState } from '../utils/portableMode.js';
+import { getPortableDataState, getPortableModeAvailable } from '../utils/portableMode.js';
 import { UpdateCheckService } from '../services/updateCheckService.js';
 import { handleIpc } from '../utils/ipcWrapper';
 
@@ -55,8 +55,15 @@ export function setupConfigHandlers(configFolder: string): void {
     const packageJsonPath = path.join(__dirname, '../../package.json');
     const content = await fs.readFile(packageJsonPath, 'utf-8').catch(() => null);
     const portableData = getPortableDataState().kind === 'active';
+    const portableModeAvailable = getPortableModeAvailable();
     if (!content) {
-      return { ...DEFAULT_APP_INFO, version, distribution: getAppDistribution(), portableData };
+      return {
+        ...DEFAULT_APP_INFO,
+        version,
+        distribution: getAppDistribution(),
+        portableData,
+        portableModeAvailable,
+      };
     }
 
     const pkg = JSON.parse(content);
@@ -69,6 +76,7 @@ export function setupConfigHandlers(configFolder: string): void {
       repository: pkg.repository?.url || DEFAULT_APP_INFO.repository,
       distribution: getAppDistribution(),
       portableData,
+      portableModeAvailable,
     };
   });
 

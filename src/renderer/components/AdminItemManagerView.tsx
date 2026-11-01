@@ -16,6 +16,7 @@ import { useLaunchUsage } from '../hooks/useLaunchUsage';
 import { useAdminTabStructure, type TabStructureSettings } from '../hooks/useAdminTabStructure';
 import type { AdminItemEditing } from '../hooks/useAdminItemEditing';
 import { useWsGroupEditor } from '../hooks/useWsGroupEditor';
+import { useRevealItem } from '../hooks/useRevealItem';
 import { changeItemType, getItemKey, isInlineItemType } from '../utils/editableItemOperations';
 import { itemsToCsv, planCsvImport, type CsvImportPlan } from '../utils/itemCsv';
 import { setUsageWarning } from '../utils/setUsageWarning';
@@ -45,6 +46,9 @@ interface EditModeViewProps {
   onTabStructureSaved: (settings: Partial<TabStructureSettings>) => void;
   pendingImportModal: 'bookmark' | 'app' | null;
   onClearPendingImportModal: () => void;
+  /** 見せる行の id（ランチャーの WSグループの行の F2）。見せたら onRevealItemHandled */
+  pendingRevealItemId?: string | null;
+  onRevealItemHandled?: () => void;
   /** 管理ウィンドウを閉じるたびに増える数（開いている取込画面を閉じる合図） */
   importModalCloseSignal: number;
   /** 設定「ブックマーク自動取込」を開く（追加の ▼ メニュー・手動取込モーダルの案内から） */
@@ -88,6 +92,8 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
   onTabStructureSaved,
   pendingImportModal,
   onClearPendingImportModal,
+  pendingRevealItemId = null,
+  onRevealItemHandled,
   importModalCloseSignal,
   onOpenAutoImportSettings,
 }) => {
@@ -243,6 +249,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     pathCheck,
     linkStatusOf,
     missingSetRowsOf,
+    missingWsGroupCountOf,
     missingIds,
     runPathCheck,
     filteredItems,
@@ -365,6 +372,25 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     },
     [openDetailEditor]
   );
+
+  // ランチャーの WSグループの行の F2: その行へスクロールして、編集ダイアログを開く（A3-229 W8）
+  const reveal = useRevealItem({
+    revealItemId: pendingRevealItemId,
+    workingItems,
+    filteredItems,
+    dataFileTabs,
+    selectedDataFile,
+    showFile: (tabIndex, fileName) => {
+      if (tabIndex >= 0) setSelectedTabIndex(tabIndex);
+      setSelectedDataFile(fileName);
+    },
+    clearSearchAndFilters: () => {
+      onSearchChange('');
+      listView.clearFilters();
+    },
+    openEditor: handleEditItemClick,
+    onHandled: () => onRevealItemHandled?.(),
+  });
 
   const handleChangeType = (item: EditableJsonItem, newType: JsonItem['type']) => {
     // WSグループは「＋ アイテムを追加」の ▼ からだけ作り、ほかの種別とは行き来しない
@@ -725,9 +751,12 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           filterOptions={filterOptions}
           linkStatusOf={linkStatusOf}
           missingSetRowsOf={missingSetRowsOf}
+          missingWsGroupCountOf={missingWsGroupCountOf}
           usageOf={launchUsage.usageOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}
+          scrollToItemId={reveal.scrollToItemId}
+          onScrolledToItem={reveal.onScrolled}
           onItemEdit={editing.recordEdit}
           onChangeType={handleChangeType}
           onItemSelect={editing.selectItem}

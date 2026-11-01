@@ -9,6 +9,19 @@
   background-color: var(--mode-surface);
 }
 
+/* 今のタブの一部のデータファイルを読めなかったときの帯（一覧の上。ほかのファイルのアイテムは並んでいる） */
+.item-list-unreadable-bar {
+  flex: 0 0 auto;
+  padding: 2px var(--spacing-sm);
+  border-left: 3px solid var(--color-warning);
+  background-color: var(--mode-surface);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 一覧が空のときの案内（検索で 0 件・空のタブ） */
 .item-list-empty {
   display: flex;
@@ -259,4 +272,10 @@
 .item.selected .ws-group-badge {
   color: var(--color-white);
   border-color: var(--color-white);
+}
+
+/* アーカイブしたグループの WSグループ: 名前とアイコンを薄くする（選んでいる行は読めるよう戻す） */
+.item.archived-ws-group:not(.selected) .item-name,
+.item.archived-ws-group:not(.selected) .item-icon {
+  opacity: 0.6;
 }

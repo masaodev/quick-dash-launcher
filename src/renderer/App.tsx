@@ -648,9 +648,13 @@ function App(): React.ReactElement {
     (item: AppItem) => {
       if (isWindowInfo(item)) return;
 
-      // WSグループの行は登録画面でなく、管理ウィンドウのアイテム管理で直す
+      // WSグループの行は登録画面でなく、管理ウィンドウのアイテム管理で直す（その行へスクロールして選ぶ）
       if (isWsGroupItem(item)) {
-        void window.electronAPI.openEditWindowWithTab('edit');
+        if (item.expandedFromId) {
+          void window.electronAPI.openEditWindowWithItem(item.expandedFromId);
+        } else {
+          void window.electronAPI.openEditWindowWithTab('edit');
+        }
         return;
       }
 
@@ -878,7 +882,16 @@ function App(): React.ReactElement {
     autoLaunch: boolean;
     itemSearchHotkey: string;
     updateCheckEnabled?: boolean;
+    portableMode?: boolean;
   }): Promise<boolean> => {
+    if (settings.portableMode) {
+      // exe の横にデータフォルダを作り、選んだ設定を書いて再起動する（%APPDATA% には保存しない）。
+      // 成功すると再起動するので、返ってくるのは失敗したときだけ
+      const { portableMode: _portableMode, ...rest } = settings;
+      const result = await window.electronAPI.switchToPortableOnFirstLaunch(rest);
+      if (!result.success) logError('ポータブルモードにできませんでした:', result.error);
+      return result.success;
+    }
     try {
       await window.electronAPI.setMultipleSettings({
         hotkey: settings.hotkey,
@@ -1055,6 +1068,11 @@ function App(): React.ReactElement {
         onAddItem={() => void openRegisterWindow()}
         onAddFolderImport={() => void openFolderImportWindow()}
         onOpenConfigFolder={() => void window.electronAPI.openConfigFolder()}
+        partlyUnreadableFiles={
+          searchMode === 'normal' && tabFilteredItems.length > 0
+            ? activeTabCorruptedFiles
+            : undefined
+        }
         onBlankContextMenu={
           searchMode === 'normal'
             ? () => void window.electronAPI.showLauncherBlankContextMenu()

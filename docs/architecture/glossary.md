@@ -122,13 +122,15 @@
 | --- | --- | --- | --- | --- |
 | 管理ウィンドウ | settings window | 管理画面、設定画面、設定・管理、admin window | 設定・アイテム管理・ヘルプのタブを持つウィンドウ | `AdminApp.tsx` |
 | 設定（タブ） | Settings | 基本設定タブ | 管理ウィンドウの設定のタブ。左のメニューで基本設定・ウィンドウ・バックアップ・ブックマーク自動取込を切り替える | `AdminSettingsTab` |
-| 基本設定 | General | — | 設定タブの最初のカテゴリ（言語・起動ホットキー・起動と更新・ランチャー・検索・QuickDashLauncher CLI） | `AdminSettingsBasicSection` |
+| 基本設定 | General | — | 設定タブの最初のカテゴリ（言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI・詳細） | `AdminSettingsBasicSection` |
 | アイテム管理 | Item Manager | 編集画面、編集モード、アイテム編集 | 管理ウィンドウでアイテムとタブを編集するタブ（Ctrl+E） | `AdminItemManagerView` |
 | 起動ホットキー | launch hotkey | ショートカットキー、hot key | ランチャーを出すキーの組み合わせ | `hotkey` |
 | 表示言語 | display language | — | 画面に使う言語（自動・日本語・English） | `language` |
 | 自動起動 | start with Windows | スタートアップ起動 | Windows の起動時に QuickDashLauncher を起動すること | `autoLaunch` |
-| バージョン | version | 新しい版、最新の版 | QDL 本体や qdl.exe のバージョン（v0.8.0 など）。「ベータ版」「ポータブル版」「Store 版」のような種類の名前の「版」はそのまま使う | `version` |
+| バージョン | version | 新しい版、最新の版 | QDL 本体や qdl.exe のバージョン（v0.8.0 など）。「ベータ版」「ZIP 版」「Store 版」のような種類の名前の「版」はそのまま使う | `version` |
 | アップデートの確認 | update check | 更新の知らせ（設定の名前として） | 1 日 1 回 GitHub で新しいバージョンを確かめ、あれば知らせること。インストールはしない | `updateCheckEnabled` |
+| ZIP 版 | ZIP | ポータブル版（ZIP 版を指すとき） | ZIP を展開して使う配布形式。データの置き場は既定で %APPDATA%（インストーラー版と同じ）。以前の 1 ファイルの exe は「以前の 1 ファイルの exe のポータブル版」と書く | `portable`（`AppDistribution`） |
+| ポータブルモード | portable mode | — | ZIP 版で、exe の横の QuickDashLauncher-data フォルダにデータを置く使い方。フォルダが無ければ %APPDATA% に置く | `portableData`・`resolvePortableData` |
 | ブックマーク取込 | bookmark import | ブックマークインポート、ブックマーク取り込み | ブラウザのブックマークをアイテムにすること | — |
 | アプリ取込 | app import | アプリインポート、アプリ取り込み | インストール済みのアプリをアイテムにすること | — |
 | バックアップ | backup | — | 設定フォルダのファイルを残しておく機能 | `BackupService` |
@@ -136,7 +138,7 @@
 | 不透明度 | opacity | 透過度 | ワークスペースウィンドウの濃さ（100% で完全に不透明） | `workspaceOpacity` |
 | ディスプレイ | display | モニター | 画面を映す装置。複数つないだとき、ワークスペースと切り離しウィンドウは「ランチャーと同じディスプレイ」に出せる | `Display`・`MAIN_WINDOW_DISPLAY_INDEX` |
 | 絞り込み | filter | フィルタ | 一覧を条件で絞ること（アイテム管理・ワークスペース・自動取込） | — |
-| リンク切れ | broken link | — | アイテム（セットは行）のパスが見つからないこと。アイテム管理の「整理 ▼」の「リンク切れを確認」で確かめる | `checkPathsExist` |
+| リンク切れ | broken link | — | アイテム（セットは行）のパスが見つからないこと。アイテム管理の「整理 ▼」の「リンク切れを確認」で確かめる。WSグループは、選んだグループがワークスペースに見つからないこともリンク切れに数える（確認を押さなくても印を出す） | `checkPathsExist` |
 | パスの確認（列） | Path check | リンク（列の名前として。link はワークスペースの「参照」の訳と重なる） | アイテム管理で「リンク切れを確認」の結果（⚠ 見つかりません・✓・?）を出す列 | `link`（列の id） |
 | 既定 | default | デフォルト | 何も選ばないときに使う値 | — |
 | スナップショット | snapshot | — | バックアップで残した、ある時点のファイル一式 | — |

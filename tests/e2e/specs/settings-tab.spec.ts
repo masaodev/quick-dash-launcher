@@ -10,8 +10,8 @@ import { TestUtils } from '../helpers/test-utils';
  * electronApp.waitForEvent('window')を使用して新しいウィンドウを取得します。
  *
  * 設定画面はサイドバーメニューで以下のカテゴリに分かれています：
- * - 基本設定: 表示言語、ホットキー、システム、表示
- * - ウィンドウ: ランチャー・ワークスペースウィンドウ・切り離しウィンドウ・その他の節（どれも畳まずに出す）
+ * - 基本設定: 言語・起動ホットキー・起動と更新・検索・QuickDashLauncher CLI の節
+ * - ウィンドウ: ランチャー（場所・大きさ・見た目）・ワークスペースウィンドウ・切り離しウィンドウ・その他の節（どれも畳まずに出す）
  * - バックアップ: バックアップ
  */
 test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
@@ -55,13 +55,22 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
           .filter({ has: adminWindow.locator('h3', { hasText: 'ホットキー' }) });
         await expect(hotkeySection).toBeVisible();
 
-        // 起動と更新・ランチャー・検索・CLI の節
-        for (const heading of ['起動と更新', 'ランチャー', '検索', 'QuickDashLauncher CLI']) {
+        // 起動と更新・検索・CLI の節
+        for (const heading of ['起動と更新', '検索', 'QuickDashLauncher CLI']) {
           const section = adminWindow
             .locator('.settings-section')
             .filter({ has: adminWindow.locator('h3', { hasText: heading }) });
           await expect(section).toBeVisible();
         }
+        // 「ランチャー」の節はウィンドウのカテゴリにだけある（A3-223）
+        await expect(adminWindow.locator('h3', { hasText: 'ランチャー' })).toHaveCount(0);
+        // 起動回数の記録は検索の節にある（よく使う順の並べ替えに使う）
+        const searchSection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: '検索' }) });
+        await expect(
+          searchSection.locator('label', { hasText: '起動回数を記録する' })
+        ).toBeVisible();
       });
 
       await test.step('ウィンドウカテゴリに切り替えてセクションを確認', async () => {
@@ -95,12 +104,15 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(backupSection).toBeVisible();
       });
 
-      await test.step('「タブを表示する」は基本設定にあり、タブ管理のカテゴリは無い', async () => {
+      await test.step('「タブを表示する」はウィンドウのランチャーの節にあり、タブ管理のカテゴリは無い', async () => {
         // タブとデータファイルの構成はアイテム管理で扱う
         await expect(adminWindow.locator('.menu-item', { hasText: 'タブ管理' })).toHaveCount(0);
 
-        await adminWindow.locator('.menu-item', { hasText: '基本設定' }).click();
-        const showTabs = adminWindow
+        await adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' }).click();
+        const launcherSection = adminWindow
+          .locator('.settings-section')
+          .filter({ has: adminWindow.locator('h3', { hasText: 'ランチャー' }) });
+        const showTabs = launcherSection
           .locator('label', { hasText: 'タブを表示する' })
           .locator('input');
         await expect(showTabs).not.toBeChecked();
@@ -228,10 +240,11 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
     try {
+      await adminWindow.locator('.menu-item', { hasText: 'ウィンドウ' }).click();
       const hintLabel = adminWindow.locator('label', { hasText: '操作のヒントを表示する' });
       const hintCheckbox = hintLabel.locator('input[type="checkbox"]');
 
-      await test.step('基本設定でオフにすると、ヒントが消えて設定に保存される', async () => {
+      await test.step('ウィンドウのランチャーの節でオフにすると、ヒントが消えて設定に保存される', async () => {
         await expect(hintCheckbox).toBeChecked();
         await hintLabel.click();
         await expect(hintBar).toHaveCount(0);

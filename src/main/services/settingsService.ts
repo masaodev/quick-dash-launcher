@@ -89,6 +89,7 @@ export class SettingsService {
     recordLaunchUsage: true,
     updateCheckEnabled: true,
     updateCheckIncludeBeta: false,
+    launchInheritEnvironment: true,
     adminItemColumns: { visible: {}, widths: {} },
   };
 

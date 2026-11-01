@@ -21,6 +21,8 @@ interface FirstLaunchSettings {
   itemSearchHotkey: string;
   /** 新しい版が出たら知らせる（Store 版では出さないので undefined） */
   updateCheckEnabled?: boolean;
+  /** データを exe の横に保存する（ZIP 版で選べるときだけ。選ばなければ undefined） */
+  portableMode?: boolean;
 }
 
 interface FirstLaunchSetupProps {
@@ -79,6 +81,9 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
   const [updateCheckEnabled, setUpdateCheckEnabled] = useState(true);
   // Store 版は Store が更新するので「新しい版が出たら知らせる」を出さない
   const [isStore, setIsStore] = useState(false);
+  // ZIP 版で、まだデータフォルダが無いときだけ「データを exe の横に保存する」を出す（既定はオフ）
+  const [portableModeAvailable, setPortableModeAvailable] = useState(false);
+  const [portableMode, setPortableMode] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
   const isValid = hotkeyValidation.isValid && itemSearchHotkeyValidation.isValid;
@@ -86,7 +91,9 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
   useEffect(() => {
     let cancelled = false;
     void window.electronAPI.getAppInfo().then((info) => {
-      if (!cancelled) setIsStore(info.distribution === 'store');
+      if (cancelled) return;
+      setIsStore(info.distribution === 'store');
+      setPortableModeAvailable(info.portableModeAvailable === true);
     });
     return () => {
       cancelled = true;
@@ -144,6 +151,7 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
       autoLaunch,
       itemSearchHotkey,
       ...(isStore ? {} : { updateCheckEnabled }),
+      ...(portableModeAvailable && portableMode ? { portableMode: true } : {}),
     });
     // 保存できたら画面ごと切り替わるので、戻すのは失敗したときだけ
     if (!saved) {
@@ -307,22 +315,31 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
                 />
                 {t('firstLaunch.autoLaunch')}
               </label>
-              <p className="auto-launch-hint">{t('firstLaunch.autoLaunchHint')}</p>
               {!isStore && (
-                <>
-                  <label className="auto-launch-checkbox-label update-check-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={updateCheckEnabled}
-                      onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
-                      disabled={isLoading}
-                      className="update-check-checkbox"
-                      data-testid="first-launch-update-check"
-                    />
-                    {t('firstLaunch.updateCheck')}
-                  </label>
-                  <p className="update-check-hint">{t('firstLaunch.updateCheckHint')}</p>
-                </>
+                <label className="auto-launch-checkbox-label update-check-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={updateCheckEnabled}
+                    onChange={(e) => setUpdateCheckEnabled(e.target.checked)}
+                    disabled={isLoading}
+                    className="update-check-checkbox"
+                    data-testid="first-launch-update-check"
+                  />
+                  {t('firstLaunch.updateCheck')}
+                </label>
+              )}
+              {portableModeAvailable && (
+                <label className="auto-launch-checkbox-label portable-mode-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={portableMode}
+                    onChange={(e) => setPortableMode(e.target.checked)}
+                    disabled={isLoading}
+                    className="portable-mode-checkbox"
+                    data-testid="first-launch-portable-mode"
+                  />
+                  {t('firstLaunch.portableMode')}
+                </label>
               )}
             </div>
 
@@ -341,7 +358,13 @@ export const SetupFirstLaunch: React.FC<FirstLaunchSetupProps> = ({ onComplete }
               >
                 {t('firstLaunch.back')}
               </Button>
-              <span className="first-launch-change-later">{t('firstLaunch.changeLater')}</span>
+              <span className="first-launch-change-later">
+                {t(
+                  portableModeAvailable
+                    ? 'firstLaunch.changeLaterExceptPortable'
+                    : 'firstLaunch.changeLater'
+                )}
+              </span>
               <Button
                 variant="primary"
                 type="button"

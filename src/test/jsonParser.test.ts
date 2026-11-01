@@ -920,4 +920,18 @@ describe('jsonParser: WSグループ', () => {
 
     expect(result.validItems).toHaveLength(0);
   });
+
+  it('archived を読み、exclude・include・only 以外は不正とすること', () => {
+    const ok = parseJsonDataFileLenient(
+      fileWith([{ id: 'wsgrp004', type: 'wsgroup', scope: 'all', archived: 'only' }])
+    );
+    expect(ok.validItems).toEqual([
+      { id: 'wsgrp004', type: 'wsgroup', scope: 'all', archived: 'only' },
+    ]);
+
+    const ng = parseJsonDataFileLenient(
+      fileWith([{ id: 'wsgrp005', type: 'wsgroup', scope: 'all', archived: 'yes' }])
+    );
+    expect(ng.validItems).toHaveLength(0);
+  });
 });
