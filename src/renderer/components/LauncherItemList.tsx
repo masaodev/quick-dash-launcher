@@ -438,7 +438,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
           variant="secondary"
           size="sm"
           onClick={openBookmarkImport}
-          title={t('launcher.registerMenu.addBookmarks')}
+          title={t('launcher.registerMenu.itemManagerImportTitle')}
         >
           {t('launcher.empty.importBookmarks')}
         </Button>
@@ -446,7 +446,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
           variant="secondary"
           size="sm"
           onClick={openAppImport}
-          title={t('launcher.registerMenu.addApps')}
+          title={t('launcher.registerMenu.itemManagerImportTitle')}
         >
           {t('launcher.empty.importApps')}
         </Button>

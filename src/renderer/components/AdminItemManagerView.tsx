@@ -422,12 +422,24 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     if (!hasUnsavedChanges) fetchIconsAfterSaveRef.current = false;
   }, [hasUnsavedChanges]);
 
+  // 未保存の変更として取り込んだ先のデータファイル。保存したらランチャーに知らせる（ランチャーの取込の入口から
+  // 開いていたら、閉じたときにそのタブを選ぶ。A3-237）。未保存の変更が無くなったら（破棄など）忘れる
+  const importedFileRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!hasUnsavedChanges) importedFileRef.current = null;
+  }, [hasUnsavedChanges]);
+
   const runSave = async () => {
     // 保存すると未保存の変更が無くなり、上の effect が先に戻すことがあるので、保存の前に読んでおく
     const fetchIcons = fetchIconsAfterSaveRef.current;
+    const importedFile = importedFileRef.current;
     const saved = await editing.saveChanges();
     if (saved) {
       showSuccess(t('itemManager.saved'));
+      if (importedFile) {
+        importedFileRef.current = null;
+        window.electronAPI.notifyImportSaved(importedFile);
+      }
       if (fetchIcons) {
         fetchIconsAfterSaveRef.current = false;
         void window.electronAPI.requestFetchMissingIcons();
@@ -514,6 +526,10 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     importModalCloseSignal,
     onFetchIconsAfterSave: () => {
       fetchIconsAfterSaveRef.current = true;
+    },
+    onImported: (fileName, saved) => {
+      if (saved) window.electronAPI.notifyImportSaved(fileName);
+      else importedFileRef.current = fileName;
     },
   });
 

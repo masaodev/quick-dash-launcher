@@ -65,10 +65,24 @@ const LauncherRegisterDropdown: React.FC<RegisterDropdownProps> = ({
             {t('launcher.registerMenu.addFolderImport')}
           </button>
           <div className="dropdown-divider"></div>
-          <button className="dropdown-item" onClick={handleImportBookmarks}>
+          {/* 上の 2 つはこの場で登録してランチャーに戻る。下の 2 つは管理ウィンドウで開くので、見出しで分ける（A3-237） */}
+          <div className="dropdown-section-label" data-testid="register-menu-item-manager-section">
+            {t('launcher.registerMenu.itemManagerSection')}
+          </div>
+          <button
+            className="dropdown-item"
+            onClick={handleImportBookmarks}
+            title={t('launcher.registerMenu.itemManagerImportTitle')}
+            data-testid="register-menu-bookmarks"
+          >
             {t('launcher.registerMenu.addBookmarks')}
           </button>
-          <button className="dropdown-item" onClick={handleImportApps}>
+          <button
+            className="dropdown-item"
+            onClick={handleImportApps}
+            title={t('launcher.registerMenu.itemManagerImportTitle')}
+            data-testid="register-menu-apps"
+          >
             {t('launcher.registerMenu.addApps')}
           </button>
         </div>

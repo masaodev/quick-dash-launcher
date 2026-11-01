@@ -124,6 +124,9 @@ const electronAPI: ElectronAPI = {
   onAdminHidden: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_ADMIN_HIDDEN, callback),
   onOpenImportModal: (callback) =>
     createEventListener<'bookmark' | 'app'>(IPC_CHANNELS.EVENT_OPEN_IMPORT_MODAL, callback),
+  notifyImportSaved: (fileName) => ipcRenderer.send(IPC_CHANNELS.NOTIFY_IMPORT_SAVED, fileName),
+  onSelectDataFileTab: (callback) =>
+    createEventListener<string>(IPC_CHANNELS.EVENT_SELECT_DATA_FILE_TAB, callback),
   onRevealItem: (callback) => createEventListener<string>(IPC_CHANNELS.EVENT_REVEAL_ITEM, callback),
   onDataChanged: (callback) => createEventListenerNoArg(IPC_CHANNELS.EVENT_DATA_CHANGED, callback),
   onSettingsChanged: (callback) =>

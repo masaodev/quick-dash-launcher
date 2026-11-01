@@ -836,6 +836,12 @@ function App(): React.ReactElement {
       showSuccess(t(messageKeys[result.action]));
     });
 
+    // 取込の入口から開いた管理ウィンドウを閉じて戻ってきたとき、取り込んで保存したタブを選ぶ（A3-237）
+    const cleanupSelectDataFileTab = window.electronAPI.onSelectDataFileTab((fileName) => {
+      setActiveTab(fileName);
+      setSelectedIndex(0);
+    });
+
     return () => {
       cleanupWindowShown();
       cleanupWindowShownItemSearch();
@@ -844,6 +850,7 @@ function App(): React.ReactElement {
       cleanupWorkspaceOpenChanged();
       cleanupPinChanged();
       cleanupChildResult();
+      cleanupSelectDataFileTab();
     };
   }, []);
 

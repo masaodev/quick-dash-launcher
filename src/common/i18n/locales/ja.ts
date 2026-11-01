@@ -100,6 +100,10 @@ export const ja = {
       addFolderImportTitle:
         'フォルダ内のファイルを、開くたびに一覧へ並べるアイテム（フォルダ取込）を追加します',
       clipboardEmpty: 'クリップボードにファイル・フォルダ・URL がありません',
+      /** ブックマーク取込・アプリ取込の上の見出し（この 2 つは管理ウィンドウで開く。A3-237） */
+      itemManagerSection: 'アイテム管理が開きます',
+      itemManagerImportTitle:
+        'アイテム管理を開きます。取り込んだアイテムは一覧で確かめてから「変更を保存」で確定します',
     },
     partlyUnreadable:
       '⚠ {{files}} を読めなかったので、そのアイテムは出ていません。直したら F5 で読み直してください',

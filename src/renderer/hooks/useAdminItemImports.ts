@@ -42,6 +42,11 @@ interface UseAdminItemImportsOptions {
   importModalCloseSignal: number;
   /** 未保存の変更として取り込んだブックマークのアイコンを、保存のあとに取りに行くよう覚えておく */
   onFetchIconsAfterSave: () => void;
+  /**
+   * 取り込んだ先のデータファイル。saved は、同期のルールで取り込んでその場で保存したとき true
+   * （未保存の変更として取り込んだときは false。保存されたらランチャーに知らせる。A3-237）
+   */
+  onImported: (fileName: string, saved: boolean) => void;
 }
 
 /**
@@ -62,6 +67,7 @@ export function useAdminItemImports({
   onClearPendingImportModal,
   importModalCloseSignal,
   onFetchIconsAfterSave,
+  onImported,
 }: UseAdminItemImportsOptions) {
   const { t } = useTranslation();
   const { showSuccess, showInfo, showWarning } = toast;
@@ -138,6 +144,7 @@ export function useAdminItemImports({
     editing.importBookmarks(bookmarks, duplicateHandling, target.fileName);
     // まだデータファイルに無いので、保存してランチャーが読み直してから取る
     if (options.fetchIcons && addedCount > 0) onFetchIconsAfterSave();
+    if (addedCount > 0) onImported(target.fileName, false);
     onShowTarget(target);
     showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
     return true;
@@ -182,6 +189,7 @@ export function useAdminItemImports({
       };
     }
     if (result.success) {
+      onImported(target.fileName, true);
       // ルールはデータファイルへ直接書くので、すぐランチャーに取ってもらう
       if (options.fetchIcons) void window.electronAPI.requestFetchMissingIcons();
       const message = t('itemManager.ruleSavedAndRun', {
@@ -219,6 +227,7 @@ export function useAdminItemImports({
     const addedCount =
       duplicateHandling === 'skip' ? checkAppDuplicates(apps, fileItems).newCount : apps.length;
     editing.importApps(apps, duplicateHandling, target.fileName);
+    if (addedCount > 0) onImported(target.fileName, false);
     onShowTarget(target);
     showInfo(t('itemManager.imported', { count: addedCount, file: target.fileLabel }));
     return true;
