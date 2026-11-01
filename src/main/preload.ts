@@ -99,7 +99,6 @@ const electronAPI: ElectronAPI = {
   requestFetchMissingIcons: () => ipcInvoke(IPC_CHANNELS.REQUEST_FETCH_MISSING_ICONS),
   onFetchMissingIconsRequested: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_FETCH_MISSING_ICONS_REQUESTED, callback),
-  // アイコン取得エラー記録をクリア
   // アイコン取得エラー記録を取得
   getIconFetchErrors: () => ipcInvoke(IPC_CHANNELS.GET_ICON_FETCH_ERRORS),
   onIconProgress: (eventType, callback) =>
@@ -269,7 +268,6 @@ const electronAPI: ElectronAPI = {
   isWindowPinned: (hwnd) => ipcInvoke(IPC_CHANNELS.IS_WINDOW_PINNED, hwnd),
   closeWindow: (hwnd) => ipcInvoke(IPC_CHANNELS.CLOSE_WINDOW, hwnd),
   waitForWindowsClosed: (hwnds) => ipcInvoke(IPC_CHANNELS.WAIT_FOR_WINDOWS_CLOSED, hwnds),
-  // システム通知API
   // トーストウィンドウAPI（ランチャーが閉じた後も表示可能）
   showToastWindow: (options) => ipcInvoke(IPC_CHANNELS.SHOW_TOAST_WINDOW, options),
   onShowToast: (callback) =>

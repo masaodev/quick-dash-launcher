@@ -127,11 +127,6 @@ function createEntryMatcher(entry: MatchableEntry): (window: MatchableWindow) =>
   return (window) => matchesTarget(entry.target, window);
 }
 
-/** 行がこのウィンドウと結び付くか */
-export function entryMatchesWindow(entry: MatchableEntry, window: MatchableWindow): boolean {
-  return createEntryMatcher(entry)(window);
-}
-
 /**
  * 指す先の無い行か（旧グループの名前でアイテムが見つからず、名前だけ残した行）
  *
