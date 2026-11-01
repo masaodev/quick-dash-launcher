@@ -19,7 +19,7 @@ async function hasDetachedWindow(electronApp: ElectronApplication, groupId: stri
 async function isMainWindowVisible(electronApp: ElectronApplication) {
   return electronApp.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows().some(
-      (win) => win.getTitle() === 'QuickDashLauncher' && win.isVisible()
+      (win) => win.getTitle() === 'Quick Dash Launcher' && win.isVisible()
     )
   );
 }
@@ -112,7 +112,7 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       // 管理ウィンドウを開いたときにランチャーは隠れているので、出し直す
       await electronApp.evaluate(({ BrowserWindow }) => {
         const main = BrowserWindow.getAllWindows().find(
-          (w) => w.getTitle() === 'QuickDashLauncher'
+          (w) => w.getTitle() === 'Quick Dash Launcher'
         );
         main?.show();
         main?.focus();

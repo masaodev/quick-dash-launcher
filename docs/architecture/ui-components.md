@@ -1,6 +1,6 @@
 # UIコンポーネント
 
-QuickDashLauncherで使う共通UIコンポーネントの規約を書く。実装は `src/renderer/components/ui/` が正である。
+Quick Dash Launcher で使う共通UIコンポーネントの規約を書く。実装は `src/renderer/components/ui/` が正である。
 
 ## 設計思想
 

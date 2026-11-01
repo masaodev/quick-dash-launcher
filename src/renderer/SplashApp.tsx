@@ -94,7 +94,7 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
   return (
     <div className="splash-container">
       <div className="app-logo">Q</div>
-      <h1 className="app-title">QuickDashLauncher</h1>
+      <h1 className="app-title">Quick Dash Launcher</h1>
       <p className="app-subtitle">{t('splash.subtitle')}</p>
 
       <div className="loading-container">

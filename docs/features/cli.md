@@ -1,6 +1,6 @@
-# QuickDashLauncher CLI（qdl）
+# Quick Dash Launcher CLI（qdl）
 
-QuickDashLauncher CLI は、コマンドライン（`qdl` コマンド）から、起動中の QuickDashLauncher（本体）に依頼する仕組みです。人やスクリプト、AI が、画面を操作せずにアイテム・セットの行・ワークスペースのグループを足したり変えたり、ホットキーなどの設定を変えたり、設定ファイルを読み直させたりするのに使います。
+Quick Dash Launcher CLI は、コマンドライン（`qdl` コマンド）から、起動中の Quick Dash Launcher（本体）に依頼する仕組みです。人やスクリプト、AI が、画面を操作せずにアイテム・セットの行・ワークスペースのグループを足したり変えたり、ホットキーなどの設定を変えたり、設定ファイルを読み直させたりするのに使います。
 
 ## 概要
 
@@ -14,7 +14,7 @@ CLI の実行ファイルは `qdl.exe` です。`qdl.exe` は引数を解釈せ�
 
 ## qdl を使えるようにする
 
-`qdl.exe` は本体に同梱されていますが、そのままではターミナルから `qdl` と打っても見つかりません（以前の 1 ファイルの exe のポータブル版は起動のたびに一時フォルダへ展開されて動くので、同梱の場所も毎回変わりました）。管理画面の基本設定「QuickDashLauncher CLI を使えるようにする」（設定項目 `cliEnabled`。[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）をオンにすると、次のことが起きます。
+`qdl.exe` は本体に同梱されていますが、そのままではターミナルから `qdl` と打っても見つかりません（以前の 1 ファイルの exe のポータブル版は起動のたびに一時フォルダへ展開されて動くので、同梱の場所も毎回変わりました）。管理画面の基本設定「Quick Dash Launcher CLI を使えるようにする」（設定項目 `cliEnabled`。[設定ファイル形式](../architecture/file-formats/settings-format.md#34-自動起動cli-設定)）をオンにすると、次のことが起きます。
 
 - 同梱の `qdl.exe` を `%LOCALAPPDATA%\quick-dash-launcher\bin` にコピーし、そのフォルダをユーザーの環境変数 PATH に足す。新しく開いたターミナルから `qdl` で呼べる
 - 本体を起動するたびに、同梱の `qdl.exe` とコピー済みのものを比べ、違えば入れ替える。本体を更新しても、CLI と本体のやり取りの版はずれない
@@ -145,7 +145,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | 表示 | `defaultFileTab` | 起動したときに開くタブの、データファイル（`data2.json` など）。どれかのタブに入っているものだけ |
 | システム | `recordLaunchUsage` | `true`・`false`（起動回数を記録する） |
 | システム | `updateCheckEnabled`・`updateCheckIncludeBeta` | `true`・`false`（アップデートを自動で確認する・ベータ版も確認する） |
-| システム | `launchInheritEnvironment` | `true`・`false`（アプリに QuickDashLauncher の環境変数を引き継ぐ） |
+| システム | `launchInheritEnvironment` | `true`・`false`（アプリに Quick Dash Launcher の環境変数を引き継ぐ） |
 | ホットキー | `hotkey`・`itemSearchHotkey` | `Ctrl+Alt+Q` のような組み合わせ。`itemSearchHotkey` は `""` で無効になる |
 | メイン | `windowWidth`・`windowHeight` | 400〜2000・300〜1200 |
 | メイン | `windowPositionMode` | `center`・`cursor`・`cursorMonitorCenter`・`fixed` |
@@ -259,7 +259,7 @@ JSON は UTF-8 で出します。どのコマンドにも `--ascii` を付けら
 
 ## 本体が起動していないとき
 
-パイプが無い（本体が動いていない）ときは、`qdl.exe` が本体を起動し、パイプが開くのを最大 60 秒待ってから依頼します。待つ間、標準エラーに「QuickDashLauncher を起動しています…」と出します。
+パイプが無い（本体が動いていない）ときは、`qdl.exe` が本体を起動し、パイプが開くのを最大 60 秒待ってから依頼します。待つ間、標準エラーに「Quick Dash Launcher を起動しています…」と出します。
 
 - **起動のしかた**: 本体には `--launched-by-cli` を付けて起動します。この印があると、本体はスプラッシュを出しません。本体は `qdl.exe` から切り離して起動し、本体のログが `qdl.exe` の出力に混ざらないよう、標準入出力は引き継ぎません。呼び出し元（AI のシェルなど）のパイプのハンドルも本体に渡さないので、本体が動き続けていても `qdl` の呼び出しはすぐに終わります
 - **起動する本体の探し方**: 次の順に探し、最初に見つかったものを起動します
@@ -287,7 +287,7 @@ JSON は UTF-8 で出します。どのコマンドにも `--ascii` を付けら
 ### 現在の制限
 
 1. **扱えるのはアイテム・セットの行・タブ構成・ワークスペースとそのグループ・グループのアーカイブ・設定まで**: 開けるのはランチャーのアイテムだけ（`open`。ワークスペースのアイテムは開けない）。 設定のうち自動起動・ブックマークの自動取込・CLI の有効化は読むだけです（[設定の変更](#設定の変更)）
-2. **アンインストールしても PATH は残る**: アンインストールしても PATH の項目と `%LOCALAPPDATA%\quick-dash-launcher\bin` は残ります。先に管理画面で「QuickDashLauncher CLI を使えるようにする」を外してからアンインストールしてください
+2. **アンインストールしても PATH は残る**: アンインストールしても PATH の項目と `%LOCALAPPDATA%\quick-dash-launcher\bin` は残ります。先に管理画面で「Quick Dash Launcher CLI を使えるようにする」を外してからアンインストールしてください
 3. **Windows のみ**: 名前付きパイプを使うので、本体と同じく Windows でだけ動きます
 
 ## 関連ドキュメント

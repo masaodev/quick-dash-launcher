@@ -164,7 +164,7 @@ QDL_INSTANCE=dev cli/target/release/qdl.exe reload
 | `QDL_APP_EXE` | 本体が起動していないときに起動する exe（`cli-launcher.json` やインストール先より優先） | `C:\path\to\QuickDashLauncher.exe` |
 | `QDL_NO_LAUNCH` | `1` で、本体が起動していなくても起動しない（終了コード 3 で終わる） | `1` |
 
-コマンド・終了コード・本体の探し方は [QuickDashLauncher CLI](../features/cli.md) を参照。
+コマンド・終了コード・本体の探し方は [Quick Dash Launcher CLI](../features/cli.md) を参照。
 
 ## 重要な実装詳細
 

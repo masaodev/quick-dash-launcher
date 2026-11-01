@@ -2,7 +2,7 @@
   <img src="assets/icon.svg" width="96" alt="" />
 </p>
 
-<h1 align="center">QuickDashLauncher</h1>
+<h1 align="center">Quick Dash Launcher</h1>
 
 <p align="center"><a href="README.md">English</a> | <b>日本語</b></p>
 
@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/demo-main.gif" alt="QuickDashLauncher のメインデモ" />
+  <img src="docs/images/demo-main.gif" alt="Quick Dash Launcher のメインデモ" />
 </p>
 
 <!-- 日本語版が正本。英語版（README.md）は訳で、同じ PR で両方を直す。メインデモ GIF は `npm run docs:demo-gif` で撮り直す（英語版は docs:demo-gif:en。デモデータ＝tests/demo-gif/demo-content-ja.ts と tests/e2e/templates/demo/） -->
@@ -61,13 +61,13 @@ winget install masaodev.quick-dash-launcher
 
 ## なぜ登録型なのか
 
-PowerToys Run のような多くのランチャーは、インストール済みのアプリやファイルを自動で全部読み込みます。そのため、使わないものまで候補に並び、目当てを探す手間が残ります。QuickDashLauncher は、作者がこのノイズを嫌って作り始めたランチャーで、使うものを自分で選んで登録する「登録型」をとっています。登録したものだけが候補に出るので、数文字で目当てにたどり着けます。
+PowerToys Run のような多くのランチャーは、インストール済みのアプリやファイルを自動で全部読み込みます。そのため、使わないものまで候補に並び、目当てを探す手間が残ります。Quick Dash Launcher は、作者がこのノイズを嫌って作り始めたランチャーで、使うものを自分で選んで登録する「登録型」をとっています。登録したものだけが候補に出るので、数文字で目当てにたどり着けます。
 
 とはいえ、1 件ずつ登録するのは手間です。そのため、まとめて登録する手段も用意しています。フォルダを指定すれば中のファイルがまとめて候補に並び（フォルダ取込）、スタートメニューのアプリやブラウザのブックマークも一覧から選んで取り込めます。
 
 登録したものは、[専用の管理ウィンドウ](#画面)に一覧で並び、まとめて直せます。
 
-| 観点 | 検索型（PowerToys Run など） | QuickDashLauncher |
+| 観点 | 検索型（PowerToys Run など） | Quick Dash Launcher |
 | --- | --- | --- |
 | 候補に出るもの | インストール済みのもの全部 | 自分で登録したものだけ |
 | 登録の手間 | なし（自動で入る） | フォルダ・アプリ・ブックマークはまとめて取り込める |

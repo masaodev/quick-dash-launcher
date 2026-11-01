@@ -42,7 +42,7 @@ const GAP = 40;
 
 /**
  * ページのタイトルでウィンドウを探す（ワークスペースは about:blank で開いてから中身を書き込むので、
- * URL では見分けられない。タイトルはメイン＝QuickDashLauncher、ワークスペース＝Workspace）
+ * URL では見分けられない。タイトルはメイン＝Quick Dash Launcher、ワークスペース＝Workspace）
  */
 async function findWindow(app: ElectronApplication, title: string): Promise<Page> {
   for (let i = 0; i < 40; i++) {
@@ -103,7 +103,7 @@ test('ワークスペースのデモ', async () => {
   const mouse = await OsMouse.start();
 
   try {
-    const main = await findWindow(app, 'QuickDashLauncher');
+    const main = await findWindow(app, 'Quick Dash Launcher');
     await main.waitForLoadState('networkidle');
 
     // アイコンを取得してから撮る（Web サイトのファビコン取得にネットワークを使う）
@@ -134,7 +134,9 @@ test('ワークスペースのデモ', async () => {
     const scale = await app.evaluate(
       ({ BrowserWindow, screen }, { gap, margin }) => {
         const ws = BrowserWindow.getAllWindows().find((bw) => bw.getTitle() === 'Workspace');
-        const w = BrowserWindow.getAllWindows().find((bw) => bw.getTitle() === 'QuickDashLauncher');
+        const w = BrowserWindow.getAllWindows().find(
+          (bw) => bw.getTitle() === 'Quick Dash Launcher'
+        );
         if (!ws || !w) throw new Error('ウィンドウが見つかりません');
         const wsb = ws.getBounds();
         ws.setPosition(wsb.x - margin, wsb.y + margin);
@@ -150,7 +152,7 @@ test('ワークスペースのデモ', async () => {
       { gap: GAP, margin: BACKDROP_MARGIN }
     );
     const wsBounds = await contentBounds(app, 'Workspace');
-    const mainBounds = await contentBounds(app, 'QuickDashLauncher');
+    const mainBounds = await contentBounds(app, 'Quick Dash Launcher');
 
     // 撮る範囲: ランチャーの左からワークスペースの右まで、ワークスペースの上からランチャーの下まで（周りに余白）
     const left = mainBounds.x - BACKDROP_MARGIN;
@@ -167,7 +169,7 @@ test('ワークスペースのデモ', async () => {
     await showBackdrop(
       app,
       { x: left, y: top, width: right - left, height: bottom - top },
-      'QuickDashLauncher'
+      'Quick Dash Launcher'
     );
     await input.focus();
 
@@ -253,7 +255,7 @@ test('ワークスペースのデモ', async () => {
     await main.waitForTimeout(1200);
 
     // 4. 切り離しウィンドウの見出しをクリックして畳むと、ウィンドウが見出しだけの大きさに縮む
-    const detachedTitle = `${groupName} - QuickDashLauncher`;
+    const detachedTitle = `${groupName} - Quick Dash Launcher`;
     const detached = await findWindow(app, detachedTitle);
     // クリックしたグループに付く貼り付け先の枠（黄色）は、畳んで縮む様子の邪魔になるので撮影では出さない
     await detached.addStyleTag({

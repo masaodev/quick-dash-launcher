@@ -11,7 +11,7 @@ import { TestUtils } from '../helpers/test-utils';
 async function isMainWindowVisible(electronApp: ElectronApplication): Promise<boolean> {
   return electronApp.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows().some(
-      (win) => win.getTitle() === 'QuickDashLauncher' && win.isVisible()
+      (win) => win.getTitle() === 'Quick Dash Launcher' && win.isVisible()
     )
   );
 }
@@ -31,7 +31,7 @@ async function expectMainWindowHidden(electronApp: ElectronApplication): Promise
  */
 async function pressEscape(electronApp: ElectronApplication): Promise<void> {
   await electronApp.evaluate(({ BrowserWindow }) => {
-    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'QuickDashLauncher');
+    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'Quick Dash Launcher');
     win?.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
     win?.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
   });

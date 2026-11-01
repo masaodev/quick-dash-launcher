@@ -306,7 +306,7 @@ export const en: LocaleMessages = {
     dataFileCorrupted: 'Stopped the import because the data file may be corrupted: {{file}}',
   },
   firstLaunch: {
-    title: 'Welcome to QuickDashLauncher',
+    title: 'Welcome to Quick Dash Launcher',
     description:
       'A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword.',
     stepWelcome: 'Welcome',
@@ -324,7 +324,7 @@ export const en: LocaleMessages = {
     next: 'Next',
     back: 'Back',
     hotkeyTitle: 'Choose your hotkey',
-    hotkeyDescription: 'Press these keys from any screen to bring up QuickDashLauncher.',
+    hotkeyDescription: 'Press these keys from any screen to bring up Quick Dash Launcher.',
     hotkeyKeepDefault: "If you're not sure, keep this one.",
     hotkeyChangeLabel: 'To use different keys, click here and press them',
     hotkeyHint: 'Press Ctrl, Alt, or Shift together with another key (for example, Ctrl+Alt+Q).',
@@ -360,7 +360,7 @@ export const en: LocaleMessages = {
     validationFailed: "Couldn't check the hotkey",
   },
   splash: {
-    windowTitle: 'QuickDashLauncher - Starting…',
+    windowTitle: 'Quick Dash Launcher - Starting…',
     subtitle: 'Get to your apps, files, and sites fast',
     starting: 'Starting',
     loadingSettings: 'Loading settings',
@@ -529,7 +529,7 @@ export const en: LocaleMessages = {
     help: {
       main: `Usage: qdl <command> [arguments]
 
-QuickDashLauncher CLI. Sends requests to the running QuickDashLauncher app, and starts the app if it isn't running.
+Quick Dash Launcher CLI. Sends requests to the running Quick Dash Launcher app, and starts the app if it isn't running.
 
 Commands:
   launcher item list|add|update|remove     Items in the launcher (qdl launcher --help)
@@ -640,7 +640,7 @@ Keys you can change:
                defaultFileTab (the data file of the tab to open at startup, e.g. data2.json)
   Search       searchMemo searchIgnoreWidth searchIgnoreKana searchSortByUsage recordLaunchUsage
   Updates      updateCheckEnabled updateCheckIncludeBeta
-  Launching    launchInheritEnvironment (pass QuickDashLauncher's environment variables to apps)
+  Launching    launchInheritEnvironment (pass Quick Dash Launcher's environment variables to apps)
   Hotkeys      hotkey itemSearchHotkey (checked before changing; "" turns off itemSearchHotkey)
   Launcher     windowWidth (400-2000) windowHeight (300-1200)
                windowPositionMode (center / cursor / cursorMonitorCenter / fixed)
@@ -720,7 +720,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       badJson: "Can't read the request as JSON",
       badShape: 'The request is malformed',
       versionMismatch:
-        "The CLI and QuickDashLauncher versions don't match (CLI: {{cli}}, app: {{app}}). Use the qdl that comes with the same version of QuickDashLauncher",
+        "The CLI and Quick Dash Launcher versions don't match (CLI: {{cli}}, app: {{app}}). Use the qdl that comes with the same version of Quick Dash Launcher",
       badArgv: 'The argv in the request is invalid',
       tooLarge: 'The request is too large',
       failed: 'The request failed: {{message}}',
@@ -845,8 +845,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       setEntryAdded: 'CLI: Added the row "{{name}}" to the set "{{set}}"',
       setEntryRemoved: 'CLI: Deleted the row "{{name}}" from the set "{{set}}"',
     },
-    enabled: 'QuickDashLauncher CLI is turned on. Use qdl from a new terminal window.',
-    disabled: 'QuickDashLauncher CLI is turned off (qdl was removed from PATH).',
+    enabled: 'Quick Dash Launcher CLI is turned on. Use qdl from a new terminal window.',
+    disabled: 'Quick Dash Launcher CLI is turned off (qdl was removed from PATH).',
   },
   display: {
     label: 'Display {{number}}',
@@ -1121,7 +1121,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     deleteFailed: "Couldn't delete the file: {{error}}",
   },
   admin: {
-    windowTitle: 'QuickDashLauncher - Settings',
+    windowTitle: 'Quick Dash Launcher - Settings',
     tabs: {
       settings: '⚙️ Settings',
       itemManager: '✏️ Item Manager',
@@ -1131,7 +1131,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     saveBlockedByLoadError:
       "Couldn't save because a data file failed to load. Fix the file, and then reopen this window.",
     externalChangeConflict:
-      "Your changes weren't saved because the data file was changed outside QuickDashLauncher (or in another window). The latest data was reloaded and your unsaved edits were reapplied. Review them, and then save again.",
+      "Your changes weren't saved because the data file was changed outside Quick Dash Launcher (or in another window). The latest data was reloaded and your unsaved edits were reapplied. Review them, and then save again.",
     itemSaveFailed: "Couldn't save the items. {{error}}",
     hotkeyRegisterFailed:
       'Couldn\'t register the new launch hotkey "{{hotkey}}". Another app might be using it.',
@@ -1777,9 +1777,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     dataDescription: 'Opens the folder where your settings and data files are stored.',
     openSettingsFolder: '📂 Open settings folder',
     cliNote:
-      'When an AI agent changes your items or workspaces, have it use the CLI (qdl) instead of editing the files directly (turn on "Enable QuickDashLauncher CLI" in General).',
-    quit: '🚪 Exit QuickDashLauncher',
-    quitConfirm: 'Exit QuickDashLauncher?',
+      'When an AI agent changes your items or workspaces, have it use the CLI (qdl) instead of editing the files directly (turn on "Enable Quick Dash Launcher CLI" in General).',
+    quit: '🚪 Exit Quick Dash Launcher',
+    quitConfirm: 'Exit Quick Dash Launcher?',
     quitConfirmButton: 'Exit',
   },
   register: {
@@ -2111,7 +2111,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     convertFailed: 'Conversion failed: {{error}}',
     configLoadFailed: "Couldn't load the settings files (they may be corrupted): {{files}}",
     settingsRecovered:
-      "Couldn't read settings.json, so QuickDashLauncher started with the default settings. The original file is kept as {{file}} in the settings folder",
+      "Couldn't read settings.json, so Quick Dash Launcher started with the default settings. The original file is kept as {{file}} in the settings folder",
     saveBlockedNewer:
       "These data files were saved by a newer version of QDL, so they can't be changed: {{files}}. Update QDL to the latest version.",
     newerFormatLoaded:
@@ -2124,9 +2124,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       "Can't write to the data folder, so data is saved in %APPDATA% instead: {{dir}}. Move QDL to a folder you can write to.",
   },
   startupErrors: {
-    otherInstanceTitle: 'QuickDashLauncher will not start',
+    otherInstanceTitle: 'Quick Dash Launcher will not start',
     otherInstanceMessage:
-      'Another QuickDashLauncher from a different location is running with the same data.\n\nRunning QDL: {{running}}\nThis QDL: {{self}}\n\nOnly one QDL can run at a time with the same data. Quit the running QDL, then start this one again.',
+      'Another Quick Dash Launcher from a different location is running with the same data.\n\nRunning QDL: {{running}}\nThis QDL: {{self}}\n\nOnly one QDL can run at a time with the same data. Quit the running QDL, then start this one again.',
     otherInstancePortableUnwritable:
       "This QDL can't write to the data folder next to its exe, so it tried to use the data in %APPDATA%: {{dir}}. Move QDL to a folder you can write to.",
   },
@@ -2222,19 +2222,19 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     confirmWarning:
       'All of your current data will be replaced.\nYour original data is kept in a snapshot.',
     detailSource: 'Exported from',
-    sourceValue: 'QuickDashLauncher {{version}} ({{distribution}})',
+    sourceValue: 'Quick Dash Launcher {{version}} ({{distribution}})',
     detailExportedAt: 'Exported on',
     detailItems: 'Items (now → after import)',
     detailWorkspaceItems: 'Workspace items',
     confirmButton: 'Import and restart',
-    notExport: "This file wasn't exported from QuickDashLauncher, so it can't be imported",
+    notExport: "This file wasn't exported from Quick Dash Launcher, so it can't be imported",
     newerVersion:
-      'This file was exported from a newer version of QuickDashLauncher. Update QuickDashLauncher, then import it.',
+      'This file was exported from a newer version of Quick Dash Launcher. Update Quick Dash Launcher, then import it.',
     invalidFile: "{{file}} in the file can't be read, so it can't be imported",
     failed: "Couldn't import: {{error}}",
     corrupted: "The file is corrupted, so it can't be imported. Export it again",
     corruptedFile: "{{file}} in the file is corrupted, so it can't be imported. Export it again",
-    restarting: 'Importing. QuickDashLauncher will restart when done…',
+    restarting: 'Importing. Quick Dash Launcher will restart when done…',
   },
   itemCsv: {
     replanned:
@@ -2295,7 +2295,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     /** 初回起動で Web のアイテムを分けて入れる 2 つ目のタブの名前 */
     webTabName: 'Web',
     readme: {
-      name: '📖 How to use QuickDashLauncher (README)',
+      name: '📖 How to use Quick Dash Launcher (README)',
       url: 'https://github.com/masaodev/quick-dash-launcher#readme',
     },
     google: { name: 'Google Search', url: 'https://www.google.com/' },
@@ -2625,13 +2625,13 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       heading: 'Search',
     },
     cli: {
-      heading: 'QuickDashLauncher CLI',
+      heading: 'Quick Dash Launcher CLI',
     },
     advanced: {
       heading: 'Advanced',
-      launchInheritEnvironment: "Pass QuickDashLauncher's environment variables to apps",
+      launchInheritEnvironment: "Pass Quick Dash Launcher's environment variables to apps",
       launchInheritEnvironmentDescription:
-        "When off, apps start with the same environment variables as when you open them from the Start menu. Turn this off if you sometimes start QuickDashLauncher from Claude Code or a terminal and don't want apps to get the environment variables set there.",
+        "When off, apps start with the same environment variables as when you open them from the Start menu. Turn this off if you sometimes start Quick Dash Launcher from Claude Code or a terminal and don't want apps to get the environment variables set there.",
     },
     display: {
       keyboardHints: 'Show keyboard hints',
@@ -2760,7 +2760,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       restoreWholeWarning:
         'All of your current data will be replaced.\nYour current data is kept in a snapshot.',
       restoreWholeButton: 'Restore and restart',
-      restoringWhole: 'Restoring. QuickDashLauncher will restart when done…',
+      restoringWhole: 'Restoring. Quick Dash Launcher will restart when done…',
       restoreFailed: "Couldn't restore: {{error}}",
       restoreError: 'An error occurred while restoring',
       deleteTitle: 'Delete snapshot',
@@ -2797,7 +2797,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       heading: 'Language',
       label: 'Display language:',
       description:
-        'The language used in QuickDashLauncher. Changes apply right away to all open windows.',
+        'The language used in Quick Dash Launcher. Changes apply right away to all open windows.',
       options: {
         auto: 'Automatic (match the Windows display language)',
         // 言語の選択肢は、どの表示言語でもその言語自身の名前で出す

@@ -56,7 +56,7 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
         await expect(hotkeySection).toBeVisible();
 
         // 起動と更新・検索・CLI の節
-        for (const heading of ['起動と更新', '検索', 'QuickDashLauncher CLI']) {
+        for (const heading of ['起動と更新', '検索', 'Quick Dash Launcher CLI']) {
           const section = adminWindow
             .locator('.settings-section')
             .filter({ has: adminWindow.locator('h3', { hasText: heading }) });

@@ -1,6 +1,6 @@
-# QuickDashLauncher 画面仕様
+# Quick Dash Launcher 画面仕様
 
-このフォルダは、**QuickDashLauncherの仕様書の主軸**となる画面仕様を管理します。
+このフォルダは、**Quick Dash Launcher の仕様書の主軸**となる画面仕様を管理します。
 
 ## このフォルダの役割
 

@@ -150,12 +150,14 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Quick Dash Launcher",
+      "uninstallDisplayName": "Quick Dash Launcher ${version}"
     },
     "appx": {
       "identityName": "QuickDashLauncher",
       "applicationId": "QuickDashLauncher",
-      "displayName": "QuickDashLauncher",
+      "displayName": "Quick Dash Launcher",
       "publisher": "CN=masaodev",
       "publisherDisplayName": "masaodev",
       "backgroundColor": "transparent",

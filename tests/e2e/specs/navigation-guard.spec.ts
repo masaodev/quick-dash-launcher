@@ -12,14 +12,14 @@ import { TestUtils } from '../helpers/test-utils';
  */
 async function mainWindowUrl(electronApp: ElectronApplication): Promise<string> {
   return electronApp.evaluate(({ BrowserWindow }) => {
-    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'QuickDashLauncher');
+    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'Quick Dash Launcher');
     return win?.webContents.getURL() ?? '';
   });
 }
 
 async function runInMainWindow(electronApp: ElectronApplication, script: string): Promise<void> {
   await electronApp.evaluate(({ BrowserWindow }, js) => {
-    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'QuickDashLauncher');
+    const win = BrowserWindow.getAllWindows().find((w) => w.getTitle() === 'Quick Dash Launcher');
     void win?.webContents.executeJavaScript(js);
   }, script);
 }
