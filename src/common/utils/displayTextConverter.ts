@@ -77,6 +77,9 @@ export function jsonItemToDisplayText(item: JsonItem): string {
     case 'wsgroup': {
       const parts = ['wsgroup', item.scope];
       if (item.scope === 'selected') parts.push((item.groupIds ?? []).join(';'));
+      if (item.scope === 'all' && item.archived && item.archived !== 'exclude') {
+        parts.push(`archived=${item.archived}`);
+      }
       const opts = (['prefix', 'suffix'] as const)
         .filter((key) => item.options?.[key])
         .map((key) => `${key}=${item.options![key]}`);

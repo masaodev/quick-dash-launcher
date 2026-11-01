@@ -4,10 +4,11 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { JsonWsGroupItem, WsGroupScope } from '@common/types';
+import type { JsonWsGroupItem, WsGroupArchivedFilter, WsGroupScope } from '@common/types';
 import { resolveGroupColorCss } from '@common/groupColors';
 import {
   findMissingWsGroupIds,
+  isArchivedCandidate,
   listWsGroupCandidates,
   resolveWsGroupTargets,
   type WsGroupCandidate,
@@ -21,7 +22,18 @@ import '../styles/components/Modal.css';
 import '../styles/components/WsGroupEditModal.css';
 
 /** ダイアログで決める WSグループの中身（id・更新日は呼び出し側が付ける） */
-export type WsGroupFields = Pick<JsonWsGroupItem, 'scope' | 'groupIds' | 'options' | 'memo'>;
+export type WsGroupFields = Pick<
+  JsonWsGroupItem,
+  'scope' | 'groupIds' | 'archived' | 'options' | 'memo'
+>;
+
+/** 「すべてのグループ」のときのアーカイブしたグループの扱い（画面に出す順） */
+const ARCHIVED_FILTERS: readonly WsGroupArchivedFilter[] = ['exclude', 'include', 'only'];
+const ARCHIVED_FILTER_LABEL_KEYS = {
+  exclude: 'itemManager.wsGroup.archivedExclude',
+  include: 'itemManager.wsGroup.archivedInclude',
+  only: 'itemManager.wsGroup.archivedOnly',
+} as const satisfies Record<WsGroupArchivedFilter, string>;
 
 interface WsGroupEditModalProps {
   /** 編集する行（新しく追加するときは undefined） */
@@ -36,6 +48,7 @@ const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm,
   const [candidates, setCandidates] = useState<WsGroupCandidate[] | null>(null);
   const [scope, setScope] = useState<WsGroupScope>(initial?.scope ?? 'all');
   const [groupIds, setGroupIds] = useState<string[]>(initial?.groupIds ?? []);
+  const [archived, setArchived] = useState<WsGroupArchivedFilter>(initial?.archived ?? 'exclude');
   const [prefix, setPrefix] = useState(initial?.options?.prefix ?? '');
   const [suffix, setSuffix] = useState(initial?.options?.suffix ?? '');
   const [memo, setMemo] = useState(initial?.memo ?? '');
@@ -43,9 +56,9 @@ const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm,
   useEffect(() => {
     let cancelled = false;
     const api = window.electronAPI.workspaceAPI;
-    Promise.all([api.loadWorkspaces(), api.loadGroups()])
-      .then(([workspaces, groups]) => {
-        if (!cancelled) setCandidates(listWsGroupCandidates(workspaces, groups));
+    Promise.all([api.loadWorkspaces(), api.loadGroups(), api.loadArchivedGroups()])
+      .then(([workspaces, groups, archivedGroups]) => {
+        if (!cancelled) setCandidates(listWsGroupCandidates(workspaces, groups, archivedGroups));
       })
       .catch((error) => {
         logError('WSグループの編集でワークスペースのグループを読めませんでした:', error);
@@ -67,11 +80,19 @@ const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm,
   const list = candidates ?? [];
   const missingCount = findMissingWsGroupIds({ scope, groupIds }, list).length;
   const targets = useMemo(
-    () => resolveWsGroupTargets({ scope, groupIds }, list),
-    [scope, groupIds, list]
+    () => resolveWsGroupTargets({ scope, groupIds, archived }, list),
+    [scope, groupIds, archived, list]
   );
-  // ワークスペースが 2 つ以上あるときだけ、ワークスペースの名前で区切る
-  const showWorkspaceHeadings = new Set(list.map((c) => c.workspace.id)).size > 1;
+  // ワークスペースが 2 つ以上あるときだけ、ワークスペースの名前で区切る。アーカイブしたグループは、
+  // ワークスペースによらず最後に「アーカイブ済み」の見出しでまとめる
+  const showWorkspaceHeadings =
+    new Set(list.filter((c) => !isArchivedCandidate(c)).map((c) => c.workspace?.id)).size > 1;
+  const headingOf = (candidate: WsGroupCandidate): string | null => {
+    if (isArchivedCandidate(candidate)) return t('itemManager.wsGroup.archivedHeading');
+    return showWorkspaceHeadings ? (candidate.workspace?.displayName ?? null) : null;
+  };
+  // 「すべてのグループ」でチェックを付けて見せるのは、並ぶグループだけ
+  const targetIds = new Set(targets.map((c) => c.group.id));
   const canConfirm = candidates !== null && (scope === 'all' || targets.length > 0);
 
   const toggleGroup = (id: string, checked: boolean) => {
@@ -88,8 +109,9 @@ const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm,
     };
     onConfirm({
       scope,
-      // 選んだグループは、今あるものだけを残す（消えたグループの id はここで外す）
+      // 選んだグループは、見つかるものだけを残す（消えたグループの id はここで外す。アーカイブしたグループは残す）
       ...(scope === 'selected' ? { groupIds: targets.map((c) => c.group.id) } : {}),
+      ...(scope === 'all' && archived !== 'exclude' ? { archived } : {}),
       ...(Object.keys(options).length > 0 ? { options } : {}),
       ...(memo.trim() ? { memo } : {}),
     });
@@ -142,28 +164,54 @@ const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm,
               className={`ws-group-modal-groups${scope === 'all' ? ' is-disabled' : ''}`}
               data-testid="ws-group-list"
             >
-              {list.map(({ group, workspace }, index) => (
-                <React.Fragment key={group.id}>
-                  {showWorkspaceHeadings && list[index - 1]?.workspace.id !== workspace.id && (
-                    <div className="ws-group-modal-workspace">{workspace.displayName}</div>
-                  )}
-                  <label>
+              {list.map((candidate, index) => {
+                const { group } = candidate;
+                const heading = headingOf(candidate);
+                const prevHeading = index > 0 ? headingOf(list[index - 1]) : null;
+                return (
+                  <React.Fragment key={group.id}>
+                    {heading !== null && heading !== prevHeading && (
+                      <div className="ws-group-modal-workspace">{heading}</div>
+                    )}
+                    <label className={isArchivedCandidate(candidate) ? 'is-archived' : undefined}>
+                      <input
+                        type="checkbox"
+                        disabled={scope === 'all'}
+                        checked={
+                          scope === 'all' ? targetIds.has(group.id) : groupIds.includes(group.id)
+                        }
+                        onChange={(e) => toggleGroup(group.id, e.target.checked)}
+                        data-testid={`ws-group-check-${group.id}`}
+                      />
+                      <span
+                        className="ws-group-swatch"
+                        style={{ background: resolveGroupColorCss(group.color) }}
+                        aria-hidden="true"
+                      />
+                      {group.displayName}
+                    </label>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          )}
+          {scope === 'all' && list.some(isArchivedCandidate) && (
+            <div className="ws-group-modal-archived" data-testid="ws-group-archived">
+              <span className="ws-group-modal-label">{t('itemManager.wsGroup.archivedLabel')}</span>
+              <div className="ws-group-modal-radios">
+                {ARCHIVED_FILTERS.map((filter) => (
+                  <label key={filter}>
                     <input
-                      type="checkbox"
-                      disabled={scope === 'all'}
-                      checked={scope === 'all' || groupIds.includes(group.id)}
-                      onChange={(e) => toggleGroup(group.id, e.target.checked)}
-                      data-testid={`ws-group-check-${group.id}`}
+                      type="radio"
+                      name="ws-group-archived"
+                      checked={archived === filter}
+                      onChange={() => setArchived(filter)}
+                      data-testid={`ws-group-archived-${filter}`}
                     />
-                    <span
-                      className="ws-group-swatch"
-                      style={{ background: resolveGroupColorCss(group.color) }}
-                      aria-hidden="true"
-                    />
-                    {group.displayName}
+                    {t(ARCHIVED_FILTER_LABEL_KEYS[filter])}
                   </label>
-                </React.Fragment>
-              ))}
+                ))}
+              </div>
             </div>
           )}
           <p className="ws-group-modal-note">
@@ -206,10 +254,18 @@ const WsGroupEditModal: React.FC<WsGroupEditModalProps> = ({ initial, onConfirm,
             {targets.length === 0 ? (
               <li className="ws-group-modal-note">{t('itemManager.wsGroup.previewEmpty')}</li>
             ) : (
-              targets.map(({ group }) => (
-                <li key={group.id}>
-                  <WsGroupIcon color={group.color} />
-                  {`${prefix}${group.displayName}${suffix}`}
+              targets.map((candidate) => (
+                <li
+                  key={candidate.group.id}
+                  className={isArchivedCandidate(candidate) ? 'is-archived' : undefined}
+                >
+                  <WsGroupIcon color={candidate.group.color} />
+                  {`${prefix}${candidate.group.displayName}${suffix}`}
+                  {isArchivedCandidate(candidate) && (
+                    <span className="ws-group-modal-tag">
+                      {t('itemManager.wsGroup.archivedTag')}
+                    </span>
+                  )}
                 </li>
               ))
             )}

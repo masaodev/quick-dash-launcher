@@ -89,7 +89,8 @@ export function setupItemHandlers(): void {
     IPC_CHANNELS.OPEN_WS_GROUP,
     async (_event, groupId: string, expandedFromId?: string) => {
       const service = await WorkspaceService.getInstance();
-      const groups = await service.loadGroups();
+      // アーカイブしたグループ（しまった単位の最上位）も、アーカイブのまま開く（A3-227）
+      const groups = [...(await service.loadGroups()), ...(await service.loadArchivedGroups())];
       if (!groups.some((group) => group.id === groupId && !group.parentGroupId)) {
         itemLogger.warn({ groupId }, 'WSグループのグループが見つかりません');
         return { success: false };

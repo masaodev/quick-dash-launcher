@@ -147,6 +147,7 @@ export const en: LocaleMessages = {
       groupCount_other: ' ({{count}} items)',
       setPlacedBadge: 'Some rows have a window position',
       wsGroupBadge: 'Workspace group',
+      wsGroupArchivedBadge: 'Archived',
       windowSearchBadge: 'Window search: {{title}}',
       showNote: 'Show note',
     },
@@ -196,6 +197,8 @@ export const en: LocaleMessages = {
       id: 'ID: {{value}}',
       expandedFromId: 'Imported from ID: {{value}}',
       wsGroup: 'Workspace group (opens in a detached window when you pick it)',
+      wsGroupArchived:
+        'Archived group (opens in a detached window as it is. To change it, restore it in the workspace)',
       lineNumber: 'Line: {{value}}',
       expandedFrom: 'Imported from: {{value}}',
       expandedOptions: 'Options: {{value}}',
@@ -1152,6 +1155,12 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       allNote:
         'Groups you add later appear automatically. In the launcher, they are sorted by name like other items',
       selectedNote: 'Only top-level groups can be chosen (subgroups are not shown)',
+      archivedLabel: 'Archived groups',
+      archivedExclude: "Don't show",
+      archivedInclude: 'Show them too',
+      archivedOnly: 'Archived groups only',
+      archivedHeading: 'Archived',
+      archivedTag: 'Archived',
       noGroups: 'The workspace has no groups',
       missing_one: '⚠ {{count}} group was not found (it was deleted). It is removed when you apply',
       missing_other:
@@ -1186,6 +1195,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       setRowsPlaced_other: '{{count}} rows ({{placed}} with a window position)',
       unknownType: '(unknown type)',
       wsGroupAll: 'All groups',
+      wsGroupAllWithArchived: 'All groups (including archived)',
+      wsGroupArchivedOnly: 'All archived groups',
       wsGroupSelected_one: '{{count}} selected group',
       wsGroupSelected_other: '{{count}} selected groups',
     },
@@ -2448,6 +2459,9 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     detached: {
       close: 'Close',
       closeLabel: 'Close detached window',
+      archivedBadge: 'Archived',
+      archivedBadgeTitle:
+        'This group is archived. You can open its items. To change it, restore it from the workspace archive',
     },
     itemCard: {
       linkTarget: 'Target: {{path}}',

@@ -273,3 +273,9 @@
   color: var(--color-white);
   border-color: var(--color-white);
 }
+
+/* アーカイブしたグループの WSグループ: 名前とアイコンを薄くする（選んでいる行は読めるよう戻す） */
+.item.archived-ws-group:not(.selected) .item-name,
+.item.archived-ws-group:not(.selected) .item-icon {
+  opacity: 0.6;
+}

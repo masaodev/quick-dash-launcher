@@ -309,6 +309,8 @@ export interface WsGroupItem {
   groupId: string;
   /** グループの色（色のトークンか #RRGGBB。無ければ未設定） */
   color?: string;
+  /** アーカイブしたグループ（選ぶとアーカイブのまま切り離しウィンドウで開く） */
+  archived?: boolean;
   /** 元のデータファイル */
   sourceFile?: string;
   /** データファイル内の行番号（WSグループの行の位置） */

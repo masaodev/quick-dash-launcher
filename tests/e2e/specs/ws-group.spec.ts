@@ -289,4 +289,100 @@ test.describe('QuickDashLauncher - WSグループ', () => {
       timeout: 5000,
     });
   });
+
+  test('アーカイブしたグループも並べられ、選ぶとアーカイブのまま切り離しウィンドウで開く（A3-227）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const [active, archived] = await mainWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const created = [await api.createGroup('E2E 今ある'), await api.createGroup('E2E しまった')];
+      await api.createItem(
+        { type: 'item', displayName: 'E2E しまったメモ', path: 'https://example.com/' },
+        created[1].id
+      );
+      await api.archiveGroup(created[1].id);
+      return created.map((group) => group.id);
+    });
+    configHelper.addItemToFile('data.json', {
+      id: 'wsgall02',
+      type: 'wsgroup',
+      scope: 'all',
+      archived: 'include',
+      options: { prefix: 'WS: ' },
+    } as JsonItem);
+    configHelper.addItemToFile('data.json', {
+      id: 'wsgsel02',
+      type: 'wsgroup',
+      scope: 'selected',
+      groupIds: [archived],
+      options: { prefix: 'SEL: ' },
+    } as JsonItem);
+    await utils.reloadWithF5();
+
+    await test.step('「一緒に並べる」の行では、今あるグループとアーカイブしたグループが並び、札で見分けられる', async () => {
+      await utils.searchFor('WS: E2E');
+      await expect(mainWindow.locator('.item', { hasText: 'WS: E2E' })).toHaveCount(2);
+      const archivedRow = mainWindow.locator('.item', { hasText: 'WS: E2E しまった' });
+      await expect(archivedRow.locator('.ws-group-badge')).toHaveText('アーカイブ済み');
+      await expect(archivedRow).toHaveClass(/archived-ws-group/);
+      const activeRow = mainWindow.locator('.item', { hasText: 'WS: E2E 今ある' });
+      await expect(activeRow.locator('.ws-group-badge')).toHaveText('ワークスペースグループ');
+      await utils.attachScreenshot(testInfo, 'アーカイブしたグループの WSグループ');
+    });
+
+    await test.step('「選んだグループ」で選んだアーカイブしたグループも並ぶ', async () => {
+      await utils.searchFor('SEL: E2E');
+      await expect(mainWindow.locator('.item', { hasText: 'SEL: E2E しまった' })).toHaveCount(1);
+    });
+
+    await test.step('選ぶと、復元せずにアーカイブのまま切り離しウィンドウで開く', async () => {
+      await utils.searchFor('WS: E2E しまった');
+      await mainWindow.keyboard.press('Enter');
+      await expect
+        .poll(() => hasDetachedWindow(electronApp, archived), { timeout: 10000 })
+        .toBe(true);
+      const pages = electronApp.windows();
+      let detachedPage = pages[0];
+      for (const page of pages) {
+        const name = await page.evaluate(() => window.name).catch(() => '');
+        if (name === `detached-group:${archived}`) detachedPage = page;
+      }
+      await expect(detachedPage.getByTestId('detached-archived-badge')).toBeVisible();
+      await expect(detachedPage.locator('body')).toContainText('E2E しまったメモ');
+      // 復元していない（アーカイブに残っている）
+      const stillArchived = await mainWindow.evaluate(
+        async (id) =>
+          (await window.electronAPI.workspaceAPI.loadArchivedGroups()).some((g) => g.id === id),
+        archived
+      );
+      expect(stillArchived).toBe(true);
+    });
+
+    await test.step('追加のダイアログでは、アーカイブしたグループを見出しで分けて出し、「すべて」で扱いを選べる', async () => {
+      const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+      try {
+        await adminWindow.locator('.toolbar-split-toggle').click();
+        await adminWindow.getByTestId('add-ws-group').click();
+        const list = adminWindow.getByTestId('ws-group-list');
+        await expect(list).toContainText('アーカイブ済み');
+        await expect(adminWindow.getByTestId(`ws-group-check-${active}`)).toBeChecked();
+        // 既定は「並べない」なので、アーカイブしたグループにはチェックが付かない
+        await expect(adminWindow.getByTestId('ws-group-archived-exclude')).toBeChecked();
+        await expect(adminWindow.getByTestId(`ws-group-check-${archived}`)).not.toBeChecked();
+
+        await adminWindow.getByTestId('ws-group-archived-only').check();
+        const preview = adminWindow.getByTestId('ws-group-preview');
+        await expect(preview.locator('li')).toHaveCount(1);
+        await expect(preview.locator('li')).toContainText('E2E しまった');
+        await expect(preview.locator('li')).toContainText('アーカイブ済み');
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, 'アーカイブしたグループの扱い');
+      } finally {
+        await adminWindow.close();
+      }
+    });
+  });
 });

@@ -261,13 +261,37 @@ const WorkspaceApp: React.FC = () => {
     };
   }, []);
 
+  // 切り離しウィンドウのグループがアーカイブにあれば、アーカイブの表示（開くだけ・変えない）で出す（A3-227）。
+  // ランチャーの WSグループから、アーカイブしたグループを開いたとき。ワークスペースで復元したら普通の表示に戻す
+  useEffect(() => {
+    if (!detachedGroupId) return;
+    if (groups.some((g) => g.id === detachedGroupId)) {
+      setIsArchiveMode(false);
+      return;
+    }
+    let cancelled = false;
+    window.electronAPI.workspaceAPI
+      .loadArchivedGroups()
+      .then((archived) => {
+        if (!cancelled && archived.some((g) => g.id === detachedGroupId)) setIsArchiveMode(true);
+      })
+      .catch((error) => logError('Failed to check archived group for detached window:', error));
+    return () => {
+      cancelled = true;
+    };
+  }, [detachedGroupId, groups]);
+
   // 切り離しウィンドウのタイトルにグループ名を反映する（タスクバー・Alt+Tabでの識別用）
   // グループ名の変更にも追従する
   useEffect(() => {
     if (!isDetached) return;
-    const groupName = groups.find((g) => g.id === detachedGroupId)?.displayName;
-    if (groupName) document.title = `${groupName} - QuickDashLauncher`;
-  }, [isDetached, detachedGroupId, groups]);
+    const source = isArchiveMode ? archivedGroups : groups;
+    const groupName = source.find((g) => g.id === detachedGroupId)?.displayName;
+    if (!groupName) return;
+    document.title = isArchiveMode
+      ? `${groupName} (${t('workspace.detached.archivedBadge')}) - QuickDashLauncher`
+      : `${groupName} - QuickDashLauncher`;
+  }, [isDetached, isArchiveMode, detachedGroupId, groups, archivedGroups, t]);
 
   useEffect(() => {
     if (isDetached) return;
@@ -610,7 +634,11 @@ const WorkspaceApp: React.FC = () => {
 
   // 切り離しウィンドウモード: 対象グループとその子孫のみ表示
   if (detachedGroupId) {
-    const descendantIds = getDescendantGroupIds(detachedGroupId, groups);
+    // アーカイブしたグループを開いているときは、アーカイブのデータで出す（変える操作は archiveHandlers で止める）
+    const detachedData = isArchiveMode
+      ? { groups: displayGroups, items: displayItems }
+      : { groups, items };
+    const descendantIds = getDescendantGroupIds(detachedGroupId, detachedData.groups);
     const detachedVisibleGroupIds = new Set([detachedGroupId, ...descendantIds]);
 
     return (
@@ -619,16 +647,26 @@ const WorkspaceApp: React.FC = () => {
       >
         <WorkspaceGroupedList
           contentRef={contentRef}
-          data={{ groups, items }}
+          data={detachedData}
           handlers={commonHandlers}
           ui={{
             ...commonUi,
+            isArchiveMode,
             activeWorkspaceId,
             visibleGroupIds: detachedVisibleGroupIds,
             detachedRootGroupId: detachedGroupId,
           }}
         />
         <div className="detached-window-controls">
+          {isArchiveMode && (
+            <span
+              className="detached-archived-badge"
+              title={t('workspace.detached.archivedBadgeTitle')}
+              data-testid="detached-archived-badge"
+            >
+              {t('workspace.detached.archivedBadge')}
+            </span>
+          )}
           <PinButton level={pinLevel} onLevelChange={setPinLevel} className="workspace-pin-btn" />
           <button
             className="action-btn workspace-close-btn"

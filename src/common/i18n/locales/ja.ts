@@ -150,6 +150,7 @@ export const ja = {
       groupCount_other: '（{{count}} 件）',
       setPlacedBadge: 'ウィンドウ位置のある行があります',
       wsGroupBadge: 'ワークスペースグループ',
+      wsGroupArchivedBadge: 'アーカイブ済み',
       windowSearchBadge: 'ウィンドウ検索: {{title}}',
       showNote: 'メモを表示',
     },
@@ -198,6 +199,8 @@ export const ja = {
       id: 'ID: {{value}}',
       expandedFromId: '取込元 ID: {{value}}',
       wsGroup: 'ワークスペースのグループ（選ぶと切り離しウィンドウで開きます）',
+      wsGroupArchived:
+        'アーカイブしたグループ（選ぶとアーカイブのまま切り離しウィンドウで開きます。変えるときはワークスペースで復元してください）',
       lineNumber: '行番号: {{value}}',
       expandedFrom: '取込元: {{value}}',
       expandedOptions: '設定: {{value}}',
@@ -1156,6 +1159,12 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       allNote:
         'あとで増やしたグループも自動で並びます。ランチャーでは、ほかのアイテムと同じく名前の順に並びます',
       selectedNote: 'いちばん上の階層のグループだけを選べます（サブグループは並べません）',
+      archivedLabel: 'アーカイブしたグループ',
+      archivedExclude: '並べない',
+      archivedInclude: '一緒に並べる',
+      archivedOnly: 'アーカイブしたグループだけ',
+      archivedHeading: 'アーカイブ済み',
+      archivedTag: 'アーカイブ済み',
       noGroups: 'ワークスペースにグループがありません',
       missing_one:
         '⚠ 見つからないグループが {{count}} 件あります（消えたグループ）。反映すると外れます',
@@ -1191,6 +1200,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       setRowsPlaced_other: '{{count}} 行（ウィンドウ位置のある行 {{placed}}）',
       unknownType: '（不明な型）',
       wsGroupAll: 'すべてのグループ',
+      wsGroupAllWithArchived: 'すべてのグループ（アーカイブ済みも）',
+      wsGroupArchivedOnly: 'アーカイブしたグループすべて',
       wsGroupSelected_one: '選んだグループ {{count}} 件',
       wsGroupSelected_other: '選んだグループ {{count}} 件',
     },
@@ -2449,6 +2460,9 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     detached: {
       close: '閉じる',
       closeLabel: '切り離しウィンドウを閉じる',
+      archivedBadge: 'アーカイブ済み',
+      archivedBadgeTitle:
+        'アーカイブしたグループです。中のアイテムは開けますが、変えるときはワークスペースのアーカイブから復元してください',
     },
     itemCard: {
       linkTarget: 'リンク先: {{path}}',

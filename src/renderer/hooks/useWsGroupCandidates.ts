@@ -22,9 +22,9 @@ export function useWsGroupCandidates(enabled: boolean): WsGroupCandidate[] | nul
     let timer: ReturnType<typeof setTimeout> | undefined;
     const load = () => {
       const api = window.electronAPI.workspaceAPI;
-      Promise.all([api.loadWorkspaces(), api.loadGroups()])
-        .then(([workspaces, groups]) => {
-          if (!cancelled) setCandidates(listWsGroupCandidates(workspaces, groups));
+      Promise.all([api.loadWorkspaces(), api.loadGroups(), api.loadArchivedGroups()])
+        .then(([workspaces, groups, archivedGroups]) => {
+          if (!cancelled) setCandidates(listWsGroupCandidates(workspaces, groups, archivedGroups));
         })
         .catch((error) => {
           logError('アイテム管理でワークスペースのグループを読めませんでした:', error);
