@@ -63,11 +63,6 @@ export function getMainItemIndex(): MainItemIndex | null {
   return currentIndex;
 }
 
-/** テスト用: 表を捨てる */
-export function resetMainItemIndexForTest(): void {
-  currentIndex = null;
-}
-
 /** 所属・並び順・アーカイブの情報（参照から解決したアイテムにもそのまま引き継ぐ） */
 function pickMeta(item: WorkspaceItem): Record<string, unknown> {
   const src = item as unknown as Record<string, unknown>;

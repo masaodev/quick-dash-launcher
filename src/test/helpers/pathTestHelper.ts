@@ -121,28 +121,3 @@ export class PathTestHelper {
     return path.join(this.tempConfigFolder, subFolder);
   }
 }
-
-/**
- * テスト用のヘルパー関数
- * beforeEach/afterEachで使用することを想定
- */
-export function createPathTestHelper(): PathTestHelper {
-  return new PathTestHelper();
-}
-
-/**
- * 環境変数を使用してカスタム設定フォルダを設定するヘルパー
- * @param customPath カスタム設定フォルダのパス
- */
-export function setConfigFolderViaEnv(customPath: string): void {
-  process.env.QUICK_DASH_CONFIG_DIR = customPath;
-}
-
-/**
- * 環境変数をクリア
- */
-export function clearConfigFolderEnv(): void {
-  delete process.env.QUICK_DASH_CONFIG_DIR;
-}
-
-export default PathTestHelper;
