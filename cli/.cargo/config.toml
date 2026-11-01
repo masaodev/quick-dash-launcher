@@ -1,0 +1,3 @@
+# qdl.exe に C ランタイム（VCRUNTIME140.dll）を埋め込む。Visual C++ 再頒布可能パッケージが入っていない PC でも動くように（A3-232）
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
