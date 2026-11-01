@@ -154,6 +154,55 @@ test.describe('QuickDashLauncher - WSグループ', () => {
     });
   });
 
+  test('選んだグループを消すと、アイテム管理の行に見つからない数が出る（A3-224）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }, testInfo) => {
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    const [work, hobby] = await mainWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const created = [await api.createGroup('E2E 仕事'), await api.createGroup('E2E 趣味')];
+      return created.map((group) => group.id);
+    });
+    configHelper.addItemToFile('data.json', {
+      id: 'wsgsel01',
+      type: 'wsgroup',
+      scope: 'selected',
+      groupIds: [work, hobby],
+    } as JsonItem);
+    await utils.reloadWithF5();
+
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    try {
+      const row = adminWindow.locator('tr', { hasText: '選んだワークスペースグループ（2 件）' });
+      await expect(row).toBeVisible();
+      // 「リンク切れを確認」を押す前から判定するので、全部あるうちは印が無い
+      await expect(adminWindow.getByTestId('ws-group-row-missing')).toHaveCount(0);
+
+      await test.step('グループを 1 つ消すと、開いたままのアイテム管理に印が出る（件数は選んだ数のまま）', async () => {
+        await mainWindow.evaluate((id) => window.electronAPI.workspaceAPI.deleteGroup(id), hobby);
+        await expect(row.getByTestId('ws-group-row-missing')).toHaveText(
+          '⚠ グループ 1 件が見つかりません',
+          { timeout: 5000 }
+        );
+        await expect(row).toContainText('選んだワークスペースグループ（2 件）');
+        await new TestUtils(adminWindow).attachScreenshot(testInfo, '見つからないグループの印');
+      });
+
+      await test.step('「リンク切れを確認」の件数にも入る', async () => {
+        await adminWindow.locator('.organize-dropdown .dropdown-trigger-btn').click();
+        await adminWindow
+          .locator('.organize-dropdown .dropdown-item', { hasText: 'リンク切れを確認' })
+          .click();
+        await expect(adminWindow.locator('.missing-count')).toHaveText('リンク切れ: 1 件');
+      });
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   test('グループが 1 つも無いときに足した「すべてのグループ」の行も、グループを作ると F5 なしで並ぶ', async ({
     mainWindow,
     configHelper,

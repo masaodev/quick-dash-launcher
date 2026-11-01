@@ -243,6 +243,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
     pathCheck,
     linkStatusOf,
     missingSetRowsOf,
+    missingWsGroupCountOf,
     missingIds,
     runPathCheck,
     filteredItems,
@@ -725,6 +726,7 @@ const AdminItemManagerView: React.FC<EditModeViewProps> = ({
           filterOptions={filterOptions}
           linkStatusOf={linkStatusOf}
           missingSetRowsOf={missingSetRowsOf}
+          missingWsGroupCountOf={missingWsGroupCountOf}
           usageOf={launchUsage.usageOf}
           autoEditItemId={autoEditItemId}
           onAutoEditHandled={() => setAutoEditItemId(null)}
