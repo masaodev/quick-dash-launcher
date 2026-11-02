@@ -154,7 +154,7 @@ export class AutoLaunchService {
       const target = this.getTargetPath();
       const success = shell.writeShortcutLink(shortcutPath, 'create', {
         target,
-        description: 'QuickDashLauncher - Quick access launcher with global hotkey',
+        description: "Quick Dash Launcher - A search launcher for what you've added",
         appUserModelId: 'net.masaodev.quick-dash-launcher',
       });
 

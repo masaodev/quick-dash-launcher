@@ -51,7 +51,7 @@
   ],
   "author": "masaodev",
   "license": "MIT",
-  "description": "Quick access launcher for Windows with global hotkey support",
+  "description": "A search launcher for what you've added. Open apps, files, folders, and URLs by typing a keyword.",
   "repository": {
     "type": "git",
     "url": "https://github.com/masaodev/quick-dash-launcher.git"
