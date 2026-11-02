@@ -92,21 +92,40 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
   }, [onReady]);
 
   return (
-    <div className="splash-container">
-      <div className="app-logo">Q</div>
-      <h1 className="app-title">Quick Dash Launcher</h1>
-      <p className="app-subtitle">{t('splash.subtitle')}</p>
+    <>
+      <div className="splash-band splash-band-search" aria-hidden="true" />
+      <div className="splash-band splash-band-row" aria-hidden="true" />
+      <div className="splash-container">
+        {/* アプリアイコン（assets/icon.svg）の Q と同じ形 */}
+        <svg className="app-logo" viewBox="0 0 256 256" aria-hidden="true">
+          <circle cx="124" cy="120" r="70" fill="none" stroke="currentColor" strokeWidth="34" />
+          <line
+            x1="162"
+            y1="160"
+            x2="212"
+            y2="210"
+            stroke="currentColor"
+            strokeWidth="34"
+            strokeLinecap="round"
+          />
+        </svg>
+        <h1 className="app-title">Quick Dash Launcher</h1>
+        <p className="app-subtitle">{t('splash.subtitle')}</p>
 
-      <div className="loading-container">
-        <div className="loading-bar">
-          <div className="loading-progress" style={{ width: `${progress}%`, animation: 'none' }} />
-        </div>
-        <div className="loading-text">
-          {t(`splash.${loadingText}`)}
-          <span className="loading-dots">...</span>
+        <div className="loading-container">
+          <div className="loading-bar">
+            <div
+              className="loading-progress"
+              style={{ width: `${progress}%`, animation: 'none' }}
+            />
+          </div>
+          <div className="loading-text">
+            {t(`splash.${loadingText}`)}
+            <span className="loading-dots">...</span>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
