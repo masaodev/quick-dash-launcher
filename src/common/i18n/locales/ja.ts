@@ -370,7 +370,7 @@ export const ja = {
   },
   splash: {
     windowTitle: 'Quick Dash Launcher - 起動中…',
-    subtitle: '素早いアクセスを実現するランチャーアプリ',
+    subtitle: 'いつもの呼び名で、なんでも開く',
     starting: '起動中',
     loadingSettings: '設定を読み込み中',
     preparing: 'アプリを準備中',
