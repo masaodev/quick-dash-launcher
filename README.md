@@ -6,6 +6,8 @@
 
 <p align="center"><b>English</b> | <a href="README.ja.md">日本語</a></p>
 
+<p align="center"><b>Open it by the name you call it, no second-guessing</b><br /><sub>A search launcher for what you've added</sub></p>
+
 **A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword.**
 
 Tired of searches that bring up files with similar names, or files that have nothing to do with what you want? In Quick Dash Launcher, only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project, so your launcher grows with you as you use it.
@@ -44,7 +46,7 @@ winget install masaodev.quick-dash-launcher
   - Open apps, folders, files, and websites, plus links such as Teams chats, from the same window.
   - Save snippets of text or images, and copy them back to the clipboard when you select them.
 - **Name items and sort them into tabs**
-  - Long paths and URLs open by the name you actually use, such as "Timesheet" or "Expenses."
+  - Long paths and URLs open by the name you call them, such as "Timesheet" or "Expenses."
   - Create whatever tabs you like, such as "Daily," one per project, or "Bookmarks."
 - **Import many at once**
   - Pick apps from the Start menu and your browser bookmarks from a list and import them.
@@ -59,7 +61,7 @@ winget install masaodev.quick-dash-launcher
 
 Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. [Importing many at once](#features) keeps the setup effort low.
 
-| | Search-based launchers (PowerToys Run and others) | Quick Dash Launcher |
+| | Launchers that index everything (PowerToys Run and others) | Quick Dash Launcher |
 | --- | --- | --- |
 | What shows up | Everything installed | Only what you've added |
 | Setup effort | None (added automatically) | Import folders, apps, and bookmarks in bulk |
