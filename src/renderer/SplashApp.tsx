@@ -111,6 +111,7 @@ function SplashApp({ onReady }: SplashAppProps): React.ReactElement {
         </svg>
         <h1 className="app-title">Quick Dash Launcher</h1>
         <p className="app-subtitle">{t('splash.subtitle')}</p>
+        <p className="app-category">{t('splash.category')}</p>
 
         <div className="loading-container">
           <div className="loading-bar">
