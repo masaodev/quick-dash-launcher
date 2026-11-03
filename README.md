@@ -55,6 +55,8 @@ winget install masaodev.quick-dash-launcher
 - **Matches appear as you type, ready to open**
   - Type part of a name, and the list narrows with each character. Press Enter to open it. Type "goo" to list your Google services, then add "map" after a space ("goo map") to narrow it to Google Maps.
   - If a match is in another tab, press Tab to switch to it.
+- **Keep your most-used items at the edge of the screen**
+  - Besides the launcher, there's the [workspace](#workspace), a window you can keep on screen.
 
 ---
 
@@ -104,16 +106,16 @@ Set the type to **Folder import** to add all the files in a folder to the list.
 
 ## Workspace
 
-The workspace is a separate window that keeps the things you use most at the edge of your screen. To open it, select ⭐ in the launcher or press `Ctrl+W`. Unlike the launcher, it stays visible while you work in other windows.
+Separate from the launcher, the workspace is a window that lines up the things you use most at the edge of your screen. Files and folders for the project you're working on open with just a click. You can keep it on screen all the time, or have it appear together with the launcher.
 
 <p align="center">
   <img src="docs/images/demo-workspace-en.gif" alt="Zoom, found by typing zoom in the launcher, is dragged into the Daily group in the workspace. The group is then dragged out of the workspace into a window of its own, pinned with the 📌 button, and collapsed by clicking its header." /><br />
   <sub>▶ Demo (about 25 seconds)</sub>
 </p>
 
-- **Add items**: Right-click an item in the launcher, or drag it to the workspace. You can also drag files and URLs, or copy a path or text and press `Ctrl+V` in the workspace.
-- **Organize with groups**: Sort items into color-coded groups, and create groups inside groups.
-- **Detach a group**: Drag a group out of the workspace to open it in a window of its own, and put it anywhere on your screen.
+- **Drag to add**: Besides launcher items, you can add files, URLs, and open windows.
+- **Organize with groups**: Sort items into color-coded groups, and collapse the ones you're not using.
+- **Detach and place**: Drag a group out to open it in a window of its own, and put it anywhere on your screen.
 
 For details, see [Workspace](docs/features/workspace.md) (Japanese).
 
