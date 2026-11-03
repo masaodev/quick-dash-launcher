@@ -477,7 +477,14 @@ export const enContent: DemoContent = {
       {
         name: 'Client A',
         color: 'success',
-        items: ['Client A project folder', 'Client A shared site', 'Teams: Client A team'],
+        items: ['Client A project folder', 'Client A shared site'],
+        subgroups: [
+          {
+            name: 'Chats',
+            color: 'teal',
+            items: ['Teams: Client A team', 'Teams: Client A Riley'],
+          },
+        ],
       },
       {
         name: 'Client B',

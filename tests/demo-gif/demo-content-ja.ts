@@ -516,7 +516,10 @@ export const jaContent: DemoContent = {
       {
         name: 'A社',
         color: 'success',
-        items: ['A社 案件フォルダ', 'A社 共有サイト', 'Teams: A社 チーム'],
+        items: ['A社 案件フォルダ', 'A社 共有サイト'],
+        subgroups: [
+          { name: 'チャット', color: 'teal', items: ['Teams: A社 チーム', 'Teams: A社 田中さん'] },
+        ],
       },
       {
         name: 'B社',

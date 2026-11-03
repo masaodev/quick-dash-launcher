@@ -10,7 +10,7 @@
 
 **A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword.**
 
-Tired of searches that bring up files with similar names, or files that have nothing to do with what you want? In Quick Dash Launcher, only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project, so your launcher grows with you as you use it.
+Tired of searching the Start menu or another launcher, only to get a list full of files that have nothing to do with what you want? In Quick Dash Launcher, only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project, so your launcher grows with you as you use it.
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
@@ -27,7 +27,8 @@ Tired of searches that bring up files with similar names, or files that have not
 </p>
 
 <p align="center">
-  <img src="docs/images/demo-main-en.gif" alt="Quick Dash Launcher demo" />
+  <img src="docs/images/demo-main-en.gif" alt="Quick Dash Launcher demo" /><br />
+  <sub>▶ Demo (about 30 seconds)</sub>
 </p>
 
 <!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->
@@ -44,7 +45,7 @@ winget install masaodev.quick-dash-launcher
 
 - **Open everything from one place**
   - Open apps, folders, files, and websites, plus links such as Teams chats, from the same window.
-  - Save snippets of text or images, and copy them back to the clipboard when you select them.
+  - Save snippets of text or images. Select one, and it's copied to the clipboard, ready to paste.
 - **Name items and sort them into tabs**
   - Long paths and URLs open by the name you call them, such as "Timesheet" or "Expenses."
   - Create whatever tabs you like, such as "Daily," one per project, or "Bookmarks."
@@ -54,20 +55,22 @@ winget install masaodev.quick-dash-launcher
 - **Matches appear as you type, ready to open**
   - Type part of a name, and the list narrows with each character. Press Enter to open it. Type "goo" to list your Google services, then add "map" after a space ("goo map") to narrow it to Google Maps.
   - If a match is in another tab, press Tab to switch to it.
+- **Keep your most-used items at the edge of the screen**
+  - Besides the launcher, there's the [workspace](#workspace), a window you can keep on screen.
 
 ---
 
 ## Why you add items yourself
 
-Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. [Importing many at once](#features) keeps the setup effort low.
+Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. To keep the setup effort low, it comes with drag-and-drop adding, bulk import of apps, bookmarks, and folders, and a dedicated [settings window](#adding-and-managing-items) where you can edit everything you've added in a list.
 
 | | Launchers that index everything (PowerToys Run and others) | Quick Dash Launcher |
 | --- | --- | --- |
 | What shows up | Everything installed | Only what you've added |
-| Setup effort | None (added automatically) | Import folders, apps, and bookmarks in bulk |
+| Setup effort | None (added automatically) | Needed (drag and drop and bulk import keep it low) |
 | Organization | None | Sort into tabs as you like |
-| Names | App and file names as they are | Names you choose |
-| Files inside folders | Not shown | Shown once you import the folder |
+| Names | App and file names as they are | Any name you like (or keep the file name) |
+| Showing only a specific folder | Hard (mixed into the whole search) | Folder import shows just that folder's contents |
 
 ---
 
@@ -83,7 +86,7 @@ Edit everything you've added, tab by tab. To open it, select ⚙ > **Item Manage
 
 ### Add item
 
-Add one item at a time. To open it, select ➕ > **Add item** in the launcher, or drag and drop a file onto it.
+Add one item at a time. To open it, select ➕ > **Add item** in the launcher. You can also drag and drop a file or URL onto the launcher.
 
 <p align="center">
   <img src="docs/images/readme-register-item-en.png" alt="The Add item window, adding a URL named Timesheet." />
@@ -103,17 +106,16 @@ Set the type to **Folder import** to add all the files in a folder to the list.
 
 ## Workspace
 
-The workspace is a separate window that keeps the things you use most at the edge of your screen. To open it, select ⭐ in the launcher or press `Ctrl+W`. Unlike the launcher, it stays visible while you work in other windows.
+Separate from the launcher, the workspace is a window that lines up the things you use most at the edge of your screen. Items open with just a click, and you can choose to keep it on screen all the time or have it appear together with the launcher.
 
 <p align="center">
-  <img src="docs/images/demo-workspace-en.gif" alt="Zoom, found by typing zoom in the launcher, is dragged into the Daily group in the workspace. The group is then dragged out of the workspace into a window of its own, pinned with the 📌 button, and collapsed by clicking its header." />
+  <img src="docs/images/demo-workspace-en.gif" alt="Zoom, found by typing zoom in the launcher, is dragged into the Daily group in the workspace. The group is then dragged out of the workspace into a window of its own, pinned with the 📌 button, and collapsed by clicking its header." /><br />
+  <sub>▶ Demo (about 25 seconds)</sub>
 </p>
 
-- **Add items**: Right-click an item in the launcher, or drag it to the workspace. You can also drag files and URLs, or copy a path or text and press `Ctrl+V` in the workspace.
-- **Organize with groups**: Sort items into color-coded groups, and create groups inside groups.
-- **Detach a group**: Drag a group out of the workspace to open it in a window of its own, and put it anywhere on your screen.
-
-For details, see [Workspace](docs/features/workspace.md) (Japanese).
+- **Drag to add**: Besides launcher items, you can add files, URLs, and open windows.
+- **Organize with groups**: Sort items into color-coded groups, and create groups inside them. Collapse the groups you're not using.
+- **Detach and place**: Drag a group out to open it in a window of its own, and put it anywhere on your screen.
 
 <!-- Re-record the demo GIF with `npm run docs:demo-gif-workspace:en` (the real mouse pointer moves while recording; demo data: workspace in tests/demo-gif/demo-content-en.ts) -->
 
@@ -121,16 +123,15 @@ For details, see [Workspace](docs/features/workspace.md) (Japanese).
 
 ## More you can do
 
-Change the type in the Add item window to do more than open files and URLs. For details on each type, see [Item types](docs/features/item-categories.md) (Japanese).
+Besides opening files and URLs, you can also do the following.
 
 | Feature | What it does |
 | --- | --- |
-| [Set](docs/features/set.md) | Open several items or paths at once, and optionally move their windows to recorded positions |
-| Clipboard item | Save text or images and copy them back to the clipboard when you select them |
-| WS group | List workspace groups in the launcher and in search, and open a group in a detached window when you select it (add one from the ▼ next to "+ Add item" in Item Manager) |
-| [Bookmark import](docs/features/bookmark-import.md) | Import your browser bookmarks, and optionally keep them up to date automatically |
-| [Window search](docs/screens/main-window.md#526-ウィンドウ検索モード) | Find an open window by name and switch to it, including windows on other virtual desktops (press `Ctrl+Alt+Space` to open it directly) |
-| [Command line (qdl)](docs/features/cli.md) | Add and change items, workspace groups, and settings with the `qdl` command. Results come back as JSON, so scripts and AI agents (such as Claude Code) can use it too. Turn it on in the basic settings |
+| Bookmark auto-import | Re-imports your Chrome and Edge bookmarks automatically as they change in the browser.<br>You can narrow it down, for example to just your "Work" folder. |
+| Window search | Find an open window by name and switch to it (default key: `Ctrl+Alt+Space`).<br>It's faster than hunting through the taskbar, and takes you straight to windows on other virtual desktops. |
+| Set | Open the things you start every morning, such as mail, calendar, and chat, in one go.<br>It can even arrange the windows, for example an editor on the left half and a browser on the right. |
+| Quick Dash Launcher CLI | Add and change items and settings with the `qdl` command.<br>You can also ask an AI agent such as Claude Code to "add this folder to the launcher."<br>Turn it on in the settings to use it. |
+| WS group | Search for a workspace group by name in the launcher and open it.<br>Select one to open just that group in a window of its own (works even when the workspace isn't shown). |
 
 ---
 
@@ -158,7 +159,7 @@ Download them from [Releases](https://github.com/masaodev/quick-dash-launcher/re
 
 Settings and data are saved in `%APPDATA%\quick-dash-launcher`, the same place as the installer, so a new version extracted to another folder uses the same data.
 
-To use portable mode, check the portable mode option on the first-run setup screen, or create a `QuickDashLauncher-data` folder next to the exe. Settings and data are then saved in that folder, so you can carry the whole folder on a USB drive (to update, move `QuickDashLauncher-data` into the new folder).
+To use portable mode, check the portable mode option on the first-run screen, or create a `QuickDashLauncher-data` folder next to the exe. Settings and data are then saved in that folder, so you can carry the whole folder on a USB drive (to update, move `QuickDashLauncher-data` into the new folder).
 
 If you use both a stable version and a beta version on the same PC, run the beta in portable mode. Otherwise both read the same data and can't run at the same time.
 
@@ -166,7 +167,13 @@ If you use both a stable version and a beta version on the same PC, run the beta
 
 The installer and ZIP versions aren't signed, so Windows SmartScreen may show a warning the first time you run them. If it does, select **More info** > **Run anyway**.
 
-When you first start the app, choose the launch hotkey that opens the launcher (Alt+Space by default). For keyboard operations, see [Keyboard shortcuts](docs/features/keyboard-shortcuts.md) (Japanese).
+### Getting started
+
+1. On the first-run screen, choose the launch hotkey that opens the launcher (Alt+Space by default).
+2. Drag and drop a file or URL onto the launcher, or select ➕ > **Add item** to add it.
+3. Press the launch hotkey to open the launcher, type part of a name, and press Enter to open it.
+
+For keyboard operations, see [Keyboard shortcuts](docs/features/keyboard-shortcuts.md) (Japanese).
 
 If something isn't working, see [Troubleshooting](docs/features/troubleshooting.md) (Japanese).
 
