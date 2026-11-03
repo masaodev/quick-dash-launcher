@@ -16,8 +16,10 @@ const item = (displayName: string, itemPath: string): DemoItem => ({
   path: itemPath,
 });
 
-const PROJECT_A_DIR = 'Client A_New store interior';
-const PROJECT_B_DIR = 'Client B_Trade show booth';
+/** 案件のフォルダは共有ドライブの年度の下に置く（README の登録画面で、深い階層のパスを短い名前で扱う様子を見せる） */
+const PROJECTS_DIR = path.join('Shared drive', '2026 projects');
+const PROJECT_A_DIR = path.join(PROJECTS_DIR, 'Client A_New store interior');
+const PROJECT_B_DIR = path.join(PROJECTS_DIR, 'Client B_Trade show booth');
 
 /** 案件 A（Client A の新店舗の内装）のフォルダに作るファイル */
 const PROJECT_A_FILES: Record<string, string[]> = {

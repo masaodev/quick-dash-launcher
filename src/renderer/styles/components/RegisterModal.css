@@ -580,6 +580,15 @@
   font-size: var(--font-size-sm);
 }
 
+/* 種類ごとのアイコン（ランチャーと同じもの）。行の文字が小さいので、絵文字と同じくらいの大きさにする */
+.dir-preview-icon-img {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
 .dir-preview-name {
   min-width: 0;
   overflow-wrap: anywhere;

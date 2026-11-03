@@ -18,6 +18,8 @@ export interface DirPreviewItem {
   /** 頭・後ろに付ける文字を付ける前の名前（画面で付ける文字だけを入れ替えるのに使う） */
   baseName: string;
   isFolder: boolean;
+  /** フルパス（プレビューで種類ごとのアイコンを取るのに使う。ショートカットは .lnk 自体のパス） */
+  path: string;
   /** 選んだフォルダから見た、入っているフォルダ（直下なら空） */
   location: string;
   /** ショートカット（.lnk）のリンク先 */

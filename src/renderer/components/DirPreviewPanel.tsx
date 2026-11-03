@@ -3,11 +3,12 @@
  *
  * フォルダを読むのは「フォルダを選択」で選んだときと「🔍 プレビュー更新」を押したときだけ（A3-183）。
  * パス欄に手で打っている途中では読まない（ネットワークのフォルダで勝手に重くしない）。
- * パス・階層・種類・条件を変えたら結果を薄くして数え直しを促し、頭・後ろに付ける文字だけはその場で反映する
+ * パス・階層・種類・条件を変えたら結果を薄くして数え直しを促し、頭・後ろに付ける文字だけはその場で反映する。
+ * アイコンはランチャーと同じものを、ファイルは拡張子ごと・フォルダは 1 回だけ取って使い回す（取れるまでは絵文字）
  */
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
-import type { DirPreviewResult, JsonDirOptions } from '@common/types';
+import type { DirPreviewItem, DirPreviewResult, JsonDirOptions } from '@common/types';
 import { DIR_PREVIEW_TIMEOUT_MS } from '@common/types/json-data';
 
 import { logError } from '../utils/debug';
@@ -22,6 +23,14 @@ interface DirPreviewPanelProps {
   dirOptions: JsonDirOptions | undefined;
   /** 増えるたびに、その時点のパスで読む（「フォルダを選択」で選んだとき）。0 なら読まない */
   autoRunToken?: number;
+}
+
+/** アイコンを使い回す単位（フォルダはまとめて 1 つ、ファイルは拡張子ごと。ショートカットは絵文字のまま） */
+function iconKey(item: DirPreviewItem): string | null {
+  if (item.shortcutTarget) return null;
+  if (item.isFolder) return 'folder';
+  const dot = item.baseName.lastIndexOf('.');
+  return dot > 0 ? `ext:${item.baseName.slice(dot).toLowerCase()}` : 'ext:';
 }
 
 /** 走査し直しが要る条件（頭・後ろに付ける文字は含めない） */
@@ -46,6 +55,9 @@ const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({
   const [scannedFilter, setScannedFilter] = useState('');
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false);
+  // 種類ごとのアイコン（iconKey → data URL）。一度取った種類はパスを変えても使い回す
+  const [icons, setIcons] = useState<Record<string, string>>({});
+  const requestedIconsRef = useRef(new Set<string>());
   // 走査の通し番号。読み直しで前の走査をやめたとき、前の結果（「やめました」）で上書きしないため
   const scanIdRef = useRef(0);
 
@@ -100,6 +112,22 @@ const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({
     void scan();
     // 選んだときだけ読む（パス・条件の変化では読まない）ので、依存は autoRunToken だけ
   }, [autoRunToken]);
+
+  // 一覧に出す分について、まだ取っていない種類のアイコンを 1 つずつ取る
+  useEffect(() => {
+    if (result?.status !== 'ok') return;
+    for (const item of result.items.slice(0, SHOWN_ITEMS)) {
+      const key = iconKey(item);
+      if (!key || requestedIconsRef.current.has(key)) continue;
+      requestedIconsRef.current.add(key);
+      window.electronAPI
+        .getIconForItem(item.path, item.isFolder ? 'folder' : 'file')
+        .then((icon) => {
+          if (icon) setIcons((prev) => ({ ...prev, [key]: icon }));
+        })
+        .catch((error) => logError('フォルダ取込のプレビューのアイコン取得に失敗', error));
+    }
+  }, [result]);
 
   const hasPath = path.trim() !== '';
   const isStale = !!result && !running && scannedWith !== scanSignature(path, dirOptions);
@@ -175,21 +203,33 @@ const DirPreviewPanel: React.FC<DirPreviewPanelProps> = ({
           </div>
         ) : (
           <>
-            {items.slice(0, SHOWN_ITEMS).map((item, index) => (
-              <div key={index} className="dir-preview-item">
-                <span className="dir-preview-icon" aria-hidden>
-                  {item.shortcutTarget ? '🔗' : item.isFolder ? '📁' : '📄'}
-                </span>
-                <span className="dir-preview-name">
-                  {prefix && <span className="dir-preview-affix">{prefix}</span>}
-                  {item.baseName}
-                  {suffix && <span className="dir-preview-affix">{suffix}</span>}
-                </span>
-                <span className="dir-preview-where">
-                  {item.shortcutTarget ? `→ ${item.shortcutTarget}` : item.location}
-                </span>
-              </div>
-            ))}
+            {items.slice(0, SHOWN_ITEMS).map((item, index) => {
+              const key = iconKey(item);
+              const icon = key ? icons[key] : undefined;
+              return (
+                <div key={index} className="dir-preview-item">
+                  <span className="dir-preview-icon" aria-hidden>
+                    {icon ? (
+                      <img className="dir-preview-icon-img" src={icon} alt="" />
+                    ) : item.shortcutTarget ? (
+                      '🔗'
+                    ) : item.isFolder ? (
+                      '📁'
+                    ) : (
+                      '📄'
+                    )}
+                  </span>
+                  <span className="dir-preview-name">
+                    {prefix && <span className="dir-preview-affix">{prefix}</span>}
+                    {item.baseName}
+                    {suffix && <span className="dir-preview-affix">{suffix}</span>}
+                  </span>
+                  <span className="dir-preview-where">
+                    {item.shortcutTarget ? `→ ${item.shortcutTarget}` : item.location}
+                  </span>
+                </div>
+              );
+            })}
             {items.length > SHOWN_ITEMS && (
               <div className="dir-preview-more">
                 {result?.truncated
