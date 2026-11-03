@@ -1,0 +1,29 @@
+name: Feature request / 機能の要望
+description: Suggest an idea or an improvement. / 欲しい機能や改善の案を送る
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! English or Japanese is fine.
+        要望ありがとうございます。日本語でも英語でもかまいません。
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do? / 困っていること・やりたいこと
+      description: Tell us the situation, not only the solution. / 欲しい機能だけでなく、どんな場面で困っているかを書いてください。
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How should it work? / こう動いてほしい
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else? / そのほか
+      description: Workarounds you use now, screenshots, similar apps, etc. / 今の回避策・スクリーンショット・参考になるアプリなど
+    validations:
+      required: false

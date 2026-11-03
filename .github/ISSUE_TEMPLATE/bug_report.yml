@@ -1,0 +1,71 @@
+name: Bug report / 不具合の報告
+description: Report something that doesn't work as expected. / 思ったとおりに動かないことを知らせる
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! English or Japanese is fine.
+        報告ありがとうございます。日本語でも英語でもかまいません。
+
+        For questions about how to use Quick Dash Launcher, please use [Discussions](https://github.com/masaodev/quick-dash-launcher/discussions).
+        使い方の質問は [Discussions](https://github.com/masaodev/quick-dash-launcher/discussions) へどうぞ。
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened? / 何が起きたか
+      description: Describe the problem. Screenshots help. / 起きたことを書いてください。スクリーンショットがあると助かります。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / 再現の手順
+      placeholder: |
+        1. Press Alt+Space
+        2. Type ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect? / 期待した動き
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Quick Dash Launcher version / バージョン
+      description: Shown in the Help tab of the settings window. / 管理ウィンドウのヘルプタブに出ています。
+      placeholder: e.g. 0.8.0
+    validations:
+      required: true
+  - type: dropdown
+    id: distribution
+    attributes:
+      label: How did you install it? / 入れ方
+      options:
+        - winget
+        - Installer / インストーラー版
+        - ZIP / ZIP 版
+        - Microsoft Store / Microsoft Store 版
+        - Other / その他
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version / Windows のバージョン
+      placeholder: e.g. Windows 11 24H2
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else? / そのほか
+      description: |
+        Logs may help: `%APPDATA%\quick-dash-launcher\config\logs\` (ZIP portable mode: `QuickDashLauncher-data\config\logs\` next to the exe). Please remove personal paths or URLs before attaching.
+        ログが手掛かりになることがあります（場所は上のとおり）。添付する前に、個人的なパスや URL は消してください。
+    validations:
+      required: false

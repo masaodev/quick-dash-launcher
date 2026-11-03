@@ -181,7 +181,7 @@ If something isn't working, see [Troubleshooting](docs/features/troubleshooting.
 
 ## Bug reports and contributing
 
-Please report bugs and request features in [GitHub Issues](https://github.com/masaodev/quick-dash-launcher/issues). Issues in English are welcome, and so are pull requests.
+Please report bugs and request features in [GitHub Issues](https://github.com/masaodev/quick-dash-launcher/issues). For questions about how to use it, use [Discussions](https://github.com/masaodev/quick-dash-launcher/discussions). Issues in English are welcome, and so are pull requests.
 
 Quick Dash Launcher is built with Electron, React, and TypeScript (the `qdl.exe` CLI is written in Rust). To build from source, you need Node.js, plus Visual Studio Build Tools (C++) and Python to compile native modules. For details, see the [development guide](docs/setup/development.md). For design and testing, see the [docs](docs/README.md). The documentation is in Japanese.
 
@@ -202,3 +202,7 @@ Quick Dash Launcher does not send your information to the author or anyone else.
 ## License
 
 Released under the [MIT License](./LICENSE).
+
+## Support
+
+If you like Quick Dash Launcher, you can support its development through [GitHub Sponsors](https://github.com/sponsors/masaodev).

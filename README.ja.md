@@ -182,7 +182,7 @@ winget install masaodev.quick-dash-launcher
 
 ## バグ報告・開発への参加
 
-バグ報告と機能の要望は [GitHub Issues](https://github.com/masaodev/quick-dash-launcher/issues) へお願いします。プルリクエストも歓迎します。
+バグ報告と機能の要望は [GitHub Issues](https://github.com/masaodev/quick-dash-launcher/issues) へお願いします。使い方の質問や相談は [Discussions](https://github.com/masaodev/quick-dash-launcher/discussions) へどうぞ。プルリクエストも歓迎します。
 
 Electron・React・TypeScript で作っています（CLI の `qdl.exe` は Rust）。ソースからビルドするには、Node.js に加えて、ネイティブモジュールのコンパイルに Visual Studio Build Tools（C++）と Python が必要です。詳しくは[開発ガイド](docs/setup/development.md)を、設計やテストは [docs](docs/README.md) を参照してください。
 
@@ -203,3 +203,7 @@ Quick Dash Launcher は、利用者の情報を作者やほかの誰かに送り
 ## ライセンス
 
 [MIT ライセンス](./LICENSE)で公開しています。
+
+## 支援
+
+Quick Dash Launcher を気に入っていただけたら、[GitHub Sponsors](https://github.com/sponsors/masaodev) で開発を支援できます。
