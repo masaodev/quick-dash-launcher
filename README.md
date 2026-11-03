@@ -123,16 +123,15 @@ Separate from the launcher, the workspace is a window that lines up the things y
 
 ## More you can do
 
-Change the type in the Add item window to do more than open files and URLs.
+Besides opening files and URLs, you can also do the following.
 
 | Feature | What it does |
 | --- | --- |
-| Set | Open several items or paths at once, and optionally move their windows to recorded positions |
-| Clipboard item | Save text or images and copy them back to the clipboard when you select them |
-| WS group | List workspace groups in the launcher and in search, and open a group in a detached window when you select it (add one from the ▼ next to "+ Add item" in Item Manager) |
-| Bookmark import | Import your browser bookmarks, and optionally keep them up to date automatically |
-| Window search | Find an open window by name and switch to it, including windows on other virtual desktops (press `Ctrl+Alt+Space` to open it directly) |
-| Command line (qdl) | Add and change items, workspace groups, and settings with the `qdl` command. Results come back as JSON, so scripts and AI agents (such as Claude Code) can use it too. Turn it on in the basic settings |
+| Set | Opens several items at once. It can also arrange their windows in set positions. |
+| WS group | Lets you search for a workspace group in the launcher and open it. |
+| Bookmark auto-import | Re-imports your browser bookmarks automatically to keep them up to date. |
+| Window search | Finds an open window by name and switches to it, including windows on other virtual desktops (`Ctrl+Alt+Space`). |
+| Quick Dash Launcher CLI | Lets you add and change items and settings from a terminal or an AI agent (such as Claude Code) with the `qdl` command. Turn it on in the settings to use it. |
 
 ---
 
