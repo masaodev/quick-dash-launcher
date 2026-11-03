@@ -57,7 +57,13 @@ export interface DemoContent {
   /** ワークスペースのデモ GIF（アイテムは parts の displayName で指す） */
   workspace: {
     /** 最初から入れておくグループ（color は色トークン） */
-    groups: { name: string; color: string; items: string[] }[];
+    groups: {
+      name: string;
+      color: string;
+      items: string[];
+      /** グループの中に入れるサブグループ（サブグループを作れることを GIF で見せる） */
+      subgroups?: { name: string; color: string; items: string[] }[];
+    }[];
     /** ランチャーで打ち、先頭の候補をワークスペースへドラッグする言葉 */
     search: string;
     /** ドラッグで入れる先で、後で切り離すグループ（groups の添字） */
@@ -161,17 +167,27 @@ export function writeDemoWorkspace(configDir: string, demoRoot: string, lang: De
   const all = [...parts.daily, ...parts.projectA, ...parts.projectB];
   const createdAt = 1759449600000;
   const workspaceId = 'WsDemo01';
-  const items = content.workspace.groups.flatMap((group, g) =>
+  // サブグループも 1 つのグループとして平らに並べ、parentGroupId で親を指す
+  const flatGroups = content.workspace.groups.flatMap((group, g) => [
+    { id: `GrDemo0${g}`, group, order: g, parentGroupId: undefined as string | undefined },
+    ...(group.subgroups ?? []).map((sub, s) => ({
+      id: `GrDemo0${g}s${s}`,
+      group: sub,
+      order: s,
+      parentGroupId: `GrDemo0${g}`,
+    })),
+  ]);
+  const items = flatGroups.flatMap(({ id: groupId, group }) =>
     group.items.map((name, i) => {
       const found = all.find((it) => it.type === 'item' && it.displayName === name);
       if (!found || found.type !== 'item') throw new Error(`デモデータに「${name}」がありません`);
       return {
-        id: `ItDemo${g}${i}`,
+        id: `It${groupId}_${i}`,
         type: 'item',
         displayName: found.displayName,
         path: found.path,
         workspaceId,
-        groupId: `GrDemo0${g}`,
+        groupId,
         order: i,
         addedAt: createdAt,
       };
@@ -180,13 +196,14 @@ export function writeDemoWorkspace(configDir: string, demoRoot: string, lang: De
   const workspace = {
     version: '2.0',
     workspaces: [{ id: workspaceId, displayName: content.tabs[0], order: 0, createdAt }],
-    groups: content.workspace.groups.map((group, g) => ({
-      id: `GrDemo0${g}`,
+    groups: flatGroups.map(({ id, group, order, parentGroupId }) => ({
+      id,
       displayName: group.name,
       color: group.color,
-      order: g,
+      order,
       createdAt,
       workspaceId,
+      ...(parentGroupId ? { parentGroupId } : {}),
     })),
     items,
   };

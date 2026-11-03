@@ -117,8 +117,6 @@ Separate from the launcher, the workspace is a window that lines up the things y
 - **Organize with groups**: Sort items into color-coded groups, and create groups inside them. Collapse the groups you're not using.
 - **Detach and place**: Drag a group out to open it in a window of its own, and put it anywhere on your screen.
 
-For details, see [Workspace](docs/features/workspace.md) (Japanese).
-
 <!-- Re-record the demo GIF with `npm run docs:demo-gif-workspace:en` (the real mouse pointer moves while recording; demo data: workspace in tests/demo-gif/demo-content-en.ts) -->
 
 ---

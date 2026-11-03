@@ -37,6 +37,10 @@ const NAME = LANG === 'en' ? 'workspace-en' : 'workspace';
 const OUT_DIR = path.join(process.cwd(), 'test-results', 'demo-gif', NAME);
 const DEMO_ROOT = path.join(os.tmpdir(), LANG === 'en' ? 'qdl-demo-en' : 'qdl-demo');
 const TYPE_DELAY_MS = 120;
+/** マウスの動きの長さ（目当てへ動かす・休む位置へ戻す・ドラッグ）。遅いと間延びするので短めにする */
+const GLIDE_MS = 450;
+const RETURN_MS = 380;
+const DRAG_MS = 900;
 /** ランチャーとワークスペースの間の隙間（論理ピクセル） */
 const GAP = 40;
 
@@ -277,15 +281,15 @@ test('ワークスペースのデモ', async () => {
     await main.keyboard.type(CONTENT.workspace.search, { delay: TYPE_DELAY_MS });
     await main.waitForTimeout(900);
     const row = main.locator('.item-row-wrapper .item-name').first();
-    await mouse.glideTo(await screenPoint(row, mainBounds, scale), 600);
+    await mouse.glideTo(await screenPoint(row, mainBounds, scale), GLIDE_MS);
     await main.waitForTimeout(300);
     await mouse.drag(
       await screenPoint(row, mainBounds, scale),
       await screenPoint(targetHeader, wsBounds, scale),
-      1200
+      DRAG_MS
     );
     await main.waitForTimeout(400);
-    await mouse.glideTo(restPoint, 500);
+    await mouse.glideTo(restPoint, RETURN_MS);
     await main.waitForTimeout(1200);
 
     // 2. ランチャーを閉じても、ワークスペースは残る
@@ -298,7 +302,7 @@ test('ワークスペースのデモ', async () => {
 
     // 3. グループの見出しをワークスペースの外（ランチャーのあった所）へドラッグして切り離す
     const header = await screenPoint(targetHeader, wsBounds, scale);
-    await mouse.glideTo(header, 600);
+    await mouse.glideTo(header, GLIDE_MS);
     await main.waitForTimeout(300);
     await mouse.drag(
       header,
@@ -306,10 +310,10 @@ test('ワークスペースのデモ', async () => {
         x: (mainBounds.x + mainBounds.width * 0.35) * scale,
         y: (mainBounds.y + mainBounds.height * 0.3) * scale,
       },
-      1200
+      DRAG_MS
     );
     await main.waitForTimeout(400);
-    await mouse.glideTo(restPoint, 500);
+    await mouse.glideTo(restPoint, RETURN_MS);
     await main.waitForTimeout(1200);
 
     // 4. 切り離しウィンドウを 📌 でピン留めする（ほかのウィンドウを使っても隠れない）
@@ -318,11 +322,11 @@ test('ワークスペースのデモ', async () => {
     const pinBtn = detached.locator('.pin-btn').first();
     await pinBtn.waitFor({ state: 'visible' });
     const pin = await screenPoint(pinBtn, await contentBounds(app, detachedTitle), scale);
-    await mouse.glideTo(pin, 600);
+    await mouse.glideTo(pin, GLIDE_MS);
     await main.waitForTimeout(300);
     await mouse.click();
     await main.waitForTimeout(500);
-    await mouse.glideTo(restPoint, 500);
+    await mouse.glideTo(restPoint, RETURN_MS);
     await main.waitForTimeout(1000);
 
     // 5. 切り離しウィンドウの見出しをクリックして畳むと、ウィンドウが見出しだけの大きさに縮む
@@ -332,11 +336,11 @@ test('ワークスペースのデモ', async () => {
     });
     const collapseIcon = detached.locator('.workspace-group-collapse-icon').first();
     const icon = await screenPoint(collapseIcon, await contentBounds(app, detachedTitle), scale);
-    await mouse.glideTo(icon, 600);
+    await mouse.glideTo(icon, GLIDE_MS);
     await main.waitForTimeout(300);
     await mouse.click();
     await main.waitForTimeout(300);
-    await mouse.glideTo(restPoint, 500);
+    await mouse.glideTo(restPoint, RETURN_MS);
     await main.waitForTimeout(2000);
 
     // 目印が消えてから最後までの長さ（GIF の長さ）

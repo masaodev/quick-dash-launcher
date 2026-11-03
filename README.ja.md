@@ -118,8 +118,6 @@ PowerToys Run や Command Palette のような多くのランチャーは、イ�
 - **グループで分ける**: 色付きのグループに分け、その中にもグループを作れます。使わないグループは畳んでおけます。
 - **切り離して置く**: グループを外へドラッグすると独立したウィンドウになり、好きな場所に置けます。
 
-詳しくは[ワークスペース機能](docs/features/workspace.md)を参照してください。
-
 <!-- デモ GIF は `npm run docs:demo-gif-workspace` で撮り直す（英語版は docs:demo-gif-workspace:en。撮影中は実際のマウスが動く。デモデータ＝tests/demo-gif/demo-content-ja.ts の workspace） -->
 
 ---
