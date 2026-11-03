@@ -27,7 +27,8 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/demo-main.gif" alt="Quick Dash Launcher のメインデモ" />
+  <img src="docs/images/demo-main.gif" alt="Quick Dash Launcher のメインデモ" /><br />
+  <sub>▶ デモ（約 25 秒）</sub>
 </p>
 
 <!-- 日本語版が正本。英語版（README.md）は訳で、同じ PR で両方を直す。メインデモ GIF は `npm run docs:demo-gif` で撮り直す（英語版は docs:demo-gif:en。デモデータ＝tests/demo-gif/demo-content-ja.ts と tests/e2e/templates/demo/） -->
@@ -107,7 +108,8 @@ PowerToys Run や Command Palette のような多くのランチャーは、イ�
 よく使うものを、画面の端に出しておける専用のウィンドウです。ランチャーの ⭐ か `Ctrl+W` で開きます。ランチャーと違い、ほかのウィンドウを使っている間も隠れません。
 
 <p align="center">
-  <img src="docs/images/demo-workspace.gif" alt="ランチャーで「zoom」と打って出した Zoom をワークスペースの「毎日使う」グループへドラッグして追加し、そのグループをワークスペースの外へドラッグして別のウィンドウに切り離し、📌 でピン留めして、見出しのクリックで畳むところ" />
+  <img src="docs/images/demo-workspace.gif" alt="ランチャーで「zoom」と打って出した Zoom をワークスペースの「毎日使う」グループへドラッグして追加し、そのグループをワークスペースの外へドラッグして別のウィンドウに切り離し、📌 でピン留めして、見出しのクリックで畳むところ" /><br />
+  <sub>▶ デモ（約 25 秒）</sub>
 </p>
 
 - **追加する**: ランチャーのアイテムを右クリックするか、ワークスペースへドラッグします。ファイルや URL のドラッグ、コピーしたパスや文の `Ctrl+V` でも追加できます。

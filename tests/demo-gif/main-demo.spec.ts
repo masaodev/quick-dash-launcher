@@ -241,8 +241,8 @@ test('メインデモ', async () => {
     await win.waitForTimeout(500);
     await win.evaluate(() => document.getElementById('demo-marker')?.remove());
     const markerGone = Date.now();
-    // 動き始める前に、空のランチャーを約 2 秒見せる
-    await win.waitForTimeout(2000);
+    // 動き始める前に、空のランチャーを少しだけ見せる（長いと静止画と思われて読み飛ばされるので短くする）
+    await win.waitForTimeout(600);
 
     // 1. README の検索の例と同じ「goo」→「goo map」で、名前の一部で並び、足すと 1 件に絞れるのを見せる
     await caption(win, CONTENT.demo.captions.quick);

@@ -271,7 +271,8 @@ test('ワークスペースのデモ', async () => {
       g.__demoMarker = undefined;
     });
     const markerGone = Date.now();
-    await main.waitForTimeout(1200);
+    // 動き始める前の間は短くする（長いと静止画と思われて読み飛ばされる）
+    await main.waitForTimeout(600);
 
     // 1. ランチャーで候補を出し、ワークスペースのグループへドラッグして入れる
     await main.keyboard.type(CONTENT.workspace.search, { delay: TYPE_DELAY_MS });

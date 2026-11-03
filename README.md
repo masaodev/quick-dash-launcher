@@ -27,7 +27,8 @@ Tired of searching the Start menu or a launcher, only to get a list full of file
 </p>
 
 <p align="center">
-  <img src="docs/images/demo-main-en.gif" alt="Quick Dash Launcher demo" />
+  <img src="docs/images/demo-main-en.gif" alt="Quick Dash Launcher demo" /><br />
+  <sub>▶ Demo (about 25 seconds)</sub>
 </p>
 
 <!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->
@@ -106,7 +107,8 @@ Set the type to **Folder import** to add all the files in a folder to the list.
 The workspace is a separate window that keeps the things you use most at the edge of your screen. To open it, select ⭐ in the launcher or press `Ctrl+W`. Unlike the launcher, it stays visible while you work in other windows.
 
 <p align="center">
-  <img src="docs/images/demo-workspace-en.gif" alt="Zoom, found by typing zoom in the launcher, is dragged into the Daily group in the workspace. The group is then dragged out of the workspace into a window of its own, pinned with the 📌 button, and collapsed by clicking its header." />
+  <img src="docs/images/demo-workspace-en.gif" alt="Zoom, found by typing zoom in the launcher, is dragged into the Daily group in the workspace. The group is then dragged out of the workspace into a window of its own, pinned with the 📌 button, and collapsed by clicking its header." /><br />
+  <sub>▶ Demo (about 25 seconds)</sub>
 </p>
 
 - **Add items**: Right-click an item in the launcher, or drag it to the workspace. You can also drag files and URLs, or copy a path or text and press `Ctrl+V` in the workspace.
