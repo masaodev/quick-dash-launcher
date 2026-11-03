@@ -114,7 +114,7 @@ Separate from the launcher, the workspace is a window that lines up the things y
 </p>
 
 - **Drag to add**: Besides launcher items, you can add files, URLs, and open windows.
-- **Organize with groups**: Sort items into color-coded groups, and collapse the ones you're not using.
+- **Organize with groups**: Sort items into color-coded groups, and create groups inside them. Collapse the groups you're not using.
 - **Detach and place**: Drag a group out to open it in a window of its own, and put it anywhere on your screen.
 
 For details, see [Workspace](docs/features/workspace.md) (Japanese).
