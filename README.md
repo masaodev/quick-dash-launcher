@@ -127,11 +127,11 @@ Besides opening files and URLs, you can also do the following.
 
 | Feature | What it does |
 | --- | --- |
-| Bookmark auto-import | Re-imports your Chrome and Edge bookmarks automatically as they change in the browser. You can narrow it down, for example to just your "Work" folder. |
-| Window search | Find an open window by name and switch to it. It's faster than hunting through the taskbar, and takes you straight to windows on other virtual desktops (`Ctrl+Alt+Space`). |
-| Set | Open the things you start every morning, such as mail, calendar, and chat, in one go. It can even arrange the windows, for example an editor on the left half and a browser on the right. |
-| Quick Dash Launcher CLI | Add and change items and settings with the `qdl` command. You can also ask an AI agent such as Claude Code to "add this folder to the launcher." Turn it on in the settings to use it. |
-| WS group | Search for a workspace group by name in the launcher and open it. Even when the workspace isn't shown, typing "Client A" brings up everything for that project together. |
+| Bookmark auto-import | Re-imports your Chrome and Edge bookmarks automatically as they change in the browser.<br>You can narrow it down, for example to just your "Work" folder. |
+| Window search | Find an open window by name and switch to it.<br>It's faster than hunting through the taskbar, and takes you straight to windows on other virtual desktops (`Ctrl+Alt+Space`). |
+| Set | Open the things you start every morning, such as mail, calendar, and chat, in one go.<br>It can even arrange the windows, for example an editor on the left half and a browser on the right. |
+| Quick Dash Launcher CLI | Add and change items and settings with the `qdl` command.<br>You can also ask an AI agent such as Claude Code to "add this folder to the launcher."<br>Turn it on in the settings to use it. |
+| WS group | Search for a workspace group by name in the launcher and open it.<br>Even when the workspace isn't shown, typing "Client A" brings up everything for that project together. |
 
 ---
 
