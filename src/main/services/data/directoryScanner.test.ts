@@ -50,8 +50,20 @@ describe('previewDirectoryItems', () => {
     expect(result.status).toBe('ok');
     expect(result.truncated).toBe(false);
     expect(result.items).toEqual([
-      { displayName: '【仕事】a.txt', baseName: 'a.txt', isFolder: false, location: '' },
-      { displayName: '【仕事】c.txt', baseName: 'c.txt', isFolder: false, location: 'sub' },
+      {
+        displayName: '【仕事】a.txt',
+        baseName: 'a.txt',
+        isFolder: false,
+        path: path.join(root, 'a.txt'),
+        location: '',
+      },
+      {
+        displayName: '【仕事】c.txt',
+        baseName: 'c.txt',
+        isFolder: false,
+        path: path.join(root, 'sub', 'c.txt'),
+        location: 'sub',
+      },
     ]);
   });
 

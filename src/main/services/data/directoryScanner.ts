@@ -347,6 +347,7 @@ export async function previewDirectoryItems(
         displayName: item.displayName,
         baseName,
         isFolder: item.type === 'folder' && !item.originalPath,
+        path: item.path,
         location,
         ...(item.originalPath && { shortcutTarget: item.originalPath }),
       };
