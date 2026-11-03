@@ -21,7 +21,7 @@
 | Node.js 22.12.0 以上 | `package.json` の `engines` |
 | Visual Studio Build Tools 2022（C++ ワークロード） | ネイティブモジュール（clipboard-files・extract-file-icon）のコンパイル |
 | Python 3 | node-gyp が使う |
-| Rust（rustup、MSVC ツールチェーン） | CLI（`cli/`、`qdl.exe`）のビルドとテスト（`npm run build:cli`・`npm run test:cli`。`npm run dist`・`dist:appx` も `build:cli` を含む） |
+| Rust（rustup、MSVC ツールチェーン） | CLI（`cli/`、`qdl.exe`）のビルドとテスト（`npm run build:cli`・`npm run test:cli`。`npm run dist`・`dist:appx` も `build:cli` を含む）、`npm run build` の prebuild（ライセンス表記で `cargo metadata` を使う） |
 
 clipboard-files と extract-file-icon は完成品を同梱しておらず、`npm install`・`npm ci` のたびに C++ のソースをコンパイルする。C++ のビルド環境が無いと、node-gyp の「Could not find any Visual Studio installation to use」で失敗する。CI（`.github/workflows/ci.yml`）も windows-2022 の Visual Studio 2022 と Python 3.11 でビルドしている。
 
@@ -31,7 +31,7 @@ Build Tools は IDE なしで、C++ ワークロードだけ入れれば足り�
 winget install --id Microsoft.VisualStudio.2022.BuildTools --source winget --override "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-Rust は CLI に触るとき・配布物を作るときだけ要る（`npm run dev` や単体テストには要らない）。rustup で入れ、Windows の既定の MSVC ツールチェーン（`stable-x86_64-pc-windows-msvc`）を使う。リンクには上の Build Tools の C++ ワークロードを使う。CI の windows-2022 ランナーには Rust が入っている。
+Rust は CLI に触るとき・配布物を作るとき・`npm run build`（E2E を含む）のときだけ要る（`npm run dev` や単体テストには要らない）。`npm run build` は prebuild でサードパーティのライセンス表記を作るときに `cargo metadata` で Rust のクレートを調べる（[ビルドとデプロイ - パッケージング](build-deploy.md#パッケージング)）。rustup で入れ、Windows の既定の MSVC ツールチェーン（`stable-x86_64-pc-windows-msvc`）を使う。リンクには上の Build Tools の C++ ワークロードを使う。CI の windows-2022 ランナーには Rust が入っている。
 
 ```powershell
 winget install --id Rustlang.Rustup --source winget

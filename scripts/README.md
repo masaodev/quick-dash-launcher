@@ -10,6 +10,7 @@ npm scripts から呼ばれる主なもの：
 | --- | --- | --- |
 | `create-dev-icon.ps1` | `npm run create-dev-icon` | `assets/icon.png`に「DEV」を重ねた開発用アイコン（`icon-dev.png`・`icon-dev.ico`）を生成 |
 | `generate-appx-assets.mjs` | `npm run dist:appx`（の途中） | `assets/icon.svg` から Store 版（appx）のロゴ画像を拡大率・大きさ別に`build/appx/`へ生成。Electron で描くので `electron scripts/generate-appx-assets.mjs` で実行する |
+| `generate-third-party-notices.mjs` | `npm run generate-licenses`（`npm run build` の prebuild） | 同梱するサードパーティ（npm・DLL・qdl.exe の Rust のクレート）の名前・ライセンス・本文を `THIRD-PARTY-NOTICES.md` にまとめる。cargo が要る（[ビルドとデプロイ - パッケージング](../docs/setup/build-deploy.md#パッケージング)） |
 | `make-portable-zip.mjs` | `npm run dist` の後（`postdist`） | `release/win-unpacked` に印（`portable.txt`）を添えて、ZIP 版（`release/QuickDashLauncher-<版>-portable.zip`）を作る。データフォルダは入れない（[ビルドとデプロイ - ZIP 版](../docs/setup/build-deploy.md#zip-版)） |
 | `run-e2e-test.js` | `npm run test:e2e:single <テスト名>` | ビルド後に E2E テストを1ファイルだけ実行（引数なしでテスト名の一覧を表示） |
 | `debug-windows.mjs` | `npm run debug:windows` | ウィンドウ検索のデバッグ（下記） |

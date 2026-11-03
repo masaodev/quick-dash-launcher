@@ -14,7 +14,7 @@ npm run dist:appx       # Store 版（MSIX の appx、x64）の作成。ロゴ�
 npm run winrt:generate  # Store 版で使う WinRT の呼び出しコード（src/main/winrt/generated/）を作り直す
 npm run build:cli       # CLI（qdl.exe）のビルド（cargo build --release。Rust が要る）
 npm run test:cli        # CLI の単体テスト（cargo test）
-npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に自動で実行）
+npm run generate-licenses # THIRD-PARTY-NOTICES.md の生成（build の前に自動で実行。Rust のクレートを調べるので cargo が要る）
 npm run create-dev-icon # 開発モード用アイコンの作成
 npm run docs:screenshots # 画面仕様の画面イメージを撮影（ビルド込み）
 npm run docs:demo-gif    # README のデモ GIF を撮影（ビルド込み。ffmpeg が要る。撮影中は画面を触らない。英語版は docs:demo-gif:en）
@@ -43,6 +43,10 @@ Viteベースのビルドシステムを使用:
 - **App ID**: `net.masaodev.quick-dash-launcher`（masaodev.netドメイン所有者のため）
 - **CLI の同梱**: `npm run dist`・`dist:appx` は `build:cli` で `qdl.exe` を作ってから同梱する（`package.json` の `build.extraResources`。同梱先は下の「CLI（qdl.exe）」）。Rust が無いと失敗する（[開発ガイド - 必要なツール](development.md#必要なツール)）
 - **DLL の同梱**: 仮想デスクトップの操作に使う `resources/native/VirtualDesktopAccessor.dll`（リポジトリに入っている）を、`build.extraResources` でアプリの `resources/resources/native/` に同梱する。パッケージ版は `process.resourcesPath` の下から、開発時はリポジトリ直下から読む（`src/main/utils/virtualDesktop/dllLoader.ts`）
+- **サードパーティのライセンス表記**: `npm run build` の prebuild で `scripts/generate-third-party-notices.mjs` が `THIRD-PARTY-NOTICES.md` を作り、`build.extraFiles` でインストール先の直下（exe の横）に置く。ZIP 版・Store 版にも入り、リリースのアセットにも上げる。MIT・BSD・ISC などは著作権表示と本文の同梱を求めるので、名前とライセンス名だけでなく本文も載せる
+  - 載せるもの: npm のパッケージ（`dependencies` とその依存。license-checker の `--production`）、同梱の DLL（本文は DLL の横の `<名前>-LICENSE.txt`。DLL を足したらスクリプトの `NATIVE_LIBRARIES` にも足す）、`qdl.exe` に入る Rust のクレート（`cargo metadata`。「MIT OR Apache-2.0」は MIT の本文を選ぶ）
+  - Electron と Chromium の本文は、electron-builder が `LICENSE.electron.txt`・`LICENSES.chromium.html` として同梱するので載せない
+  - 本文のファイルが無いパッケージがあると失敗する。同じプロジェクトの別パッケージから借りるときは、スクリプトの `LICENSE_TEXT_FROM` に足す（例: `@koromix/koffi-win32-x64` は `koffi` の本文）
 
 ### CLI（qdl.exe）
 
