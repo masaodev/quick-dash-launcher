@@ -1,0 +1,25 @@
+# winget のマニフェスト（ja-JP）に載せる説明文の正本。日本語が正本で、locale.en-US.yaml はその訳。
+# scripts/winget-manifest.mjs が wingetcreate の出力のこの項目を、ここの値で置き換える。
+# 文面は README.ja.md の冒頭と「特徴」に合わせる。Microsoft Store の掲載文の元にも使う。
+PackageName: Quick Dash Launcher
+ShortDescription: 登録したアプリ・ファイル・フォルダ・URL を、キーワードを打って開くランチャー
+Description: |-
+  アプリ・ファイル・フォルダ・URL を登録して、キーワードを打って開くランチャーです。候補に出るのは自分で登録したものだけで、いつもの呼び名で開けます。
+
+  主な機能:
+  - 起動ホットキー（初期値は Alt+Space）で呼び出し、名前の一部を打って Enter で開く
+  - アプリ・フォルダ・ファイル・Web ページのほか、Teams のチャットなどのリンクも開ける。定型文や画像は選ぶとクリップボードにコピー
+  - タブで自由に分けられる。スタートメニューのアプリやブラウザのブックマークをまとめて取り込める
+  - フォルダを指定すると、中のファイルが候補に並ぶ
+  - 常に出しておけるワークスペースのウィンドウ
+  - ターミナルや AI から操作できる CLI（qdl）
+  - 日本語と英語の表示
+Tags:
+  - launcher
+  - app-launcher
+  - keyboard-launcher
+  - productivity
+  - hotkey
+  - bookmarks
+  - quick-access
+  - windows

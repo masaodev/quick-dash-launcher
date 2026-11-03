@@ -58,7 +58,7 @@ docs/
 | ビルド・配布の変更 | setup/build-deploy.md |
 | テスト構成・テストコマンドの変更 | testing/README.md（リポジトリ直下の tests/README.md・tests/e2e/README.md も） |
 | 外部との通信、または PC の中で読む情報（ブックマーク・クリップボードなど）の追加・変更 | リポジトリ直下の PRIVACY.ja.md（日本語。正本）と PRIVACY.md（英語の訳）。施行日も改める |
-| リポジトリ直下の README.ja.md（日本語。正本）の変更 | README.md（英語の訳）。用語は architecture/glossary.md の English にそろえる。片方だけの変更は PR のチェック（README sync）で止まる |
+| リポジトリ直下の README.ja.md（日本語。正本）の変更 | README.md（英語の訳）。用語は architecture/glossary.md の English にそろえる。片方だけの変更は PR のチェック（README sync）で止まる。冒頭の紹介や「特徴」を変えたら、winget の説明文の正本 `packaging/winget/locale.ja-JP.yaml`・`locale.en-US.yaml` も（[ビルドとデプロイ - winget](setup/build-deploy.md#winget)） |
 
 直し漏れは、リリース前の `/docs-check`（前回の点検以降に変わったコードに触れている文書の照合）でも拾う。
 
