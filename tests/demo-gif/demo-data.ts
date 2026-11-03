@@ -5,7 +5,7 @@ import { enContent } from './demo-content-en';
 import { jaContent } from './demo-content-ja';
 
 /**
- * README のデモ GIF・画面イメージ用のデータ（5 タブ。メインに約 140 件、ブックマークに 80〜90 件）
+ * README のデモ GIF・画面イメージ用のデータ（4 タブ。メインに約 80 件、案件のタブに 35〜50 件、ブックマークに 180〜220 件）
  *
  * 「仕事で開くものを全部ここに登録し、案件ごとのタブに整理して、名前の一部で探す」使い方を見せるため、
  * システム開発の案件フォルダ（フォルダ取込で中のファイルを丸ごと読み込む）・ブラウザのブックマーク・
@@ -22,15 +22,15 @@ export type DemoItem =
 
 /** 1 つの言語のデモデータと、撮影で打つ言葉 */
 export interface DemoContent {
-  /** タブの名前（data.json〜data5.json の順） */
+  /** タブの名前（data.json〜data4.json の順） */
   tabs: string[];
-  /** データファイルの名前（data.json〜data5.json の順。管理ウィンドウに出る） */
+  /** データファイルの名前（data.json〜data4.json の順。管理ウィンドウに出る） */
   dataFileLabels: string[];
   /** demoRoot の下に作る空のファイル（demoRoot からの相対パス。親のフォルダも作る） */
   files: string[];
   /** demoRoot の下に作る空のフォルダ */
   dirs: string[];
-  /** タブごとのアイテム。メインタブは daily・projectA・projectB・apps を重複を除いて並べる */
+  /** タブごとのアイテム。メインタブは daily・案件の Teams・apps を重複を除いて並べる */
   parts: (root: string) => {
     daily: DemoItem[];
     projectA: DemoItem[];
@@ -43,15 +43,16 @@ export interface DemoContent {
     /** 最初の場面で打つ言葉（README の検索の例と同じ。quick で並び、quickRefine を足すと 1 件に絞れる） */
     quick: string;
     quickRefine: string;
-    search: string;
-    refine: string;
+    /** 種類の名前で並べ、↓ を listDown 回押して選ぶ（探して選ぶ場面） */
+    list: string;
+    listDown: number;
+    /** 呼び名だけで 1 件に決まる（list で選んだのと同じものを、付けた呼び名で） */
+    call: string;
+    /** 案件のタブ（2 つ目のタブ）に Tab で移ってから、日付を打って議事録を出す */
     minutes: string;
-    chat: string;
+    /** メインに無く、ブックマークにだけある（メインで 0 件になり、Tab で見に行く） */
     otherTab: string;
-    captions: Record<
-      'intro' | 'quick' | 'tabs' | 'search' | 'refine' | 'open' | 'minutes' | 'chat' | 'otherTab',
-      string
-    >;
+    captions: Record<'intro' | 'quick' | 'list' | 'call' | 'tabs' | 'minutes' | 'otherTab', string>;
   };
   /** ワークスペースのデモ GIF（アイテムは parts の displayName で指す） */
   workspace: {
@@ -82,9 +83,15 @@ export function demoContent(lang: DemoLang): DemoContent {
   return lang === 'en' ? enContent : jaContent;
 }
 
-/** メインタブ。普段使うものに加えて、案件・アプリも全部入れる（案件タブ・アプリタブは同じものの絞り込み用） */
+/** メインタブ。普段使うもの・案件の Teams のチャット・アプリを入れる（案件の資料は案件のタブにだけ置く。アプリタブは同じものの絞り込み用） */
 function mainItems(parts: ReturnType<DemoContent['parts']>): DemoItem[] {
-  const all = [...parts.daily, ...parts.projectA, ...parts.projectB, ...parts.apps];
+  const isChat = (it: DemoItem) => it.type === 'item' && it.path.includes('teams.microsoft.com');
+  const all = [
+    ...parts.daily,
+    ...parts.projectA.filter(isChat),
+    ...parts.projectB.filter(isChat),
+    ...parts.apps,
+  ];
   const seen = new Set<string>();
   return all.filter((it) => {
     const key = it.type === 'dir' ? `dir:${it.path}` : it.displayName;
@@ -98,7 +105,7 @@ function mainItems(parts: ReturnType<DemoContent['parts']>): DemoItem[] {
  * demoRoot にデモ用のフォルダとファイルを作り、configDir にデータとタブの名前・表示言語を書く
  *
  * タブの割り当ては tests/e2e/templates/demo/settings.json（data.json＝メイン、data2＝A、data3＝B、
- * data4＝ブックマーク、data5＝アプリ）。タブの名前と表示言語はここで上書きする
+ * data4＝ブックマーク）。アプリはメインにだけ入れ、タブは作らない。タブの名前と表示言語はここで上書きする
  */
 export function writeDemoData(configDir: string, demoRoot: string, lang: DemoLang): void {
   const content = demoContent(lang);
@@ -116,7 +123,6 @@ export function writeDemoData(configDir: string, demoRoot: string, lang: DemoLan
     ['data2.json', parts.projectA],
     ['data3.json', parts.projectB],
     ['data4.json', parts.bookmarks],
-    ['data5.json', parts.apps],
   ];
   const dataDir = path.join(configDir, 'datafiles');
   fs.mkdirSync(dataDir, { recursive: true });

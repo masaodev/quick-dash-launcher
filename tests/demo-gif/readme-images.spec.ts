@@ -226,7 +226,7 @@ async function takeShots(configDir: string, demoRoot: string): Promise<void> {
     // 別案用: 検索中のランチャー（リポジトリのプレビュー画像の素材。説明文は入れない）
     await main.mouse.move(5, 5);
     const input = main.locator('input[type="text"]').first();
-    await input.fill(CONTENT.demo.search);
+    await input.fill(CONTENT.demo.list);
     await shot(main, path.join(ALT_DIR, 'main-search.png'));
     await input.fill('');
 

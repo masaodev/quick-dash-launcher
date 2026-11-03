@@ -16,7 +16,7 @@ import { demoContent, demoLang, writeDemoData } from './demo-data';
 /**
  * README のメインデモ GIF の素材（ランチャーの動画）を撮る
  *
- * デモデータ（5 タブ。メインに約 140 件）は demo-data.ts。案件フォルダは %TEMP%\qdl-demo\ に空のファイルで作る。
+ * デモデータ（4 タブ。メインに約 80 件）は demo-data.ts。案件フォルダは %TEMP%\qdl-demo\ に空のファイルで作る。
  * 環境変数 DEMO_LANG=en で英語の画面とデータで撮る（GIF は docs/images/demo-main-en.gif。既定は日本語で demo-main.gif）。
  * 録画は ffmpeg の gdigrab で、ランチャーの周りに少し余白を足した範囲を 30fps・劣化なしで撮る（Playwright の動画は
  * 圧縮の残像が出るため使わない）。余白には色付きの背景を敷く（demo-backdrop.ts）。
@@ -71,9 +71,49 @@ async function clearSearch(page: Page): Promise<void> {
   await page.keyboard.press('Backspace');
 }
 
+/**
+ * 場面の切り替え（撮影用。アプリの画面には残らない）
+ *
+ * 前の場面の終わりで一気に真っ暗にし（暗くなっていく途中や、検索欄を消して一覧が変わるところは見せない）、
+ * 暗い間に検索欄を消してから、次の場面を明転で始める。薄く暗くするだけだと、消える瞬間が透けて見える
+ */
+async function nextScene(page: Page, whileDark?: () => Promise<void>): Promise<void> {
+  await page.evaluate(() => {
+    let el = document.getElementById('demo-fade');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'demo-fade';
+      Object.assign(el.style, {
+        position: 'fixed',
+        inset: '0',
+        background: '#0b1220',
+        zIndex: '99998',
+        pointerEvents: 'none',
+      });
+      document.body.appendChild(el);
+    }
+    el.style.transition = 'none';
+    el.style.opacity = '1';
+  });
+  await page.waitForTimeout(30);
+  await clearSearch(page);
+  // 暗い間にしておきたいこと（タブをメインに戻すなど）
+  if (whileDark) await whileDark();
+  await page.waitForTimeout(40);
+  await page.evaluate(() => {
+    const el = document.getElementById('demo-fade');
+    if (!el) return;
+    el.style.transition = 'opacity 200ms ease-out';
+    el.style.opacity = '0';
+  });
+  await page.waitForTimeout(450);
+}
+
 test('メインデモ', async () => {
   test.setTimeout(300000);
   const helper = ConfigFileHelper.createTempConfigDir('demo-gif-main', 'demo');
+  // 前の撮影で作ったフォルダが残っていると、データから外したファイルまで候補に出るので、作り直す
+  fs.rmSync(DEMO_ROOT, { recursive: true, force: true });
   writeDemoData(helper.getConfigDir(), DEMO_ROOT, LANG);
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -141,7 +181,7 @@ test('メインデモ', async () => {
         scale: screen.getDisplayMatching(b).scaleFactor,
       };
     }, BACKDROP_MARGIN);
-    await showBackdrop(app, area, 'Quick Dash Launcher');
+    await showBackdrop(app, area, 'Quick Dash Launcher', { pinned: true });
     const rect = {
       logicalWidth: area.width,
       x: Math.round(area.x * scale),
@@ -151,7 +191,6 @@ test('メインデモ', async () => {
     };
     await input.focus();
     const videoFile = 'capture.mkv';
-    const recordStart = Date.now();
     const ffmpeg = spawn(
       'ffmpeg',
       [
@@ -182,67 +221,96 @@ test('メインデモ', async () => {
       ],
       { cwd: OUT_DIR, stdio: ['pipe', 'inherit', 'inherit'] }
     );
-    // ffmpeg が録り始めるまでの遅れを見込んで、最初の画面を長めに見せる
-    await win.waitForTimeout(1500);
-    const startSec = Math.max(0, (Date.now() - recordStart) / 1000 - 0.7);
+    // 動画のどこから GIF にするかは、時計ではなく動画の中の目印で決める。ffmpeg が録り始めるまでの遅れや、
+    // 動画の時刻と PC の時計のずれは、PC の混み具合で 1〜数秒ぶれるため（決め打ちだと最初の場面が切れたり、
+    // 空の画面が長く残ったりした）。録り始めを十分待ってから、画面全体をマゼンタの目印で 0.5 秒覆い、
+    // 消した瞬間を GIF の始まりにする。scripts/make-demo-gif.mjs が目印の消えた時刻を動画から探す
+    await win.waitForTimeout(3000);
+    await win.evaluate(() => {
+      const el = document.createElement('div');
+      el.id = 'demo-marker';
+      Object.assign(el.style, {
+        position: 'fixed',
+        inset: '0',
+        background: '#ff00ff',
+        zIndex: '99999',
+        pointerEvents: 'none',
+      });
+      document.body.appendChild(el);
+    });
+    await win.waitForTimeout(500);
+    await win.evaluate(() => document.getElementById('demo-marker')?.remove());
+    const markerGone = Date.now();
+    // 動き始める前に、空のランチャーを約 2 秒見せる
+    await win.waitForTimeout(2000);
 
-    // 0. まず README の検索の例と同じ「goo」→「goo map」で、名前の一部で並び、足すと 1 件に絞れるのを見せる
+    // 1. README の検索の例と同じ「goo」→「goo map」で、名前の一部で並び、足すと 1 件に絞れるのを見せる
     await caption(win, CONTENT.demo.captions.quick);
     await win.keyboard.type(CONTENT.demo.quick, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1200);
     await win.keyboard.type(CONTENT.demo.quickRefine, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(1600);
-    await clearSearch(win);
-    await win.waitForTimeout(500);
+    await nextScene(win);
 
-    // 1. メインタブ → タブを一巡して、案件・ブックマーク・アプリに整理されている様子を見せる
-    await caption(win, CONTENT.demo.captions.tabs);
-    for (let i = 0; i < 5; i++) {
-      await win.keyboard.press('Tab');
-      await win.waitForTimeout(i === 4 ? 900 : 750);
-    }
-
-    // 2. メインに全部入っているので、名前の一部を打つだけで案件の資料まで絞り込める
-    await caption(win, CONTENT.demo.captions.search);
-    await win.keyboard.type(CONTENT.demo.search, { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1500);
-
-    // 3. スペース区切りでさらに絞る
-    await caption(win, CONTENT.demo.captions.refine);
-    await win.keyboard.type(CONTENT.demo.refine, { delay: TYPE_DELAY_MS });
+    // 2. 種類の名前（Teams）で並べ、矢印キーで探して選ぶ
+    await caption(win, CONTENT.demo.captions.list);
+    await win.keyboard.type(CONTENT.demo.list, { delay: TYPE_DELAY_MS });
     await win.waitForTimeout(900);
-    await win.keyboard.press('ArrowDown');
-    await caption(win, CONTENT.demo.captions.open);
-    await win.waitForTimeout(1500);
+    for (let i = 0; i < CONTENT.demo.listDown; i++) {
+      await win.keyboard.press('ArrowDown');
+      await win.waitForTimeout(450);
+    }
+    await win.waitForTimeout(1000);
+    await nextScene(win);
 
-    // 4. 議事録
-    await clearSearch(win);
+    // 3. 同じ相手でも、付けた呼び名（sato）なら打つだけで 1 件に決まる
+    await caption(win, CONTENT.demo.captions.call);
+    await win.keyboard.type(CONTENT.demo.call, { delay: TYPE_DELAY_MS });
+    await win.waitForTimeout(1600);
+    await nextScene(win);
+
+    // 4. タブを一巡して、案件・ブックマーク・アプリに分けて整理している様子を見せる（目で追えるよう 1 タブ 1 秒）
+    await caption(win, CONTENT.demo.captions.tabs);
+    for (let i = 0; i < CONTENT.tabs.length; i++) {
+      await win.keyboard.press('Tab');
+      await win.waitForTimeout(1000);
+    }
+    await nextScene(win);
+
+    // 5. 案件のタブに Tab で移り、そのタブの中で議事録を日付で出す
     await caption(win, CONTENT.demo.captions.minutes);
+    await win.keyboard.press('Tab');
+    await win.waitForTimeout(1200);
     await win.keyboard.type(CONTENT.demo.minutes, { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1800);
+    await win.waitForTimeout(2000);
+    // 暗い間にタブをメインへ戻す（案件のタブから残りのタブを送って一巡させる）
+    await nextScene(win, async () => {
+      for (let i = 1; i < CONTENT.tabs.length; i++) {
+        await win.keyboard.press('Tab');
+        await win.waitForTimeout(50);
+      }
+    });
 
-    // 5. Teams のチャット
-    await clearSearch(win);
-    await caption(win, CONTENT.demo.captions.chat);
-    await win.keyboard.type(CONTENT.demo.chat, { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1800);
-
-    // 6. メインに無いもの（ブックマーク）は、件数の出たタブへ Tab で移る
-    await clearSearch(win);
+    // 6. メインに無いものは 0 件になり、件数の出たほかのタブ（ブックマーク）へ Tab で見に行く
     await caption(win, CONTENT.demo.captions.otherTab);
     await win.keyboard.type(CONTENT.demo.otherTab, { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1000);
+    await win.waitForTimeout(1400);
     await win.keyboard.press('Tab');
-    await win.waitForTimeout(2000);
+    await win.waitForTimeout(2200);
 
-    const endSec = (Date.now() - recordStart) / 1000;
+    // 目印が消えてから最後までの長さ（GIF の長さ）
+    const durationSec = (Date.now() - markerGone) / 1000;
     await new Promise<void>((resolve) => {
       ffmpeg.on('close', () => resolve());
       ffmpeg.stdin?.write('q');
     });
     fs.writeFileSync(
       path.join(OUT_DIR, 'meta.json'),
-      JSON.stringify({ video: videoFile, startSec, endSec, width: rect.logicalWidth }, null, 2)
+      JSON.stringify(
+        { video: videoFile, marker: true, durationSec, width: rect.logicalWidth },
+        null,
+        2
+      )
     );
   } finally {
     // 正常時は上で閉じ済み。途中で失敗したときだけ閉じる（2 回目の close は失敗するので握りつぶす）
