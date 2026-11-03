@@ -167,6 +167,12 @@ If you use both a stable version and a beta version on the same PC, run the beta
 
 The installer and ZIP versions aren't signed, so Windows SmartScreen may show a warning the first time you run them. If it does, select **More info** > **Run anyway**.
 
+### Updates and backups
+
+When a new version is out, Quick Dash Launcher checks once a day and lets you know with a toast and in the tray menu (it doesn't install anything automatically, and you can turn this off in **Settings**). Your settings and items carry over when you update.
+
+Once a day at startup, Quick Dash Launcher saves a snapshot of your settings and items (only if something changed). You can restore one from **Settings** > **Backup** > **Snapshots**. To move to another PC, use **Export…** on the same screen to save everything as a single zip, then use **Import…** on the new PC.
+
 ### Getting started
 
 1. On the first-run screen, choose the launch hotkey that opens the launcher (Alt+Space by default).
