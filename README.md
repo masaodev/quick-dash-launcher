@@ -106,7 +106,7 @@ Set the type to **Folder import** to add all the files in a folder to the list.
 
 ## Workspace
 
-Separate from the launcher, the workspace is a window that lines up the things you use most at the edge of your screen. Files and folders for the project you're working on open with just a click. You can keep it on screen all the time, or have it appear together with the launcher.
+Separate from the launcher, the workspace is a window that lines up the things you use most at the edge of your screen. Items open with just a click, and you can choose to keep it on screen all the time or have it appear together with the launcher.
 
 <p align="center">
   <img src="docs/images/demo-workspace-en.gif" alt="Zoom, found by typing zoom in the launcher, is dragged into the Daily group in the workspace. The group is then dragged out of the workspace into a window of its own, pinned with the 📌 button, and collapsed by clicking its header." /><br />
