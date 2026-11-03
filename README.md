@@ -59,14 +59,14 @@ winget install masaodev.quick-dash-launcher
 
 ## Why you add items yourself
 
-Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. [Importing many at once](#features) keeps the setup effort low.
+Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. To keep the setup effort low, it comes with drag-and-drop adding, bulk import of apps, bookmarks, and folders, and a [dedicated management window](#adding-and-managing-items) where you can edit everything you've added in a list.
 
 | | Launchers that index everything (PowerToys Run and others) | Quick Dash Launcher |
 | --- | --- | --- |
 | What shows up | Everything installed | Only what you've added |
 | Setup effort | None (added automatically) | Import folders, apps, and bookmarks in bulk |
 | Organization | None | Sort into tabs as you like |
-| Names | App and file names as they are | Names you choose |
+| Names | App and file names as they are | Any name you like (or keep the file name) |
 | Files inside folders | Not shown | Shown once you import the folder |
 
 ---
