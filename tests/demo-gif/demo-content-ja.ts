@@ -522,8 +522,8 @@ export const jaContent: DemoContent = {
         items: ['B社 案件フォルダ', 'B社 展示会の公式サイト', 'Teams: B社 チーム'],
       },
     ],
-    search: 'a社 田中',
-    targetGroup: 1,
+    search: 'zoom',
+    targetGroup: 0,
   },
 
   shots: {

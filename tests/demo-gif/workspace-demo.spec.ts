@@ -83,6 +83,8 @@ async function screenPoint(locator: Locator, win: Bounds, scale: number, dx = 0)
 test('ワークスペースのデモ', async () => {
   test.setTimeout(300000);
   const helper = ConfigFileHelper.createTempConfigDir('demo-gif-workspace', 'demo');
+  // 前の撮影で作ったフォルダが残っていると、データから外したファイルまで候補に出るので、作り直す
+  fs.rmSync(DEMO_ROOT, { recursive: true, force: true });
   writeDemoData(helper.getConfigDir(), DEMO_ROOT, LANG);
   writeDemoWorkspace(helper.getConfigDir(), DEMO_ROOT, LANG);
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
@@ -129,19 +131,20 @@ test('ワークスペースのデモ', async () => {
     const targetHeader = ws.locator('.workspace-group-header', { hasText: groupName });
     await targetHeader.waitFor({ state: 'visible' });
 
-    // ランチャーをワークスペースの左隣に寄せ、両方を最前面に固定する
-    // ワークスペースを画面の右上の端から余白の分だけ離し、ランチャーをその左隣に寄せ、両方を最前面に固定する
+    // ワークスペースを画面の右上の角にくっつけ、ランチャーをその左隣に寄せ、両方を最前面に固定する
     const scale = await app.evaluate(
-      ({ BrowserWindow, screen }, { gap, margin }) => {
+      ({ BrowserWindow, screen }, { gap }) => {
         const ws = BrowserWindow.getAllWindows().find((bw) => bw.getTitle() === 'Workspace');
         const w = BrowserWindow.getAllWindows().find(
           (bw) => bw.getTitle() === 'Quick Dash Launcher'
         );
         if (!ws || !w) throw new Error('ウィンドウが見つかりません');
+        const area = screen.getDisplayMatching(ws.getBounds()).workArea;
         const wsb = ws.getBounds();
-        ws.setPosition(wsb.x - margin, wsb.y + margin);
+        const wsX = area.x + area.width - wsb.width;
+        ws.setPosition(wsX, area.y);
         const b = w.getBounds();
-        w.setPosition(wsb.x - margin - gap - b.width, wsb.y + margin + gap);
+        w.setPosition(wsX - gap - b.width, area.y + gap);
         w.show();
         for (const bw of BrowserWindow.getAllWindows()) {
           if (bw.isVisible()) bw.setAlwaysOnTop(true, 'screen-saver');
@@ -149,16 +152,21 @@ test('ワークスペースのデモ', async () => {
         w.focus();
         return screen.getPrimaryDisplay().scaleFactor;
       },
-      { gap: GAP, margin: BACKDROP_MARGIN }
+      { gap: GAP }
     );
     const wsBounds = await contentBounds(app, 'Workspace');
     const mainBounds = await contentBounds(app, 'Quick Dash Launcher');
 
-    // 撮る範囲: ランチャーの左からワークスペースの右まで、ワークスペースの上からランチャーの下まで（周りに余白）
+    // 撮る範囲: ランチャーの左からワークスペースの右（画面の右端）まで、ワークスペースの上（画面の上端）から下端まで
+    // （画面の端に付けた右と上には余白を取らない）
     const left = mainBounds.x - BACKDROP_MARGIN;
-    const top = wsBounds.y - BACKDROP_MARGIN;
-    const right = wsBounds.x + wsBounds.width + BACKDROP_MARGIN;
-    const bottom = mainBounds.y + mainBounds.height + BACKDROP_MARGIN;
+    const top = wsBounds.y;
+    const right = wsBounds.x + wsBounds.width;
+    // 下はワークスペースの下端まで（ワークスペース全体を写す）。ランチャーのほうが下に出るときはその下に余白
+    const bottom = Math.max(
+      mainBounds.y + mainBounds.height + BACKDROP_MARGIN,
+      wsBounds.y + wsBounds.height
+    );
     const rect = {
       logicalWidth: right - left,
       x: Math.round(left * scale),
@@ -166,11 +174,35 @@ test('ワークスペースのデモ', async () => {
       width: Math.round((right - left) * scale),
       height: Math.round((bottom - top) * scale),
     };
+    // 背景は撮るウィンドウのすぐ下に固定し、撮影中に前へ出た他のアプリ（ターミナルなど）が余白に写らないようにする。
+    // 後から開く切り離しウィンドウが背景の下に隠れないよう、新しく開くウィンドウも最前面に固定する
+    await app.evaluate(({ app: electronApp }) => {
+      electronApp.on('browser-window-created', (_event, bw) => {
+        bw.setAlwaysOnTop(true, 'screen-saver');
+        // 📌 の表示固定は最前面を外す（setAlwaysOnTop(false)）ので、撮影中は外れたら付け直す（背景の下に隠れないように）
+        bw.on('always-on-top-changed', (_e, isOnTop) => {
+          if (!isOnTop) bw.setAlwaysOnTop(true, 'screen-saver');
+        });
+      });
+    });
     await showBackdrop(
       app,
       { x: left, y: top, width: right - left, height: bottom - top },
-      'Quick Dash Launcher'
+      'Quick Dash Launcher',
+      { pinned: true }
     );
+    // Windows では最前面に固定したウィンドウどうしに段の違いが無く、後から前へ出した背景がワークスペースを隠すので、
+    // ワークスペース・ランチャーの順に前へ戻す（フォーカスはランチャー）
+    await app.evaluate(({ BrowserWindow }) => {
+      for (const title of ['Workspace', 'Quick Dash Launcher']) {
+        BrowserWindow.getAllWindows()
+          .find((bw) => bw.isVisible() && bw.getTitle() === title)
+          ?.moveTop();
+      }
+      BrowserWindow.getAllWindows()
+        .find((bw) => bw.getTitle() === 'Quick Dash Launcher')
+        ?.focus();
+    });
     await input.focus();
 
     // マウスはランチャーの入力欄の脇で待たせる。ドロップの後は、ツールチップが出ないよう空いている所へ逃がす
@@ -181,7 +213,6 @@ test('ワークスペースのデモ', async () => {
     };
 
     const videoFile = 'capture.mkv';
-    const recordStart = Date.now();
     const ffmpeg = spawn(
       'ffmpeg',
       [
@@ -212,8 +243,35 @@ test('ワークスペースのデモ', async () => {
       ],
       { cwd: OUT_DIR, stdio: ['pipe', 'inherit', 'inherit'] }
     );
-    await main.waitForTimeout(1500);
-    const startSec = Math.max(0, (Date.now() - recordStart) / 1000 - 0.7);
+    // どこから GIF にするかは動画の中の目印で決める（メインデモと同じ。録画の開始の遅れで最初の場面が切れないように）。
+    // 録り始めを十分待ってから、撮る範囲全体をマゼンタのウィンドウで 0.5 秒覆い、消した瞬間を GIF の始まりにする
+    await main.waitForTimeout(3000);
+    await app.evaluate(
+      ({ BrowserWindow }, b) => {
+        const marker = new BrowserWindow({
+          ...b,
+          frame: false,
+          resizable: false,
+          focusable: false,
+          skipTaskbar: true,
+          backgroundColor: '#ff00ff',
+          show: false,
+        });
+        marker.setAlwaysOnTop(true, 'screen-saver');
+        marker.showInactive();
+        marker.moveTop();
+        (globalThis as { __demoMarker?: { destroy(): void } }).__demoMarker = marker;
+      },
+      { x: left, y: top, width: right - left, height: bottom - top }
+    );
+    await main.waitForTimeout(500);
+    await app.evaluate(() => {
+      const g = globalThis as { __demoMarker?: { destroy(): void } };
+      g.__demoMarker?.destroy();
+      g.__demoMarker = undefined;
+    });
+    const markerGone = Date.now();
+    await main.waitForTimeout(1200);
 
     // 1. ランチャーで候補を出し、ワークスペースのグループへドラッグして入れる
     await main.keyboard.type(CONTENT.workspace.search, { delay: TYPE_DELAY_MS });
@@ -254,9 +312,20 @@ test('ワークスペースのデモ', async () => {
     await mouse.glideTo(restPoint, 500);
     await main.waitForTimeout(1200);
 
-    // 4. 切り離しウィンドウの見出しをクリックして畳むと、ウィンドウが見出しだけの大きさに縮む
+    // 4. 切り離しウィンドウを 📌 でピン留めする（ほかのウィンドウを使っても隠れない）
     const detachedTitle = `${groupName} - Quick Dash Launcher`;
     const detached = await findWindow(app, detachedTitle);
+    const pinBtn = detached.locator('.pin-btn').first();
+    await pinBtn.waitFor({ state: 'visible' });
+    const pin = await screenPoint(pinBtn, await contentBounds(app, detachedTitle), scale);
+    await mouse.glideTo(pin, 600);
+    await main.waitForTimeout(300);
+    await mouse.click();
+    await main.waitForTimeout(500);
+    await mouse.glideTo(restPoint, 500);
+    await main.waitForTimeout(1000);
+
+    // 5. 切り離しウィンドウの見出しをクリックして畳むと、ウィンドウが見出しだけの大きさに縮む
     // クリックしたグループに付く貼り付け先の枠（黄色）は、畳んで縮む様子の邪魔になるので撮影では出さない
     await detached.addStyleTag({
       content: '.workspace-group-header.paste-target { outline: none !important; }',
@@ -270,14 +339,19 @@ test('ワークスペースのデモ', async () => {
     await mouse.glideTo(restPoint, 500);
     await main.waitForTimeout(2000);
 
-    const endSec = (Date.now() - recordStart) / 1000;
+    // 目印が消えてから最後までの長さ（GIF の長さ）
+    const durationSec = (Date.now() - markerGone) / 1000;
     await new Promise<void>((resolve) => {
       ffmpeg.on('close', () => resolve());
       ffmpeg.stdin?.write('q');
     });
     fs.writeFileSync(
       path.join(OUT_DIR, 'meta.json'),
-      JSON.stringify({ video: videoFile, startSec, endSec, width: rect.logicalWidth }, null, 2)
+      JSON.stringify(
+        { video: videoFile, marker: true, durationSec, width: rect.logicalWidth },
+        null,
+        2
+      )
     );
   } finally {
     await mouse.stop().catch(() => {});
