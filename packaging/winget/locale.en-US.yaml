@@ -1,0 +1,24 @@
+# winget のマニフェスト（en-US）に載せる説明文。locale.ja-JP.yaml（正本）の訳で、両方を同じ PR で直す。
+# 画面の言葉は docs/architecture/glossary.md の English、README.md の言い回しに合わせる。
+PackageName: Quick Dash Launcher
+ShortDescription: A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword
+Description: |-
+  Quick Dash Launcher is a launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword. Only what you've added shows up, and you open things by the names you call them.
+
+  Key features:
+  - Bring up the launcher with the launch hotkey (Alt+Space by default), type part of a name, and press Enter to open it
+  - Open apps, folders, files, and websites, plus links such as Teams chats. Select a saved snippet of text or an image, and it's copied to the clipboard
+  - Sort items into whatever tabs you like. Import apps from the Start menu and your browser bookmarks all at once
+  - Point to a folder, and the files in it show up in the list
+  - Keep a workspace window on screen for your most-used items
+  - Control it from a terminal or AI with the CLI (qdl)
+  - English and Japanese display
+Tags:
+  - launcher
+  - app-launcher
+  - keyboard-launcher
+  - productivity
+  - hotkey
+  - bookmarks
+  - quick-access
+  - windows

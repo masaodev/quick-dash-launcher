@@ -50,7 +50,8 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion', 'Skill',
    - ベータ版: 前のタグ（ベータ版でも正式版でも）からのコミット（`git log v{prev}..HEAD --oneline`）を元に書く
    - 正式版: **前の正式版から**のコミット（`git log v{prevStable}..HEAD --oneline`）を元に、ベータ版の分も含めてまとめて書く
    - まず日本語で「## 更新内容」の下に、変更点を機能単位でまとめる（コミットの羅列にしない。ファイル形式の変更・自動移行・注意事項があれば必ず書く）
-   - `--yes` でなければユーザーに日本語の本文を確認してもらう（`--yes` のときは書いた本文をそのまま使う）
+   - **正式版のときは、winget の ReleaseNotes（ja-JP）に入れる要約も一緒に書く**。数行（300〜500 字が目安、上限 1,000 字）で、1 行目に版と要点、`- ` の箇条書き、最後に「詳しくはリリースノートのリンクを見てください。」。全文は入れない（0.8.0 で 6,179 字を入れて長すぎた）。作業用の一時ファイル（`winget-notes.ja.txt`）に書く
+   - `--yes` でなければユーザーに日本語の本文（正式版なら winget の要約も）を確認してもらう（`--yes` のときは書いた本文をそのまま使う）
    - 確認が済んだ日本語を英訳し、「## What's new」の下に置く。画面の言葉は用語集（`docs/architecture/glossary.md`）の English にそろえ、Microsoft Writing Style Guide に合わせる。英訳は改めて確認を取らず、タグを作る前に全文をユーザーに示す
    - 本文は注釈付きタグのメッセージになり、GitHub Release の本文に使われる
      （`release.yml` がタグ本文を取り出し、インストール方法・ライセンス節（英語と、折りたたんだ日本語）を末尾に付ける）
@@ -69,9 +70,12 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion', 'Skill',
    - ビルドとリリースが自動的に作成される（本文はタグのメッセージから。タグに `-` があればプレリリース）
 
 8. **winget への提出（正式版のとき）**
-   - Actions が終わり、Release にインストーラーが載ったのを確かめてから、`wingetcreate update … --submit` で winget-pkgs に更新 PR を出す（下の処理フロー 7）
-   - トークンは `gh auth token` をその場で渡す（保存しない。`repo` 権限が要る）。フォークの作成・同期と PR 作成は wingetcreate が行う
-   - 出た PR の URL をユーザーに報告する。失敗しても、コミュニティの自動更新ボットが半日〜1 日で拾うので、リリース自体はやり直さない
+   - Actions が終わり、Release にインストーラーが載ったのを確かめてから、`npm run winget:manifest -- --version {version} --release-notes winget-notes.ja.txt` でマニフェストを `release/winget/` に作る（提出はしない。下の処理フロー 7）
+     - スクリプトは `wingetcreate update --out` で作り、説明文を正本（`packaging/winget/locale.<言語>.yaml`）で置き換え、ja-JP に ReleaseNotes の要約を入れ、インストーラーの SHA256 と Release の digest の照合と `winget validate` までする。wingetcreate は前の版の ReleaseNotes を引き継がず、前の版にあった項目が無いと winget-pkgs の自動検証に指摘されるので、`wingetcreate update --submit` で直接出さない
+     - 説明文を変えたいときは、先に `packaging/winget/` の正本（日本語が正本、英語は訳）を PR で直す
+   - **winget-pkgs は外部の公開の場なので、提出の前に中身（ja-JP・en-US の locale ファイル）をユーザーに見せて OK を取る**。OK が出たら `wingetcreate submit release/winget/manifests/m/masaodev/quick-dash-launcher/{version} --token "$(gh auth token)"` で出す
+   - トークンは `gh auth token` をその場で渡す（保存しない。`repo` 権限が要る）。フォークの作成・同期と PR 作成は wingetcreate が行う。PR 本文のチェック欄は付けなくてよい（ほかの PR も無しでマージされている）
+   - 出た PR の URL をユーザーに報告する。指摘を受けて直すのは手順の外なので、直し方（差分）を見せて OK を取ってから PR のブランチを更新する。失敗しても、コミュニティの自動更新ボットが半日〜1 日で拾うので、リリース自体はやり直さない
 
 9. **正式版にするかの確認（ベータ版のとき）**
    - 直前の正式版から何本のベータ版が出ているかと、その間の主な変更を短く示し、そろそろ正式版にするかをユーザーに尋ねる（毎回でなくてよい。テーマが一区切りついたとき・ベータ版が何本かたまったときに）
@@ -144,10 +148,9 @@ git tag -l --format='%(contents:body)' v{version}
 
 # 7. winget への提出（正式版のときだけ。Actions の完了を待ってから）
 gh run watch $(gh run list --workflow release.yml --limit 1 --json databaseId -q '.[0].databaseId')
-wingetcreate update masaodev.quick-dash-launcher --version {version} \
-  --urls "https://github.com/masaodev/quick-dash-launcher/releases/download/v{version}/QuickDashLauncher.Setup.{version}.exe|x64" \
-  --release-notes-url "https://github.com/masaodev/quick-dash-launcher/releases/tag/v{version}" \
-  --submit --token "$(gh auth token)"
+npm run winget:manifest -- --version {version} --release-notes winget-notes.ja.txt   # 作って確かめるだけ（未提出）
+# → release/winget/ の locale ファイルをユーザーに見せて OK を取ってから
+wingetcreate submit release/winget/manifests/m/masaodev/quick-dash-launcher/{version} --token "$(gh auth token)"
 ```
 
 ## リリース後の確認
