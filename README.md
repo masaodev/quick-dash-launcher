@@ -123,16 +123,16 @@ Separate from the launcher, the workspace is a window that lines up the things y
 
 ## More you can do
 
-Change the type in the Add item window to do more than open files and URLs. For details on each type, see [Item types](docs/features/item-categories.md) (Japanese).
+Change the type in the Add item window to do more than open files and URLs.
 
 | Feature | What it does |
 | --- | --- |
-| [Set](docs/features/set.md) | Open several items or paths at once, and optionally move their windows to recorded positions |
+| Set | Open several items or paths at once, and optionally move their windows to recorded positions |
 | Clipboard item | Save text or images and copy them back to the clipboard when you select them |
 | WS group | List workspace groups in the launcher and in search, and open a group in a detached window when you select it (add one from the ▼ next to "+ Add item" in Item Manager) |
-| [Bookmark import](docs/features/bookmark-import.md) | Import your browser bookmarks, and optionally keep them up to date automatically |
-| [Window search](docs/screens/main-window.md#526-ウィンドウ検索モード) | Find an open window by name and switch to it, including windows on other virtual desktops (press `Ctrl+Alt+Space` to open it directly) |
-| [Command line (qdl)](docs/features/cli.md) | Add and change items, workspace groups, and settings with the `qdl` command. Results come back as JSON, so scripts and AI agents (such as Claude Code) can use it too. Turn it on in the basic settings |
+| Bookmark import | Import your browser bookmarks, and optionally keep them up to date automatically |
+| Window search | Find an open window by name and switch to it, including windows on other virtual desktops (press `Ctrl+Alt+Space` to open it directly) |
+| Command line (qdl) | Add and change items, workspace groups, and settings with the `qdl` command. Results come back as JSON, so scripts and AI agents (such as Claude Code) can use it too. Turn it on in the basic settings |
 
 ---
 
