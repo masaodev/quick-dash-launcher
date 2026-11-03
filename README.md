@@ -127,11 +127,11 @@ Besides opening files and URLs, you can also do the following.
 
 | Feature | What it does |
 | --- | --- |
-| Set | Opens several items at once. It can also arrange their windows in set positions. |
-| WS group | Lets you search for a workspace group in the launcher and open it. |
-| Bookmark auto-import | Re-imports your browser bookmarks automatically to keep them up to date. |
-| Window search | Finds an open window by name and switches to it, including windows on other virtual desktops (`Ctrl+Alt+Space`). |
-| Quick Dash Launcher CLI | Lets you add and change items and settings from a terminal or an AI agent (such as Claude Code) with the `qdl` command. Turn it on in the settings to use it. |
+| Bookmark auto-import | Re-imports your Chrome and Edge bookmarks automatically as they change in the browser. You can narrow it down, for example to just your "Work" folder. |
+| Window search | Find an open window by name and switch to it. It's faster than hunting through the taskbar, and takes you straight to windows on other virtual desktops (`Ctrl+Alt+Space`). |
+| Set | Open the things you start every morning, such as mail, calendar, and chat, in one go. It can even arrange the windows, for example an editor on the left half and a browser on the right. |
+| Quick Dash Launcher CLI | Add and change items and settings with the `qdl` command. You can also ask an AI agent such as Claude Code to "add this folder to the launcher." Turn it on in the settings to use it. |
+| WS group | Search for a workspace group by name in the launcher and open it. Even when the workspace isn't shown, typing "Client A" brings up everything for that project together. |
 
 ---
 
