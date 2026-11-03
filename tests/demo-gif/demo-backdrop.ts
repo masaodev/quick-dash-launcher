@@ -32,16 +32,18 @@ export interface Bounds {
  * 撮る範囲（論理ピクセル）の後ろに色付きの無地のウィンドウを敷く
  *
  * デスクトップの壁紙や他のアプリを写さず、ウィンドウの周りの余白に色を付けるため。
- * 最前面には固定しない（撮るウィンドウは setAlwaysOnTop で上に出し、後から開くウィンドウもこの上に出るように）。
+ * 既定では最前面に固定しない（撮るウィンドウは setAlwaysOnTop で上に出し、後から開くウィンドウもこの上に出るように）。
+ * 後からウィンドウを開かない撮影は pinned で固定する（撮影中に前へ出た他のアプリが余白に写らないように）。
  * 敷いた後は focusTitle のウィンドウにフォーカスを戻す
  */
 export async function showBackdrop(
   app: ElectronApplication,
   bounds: Bounds,
-  focusTitle: string
+  focusTitle: string,
+  options: { pinned?: boolean } = {}
 ): Promise<void> {
   await app.evaluate(
-    ({ BrowserWindow }, { b, title }) => {
+    ({ BrowserWindow }, { b, title, pinned }) => {
       const backdrop = new BrowserWindow({
         ...b,
         frame: false,
@@ -52,11 +54,13 @@ export async function showBackdrop(
         show: false,
       });
       backdrop.show();
+      // pinned: 撮るウィンドウ（screen-saver の最前面）のすぐ下に固定し、撮影中に前へ出た他のアプリが間に入らないようにする
+      if (pinned) backdrop.setAlwaysOnTop(true, 'floating');
       backdrop.moveTop();
       BrowserWindow.getAllWindows()
         .find((bw) => bw.getTitle() === title)
         ?.focus();
     },
-    { b: bleed(bounds), title: focusTitle }
+    { b: bleed(bounds), title: focusTitle, pinned: options.pinned ?? false }
   );
 }
