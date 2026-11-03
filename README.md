@@ -28,7 +28,7 @@ Tired of searching the Start menu or a launcher, only to get a list full of file
 
 <p align="center">
   <img src="docs/images/demo-main-en.gif" alt="Quick Dash Launcher demo" /><br />
-  <sub>▶ Demo (about 25 seconds)</sub>
+  <sub>▶ Demo (about 30 seconds)</sub>
 </p>
 
 <!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->

@@ -28,7 +28,7 @@
 
 <p align="center">
   <img src="docs/images/demo-main.gif" alt="Quick Dash Launcher のメインデモ" /><br />
-  <sub>▶ デモ（約 25 秒）</sub>
+  <sub>▶ デモ（約 30 秒）</sub>
 </p>
 
 <!-- 日本語版が正本。英語版（README.md）は訳で、同じ PR で両方を直す。メインデモ GIF は `npm run docs:demo-gif` で撮り直す（英語版は docs:demo-gif:en。デモデータ＝tests/demo-gif/demo-content-ja.ts と tests/e2e/templates/demo/） -->
