@@ -78,7 +78,7 @@ Many launchers, such as PowerToys Run and Command Palette, index every installed
 Edit everything you've added, tab by tab. To open it, select ⚙ > **Item Manager** in the launcher.
 
 <p align="center">
-  <img src="docs/images/readme-admin-en.png" alt="Item Manager in the settings window. A project tab lists a folder import, webpages, Teams chats, and more in a table." />
+  <img src="docs/images/readme-admin-en.png" alt="Item Manager in the settings window. A client tab lists a folder import, folders, webpages, Teams chats, and more in a table." />
 </p>
 
 ### Add item
@@ -106,7 +106,7 @@ Set the type to **Folder import** to add all the files in a folder to the list.
 The workspace is a separate window that keeps the things you use most at the edge of your screen. To open it, select ⭐ in the launcher or press `Ctrl+W`. Unlike the launcher, it stays visible while you work in other windows.
 
 <p align="center">
-  <img src="docs/images/demo-workspace-en.gif" alt="An item found by typing wi c in the launcher is dragged into a workspace group. The group is then dragged out of the workspace into a window of its own and collapsed by clicking its header." />
+  <img src="docs/images/demo-workspace-en.gif" alt="Zoom, found by typing zoom in the launcher, is dragged into the Daily group in the workspace. The group is then dragged out of the workspace into a window of its own, pinned with the 📌 button, and collapsed by clicking its header." />
 </p>
 
 - **Add items**: Right-click an item in the launcher, or drag it to the workspace. You can also drag files and URLs, or copy a path or text and press `Ctrl+V` in the workspace.

@@ -483,8 +483,8 @@ export const enContent: DemoContent = {
         items: ['Client B project folder', 'Client B trade show site', 'Teams: Client B team'],
       },
     ],
-    search: 'client a riley',
-    targetGroup: 1,
+    search: 'zoom',
+    targetGroup: 0,
   },
 
   shots: {

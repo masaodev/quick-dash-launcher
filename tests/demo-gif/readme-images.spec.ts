@@ -41,6 +41,8 @@ const imagePath = (name: string): string =>
 
 /** DEMO_DIR を空いているドライブに割り当て、そのルート（例: S:\）を返す */
 function mapDemoDrive(): string {
+  // 前の撮影で作ったフォルダが残っていると、データから外したファイルまで写るので、作り直す
+  fs.rmSync(DEMO_DIR, { recursive: true, force: true });
   fs.mkdirSync(DEMO_DIR, { recursive: true });
   for (const letter of ['S', 'T', 'Q', 'P', 'R', 'W']) {
     if (fs.existsSync(`${letter}:\\`)) continue;
