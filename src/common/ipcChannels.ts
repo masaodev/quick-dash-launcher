@@ -102,6 +102,7 @@ export const IPC_CHANNELS = {
   WINDOW_START_MOVE: 'window:start-move',
   QUIT_APP: 'quit-app',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
+  SET_ADMIN_UNSAVED: 'set-admin-unsaved',
   TOGGLE_EDIT_WINDOW: 'toggle-edit-window',
   OPEN_EDIT_WINDOW_WITH_TAB: 'open-edit-window-with-tab',
   OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL: 'open-edit-window-with-import-modal',
