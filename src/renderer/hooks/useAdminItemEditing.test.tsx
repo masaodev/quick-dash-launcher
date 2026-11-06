@@ -152,6 +152,20 @@ describe('useAdminItemEditing', () => {
     expect(result.current.rebaseNotice).toBeNull();
   });
 
+  it('読み直してもディスクの内容が同じなら、未保存の変更を残したまま知らせを出さないこと（A3-258）', () => {
+    const base = rows([launcher('a', 'C:\\a')], [launcher('b', 'C:\\b')]);
+    const { result, rerender } = setup(base);
+    act(() => result.current.recordEdit(withName(base[0], 'A')));
+
+    // 管理ウィンドウを出し直したときの読み直し（中身は同じ別の配列）
+    const reloaded = base.map((item) => ({ ...item, item: { ...item.item } }));
+    rerender({ items: reloaded });
+
+    expect(names(result.current.workingItems)).toEqual(['A', 'b']);
+    expect(result.current.hasUnsavedChanges).toBe(true);
+    expect(result.current.rebaseNotice).toBeNull();
+  });
+
   it('未保存の変更が無ければディスクの内容をそのまま採用すること', () => {
     const base = rows([launcher('a', 'C:\\a')]);
     const { result, rerender } = setup(base);
