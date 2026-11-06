@@ -102,6 +102,7 @@ export const IPC_CHANNELS = {
   WINDOW_START_MOVE: 'window:start-move',
   QUIT_APP: 'quit-app',
   HIDE_EDIT_WINDOW: 'hide-edit-window',
+  SET_ADMIN_UNSAVED: 'set-admin-unsaved',
   TOGGLE_EDIT_WINDOW: 'toggle-edit-window',
   OPEN_EDIT_WINDOW_WITH_TAB: 'open-edit-window-with-tab',
   OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL: 'open-edit-window-with-import-modal',
@@ -391,6 +392,8 @@ export const IPC_CHANNELS = {
   // クリップボード操作
   CLIPBOARD_CAPTURE: 'clipboard:capture',
   CLIPBOARD_RESTORE: 'clipboard:restore',
+  /** ランチャーのクリップボードアイテムを開く（ほかのアイテムと同じくランチャーを隠し、起動の記録に数える） */
+  CLIPBOARD_RESTORE_ITEM: 'clipboard:restore-item',
   /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
   CLIPBOARD_READ_FOR_REGISTER: 'clipboard:read-for-register',
   CLIPBOARD_CHECK_CURRENT: 'clipboard:check-current',

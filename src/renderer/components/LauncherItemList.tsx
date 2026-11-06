@@ -8,12 +8,19 @@ import {
   isClipboardItem,
   isWsGroupItem,
 } from '@common/types/guards';
-import { LauncherItem, AppItem, WindowInfo, type WorkspaceTarget } from '@common/types';
+import {
+  LauncherItem,
+  AppItem,
+  WindowInfo,
+  type SearchMode,
+  type WorkspaceTarget,
+} from '@common/types';
 import { windowInfoToPathlessItem } from '@common/utils/windowInfoConverter';
 import { hasItemWindowSwitch } from '@common/utils/itemWindowConversion';
 
 import { getTooltipText } from '../utils/tooltipTextGenerator';
 import { logError } from '../utils/debug';
+import { renderWithMatches } from '../utils/searchHighlight';
 import { ITEM_TYPE_ICONS } from '../utils/itemTypeIcons';
 import type { NoMatchElsewhere } from '../utils/noMatchElsewhere';
 import { openAppImport, openBookmarkImport } from '../utils/importEntrances';
@@ -64,6 +71,10 @@ interface ItemListProps {
   windowSelection?: WindowListSelection;
   /** id からアイテムの名前を引く（セットのツールチップに行の名前を出す。絞り込みの外のアイテムも引く） */
   nameOfItem?: (itemId: string) => string | undefined;
+  /** 検索欄の語。名前のうち当たった部分を強調する（A3-258） */
+  searchQuery?: string;
+  /** 検索のモード（ウィンドウ検索の先頭の < を語に含めないため） */
+  searchMode?: SearchMode;
 }
 
 /** 一覧が空のときの案内の種類 */
@@ -128,6 +139,8 @@ const LauncherItemList: React.FC<ItemListProps> = ({
   onMoveWindows,
   windowSelection,
   nameOfItem,
+  searchQuery = '',
+  searchMode = 'normal',
   emptyState,
   onAddItem,
   onAddFolderImport,
@@ -621,7 +634,7 @@ const LauncherItemList: React.FC<ItemListProps> = ({
                 )}
                 <span className="item-icon">{getItemIcon(item)}</span>
                 <span className="item-name">
-                  {itemName}
+                  {renderWithMatches(itemName, searchQuery, searchMode)}
                   {isSet && (
                     <span className="group-count">
                       {t('launcher.list.groupCount', { count: item.entries.length })}

@@ -34,13 +34,26 @@ let pendingRevealItem: string | null = null;
 let returnToMain: { savedFile: string | null } | null = null;
 let returnToMainHandler: ((savedFile: string | null) => void) | null = null;
 
+/** アイテム管理に未保存の変更があるか（レンダラーが SET_ADMIN_UNSAVED で知らせる） */
+let adminHasUnsavedChanges = false;
+
 // 閉じた後も非表示で常駐するウィンドウを、放置が続いた場合のみ破棄して
-// レンダラープロセスを解放する（次回表示時に再作成される）
+// レンダラープロセスを解放する（次回表示時に再作成される）。
+// 未保存の変更があるときは破棄しない（Ctrl+E で隠したときは確認が出ないので、黙って消えてしまう。A3-258）
 const idleDestroyer = new WindowIdleDestroyer(IDLE_DESTROY_MS, () => {
-  if (isWindowValid() && !adminWindow!.isVisible()) {
+  if (isWindowValid() && !adminWindow!.isVisible() && !adminHasUnsavedChanges) {
     closeAdminWindow();
   }
 });
+
+/** アイテム管理の未保存の変更の有無を受け取る。隠れている間に保存・破棄されて無くなったら、改めて放置の破棄を待つ */
+export function setAdminHasUnsavedChanges(unsaved: boolean): void {
+  const wasUnsaved = adminHasUnsavedChanges;
+  adminHasUnsavedChanges = unsaved;
+  if (wasUnsaved && !unsaved && isWindowValid() && !adminWindow!.isVisible()) {
+    idleDestroyer.schedule();
+  }
+}
 
 /**
  * ウィンドウが有効かどうかを判定する
@@ -106,6 +119,7 @@ export async function createAdminWindow(): Promise<BrowserWindow> {
   adminWindow.on('closed', () => {
     adminWindow = null;
     isAdminWindowVisible = false;
+    adminHasUnsavedChanges = false;
     returnToMain = null;
     idleDestroyer.cancel();
   });

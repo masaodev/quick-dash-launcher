@@ -223,7 +223,11 @@ function releaseReplacedClipboardData(
  * 画面側はパスの文字列しか見られないため、アイコンやフォルダの絵文字がランチャーと食い違わないようにする
  */
 async function resolveLauncherTypes(items: EditableJsonItem[]): Promise<void> {
-  const launcherEntries = items.filter((entry) => isJsonLauncherItem(entry.item));
+  // 不正なアイテムは手で書いたままの形で入っている（path が無い・文字列でないこともある）ので外す
+  const launcherEntries = items.filter(
+    (entry) =>
+      isJsonLauncherItem(entry.item) && typeof (entry.item as { path?: unknown }).path === 'string'
+  );
   const pathOf = (entry: EditableJsonItem) => (entry.item as JsonLauncherItem).path;
   await prefetchFolderProbes(launcherEntries.map(pathOf));
   for (const entry of launcherEntries) {

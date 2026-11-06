@@ -49,6 +49,13 @@ const WorkspaceItemCard: React.FC<WorkspaceItemCardProps> = ({
   const [dropZone, setDropZone] = useState<ItemDropZone | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // 編集していないあいだは今の名前に合わせておく。マウントのときの名前のままだと、参照先の名前を
+  // ランチャーで変えた後などに古い名前から編集が始まり、そのまま確定すると古い名前に戻ってしまう（A3-258）。
+  // 編集中に名前が変わっても、打っている途中の文字は消さない
+  useEffect(() => {
+    if (!isEditing) setEditValue(item.displayName);
+  }, [isEditing, item.displayName]);
+
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();

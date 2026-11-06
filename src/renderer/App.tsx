@@ -420,7 +420,10 @@ function App(): React.ReactElement {
     async (item: AppItem): Promise<void> => {
       if (isClipboardItem(item)) {
         // 書き戻しは一瞬なので、書き戻してから「コピーしました」を出す（前に出すと終わっていないように見える）
-        const restored = await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
+        const restored = await window.electronAPI.clipboardAPI.restoreItem(
+          item.clipboardDataRef,
+          item.id ?? ''
+        );
         if (restored.success) {
           await window.electronAPI.showToastWindow({
             type: 'success',
@@ -637,10 +640,14 @@ function App(): React.ReactElement {
   // よく開く順の回数を読み直して並びが変わっても、選んでいたアイテムを選んだままにする
   useKeepSelectionOnReorder(filteredItems, selectedIndex, setSelectedIndex, usageCountOf);
 
-  // 一覧が縮んで選択が範囲外になったら末尾に合わせる（末尾のウィンドウを閉じた後など）
+  // 一覧が縮んで選択が範囲外になったら末尾に合わせる（末尾のウィンドウを閉じた後など）。
+  // 負の値（どこも選んでいない）になっていたら先頭に戻す
   useEffect(() => {
-    if (filteredItems.length > 0 && selectedIndex >= filteredItems.length) {
+    if (filteredItems.length === 0) return;
+    if (selectedIndex >= filteredItems.length) {
       setSelectedIndex(filteredItems.length - 1);
+    } else if (selectedIndex < 0) {
+      setSelectedIndex(0);
     }
   }, [filteredItems.length, selectedIndex]);
 
@@ -1058,6 +1065,8 @@ function App(): React.ReactElement {
       <LauncherItemList
         items={filteredItems}
         nameOfItem={nameOfMainItem}
+        searchQuery={searchQuery}
+        searchMode={searchMode}
         emptyState={
           searchQuery.trim()
             ? {

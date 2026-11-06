@@ -77,6 +77,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.SETTINGS_IS_FIRST_LAUNCH]: ElectronAPI['isFirstLaunch'];
   [IPC_CHANNELS.FIRST_LAUNCH_SWITCH_TO_PORTABLE]: ElectronAPI['switchToPortableOnFirstLaunch'];
   [IPC_CHANNELS.HIDE_EDIT_WINDOW]: ElectronAPI['hideEditWindow'];
+  [IPC_CHANNELS.SET_ADMIN_UNSAVED]: ElectronAPI['setAdminUnsaved'];
   [IPC_CHANNELS.TOGGLE_EDIT_WINDOW]: ElectronAPI['toggleEditWindow'];
   [IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB]: ElectronAPI['openEditWindowWithTab'];
   [IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_IMPORT_MODAL]: ElectronAPI['openEditWindowWithImportModal'];
@@ -191,6 +192,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.CLIPBOARD_CHECK_CURRENT]: ElectronAPI['clipboardAPI']['checkCurrent'];
   [IPC_CHANNELS.CLIPBOARD_CAPTURE]: ElectronAPI['clipboardAPI']['capture'];
   [IPC_CHANNELS.CLIPBOARD_RESTORE]: ElectronAPI['clipboardAPI']['restore'];
+  [IPC_CHANNELS.CLIPBOARD_RESTORE_ITEM]: ElectronAPI['clipboardAPI']['restoreItem'];
   [IPC_CHANNELS.CLIPBOARD_CAPTURE_TO_SESSION]: ElectronAPI['clipboardAPI']['captureToSession'];
   [IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION]: ElectronAPI['clipboardAPI']['commitSession'];
   [IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION]: ElectronAPI['clipboardAPI']['discardSession'];

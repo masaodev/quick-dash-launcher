@@ -216,6 +216,7 @@ const electronAPI: ElectronAPI = {
     ipcInvoke(IPC_CHANNELS.FIRST_LAUNCH_SWITCH_TO_PORTABLE, settings),
   // 編集ウィンドウ関連API
   hideEditWindow: () => ipcInvoke(IPC_CHANNELS.HIDE_EDIT_WINDOW),
+  setAdminUnsaved: (unsaved) => ipcInvoke(IPC_CHANNELS.SET_ADMIN_UNSAVED, unsaved),
   toggleEditWindow: () => ipcInvoke(IPC_CHANNELS.TOGGLE_EDIT_WINDOW),
   openEditWindowWithTab: (tab) => ipcInvoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, tab),
   openEditWindowWithImportModal: (modal) =>
@@ -594,6 +595,8 @@ const electronAPI: ElectronAPI = {
     checkCurrent: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_CHECK_CURRENT),
     capture: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_CAPTURE),
     restore: (dataFileRef) => ipcInvoke(IPC_CHANNELS.CLIPBOARD_RESTORE, dataFileRef),
+    restoreItem: (dataFileRef, itemId) =>
+      ipcInvoke(IPC_CHANNELS.CLIPBOARD_RESTORE_ITEM, dataFileRef, itemId),
     // セッション管理（登録確定前の一時保存）
     captureToSession: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_CAPTURE_TO_SESSION),
     commitSession: (sessionId) => ipcInvoke(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, sessionId),

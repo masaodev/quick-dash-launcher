@@ -309,6 +309,8 @@ export interface ElectronAPI {
     callback: (progress: { scanId: number; found: number }) => void
   ) => () => void;
   hideEditWindow: () => Promise<void>;
+  /** アイテム管理に未保存の変更があるかを本体に知らせる（隠れている間に放置で破棄しないため） */
+  setAdminUnsaved: (unsaved: boolean) => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   openEditWindowWithTab: (tab: AdminTab) => Promise<void>;
   openEditWindowWithImportModal: (modal: 'bookmark' | 'app') => Promise<void>;
@@ -675,6 +677,8 @@ export interface ElectronAPI {
     checkCurrent: () => Promise<CurrentClipboardState>;
     capture: () => Promise<ClipboardCaptureResult>;
     restore: (dataFileRef: string) => Promise<ClipboardRestoreResult>;
+    /** ランチャーで選んだクリップボードアイテムを書き戻す（ランチャーを隠し、書き戻せたら起動の記録に数える） */
+    restoreItem: (dataFileRef: string, itemId: string) => Promise<ClipboardRestoreResult>;
     // セッション管理（登録確定前の一時保存）
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;

@@ -76,6 +76,12 @@ export function editingReducer(state: EditingState, action: EditingAction): Edit
           baseVersion: state.baseVersion + 1,
         };
       }
+      // 読み直しただけでディスクの内容が変わっていなければ、載せ直さずに土台だけ替える。載せ直すと
+      // 自分の変更が「取り込めた変更」に数えられ、管理ウィンドウを出し直すたびに
+      // 「他で変更された内容を取り込みました」が出ていた（A3-258）
+      if (!diffItems(state.baseItems, action.items).hasChanges) {
+        return { ...state, baseItems: action.items, baseVersion: state.baseVersion + 1 };
+      }
       const rebased = rebaseWorkingItems(state.baseItems, state.workingItems, action.items);
       const notice =
         rebased.applied > 0 || rebased.conflicts.length > 0
