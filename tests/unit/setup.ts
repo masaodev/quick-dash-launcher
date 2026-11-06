@@ -5,12 +5,16 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { createI18nOptions } from '@common/i18n';
+import { createI18nOptions, setFallbackT } from '@common/i18n';
+import { I18N_RESOURCES, createI18n } from '@common/i18n/resources';
 
 // 画面の部品は useTranslation で文言を引くので、テストでは日本語（正本）で初期化しておく
 void i18next
   .use(initReactI18next)
-  .init({ ...createI18nOptions('ja'), react: { useSuspense: false } });
+  .init({ ...createI18nOptions('ja', I18N_RESOURCES), react: { useSuspense: false } });
+
+// t を渡さない common の関数（解析）が使う、正本の言語の t
+setFallbackT(createI18n('ja').t);
 
 afterEach(() => {
   cleanup();

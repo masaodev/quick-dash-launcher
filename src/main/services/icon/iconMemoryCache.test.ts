@@ -83,4 +83,21 @@ describe('iconMemoryCache', () => {
     expect(await readFirstExistingIconCached([file])).toBe(first);
     expect(readSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('読み込みを待っている間に書かれたファイルは、古い読み込みの結果（無い）で上書きしない', async () => {
+    const file = path.join(dir, 'f.png');
+    const pending = readFirstExistingIconCached([file]); // まだ無い
+    rememberIconFile(file, 'data:image/png;base64,NEW');
+    expect(await pending).toBeNull();
+    expect(await readFirstExistingIconCached([file])).toBe('data:image/png;base64,NEW');
+  });
+
+  it('大きいアイコンは覚えず、毎回ディスクから読む', async () => {
+    const file = path.join(dir, 'big.png');
+    fs.writeFileSync(file, Buffer.alloc(300 * 1024, 1));
+    const readSpy = vi.spyOn(fs.promises, 'readFile');
+    await readFirstExistingIconCached([file]);
+    await readFirstExistingIconCached([file]);
+    expect(readSpy).toHaveBeenCalledTimes(2);
+  });
 });

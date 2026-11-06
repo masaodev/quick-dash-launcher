@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { validateEditableItem } from '@common/types/editableItem';
 import type { JsonItem } from '@common/types';
-import { createI18n } from '@common/i18n';
+import { createI18n } from '@common/i18n/resources';
 
 const t = createI18n('ja').t;
 

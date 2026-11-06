@@ -54,7 +54,8 @@ export class SettingsService {
    */
   private newerFormat = false;
   private sessionOverrides: Partial<AppSettings> = {};
-  private static instance: SettingsService;
+  /** 初期化中・初期化済みのインスタンス（同時に呼ばれても初期化は 1 回だけ。全員が初期化の終わりを待つ） */
+  private static instancePromise: Promise<SettingsService> | null = null;
 
   private static readonly DEFAULT_SETTINGS: AppSettings = {
     settingsVersion: SETTINGS_FORMAT_VERSION,
@@ -264,12 +265,19 @@ export class SettingsService {
     return this.store;
   }
 
-  public static async getInstance(): Promise<SettingsService> {
-    if (!SettingsService.instance) {
-      SettingsService.instance = new SettingsService();
-      await SettingsService.instance.initializeStore();
-    }
-    return SettingsService.instance;
+  public static getInstance(): Promise<SettingsService> {
+    // 起動中はスプラッシュの言語の問い合わせと起動処理が同時に呼ぶ。インスタンスだけ先に返すと、
+    // 初期化の途中で読み書きされ、ストアを 2 つ作ってしまう
+    SettingsService.instancePromise ??= (async () => {
+      const service = new SettingsService();
+      await service.initializeStore();
+      return service;
+    })().catch((error: unknown) => {
+      // 初期化に失敗したら、次に呼ばれたときにやり直す
+      SettingsService.instancePromise = null;
+      throw error;
+    });
+    return SettingsService.instancePromise;
   }
 
   /**
