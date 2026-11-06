@@ -56,18 +56,20 @@ export function useClipboardPaste(
       }
     }
 
+    /** ランチャーにパスの同じアイテムがあれば、その参照で足す（名前はランチャーのものになる） */
     async function addLauncherItem(
       value: string,
       type: LauncherItem['type'],
       displayName: string,
       icon?: string
     ): Promise<void> {
-      await window.electronAPI.workspaceAPI.addItem(
+      const added = await window.electronAPI.workspaceAPI.addItem(
         { displayName, path: value, type, icon },
         activeGroupId,
-        activeWorkspaceId
+        activeWorkspaceId,
+        { linkSamePath: true }
       );
-      await notifyAdded(displayName, value);
+      await notifyAdded(added.displayName || displayName, value);
       onItemsAdded();
     }
 
@@ -80,7 +82,8 @@ export function useClipboardPaste(
       );
       const displayName = PathUtils.getFileName(value.replace(/[\\/]+$/, '')) || value;
       if (added.length > 0) {
-        await notifyAdded(displayName, value);
+        // ランチャーの参照になったときは、ランチャーの表示名で知らせる
+        await notifyAdded(added[0].displayName || displayName, value);
         onItemsAdded();
         return;
       }

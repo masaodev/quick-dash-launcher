@@ -61,6 +61,8 @@ export interface WorkspaceStore {
   addItem(item: AppItem, groupId?: string, workspaceId?: string): Promise<WorkspaceItem>;
   /** ランチャーのアイテム（id）を参照できるか（今のデータファイルにあり、フォルダ取込で展開したものでない） */
   canRef(itemId: string): Promise<boolean>;
+  /** パスと引数が同じランチャーのアイテム（参照できるもの）の id。複数あれば表の並びで最初。無ければ undefined */
+  findSamePathRef(path: string, args?: string): Promise<string | undefined>;
   /** ランチャーのアイテム（id）を指す参照を足す。参照できなければ undefined */
   addRef(
     itemId: string,
@@ -561,7 +563,9 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   expectPositionals(parsed, []);
   const from = optionString(parsed, 'from');
   if (from !== undefined) return addFromLauncher(parsed, from, ctx);
-  if (optionFlag(parsed, 'copy')) {
+  // --copy は --from か --path と一緒に使う（--path では、ランチャーに同じアイテムがあっても参照にしない）
+  const copy = optionFlag(parsed, 'copy');
+  if (copy && optionString(parsed, 'path') === undefined) {
     throw new CliError('usage', mainI18n.t('cli.errors.copyNeedsFrom'));
   }
   const type = optionString(parsed, 'type') ?? 'item';
@@ -606,11 +610,41 @@ async function addItem(args: readonly string[], ctx: WorkspaceCommandContext): P
   if (!dryRun) await ctx.syncBeforeWrite();
   const s = await snapshot(ctx.store);
   const place = resolvePlace(s, optionString(parsed, 'workspace'), optionString(parsed, 'group'));
+  const location = [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)];
+
+  // ランチャーにパスと引数の同じアイテムがあれば、画面のドロップと同じくその参照で足す（--name はワークスペース
+  // での表示名）。メモ・--set は参照に持たせられないので、付けたときはコピーで足す
+  const refMainId =
+    !copy && itemPath && optionString(parsed, 'memo') === undefined && parsed.sets.length === 0
+      ? await ctx.store.findSamePathRef(itemPath, optionString(parsed, 'args'))
+      : undefined;
+  if (refMainId) {
+    if (dryRun) {
+      return {
+        dryRun: true,
+        item: { id: null, type: 'ref', refItemId: refMainId, displayName: name.trim(), location },
+        linkedBySamePath: true,
+      };
+    }
+    const linked = await ctx.store.addRef(refMainId, place.groupId, place.workspaceId);
+    if (linked) {
+      await ctx.store.updateDisplayName(linked.id, name.trim());
+      if (position !== undefined) {
+        await placeAt(ctx.store, linked.id, place.workspaceId, place.groupId, position);
+      }
+      const after = await snapshot(ctx.store);
+      const item = after.items.find((i) => i.id === linked.id) ?? linked;
+      ctx.changed(mainI18n.t('cli.changed.workspaceItemAdded', { name: item.displayName }));
+      return { ...itemView(item, after), linkedBySamePath: true };
+    }
+    // 調べてから足すまでの間に参照できなくなった（下でコピーで足す）
+  }
+
   const preview = {
     ...checked,
     id: null,
     kind: detectItemTypeSync(itemPath),
-    location: [workspaceName(place.workspaceId, s), ...groupPath(place.groupId, s)],
+    location,
   };
   if (dryRun) return { dryRun: true, item: preview };
 

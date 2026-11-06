@@ -33,6 +33,7 @@ import {
   convertRefToCopy,
   ensureMainItemIndex,
   findLinkCandidates,
+  findSamePathMainItem,
   linkToMainItem,
   moveWorkspaceItemToMain,
 } from '../workspace/workspaceRefOperations.js';
@@ -208,6 +209,7 @@ export function createCliContext(
         return (await WorkspaceService.getInstance()).loadResolvedItems();
       },
       canRef: async (itemId) => (await ensureMainItemIndex()).byId.has(itemId),
+      findSamePathRef: async (path, args) => (await findSamePathMainItem(path, args))?.id,
       addRef: async (itemId, groupId, workspaceId) => {
         const index = await ensureMainItemIndex();
         const main = index.byId.get(itemId);

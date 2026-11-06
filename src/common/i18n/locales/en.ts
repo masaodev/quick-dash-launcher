@@ -611,7 +611,8 @@ Works with workspaces (workspace.json).
   qdl workspace item list                     List items (--workspace --group --grep --with-text)
   qdl workspace item add                      Add an item (--name, --path, and --group in a workspace with groups are required. --args --memo
                                               --workspace --position <0-based> --set key=value --dry-run.
-                                              With --type clipboard, --text | --text-file instead of --path)
+                                              With --type clipboard, --text | --text-file instead of --path.
+                                              Adds a link if the launcher has an item with the same path and args. --copy adds a copy)
   qdl workspace item add --from <id or name>  Add a launcher item as a link (--copy adds a copy.
                                               --name (the workspace name for a link) --group --workspace
                                               --position --dry-run)
@@ -714,7 +715,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       missingSetNoun: 'Specify row after launcher set',
       missingSetVerb: 'Specify an action (list / add / remove)',
       unknownVerb: 'Unknown action: {{command}}',
-      copyNeedsFrom: 'Use --copy with --from',
+      copyNeedsFrom: 'Use --copy with --from or --path',
       refBody:
         "A linked item's content comes from the launcher item (--{{option}} can't be used). Change it with qdl launcher item update {{id}}",
       convertTo: 'Set --to to copy or ref ({{to}})',
@@ -2476,6 +2477,7 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       tooltipMissingHint: 'Right-click to link it to another item or remove it from the workspace',
       launchMissing: 'Can\'t open "{{name}}". {{reason}}',
       addedAsCopy: "This item can't be linked, so a copy was added",
+      addedAsSamePathRef: 'The same item is in the launcher, so it was added as a link to it',
       convertedToCopy: 'Made "{{name}}" a copy',
       linked: 'Linked "{{name}}" to the launcher item',
       retargeted: 'Changed the item that "{{name}}" links to',

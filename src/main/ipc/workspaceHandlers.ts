@@ -42,6 +42,8 @@ import { LaunchUsageService } from '../services/launchUsageService.js';
 import { ClipboardService } from '../services/clipboardService.js';
 import {
   addAppItemToWorkspace,
+  addPathToWorkspace,
+  type AddAppItemOptions,
   applyLinkCopies,
   convertRefToCopy,
   ensureMainItemIndex,
@@ -159,6 +161,17 @@ async function withWorkspaceChange<T = void>(
 }
 
 /**
+ * ドロップ・貼り付けで足したものが、ランチャーにパスの同じアイテムがあって参照になったことを知らせる
+ * （名前・アイコンがランチャーのものになり、ランチャーで直すと追随する。「追加しました」とは別に出す）
+ */
+function notifyLinkedBySamePath(): void {
+  showToastWindow({
+    message: mainI18n.t('workspace.ref.addedAsSamePathRef'),
+    type: 'info',
+  }).catch(() => {});
+}
+
+/**
  * ワークスペース関連のIPCハンドラーを設定
  */
 export function setupWorkspaceHandlers(): void {
@@ -174,13 +187,7 @@ export function setupWorkspaceHandlers(): void {
 
   handleIpc(
     IPC_CHANNELS.WORKSPACE_ADD_ITEM,
-    (
-      _event,
-      item: AppItem,
-      groupId?: string,
-      workspaceId?: string,
-      options?: { copy?: boolean; freshClipboardData?: boolean }
-    ) =>
+    (_event, item: AppItem, groupId?: string, workspaceId?: string, options?: AddAppItemOptions) =>
       withWorkspaceService(
         async () => {
           // 既定はランチャーのアイテムの参照。参照できないもの・copy の指定はコピー（クリップボードは実データを複製）
@@ -192,11 +199,14 @@ export function setupWorkspaceHandlers(): void {
               groupId,
               workspaceId,
               linked: result.linked,
+              linkedBySamePath: result.linkedBySamePath,
             },
             'Added item to workspace'
           );
           notifyWorkspaceChanged();
-          if (result.fellBackToCopy) {
+          if (result.linkedBySamePath) {
+            notifyLinkedBySamePath();
+          } else if (result.fellBackToCopy) {
             showToastWindow({
               message: mainI18n.t('workspace.ref.addedAsCopy'),
               type: 'info',
@@ -250,20 +260,31 @@ export function setupWorkspaceHandlers(): void {
             }
           }
 
+          let linkedCount = 0;
           for (const filePath of filePaths) {
             try {
               // ドット入りのフォルダ名は末尾に区切り文字を付けてから判定する（拡張子のアイコンを取りに行かない）
               const markedPath = await withFolderMarker(filePath);
               const itemType = detectItemTypeSync(markedPath);
-              await getIconForItem(markedPath, itemType);
-              const addedItem = await service.addItemFromPath(
-                markedPath,
-                targetGroupId,
-                workspaceId
-              );
+              // ランチャーにパスの同じアイテムがあればその参照で足す（無ければパスから作る）
+              const result = await addPathToWorkspace(markedPath, targetGroupId, workspaceId);
+              // アイコンは表示用の取り置き。足した後なので、取れなくても「足せなかった」にしない
+              if (!result.linked) {
+                await getIconForItem(markedPath, itemType).catch((error: unknown) =>
+                  logger.warn({ error, path: filePath }, 'Failed to get icon for added item')
+                );
+              }
+              if (result.linked) linkedCount++;
+              const addedItem = result.item;
               addedItems.push(addedItem);
               logger.info(
-                { id: addedItem.id, name: addedItem.displayName, path: filePath, type: itemType },
+                {
+                  id: addedItem.id,
+                  name: addedItem.displayName,
+                  path: filePath,
+                  type: itemType,
+                  linked: result.linked,
+                },
                 'Added item from path to workspace'
               );
             } catch (error) {
@@ -278,6 +299,7 @@ export function setupWorkspaceHandlers(): void {
           if (addedItems.length > 0) {
             notifyWorkspaceChanged();
           }
+          if (linkedCount > 0) notifyLinkedBySamePath();
           // 足せたものだけ返す。足せなかったものはここで知らせる（画面側は返ったものだけ「追加しました」と出す）
           if (failed.length > 0) {
             showToastWindow({
