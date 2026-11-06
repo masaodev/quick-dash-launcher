@@ -34,8 +34,28 @@ export class FaviconService {
   /** ファビコン（og:image を含む）1 件の上限。超えたら打ち切って次の取得元へ進む */
   private faviconMaxBytes = 5 * 1024 * 1024;
 
+  /**
+   * 直近のダウンロード（取得元の URL → 結果の Promise）。同じサイトのアイテムを並べて取得すると、
+   * どれも同じ `/favicon.ico` などを試すので、短い間は 1 回の結果を分け合う（失敗も含む。A3-258）
+   */
+  private recentDownloads = new Map<string, { promise: Promise<Buffer | null>; at: number }>();
+  private recentDownloadTtlMs = 30_000;
+
   constructor(faviconsFolder: string) {
     this.faviconsFolder = faviconsFolder;
+  }
+
+  /** 直近に同じ URL を取りに行っていれば、その結果を使う（取得中なら終わるのを待つ） */
+  private downloadFaviconShared(url: string): Promise<Buffer | null> {
+    const now = Date.now();
+    const recent = this.recentDownloads.get(url);
+    if (recent && now - recent.at < this.recentDownloadTtlMs) return recent.promise;
+    for (const [key, entry] of this.recentDownloads) {
+      if (now - entry.at >= this.recentDownloadTtlMs) this.recentDownloads.delete(key);
+    }
+    const promise = this.downloadFavicon(url);
+    this.recentDownloads.set(url, { promise, at: now });
+    return promise;
   }
 
   async fetchFavicon(url: string, forceRefresh = false): Promise<string | null> {
@@ -213,7 +233,7 @@ export class FaviconService {
           { url: source.url, size: source.size, isOgImage: source.isOgImage },
           'ファビコンダウンロードを試行'
         );
-        const data = await this.downloadFavicon(source.url);
+        const data = await this.downloadFaviconShared(source.url);
         if (data && data.length > 0) {
           // エラーページ等のHTMLが200で返るサイトがあるため、画像データのみ受け入れる
           if (!this.isLikelyImageData(data)) {
