@@ -30,6 +30,7 @@ import { useWorkspaceAddNotice } from '../hooks/useWorkspaceAddNotice';
 import { useItemActions } from '../hooks/useItemActions';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
+import { formatGroupAsText } from '../utils/workspaceGroupText';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
@@ -300,20 +301,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceGroupMenuRename(setEditingGroupId),
       window.electronAPI.onWorkspaceGroupMenuShowColorPicker(setColorPickerGroupId),
       window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
-        const { groupsMap, itemsByGroup, showSuccess, showError, t } = latest.current;
+        const { groupsMap, mixedChildrenByGroup, showSuccess, showError, t } = latest.current;
         const group = groupsMap.get(groupId);
         if (group) {
-          const groupItems = itemsByGroup[groupId] || [];
-          let text = `【${group.displayName}】\r\n`;
-          /* eslint-disable no-irregular-whitespace */
-          groupItems.forEach((item, index) => {
-            text += `　■${item.displayName}\r\n`;
-            text += `　　${describeWorkspaceItem(item, t)}\r\n`;
-            if (index < groupItems.length - 1) {
-              text += '\r\n';
-            }
-          });
-          /* eslint-enable no-irregular-whitespace */
+          // サブグループの中身も、画面と同じ並びで見出し付きで含める（A3-258）
+          const text = formatGroupAsText(group, mixedChildrenByGroup, (item) =>
+            describeWorkspaceItem(item, t)
+          );
           const name = group.displayName;
           window.electronAPI
             .copyToClipboard(text)
