@@ -174,6 +174,8 @@ export class BackupService {
     try {
       // スナップショット内の全ファイルを復元
       const files = this.listFilesRecursive(snapshotFolder);
+      // 戻せなかったファイル（ロックなど）。黙って「完了」にすると、一部だけ古いまま気づけない（A3-258）
+      const failed: string[] = [];
 
       for (const relPath of files) {
         const sourcePath = path.join(snapshotFolder, relPath);
@@ -182,6 +184,7 @@ export class BackupService {
         FileUtils.ensureDirectory(path.dirname(destPath));
         if (!FileUtils.safeCopyFile(sourcePath, destPath)) {
           logger.error({ relPath }, 'リストア中のファイルコピーに失敗');
+          failed.push(relPath.split(path.sep).join('/'));
         }
       }
 
@@ -189,6 +192,13 @@ export class BackupService {
       (await SettingsService.getInstance()).reloadFromDisk();
       // カスタムアイコンも戻したので、メモリに覚えたアイコンも捨てる
       clearIconMemoryCache();
+      if (failed.length > 0) {
+        logger.error({ timestamp, failed }, 'スナップショットの一部のファイルを戻せませんでした');
+        return {
+          success: false,
+          error: mainI18n.t('backupErrors.restorePartlyFailed', { files: failed.join(', ') }),
+        };
+      }
       logger.info({ timestamp, fileCount: files.length }, 'スナップショットからリストアしました');
       return { success: true };
     } catch (error) {
