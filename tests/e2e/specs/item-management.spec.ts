@@ -71,6 +71,34 @@ test.describe('QuickDashLauncher - アイテム管理機能テスト', () => {
 
   // ==================== アイテム追加テスト ====================
 
+  test('パスの無い単一アイテムを手で書いたファイルでも、一覧を読み込んで入力不備として出す（A3-258）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    // 以前は起動種別を調べるところで path.trim() が落ち、一覧が 1 件も出なかった
+    configHelper.writeDataFileRaw(
+      'data.json',
+      JSON.stringify({
+        version: '1.0',
+        items: [
+          { id: 'e2eNoPth', type: 'item', displayName: 'パス無し' },
+          {
+            id: 'e2eOkIt1',
+            type: 'item',
+            displayName: '普通のアイテム',
+            path: 'https://example.com/',
+          },
+        ],
+      })
+    );
+    const utils = new TestUtils(mainWindow);
+    await utils.reloadWithF5();
+    const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
+    await expect(adminWindow.locator('.raw-item-row', { hasText: '普通のアイテム' })).toBeVisible();
+    await expect(adminWindow.locator('.raw-item-row', { hasText: 'パス無し' })).toBeVisible();
+  });
+
   test('新規アイテムを追加できる', async ({ electronApp, mainWindow, configHelper }, _testInfo) => {
     const utils = new TestUtils(mainWindow);
     const adminWindow = await utils.openAdminWindow(electronApp, 'edit');
