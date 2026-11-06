@@ -2167,6 +2167,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   backupErrors: {
     snapshotNotFound: "The snapshot wasn't found",
     restoreFailed: "Couldn't restore",
+    restorePartlyFailed:
+      "Some files couldn't be restored: {{files}}. Make sure no other app has them open, then restore again.",
     deleteFailed: "Couldn't delete",
     preMigrationCopyFailed: "Couldn't copy {{file}} to the pre-migration snapshot",
     preImportCopyFailed:
