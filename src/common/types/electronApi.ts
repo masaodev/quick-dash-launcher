@@ -309,6 +309,8 @@ export interface ElectronAPI {
     callback: (progress: { scanId: number; found: number }) => void
   ) => () => void;
   hideEditWindow: () => Promise<void>;
+  /** アイテム管理に未保存の変更があるかを本体に知らせる（隠れている間に放置で破棄しないため） */
+  setAdminUnsaved: (unsaved: boolean) => Promise<void>;
   toggleEditWindow: () => Promise<void>;
   openEditWindowWithTab: (tab: AdminTab) => Promise<void>;
   openEditWindowWithImportModal: (modal: 'bookmark' | 'app') => Promise<void>;
