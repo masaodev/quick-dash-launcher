@@ -32,6 +32,8 @@ test.describe('QuickDashLauncher - 外部編集への対応', () => {
     configHelper.updateSettings({ backupEnabled: true });
 
     await test.step('初期表示を待つ', async () => {
+      // 設定はメモリに持つので、外で書き換えた settings.json は画面を読み込み直して反映する（A3-254）
+      await mainWindow.reload();
       await utils.waitForPageLoad();
       await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
       await expect(mainWindow.locator('.item', { hasText: 'GitHub' })).toBeVisible();
@@ -273,6 +275,8 @@ test.describe('QuickDashLauncher - 外部変更の検知（F5 以外の読み込
     configHelper.updateSettings({ backupEnabled: true });
 
     await test.step('初期表示を待つ', async () => {
+      // 設定はメモリに持つので、外で書き換えた settings.json は画面を読み込み直して反映する（A3-254）
+      await mainWindow.reload();
       await utils.waitForPageLoad();
       await mainWindow.locator('.item').first().waitFor({ state: 'visible', timeout: 10000 });
     });

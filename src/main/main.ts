@@ -185,6 +185,18 @@ app.whenReady().then(async () => {
   // 画面がページ側から別の URL へ移らないようにする（ウィンドウを作る前に付ける）
   installNavigationGuard();
 
+  // 画面を読み込み直したら（開発中・テストの再読み込み、管理画面などを開き直したとき）、設定もファイルから読み直す。
+  // 設定はメモリに持つので、QDL の外で直した settings.json はこれまで次に読んだときに効いていたが、
+  // 画面を読み込み直しても古いままになっていた（A3-254）。表示・非表示では読み込み直さないので、写しの効果は残る
+  app.on('web-contents-created', (_event, contents) => {
+    contents.on('did-start-loading', () => {
+      if (!SettingsService.isSettingsFileReadable()) return;
+      SettingsService.getInstance()
+        .then((settings) => settings.reloadFromDisk())
+        .catch((error) => console.error('画面の読み込みに合わせた設定の読み直しでエラー:', error));
+    });
+  });
+
   // 設定フォルダを先に作成（スプラッシュのアイコンパス解決に必要）
   PathManager.ensureDirectories();
 
