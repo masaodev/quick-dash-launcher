@@ -23,6 +23,8 @@ let ctx: WorkspaceCommandContext;
 let nextId: number;
 let saved: number;
 let linkCandidates: Record<string, string[]>;
+/** パス（と引数）→ ランチャーのアイテムの id（findSamePathRef の答え） */
+let samePathRefs: Record<string, string>;
 
 function group(id: string, name: string, order: number, extra: Partial<WorkspaceGroupView> = {}) {
   return {
@@ -55,6 +57,7 @@ function item(id: string, name: string, order: number, groupId?: string, workspa
 beforeEach(() => {
   nextId = 1;
   linkCandidates = {};
+  samePathRefs = {};
   saved = 0;
   workspaces = [
     { id: 'Ws000001', displayName: '仕事', order: 0, createdAt: 0 },
@@ -115,6 +118,8 @@ beforeEach(() => {
       return added;
     },
     canRef: async (itemId: string) => !unrefable.has(itemId),
+    findSamePathRef: async (path: string, args?: string) =>
+      samePathRefs[args ? `${path} ${args}` : path],
     addRef: async (itemId: string, groupId?: string, workspaceId?: string) => {
       const added = {
         ...item(
@@ -705,9 +710,14 @@ describe('workspace item add --from（ランチャーのアイテムを参照・
     expect(items).toHaveLength(2);
   });
 
-  it('--copy は --from と一緒にだけ使える（usage）', async () => {
+  it('--copy は --from か --path と一緒にだけ使える（usage）', async () => {
     const e = await errorOf(
-      runWorkspaceCommand('item', 'add', ['--name', 'x', '--path', 'C:\\x', '--copy'], ctx)
+      runWorkspaceCommand(
+        'item',
+        'add',
+        ['--type', 'clipboard', '--name', 'x', '--text', 'a', '--copy'],
+        ctx
+      )
     );
     expect(e.code).toBe('usage');
   });
@@ -896,5 +906,70 @@ describe('workspace item update / convert（参照アイテム）', () => {
     expect(
       (await errorOf(runWorkspaceCommand('item', 'convert', ['It000002', '--to', 'x'], ctx))).code
     ).toBe('usage');
+  });
+});
+
+describe('workspace item add --path（ランチャーに同じパスのアイテムがあれば参照で足す。A3-256）', () => {
+  it('同じパスがあれば参照で足し、--name をワークスペースでの表示名にする', async () => {
+    samePathRefs['C:\\tools\\a.exe'] = 'Main0001';
+    const r = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--name', 'ツール', '--path', 'C:\\tools\\a.exe', '--group', '案件A'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(r).toMatchObject({ displayName: 'ツール', linkedBySamePath: true });
+    const added = items.find((i) => i.id === r.id);
+    expect(added?.ref).toMatchObject({ itemId: 'Main0001', alias: 'ツール' });
+    expect(ctx.changed).toHaveBeenCalledWith('CLI: ワークスペースに「ツール」を追加しました');
+  });
+
+  it('--dry-run は参照の形を返し、何も足さない', async () => {
+    samePathRefs['C:\\tools\\a.exe'] = 'Main0001';
+    const r = await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--name', 'ツール', '--path', 'C:\\tools\\a.exe', '--group', '案件A', '--dry-run'],
+      ctx
+    );
+    expect(r).toMatchObject({
+      dryRun: true,
+      item: { id: null, type: 'ref', refItemId: 'Main0001', displayName: 'ツール' },
+      linkedBySamePath: true,
+    });
+    expect(items).toHaveLength(2);
+  });
+
+  it('引数も比べる（引数が違えば別のアイテム）', async () => {
+    samePathRefs['C:\\tools\\a.exe -x'] = 'Main0002';
+    const plain = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--name', 'a', '--path', 'C:\\tools\\a.exe', '--group', '案件A'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(plain).not.toHaveProperty('linkedBySamePath');
+    const withArgs = (await runWorkspaceCommand(
+      'item',
+      'add',
+      ['--name', 'a', '--path', 'C:\\tools\\a.exe', '--args', '-x', '--group', '案件A'],
+      ctx
+    )) as Record<string, unknown>;
+    expect(withArgs).toMatchObject({ linkedBySamePath: true });
+  });
+
+  it('--copy・--memo・--set を付けたときは、同じパスがあってもコピーで足す', async () => {
+    samePathRefs['C:\\tools\\a.exe'] = 'Main0001';
+    const addRef = vi.spyOn(ctx.store, 'addRef');
+    for (const extra of [['--copy'], ['--memo', 'メモ'], ['--set', 'window={"title":"x"}']]) {
+      const r = (await runWorkspaceCommand(
+        'item',
+        'add',
+        ['--name', 'a', '--path', 'C:\\tools\\a.exe', '--group', '案件A', ...extra],
+        ctx
+      )) as Record<string, unknown>;
+      expect(r).not.toHaveProperty('linkedBySamePath');
+    }
+    expect(addRef).not.toHaveBeenCalled();
   });
 });

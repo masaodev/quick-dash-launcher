@@ -371,12 +371,15 @@ export interface ElectronAPI {
     reorderWorkspaces: (ids: string[]) => Promise<{ success: boolean }>;
     // アイテム管理
     loadItems: () => Promise<WorkspaceItem[]>;
-    /** ランチャーのアイテムを足す（既定は参照。copy ならコピー。参照できないものはコピー） */
+    /**
+     * ランチャーのアイテムを足す（既定は参照。copy ならコピー。参照できないものはコピー）。
+     * linkSamePath なら、URL・パスの貼り付けなどでもランチャーにパスの同じアイテムがあればその参照で足す
+     */
     addItem: (
       item: AppItem,
       groupId?: string,
       workspaceId?: string,
-      options?: { copy?: boolean; freshClipboardData?: boolean }
+      options?: { copy?: boolean; freshClipboardData?: boolean; linkSamePath?: boolean }
     ) => Promise<WorkspaceItem>;
     /** 中身（編集フォームで新しく入力したもの）からアイテムを作る */
     createItem: (

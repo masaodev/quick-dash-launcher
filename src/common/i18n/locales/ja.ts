@@ -613,7 +613,8 @@ Quick Dash Launcher CLI。起動中の Quick Dash Launcher（本体）に依頼�
   qdl workspace item list                     アイテムの一覧（--workspace --group --grep --with-text）
   qdl workspace item add                      追加（--name・--path と、グループのあるワークスペースなら --group も必須。--args --memo
                                               --workspace --position <0 始まり> --set key=value --dry-run。
-                                              --type clipboard なら --path の代わりに --text | --text-file）
+                                              --type clipboard なら --path の代わりに --text | --text-file。
+                                              ランチャーにパスと引数の同じアイテムがあれば参照で追加。--copy ならコピー）
   qdl workspace item add --from <id か表示名>  ランチャーのアイテムを参照で追加（--copy ならコピー。
                                               --name（参照ならワークスペースでの表示名）--group --workspace
                                               --position --dry-run）
@@ -715,7 +716,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       missingSetNoun: 'launcher set の後に row を指定してください',
       missingSetVerb: '操作を指定してください（list / add / remove）',
       unknownVerb: '不明な操作です: {{command}}',
-      copyNeedsFrom: '--copy は --from と一緒に使います',
+      copyNeedsFrom: '--copy は --from か --path と一緒に使います',
       refBody:
         '参照アイテムの中身はランチャーのアイテムのものです（--{{option}} は使えません）。中身は qdl launcher item update {{id}} で直してください',
       convertTo: '--to には copy か ref を指定してください（{{to}}）',
@@ -2478,6 +2479,7 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       tooltipMissingHint: '右クリックで、別のアイテムを指すか、ワークスペースから削除できます',
       launchMissing: '「{{name}}」は開けません。{{reason}}',
       addedAsCopy: '参照できないアイテムなので、コピーで追加しました',
+      addedAsSamePathRef: 'ランチャーに同じアイテムがあるので、その参照で追加しました',
       convertedToCopy: '「{{name}}」をコピーにしました',
       linked: '「{{name}}」をランチャーのアイテムの参照にしました',
       retargeted: '「{{name}}」の指すアイテムを変えました',

@@ -68,7 +68,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `workspace update <id か名前>` | ワークスペースの名前・並び順を変える |
 | `workspace remove <id か名前>` | 空のワークスペースを消す |
 | `workspace item list` | ワークスペースのアイテムの一覧。`--workspace`・`--group`・`--grep` で絞る。`--with-text` でクリップボードアイテムの本文も返す。参照はランチャーのアイテムの中身で埋めて返す（下の「参照」） |
-| `workspace item add` | ワークスペースにアイテムを足す。`--from` ならランチャーのアイテムを参照で足す（`--copy` ならコピー） |
+| `workspace item add` | ワークスペースにアイテムを足す。`--from` ならランチャーのアイテムを参照で足す（`--copy` ならコピー）。`--path` でも、ランチャーにパスと引数の同じアイテムがあれば参照で足す |
 | `workspace item update <id か表示名>` | ワークスペースのアイテムを変える・移す |
 | `workspace item remove <id か表示名>` | ワークスペースのアイテムを消す |
 | `workspace item convert <id か表示名> --to copy\|ref` | 参照とコピーを行き来する。`--to ref` では `--from` で指す先を選ぶ |
@@ -98,7 +98,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 | `--type` | launcher item add、workspace item add | `item`（既定）・`dir`（フォルダ取込）・`set`（セット）・`clipboard`（テキストだけのクリップボードアイテム）。workspace item add は `item` と `clipboard` だけ。廃止した `window`（ウィンドウ操作）を渡すと `usage` で断り、代わりに `--set window='{"processName":"notepad.exe","title":"…"}'` でパスの無い単一アイテムを作るよう案内する |
 | `--group` | workspace item add／update | 入れるグループ。グループのあるワークスペースへ足すとき（add）と、update で `--workspace` だけを変えて移す先にグループがあるときは必須（下の「足す先のグループ」）。`""` は使えない（`usage`） |
 | `--from` | workspace item add、workspace item convert | 足す元・指す先のランチャーのアイテム（id か表示名）。item add では `--name`・`--group`・`--workspace`・`--position`・`--copy`・`--dry-run` と一緒に使え、中身を決めるオプション（`--path`・`--args`・`--memo`・`--type`・`--text`・`--text-file`・`--set`）とは使えない。決まりは下の「ランチャーのアイテムを足す」 |
-| `--copy` | workspace item add（`--from` と一緒にだけ） | 参照ではなくコピーで足す。`--from` 無しで渡すと `usage` |
+| `--copy` | workspace item add（`--from` か `--path` と一緒にだけ） | 参照ではなくコピーで足す。`--from` も `--path` も無しで渡すと `usage` |
 | `--to` | workspace item convert（必須） | `copy`（参照をコピーにする）か `ref`（参照にする・指し直す） |
 | `--workspace` | workspace の各コマンド | ワークスペース。グループを指定したときは、そのグループのワークスペースになる。archive restore では復元先（省略時は元のワークスペース） |
 | `--position` | workspace item add／update、workspace add／update、set row add、launcher tab add／update | 同じ並びの中の位置（0 始まり）。グループの中はサブグループとアイテムが同じ並び。workspace add／update ではワークスペースの、launcher tab add／update ではタブの並び。set row add では行を差し込む位置（省略時は最後） |
@@ -128,6 +128,7 @@ PATH は、`%USERPROFILE%` のような書き方を崩さないよう、レジ�
 - **ワークスペースに足せる種類**: 新しく作れるのは、通常のアイテム（パスの無い単一アイテムを含む）と、テキストだけのクリップボードアイテム。セットと、画像などを含むクリップボードアイテムは、`--from` でランチャーのアイテムを参照で（`--copy` ならコピーで）足す（既にあるコピーは update で変えられる）
 - **足す先のグループ**: ワークスペースのアイテムはどれかのグループに入る（未分類という区画は無い。[ワークスペース機能 - 構成](./workspace.md#構成)）。`workspace item add` は、グループのあるワークスペースでは `--group` が要り、無いと `usage`（「ワークスペース「{名前}」にはグループがあるので、--group で入れるグループを指定してください」）。グループが 1 つも無いワークスペースへは `--group` 無しで足せ、そのとき「未分類」という名前のグループを作って入れる。`--group ""`（以前の「未分類へ移す」）は `usage`。`workspace item update` で `--workspace` だけを変えるときも同じで、移す先にグループがあれば `--group` が要る（今いるワークスペースを `--workspace` で書いただけなら、動かさずに更新する）。`workspace group remove` で消せるのは、これまでどおり空のグループだけ（中身があれば `conflict`。画面の削除は中身ごと消す）
 - **ランチャーのアイテムを足す**: `workspace item add --from <id か表示名>` は、ランチャーの右クリックの「⭐ ワークスペースに追加」と同じく、既定で参照を足す（[ワークスペース機能 - 参照とコピー](./workspace.md#参照とコピー)）。`--name` はワークスペースでの表示名になる。`--dry-run` は `type: "ref"`・`refItemId` の形を返す。参照できないアイテム（id が無い・フォルダ取込で展開した・データファイルで重複して一覧に出ないなど）は、画面と同じくコピーで足し、結果に `fellBackToCopy: true` を付ける（`--dry-run` も同じ。`--copy` を付けたときは付けない）。フォルダ取込は参照もコピーもできない（`conflict`。中のファイルは `--path` で足す）。読み込みで不正とされたアイテムは `invalid`。表示名が複数に当たれば、タブつきの候補を返して `ambiguous`
+- **パスで足すときに同じアイテムがランチャーにある**: `workspace item add --path` は、画面のドロップ・貼り付けと同じく、ランチャーにパスと引数の同じアイテムがあればその参照で足す（[ワークスペース機能 - 同じアイテムがランチャーにあるとき](./workspace.md#同じアイテムがランチャーにあるとき)）。`--name` はワークスペースでの表示名になる（ランチャーの表示名と同じなら付けない）。結果に `linkedBySamePath: true` を付ける（`--dry-run` は `type: "ref"`・`refItemId` の形）。`--memo`・`--set` は参照に持たせられないので、付けたときと `--copy` を付けたときは、同じアイテムがあってもコピーで足す
 - **コピーで足す**: `--copy` を付けると、右クリックの「📄 ワークスペースにコピーを追加」と同じ中身を写して足す（.lnk はリンク先を読んだ形）。セットの行はランチャーのアイテムを id で指したままにする。クリップボードアイテムは実データを複製し、ワークスペース側に自分のファイルを持たせる（複製できなければ元の参照のまま）。写した後に中身を変えるときは `workspace item update`
 - **参照**: `workspace item list` と各コマンドの結果は、参照をランチャーのアイテムの中身で埋めた形（指す先の `type`）で返し、`ref`（指す先の `itemId`・ワークスペースでの表示名 `alias`・`status`（`ok`／`missing`／`unsupported`）・`mainDisplayName`・`tabName` など）を付ける。元のアイテムが見つからない参照は `type: "ref"` のまま返す。`workspace item update` で参照に使えるのは `--name`（ワークスペースでの表示名。`""` でランチャーの表示名に戻す）・`--group`・`--workspace`・`--position` だけで、`--path`・`--args`・`--memo`・`--text`・`--text-file`・`--set`・`--unset` は `conflict`（中身は `qdl launcher item update <指す先の id>` で直すよう案内する）
 - **参照とコピーを行き来する**: `workspace item convert <id か表示名> --to copy` は参照をコピーにする（画面の「📄 コピーにする」と同じ）。参照でないもの・元のアイテムが見つからない参照は `conflict`。`--to ref` はコピーを参照にする（参照なら指し直す。画面の「🔁 別のアイテムを指す…」・一括の「🔗 ランチャーのアイテムとつなぐ…」と同じく、表示名が違えばワークスペースでの表示名にし、メモはランチャーのアイテムにメモが無ければ移す）。指す先は `--from <id か表示名>`（フォルダ取込は `conflict`）。`--from` を省くと、パスと引数が同じランチャーのアイテムが 1 件のときだけそれを指し、0 件なら `not_found`、2 件以上なら `ambiguous`。`--dry-run` は `before`・`to`（`ref` なら指す先の `refItemId` も）を返す

@@ -77,6 +77,60 @@ export interface AddToWorkspaceResult {
   linked: boolean;
   /** 参照で足すつもりだったが、参照できないアイテムなのでコピーで足したか */
   fellBackToCopy: boolean;
+  /** パスの同じランチャーのアイテムが見つかったので、その参照で足したか（ドロップ・貼り付け・CLI の --path） */
+  linkedBySamePath?: boolean;
+}
+
+/**
+ * パスと引数が同じランチャーのアイテムのうち、表の並びで最初の 1 件（無ければ undefined）
+ *
+ * ドロップ・貼り付け・CLI の --path で足すとき、ランチャーに同じものがあればその参照で足すのに使う。
+ * 引数の無いものを足すときは、引数の無いランチャーのアイテムだけが当たる（同じ exe を引数で使い分けて
+ * いるアイテムを取り違えない）
+ */
+export async function findSamePathMainItem(
+  path: string,
+  args?: string
+): Promise<(ReferenceableAppItem & { id: string }) | undefined> {
+  const index = await ensureMainItemIndex();
+  const main = findSamePathItems(path, args, index)[0];
+  return main?.id ? (main as ReferenceableAppItem & { id: string }) : undefined;
+}
+
+/** ランチャーにパスと引数の同じアイテムがあれば、その参照で足す（無ければ undefined。何も足さない） */
+async function tryAddSamePathRef(
+  path: string,
+  args: string | undefined,
+  groupId: string | undefined,
+  workspaceId: string | undefined
+): Promise<AddToWorkspaceResult | undefined> {
+  const main = await findSamePathMainItem(path, args);
+  if (!main) return undefined;
+  const item = await (await WorkspaceService.getInstance()).addRef(main, groupId, workspaceId);
+  return { item, linked: true, fellBackToCopy: false, linkedBySamePath: true };
+}
+
+/**
+ * パス（ドロップ・ファイルの貼り付け）からワークスペースへ足す。ランチャーにパスの同じアイテムがあれば
+ * その参照で、無ければパスから作ったアイテム（コピー）で足す
+ */
+export async function addPathToWorkspace(
+  filePath: string,
+  groupId: string | undefined,
+  workspaceId: string | undefined
+): Promise<AddToWorkspaceResult> {
+  const linked = await tryAddSamePathRef(filePath, undefined, groupId, workspaceId);
+  if (linked) return linked;
+  const service = await WorkspaceService.getInstance();
+  const item = await service.addItemFromPath(filePath, groupId, workspaceId);
+  return { item, linked: false, fellBackToCopy: false };
+}
+
+/** addAppItemToWorkspace の指定 */
+export interface AddAppItemOptions {
+  copy?: boolean;
+  freshClipboardData?: boolean;
+  linkSamePath?: boolean;
 }
 
 /**
@@ -87,14 +141,20 @@ export interface AddToWorkspaceResult {
  *
  * @param options.freshClipboardData - 取り込んだばかりで、どこからも使われていないクリップボードの実データ
  *   （ワークスペースの Ctrl+V）。複製せずにそのまま使う（複製すると、取り込んだ方が使われずに残る）
+ * @param options.linkSamePath - ランチャーのアイテムでないもの（URL・パスのドロップや貼り付け）でも、
+ *   ランチャーにパスと引数の同じアイテムがあればその参照で足す
  */
 export async function addAppItemToWorkspace(
   item: AppItem,
   groupId: string | undefined,
   workspaceId: string | undefined,
-  options: { copy?: boolean; freshClipboardData?: boolean } = {}
+  options: AddAppItemOptions = {}
 ): Promise<AddToWorkspaceResult> {
   const service = await WorkspaceService.getInstance();
+  if (!options.copy && options.linkSamePath && isLauncherItem(item) && !item.id && item.path) {
+    const linked = await tryAddSamePathRef(item.path, item.args, groupId, workspaceId);
+    if (linked) return linked;
+  }
   const referenceable = isReferenceableAppItem(item);
   if (!options.copy && referenceable && item.id) {
     // 表に無ければ（登録した直後など、表を作り直す前）1 回だけ読み直して引き直す
@@ -149,9 +209,30 @@ function findSamePathItems(
 ): ReferenceableAppItem[] {
   const key = pathKey(path, args);
   if (key === null) return [];
-  return [...index.byId.values()].filter(
-    (main) => isLauncherItem(main) && pathKey(main.path, main.args) === key
-  );
+  return byPathKeyOf(index).get(key) ?? [];
+}
+
+/**
+ * パスのキー → ランチャーの通常アイテム（表の並び）。表ごとに 1 回だけ作る
+ * （表はデータファイルを読み直すたびに作り直されるので、古い表の分は WeakMap から消える）。
+ * 多数のファイルをまとめてドロップしたとき、1 件ごとに全アイテムのキーを計算し直さない
+ */
+const byPathKeyCache = new WeakMap<MainItemIndex, Map<string, ReferenceableAppItem[]>>();
+
+function byPathKeyOf(index: MainItemIndex): Map<string, ReferenceableAppItem[]> {
+  const cached = byPathKeyCache.get(index);
+  if (cached) return cached;
+  const map = new Map<string, ReferenceableAppItem[]>();
+  for (const main of index.byId.values()) {
+    if (!isLauncherItem(main)) continue;
+    const key = pathKey(main.path, main.args);
+    if (key === null) continue;
+    const list = map.get(key);
+    if (list) list.push(main);
+    else map.set(key, [main]);
+  }
+  byPathKeyCache.set(index, map);
+  return map;
 }
 
 /** コピーの指す先の候補（パスと引数が同じランチャーのアイテム） */

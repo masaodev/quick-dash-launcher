@@ -55,7 +55,10 @@ export function useFileOperations() {
     }
   };
 
-  /** URL をワークスペースへ足す。足せたか返す（失敗は本体側がトーストで知らせる） */
+  /**
+   * URL をワークスペースへ足す。足せたアイテムを返す（失敗は本体側がトーストで知らせる）。
+   * ランチャーに同じ URL のアイテムがあれば、その参照で足す
+   */
   const addUrlItem = async (
     url: string,
     onItemsAdded: () => void,
@@ -67,7 +70,8 @@ export function useFileOperations() {
       const added = await window.electronAPI.workspaceAPI.addItem(
         { displayName: url, path: url, type: 'url' as const, icon },
         groupId,
-        workspaceId
+        workspaceId,
+        { linkSamePath: true }
       );
       onItemsAdded();
       return added;
