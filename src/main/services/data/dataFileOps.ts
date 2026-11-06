@@ -97,6 +97,8 @@ export async function deleteDataFile(
 
     // 削除されたファイルを targetFile に持つ自動取込ルールを無効化
     const settingsService = await SettingsService.getInstance();
+    // ルールの一覧ごと書き戻すので、QDL の外で直したルールを消さないようファイルから読み直す（A3-258）
+    if (SettingsService.isSettingsFileReadable()) settingsService.reloadFromDisk();
     const autoImportSettings = await settingsService.get('bookmarkAutoImport');
     const rulesToDisable =
       autoImportSettings?.rules?.filter((r) => r.targetFile === fileName && r.enabled) ?? [];

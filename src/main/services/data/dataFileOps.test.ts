@@ -6,9 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../settingsService.js', () => ({
   SettingsService: {
+    isSettingsFileReadable: () => true,
     getInstance: async () => ({
       get: async () => ({ autoRunOnStartup: false, rules: [] }),
       set: async () => {},
+      reloadFromDisk: () => {},
     }),
   },
 }));
