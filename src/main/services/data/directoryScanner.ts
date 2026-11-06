@@ -11,6 +11,26 @@ import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTy
 import { LauncherItem } from '@common/types';
 import type { DirPreviewItem, DirPreviewResult, DirPreviewStatus } from '@common/types';
 
+import { runWithConcurrency } from '../../utils/concurrency.js';
+
+import { readShortcutCached, type ShortcutInfo } from './shortcutCache.js';
+
+/** フォルダ取込の走査で、同時に待つ stat の数 */
+const SCAN_STAT_CONCURRENCY = 8;
+
+/** .lnk を読み、リンク先があるか・フォルダかを確かめる（同期。1 個あたり数 ms） */
+function readShortcutFromDisk(filePath: string): ShortcutInfo | null {
+  const details = shell.readShortcutLink(filePath);
+  if (!details?.target) return null;
+  const targetExists = FileUtils.exists(details.target);
+  return {
+    target: details.target,
+    args: details.args,
+    targetExists,
+    targetIsDirectory: targetExists && FileUtils.isDirectory(details.target),
+  };
+}
+
 /** 表示名の前後に、入力したとおりの文字を付ける（区切りや括弧は足さない） */
 export function applyPrefixSuffix(name: string, prefix?: string, suffix?: string): string {
   return `${prefix ?? ''}${name}${suffix ?? ''}`;
@@ -57,7 +77,8 @@ export function processShortcut(
   expandedFromId?: string
 ): LauncherItem | null {
   try {
-    const shortcutDetails = shell.readShortcutLink(filePath);
+    // 同じ .lnk を読み直しのたびに読まないよう、前に読んだ結果を使う（.lnk が変わっていなければ。A3-254）
+    const shortcutDetails = readShortcutCached(filePath, readShortcutFromDisk);
 
     if (shortcutDetails?.target) {
       const name = applyPrefixSuffix(
@@ -67,10 +88,9 @@ export function processShortcut(
       );
 
       // リンク先が実在すればディスクの種類に従う（拡張子の無いファイルをフォルダにしない）
-      const targetExists = FileUtils.exists(shortcutDetails.target);
-      const targetType: LauncherItem['type'] = !targetExists
+      const targetType: LauncherItem['type'] = !shortcutDetails.targetExists
         ? detectItemTypeSync(shortcutDetails.target)
-        : FileUtils.isDirectory(shortcutDetails.target)
+        : shortcutDetails.targetIsDirectory
           ? 'folder'
           : detectFileItemTypeSync(shortcutDetails.target);
 
@@ -135,17 +155,27 @@ async function scanDirectory(
       return;
     }
 
-    for (const item of items) {
+    // stat は同時に SCAN_STAT_CONCURRENCY 本まで並べて待つ（1 件ずつ待つと、ネットワークのフォルダで遅い。A3-254 S5）。
+    // 結果はフォルダの中の順のまま使う
+    const stats: Array<fs.Stats | null> = new Array(items.length).fill(null);
+    await runWithConcurrency(
+      items.map((item, i) => async () => {
+        const itemPath = path.join(currentDir, item);
+        try {
+          stats[i] = await fs.promises.stat(itemPath);
+        } catch (error) {
+          dataLogger.warn({ itemPath, error }, 'アイテムにアクセスできません');
+        }
+      }),
+      SCAN_STAT_CONCURRENCY,
+      shouldStop
+    );
+
+    for (const [i, item] of items.entries()) {
       if (shouldStop()) return;
       const itemPath = path.join(currentDir, item);
-
-      let stat;
-      try {
-        stat = await fs.promises.stat(itemPath);
-      } catch (error) {
-        dataLogger.warn({ itemPath, error }, 'アイテムにアクセスできません');
-        continue;
-      }
+      const stat = stats[i];
+      if (!stat) continue;
 
       const isDirectory = stat.isDirectory();
       const itemName = path.basename(itemPath);

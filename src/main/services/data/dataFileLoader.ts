@@ -52,7 +52,8 @@ import {
   isNewerFormatFile,
   markNewerFormatFile,
 } from './newerFormatFiles.js';
-import { convertJsonItemToAppItems } from './jsonItemConverter.js';
+import { convertJsonItemToAppItems, takeDirScanStats } from './jsonItemConverter.js';
+import { clearShortcutCache } from './shortcutCache.js';
 import { setHasWsGroupRows } from './wsGroupRows.js';
 import {
   buildGroupNameResolver,
@@ -524,7 +525,11 @@ async function reloadConfigFilesInternal(
   // （アプリ内の変更に伴う再読込では覚えた結果を使う）
   const startedAt = performance.now();
   // 起動時・F5・「アイコンをすべて取り直す」は、メモリに覚えたアイコンも捨ててディスクの今の状態を読む
-  if (trigger !== 'internal') clearIconMemoryCache();
+  // ショートカットを読んだ結果も同じ（リンク先を消した・作ったことは .lnk に現れないので）
+  if (trigger !== 'internal') {
+    clearIconMemoryCache();
+    clearShortcutCache();
+  }
   await beginLoadProbeSession(LOAD_PROBE_MODES[trigger]);
   let data: Awaited<ReturnType<typeof loadDataFilesWithReport>>;
   try {
@@ -639,6 +644,7 @@ async function reloadConfigFilesInternal(
       totalItems: data.items.length,
       workspaceChanged,
       workspaceRefsChanged,
+      dirScan: takeDirScanStats(),
       ms: {
         data: Math.round(dataLoadedAt - startedAt),
         workspace: Math.round(workspaceLoadedAt - dataLoadedAt),

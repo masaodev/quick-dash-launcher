@@ -412,7 +412,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 | ログの行 | 出るとき | 中身 |
 | --- | --- | --- |
 | `起動の計測` | 起動の準備ができた 5 秒後に 1 回 | `startupMs`: プロセスが動き出してからの経過ミリ秒（`ready`・`splash-window-created`・`splash-shown`・`settings-ready`・`windows-created`・`first-data-loaded`・`renderer-ready`・`launcher-shown`） |
-| `設定ファイルを読み直しました` | データファイルとワークスペースを読み直すたび | `trigger`（読み込みのきっかけ）・`totalItems`・`ms`（`data`＝データファイルとフォルダ取込、`workspace`、`total`） |
+| `設定ファイルを読み直しました` | データファイルとワークスペースを読み直すたび | `trigger`（読み込みのきっかけ）・`totalItems`・`workspaceChanged`／`workspaceRefsChanged`（ワークスペース・参照の中身が変わったか）・`dirScan`（フォルダ取込の件数 `count`・展開したアイテム数 `items`・走査の時間 `ms`）・`ms`（`data`＝データファイルとフォルダ取込、`workspace`、`total`） |
 | `キャッシュのアイコンを読み込みました` | 画面がキャッシュのアイコンをまとめて読むたび | `requested`（アイテム数）・`found`（見つかった数）・`ms` |
 | `表示の時間` | ホットキーでランチャーを出したあと、描画が終わったとき | `showMs`: メイン側（`position-set`・`companion-windows-shown`・`window-shown`・`window-focused`）と画面側（`renderer-received`・`before-animation-frame`・`window-show-complete`）の経過ミリ秒 |
 | `メモリの計測` | 起動の 1 分後と 1 時間後 | `processes`: プロセスの種類ごとの数と MB（`app.getAppMetrics()`）、`mainHeapMB`: メインプロセスのヒープ |
