@@ -4,7 +4,7 @@ import type { LauncherItem } from '@common/types';
 import { isIconFetchTarget } from '@common/constants';
 
 import { CombinedProgressManager } from '../../utils/progressManager.js';
-import { FaviconService } from '../faviconService.js';
+import { FaviconService, type FaviconDownloadShare } from '../faviconService.js';
 import { IconFetchErrorService } from '../iconFetchErrorService.js';
 import PathManager from '../../config/pathManager.js';
 import { runWithConcurrency } from '../../utils/concurrency.js';
@@ -44,12 +44,13 @@ export interface IconItem extends IconTargetItem {
 export async function fetchFavicon(
   url: string,
   faviconsFolder: string,
-  forceRefresh = false
+  forceRefresh = false,
+  shared?: FaviconDownloadShare
 ): Promise<string | null> {
   if (!faviconService) {
     faviconService = new FaviconService(faviconsFolder);
   }
-  return faviconService.fetchFavicon(url, forceRefresh);
+  return faviconService.fetchFavicon(url, forceRefresh, shared);
 }
 
 /** PathManagerからアイコンキャッシュのフォルダ群を取得する */
@@ -128,11 +129,12 @@ async function filterItemsWithoutErrors(
 async function fetchIconForItem(
   item: IconItem,
   folders: IconFolders,
-  forceRefresh = false
+  forceRefresh = false,
+  faviconShare?: FaviconDownloadShare
 ): Promise<string | null> {
   switch (classifyIconTarget(item)) {
     case 'favicon':
-      return fetchFavicon(item.path, folders.favicons, forceRefresh);
+      return fetchFavicon(item.path, folders.favicons, forceRefresh, faviconShare);
 
     case 'uwp':
       return extractUwpIcon(item.path, folders.icons);
@@ -244,10 +246,12 @@ export async function fetchIconsCombined(
     return results;
   }
 
+  // 同じサイトの取得元（/favicon.ico など）は、この回のうちは 1 回だけ取りに行く（A3-258）
+  const faviconShare: FaviconDownloadShare = new Map();
   const faviconResults = await processPhase(
     filteredUrlItems,
     'favicon',
-    (item) => fetchIconForItem(item, folders, forceRefresh),
+    (item) => fetchIconForItem(item, folders, forceRefresh, faviconShare),
     mainI18n.t('iconErrors.faviconNotFound'),
     mainI18n.t('iconErrors.faviconFailed'),
     FAVICON_CONCURRENCY
