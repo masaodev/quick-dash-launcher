@@ -20,6 +20,7 @@ import { mainI18n } from '../mainI18n.js';
 import { showToastWindow } from '../overlayWindowService.js';
 import { BackupService } from '../backupService.js';
 import { markStartup } from '../perfMetrics.js';
+import { clearIconMemoryCache } from '../icon/iconMemoryCache.js';
 import {
   detectExternalChange,
   prepareDataFileContent,
@@ -522,6 +523,8 @@ async function reloadConfigFilesInternal(
   // 起動時・F5・「アイコンをすべて取り直す」はディスクの今の状態で判定し直す
   // （アプリ内の変更に伴う再読込では覚えた結果を使う）
   const startedAt = performance.now();
+  // 起動時・F5・「アイコンをすべて取り直す」は、メモリに覚えたアイコンも捨ててディスクの今の状態を読む
+  if (trigger !== 'internal') clearIconMemoryCache();
   await beginLoadProbeSession(LOAD_PROBE_MODES[trigger]);
   let data: Awaited<ReturnType<typeof loadDataFilesWithReport>>;
   try {
@@ -623,7 +626,9 @@ async function reloadConfigFilesInternal(
   }
 
   if (workspaceChanged || workspaceRefsChanged) {
-    notifyWorkspaceChanged();
+    // 参照の中身だけが変わったとき（起動して最初の読み込みは必ずこれ）は、ランチャーの WSグループの行を読み直させない
+    //（グループは変わっていないので、ランチャーが全件をもう 1 回読むだけになる。A3-254 S3）
+    notifyWorkspaceChanged({ refsOnly: !workspaceChanged });
   }
 
   // 読み直しにかかった時間（A3-254 の計測。データ＝データファイルとフォルダ取込、ワークスペース＝参照の同期を含む）
@@ -632,6 +637,8 @@ async function reloadConfigFilesInternal(
     {
       trigger,
       totalItems: data.items.length,
+      workspaceChanged,
+      workspaceRefsChanged,
       ms: {
         data: Math.round(dataLoadedAt - startedAt),
         workspace: Math.round(workspaceLoadedAt - dataLoadedAt),
