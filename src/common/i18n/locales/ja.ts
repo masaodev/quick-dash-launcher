@@ -2168,6 +2168,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
   backupErrors: {
     snapshotNotFound: 'スナップショットが見つかりません',
     restoreFailed: '復元に失敗しました',
+    restorePartlyFailed:
+      '一部のファイルを戻せませんでした: {{files}}。ほかのアプリがファイルを開いていないか確かめてから、もう一度戻してください',
     deleteFailed: '削除に失敗しました',
     preMigrationCopyFailed: '移行前スナップショットに {{file}} をコピーできませんでした',
     preImportCopyFailed:
