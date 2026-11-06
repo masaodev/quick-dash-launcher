@@ -12,6 +12,8 @@ import {
   decodeIcoBmpEntry,
 } from '../utils/icoDecoder';
 
+import { forgetIconFile } from './icon/iconMemoryCache.js';
+
 interface FaviconSource {
   url: string;
   size?: number;
@@ -58,6 +60,7 @@ export class FaviconService {
         // 表示に不要な大きさの画像は縮小してメモリ・IPC・ディスクの消費を抑える
         const optimized = this.resizeFavicon(faviconData);
         // キャッシュに保存（保存先のフォルダが起動後に消されていても作り直す。A3-175）
+        forgetIconFile(faviconPath);
         if (!FileUtils.writeBinaryFile(faviconPath, optimized)) {
           faviconLogger.warn({ faviconPath }, 'ファビコンをキャッシュに保存できませんでした');
         }
@@ -84,11 +87,13 @@ export class FaviconService {
     const cached = fs.readFileSync(faviconPath);
     if (!this.isLikelyImageData(cached)) {
       fs.unlinkSync(faviconPath);
+      forgetIconFile(faviconPath);
       return null;
     }
     const optimized = this.resizeFavicon(cached);
     if (optimized.length < cached.length) {
       FileUtils.writeBinaryFile(faviconPath, optimized);
+      forgetIconFile(faviconPath);
     }
     return FileUtils.bufferToBase64DataUrl(optimized, 'image/png');
   }

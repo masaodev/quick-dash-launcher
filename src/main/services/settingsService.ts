@@ -26,6 +26,8 @@ let Store: any = null;
 type StoreInstance = {
   get<K extends keyof AppSettings>(key: K): AppSettings[K];
   set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): void;
+  /** まとめて書く（ファイルを読むのも書くのも 1 回） */
+  set(values: Partial<AppSettings>): void;
   store: AppSettings;
   clear(): void;
   delete(key: string): void;
@@ -35,9 +37,15 @@ type StoreInstance = {
 /**
  * アプリケーション設定を管理するサービスクラス
  * electron-storeを使用して設定の永続化を行う
+ *
+ * electron-store（conf）は値を読むたびに settings.json を読んでパースするので、読んだ内容をメモリに持つ（A3-254）。
+ * 書いたとき・消したとき・F5（reloadFromDisk）で捨てて、次に読むときにファイルから読み直す。
+ * QDL の外で settings.json を直したときは、F5 か CLI の reload で反映する
  */
 export class SettingsService {
   private store: StoreInstance | null = null;
+  /** settings.json の中身（パースしたもの）。null なら次に読むときにファイルから読む */
+  private cache: Record<string, unknown> | null = null;
   /** 起動時に壊れていて退避した settings.json の行き先（退避しなかったら null） */
   private recoveredBrokenFile: string | null = null;
   /**
@@ -46,7 +54,8 @@ export class SettingsService {
    */
   private newerFormat = false;
   private sessionOverrides: Partial<AppSettings> = {};
-  private static instance: SettingsService;
+  /** 初期化中・初期化済みのインスタンス（同時に呼ばれても初期化は 1 回だけ。全員が初期化の終わりを待つ） */
+  private static instancePromise: Promise<SettingsService> | null = null;
 
   private static readonly DEFAULT_SETTINGS: AppSettings = {
     settingsVersion: SETTINGS_FORMAT_VERSION,
@@ -211,6 +220,29 @@ export class SettingsService {
     }
   }
 
+  /**
+   * settings.json の中身（メモリに持っている写し）。持っていなければファイルから読む。
+   * 読めなければ（QDL の外で壊したなど）例外を投げ、写しは持たない（直したら次に読むときに読める）
+   */
+  private readRaw(store: StoreInstance): Record<string, unknown> {
+    this.cache ??= store.store as unknown as Record<string, unknown>;
+    return this.cache;
+  }
+
+  /** メモリの写しを捨てる（書いた後・QDL の外で書き換わったかもしれないとき） */
+  private invalidateCache(): void {
+    this.cache = null;
+  }
+
+  /**
+   * 次に読むときに settings.json をファイルから読み直す
+   *
+   * F5・CLI の reload（QDL の外で直した設定を反映する入口）と、スナップショットから戻した後に呼ぶ
+   */
+  public reloadFromDisk(): void {
+    this.invalidateCache();
+  }
+
   /** 新しい版のファイルのとき: その回だけの変更 → ファイルの値 → 既定値の順に読む */
   private readWithoutSaving<K extends keyof AppSettings>(
     store: StoreInstance,
@@ -219,8 +251,10 @@ export class SettingsService {
     if (Object.prototype.hasOwnProperty.call(this.sessionOverrides, key)) {
       return this.sessionOverrides[key] as AppSettings[K];
     }
-    const raw = store.store as unknown as Record<string, unknown>;
-    if (Object.prototype.hasOwnProperty.call(raw, key)) return raw[key] as AppSettings[K];
+    const raw = this.readRaw(store);
+    if (Object.prototype.hasOwnProperty.call(raw, key)) {
+      return structuredClone(raw[key]) as AppSettings[K];
+    }
     return structuredClone(SettingsService.DEFAULT_SETTINGS[key]);
   }
 
@@ -231,12 +265,19 @@ export class SettingsService {
     return this.store;
   }
 
-  public static async getInstance(): Promise<SettingsService> {
-    if (!SettingsService.instance) {
-      SettingsService.instance = new SettingsService();
-      await SettingsService.instance.initializeStore();
-    }
-    return SettingsService.instance;
+  public static getInstance(): Promise<SettingsService> {
+    // 起動中はスプラッシュの言語の問い合わせと起動処理が同時に呼ぶ。インスタンスだけ先に返すと、
+    // 初期化の途中で読み書きされ、ストアを 2 つ作ってしまう
+    SettingsService.instancePromise ??= (async () => {
+      const service = new SettingsService();
+      await service.initializeStore();
+      return service;
+    })().catch((error: unknown) => {
+      // 初期化に失敗したら、次に呼ばれたときにやり直す
+      SettingsService.instancePromise = null;
+      throw error;
+    });
+    return SettingsService.instancePromise;
   }
 
   /**
@@ -277,7 +318,9 @@ export class SettingsService {
       if (this.newerFormat) {
         return SettingsService.sanitizeValue(key, this.readWithoutSaving(store, key));
       }
-      return SettingsService.sanitizeValue(key, store.get(key));
+      // 呼び出し元が返した値を書き換えても写しが変わらないよう、写しのコピーを返す
+      const value = structuredClone(this.readRaw(store)[key]) as AppSettings[K];
+      return SettingsService.sanitizeValue(key, value);
     } catch (error) {
       logger.error({ error, key }, 'Failed to get setting');
       return SettingsService.DEFAULT_SETTINGS[key];
@@ -285,16 +328,13 @@ export class SettingsService {
   }
 
   public async set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void> {
-    const store = await this.ensureStore();
+    await this.ensureStore();
     if (this.newerFormat) {
       this.sessionOverrides[key] = value;
       logger.info({ key, value }, 'Setting updated (not saved: settings.json is a newer format)');
       return;
     }
-    store.set(key, value);
-    if (!SettingsService.isMetadataKey(key)) {
-      this.recordUpdatedVersion(store);
-    }
+    await this.setMultiple({ [key]: value } as Partial<AppSettings>, { log: false });
     logger.info({ key, value }, 'Setting updated');
   }
 
@@ -303,7 +343,7 @@ export class SettingsService {
    */
   public async readRemovedKeys(keys: readonly string[]): Promise<Record<string, unknown>> {
     const store = await this.ensureStore();
-    const raw = store.store as unknown as Record<string, unknown>;
+    const raw = this.readRaw(store);
     const found: Record<string, unknown> = {};
     for (const key of keys) {
       if (Object.prototype.hasOwnProperty.call(raw, key)) found[key] = raw[key];
@@ -315,10 +355,22 @@ export class SettingsService {
   public async deleteRemovedKeys(keys: readonly string[]): Promise<void> {
     const store = await this.ensureStore();
     if (this.newerFormat) return;
-    for (const key of keys) store.delete(key);
+    try {
+      for (const key of keys) store.delete(key);
+    } finally {
+      this.invalidateCache();
+    }
   }
 
-  public async setMultiple(settings: Partial<AppSettings>): Promise<void> {
+  /**
+   * 設定をまとめて保存する（ファイルを読むのも書くのも 1 回。設定値を変えたら版の記録も同じ書き込みに入れる）
+   * @param options.log 「Multiple settings updated」のログを出すか（set から呼ぶときは set のログだけにする）
+   */
+  public async setMultiple(
+    settings: Partial<AppSettings>,
+    options: { log?: boolean } = {}
+  ): Promise<void> {
+    const { log = true } = options;
     const store = await this.ensureStore();
     if (this.newerFormat) {
       for (const [key, value] of Object.entries(settings)) {
@@ -329,21 +381,28 @@ export class SettingsService {
       logger.info({ settings }, 'Multiple settings updated (not saved: newer format)');
       return;
     }
-    const hasNonMetadataKey = Object.keys(settings).some(
+    const values: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(settings)) {
+      if (value !== undefined) values[key] = value;
+    }
+    const hasNonMetadataKey = Object.keys(values).some(
       (key) => !SettingsService.isMetadataKey(key as keyof AppSettings)
     );
+    if (hasNonMetadataKey) {
+      const version = this.versionToRecord(store);
+      if (version) values.updatedWithVersion = version;
+    }
 
-    for (const [key, value] of Object.entries(settings)) {
-      if (value !== undefined) {
-        store.set(key as keyof AppSettings, value);
+    if (Object.keys(values).length > 0) {
+      try {
+        store.set(values as Partial<AppSettings>);
+      } finally {
+        // 書けたときも書けなかったときも、次はファイルの今の中身を読む
+        this.invalidateCache();
       }
     }
 
-    if (hasNonMetadataKey) {
-      this.recordUpdatedVersion(store);
-    }
-
-    logger.info({ settings }, 'Multiple settings updated');
+    if (log) logger.info({ settings }, 'Multiple settings updated');
   }
 
   /**
@@ -354,7 +413,7 @@ export class SettingsService {
   public async getLegacyParallelGroupLaunch(): Promise<boolean> {
     const store = await this.ensureStore();
     try {
-      return (store.store as unknown as Record<string, unknown>).parallelGroupLaunch === true;
+      return this.readRaw(store).parallelGroupLaunch === true;
     } catch {
       return false;
     }
@@ -366,11 +425,14 @@ export class SettingsService {
       if (this.newerFormat) {
         return SettingsService.sanitizeAll({
           ...structuredClone(SettingsService.DEFAULT_SETTINGS),
-          ...store.store,
+          ...structuredClone(this.readRaw(store)),
           ...this.sessionOverrides,
         });
       }
-      return SettingsService.sanitizeAll(store.store);
+      // 呼び出し元が書き換えても写しが変わらないよう、コピーを返す
+      return SettingsService.sanitizeAll(
+        structuredClone(this.readRaw(store)) as unknown as AppSettings
+      );
     } catch (error) {
       logger.error({ error }, 'Failed to get all settings');
       return SettingsService.DEFAULT_SETTINGS;
@@ -387,7 +449,11 @@ export class SettingsService {
       logger.info('Settings reset to defaults (not saved: newer format)');
       return;
     }
-    store.clear();
+    try {
+      store.clear();
+    } finally {
+      this.invalidateCache();
+    }
     logger.info('Settings reset to defaults');
   }
 
@@ -419,17 +485,26 @@ export class SettingsService {
   private setCreatedWithVersion(): void {
     if (!this.store) return;
     const version = app.getVersion();
-    this.store.set('createdWithVersion', version);
-    this.store.set('updatedWithVersion', version);
+    try {
+      this.store.set({ createdWithVersion: version, updatedWithVersion: version });
+    } finally {
+      this.invalidateCache();
+    }
     logger.info({ version }, 'Settings file created with version');
   }
 
-  private recordUpdatedVersion(store: StoreInstance): void {
+  /** 版の記録を進める必要があれば、記録する版を返す（今の版がもう記録されていれば null） */
+  private versionToRecord(store: StoreInstance): string | null {
     const version = app.getVersion();
-    if (store.get('updatedWithVersion') !== version) {
-      store.set('updatedWithVersion', version);
-      logger.info({ version }, 'Settings file updated with version');
+    let recorded: unknown;
+    try {
+      recorded = this.readRaw(store).updatedWithVersion;
+    } catch {
+      recorded = undefined;
     }
+    if (recorded === version) return null;
+    logger.info({ version }, 'Settings file updated with version');
+    return version;
   }
 }
 

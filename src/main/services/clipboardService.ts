@@ -64,6 +64,18 @@ interface ClipboardContents {
  */
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_PENDING_SESSIONS = 20;
+/**
+ * 未確定のキャプチャの大きさの合計の上限（メモリでの大きさ。画像は 1 件 10MB まで持つので、件数だけでは
+ * 数百 MB になりうる。超える分は古いものから捨てる。新しい 1 件は上限を超えても残す。A3-254 M4）
+ */
+const MAX_PENDING_BYTES = 50 * 1024 * 1024;
+
+/** 未確定のキャプチャがメモリで占める大きさ（画像は base64 の文字列で持つので、PNG の 4/3 ほどになる） */
+function pendingSessionBytes(clipboardData: SerializableClipboard, preview?: string): number {
+  const image = clipboardData.imageBase64?.length ?? 0;
+  const pngBytes = image > 0 ? Math.floor((image * 3) / 4) : 0;
+  return Math.max(0, clipboardData.dataSize - pngBytes) + image + (preview?.length ?? 0);
+}
 
 const MIME_TEXT = 'text/plain';
 const MIME_HTML = 'text/html';
@@ -335,7 +347,7 @@ export class ClipboardService {
       const sessionId = generateId();
       const capturedAt = Date.now();
 
-      this.prunePendingSessions(capturedAt);
+      this.prunePendingSessions(capturedAt, pendingSessionBytes(clipboardData, preview));
       this.pendingSessions.set(sessionId, { clipboardData, preview, capturedAt });
 
       logger.info(
@@ -387,17 +399,28 @@ export class ClipboardService {
     }
   }
 
-  /** 期限切れのセッションと、件数の上限を超える古いセッションを捨てる（新しい 1 件を足す前に呼ぶ） */
-  private prunePendingSessions(now: number): void {
+  /**
+   * 期限切れのセッションと、件数・大きさの上限を超える古いセッションを捨てる（新しい 1 件を足す前に呼ぶ）
+   * @param incomingBytes これから足す 1 件の大きさ（dataSize）
+   */
+  private prunePendingSessions(now: number, incomingBytes = 0): void {
     for (const [id, session] of this.pendingSessions) {
       if (now - session.capturedAt > SESSION_TTL_MS) {
         this.pendingSessions.delete(id);
       }
     }
+    let totalBytes = incomingBytes;
+    for (const session of this.pendingSessions.values())
+      totalBytes += pendingSessionBytes(session.clipboardData, session.preview);
     // Map は挿入順なので、先頭から古い
-    while (this.pendingSessions.size >= MAX_PENDING_SESSIONS) {
+    while (
+      this.pendingSessions.size >= MAX_PENDING_SESSIONS ||
+      (this.pendingSessions.size > 0 && totalBytes > MAX_PENDING_BYTES)
+    ) {
       const oldestId = this.pendingSessions.keys().next().value;
       if (oldestId === undefined) break;
+      const oldest = this.pendingSessions.get(oldestId);
+      if (oldest) totalBytes -= pendingSessionBytes(oldest.clipboardData, oldest.preview);
       this.pendingSessions.delete(oldestId);
     }
   }

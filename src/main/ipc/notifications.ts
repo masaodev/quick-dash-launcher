@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron';
 import { dataLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import type { WorkspaceChangeInfo } from '@common/types/electronApi';
 
 /**
  * データ変更・ワークスペース変更を全ウィンドウへ通知する
@@ -35,10 +36,11 @@ export function notifyDataChanged(): void {
 
 /**
  * ワークスペースの変更を全ウィンドウに通知する
+ * @param change 変わったものの印（参照アイテムの中身だけが変わったときは `refsOnly`。グループは変わっていない）
  */
-export function notifyWorkspaceChanged(): void {
+export function notifyWorkspaceChanged(change: WorkspaceChangeInfo = {}): void {
   for (const window of BrowserWindow.getAllWindows()) {
     if (window.isDestroyed()) continue;
-    window.webContents.send(IPC_CHANNELS.WORKSPACE_CHANGED);
+    window.webContents.send(IPC_CHANNELS.WORKSPACE_CHANGED, change);
   }
 }

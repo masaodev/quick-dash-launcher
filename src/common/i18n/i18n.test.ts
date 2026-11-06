@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 
 import { en } from './locales/en';
 import { ja } from './locales/ja';
+import { createI18n } from './resources';
 
-import { createI18n, flattenMessages, isLanguageSetting, resolveLanguage } from './index';
+import { flattenMessages, isLanguageSetting, resolveLanguage } from './index';
 
 describe('resolveLanguage', () => {
   it('ja・en を指定したらそのまま使うこと', () => {

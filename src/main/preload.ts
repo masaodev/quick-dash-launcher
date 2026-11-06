@@ -10,7 +10,7 @@ import type {
   AdminTab,
   WorkspaceTarget,
 } from '@common/types';
-import type { ElectronAPI } from '@common/types/electronApi';
+import type { ElectronAPI, WorkspaceChangeInfo } from '@common/types/electronApi';
 import type { IpcInvokeArgs, IpcInvokeChannel, IpcInvokeResult } from '@common/types/ipcInvokeMap';
 import {
   IPC_CHANNELS,
@@ -137,7 +137,10 @@ const electronAPI: ElectronAPI = {
   onWorkspaceRefitHeight: (callback) =>
     createEventListenerNoArg(IPC_CHANNELS.EVENT_WORKSPACE_REFIT_HEIGHT, callback),
   onWorkspaceChanged: (callback) =>
-    createEventListenerNoArg(IPC_CHANNELS.WORKSPACE_CHANGED, callback),
+    // 古い呼び出し（印なし）でも受け取れるよう、空の印にそろえる
+    createEventListener<WorkspaceChangeInfo | undefined>(IPC_CHANNELS.WORKSPACE_CHANGED, (change) =>
+      callback(change ?? {})
+    ),
   pin: {
     get: () => ipcInvoke(IPC_CHANNELS.PIN_GET),
     set: (level) => ipcInvoke(IPC_CHANNELS.PIN_SET, level),
