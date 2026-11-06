@@ -167,6 +167,12 @@ const AdminApp: React.FC = () => {
   const editing = useAdminItemEditing(editableItems, handleEditableItemsSave);
   editingRef.current = editing;
 
+  // 未保存の変更があるあいだは、隠れていても放置で破棄しないよう本体に知らせる（A3-258）
+  const hasUnsavedChanges = editing.hasUnsavedChanges;
+  useEffect(() => {
+    window.electronAPI.setAdminUnsaved(hasUnsavedChanges).catch(() => {});
+  }, [hasUnsavedChanges]);
+
   async function handleSettingsSave(newSettings: AppSettings): Promise<void> {
     try {
       const isHotkeyChanged = settings && settings.hotkey !== newSettings.hotkey;
