@@ -26,6 +26,9 @@ class FaviconTimeoutError extends Error {}
 /** 応答が上限より大きかった（失敗理由の判定に使う） */
 class FaviconTooLargeError extends Error {}
 
+/** 一括取得の 1 回のあいだ共有する、取得元の URL → ダウンロードの結果 */
+export type FaviconDownloadShare = Map<string, Promise<Buffer | null>>;
+
 export class FaviconService {
   private faviconsFolder: string;
   private defaultSize = 64;
@@ -34,31 +37,36 @@ export class FaviconService {
   /** ファビコン（og:image を含む）1 件の上限。超えたら打ち切って次の取得元へ進む */
   private faviconMaxBytes = 5 * 1024 * 1024;
 
-  /**
-   * 直近のダウンロード（取得元の URL → 結果の Promise）。同じサイトのアイテムを並べて取得すると、
-   * どれも同じ `/favicon.ico` などを試すので、短い間は 1 回の結果を分け合う（失敗も含む。A3-258）
-   */
-  private recentDownloads = new Map<string, { promise: Promise<Buffer | null>; at: number }>();
-  private recentDownloadTtlMs = 30_000;
-
   constructor(faviconsFolder: string) {
     this.faviconsFolder = faviconsFolder;
   }
 
-  /** 直近に同じ URL を取りに行っていれば、その結果を使う（取得中なら終わるのを待つ） */
-  private downloadFaviconShared(url: string): Promise<Buffer | null> {
-    const now = Date.now();
-    const recent = this.recentDownloads.get(url);
-    if (recent && now - recent.at < this.recentDownloadTtlMs) return recent.promise;
-    for (const [key, entry] of this.recentDownloads) {
-      if (now - entry.at >= this.recentDownloadTtlMs) this.recentDownloads.delete(key);
-    }
+  /**
+   * 取得元のダウンロード。`shared` を渡すと、同じ取得の回のうちに同じ URL を取りに行った結果
+   * （取得中なら終わるのを待つ。失敗も含む）を使う。同じサイトのアイテムを並べて取得すると、
+   * どれも同じ `/favicon.ico` などを試すため（A3-258）。回が終われば `shared` ごと捨てるので、
+   * 次の回は必ず取り直す
+   */
+  private downloadFaviconShared(
+    url: string,
+    shared?: FaviconDownloadShare
+  ): Promise<Buffer | null> {
+    if (!shared) return this.downloadFavicon(url);
+    const existing = shared.get(url);
+    if (existing) return existing;
     const promise = this.downloadFavicon(url);
-    this.recentDownloads.set(url, { promise, at: now });
+    shared.set(url, promise);
     return promise;
   }
 
-  async fetchFavicon(url: string, forceRefresh = false): Promise<string | null> {
+  /**
+   * @param shared 一括取得の 1 回で共有する、取得元のダウンロードの結果（呼び出し側が回ごとに作る）
+   */
+  async fetchFavicon(
+    url: string,
+    forceRefresh = false,
+    shared?: FaviconDownloadShare
+  ): Promise<string | null> {
     try {
       const domain = new URL(url).hostname;
       const faviconPath = path.join(
@@ -74,7 +82,7 @@ export class FaviconService {
       }
 
       // 複数の方法でファビコンを取得
-      const faviconData = await this.tryMultipleSources(url);
+      const faviconData = await this.tryMultipleSources(url, shared);
 
       if (faviconData) {
         // 表示に不要な大きさの画像は縮小してメモリ・IPC・ディスクの消費を抑える
@@ -224,7 +232,10 @@ export class FaviconService {
     return data.subarray(0, 512).toString('utf8').toLowerCase().includes('<svg');
   }
 
-  private async tryMultipleSources(url: string): Promise<Buffer | null> {
+  private async tryMultipleSources(
+    url: string,
+    shared?: FaviconDownloadShare
+  ): Promise<Buffer | null> {
     const sources = await this.getFaviconSources(url);
 
     for (const source of sources) {
@@ -233,7 +244,7 @@ export class FaviconService {
           { url: source.url, size: source.size, isOgImage: source.isOgImage },
           'ファビコンダウンロードを試行'
         );
-        const data = await this.downloadFaviconShared(source.url);
+        const data = await this.downloadFaviconShared(source.url, shared);
         if (data && data.length > 0) {
           // エラーページ等のHTMLが200で返るサイトがあるため、画像データのみ受け入れる
           if (!this.isLikelyImageData(data)) {
