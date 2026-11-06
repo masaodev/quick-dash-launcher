@@ -7,6 +7,7 @@ const responsePlan = vi.hoisted(() => ({
   headers: {} as Record<string, string>,
   chunks: [] as Buffer[],
   aborted: false,
+  requests: 0,
 }));
 
 vi.mock('electron', async () => {
@@ -15,6 +16,8 @@ vi.mock('electron', async () => {
     nativeImage: {},
     net: {
       request: () => {
+        responsePlan.requests++;
+        responsePlan.aborted = false;
         const request = new Emitter() as EventEmitter & Record<string, unknown>;
         request.setHeader = () => undefined;
         request.abort = () => {
@@ -44,9 +47,13 @@ vi.mock('@common/logger', () => ({
 
 import { FaviconService } from './faviconService';
 
-type Downloader = { downloadFavicon: (url: string) => Promise<Buffer | null> };
+type Downloader = {
+  downloadFavicon: (url: string) => Promise<Buffer | null>;
+  downloadFaviconShared: (url: string) => Promise<Buffer | null>;
+};
 const service = new FaviconService('unused') as unknown as Downloader & {
   faviconMaxBytes: number;
+  recentDownloads: Map<string, unknown>;
 };
 
 describe('FaviconService のダウンロードの上限', () => {
@@ -77,5 +84,41 @@ describe('FaviconService のダウンロードの上限', () => {
     await expect(service.downloadFavicon('https://example.com/big.png')).rejects.toThrow(
       '大きすぎます'
     );
+  });
+});
+
+describe('FaviconService の直近のダウンロードの共有', () => {
+  beforeEach(() => {
+    service.faviconMaxBytes = 10;
+    service.recentDownloads.clear();
+    responsePlan.headers = {};
+    responsePlan.chunks = [Buffer.from('icon')];
+    responsePlan.aborted = false;
+    responsePlan.requests = 0;
+  });
+
+  it('同じ URL を同時に取りに行くと、通信は 1 回で結果を分け合う', async () => {
+    const results = await Promise.all([
+      service.downloadFaviconShared('https://example.com/favicon.ico'),
+      service.downloadFaviconShared('https://example.com/favicon.ico'),
+      service.downloadFaviconShared('https://example.com/favicon.ico'),
+    ]);
+    expect(results.map((r) => r?.toString())).toEqual(['icon', 'icon', 'icon']);
+    expect(responsePlan.requests).toBe(1);
+  });
+
+  it('失敗も分け合う（同じサイトの 404 を何度も試さない）', async () => {
+    responsePlan.chunks = [Buffer.from('12345678901')];
+    const first = service.downloadFaviconShared('https://example.com/big.png');
+    const second = service.downloadFaviconShared('https://example.com/big.png');
+    await expect(first).rejects.toThrow('大きすぎます');
+    await expect(second).rejects.toThrow('大きすぎます');
+    expect(responsePlan.requests).toBe(1);
+  });
+
+  it('URL が違えば別に取りに行く', async () => {
+    await service.downloadFaviconShared('https://example.com/favicon.ico');
+    await service.downloadFaviconShared('https://example.org/favicon.ico');
+    expect(responsePlan.requests).toBe(2);
   });
 });
