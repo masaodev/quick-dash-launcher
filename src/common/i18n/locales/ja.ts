@@ -2105,6 +2105,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
     itemNotFound: 'ID {{id}} のアイテムが見つかりません',
     invalidTargetFile: '登録先のデータファイル名が正しくありません: {{files}}',
     fileUnreadable: 'ファイルを読み込めませんでした',
+    writeBlockedUnreadable:
+      '{{file}} を読み込めなかったため、書き込みを中止しました。ほかのアプリがファイルを開いていないか確かめてから、もう一度試してください',
     convertFailed: '変換に失敗: {{error}}',
     configLoadFailed: '設定ファイルの読み込みに失敗しました（破損の可能性）: {{files}}',
     settingsRecovered:
