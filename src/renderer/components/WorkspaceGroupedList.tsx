@@ -225,6 +225,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     groupsMap,
     groups,
     itemsByGroup,
+    mixedChildrenByGroup,
     setEditingItemId,
     onMoveItemToGroup,
     onRemoveItem,
@@ -373,14 +374,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
    * 5 件以上なら確かめてから開く。元が見つからない参照は飛ばす
    */
   async function openAllInGroup(groupId: string): Promise<void> {
-    const { groups, groupsMap, itemsByGroup, onLaunch, t } = latest.current;
-    const collect = (id: string): WorkspaceItem[] => [
-      ...(itemsByGroup[id] || []),
-      ...groups
-        .filter((g) => g.parentGroupId === id)
-        .sort((a, b) => a.order - b.order)
-        .flatMap((g) => collect(g.id)),
-    ];
+    const { groupsMap, mixedChildrenByGroup, onLaunch, t } = latest.current;
+    // 画面と同じ順（アイテムとサブグループを混ぜた並び）でたどる。以前はアイテムを先に、
+    // サブグループを後に集めていて、混ぜて並べていると画面の順と違った（A3-258）
+    const collect = (id: string): WorkspaceItem[] =>
+      (mixedChildrenByGroup[id] || []).flatMap((child) =>
+        child.kind === 'item' ? [child.item] : collect(child.group.id)
+      );
     const targets = collect(groupId).filter((item) => item.type !== 'ref');
     const name = groupsMap.get(groupId)?.displayName ?? '';
     if (targets.length === 0) {
