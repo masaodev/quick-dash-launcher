@@ -2103,6 +2103,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     itemNotFound: "The item with ID {{id}} wasn't found",
     invalidTargetFile: 'The data file name to add to is invalid: {{files}}',
     fileUnreadable: "Couldn't read the file",
+    writeBlockedUnreadable:
+      "Writing was stopped because {{file}} couldn't be read. Make sure no other app has the file open, then try again.",
     convertFailed: 'Conversion failed: {{error}}',
     configLoadFailed: "Couldn't load the settings files (they may be corrupted): {{files}}",
     settingsRecovered:
