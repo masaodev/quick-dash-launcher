@@ -320,7 +320,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   handleIpc(IPC_CHANNELS.SETTINGS_GET, async () => {
     const settingsService = await SettingsService.getInstance();
     const allSettings = await settingsService.getAll();
-    logger.info('Settings get all request');
+    logger.debug('Settings get all request');
     return allSettings;
   });
 

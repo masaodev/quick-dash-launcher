@@ -1,4 +1,5 @@
 import * as path from 'path';
+import { performance } from 'node:perf_hooks';
 
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
@@ -18,6 +19,7 @@ import { PathManager } from '../../config/pathManager.js';
 import { mainI18n } from '../mainI18n.js';
 import { showToastWindow } from '../overlayWindowService.js';
 import { BackupService } from '../backupService.js';
+import { markStartup } from '../perfMetrics.js';
 import {
   detectExternalChange,
   prepareDataFileContent,
@@ -256,7 +258,7 @@ async function loadDataFilesWithReport(configFolder: string): Promise<DataFilesL
       });
     });
 
-    dataLogger.info(
+    dataLogger.debug(
       { tabCount: dataFileTabs.length, mappedFiles: Array.from(fileToTabMap.keys()) },
       'タブ設定を読み込みました'
     );
@@ -519,6 +521,7 @@ async function reloadConfigFilesInternal(
 ): Promise<AppItem[]> {
   // 起動時・F5・「アイコンをすべて取り直す」はディスクの今の状態で判定し直す
   // （アプリ内の変更に伴う再読込では覚えた結果を使う）
+  const startedAt = performance.now();
   await beginLoadProbeSession(LOAD_PROBE_MODES[trigger]);
   let data: Awaited<ReturnType<typeof loadDataFilesWithReport>>;
   try {
@@ -527,6 +530,8 @@ async function reloadConfigFilesInternal(
     endLoadProbeSession(null);
     throw error;
   }
+
+  const dataLoadedAt = performance.now();
 
   // ワークスペースの参照アイテムが指す先の表を作り直す（ワークスペースを読み直す前に。参照の名前の控えに使う）
   setMainItemIndex(buildMainItemIndex(data.items, await readDataFileTabs()));
@@ -551,6 +556,8 @@ async function reloadConfigFilesInternal(
   } catch (error) {
     dataLogger.error({ error }, 'ワークスペースファイルの再読込に失敗しました');
   }
+
+  const workspaceLoadedAt = performance.now();
 
   // すべて読めたときだけ、どこからも消えたパスの拡張子なしファイルのメモを捨てる
   const allFilesOk =
@@ -618,6 +625,21 @@ async function reloadConfigFilesInternal(
   if (workspaceChanged || workspaceRefsChanged) {
     notifyWorkspaceChanged();
   }
+
+  // 読み直しにかかった時間（A3-254 の計測。データ＝データファイルとフォルダ取込、ワークスペース＝参照の同期を含む）
+  markStartup('first-data-loaded');
+  dataLogger.info(
+    {
+      trigger,
+      totalItems: data.items.length,
+      ms: {
+        data: Math.round(dataLoadedAt - startedAt),
+        workspace: Math.round(workspaceLoadedAt - dataLoadedAt),
+        total: Math.round(performance.now() - startedAt),
+      },
+    },
+    '設定ファイルを読み直しました'
+  );
 
   return data.items;
 }

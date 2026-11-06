@@ -15,9 +15,9 @@ import {
 import { IPC_CHANNELS, type IpcChannelName } from '@common/ipcChannels';
 import { windowLogger } from '@common/logger';
 import type { WindowPinMode, WindowPositionMode } from '@common/types';
-import { PerformanceTimer } from '@common/utils/performanceTimer';
 
 import { HotkeyService } from './services/hotkeyService.js';
+import { beginShowTiming, recordShowStep } from './services/perfMetrics.js';
 import { SettingsService } from './services/settingsService.js';
 import { UpdateCheckService } from './services/updateCheckService.js';
 import { mainI18n } from './services/mainI18n.js';
@@ -605,7 +605,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
   switch (positionMode) {
     case 'center':
       mainWindow.center();
-      windowLogger.info('ウィンドウを画面中央に配置しました');
+      windowLogger.debug('ウィンドウを画面中央に配置しました');
       break;
 
     case 'cursor': {
@@ -625,7 +625,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
         display.workArea
       );
       moveWindowKeepingSize(mainWindow, x, y);
-      windowLogger.info(`ウィンドウをカーソル位置に配置しました: (${x}, ${y})`);
+      windowLogger.debug(`ウィンドウをカーソル位置に配置しました: (${x}, ${y})`);
       break;
     }
 
@@ -647,7 +647,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
         displayBounds
       );
       moveWindowKeepingSize(mainWindow, x, y);
-      windowLogger.info(`ウィンドウをカーソルのモニター中央に配置しました: (${x}, ${y})`);
+      windowLogger.debug(`ウィンドウをカーソルのモニター中央に配置しました: (${x}, ${y})`);
       break;
     }
 
@@ -671,7 +671,7 @@ export async function setWindowPosition(mode?: WindowPositionMode): Promise<void
         }
       } else {
         moveWindowKeepingSize(mainWindow, saved.x, saved.y);
-        windowLogger.info(`ウィンドウを固定位置に配置しました: (${saved.x}, ${saved.y})`);
+        windowLogger.debug(`ウィンドウを固定位置に配置しました: (${saved.x}, ${saved.y})`);
       }
       break;
     }
@@ -753,20 +753,21 @@ async function showMainWindowInternal(
   if (!mainWindow) return;
   const { startTime, enableTimer = false, placeAtCenter = false } = options;
 
-  const timer = enableTimer
-    ? new PerformanceTimer(startTime, (msg) => windowLogger.info(msg))
-    : null;
-  timer?.log(`hotkey-pressed: 0.00ms (start: ${startTime})`);
+  // 段階ごとの時間を覚え、画面側の描画が終わったところで 1 行にまとめて出す（perfMetrics）
+  if (enableTimer) beginShowTiming(startTime);
+  const step = (label: string) => {
+    if (enableTimer) recordShowStep(label);
+  };
 
   if (placeAtCenter) {
     mainWindow.center();
   } else {
     await setWindowPosition();
   }
-  timer?.log('position-set');
+  step('position-set');
 
   await toggleCompanionWindows(true);
-  timer?.log('companion-windows-shown');
+  step('companion-windows-shown');
 
   // 表示したまま別の仮想デスクトップにある（ピン留め中など）と show() では出てこない
   bringMainWindowToCurrentDesktop();
@@ -775,10 +776,10 @@ async function showMainWindowInternal(
   // 表示中は描画の抑制を切る（隠れている扱いで描き直しが止まるのを防ぐ。A3-130）
   setMainWindowRenderingKept(true);
   mainWindow.show();
-  timer?.log('window-shown');
+  step('window-shown');
 
   mainWindow.focus();
-  timer?.log('window-focused');
+  step('window-focused');
 
   bringCompanionsToFront();
 

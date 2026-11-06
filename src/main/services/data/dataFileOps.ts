@@ -41,7 +41,7 @@ export function createDataFile(configFolder: string, fileName: string): CreateDa
   }
 
   const filePath = path.join(configFolder, fileName);
-  dataLogger.info(`create-data-file called: ${fileName} at ${filePath}`);
+  dataLogger.debug(`create-data-file called: ${fileName} at ${filePath}`);
 
   if (FileUtils.exists(filePath)) {
     // 起動のたびにタブのファイルを確かめに来るので、既にあるのは普通のこと（警告にしない）

@@ -405,6 +405,29 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - 大文字小文字を区別しないインクリメンタルサーチ
 - 絞り込みはレンダラー側でリアルタイム実行
 
+#### 速さとメモリの計測
+
+速さやメモリに関わる変更は、前後の数字をログで比べる（`src/main/services/perfMetrics.ts`）。本番と同じ info の水準で次の行が出る。
+
+| ログの行 | 出るとき | 中身 |
+| --- | --- | --- |
+| `起動の計測` | 起動の準備ができた 5 秒後に 1 回 | `startupMs`: プロセスが動き出してからの経過ミリ秒（`ready`・`splash-window-created`・`splash-shown`・`settings-ready`・`windows-created`・`first-data-loaded`・`renderer-ready`・`launcher-shown`） |
+| `設定ファイルを読み直しました` | データファイルとワークスペースを読み直すたび | `trigger`（読み込みのきっかけ）・`totalItems`・`ms`（`data`＝データファイルとフォルダ取込、`workspace`、`total`） |
+| `キャッシュのアイコンを読み込みました` | 画面がキャッシュのアイコンをまとめて読むたび | `requested`（アイテム数）・`found`（見つかった数）・`ms` |
+| `表示の時間` | ホットキーでランチャーを出したあと、描画が終わったとき | `showMs`: メイン側（`position-set`・`companion-windows-shown`・`window-shown`・`window-focused`）と画面側（`renderer-received`・`before-animation-frame`・`window-show-complete`）の経過ミリ秒 |
+| `メモリの計測` | 起動の 1 分後と 1 時間後 | `processes`: プロセスの種類ごとの数と MB（`app.getAppMetrics()`）、`mainHeapMB`: メインプロセスのヒープ |
+
+アイテムの多い環境は `node scripts/generate-perf-data.mjs` で作る（既定はアイテム 3,000 件・アイコン 2,000 個・データファイル 5 本を `tmp/perf-data/` に。`--items`・`--icons`・`--files`・`--out` で変えられる）。ビルドしてから、その設定フォルダで起動してログを見る。
+
+```bash
+node scripts/generate-perf-data.mjs
+npm run build
+QUICK_DASH_CONFIG_DIR="$PWD/tmp/perf-data" APP_INSTANCE=perf HOTKEY=Ctrl+Alt+F8 npx electron .
+# tmp/perf-data/logs/main.log の上の行を見る
+```
+
+`npm run dev` は開発モード（ログが debug の水準、画面は Vite の開発サーバー）なので、数字を比べるときは使わない。
+
 ## UIコンポーネント構造
 
 画面とコンポーネントの対応は、[画面一覧](../screens/README.md) と各画面仕様の「基本情報」を正とする（画面のいちばん上のコンポーネントには「画面仕様:」コメントがある）。共通ダイアログは [共通ダイアログ](../screens/dialogs.md)、ランチャーの ⚙️ メニューは [ランチャー](../screens/main-window.md) を参照。

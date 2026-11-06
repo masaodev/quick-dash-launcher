@@ -1,4 +1,7 @@
+import { performance } from 'node:perf_hooks';
+
 import { IPC_CHANNELS } from '@common/ipcChannels';
+import { iconLogger } from '@common/logger';
 
 import { IconFetchErrorService } from '../services/iconFetchErrorService.js';
 import { getMainWindow } from '../windowManager.js';
@@ -40,9 +43,20 @@ export function setupIconHandlers(
       : extractIcon(filePath, iconsFolder)
   );
 
-  handleIpc(IPC_CHANNELS.LOAD_CACHED_ICONS, (_event, items: IconItem[]) =>
-    loadCachedIcons(items, folders)
-  );
+  handleIpc(IPC_CHANNELS.LOAD_CACHED_ICONS, async (_event, items: IconItem[]) => {
+    // 読み込みにかかった時間を残す（A3-254 の計測。アイテムの読み直しのたびに全件を読むので、件数と時間を見る）
+    const startedAt = performance.now();
+    const icons = await loadCachedIcons(items, folders);
+    iconLogger.info(
+      {
+        requested: items.length,
+        found: Object.keys(icons).length,
+        ms: Math.round(performance.now() - startedAt),
+      },
+      'キャッシュのアイコンを読み込みました'
+    );
+    return icons;
+  });
 
   // 統合進捗API（進捗はランチャーの進捗バーに表示する。silent なら進捗を送らない）
   handleIpc(

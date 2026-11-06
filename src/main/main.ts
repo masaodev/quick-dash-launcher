@@ -61,6 +61,11 @@ import { mainI18n } from './services/mainI18n.js';
 import { installNavigationGuard } from './utils/navigationGuard.js';
 import { startFileLogging } from './services/fileLogging.js';
 import { LaunchUsageService } from './services/launchUsageService.js';
+import {
+  markStartup,
+  scheduleMemoryMetrics,
+  scheduleStartupReport,
+} from './services/perfMetrics.js';
 import { UpdateCheckService, fetchGitHubReleases } from './services/updateCheckService.js';
 import { getAppDistribution } from './utils/appDistribution.js';
 import {
@@ -176,6 +181,7 @@ if (EnvConfig.isDevelopment) {
 process.on('unhandledRejection', handleStartupFailure);
 
 app.whenReady().then(async () => {
+  markStartup('ready');
   // 画面がページ側から別の URL へ移らないようにする（ウィンドウを作る前に付ける）
   installNavigationGuard();
 
@@ -225,13 +231,17 @@ app.whenReady().then(async () => {
     filePath: path.join(__dirname, 'preload.js'),
   });
 
+  markStartup('cli-server-started');
+
   // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）
   if (!EnvConfig.skipSplashWindow && !launchedByCli) {
     await createSplashWindow();
+    markStartup('splash-shown');
   }
 
   // 以下はスプラッシュ表示後にバックグラウンドで初期化
   const settingsService = await SettingsService.getInstance();
+  markStartup('settings-ready');
   await applyLanguageSetting();
 
   // 初回起動判定: ホットキーが未設定なら初回起動
@@ -309,6 +319,7 @@ app.whenReady().then(async () => {
 
   // ランチャー・トレイ・ワークスペースを並列作成（互いに独立）
   await Promise.all([createWindow(), createTray(), createWorkspaceWindow()]);
+  markStartup('windows-created');
 
   // 再起動しても直前と同じ見え方に戻す（📌 ありのワークスペース・切り離しウィンドウを出す）。
   // 待たずにホットキーを登録するので、復元の途中でランチャーが出ていたら、終わった後に合わせる
@@ -321,8 +332,12 @@ app.whenReady().then(async () => {
 
   // レンダラーの準備完了を待ってからスプラッシュに初期化完了を通知
   await rendererReadyPromise;
+  markStartup('renderer-ready');
   notifySplashInitComplete();
   resolveAppReady();
+  // 起動の直後に続く読み込み（ブックマーク自動取込など）も含めて出す。メモリは 1 分後と 1 時間後
+  scheduleStartupReport(5_000);
+  scheduleMemoryMetrics();
 
   // settings.json が壊れていて退避したときは、既定の設定で起動したことを知らせる
   //（初回設定の画面が出る理由と、元の設定の残り場所が分かるように）

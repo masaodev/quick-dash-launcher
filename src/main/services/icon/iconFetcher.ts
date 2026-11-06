@@ -108,7 +108,7 @@ async function filterItemsWithoutErrors(
 
   return items.filter((item) => {
     if (errorKeys.has(item.path)) {
-      iconLogger.info({ path: item.path }, `Skipping ${errorType} fetch due to previous error`);
+      iconLogger.debug({ path: item.path }, `Skipping ${errorType} fetch due to previous error`);
       return false;
     }
     return true;

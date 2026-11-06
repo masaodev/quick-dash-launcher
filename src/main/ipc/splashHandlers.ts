@@ -2,6 +2,7 @@ import { BrowserWindow } from 'electron';
 import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
+import { markStartup } from '../services/perfMetrics';
 import { closeSplashWindow } from '../splashWindowManager';
 import { handleIpc } from '../utils/ipcWrapper';
 
@@ -21,6 +22,7 @@ export function setupSplashHandlers(getMainWindow: () => BrowserWindow | null): 
     if (mainWindow) {
       mainWindow.show();
       mainWindow.focus();
+      markStartup('launcher-shown');
       windowLogger.info('ランチャーを自動表示しました');
     }
 
