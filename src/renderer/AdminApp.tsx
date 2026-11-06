@@ -14,6 +14,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import { useAdminItemEditing, type AdminItemEditing } from './hooks/useAdminItemEditing';
 import { useAlertDialog } from './hooks/useDialogManager';
 import type { SettingsCategory } from './utils/settingsResetKeys';
+import { pickChangedSettings } from './utils/settingsDiff';
 import { debugInfo, logError } from './utils/debug';
 
 const AdminApp: React.FC = () => {
@@ -73,6 +74,13 @@ const AdminApp: React.FC = () => {
       debugInfo('データ変更通知を受信、データを再読み込みします');
       loadData(false);
     });
+    // CLI・ランチャーなど、ほかの所で設定が変わったら読み直す（設定タブが古い値を持ち続けないように。A3-258）
+    const unsubscribeSettings = window.electronAPI.onSettingsChanged(() => {
+      window.electronAPI
+        .getSettings()
+        .then(setSettings)
+        .catch((error) => logError('Failed to reload settings:', error));
+    });
     const unsubscribeWindow = window.electronAPI.onWindowShown(() => {
       debugInfo('ウィンドウが表示されました、データを再読み込みします');
       loadData(false);
@@ -94,6 +102,7 @@ const AdminApp: React.FC = () => {
       unsubscribeImportModal?.();
       unsubscribeRevealItem?.();
       unsubscribeData?.();
+      unsubscribeSettings?.();
       unsubscribeWindow?.();
       unsubscribeClose?.();
       unsubscribeHidden?.();
@@ -167,28 +176,35 @@ const AdminApp: React.FC = () => {
   const editing = useAdminItemEditing(editableItems, handleEditableItemsSave);
   editingRef.current = editing;
 
-  async function handleSettingsSave(newSettings: AppSettings): Promise<void> {
+  /** 設定タブの保存。保存できたら true（できなかったときはここで知らせて false。A3-258） */
+  async function handleSettingsSave(newSettings: AppSettings): Promise<boolean> {
     try {
       const isHotkeyChanged = settings && settings.hotkey !== newSettings.hotkey;
-      // 列の表示と幅はアイテム管理がその場で保存するので、開いたときの古い値で書き戻さない
-      const { adminItemColumns: _columns, ...settingsToSave } = newSettings;
-      await window.electronAPI.setMultipleSettings(settingsToSave);
+      // 変えた項目だけを保存する。全部を書くと、管理ウィンドウを開いている間に CLI などで変えた項目を
+      // 開いたときの値に戻してしまう（A3-258）。列の表示と幅はアイテム管理がその場で保存するので書かない
+      const { adminItemColumns: _columns, ...candidates } = newSettings;
+      const settingsToSave = settings ? pickChangedSettings(settings, candidates) : candidates;
+      if (Object.keys(settingsToSave).length > 0) {
+        await window.electronAPI.setMultipleSettings(settingsToSave);
+      }
 
       if (isHotkeyChanged) {
         const success = await window.electronAPI.changeHotkey(newSettings.hotkey);
         if (!success) {
           logError('Failed to register new hotkey:', newSettings.hotkey);
           showAlert(t('admin.hotkeyRegisterFailed', { hotkey: newSettings.hotkey }), 'error');
-          return;
+          return false;
         }
         debugInfo(`Hotkey changed successfully to: ${newSettings.hotkey}`);
       }
 
       setSettings(newSettings);
       debugInfo('Settings saved successfully');
+      return true;
     } catch (error) {
       logError('Failed to save settings:', error);
       showAlert(t('admin.settingsSaveFailed'), 'error');
+      return false;
     }
   }
 
