@@ -12,4 +12,5 @@ import { createI18n } from '@common/i18n/resources';
 export const mainI18n: i18n = createI18n(FALLBACK_LANGUAGE);
 
 // t を渡されなかった common の関数（データファイル・ワークスペースの解析）が使う、正本の言語の t
-setFallbackT(createI18n(FALLBACK_LANGUAGE).t);
+// （言語を切り替えても正本の言語で引けるよう、同じインスタンスの言語を固定した t を渡す）
+setFallbackT(mainI18n.getFixedT(FALLBACK_LANGUAGE));

@@ -524,6 +524,8 @@ async function reloadConfigFilesInternal(
   // 起動時・F5・「アイコンをすべて取り直す」はディスクの今の状態で判定し直す
   // （アプリ内の変更に伴う再読込では覚えた結果を使う）
   const startedAt = performance.now();
+  // ほかの呼び出し（CLI の変換など）が足したフォルダ取込の集計を捨て、この読み直しの分だけ数える
+  takeDirScanStats();
   // 起動時・F5・「アイコンをすべて取り直す」は、メモリに覚えたアイコンも捨ててディスクの今の状態を読む
   // ショートカットを読んだ結果も同じ（リンク先を消した・作ったことは .lnk に現れないので）
   if (trigger !== 'internal') {

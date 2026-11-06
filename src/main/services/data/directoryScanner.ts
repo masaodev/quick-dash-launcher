@@ -11,11 +11,9 @@ import { detectFileItemTypeSync, detectItemTypeSync } from '@common/utils/itemTy
 import { LauncherItem } from '@common/types';
 import type { DirPreviewItem, DirPreviewResult, DirPreviewStatus } from '@common/types';
 
-import { runWithConcurrency } from '../../utils/concurrency.js';
-
 import { readShortcutCached, type ShortcutInfo } from './shortcutCache.js';
 
-/** フォルダ取込の走査で、同時に待つ stat の数 */
+/** フォルダ取込の走査で、同時に待つ stat の数（ひとまとまりの件数） */
 const SCAN_STAT_CONCURRENCY = 8;
 
 /** .lnk を読み、リンク先があるか・フォルダかを確かめる（同期。1 個あたり数 ms） */
@@ -74,11 +72,13 @@ export function processShortcut(
   suffix?: string,
   expandedFrom?: string,
   expandedOptions?: DirOptionsForProcessing,
-  expandedFromId?: string
+  expandedFromId?: string,
+  /** 走査で取った .lnk の stat（あれば写しの照合に使い、もう一度 stat しない） */
+  stat?: fs.Stats
 ): LauncherItem | null {
   try {
     // 同じ .lnk を読み直しのたびに読まないよう、前に読んだ結果を使う（.lnk が変わっていなければ。A3-254）
-    const shortcutDetails = readShortcutCached(filePath, readShortcutFromDisk);
+    const shortcutDetails = readShortcutCached(filePath, readShortcutFromDisk, stat);
 
     if (shortcutDetails?.target) {
       const name = applyPrefixSuffix(
@@ -155,48 +155,86 @@ async function scanDirectory(
       return;
     }
 
-    // stat は同時に SCAN_STAT_CONCURRENCY 本まで並べて待つ（1 件ずつ待つと、ネットワークのフォルダで遅い。A3-254 S5）。
-    // 結果はフォルダの中の順のまま使う
-    const stats: Array<fs.Stats | null> = new Array(items.length).fill(null);
-    await runWithConcurrency(
-      items.map((item, i) => async () => {
-        const itemPath = path.join(currentDir, item);
-        try {
-          stats[i] = await fs.promises.stat(itemPath);
-        } catch (error) {
-          dataLogger.warn({ itemPath, error }, 'アイテムにアクセスできません');
-        }
-      }),
-      SCAN_STAT_CONCURRENCY,
-      shouldStop
-    );
-
-    for (const [i, item] of items.entries()) {
+    // stat は SCAN_STAT_CONCURRENCY 件ずつ並べて待つ（1 件ずつ待つと、ネットワークのフォルダで遅い。A3-254 S5）。
+    // 結果はフォルダの中の順のまま使う。プレビューの件数の上限・中止で止められるよう、ひとまとまりごとに確かめる
+    for (let start = 0; start < items.length; start += SCAN_STAT_CONCURRENCY) {
       if (shouldStop()) return;
-      const itemPath = path.join(currentDir, item);
-      const stat = stats[i];
-      if (!stat) continue;
+      const batch = items.slice(start, start + SCAN_STAT_CONCURRENCY);
+      const stats = await Promise.all(
+        batch.map(async (item) => {
+          const itemPath = path.join(currentDir, item);
+          try {
+            return await fs.promises.stat(itemPath);
+          } catch (error) {
+            dataLogger.warn({ itemPath, error }, 'アイテムにアクセスできません');
+            return null;
+          }
+        })
+      );
 
-      const isDirectory = stat.isDirectory();
-      const itemName = path.basename(itemPath);
+      for (const [i, item] of batch.entries()) {
+        if (shouldStop()) return;
+        const itemPath = path.join(currentDir, item);
+        const stat = stats[i];
+        if (!stat) continue;
 
-      if (options.exclude && matchesDirPattern(itemName, options.exclude)) {
-        continue;
-      }
+        const isDirectory = stat.isDirectory();
+        const itemName = path.basename(itemPath);
 
-      if (options.filter && !matchesDirPattern(itemName, options.filter)) {
-        if (!isDirectory) {
+        if (options.exclude && matchesDirPattern(itemName, options.exclude)) {
           continue;
         }
-      }
 
-      if (isDirectory) {
-        if (options.types === 'folder' || options.types === 'both') {
-          if (!options.filter || matchesDirPattern(itemName, options.filter)) {
+        if (options.filter && !matchesDirPattern(itemName, options.filter)) {
+          if (!isDirectory) {
+            continue;
+          }
+        }
+
+        if (isDirectory) {
+          if (options.types === 'folder' || options.types === 'both') {
+            if (!options.filter || matchesDirPattern(itemName, options.filter)) {
+              results.push(
+                processItem(
+                  itemPath,
+                  'folder',
+                  sourceFile,
+                  lineNumber,
+                  options.prefix,
+                  options.suffix,
+                  rootDirPath,
+                  expandedOptions,
+                  expandedFromId
+                )
+              );
+            }
+          }
+
+          if (currentDepth < options.depth || options.depth === -1) {
+            await walk(itemPath, currentDepth + 1);
+          }
+        } else if (options.types === 'file' || options.types === 'both') {
+          if (path.extname(itemPath).toLowerCase() === '.lnk') {
+            const processedShortcut = processShortcut(
+              itemPath,
+              sourceFile,
+              lineNumber,
+              undefined,
+              options.prefix,
+              options.suffix,
+              rootDirPath,
+              expandedOptions,
+              expandedFromId,
+              stat
+            );
+            if (processedShortcut) {
+              results.push(processedShortcut);
+            }
+          } else {
             results.push(
               processItem(
                 itemPath,
-                'folder',
+                'file',
                 sourceFile,
                 lineNumber,
                 options.prefix,
@@ -207,41 +245,6 @@ async function scanDirectory(
               )
             );
           }
-        }
-
-        if (currentDepth < options.depth || options.depth === -1) {
-          await walk(itemPath, currentDepth + 1);
-        }
-      } else if (options.types === 'file' || options.types === 'both') {
-        if (path.extname(itemPath).toLowerCase() === '.lnk') {
-          const processedShortcut = processShortcut(
-            itemPath,
-            sourceFile,
-            lineNumber,
-            undefined,
-            options.prefix,
-            options.suffix,
-            rootDirPath,
-            expandedOptions,
-            expandedFromId
-          );
-          if (processedShortcut) {
-            results.push(processedShortcut);
-          }
-        } else {
-          results.push(
-            processItem(
-              itemPath,
-              'file',
-              sourceFile,
-              lineNumber,
-              options.prefix,
-              options.suffix,
-              rootDirPath,
-              expandedOptions,
-              expandedFromId
-            )
-          );
         }
       }
     }

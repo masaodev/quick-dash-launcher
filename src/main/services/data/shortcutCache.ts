@@ -39,11 +39,13 @@ function keyOf(filePath: string): string {
  */
 export function readShortcutCached(
   filePath: string,
-  read: (filePath: string) => ShortcutInfo | null
+  read: (filePath: string) => ShortcutInfo | null,
+  /** 呼び出し元が取ってある stat（フォルダ取込の走査）。無ければここで同期で取る */
+  knownStat?: fs.Stats
 ): ShortcutInfo | null {
   let stat: fs.Stats;
   try {
-    stat = fs.statSync(filePath);
+    stat = knownStat ?? fs.statSync(filePath);
   } catch {
     return read(filePath);
   }
