@@ -594,6 +594,8 @@ const electronAPI: ElectronAPI = {
     checkCurrent: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_CHECK_CURRENT),
     capture: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_CAPTURE),
     restore: (dataFileRef) => ipcInvoke(IPC_CHANNELS.CLIPBOARD_RESTORE, dataFileRef),
+    restoreItem: (dataFileRef, itemId) =>
+      ipcInvoke(IPC_CHANNELS.CLIPBOARD_RESTORE_ITEM, dataFileRef, itemId),
     // セッション管理（登録確定前の一時保存）
     captureToSession: () => ipcInvoke(IPC_CHANNELS.CLIPBOARD_CAPTURE_TO_SESSION),
     commitSession: (sessionId) => ipcInvoke(IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION, sessionId),
