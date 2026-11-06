@@ -11,6 +11,7 @@ import { parseArgs } from '@common/utils/argsParser';
 import { shouldRunAsAdmin } from '@common/utils/runAsAdmin';
 
 import { ClipboardService } from '../services/clipboardService.js';
+import { expandEnvironmentVariables } from '../services/icon/iconFileCache.js';
 import { mainI18n } from '../services/mainI18n.js';
 
 import { noteLaunchedPath } from './folderPathProbe.js';
@@ -61,8 +62,9 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
 
       case 'file':
       case 'folder': {
+        // %USERPROFILE% などの環境変数は、開く前に展開する（ShellExecute・spawn は展開しない。A3-258）
         const result = await openTarget(
-          item.path,
+          expandEnvironmentVariables(item.path),
           'path',
           await getLaunchEnvironment(logger),
           logger,
@@ -75,10 +77,13 @@ export async function launchItem(item: LaunchableItem, logger: Logger): Promise<
         return result;
       }
 
-      case 'app':
-        if (shouldRunAsAdmin(item))
-          return adminResultToLaunchResult(await launchItemAsAdmin(item, logger));
-        return launchApp(item, logger);
+      case 'app': {
+        // 環境変数を含むパス（%LOCALAPPDATA%\...\x.exe）は展開してから起動する。作業フォルダも展開したパスで決まる
+        const expanded = { ...item, path: expandEnvironmentVariables(item.path) };
+        if (shouldRunAsAdmin(expanded))
+          return adminResultToLaunchResult(await launchItemAsAdmin(expanded, logger));
+        return launchApp(expanded, logger);
+      }
 
       case 'clipboard':
         return toResult(await restoreClipboard(item, logger));
