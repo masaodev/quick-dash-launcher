@@ -207,6 +207,11 @@ app.whenReady().then(async () => {
           setTimeout(() => reject(new Error('本体の初期化が終わりません')), 60_000)
         ),
       ]);
+      // CLI は QDL の外（人・AI）が settings.json を直したあとに使われるので、コマンドごとにファイルから読み直す
+      //（メモリの写しのまま計算して書くと、外での変更を消してしまう。読めないときは最後に読めた設定のまま。A3-254）
+      if (SettingsService.isSettingsFileReadable()) {
+        (await SettingsService.getInstance()).reloadFromDisk();
+      }
       return runCliCommand(req, cliContext);
     });
     if (app.isPackaged) {

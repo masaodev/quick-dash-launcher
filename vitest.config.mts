@@ -18,6 +18,7 @@ export default defineConfig({
           name: 'main',
           environment: 'node',
           include: MAIN_TESTS,
+          setupFiles: ['./tests/unit/setup-main.ts'],
         },
       },
       {
