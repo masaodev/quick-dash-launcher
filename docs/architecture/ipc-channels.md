@@ -187,7 +187,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 `workspace:*` の変更系チャンネル（アイテム・グループ・ワークスペース（タブ）・アーカイブの追加・更新・削除・並び替え）は、成功すると `workspace-changed` を全ウィンドウに送る（`src/main/ipc/workspaceHandlers.ts`）。主に `withWorkspaceChange()` を使い、追加・作成（`workspace:add-item`・`workspace:create-item`・`workspace:add-items-from-paths`・`workspace:create-workspace`・`workspace:create-group`）は `notifyWorkspaceChanged()` を直接呼ぶ。先に切り離しウィンドウを閉じる削除・アーカイブ（`workspace:delete-workspace`・`workspace:delete-group`・`workspace:archive-group`）も、閉じる処理ごと `withWorkspaceChange()` の中で行う。受け手のワークスペース画面は一覧を読み直す。
 
 - **方向**: メインプロセス → レンダラープロセス（全ウィンドウ）
-- **パラメータ**: なし
+- **パラメータ**: `{ refsOnly?: boolean }`（`WorkspaceChangeInfo`。preload は値の無い通知も `{}` にそろえて渡す）。`refsOnly` は、データファイルを読み直して参照アイテムの中身だけが変わったとき（グループ・並びは同じ）に付く。ランチャーの WSグループの行はワークスペースのグループから作るので、`refsOnly` の通知では読み直さない（`src/renderer/hooks/useWsGroupReload.ts`。起動して最初の読み込みでは参照の中身が必ず「変わった」になり、ランチャーが全件をもう 1 回読んでいた。A3-254）。ワークスペース画面は印にかかわらず読み直す
 - `load-data-files` の再読み込みでワークスペースの内容が変わっていた場合にも送られる
 - `workspace:add-item`（`item, groupId?, workspaceId?, options?: { copy?: boolean }`）は、参照できるランチャーのアイテム（id を持ち、今のデータファイルにあるもの）なら参照アイテムを足す。`options.freshClipboardData`（ワークスペースの Ctrl+V で取り込んだばかりの保存データ）なら保存データを複製しない。`options.copy` のときと、参照できないもの（フォルダ取込で展開したアイテム・ウィンドウ検索の結果など）はコピーを足す。展開したアイテムを参照で足そうとしてコピーにしたときは、トーストで知らせる（`src/main/services/workspace/workspaceRefOperations.ts` の `addAppItemToWorkspace`）。コピーのクリップボードアイテムは、保存データ（`clipboard-data/<id>.json`）を `ClipboardService.duplicateClipboardData` で複製し、複製を指すアイテムとして足す（ランチャーと 1 つのファイルを共有しない。複製できなければ元の参照のまま）。逆向き（`workspace:move-to-main`）は複製せず、ランチャーへ移したアイテムが保存データを引き継ぐ
 - データファイルを読み直したあと、ワークスペースに参照アイテムがあれば、ワークスペースの内容が変わっていなくても送る（参照の中身はランチャーのアイテムのものなので）
