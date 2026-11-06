@@ -2,9 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { MAIN_CHILD_WINDOW_NAME_PREFIX } from '@common/constants';
 
-import App from './App';
 import { initRendererI18n } from './i18n';
-import MainChildPage from './components/MainChildPage';
 import { ToastProvider } from './components/ToastProvider';
 import './styles/index.css';
 import './styles/components/Header.css';
@@ -38,12 +36,21 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 const childRequestId = getChildRequestIdFromWindow();
 
-void initRendererI18n().then(() => {
+// ランチャーと子ウィンドウは同じ入口なので、使う画面のコードだけを読む（ランチャーに子ウィンドウの
+// 登録・編集画面のコードを読ませない。A3-254 M3）。辞書の読み込みと並べて待つ
+async function loadPage(): Promise<React.ReactElement> {
+  if (childRequestId) {
+    const { default: MainChildPage } = await import('./components/MainChildPage');
+    return <MainChildPage requestId={childRequestId} />;
+  }
+  const { default: App } = await import('./App');
+  return <App />;
+}
+
+void Promise.all([initRendererI18n(), loadPage()]).then(([, content]) => {
   root.render(
     <React.StrictMode>
-      <ToastProvider position="bottom-right">
-        {childRequestId ? <MainChildPage requestId={childRequestId} /> : <App />}
-      </ToastProvider>
+      <ToastProvider position="bottom-right">{content}</ToastProvider>
     </React.StrictMode>
   );
 });
