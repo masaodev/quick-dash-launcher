@@ -74,6 +74,8 @@ export async function launchAppItem(item: AppItem, allItems: AppItem[]): Promise
           }
     );
     if (!restored.success) throw new Error(restored.error ?? 'restore failed');
+    // 画面の Enter と同じく、起動の記録に数える（A3-258）
+    await LaunchUsageService.getInstance()?.recordById(item.id);
     return;
   }
   if (isSetItem(item)) {

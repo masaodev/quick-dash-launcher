@@ -392,6 +392,8 @@ export const IPC_CHANNELS = {
   // クリップボード操作
   CLIPBOARD_CAPTURE: 'clipboard:capture',
   CLIPBOARD_RESTORE: 'clipboard:restore',
+  /** ランチャーのクリップボードアイテムを開く（ほかのアイテムと同じくランチャーを隠し、起動の記録に数える） */
+  CLIPBOARD_RESTORE_ITEM: 'clipboard:restore-item',
   /** 登録用にクリップボードを読む（エクスプローラーでコピーしたファイルのパスと、テキスト） */
   CLIPBOARD_READ_FOR_REGISTER: 'clipboard:read-for-register',
   CLIPBOARD_CHECK_CURRENT: 'clipboard:check-current',

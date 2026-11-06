@@ -252,4 +252,51 @@ test.describe('QuickDashLauncher - Shift+Enter で親フォルダを開く', () 
       expect(await electronApp.evaluate(() => globalThis.__e2eShownInFolder?.length)).toBe(2);
     });
   });
+
+  test('クリップボードアイテムを Enter で開くと、書き戻してランチャーを隠し、起動の記録に数える（A3-258）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const configDir = configHelper.getConfigDir();
+    fs.mkdirSync(path.join(configDir, 'clipboard-data'), { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, 'clipboard-data', 'e2eClip1.json'),
+      JSON.stringify({ formats: ['text'], text: '書き戻すテキスト', savedAt: 1, dataSize: 8 })
+    );
+    configHelper.addItemToFile('data.json', {
+      id: 'e2eClip1',
+      type: 'clipboard',
+      displayName: 'E2E クリップボード',
+      dataFileRef: 'clipboard-data/e2eClip1.json',
+      savedAt: 1,
+      formats: ['text'],
+    });
+    const utils = new TestUtils(mainWindow);
+    await utils.reloadWithF5();
+    await utils.searchFor('E2E クリップボード');
+    await mainWindow.locator('.item', { hasText: 'E2E クリップボード' }).waitFor();
+    await mainWindow.keyboard.press('Enter');
+
+    await expect
+      .poll(() => electronApp.evaluate(({ clipboard }) => clipboard.readText()))
+      .toBe('書き戻すテキスト');
+    await expect
+      .poll(() =>
+        electronApp.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows().some(
+            (win) => win.getTitle() === 'Quick Dash Launcher' && win.isVisible()
+          )
+        )
+      )
+      .toBe(false);
+    await expect
+      .poll(() => {
+        const file = path.join(configDir, 'item-usage.json');
+        return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+      })
+      .toContain('e2eClip1');
+  });
 });
