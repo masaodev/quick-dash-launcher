@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const tempRoot = vi.hoisted(() => ({ dir: '' }));
 /** 偽の electron-store がファイルを読んだ・書いた回数（メモリの写しが効いているかを見る） */
-const io = vi.hoisted(() => ({ reads: 0, writes: 0 }));
+const io = vi.hoisted(() => ({ reads: 0, writes: 0, stores: 0 }));
 
 vi.mock('electron', () => ({ app: { getVersion: () => '9.9.9' } }));
 vi.mock('../config/pathManager.js', () => {
@@ -30,6 +30,7 @@ vi.mock('electron-store', () => {
       defaults?: Record<string, unknown>;
       deserialize: (text: string) => unknown;
     }) {
+      io.stores++;
       this.file = path.join(options.cwd, `${options.name}.json`);
       const fromFile = fs.existsSync(this.file)
         ? (options.deserialize(fs.readFileSync(this.file, 'utf8')) as Record<string, unknown>)
@@ -226,5 +227,28 @@ describe('SettingsService のメモリの写し（A3-254）', () => {
 
     fs.writeFileSync(settingsPath(), JSON.stringify({ settingsVersion: 1, windowWidth: 700 }));
     expect(await service.get('windowWidth')).toBe(700);
+  });
+});
+
+describe('SettingsService.getInstance', () => {
+  beforeEach(() => {
+    tempRoot.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qdl-settings-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempRoot.dir, { recursive: true, force: true });
+  });
+
+  it('同時に呼ばれても初期化は 1 回だけで、全員が初期化の終わったインスタンスを受け取ること（A3-254）', async () => {
+    vi.resetModules();
+    const { SettingsService } = await import('./settingsService');
+    io.stores = 0;
+    const [a, b] = await Promise.all([
+      SettingsService.getInstance(),
+      SettingsService.getInstance(),
+    ]);
+    expect(a).toBe(b);
+    expect(io.stores).toBe(1);
+    expect(await a.get('windowWidth')).toBe(600);
   });
 });
