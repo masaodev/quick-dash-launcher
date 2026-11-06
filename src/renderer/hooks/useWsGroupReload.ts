@@ -19,7 +19,9 @@ export function useWsGroupReload(items: AppItem[], reload: () => Promise<unknown
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const unsubscribe = window.electronAPI.onWorkspaceChanged(() => {
+    const unsubscribe = window.electronAPI.onWorkspaceChanged((change) => {
+      // 参照アイテムの中身だけの変更ではグループは変わらないので、WSグループの行は変わらない
+      if (change.refsOnly) return;
       clearTimeout(timer);
       timer = setTimeout(async () => {
         const needed =

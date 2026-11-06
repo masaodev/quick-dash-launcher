@@ -14,6 +14,7 @@ import PathManager from '../config/pathManager.js';
 
 import { collectExportFiles } from './dataExportService.js';
 import { SettingsService } from './settingsService.js';
+import { clearIconMemoryCache } from './icon/iconMemoryCache.js';
 import { mainI18n } from './mainI18n.js';
 
 /** 外部変更の変更前スナップショットのフォルダ名サフィックス */
@@ -186,6 +187,8 @@ export class BackupService {
 
       // settings.json も戻したので、メモリに持っている設定を捨てて読み直させる
       (await SettingsService.getInstance()).reloadFromDisk();
+      // カスタムアイコンも戻したので、メモリに覚えたアイコンも捨てる
+      clearIconMemoryCache();
       logger.info({ timestamp, fileCount: files.length }, 'スナップショットからリストアしました');
       return { success: true };
     } catch (error) {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { createI18n } from '../i18n';
+import { createI18n } from '../i18n/resources';
 import type { BookmarkWithFolder } from '../types/bookmarkAutoImport';
 
 import {

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createI18n } from '@common/i18n';
+import { createI18n } from '@common/i18n/resources';
 import {
   appItemToWorkspaceItemBody,
   describeWorkspaceItem,

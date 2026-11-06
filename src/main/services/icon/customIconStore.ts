@@ -9,6 +9,8 @@ import { FileUtils } from '@common/utils/fileUtils';
 import PathManager from '../../config/pathManager.js';
 import { mainI18n } from '../mainI18n.js';
 
+import { forgetIconFile } from './iconMemoryCache.js';
+
 /** カスタムアイコンとして受け付ける最大ファイルサイズ */
 const MAX_CUSTOM_ICON_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -47,6 +49,7 @@ export async function saveCustomIcon(
   // 画像はそのままコピーして保存する。保存先のフォルダが起動後に消されていても作り直す（A3-175）
   FileUtils.ensureDirectory(path.dirname(customIconPath));
   await fs.promises.copyFile(sourceFilePath, customIconPath);
+  forgetIconFile(customIconPath);
   iconLogger.info(`カスタムアイコンを保存: ${itemIdentifier} -> ${customIconFileName}`);
   return customIconFileName;
 }
@@ -77,6 +80,7 @@ export async function deleteCustomIcon(customIconFileName: string): Promise<void
 
   if (fs.existsSync(customIconPath)) {
     await fs.promises.unlink(customIconPath);
+    forgetIconFile(customIconPath);
     iconLogger.info(`カスタムアイコンを削除: ${customIconFileName}`);
   }
 }
