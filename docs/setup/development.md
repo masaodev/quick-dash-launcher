@@ -388,6 +388,7 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 - **文言の置き場**: `src/common/i18n/locales/ja.ts` に書き、`en.ts` に同じキーで訳す（`en.ts` は `ja.ts` と同じ形でないと型エラーになる）。キーは英語の意味名で、領域ごとに分ける（`common`・`launcher`・`settings` など）。差し込みは `{{name}}`。英語で数によって形が変わる文言（1 item／2 items）は、キーに `_one`・`_other` を付けて `t('key', { count })` で引く（日本語は両方に同じ文言を書く）
 - **引き方**: renderer の部品・hook は `react-i18next` の `useTranslation()` の `t`、部品の外の関数（ツールチップの生成など）は `i18next.t`、main は `services/mainI18n.ts` の `mainI18n.t()`（言語の切り替えは `services/i18nService.ts`。トレイのメニューのように作り置くものは `mainI18n.on('languageChanged', …)` で作り直す。トーストの独立ウィンドウ `overlay.html` は文言を持たず、main が決めた文言を受け取って出す）。main と renderer の両方で使う `src/common` の関数は `t` を引数で受け取る。キーは型チェックされる
 - **言語の決め方**: 設定 `language`（`auto`・`ja`・`en`）。`auto` は Windows の最初の表示言語が日本語なら日本語、それ以外は英語（`src/common/i18n/languages.ts`）。各ウィンドウは描画の前に `src/renderer/i18n.ts` で初期化し、設定が変わったら言語を取り直す
+- **辞書の読み込み**: 画面は、表示する言語と正本（日本語）の辞書だけを動的に読む（言語ごとに別のチャンク。切り替えたときに足りない辞書を読み足す）。両方の辞書を束ねた `src/common/i18n/resources.ts`（`I18N_RESOURCES`・`createI18n`）は main とテストだけが使い、画面からは import しない（全ウィンドウが読む共通のチャンクに、使わない言語の辞書を入れないため。A3-254）。`t` を渡されなかった `src/common` の関数が使う既定の `t`（`getFallbackT`）は、main（`mainI18n.ts`）・画面（`initRendererI18n`）・テストの準備（`tests/unit/setup*.ts`）が `setFallbackT` で登録する
 - **用語**: [用語集](../architecture/glossary.md)の言葉にそろえる。「使わない表記」が辞書に出ると単体テスト（`src/common/i18n/glossary.test.ts`）が失敗する。英語は Microsoft Writing Style Guide に合わせる（用語集の「書き方の決まり」）
 - **一覧の区切り**: 画面に出す文の中で名前を並べるときは `common.listSeparator`（日本語「、」・英語「, 」）でつなぐ。ファイル名・ID・形式名のキー・CLI の出力・ログは `', '` のまま
 - **直書きの禁止**: `src` の TypeScript ファイルすべて（テストファイルと `src/test` を除く）で、日本語の文字列・JSX のテキストを直接書くと lint が失敗する（`logger.info`・`console.error` やログ関数 `logError` などのログの文言は訳さないので対象外）。辞書の正本（`ja.ts`）、既定の名前を持つファイル（`json-workspace.ts`・`settingsService.ts`。初回起動で表示言語の名前に置き換える）、ログや開発者向けの内部エラーだけで画面に出ないファイルは、`eslint.config.mjs` の `I18N_EXEMPT_FILES` で外している。画面に出る文言を足したら、そのファイルを外したままにしない
@@ -404,6 +405,29 @@ Dependabotは依存関係を以下のグループに分けてPRを作成しま�
 
 - 大文字小文字を区別しないインクリメンタルサーチ
 - 絞り込みはレンダラー側でリアルタイム実行
+
+#### 速さとメモリの計測
+
+速さやメモリに関わる変更は、前後の数字をログで比べる（`src/main/services/perfMetrics.ts`）。本番と同じ info の水準で次の行が出る。
+
+| ログの行 | 出るとき | 中身 |
+| --- | --- | --- |
+| `起動の計測` | 起動の準備ができた 5 秒後に 1 回 | `startupMs`: プロセスが動き出してからの経過ミリ秒（`ready`・`splash-window-created`・`splash-shown`・`settings-ready`・`windows-created`・`first-data-loaded`・`renderer-ready`・`launcher-shown`） |
+| `設定ファイルを読み直しました` | データファイルとワークスペースを読み直すたび | `trigger`（読み込みのきっかけ）・`totalItems`・`workspaceChanged`／`workspaceRefsChanged`（ワークスペース・参照の中身が変わったか）・`dirScan`（フォルダ取込の件数 `count`・展開したアイテム数 `items`・走査の時間 `ms`）・`ms`（`data`＝データファイルとフォルダ取込、`workspace`、`total`） |
+| `キャッシュのアイコンを読み込みました` | 画面がキャッシュのアイコンをまとめて読むたび | `requested`（アイテム数）・`found`（見つかった数）・`ms` |
+| `表示の時間` | ホットキーでランチャーを出したあと、描画が終わったとき | `showMs`: メイン側（`position-set`・`companion-windows-shown`・`window-shown`・`window-focused`）と画面側（`renderer-received`・`before-animation-frame`・`window-show-complete`）の経過ミリ秒 |
+| `メモリの計測` | 起動の 1 分後と 1 時間後 | `processes`: プロセスの種類ごとの数と MB（`app.getAppMetrics()`）、`mainHeapMB`: メインプロセスのヒープ |
+
+アイテムの多い環境は `node scripts/generate-perf-data.mjs` で作る（既定はアイテム 3,000 件・アイコン 2,000 個・データファイル 5 本を `tmp/perf-data/` に。`--items`・`--icons`・`--files`・`--out` で変えられる）。ビルドしてから、その設定フォルダで起動してログを見る。
+
+```bash
+node scripts/generate-perf-data.mjs
+npm run build
+QUICK_DASH_CONFIG_DIR="$PWD/tmp/perf-data" APP_INSTANCE=perf HOTKEY=Ctrl+Alt+F8 npx electron .
+# tmp/perf-data/logs/main.log の上の行を見る
+```
+
+`npm run dev` は開発モード（ログが debug の水準、画面は Vite の開発サーバー）なので、数字を比べるときは使わない。
 
 ## UIコンポーネント構造
 

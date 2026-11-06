@@ -1,3 +1,5 @@
+import { performance } from 'node:perf_hooks';
+
 import { dataLogger } from '@common/logger';
 import { FileUtils } from '@common/utils/fileUtils';
 import { detectItemTypeSync } from '@common/utils/itemTypeDetector';
@@ -35,6 +37,18 @@ async function loadWsGroupCandidates(): Promise<WsGroupCandidate[]> {
     await service.loadGroups(),
     await service.loadArchivedGroups()
   );
+}
+
+/** フォルダ取込の走査にかかった時間の合計（読み直し 1 回ぶん。A3-254 の計測） */
+const dirScanStats = { count: 0, ms: 0, items: 0 };
+
+/** フォルダ取込の走査の集計を返して 0 に戻す */
+export function takeDirScanStats(): { count: number; ms: number; items: number } {
+  const result = { ...dirScanStats, ms: Math.round(dirScanStats.ms) };
+  dirScanStats.count = 0;
+  dirScanStats.ms = 0;
+  dirScanStats.items = 0;
+  return result;
 }
 
 /**
@@ -112,6 +126,7 @@ export async function convertJsonItemToAppItems(
     };
     addIfUnique(item);
   } else if (isJsonDirItem(jsonItem)) {
+    const scanStartedAt = performance.now();
     const scannedItems = await processDirectoryItem(
       jsonItem.path,
       jsonItem.options,
@@ -119,6 +134,9 @@ export async function convertJsonItemToAppItems(
       lineNumber,
       jsonItem.id
     );
+    dirScanStats.count++;
+    dirScanStats.ms += performance.now() - scanStartedAt;
+    dirScanStats.items += scannedItems.length;
 
     for (const scannedItem of scannedItems) {
       addIfUnique(scannedItem);

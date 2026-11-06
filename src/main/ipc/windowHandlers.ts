@@ -16,6 +16,7 @@ import { windowLogger } from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { SettingsService } from '../services/settingsService.js';
+import { receiveRendererTiming } from '../services/perfMetrics.js';
 import { readClipboardFilePaths } from '../services/clipboardService.js';
 import {
   hideAdminWindow,
@@ -250,8 +251,9 @@ export function setupWindowHandlers(
       setMainChildWindowReturn(requestId, value)
   );
 
+  // 画面側の段階はメイン側の段階とまとめて 1 行にする（描画が止まったときは警告。perfMetrics）
   handleIpc(IPC_CHANNELS.LOG_PERFORMANCE_TIMING, (_event, label: string, duration: number) => {
-    windowLogger.info(`[Performance] ${label}: ${duration.toFixed(2)}ms`);
+    receiveRendererTiming(label, duration);
   });
 
   handleIpc(IPC_CHANNELS.WORKSPACE_TOGGLE_WINDOW, () => toggleWorkspaceWindow());
@@ -312,7 +314,7 @@ export function setupWindowHandlers(
     // レンダラーの古い幅で戻さないため（A3-131）
     const roundedHeight = Math.round(height);
     workspace.setBounds({ height: roundedHeight });
-    windowLogger.info(`Workspace height set to ${roundedHeight}`);
+    windowLogger.debug(`Workspace height set to ${roundedHeight}`);
     return true;
   });
 

@@ -93,6 +93,17 @@ describe('previewDirectoryItems', () => {
     expect(result.truncated).toBe(true);
   });
 
+  it('件数の上限に届いたら、残りの項目は stat しない（A3-254 の並べた stat でも打ち切る）', async () => {
+    for (let i = 0; i < 100; i++)
+      fs.writeFileSync(path.join(root, `f${String(i).padStart(3, '0')}.txt`), '');
+    const statSpy = vi.spyOn(fs.promises, 'stat');
+    const result = await previewDirectoryItems(root, {}, undefined, { maxItems: 3 });
+    expect(result.truncated).toBe(true);
+    // ひとまとまり（8 件）ずつなので、上限に届いたまとまりで止まる
+    expect(statSpy.mock.calls.length).toBeLessThan(20);
+    statSpy.mockRestore();
+  });
+
   it('無いパス・ファイルのパスはそれと分かる結果を返す', async () => {
     expect((await previewDirectoryItems(path.join(root, 'none'), {})).status).toBe('notFound');
     expect((await previewDirectoryItems(path.join(root, 'a.txt'), {})).status).toBe('notFolder');

@@ -124,7 +124,7 @@ export class PathManager {
         .sort()
         .map((file) => `datafiles/${file}`);
 
-      logger.info(`Found ${jsonFiles.length} data files: ${jsonFiles.join(', ')}`);
+      logger.debug(`Found ${jsonFiles.length} data files: ${jsonFiles.join(', ')}`);
       return jsonFiles;
     } catch (error) {
       logger.error({ error, dataFilesFolder }, 'Failed to read data files');

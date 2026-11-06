@@ -77,7 +77,7 @@ export function attachSnapHandler(win: BrowserWindow, getEnabled: () => boolean)
     }
   });
 
-  windowLogger.info('ウィンドウスナップハンドラーを登録しました');
+  windowLogger.debug('ウィンドウスナップハンドラーを登録しました');
 
   return () => {
     if (!win.isDestroyed()) {

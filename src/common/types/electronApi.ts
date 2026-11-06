@@ -90,6 +90,15 @@ export interface SearchBoxEditFlags {
   canSelectAll: boolean;
 }
 
+/** ワークスペースの変更通知に付く印 */
+export interface WorkspaceChangeInfo {
+  /**
+   * 参照アイテムの中身（指す先のアイテムの名前・アイコンなど）だけが変わった。
+   * グループ・アイテムの並びは変わっていないので、WSグループの行は読み直さなくてよい
+   */
+  refsOnly?: boolean;
+}
+
 export interface ElectronAPI {
   getConfigFolder: () => Promise<string>;
   getDataFiles: () => Promise<string[]>;
@@ -180,7 +189,7 @@ export interface ElectronAPI {
   onWorkspaceOpenChanged: (callback: (open: boolean) => void) => () => void;
   /** ワークスペースを出し直したとき（高さを中身に合わせ直す） */
   onWorkspaceRefitHeight: (callback: () => void) => () => void;
-  onWorkspaceChanged: (callback: () => void) => () => void;
+  onWorkspaceChanged: (callback: (change: WorkspaceChangeInfo) => void) => () => void;
   /** ピン留め。呼んだウィンドウ（メイン・ワークスペース・切り離し）が対象 */
   pin: {
     get: () => Promise<PinLevel>;

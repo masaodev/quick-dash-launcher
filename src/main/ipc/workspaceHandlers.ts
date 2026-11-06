@@ -167,7 +167,7 @@ export function setupWorkspaceHandlers(): void {
       // 参照はランチャーのアイテムの中身で埋めて渡す（まだデータファイルを読んでいなければ読む）
       await ensureMainItemIndex();
       const items = await service.loadResolvedItems();
-      logger.info({ count: items.length }, 'Loaded workspace items');
+      logger.debug({ count: items.length }, 'Loaded workspace items');
       return items;
     }, 'Failed to load workspace items')
   );
@@ -533,7 +533,7 @@ export function setupWorkspaceHandlers(): void {
   handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_WORKSPACES, () =>
     withWorkspaceService(async (service) => {
       const workspaces = await service.loadWorkspaces();
-      logger.info({ count: workspaces.length }, 'Loaded workspaces');
+      logger.debug({ count: workspaces.length }, 'Loaded workspaces');
       return workspaces;
     }, 'Failed to load workspaces')
   );
@@ -598,7 +598,7 @@ export function setupWorkspaceHandlers(): void {
   handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_GROUPS, () =>
     withWorkspaceService(async (service) => {
       const groups = await service.loadGroups();
-      logger.info({ count: groups.length }, 'Loaded workspace groups');
+      logger.debug({ count: groups.length }, 'Loaded workspace groups');
       return groups;
     }, 'Failed to load workspace groups')
   );
@@ -767,7 +767,7 @@ export function setupWorkspaceHandlers(): void {
   handleIpc(IPC_CHANNELS.WORKSPACE_LOAD_ARCHIVED_GROUPS, () =>
     withWorkspaceService(async (service) => {
       const archivedGroups = await service.loadArchivedGroups();
-      logger.info({ count: archivedGroups.length }, 'Loaded archived groups');
+      logger.debug({ count: archivedGroups.length }, 'Loaded archived groups');
       return archivedGroups;
     }, 'Failed to load archived groups')
   );

@@ -61,6 +61,11 @@ import { mainI18n } from './services/mainI18n.js';
 import { installNavigationGuard } from './utils/navigationGuard.js';
 import { startFileLogging } from './services/fileLogging.js';
 import { LaunchUsageService } from './services/launchUsageService.js';
+import {
+  markStartup,
+  scheduleMemoryMetrics,
+  scheduleStartupReport,
+} from './services/perfMetrics.js';
 import { UpdateCheckService, fetchGitHubReleases } from './services/updateCheckService.js';
 import { getAppDistribution } from './utils/appDistribution.js';
 import {
@@ -176,6 +181,7 @@ if (EnvConfig.isDevelopment) {
 process.on('unhandledRejection', handleStartupFailure);
 
 app.whenReady().then(async () => {
+  markStartup('ready');
   // 画面がページ側から別の URL へ移らないようにする（ウィンドウを作る前に付ける）
   installNavigationGuard();
 
@@ -201,6 +207,11 @@ app.whenReady().then(async () => {
           setTimeout(() => reject(new Error('本体の初期化が終わりません')), 60_000)
         ),
       ]);
+      // CLI は QDL の外（人・AI）が settings.json を直したあとに使われるので、コマンドごとにファイルから読み直す
+      //（メモリの写しのまま計算して書くと、外での変更を消してしまう。読めないときは最後に読めた設定のまま。A3-254）
+      if (SettingsService.isSettingsFileReadable()) {
+        (await SettingsService.getInstance()).reloadFromDisk();
+      }
       return runCliCommand(req, cliContext);
     });
     if (app.isPackaged) {
@@ -225,13 +236,19 @@ app.whenReady().then(async () => {
     filePath: path.join(__dirname, 'preload.js'),
   });
 
-  // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）
+  markStartup('cli-server-started');
+
+  // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）。
+  // ウィンドウはすぐ出るので、画面の読み込み（数百 ms）は待たずに初期化を進め、
+  // 初期化の完了を知らせる直前にだけ待つ（読み込み前に送ると届かない。A3-254 S7）
+  let splashLoaded: Promise<unknown> = Promise.resolve();
   if (!EnvConfig.skipSplashWindow && !launchedByCli) {
-    await createSplashWindow();
+    splashLoaded = createSplashWindow().then(() => markStartup('splash-shown'));
   }
 
   // 以下はスプラッシュ表示後にバックグラウンドで初期化
   const settingsService = await SettingsService.getInstance();
+  markStartup('settings-ready');
   await applyLanguageSetting();
 
   // 初回起動判定: ホットキーが未設定なら初回起動
@@ -309,6 +326,7 @@ app.whenReady().then(async () => {
 
   // ランチャー・トレイ・ワークスペースを並列作成（互いに独立）
   await Promise.all([createWindow(), createTray(), createWorkspaceWindow()]);
+  markStartup('windows-created');
 
   // 再起動しても直前と同じ見え方に戻す（📌 ありのワークスペース・切り離しウィンドウを出す）。
   // 待たずにホットキーを登録するので、復元の途中でランチャーが出ていたら、終わった後に合わせる
@@ -321,8 +339,13 @@ app.whenReady().then(async () => {
 
   // レンダラーの準備完了を待ってからスプラッシュに初期化完了を通知
   await rendererReadyPromise;
+  markStartup('renderer-ready');
+  await splashLoaded;
   notifySplashInitComplete();
   resolveAppReady();
+  // 起動の直後に続く読み込み（ブックマーク自動取込など）も含めて出す。メモリは 1 分後と 1 時間後
+  scheduleStartupReport(5_000);
+  scheduleMemoryMetrics();
 
   // settings.json が壊れていて退避したときは、既定の設定で起動したことを知らせる
   //（初回設定の画面が出る理由と、元の設定の残り場所が分かるように）

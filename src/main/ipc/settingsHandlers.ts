@@ -236,8 +236,8 @@ async function reapplyHotkeys(settingsService: SettingsService): Promise<void> {
 /**
  * settings.json をディスクから読み直し、副作用のある設定を適用し直す
  *
- * 設定値そのものは electron-store が毎回ディスクを読むので常に最新だが、
- * ホットキー登録・自動起動・ウィンドウ状態は set() 時にしか適用されない。
+ * 設定値は SettingsService がメモリに持つので、ここで写しを捨ててファイルから読み直させる。
+ * ホットキー登録・自動起動・ウィンドウ状態は set() 時にしか適用されないので、それも適用し直す。
  * QDL 外（人・AI）で settings.json を編集したときに、F5 でそれらを効かせる入口。
  */
 export async function reapplySettingsFromDisk(): Promise<void> {
@@ -254,6 +254,8 @@ export async function reapplySettingsFromDisk(): Promise<void> {
     return;
   }
 
+  // 読めるときだけ写しを捨てる（壊れている間は、最後に読めた設定のまま動かす）
+  settingsService.reloadFromDisk();
   await applySettingsEffects(EFFECT_KEYS, settingsService);
   try {
     await reapplyHotkeys(settingsService);
@@ -320,7 +322,7 @@ export function setupSettingsHandlers(setFirstLaunchMode?: (isFirstLaunch: boole
   handleIpc(IPC_CHANNELS.SETTINGS_GET, async () => {
     const settingsService = await SettingsService.getInstance();
     const allSettings = await settingsService.getAll();
-    logger.info('Settings get all request');
+    logger.debug('Settings get all request');
     return allSettings;
   });
 

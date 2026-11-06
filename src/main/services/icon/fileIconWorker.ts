@@ -41,6 +41,33 @@ let worker: Worker | null = null;
 let nextId = 1;
 const pending = new Map<number, Pending>();
 
+/**
+ * 要求が無くなってからワーカーを止めるまでの時間。アイコンの取り出しはまとめて来るので、続けて来る間は使い回し、
+ * 来なくなったら止めて、ワーカーのスレッドのメモリ（V8 の分で数 MB）を返す。次の要求で作り直す（A3-254 M5）
+ */
+export const WORKER_IDLE_MS = 60_000;
+let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelIdleStop(): void {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = null;
+}
+
+/** 待っている要求が無ければ、しばらくしてワーカーを止める */
+function scheduleIdleStop(): void {
+  cancelIdleStop();
+  if (pending.size > 0 || !worker) return;
+  idleTimer = setTimeout(() => {
+    idleTimer = null;
+    if (pending.size > 0 || !worker) return;
+    const stopping = worker;
+    // 先に外しておくので、exit のハンドラーは「異常終了」として扱わない
+    worker = null;
+    void stopping.terminate();
+  }, WORKER_IDLE_MS);
+  idleTimer.unref();
+}
+
 /** 待っている要求をすべて失敗にし、次の要求でワーカーを作り直す */
 function failAll(error: Error): void {
   worker = null;
@@ -63,6 +90,7 @@ function getWorker(): Worker {
     pending.delete(message.id);
     if (message.error) {
       entry.reject(new Error(message.error));
+      scheduleIdleStop();
       return;
     }
     // 転送で Uint8Array になるので Buffer に戻す。空は「取り出せなかった」として空の Buffer を返す
@@ -70,6 +98,7 @@ function getWorker(): Worker {
     entry.resolve(
       data ? Buffer.from(data.buffer, data.byteOffset, data.byteLength) : Buffer.alloc(0)
     );
+    scheduleIdleStop();
   });
   created.on('error', (error) => {
     iconLogger.error({ error }, 'アイコン取り出しのワーカーでエラーが起きました');
@@ -92,6 +121,7 @@ export function extractFileIconInWorker(filePath: string, size: number): Promise
   return new Promise<Buffer>((resolve, reject) => {
     const id = nextId++;
     pending.set(id, { resolve, reject });
+    cancelIdleStop();
     try {
       getWorker().postMessage({ id, filePath, size });
     } catch (error) {

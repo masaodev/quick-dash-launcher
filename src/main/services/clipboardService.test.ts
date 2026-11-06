@@ -25,17 +25,17 @@ import { ClipboardService } from './clipboardService';
 const service = ClipboardService.getInstance();
 
 /** クリップボードの読み出しを差し替え、キャプチャだけを試す */
-function stubCollect(): void {
+function stubCollect(dataSize = 1): void {
   vi.spyOn(
     service as unknown as { collectClipboardData: () => Promise<unknown> },
     'collectClipboardData'
-  ).mockResolvedValue({
+  ).mockImplementation(async () => ({
     success: true,
     data: {
-      clipboardData: { formats: ['text'], dataSize: 1, savedAt: Date.now() },
+      clipboardData: { formats: ['text'], dataSize, savedAt: Date.now() },
       preview: 'x',
     },
-  });
+  }));
 }
 
 function pendingCount(): number {
@@ -68,6 +68,22 @@ describe('ClipboardService の未確定のキャプチャ', () => {
     // 最初の 1 件だけが捨てられ、2 件目以降は残る
     expect(service.discardSession(ids[0])).toBe(false);
     expect(service.discardSession(ids[1])).toBe(true);
+  });
+
+  it('大きさの合計が 50MB を超える分は、古いものから捨てる（新しい 1 件は残す。A3-254）', async () => {
+    vi.restoreAllMocks();
+    stubCollect(20 * 1024 * 1024);
+    const ids = [await capture(), await capture(), await capture()];
+    // 3 件で 60MB になるので、最初の 1 件を捨てる
+    expect(pendingCount()).toBe(2);
+    expect(service.discardSession(ids[0])).toBe(false);
+
+    vi.restoreAllMocks();
+    stubCollect(80 * 1024 * 1024);
+    const big = await capture();
+    // 上限より大きい 1 件だけでも残す（ほかは捨てる）
+    expect(pendingCount()).toBe(1);
+    expect(service.discardSession(big)).toBe(true);
   });
 
   it('24 時間より古いものは、次のキャプチャのときに捨てる', async () => {

@@ -52,7 +52,7 @@ export function applyAllDesktopsPin(win: BrowserWindow, enabled: boolean, label:
   const success = enabled ? pinWindow(hwnd) : unPinWindow(hwnd);
   const action = enabled ? 'pin' : 'unpin';
   if (success) {
-    windowLogger.info(`${label}の仮想デスクトップ固定: ${action}`);
+    windowLogger.debug(`${label}の仮想デスクトップ固定: ${action}`);
   } else {
     windowLogger.warn(`${label}の仮想デスクトップ固定に失敗: ${action}`);
   }

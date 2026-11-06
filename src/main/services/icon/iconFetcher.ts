@@ -17,7 +17,7 @@ import {
 } from '../../utils/iconCacheKeys.js';
 import { mainI18n } from '../mainI18n.js';
 
-import { readFirstExistingFileAsBase64 } from './iconFileCache.js';
+import { readFirstExistingIconCached } from './iconMemoryCache.js';
 import { resolveCustomIconPath } from './customIconStore.js';
 import {
   extractCustomUriIcon,
@@ -76,7 +76,8 @@ export async function loadCachedIcons(
       if (customIconPath) candidates.push(customIconPath);
       candidates.push(...getCachedIconCandidates(item, folders));
 
-      const icon = await readFirstExistingFileAsBase64(candidates);
+      // 一度読んだファイルはメモリから返す（読み直しのたびに全ファイルを読まない。A3-254）
+      const icon = await readFirstExistingIconCached(candidates);
       if (icon) {
         iconCache[item.path] = icon;
       }
@@ -108,7 +109,7 @@ async function filterItemsWithoutErrors(
 
   return items.filter((item) => {
     if (errorKeys.has(item.path)) {
-      iconLogger.info({ path: item.path }, `Skipping ${errorType} fetch due to previous error`);
+      iconLogger.debug({ path: item.path }, `Skipping ${errorType} fetch due to previous error`);
       return false;
     }
     return true;
