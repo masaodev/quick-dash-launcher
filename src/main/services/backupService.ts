@@ -184,6 +184,8 @@ export class BackupService {
         }
       }
 
+      // settings.json も戻したので、メモリに持っている設定を捨てて読み直させる
+      (await SettingsService.getInstance()).reloadFromDisk();
       logger.info({ timestamp, fileCount: files.length }, 'スナップショットからリストアしました');
       return { success: true };
     } catch (error) {

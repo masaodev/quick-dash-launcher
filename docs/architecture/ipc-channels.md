@@ -152,7 +152,7 @@ F5 では、レンダラーが `settings:reapply` を呼んでから `load-data-
 
 ### `settings:reapply`
 
-`settings.json` をディスクの内容で適用し直す。設定値そのものは毎回ディスクから読むが、ホットキー登録・自動起動・CLI の PATH 登録・ウィンドウ状態は保存時にしか適用されないため、QDL の外で `settings.json` を編集したときに F5 から呼ぶ（CLI の `qdl reload` も同じ処理を呼ぶ）。処理後に `settings-changed` を送る。
+`settings.json` をディスクの内容で適用し直す。設定値はメモリに持っているので写しを捨ててファイルから読み直させ、保存時にしか適用されないホットキー登録・自動起動・CLI の PATH 登録・ウィンドウ状態も適用し直す。QDL の外で `settings.json` を編集したときに F5 から呼ぶ（CLI の `qdl reload` も同じ処理を呼ぶ）。処理後に `settings-changed` を送る。
 
 ### `settings:set-hotkey-recording`
 
