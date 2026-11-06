@@ -207,6 +207,11 @@ app.whenReady().then(async () => {
           setTimeout(() => reject(new Error('本体の初期化が終わりません')), 60_000)
         ),
       ]);
+      // CLI は QDL の外（人・AI）が settings.json を直したあとに使われるので、コマンドごとにファイルから読み直す
+      //（メモリの写しのまま計算して書くと、外での変更を消してしまう。読めないときは最後に読めた設定のまま。A3-254）
+      if (SettingsService.isSettingsFileReadable()) {
+        (await SettingsService.getInstance()).reloadFromDisk();
+      }
       return runCliCommand(req, cliContext);
     });
     if (app.isPackaged) {
@@ -233,10 +238,12 @@ app.whenReady().then(async () => {
 
   markStartup('cli-server-started');
 
-  // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）
+  // スプラッシュウィンドウを最速で表示（E2Eテスト環境ではスキップ）。
+  // ウィンドウはすぐ出るので、画面の読み込み（数百 ms）は待たずに初期化を進め、
+  // 初期化の完了を知らせる直前にだけ待つ（読み込み前に送ると届かない。A3-254 S7）
+  let splashLoaded: Promise<unknown> = Promise.resolve();
   if (!EnvConfig.skipSplashWindow && !launchedByCli) {
-    await createSplashWindow();
-    markStartup('splash-shown');
+    splashLoaded = createSplashWindow().then(() => markStartup('splash-shown'));
   }
 
   // 以下はスプラッシュ表示後にバックグラウンドで初期化
@@ -333,6 +340,7 @@ app.whenReady().then(async () => {
   // レンダラーの準備完了を待ってからスプラッシュに初期化完了を通知
   await rendererReadyPromise;
   markStartup('renderer-ready');
+  await splashLoaded;
   notifySplashInitComplete();
   resolveAppReady();
   // 起動の直後に続く読み込み（ブックマーク自動取込など）も含めて出す。メモリは 1 分後と 1 時間後
