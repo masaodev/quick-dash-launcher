@@ -224,6 +224,30 @@ test.describe('QuickDashLauncher - 設定タブ機能テスト', () => {
     }
   });
 
+  test('管理ウィンドウを開いている間にほかで変えた設定を、設定タブの操作で元に戻さない（A3-258）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+    try {
+      // 設定タブが開いた時点の設定を読み終えてから
+      await expect(adminWindow.locator('.settings-tab')).toBeVisible();
+      await adminWindow.waitForTimeout(1000);
+      // CLI（qdl settings set）と同じく、管理ウィンドウの外から設定を変える
+      await mainWindow.evaluate(() => window.electronAPI.setMultipleSettings({ windowWidth: 777 }));
+      await expect.poll(() => configHelper.readSettings().windowWidth).toBe(777);
+
+      await adminWindow.locator('.menu-item', { hasText: 'バックアップ' }).click();
+      await adminWindow.locator('label', { hasText: 'バックアップ機能を有効にする' }).click();
+      await expect.poll(() => configHelper.readSettings().backupEnabled).toBe(true);
+      expect(configHelper.readSettings().windowWidth).toBe(777);
+    } finally {
+      await adminWindow.close();
+    }
+  });
+
   test('「操作のヒントを表示する」でランチャー下のヒントを出し入れできる', async ({
     electronApp,
     mainWindow,
