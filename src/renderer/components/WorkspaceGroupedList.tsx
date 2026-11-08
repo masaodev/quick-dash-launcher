@@ -17,6 +17,7 @@ import { isLauncherItem } from '@common/types/guards';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import {
   canCreateSubgroup,
+  getDescendantGroupIds,
   getSubtreeMaxDepth,
   getGroupDepth,
   MAX_GROUP_DEPTH,
@@ -456,6 +457,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
    */
   const canNestGroup = React.useCallback(
     (draggedGroupId: string, targetGroupId: string): boolean => {
+      // 自分自身・自分の子孫には入れられない（本体が英語のエラーで断っていた。A3-258）
+      if (draggedGroupId === targetGroupId) return false;
+      if (getDescendantGroupIds(draggedGroupId, groups).includes(targetGroupId)) return false;
       // ターゲットがサブグループを作成可能か
       if (!canCreateSubgroup(targetGroupId, groups)) return false;
       // ドラッグ元のサブツリー深さを考慮
@@ -728,7 +732,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       } else if (
         draggedGroupId &&
         draggedGroupId !== groupId &&
-        normalizeGroupId(currentParentGroupId) !== groupId
+        normalizeGroupId(currentParentGroupId) !== groupId &&
+        // 見出しと同じく、入れられない先（自分の子孫・深すぎる）へは動かさない
+        canNestGroup(draggedGroupId, groupId)
       ) {
         // グループを別の親グループに移動
         onMoveGroupToParent(draggedGroupId, groupId);

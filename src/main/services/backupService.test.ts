@@ -147,6 +147,26 @@ describe('BackupService の変更前スナップショット', () => {
     expect(service.readPreImportSnapshot('2026-10-13T01-30-00-9_pre-import')).toBeNull();
   });
 
+  it('保持件数を超えても、ワークスペースの移行の前（_pre-migration）の新しいものは消さない（A3-258）', async () => {
+    const service = await BackupService.getInstance();
+    const names = [
+      '2026-10-09T00-00-00_pre-migration',
+      '2026-10-10T00-00-00',
+      '2026-10-11T00-00-00',
+      '2026-10-12T00-00-00',
+    ];
+    for (const name of names) {
+      fs.mkdirSync(path.join(paths.backupFolder, name), { recursive: true });
+      fs.writeFileSync(path.join(paths.backupFolder, name, 'workspace.json'), '{}');
+    }
+
+    // テストの設定の写しは保持件数に true（= 1）を返す
+    await (service as unknown as { cleanupOldSnapshots(): Promise<void> }).cleanupOldSnapshots();
+
+    const left = fs.readdirSync(paths.backupFolder).sort();
+    expect(left).toEqual(['2026-10-09T00-00-00_pre-migration', '2026-10-12T00-00-00']);
+  });
+
   it('読み込みの前のスナップショットに写せないファイルがあれば、フォルダを消して例外を投げる', async () => {
     const service = await BackupService.getInstance();
     fs.writeFileSync(path.join(tempDir, 'settings.json'), '{}');

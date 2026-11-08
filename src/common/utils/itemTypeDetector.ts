@@ -25,7 +25,8 @@ function detectTypeFromPath(itemPath: string): LauncherItem['type'] {
 
   // URLs
   if (itemPath.includes('://')) {
-    const scheme = itemPath.split('://')[0];
+    // スキームは大文字・小文字を区別しない（HTTPS:// も URL。カスタム URI にするとアイコンを取らない。A3-258）
+    const scheme = itemPath.split('://')[0].toLowerCase();
     return STANDARD_URL_SCHEMES.has(scheme) ? 'url' : 'customUri';
   }
 

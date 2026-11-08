@@ -15,6 +15,11 @@ describe('detectItemTypeSync', () => {
     expect(detectItemTypeSync('ftp://files.example.com')).toBe('url');
   });
 
+  it('スキームの大文字・小文字は区別しない（A3-258）', () => {
+    expect(detectItemTypeSync('HTTPS://example.com')).toBe('url');
+    expect(detectItemTypeSync('Http://example.com')).toBe('url');
+  });
+
   it('スラッシュ付きの非標準スキーマはcustomUriと判定する', () => {
     expect(detectItemTypeSync('obsidian://advanced-uri?vault=test')).toBe('customUri');
     expect(detectItemTypeSync('vscode://file/c:/work')).toBe('customUri');
