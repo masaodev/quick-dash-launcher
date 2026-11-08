@@ -289,10 +289,27 @@ function registerItemsToJsonFile(dataPath: string, fileName: string, items: Regi
   );
 }
 
+/**
+ * 書き足す前に今の内容を読む（無ければ null）
+ *
+ * あるのに読めない（ロック・オフラインのクラウドのファイルなど）ときに空として扱うと、
+ * 新しいアイテムだけを書いて既存のアイテムを消してしまうので、例外にして止める（A3-258）
+ *
+ * @throws ファイルがあるのに読めない場合
+ */
+export function readDataFileForWrite(dataPath: string, fileName: string): string | null {
+  const content = FileUtils.safeReadTextFile(dataPath);
+  if (content === null && FileUtils.exists(dataPath)) {
+    dataLogger.error({ dataPath }, 'データファイルがあるのに読めないため書き込みを中止します');
+    throw new Error(mainI18n.t('dataErrors.writeBlockedUnreadable', { file: fileName }));
+  }
+  return content;
+}
+
 function appendToJsonFile(dataPath: string, fileName: string, items: JsonItem[]): void {
   // 既存のJSONデータを読み込む
   let jsonData: JsonDataFile = createEmptyJsonDataFile();
-  const existingContent = FileUtils.safeReadTextFile(dataPath);
+  const existingContent = readDataFileForWrite(dataPath, fileName);
   if (existingContent) {
     try {
       jsonData = parseJsonDataFileLenient(existingContent).data;
@@ -349,7 +366,7 @@ export function moveItemToFile(
 }
 
 function readForMove(dataPath: string, fileName: string): JsonDataFile {
-  const content = FileUtils.safeReadTextFile(dataPath);
+  const content = readDataFileForWrite(dataPath, fileName);
   if (!content) return createEmptyJsonDataFile();
   try {
     return parseJsonDataFileLenient(content).data;

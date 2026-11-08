@@ -4,6 +4,7 @@ import * as path from 'path';
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { JsonClipboardItem } from '@common/types';
+import { FileUtils } from '@common/utils/fileUtils';
 
 const tempRoot = vi.hoisted(() => ({ dir: '' }));
 
@@ -312,6 +313,85 @@ describe('dataItemWriter', () => {
       expect(readItems('datafiles/data2.json')).toHaveLength(1);
     });
   });
+  describe('あるのに読めないデータファイル（ロックなど。A3-258）', () => {
+    const ORIGINAL = JSON.stringify({
+      version: '1.0',
+      items: [{ id: 'aaaaaaaa', type: 'item', displayName: 'A', path: 'C:\\a.exe' }],
+    });
+
+    beforeEach(() => {
+      writeFile('datafiles/data.json', ORIGINAL);
+      writeFile('datafiles/data2.json', JSON.stringify({ version: '1.0', items: [] }));
+      const real = FileUtils.safeReadTextFile.bind(FileUtils);
+      vi.spyOn(FileUtils, 'safeReadTextFile').mockImplementation((filePath: string) =>
+        filePath.endsWith('data.json') && !filePath.endsWith('data2.json') ? null : real(filePath)
+      );
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('登録は中止し、既存のアイテムを消さないこと', () => {
+      expect(() =>
+        registerItems(tempRoot.dir, [
+          {
+            displayName: 'B',
+            path: 'C:\\b.exe',
+            type: 'app',
+            targetTab: 'datafiles/data.json',
+            itemCategory: 'item',
+          },
+        ])
+      ).toThrow(/読み込めなかったため|couldn't be read/);
+      expect(fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data.json'), 'utf8')).toBe(
+        ORIGINAL
+      );
+    });
+
+    it('読めないファイルへの移動は中止し、どちらのファイルも書き換えないこと', () => {
+      const before2 = fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data2.json'), 'utf8');
+      writeFile(
+        'datafiles/data2.json',
+        JSON.stringify({
+          version: '1.0',
+          items: [{ id: 'cccccccc', type: 'item', displayName: 'C', path: 'C:\\c.exe' }],
+        })
+      );
+      const source2 = fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data2.json'), 'utf8');
+      expect(before2).not.toBe(source2);
+      expect(() =>
+        moveItemToFile(
+          tempRoot.dir,
+          { id: 'cccccccc', type: 'item', displayName: 'C', path: 'C:\\c.exe' },
+          'datafiles/data2.json',
+          'datafiles/data.json'
+        )
+      ).toThrow(/読み込めなかったため|couldn't be read/);
+      expect(fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data.json'), 'utf8')).toBe(
+        ORIGINAL
+      );
+      expect(fs.readFileSync(path.join(tempRoot.dir, 'datafiles/data2.json'), 'utf8')).toBe(
+        source2
+      );
+    });
+
+    it('ファイルが無ければ、今までどおり新しく作って登録すること', () => {
+      vi.restoreAllMocks();
+      fs.rmSync(path.join(tempRoot.dir, 'datafiles/data2.json'));
+      registerItems(tempRoot.dir, [
+        {
+          displayName: 'N',
+          path: 'C:\\n.exe',
+          type: 'app',
+          targetTab: 'datafiles/data2.json',
+          itemCategory: 'item',
+        },
+      ]);
+      expect(readItems('datafiles/data2.json').map((i) => i.displayName)).toEqual(['N']);
+    });
+  });
+
   describe('破損したデータファイルがあるとき', () => {
     const CORRUPTED = '{ "version": "1.0", "items": [';
 

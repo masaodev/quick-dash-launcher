@@ -42,7 +42,7 @@ import { notifyDataChanged } from '../ipc/notifications.js';
 
 import { detectInstalledBrowsers, parseBrowserBookmarksWithFolders } from './bookmarkReader.js';
 import { writeDataFile } from './dataFileTracker.js';
-import { writeFailedError } from './data/dataItemWriter.js';
+import { readDataFileForWrite, writeFailedError } from './data/dataItemWriter.js';
 import { SettingsService } from './settingsService.js';
 import { showToastWindow } from './overlayWindowService.js';
 import { mainI18n } from './mainI18n.js';
@@ -288,7 +288,7 @@ export class BookmarkAutoImportService {
    * 復旧不能になるため例外にして処理を中止する。
    */
   private loadDataFile(dataFilePath: string): JsonDataFile {
-    const content = FileUtils.safeReadTextFile(dataFilePath);
+    const content = readDataFileForWrite(dataFilePath, path.basename(dataFilePath));
     if (!content) {
       return createEmptyJsonDataFile();
     }
