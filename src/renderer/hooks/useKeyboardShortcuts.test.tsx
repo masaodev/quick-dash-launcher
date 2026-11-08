@@ -455,4 +455,10 @@ describe('useKeyboardShortcuts（PageUp・PageDown・Ctrl+Home・Ctrl+End）', (
     await press(keyEvent('End', { ctrlKey: true }));
     expect(params.setSelectedIndex).not.toHaveBeenCalled();
   });
+
+  it('一覧が空のときの ↑ は選択を動かさない（-1 にしない。A3-258）', async () => {
+    const { params, press } = setup([]);
+    await press(keyEvent('ArrowUp'));
+    expect(params.setSelectedIndex).not.toHaveBeenCalled();
+  });
 });
