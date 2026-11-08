@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { FileUtils } from '@common/utils/fileUtils';
 
 const paths = vi.hoisted(() => ({ backupFolder: '', configFolder: '' }));
 
@@ -14,7 +15,9 @@ vi.mock('../config/pathManager.js', () => ({
 }));
 
 vi.mock('./settingsService.js', () => ({
-  SettingsService: { getInstance: vi.fn(async () => ({ get: vi.fn(async () => true) })) },
+  SettingsService: {
+    getInstance: vi.fn(async () => ({ get: vi.fn(async () => true), reloadFromDisk: vi.fn() })),
+  },
 }));
 
 vi.mock('@common/logger', () => ({
@@ -81,6 +84,30 @@ describe('BackupService の変更前スナップショット', () => {
 
     expect(snapshot.timestamp).toBe(name);
     expect(snapshot.createdAt.toISOString()).toBe('2026-10-13T01:30:00.000Z');
+  });
+
+  it('戻せなかったファイルがあれば、完了にせずファイル名を添えて失敗にする（A3-258）', async () => {
+    const service = await BackupService.getInstance();
+    const name = await service.createPreExternalChangeSnapshot([
+      { relativePath: 'workspace.json', content: '{"a":1}' },
+      { relativePath: 'settings.json', content: '{"b":2}' },
+    ]);
+    const real = FileUtils.safeCopyFile.bind(FileUtils);
+    const spy = vi
+      .spyOn(FileUtils, 'safeCopyFile')
+      .mockImplementation((from: string, to: string) =>
+        to === path.join(tempDir, 'workspace.json') ? false : real(from, to)
+      );
+    try {
+      const result = await service.restoreSnapshot(name!);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('workspace.json');
+      expect(result.error).not.toContain('settings.json');
+      // 戻せたファイルは戻っている
+      expect(fs.readFileSync(path.join(tempDir, 'settings.json'), 'utf8')).toBe('{"b":2}');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('規則に合わない名前・フォルダの外を指す名前では、復元も削除もしない', async () => {
