@@ -1062,6 +1062,8 @@ function App(): React.ReactElement {
       <LauncherItemList
         items={filteredItems}
         nameOfItem={nameOfMainItem}
+        searchQuery={searchQuery}
+        searchMode={searchMode}
         emptyState={
           searchQuery.trim()
             ? {
