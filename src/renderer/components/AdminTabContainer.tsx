@@ -14,7 +14,7 @@ interface AdminTabContainerProps {
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   settings: AppSettings | null;
-  onSettingsSave: (settings: AppSettings) => Promise<void>;
+  onSettingsSave: (settings: AppSettings) => Promise<boolean>;
   /** 既定値に戻すなど、保存を経ずに設定が置き換わったとき */
   onSettingsReplaced: (settings: AppSettings) => void;
   /** アイテム管理でタブ・データファイルの構成を保存したとき */
