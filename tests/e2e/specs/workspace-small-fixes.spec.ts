@@ -86,6 +86,55 @@ test.describe('QuickDashLauncher - ワークスペースの小さな直し', () 
     ).toBeVisible();
   });
 
+  test('グループのテキストでコピーに、サブグループの中身も見出し付きで入る（A3-258）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    const groupId = await workspaceWindow.evaluate(async () => {
+      const api = window.electronAPI.workspaceAPI;
+      const parent = await api.createGroup('コピーの親');
+      await api.addItem(
+        { displayName: 'メモ帳', path: 'C:\\Windows\\System32\\notepad.exe', type: 'app' },
+        parent.id
+      );
+      const child = await api.createGroup('コピーの子', undefined, parent.id);
+      await api.addItem(
+        { displayName: '例のサイト', path: 'https://example.com', type: 'url' },
+        child.id
+      );
+      return parent.id;
+    });
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: '例のサイト' })
+    ).toBeVisible();
+
+    await sendToWorkspace(electronApp, 'workspace-group-menu-copy-as-text', groupId);
+    await expect(
+      workspaceWindow.getByText('「コピーの親」をテキストでコピーしました')
+    ).toBeVisible();
+    const text = await electronApp.evaluate(({ clipboard }) => clipboard.readText());
+    expect(text.split('\r\n')).toEqual([
+      // 並びは画面と同じ（このデータではサブグループが先に出る）
+      '【コピーの親】',
+      '　【コピーの子】',
+      '　　■例のサイト',
+      '　　　https://example.com',
+      '',
+      '　■メモ帳',
+      '　　C:\\Windows\\System32\\notepad.exe',
+      '',
+    ]);
+    const shownOrder = await workspaceWindow
+      .locator('.workspace-item-card, .workspace-group-header')
+      .allTextContents();
+    expect(shownOrder.findIndex((s) => s.includes('例のサイト'))).toBeLessThan(
+      shownOrder.findIndex((s) => s.includes('メモ帳'))
+    );
+  });
+
   test('ワークスペースの削除の確認は別の小さなウィンドウに出て、削除できる', async ({
     electronApp,
     mainWindow,
