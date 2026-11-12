@@ -192,6 +192,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.CLIPBOARD_CHECK_CURRENT]: ElectronAPI['clipboardAPI']['checkCurrent'];
   [IPC_CHANNELS.CLIPBOARD_CAPTURE]: ElectronAPI['clipboardAPI']['capture'];
   [IPC_CHANNELS.CLIPBOARD_RESTORE]: ElectronAPI['clipboardAPI']['restore'];
+  [IPC_CHANNELS.CLIPBOARD_RESTORE_ITEM]: ElectronAPI['clipboardAPI']['restoreItem'];
   [IPC_CHANNELS.CLIPBOARD_CAPTURE_TO_SESSION]: ElectronAPI['clipboardAPI']['captureToSession'];
   [IPC_CHANNELS.CLIPBOARD_COMMIT_SESSION]: ElectronAPI['clipboardAPI']['commitSession'];
   [IPC_CHANNELS.CLIPBOARD_DISCARD_SESSION]: ElectronAPI['clipboardAPI']['discardSession'];

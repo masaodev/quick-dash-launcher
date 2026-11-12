@@ -680,6 +680,8 @@ export interface ElectronAPI {
     checkCurrent: () => Promise<CurrentClipboardState>;
     capture: () => Promise<ClipboardCaptureResult>;
     restore: (dataFileRef: string) => Promise<ClipboardRestoreResult>;
+    /** ランチャーで選んだクリップボードアイテムを書き戻す（ランチャーを隠し、書き戻せたら起動の記録に数える） */
+    restoreItem: (dataFileRef: string, itemId: string) => Promise<ClipboardRestoreResult>;
     // セッション管理（登録確定前の一時保存）
     captureToSession: () => Promise<ClipboardSessionCaptureResult>;
     commitSession: (sessionId: string) => Promise<ClipboardSessionCommitResult>;

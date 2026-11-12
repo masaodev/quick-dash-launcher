@@ -420,7 +420,10 @@ function App(): React.ReactElement {
     async (item: AppItem): Promise<void> => {
       if (isClipboardItem(item)) {
         // 書き戻しは一瞬なので、書き戻してから「コピーしました」を出す（前に出すと終わっていないように見える）
-        const restored = await window.electronAPI.clipboardAPI.restore(item.clipboardDataRef);
+        const restored = await window.electronAPI.clipboardAPI.restoreItem(
+          item.clipboardDataRef,
+          item.id ?? ''
+        );
         if (restored.success) {
           await window.electronAPI.showToastWindow({
             type: 'success',
