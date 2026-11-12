@@ -134,6 +134,27 @@ test.describe('QuickDashLauncher - ワークスペースへの貼り付け', () 
     });
   });
 
+  test('ランチャーに同じ URL のアイテムがあれば、その参照で足し、ランチャーの表示名で出す（A3-256）', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    await new TestUtils(mainWindow).waitForPageLoad();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow.waitForLoadState('domcontentloaded');
+    await selectPasteGroup(workspaceWindow, '参照で貼る先');
+
+    // テストデータのランチャーには「GitHub」（https://github.com/）がある。末尾のスラッシュ無しでも同じとみなす
+    await pasteText(electronApp, workspaceWindow, 'https://github.com');
+    await expect(
+      workspaceWindow.locator('.workspace-item-card', { hasText: 'GitHub' })
+    ).toBeVisible({ timeout: 15000 });
+
+    const items = await workspaceWindow.evaluate(() => window.electronAPI.workspaceAPI.loadItems());
+    const added = items.find((item) => item.displayName === 'GitHub');
+    expect(added?.ref).toMatchObject({ itemId: 'base0001', status: 'ok' });
+    expect(items.some((item) => item.displayName === 'https://github.com')).toBe(false);
+  });
+
   test('余白の右クリックの「貼り付け」（webContents.paste）でも、ファイル以外の URL が足せる', async ({
     electronApp,
     mainWindow,

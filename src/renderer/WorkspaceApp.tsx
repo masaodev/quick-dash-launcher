@@ -512,7 +512,8 @@ const WorkspaceApp: React.FC = () => {
           for (const url of urls) {
             const added = await addUrlItem(url, () => {}, targetGroupId, activeWorkspaceId);
             if (!added) continue;
-            addedUrls.push(url);
+            // ランチャーの参照になったときは、ランチャーの表示名で知らせる
+            addedUrls.push(added.displayName || url);
             targetGroupId ??= added.groupId;
           }
           if (urls.length > 0) {

@@ -15,14 +15,22 @@ export function isReferenceableAppItem(item: AppItem): item is ReferenceableAppI
   return true;
 }
 
+/** スキームと、その後ろの「//ホスト」まで（URL・カスタム URI の、大文字小文字を区別しない部分） */
+const URL_HEAD = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*/i;
+
 /**
- * 「同じアイテム」とみなすパスのキー（大文字小文字・前後の空白・末尾の区切り文字の違いを無視し、引数も比べる）。
+ * 「同じアイテム」とみなすパスのキー（前後の空白・末尾の区切り文字の違いを無視し、引数も比べる）。
  * パスが無ければ null（比べない）
  *
- * 選ぶ画面の「追加済み」と、コピーを参照に変えるときの候補で同じ判定を使う
+ * ファイルのパスは大文字小文字を区別しない（Windows のファイルシステムと同じ）。URL・カスタム URI は
+ * スキームとホストだけ区別せず、その後ろ（パス・クエリ）は区別する（`?v=abcDEF` と `?v=ABCdef` は別の動画）
+ *
+ * 選ぶ画面の「追加済み」、コピーを参照に変えるときの候補、ドロップ・貼り付けで同じアイテムを探すときに同じ判定を使う
  */
 export function samePathKey(path: string | undefined, args: string | undefined): string | null {
   const trimmed = (path ?? '').trim().replace(/[\\/]+$/, '');
   if (!trimmed) return null;
-  return [trimmed.toLowerCase(), (args ?? '').trim()].join('\n');
+  const head = URL_HEAD.exec(trimmed)?.[0];
+  const key = head ? head.toLowerCase() + trimmed.slice(head.length) : trimmed.toLowerCase();
+  return [key, (args ?? '').trim()].join('\n');
 }
