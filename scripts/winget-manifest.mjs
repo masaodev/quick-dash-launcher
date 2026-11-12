@@ -2,8 +2,8 @@
  * winget-pkgs に出す正式版のマニフェストを作り、提出の前に確かめる（提出はしない）。
  *
  * 1. wingetcreate update で、前の版のマニフェストを元に新しい版のものを --out に作る（提出しない・トークン不要）
- * 2. 各言語のマニフェストの説明文（PackageName・ShortDescription・Description・Tags）を
- *    packaging/winget/locale.<言語>.yaml（正本）の値で置き換え、使っていない Documentations（Wiki）を消す
+ * 2. 各言語のマニフェストの説明文（PackageName・ShortDescription・Description・Tags）と Documentations（README へのリンク）を
+ *    packaging/winget/locale.<言語>.yaml（正本）の値で置き換える
  * 3. ja-JP の ReleaseNotes に、--release-notes のファイルの要約を入れる（wingetcreate は前の版の ReleaseNotes を引き継がず、
  *    前の版にあった項目が無いと winget-pkgs の自動検証に指摘される＝0.8.0 の #468015）
  *    ReleaseDate も同じ理由で、Release の公開日（UTC）を --release-date で入れる
@@ -23,7 +23,7 @@ import yaml from 'js-yaml';
 const PACKAGE_ID = 'masaodev.quick-dash-launcher';
 const REPO = 'masaodev/quick-dash-launcher';
 /** 正本の値で置き換える項目 */
-const OVERRIDE_KEYS = ['PackageName', 'ShortDescription', 'Description', 'Tags'];
+const OVERRIDE_KEYS = ['PackageName', 'ShortDescription', 'Description', 'Tags', 'Documentations'];
 /** ReleaseNotes を入れる言語（0.7.39・0.8.0 と同じく ja-JP だけ。en-US はリリースノートの全文が上限を超えるので入れていない） */
 const RELEASE_NOTES_LOCALE = 'ja-JP';
 /** ReleaseNotes の要約の長さの目安。全文（0.8.0 で 6,179 字）は長すぎたので、数行に収める */
@@ -153,7 +153,9 @@ for (const file of localeFiles) {
       if (source[key] === undefined) fail(`${sourcePath} に ${key} がありません`);
       data[key] = source[key];
     }
+    // 前の版と同じく末尾（ManifestType の前）に置く
     delete data.Documentations;
+    data.Documentations = source.Documentations;
     delete data.ReleaseNotes;
     if (locale === RELEASE_NOTES_LOCALE) data.ReleaseNotes = releaseNotes;
     data.ReleaseNotesUrl = releaseUrl;
