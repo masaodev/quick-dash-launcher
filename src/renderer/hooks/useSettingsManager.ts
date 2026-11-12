@@ -22,7 +22,8 @@ export type HandleSettingChange = <K extends keyof AppSettings>(
 interface UseSettingsManagerProps {
   editedSettings: AppSettings;
   setEditedSettings: Dispatch<SetStateAction<AppSettings>>;
-  onSave: (settings: AppSettings) => Promise<void>;
+  /** 保存できたら true。できなかったときは知らせを出し終えて false を返す（成功の知らせを出さない） */
+  onSave: (settings: AppSettings) => Promise<boolean>;
   /** 既定値に戻した後の設定を親（AdminApp）にも反映する。渡さないと親の状態が古いまま残る */
   onSettingsReplaced?: (settings: AppSettings) => void;
   showAlert: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void;
@@ -51,7 +52,7 @@ export function useSettingsManager({
   const saveSettings = useCallback(
     async (settings: AppSettings, successMessage?: string): Promise<boolean> => {
       try {
-        await onSave(settings);
+        if (!(await onSave(settings))) return false;
         if (successMessage) {
           showToast?.(successMessage);
         }

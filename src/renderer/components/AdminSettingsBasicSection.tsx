@@ -29,7 +29,8 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
   sectionReset,
 }) => {
   const { t } = useTranslation();
-  // 更新の知らせは Store 版では使わない（Store が更新する）ので、設定も出さない
+  // 更新の知らせは Store 版では使わない（Store が更新する）ので、設定も出さない。
+  // qdl コマンドの切り替えも、Store 版では説明に置き換える
   const [isStore, setIsStore] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -286,18 +287,25 @@ const AdminSettingsBasicSection: React.FC<AdminSettingsBasicSectionProps> = ({
           isLoading={isLoading}
           {...sectionReset}
         />
-        <div className="setting-item">
-          <label>
-            <input
-              type="checkbox"
-              checked={editedSettings.cliEnabled}
-              onChange={(e) => handleSettingChange('cliEnabled', e.target.checked)}
-              disabled={isLoading}
-            />
-            {t('settings.system.cli')}
-          </label>
-          <div className="setting-description">{t('settings.system.cliDescription')}</div>
-        </div>
+        {isStore ? (
+          // Store 版は実行エイリアスで最初から qdl を呼べるので、切り替えは出さない
+          <div className="setting-item">
+            <div className="setting-description">{t('settings.system.cliStoreDescription')}</div>
+          </div>
+        ) : (
+          <div className="setting-item">
+            <label>
+              <input
+                type="checkbox"
+                checked={editedSettings.cliEnabled}
+                onChange={(e) => handleSettingChange('cliEnabled', e.target.checked)}
+                disabled={isLoading}
+              />
+              {t('settings.system.cli')}
+            </label>
+            <div className="setting-description">{t('settings.system.cliDescription')}</div>
+          </div>
+        )}
       </div>
 
       <div className="settings-section">

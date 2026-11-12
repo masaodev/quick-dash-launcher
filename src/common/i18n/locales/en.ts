@@ -2104,6 +2104,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
     itemNotFound: "The item with ID {{id}} wasn't found",
     invalidTargetFile: 'The data file name to add to is invalid: {{files}}',
     fileUnreadable: "Couldn't read the file",
+    writeBlockedUnreadable:
+      "Writing was stopped because {{file}} couldn't be read. Make sure no other app has the file open, then try again.",
     convertFailed: 'Conversion failed: {{error}}',
     configLoadFailed: "Couldn't load the settings files (they may be corrupted): {{files}}",
     settingsRecovered:
@@ -2166,6 +2168,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
   backupErrors: {
     snapshotNotFound: "The snapshot wasn't found",
     restoreFailed: "Couldn't restore",
+    restorePartlyFailed:
+      "Some files couldn't be restored: {{files}}. Make sure no other app has them open, then restore again.",
     deleteFailed: "Couldn't delete",
     preMigrationCopyFailed: "Couldn't copy {{file}} to the pre-migration snapshot",
     preImportCopyFailed:
@@ -2616,6 +2620,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       updateCheckIncludeBetaDescription: "While you're on a beta, betas are always included.",
       cliDescription:
         'Lets terminals and AI tools work with items and workspaces. Works in terminals opened after you turn it on.',
+      cliStoreDescription:
+        'Lets terminals and AI tools work with items and workspaces. The qdl command works in any terminal. To turn it off, go to Windows Settings > Apps > Advanced app settings > App execution aliases, and turn off qdl.exe.',
     },
     search: {
       heading: 'Search',

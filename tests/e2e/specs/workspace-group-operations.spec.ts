@@ -234,7 +234,8 @@ test.describe('QuickDashLauncher - ワークスペースの操作', () => {
         .poll(async () => (await opened()).filter((o) => o.startsWith('external:')), {
           timeout: 10000,
         })
-        .toEqual(['external:https://example.com/a', 'external:https://example.com/b']);
+        // 画面の順（サブグループ「中のグループ」はアイテムより先に作ったので上に並ぶ）に開く
+        .toEqual(['external:https://example.com/b', 'external:https://example.com/a']);
     });
 
     await test.step('Shift+クリックで親フォルダを開く', async () => {
@@ -247,5 +248,81 @@ test.describe('QuickDashLauncher - ワークスペースの操作', () => {
         .poll(async () => (await opened()).filter((o) => o.startsWith('path:')))
         .toEqual(['path:C:\\Windows\\System32']);
     });
+  });
+  test('「すべて開く」は、アイテムとサブグループを混ぜて並べた画面の順に開く（A3-258）', async ({
+    electronApp,
+    mainWindow,
+    configHelper,
+  }) => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const at = 1759449600000;
+    const item = (id: string, name: string, groupId: string, order: number) => ({
+      id,
+      type: 'item',
+      displayName: name,
+      path: `https://example.com/${name}`,
+      workspaceId: 'WsOrd001',
+      groupId,
+      order,
+      addedAt: at,
+    });
+    fs.writeFileSync(
+      path.join(configHelper.getConfigDir(), 'workspace.json'),
+      JSON.stringify({
+        version: '2.0',
+        workspaces: [{ id: 'WsOrd001', displayName: 'メイン', order: 0, createdAt: at }],
+        groups: [
+          {
+            id: 'GrOrdTop',
+            displayName: '親',
+            color: 'primary',
+            order: 0,
+            createdAt: at,
+            workspaceId: 'WsOrd001',
+          },
+          {
+            id: 'GrOrdSub',
+            displayName: '子',
+            color: 'info',
+            order: 1,
+            createdAt: at,
+            workspaceId: 'WsOrd001',
+            parentGroupId: 'GrOrdTop',
+          },
+        ],
+        items: [
+          item('ItOrd001', 'first', 'GrOrdTop', 0),
+          item('ItOrd002', 'in-sub', 'GrOrdSub', 0),
+          item('ItOrd003', 'last', 'GrOrdTop', 2),
+        ],
+      })
+    );
+    const utils = new TestUtils(mainWindow);
+    await utils.waitForPageLoad();
+    await utils.reloadWithF5();
+    const workspaceWindow = await getWorkspaceWindow(electronApp);
+    await workspaceWindow
+      .locator('.workspace-item-card', { hasText: 'last' })
+      .waitFor({ state: 'attached', timeout: 10000 });
+
+    await electronApp.evaluate(({ shell }) => {
+      const g = globalThis as { __e2eOpened?: string[] };
+      g.__e2eOpened = [];
+      shell.openExternal = async (url: string) => {
+        g.__e2eOpened?.push(url);
+      };
+    });
+    await sendToWorkspace(electronApp, 'workspace-group-menu-open-all', 'GrOrdTop');
+    await expect
+      .poll(
+        () => electronApp.evaluate(() => (globalThis as { __e2eOpened?: string[] }).__e2eOpened),
+        { timeout: 10000 }
+      )
+      .toEqual([
+        'https://example.com/first',
+        'https://example.com/in-sub',
+        'https://example.com/last',
+      ]);
   });
 });

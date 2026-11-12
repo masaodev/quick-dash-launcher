@@ -43,6 +43,7 @@ import { mainI18n } from '../mainI18n.js';
 import { launchAppItem } from '../launch/appItemLauncher.js';
 import { showMainWindow } from '../../windowManager.js';
 import { showWorkspaceWindow } from '../../workspaceWindowManager.js';
+import { resolveRealPath } from '../../utils/packagedPath.js';
 
 import { CliError } from './cliArgs.js';
 import { itemName } from './cliLauncherCommands.js';
@@ -176,7 +177,8 @@ export function createCliContext(
   );
   return {
     ...base,
-    configFolder,
+    // qdl status が返す場所。Store 版では、外のターミナルから見える実際の場所にする
+    configFolder: resolveRealPath(configFolder),
     reload: async () => {
       // ランチャーの F5 と同じく、設定の再適用に失敗してもデータの読み直しは続ける
       await reapplySettingsFromDisk().catch((error) =>
