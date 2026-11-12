@@ -2,10 +2,11 @@
  * winget-pkgs に出す正式版のマニフェストを作り、提出の前に確かめる（提出はしない）。
  *
  * 1. wingetcreate update で、前の版のマニフェストを元に新しい版のものを --out に作る（提出しない・トークン不要）
- * 2. 各言語のマニフェストの説明文（PackageName・ShortDescription・Description・Tags）を
- *    packaging/winget/locale.<言語>.yaml（正本）の値で置き換え、使っていない Documentations（Wiki）を消す
+ * 2. 各言語のマニフェストの説明文（PackageName・ShortDescription・Description・Tags）と Documentations（README へのリンク）を
+ *    packaging/winget/locale.<言語>.yaml（正本）の値で置き換える
  * 3. ja-JP の ReleaseNotes に、--release-notes のファイルの要約を入れる（wingetcreate は前の版の ReleaseNotes を引き継がず、
  *    前の版にあった項目が無いと winget-pkgs の自動検証に指摘される＝0.8.0 の #468015）
+ *    ReleaseDate も同じ理由で、Release の公開日（UTC）を --release-date で入れる
  * 4. インストーラーの SHA256 が GitHub Release のアセットの digest と同じか、winget validate が通るかを確かめる
  *
  * 使い方: node scripts/winget-manifest.mjs --version 1.0.0 --release-notes <要約のファイル>
@@ -22,7 +23,7 @@ import yaml from 'js-yaml';
 const PACKAGE_ID = 'masaodev.quick-dash-launcher';
 const REPO = 'masaodev/quick-dash-launcher';
 /** 正本の値で置き換える項目 */
-const OVERRIDE_KEYS = ['PackageName', 'ShortDescription', 'Description', 'Tags'];
+const OVERRIDE_KEYS = ['PackageName', 'ShortDescription', 'Description', 'Tags', 'Documentations'];
 /** ReleaseNotes を入れる言語（0.7.39・0.8.0 と同じく ja-JP だけ。en-US はリリースノートの全文が上限を超えるので入れていない） */
 const RELEASE_NOTES_LOCALE = 'ja-JP';
 /** ReleaseNotes の要約の長さの目安。全文（0.8.0 で 6,179 字）は長すぎたので、数行に収める */
@@ -75,6 +76,10 @@ const releaseRes = await fetch(`https://api.github.com/repos/${REPO}/releases/ta
 if (!releaseRes.ok) fail(`Release v${version} を読めませんでした（HTTP ${releaseRes.status}）`);
 const release = await releaseRes.json();
 if (release.prerelease) fail(`v${version} はプレリリースです。winget には正式版だけを出します`);
+// ReleaseDate は Release を公開した日（UTC）。無いと winget-pkgs の自動検証に指摘される（1.0.1 の #478917）
+const releaseDate = (release.published_at ?? '').slice(0, 10);
+if (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate))
+  fail(`Release v${version} の公開日を読めませんでした`);
 const asset = release.assets.find((a) => a.name === installerName);
 if (!asset)
   fail(
@@ -101,6 +106,8 @@ execFileSync(
     `${installerUrl}|x64`,
     '--release-notes-url',
     releaseUrl,
+    '--release-date',
+    releaseDate,
     '--out',
     outDir,
   ],
@@ -146,7 +153,9 @@ for (const file of localeFiles) {
       if (source[key] === undefined) fail(`${sourcePath} に ${key} がありません`);
       data[key] = source[key];
     }
+    // 前の版と同じく末尾（ManifestType の前）に置く
     delete data.Documentations;
+    data.Documentations = source.Documentations;
     delete data.ReleaseNotes;
     if (locale === RELEASE_NOTES_LOCALE) data.ReleaseNotes = releaseNotes;
     data.ReleaseNotesUrl = releaseUrl;
@@ -160,14 +169,31 @@ for (const locale of [RELEASE_NOTES_LOCALE, 'en-US']) {
     fail(`${locale} のマニフェストがありません`);
 }
 
+// wingetcreate は ReleaseDate を末尾に足すので、前の版と同じく ManifestType の前へ移す
+const installerPath = path.join(manifestDir, `${PACKAGE_ID}.installer.yaml`);
+const installerText = fs.readFileSync(installerPath, 'utf8');
+const dateLine = installerText.match(/^ReleaseDate:.*\r?\n/m)?.[0];
+if (dateLine) {
+  fs.writeFileSync(
+    installerPath,
+    installerText.replace(dateLine, '').replace(/^ManifestType:/m, dateLine + 'ManifestType:'),
+    'utf8'
+  );
+}
+
 // 4. インストーラーとハッシュ、winget validate
-const installer = yaml.load(
-  fs.readFileSync(path.join(manifestDir, `${PACKAGE_ID}.installer.yaml`), 'utf8')
-);
+const installer = yaml.load(fs.readFileSync(installerPath, 'utf8'));
 const entries = installer.Installers ?? [];
 if (entries.length !== 1) fail(`インストーラーが ${entries.length} 件あります（1 件のはず）`);
 if (entries[0].InstallerUrl !== installerUrl)
   fail(`InstallerUrl が違います: ${entries[0].InstallerUrl}`);
+// js-yaml は日付だけの値を Date として読む
+const writtenDate =
+  installer.ReleaseDate instanceof Date
+    ? installer.ReleaseDate.toISOString().slice(0, 10)
+    : String(installer.ReleaseDate ?? '');
+if (writtenDate !== releaseDate)
+  fail(`ReleaseDate（${writtenDate || '無し'}）が Release の公開日（${releaseDate}）と違います`);
 if (entries[0].InstallerSha256.toUpperCase() !== digest) {
   fail(
     `InstallerSha256（${entries[0].InstallerSha256}）が Release の digest（${digest}）と違います`
@@ -178,6 +204,7 @@ execFileSync('winget', ['validate', '--manifest', manifestDir], { stdio: 'inheri
 console.log('');
 console.log(`✅ winget のマニフェストを作りました（未提出）: ${manifestDir}`);
 for (const line of summary) console.log(`   ${line}`);
+console.log(`   ReleaseDate: ${releaseDate}（Release の公開日。UTC）`);
 console.log(`   インストーラーの SHA256 は Release の digest と一致: ${digest}`);
 console.log('');
 console.log('中身を本人に見せて OK を取ってから、次で提出する:');

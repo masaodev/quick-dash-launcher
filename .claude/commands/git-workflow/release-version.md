@@ -70,6 +70,7 @@ allowed-tools: ['Bash', 'Read', 'Edit', 'TodoWrite', 'AskUserQuestion', 'Skill',
    - ビルドとリリースが自動的に作成される（本文はタグのメッセージから。タグに `-` があればプレリリース）
 
 8. **winget への提出（正式版のとき）**
+   - 先に wingetcreate を最新にする（`winget upgrade Microsoft.WingetCreate`。古いと古い形式の版で作られ、winget-pkgs の検証で止まる＝1.0.0 で起きた）
    - Actions が終わり、Release にインストーラーが載ったのを確かめてから、`npm run winget:manifest -- --version {version} --release-notes winget-notes.ja.txt` でマニフェストを `release/winget/` に作る（提出はしない。下の処理フロー 7）
      - スクリプトは `wingetcreate update --out` で作り、説明文を正本（`packaging/winget/locale.<言語>.yaml`）で置き換え、ja-JP に ReleaseNotes の要約を入れ、インストーラーの SHA256 と Release の digest の照合と `winget validate` までする。wingetcreate は前の版の ReleaseNotes を引き継がず、前の版にあった項目が無いと winget-pkgs の自動検証に指摘されるので、`wingetcreate update --submit` で直接出さない
      - 説明文を変えたいときは、先に `packaging/winget/` の正本（日本語が正本、英語は訳）を PR で直す
