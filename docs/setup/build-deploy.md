@@ -140,9 +140,10 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 [winget](https://github.com/microsoft/winget-pkgs) には `masaodev.quick-dash-launcher` として公開している（インストーラー版 `QuickDashLauncher.Setup.{VERSION}.exe`）。
 
 - **正式版を出したら、自分で winget-pkgs に更新 PR を出す**。リリースの Actions が終わってから、`npm run winget:manifest -- --version {VERSION} --release-notes <要約のファイル>`（`scripts/winget-manifest.mjs`）でマニフェストを `release/winget/` に作り、中身を確かめてから `wingetcreate submit <そのフォルダ> --token "$(gh auth token)"` で出す（手順は [`/release-version`](../../.claude/commands/git-workflow/release-version.md) の手順 8）。Microsoft 側の検証とモデレーターの承認を経てマージされると反映される
-  - スクリプトがすること: `wingetcreate update --out` で前の版を元に作る → 各言語の `PackageName`・`ShortDescription`・`Description`・`Tags` を `packaging/winget/locale.<言語>.yaml` の値で置き換え、使っていない `Documentations`（Wiki）を消す → ja-JP に `ReleaseNotes`（数行の要約、1,000 字まで）を入れる → インストーラーの `InstallerSha256` と Release のアセットの digest の照合、`winget validate`。正式版の番号でないとき・Release がプレリリースのとき・インストーラーが載っていないときは止まる
-  - `wingetcreate update --submit` で直接出さない。wingetcreate は前の版の `ReleaseNotes` を引き継がず、前の版にあった項目が無いと winget-pkgs の自動検証（Manifest-Metadata-Consistency）に指摘される（0.8.0 で起きた）
+  - スクリプトがすること: `wingetcreate update --out` で前の版を元に作る（`ReleaseDate` には Release の公開日を UTC で入れる）→ 各言語の `PackageName`・`ShortDescription`・`Description`・`Tags` を `packaging/winget/locale.<言語>.yaml` の値で置き換え、使っていない `Documentations`（Wiki）を消す → ja-JP に `ReleaseNotes`（数行の要約、1,000 字まで）を入れる → インストーラーの `InstallerSha256` と Release のアセットの digest の照合、`winget validate`。正式版の番号でないとき・Release がプレリリースのとき・インストーラーが載っていないときは止まる
+  - `wingetcreate update --submit` で直接出さない。wingetcreate は前の版の `ReleaseNotes` を引き継がず、前の版にあった項目が無いと winget-pkgs の自動検証（Manifest-Metadata-Consistency）に指摘される（0.8.0 で起きた。1.0.1 では `ReleaseDate` が無くて指摘された）
   - **説明文の正本**は `packaging/winget/locale.ja-JP.yaml`（日本語が正本）と `locale.en-US.yaml`（その訳）。README の冒頭と「特徴」に合わせ、README の紹介を大きく変えたら一緒に直す。ReleaseNotes は ja-JP だけに入れる（0.7.39 から同じ。en-US はリリースノートの全文が上限の 10,000 字を超えるため入れていない）
+  - `wingetcreate` は作る前に最新にする（`winget upgrade Microsoft.WingetCreate`）。古いと古い形式の版（`ManifestVersion`）で作られ、手元の `winget validate` は通っても winget-pkgs の検証で止まる（1.0.0 で起きた）
   - `wingetcreate`（`winget install wingetcreate`）と、`repo` 権限のある `gh` のログインが要る。トークンはその場で渡し、保存しない
 
 - **予備としてコミュニティの自動更新ボット**（[damn-good-b0t](https://github.com/b0t-at/winget-pkgs-updates)）も QDL を見ている。ボットはリリース直後しばらく待ち、同じ版の PR がすでにあれば出さないので、自分で出せばぶつからない。出し忘れたときは半日〜1 日でボットが出す。プレリリースは拾わない
