@@ -2618,6 +2618,8 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       updateCheckIncludeBetaDescription: "While you're on a beta, betas are always included.",
       cliDescription:
         'Lets terminals and AI tools work with items and workspaces. Works in terminals opened after you turn it on.',
+      cliStoreDescription:
+        'Lets terminals and AI tools work with items and workspaces. The qdl command works in any terminal. To turn it off, go to Windows Settings > Apps > Advanced app settings > App execution aliases, and turn off qdl.exe.',
     },
     search: {
       heading: 'Search',
