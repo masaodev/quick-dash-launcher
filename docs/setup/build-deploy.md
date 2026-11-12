@@ -98,6 +98,7 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 
 - **ロゴ**: `scripts/generate-appx-assets.mjs` が `assets/icon.svg` から拡大率・大きさ別の画像を `build/appx/` に作る（Electron で描くので `electron` コマンドで実行する）
 - **自動起動**: マニフェストに StartupTask を書く（`resources/appx/extensions.xml`。初期値は無効）。アプリからは `@microsoft/dynwinrt`（プレビュー版）で WinRT の StartupTask を切り替える。呼び出しコードは `npm run winrt:generate` で作り、git に入れる。生成物の `index.js` は変数を `require` するのでバンドルできず、クラスのファイルを直接読み込む
+- **Quick Dash Launcher CLI**: マニフェストにアプリ実行エイリアス（`qdl.exe`）を書く（同じ `resources/appx/extensions.xml`。`uap3` の名前空間は electron-builder のひな形に無いので、要素に `xmlns:uap3` を書く）。インストールするとターミナルから `qdl` で呼べる（[Store 版](../features/cli.md#store-版)）
 - **設定フォルダ**: `%APPDATA%` 直下に新しく作るフォルダは、パッケージ専用の場所（`%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Roaming\`）に振り替えられる。既にある `%APPDATA%\quick-dash-launcher` は振り替えられず、インストーラー版（とポータブルモードでない ZIP 版）と共有する
 - **Publisher・Identity**: Partner Center に登録する前の仮の値。提出前に Partner Center の値にする
 

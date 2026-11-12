@@ -2629,6 +2629,8 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       updateCheckIncludeBetaDescription: 'ベータ版を使っている間は、オフでも確認します。',
       cliDescription:
         'ターミナルや AI からアイテムやワークスペースを操作できます。オンにしたあとに開いたターミナルで使えます。',
+      cliStoreDescription:
+        'ターミナルや AI からアイテムやワークスペースを操作できます。qdl コマンドは、ターミナルでそのまま使えます。止めるには Windows の［設定］→［アプリ］→［アプリの詳細設定］→［アプリ実行エイリアス］で qdl.exe をオフにしてください。',
     },
     search: {
       heading: '検索',

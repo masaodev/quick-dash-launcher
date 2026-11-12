@@ -14,6 +14,7 @@ import {
   addPathEntry,
   getCliInstallDir,
   installCli,
+  managesCliInstall,
   removePathEntry,
   uninstallCli,
 } from './cliInstallService';
@@ -42,6 +43,24 @@ describe('addPathEntry / removePathEntry', () => {
       'C:\\a;%LOCALAPPDATA%\\x'
     );
     expect(removePathEntry('C:\\a', dir)).toBeNull();
+  });
+});
+
+describe('managesCliInstall', () => {
+  const packaged = { isPackaged: true, platform: 'win32', hasAppInstance: false, isStore: false };
+
+  it('パッケージ版（ZIP 版・インストーラー版）ではコピーと PATH の書き換えをする', () => {
+    expect(managesCliInstall(packaged)).toBe(true);
+  });
+
+  it('Store 版では何もしない（qdl は実行エイリアスで呼べる）', () => {
+    expect(managesCliInstall({ ...packaged, isStore: true })).toBe(false);
+  });
+
+  it('開発用の起動・APP_INSTANCE 付きの起動・Windows 以外では何もしない', () => {
+    expect(managesCliInstall({ ...packaged, isPackaged: false })).toBe(false);
+    expect(managesCliInstall({ ...packaged, hasAppInstance: true })).toBe(false);
+    expect(managesCliInstall({ ...packaged, platform: 'darwin' })).toBe(false);
   });
 });
 
