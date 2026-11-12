@@ -405,6 +405,8 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams): {
           e.preventDefault();
           e.stopPropagation();
           windowSelection.resetAnchor();
+          // 0 件のときは動かさない（末尾＝ -1 になり、アイテムが出ても選択が無いままになる。A3-258）
+          if (filteredItems.length === 0) return;
           setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredItems.length - 1));
         }
         return;

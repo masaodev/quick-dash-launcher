@@ -98,7 +98,8 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 
 - **ロゴ**: `scripts/generate-appx-assets.mjs` が `assets/icon.svg` から拡大率・大きさ別の画像を `build/appx/` に作る（Electron で描くので `electron` コマンドで実行する）
 - **自動起動**: マニフェストに StartupTask を書く（`resources/appx/extensions.xml`。初期値は無効）。アプリからは `@microsoft/dynwinrt`（プレビュー版）で WinRT の StartupTask を切り替える。呼び出しコードは `npm run winrt:generate` で作り、git に入れる。生成物の `index.js` は変数を `require` するのでバンドルできず、クラスのファイルを直接読み込む
-- **設定フォルダ**: `%APPDATA%` 直下に新しく作るフォルダは、パッケージ専用の場所（`%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Roaming\`）に振り替えられる。既にある `%APPDATA%\quick-dash-launcher` は振り替えられず、インストーラー版（とポータブルモードでない ZIP 版）と共有する
+- **Quick Dash Launcher CLI**: マニフェストにアプリ実行エイリアス（`qdl.exe`）を書く（同じ `resources/appx/extensions.xml`。`uap3` の名前空間は electron-builder のひな形に無いので、要素に `xmlns:uap3` を書く）。インストールするとターミナルから `qdl` で呼べる（[Store 版](../features/cli.md#store-版)）
+- **設定フォルダ**: `%APPDATA%` 直下に新しく作るフォルダは、パッケージ専用の場所（`%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Roaming\`）に振り替えられる。既にある `%APPDATA%\quick-dash-launcher` は振り替えられず、インストーラー版（とポータブルモードでない ZIP 版）と共有する。振り替えられたフォルダは、本体には振り替え前のパスで見えるが、エクスプローラーや外のターミナルには実際の場所でしか見えない。「設定フォルダを開く」などのフォルダを開く操作と `qdl status` の `configFolder` は、`utils/packagedPath.ts` で実際の場所に直す（パッケージファミリー名は `GetCurrentPackageFamilyName` で取る）
 - **Publisher・Identity**: Partner Center に登録する前の仮の値。提出前に Partner Center の値にする
 
 ローカルで試すとき（署名なしの appx は実行ファイルを含められないので、開発者モードで展開したフォルダを登録する）:

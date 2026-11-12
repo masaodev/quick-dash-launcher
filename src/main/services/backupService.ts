@@ -19,6 +19,7 @@ import { mainI18n } from './mainI18n.js';
 
 /** 外部変更の変更前スナップショットのフォルダ名サフィックス */
 const PRE_EXTERNAL_SUFFIX = '_pre-external';
+const PRE_MIGRATION_SUFFIX = '_pre-migration';
 const PRE_SET_MIGRATION_SUFFIX = '_pre-set-migration';
 const PRE_WINDOW_MIGRATION_SUFFIX = '_pre-window-migration';
 const PRE_IMPORT_SUFFIX = PRE_IMPORT_SNAPSHOT_SUFFIX;
@@ -174,6 +175,8 @@ export class BackupService {
     try {
       // スナップショット内の全ファイルを復元
       const files = this.listFilesRecursive(snapshotFolder);
+      // 戻せなかったファイル（ロックなど）。黙って「完了」にすると、一部だけ古いまま気づけない（A3-258）
+      const failed: string[] = [];
 
       for (const relPath of files) {
         const sourcePath = path.join(snapshotFolder, relPath);
@@ -182,6 +185,7 @@ export class BackupService {
         FileUtils.ensureDirectory(path.dirname(destPath));
         if (!FileUtils.safeCopyFile(sourcePath, destPath)) {
           logger.error({ relPath }, 'リストア中のファイルコピーに失敗');
+          failed.push(relPath.split(path.sep).join('/'));
         }
       }
 
@@ -189,6 +193,13 @@ export class BackupService {
       (await SettingsService.getInstance()).reloadFromDisk();
       // カスタムアイコンも戻したので、メモリに覚えたアイコンも捨てる
       clearIconMemoryCache();
+      if (failed.length > 0) {
+        logger.error({ timestamp, failed }, 'スナップショットの一部のファイルを戻せませんでした');
+        return {
+          success: false,
+          error: mainI18n.t('backupErrors.restorePartlyFailed', { files: failed.join(', ') }),
+        };
+      }
       logger.info({ timestamp, fileCount: files.length }, 'スナップショットからリストアしました');
       return { success: true };
     } catch (error) {
@@ -275,6 +286,7 @@ export class BackupService {
    * （数に入れると、外部編集を繰り返したときに日次スナップショットが押し出される）。
    * _pre-set-migration・_pre-window-migration は前の版に戻すときの拠り所なので、それぞれ新しい 2 つは消さない
    * _pre-import もインポートする前に戻す拠り所なので、新しい 2 つは消さない（保持数が少ないと数日で消えていた）
+   * _pre-migration（ワークスペースの旧形式からの移行の前）も戻せない変換の前の控えなので、同じく新しい 2 つは消さない
    */
   private async cleanupOldSnapshots(): Promise<void> {
     if (!this.settingsService) return;
@@ -283,7 +295,12 @@ export class BackupService {
     const all = await this.listSnapshotEntries();
     // 変換前のスナップショットは新しい 2 つ（データファイル用とワークスペース用）を残す
     const keptSetMigrations = new Set(
-      [PRE_SET_MIGRATION_SUFFIX, PRE_WINDOW_MIGRATION_SUFFIX, PRE_IMPORT_SUFFIX].flatMap((suffix) =>
+      [
+        PRE_MIGRATION_SUFFIX,
+        PRE_SET_MIGRATION_SUFFIX,
+        PRE_WINDOW_MIGRATION_SUFFIX,
+        PRE_IMPORT_SUFFIX,
+      ].flatMap((suffix) =>
         all
           .filter((s) => s.timestamp.endsWith(suffix))
           .slice(0, 2)

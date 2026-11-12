@@ -134,7 +134,7 @@ v0.8.0-beta.5 までの QDL が書いた `$schema` は使わない（electron-st
 | フィールド | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
 | **autoLaunch** | boolean | true | Windows起動時にアプリを自動起動するか（2026-10 に既定を true にし、初回設定画面のチェックの既定と合わせた。それより前に初回起動した人の設定ファイルには false が書き込まれているので変わらない） |
-| **cliEnabled** | boolean | false | Quick Dash Launcher CLI（`qdl` コマンド）を PATH から使えるようにするか |
+| **cliEnabled** | boolean | false | Quick Dash Launcher CLI（`qdl` コマンド）を PATH から使えるようにするか。Store 版では使わない（[Store 版](../../features/cli.md#store-版)） |
 
 OS への登録は ZIP 版・インストーラー版ではスタートアップフォルダのショートカット、Store 版（MSIX）では Windows のスタートアップ アプリ（StartupTask）。Store 版で利用者が Windows 側で無効にしていると、この値が `true` でも自動起動しない。初回起動の間（初回設定画面を終えるまで）は、起動時に OS へ反映しない。初回設定画面で選んだ値を保存したときに反映する。
 

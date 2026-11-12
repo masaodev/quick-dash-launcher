@@ -125,6 +125,28 @@ describe('launchItem（app）', () => {
     );
   });
 
+  it('環境変数を含むパスは展開して起動し、作業フォルダも展開したパスで決める（A3-258）', async () => {
+    process.env.QDL_A3_258_TOOLS = 'C:\\Tools';
+    try {
+      await launchItem(
+        { type: 'app', path: '%QDL_A3_258_TOOLS%\\myahk\\AutoHotkey.exe', args: 'main.ahk' },
+        logger
+      );
+      await launchItem({ type: 'app', path: '%QDL_A3_258_TOOLS%\\calc.exe' }, logger);
+      await launchItem({ type: 'folder', path: '%QDL_A3_258_TOOLS%\\docs' }, logger);
+    } finally {
+      delete process.env.QDL_A3_258_TOOLS;
+    }
+
+    expect(spawnMock).toHaveBeenCalledWith(
+      'C:\\Tools\\myahk\\AutoHotkey.exe',
+      ['main.ahk'],
+      expect.objectContaining({ cwd: 'C:\\Tools\\myahk', shell: false })
+    );
+    expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Tools\\calc.exe');
+    expect(shellMock.openPath).toHaveBeenCalledWith('C:\\Tools\\docs');
+  });
+
   it('引数ありの .bat は、パスを引用符で囲み、引数を書いたとおりに付けた 1 本のコマンドで cmd.exe に渡す', async () => {
     await launchItem(
       { type: 'app', path: 'C:\\Program Files\\Tools\\run.BAT', args: '--title="My App" x' },

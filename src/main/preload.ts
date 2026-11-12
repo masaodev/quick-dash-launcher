@@ -216,6 +216,7 @@ const electronAPI: ElectronAPI = {
     ipcInvoke(IPC_CHANNELS.FIRST_LAUNCH_SWITCH_TO_PORTABLE, settings),
   // 編集ウィンドウ関連API
   hideEditWindow: () => ipcInvoke(IPC_CHANNELS.HIDE_EDIT_WINDOW),
+  setAdminUnsaved: (unsaved) => ipcInvoke(IPC_CHANNELS.SET_ADMIN_UNSAVED, unsaved),
   toggleEditWindow: () => ipcInvoke(IPC_CHANNELS.TOGGLE_EDIT_WINDOW),
   openEditWindowWithTab: (tab) => ipcInvoke(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, tab),
   openEditWindowWithImportModal: (modal) =>

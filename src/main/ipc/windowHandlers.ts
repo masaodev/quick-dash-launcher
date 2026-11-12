@@ -20,6 +20,7 @@ import { receiveRendererTiming } from '../services/perfMetrics.js';
 import { readClipboardFilePaths } from '../services/clipboardService.js';
 import {
   hideAdminWindow,
+  setAdminHasUnsavedChanges,
   toggleAdminWindow,
   showAdminWindowWithTab,
   showAdminWindowWithImportModal,
@@ -171,6 +172,9 @@ export function setupWindowHandlers(
   });
 
   handleIpc(IPC_CHANNELS.HIDE_EDIT_WINDOW, () => hideAdminWindow());
+  handleIpc(IPC_CHANNELS.SET_ADMIN_UNSAVED, (_event, unsaved: boolean) =>
+    setAdminHasUnsavedChanges(unsaved === true)
+  );
   handleIpc(IPC_CHANNELS.TOGGLE_EDIT_WINDOW, () => toggleAdminWindow());
 
   handleIpc(IPC_CHANNELS.OPEN_EDIT_WINDOW_WITH_TAB, async (_event, tab: AdminTab) =>

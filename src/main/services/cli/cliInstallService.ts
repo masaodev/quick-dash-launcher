@@ -22,6 +22,11 @@ const cliLogger = createChildLogger('cli');
  *
  * PATH と保存先はインスタンスを区別しない 1 つだけなので、開発用の起動と APP_INSTANCE 付きの
  * 起動では何もしない（自動起動のショートカットと同じ扱い）。
+ *
+ * Store 版（MSIX）でも何もしない。qdl はマニフェストの実行エイリアス
+ * （resources/appx/extensions.xml）で最初から呼べる。Store 版がコピーすると、qdl.exe は
+ * パッケージ専用の場所（%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Local\）に振り替えられ、
+ * PATH には指す先に qdl.exe の無いフォルダだけが残る。
  */
 
 export const CLI_EXE_NAME = 'qdl.exe';
@@ -154,8 +159,23 @@ const powerShellUserPathStore: UserPathStore = {
   },
 };
 
+/** qdl.exe のコピーと PATH の書き換えをする起動か */
+export function managesCliInstall(env: {
+  isPackaged: boolean;
+  platform: string;
+  hasAppInstance: boolean;
+  isStore: boolean;
+}): boolean {
+  return env.isPackaged && env.platform === 'win32' && !env.hasAppInstance && !env.isStore;
+}
+
 function isSupported(): boolean {
-  return app.isPackaged && process.platform === 'win32' && !EnvConfig.hasAppInstance;
+  return managesCliInstall({
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+    hasAppInstance: EnvConfig.hasAppInstance,
+    isStore: process.windowsStore === true,
+  });
 }
 
 function realTarget(): CliInstallTarget | null {

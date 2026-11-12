@@ -17,6 +17,7 @@ import { isLauncherItem } from '@common/types/guards';
 import { describeWorkspaceItem } from '@common/utils/workspaceConverters';
 import {
   canCreateSubgroup,
+  getDescendantGroupIds,
   getSubtreeMaxDepth,
   getGroupDepth,
   MAX_GROUP_DEPTH,
@@ -29,6 +30,7 @@ import { useWorkspaceAddNotice } from '../hooks/useWorkspaceAddNotice';
 import { useItemActions } from '../hooks/useItemActions';
 import { useToast } from '../hooks/useToast';
 import { logError } from '../utils/debug';
+import { formatGroupAsText } from '../utils/workspaceGroupText';
 
 import WorkspaceGroupHeader from './WorkspaceGroupHeader';
 import WorkspaceItemCard from './WorkspaceItemCard';
@@ -225,6 +227,7 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
     groupsMap,
     groups,
     itemsByGroup,
+    mixedChildrenByGroup,
     setEditingItemId,
     onMoveItemToGroup,
     onRemoveItem,
@@ -298,20 +301,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       window.electronAPI.onWorkspaceGroupMenuRename(setEditingGroupId),
       window.electronAPI.onWorkspaceGroupMenuShowColorPicker(setColorPickerGroupId),
       window.electronAPI.onWorkspaceGroupMenuCopyAsText((groupId) => {
-        const { groupsMap, itemsByGroup, showSuccess, showError, t } = latest.current;
+        const { groupsMap, mixedChildrenByGroup, showSuccess, showError, t } = latest.current;
         const group = groupsMap.get(groupId);
         if (group) {
-          const groupItems = itemsByGroup[groupId] || [];
-          let text = `【${group.displayName}】\r\n`;
-          /* eslint-disable no-irregular-whitespace */
-          groupItems.forEach((item, index) => {
-            text += `　■${item.displayName}\r\n`;
-            text += `　　${describeWorkspaceItem(item, t)}\r\n`;
-            if (index < groupItems.length - 1) {
-              text += '\r\n';
-            }
-          });
-          /* eslint-enable no-irregular-whitespace */
+          // サブグループの中身も、画面と同じ並びで見出し付きで含める（A3-258）
+          const text = formatGroupAsText(group, mixedChildrenByGroup, (item) =>
+            describeWorkspaceItem(item, t)
+          );
           const name = group.displayName;
           window.electronAPI
             .copyToClipboard(text)
@@ -373,14 +369,13 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
    * 5 件以上なら確かめてから開く。元が見つからない参照は飛ばす
    */
   async function openAllInGroup(groupId: string): Promise<void> {
-    const { groups, groupsMap, itemsByGroup, onLaunch, t } = latest.current;
-    const collect = (id: string): WorkspaceItem[] => [
-      ...(itemsByGroup[id] || []),
-      ...groups
-        .filter((g) => g.parentGroupId === id)
-        .sort((a, b) => a.order - b.order)
-        .flatMap((g) => collect(g.id)),
-    ];
+    const { groupsMap, mixedChildrenByGroup, onLaunch, t } = latest.current;
+    // 画面と同じ順（アイテムとサブグループを混ぜた並び）でたどる。以前はアイテムを先に、
+    // サブグループを後に集めていて、混ぜて並べていると画面の順と違った（A3-258）
+    const collect = (id: string): WorkspaceItem[] =>
+      (mixedChildrenByGroup[id] || []).flatMap((child) =>
+        child.kind === 'item' ? [child.item] : collect(child.group.id)
+      );
     const targets = collect(groupId).filter((item) => item.type !== 'ref');
     const name = groupsMap.get(groupId)?.displayName ?? '';
     if (targets.length === 0) {
@@ -456,6 +451,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
    */
   const canNestGroup = React.useCallback(
     (draggedGroupId: string, targetGroupId: string): boolean => {
+      // 自分自身・自分の子孫には入れられない（本体が英語のエラーで断っていた。A3-258）
+      if (draggedGroupId === targetGroupId) return false;
+      if (getDescendantGroupIds(draggedGroupId, groups).includes(targetGroupId)) return false;
       // ターゲットがサブグループを作成可能か
       if (!canCreateSubgroup(targetGroupId, groups)) return false;
       // ドラッグ元のサブツリー深さを考慮
@@ -728,7 +726,9 @@ const WorkspaceGroupedList: React.FC<WorkspaceGroupedListProps> = ({
       } else if (
         draggedGroupId &&
         draggedGroupId !== groupId &&
-        normalizeGroupId(currentParentGroupId) !== groupId
+        normalizeGroupId(currentParentGroupId) !== groupId &&
+        // 見出しと同じく、入れられない先（自分の子孫・深すぎる）へは動かさない
+        canNestGroup(draggedGroupId, groupId)
       ) {
         // グループを別の親グループに移動
         onMoveGroupToParent(draggedGroupId, groupId);

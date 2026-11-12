@@ -25,7 +25,8 @@ const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
 
 interface SettingsTabProps {
   settings: AppSettings;
-  onSave: (settings: AppSettings) => Promise<void>;
+  /** 保存できたら true。できなかったときは知らせを出し終えて false を返す */
+  onSave: (settings: AppSettings) => Promise<boolean>;
   /** 既定値に戻すなど、保存を経ずに設定が置き換わったとき親の状態も合わせる */
   onSettingsReplaced?: (settings: AppSettings) => void;
   /** 開いているカテゴリ（親が持つ。他のタブから「ブックマーク自動取込」を直接開くため） */

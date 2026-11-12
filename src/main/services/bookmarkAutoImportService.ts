@@ -29,6 +29,7 @@ import {
   buildBookmarkDisplayName,
 } from '@common/utils/bookmarkRuleFilter';
 import { normalizeUrl } from '@common/utils/duplicateDetector';
+import { isValidDataFileName } from '@common/utils/dataFileName';
 import type { JsonLauncherItem, JsonDataFile } from '@common/types';
 import type {
   BookmarkAutoImportRule,
@@ -42,7 +43,7 @@ import { notifyDataChanged } from '../ipc/notifications.js';
 
 import { detectInstalledBrowsers, parseBrowserBookmarksWithFolders } from './bookmarkReader.js';
 import { writeDataFile } from './dataFileTracker.js';
-import { writeFailedError } from './data/dataItemWriter.js';
+import { readDataFileForWrite, writeFailedError } from './data/dataItemWriter.js';
 import { SettingsService } from './settingsService.js';
 import { showToastWindow } from './overlayWindowService.js';
 import { mainI18n } from './mainI18n.js';
@@ -276,7 +277,18 @@ export class BookmarkAutoImportService {
       : browser.profiles.filter((p) => rule.profileIds.includes(p.id));
   }
 
+  /**
+   * 取込先のデータファイルの絶対パス
+   *
+   * ルールは settings.json に入るので、手で直した値（`data2.json`・`../workspace.json` など）も来る。
+   * datafiles/ 直下の .json だけを受け付け、ほかは書かずに断る（A3-258）
+   *
+   * @throws 取込先のファイル名が正しくない場合
+   */
   private getDataFilePath(targetFile: string): string {
+    if (!isValidDataFileName(targetFile)) {
+      throw new Error(mainI18n.t('dataErrors.invalidTargetFile', { files: String(targetFile) }));
+    }
     return path.join(PathManager.getConfigFolder(), targetFile);
   }
 
@@ -288,7 +300,7 @@ export class BookmarkAutoImportService {
    * 復旧不能になるため例外にして処理を中止する。
    */
   private loadDataFile(dataFilePath: string): JsonDataFile {
-    const content = FileUtils.safeReadTextFile(dataFilePath);
+    const content = readDataFileForWrite(dataFilePath, path.basename(dataFilePath));
     if (!content) {
       return createEmptyJsonDataFile();
     }
@@ -351,6 +363,9 @@ export class BookmarkAutoImportService {
   private async updateRuleResult(ruleId: string, result: BookmarkAutoImportResult): Promise<void> {
     try {
       const settingsService = await SettingsService.getInstance();
+      // ルールの一覧ごと書き戻すので、メモリの写しではなくファイルから読み直す。写しのままだと、QDL の外で
+      // settings.json のルールを直したあと（F5 の前）に取り込むと、古いルールで上書きしてしまう（A3-258）
+      if (SettingsService.isSettingsFileReadable()) settingsService.reloadFromDisk();
       const settings = (await settingsService.get(
         'bookmarkAutoImport'
       )) as BookmarkAutoImportSettings;
