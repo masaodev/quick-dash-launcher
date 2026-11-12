@@ -45,6 +45,7 @@ import { registerMainWindowBoundsProvider } from './utils/referenceDisplay.js';
 import { registerSnapTarget } from './utils/windowSnap.js';
 import { notifyPinLevel, pinModeToLevel } from './utils/pinMenu.js';
 import { suppressSystemContextMenu } from './utils/systemContextMenu.js';
+import { resolveRealPath } from './utils/packagedPath.js';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -398,8 +399,8 @@ export async function updateTrayMenu(): Promise<void> {
     {
       label: t('tray.openSettingsFolder'),
       click: async () => {
-        const configFolder = PathManager.getConfigFolder();
-        await shell.openPath(configFolder);
+        // Store 版では、エクスプローラーから見える実際の場所を開く
+        await shell.openPath(resolveRealPath(PathManager.getConfigFolder()));
       },
     },
     { type: 'separator' },
