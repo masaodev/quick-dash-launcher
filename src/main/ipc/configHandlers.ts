@@ -9,6 +9,7 @@ import { getAppDistribution } from '../utils/appDistribution';
 import { getPortableDataState, getPortableModeAvailable } from '../utils/portableMode.js';
 import { UpdateCheckService } from '../services/updateCheckService.js';
 import { handleIpc } from '../utils/ipcWrapper';
+import { resolveRealPath } from '../utils/packagedPath.js';
 
 const DEFAULT_APP_INFO = {
   name: 'quick-dash-launcher',
@@ -46,7 +47,8 @@ async function resolveExistingFolder(folderPath: unknown): Promise<string | null
 
 export function setupConfigHandlers(configFolder: string): void {
   handleIpc(IPC_CHANNELS.OPEN_CONFIG_FOLDER, async () => {
-    await shell.openPath(configFolder);
+    // Store 版では、エクスプローラーから見える実際の場所を開く
+    await shell.openPath(resolveRealPath(configFolder));
   });
 
   handleIpc(IPC_CHANNELS.GET_APP_INFO, async () => {
@@ -108,7 +110,7 @@ export function setupConfigHandlers(configFolder: string): void {
       logger.warn({ folderPath }, '存在するフォルダではないので開きません');
       return;
     }
-    const error = await shell.openPath(folder);
+    const error = await shell.openPath(resolveRealPath(folder));
     if (error) {
       logger.error({ folderPath: folder, error }, 'フォルダを開けませんでした');
     }
