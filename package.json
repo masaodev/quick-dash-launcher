@@ -159,17 +159,17 @@
       "uninstallDisplayName": "Quick Dash Launcher ${version}"
     },
     "appx": {
-      "identityName": "QuickDashLauncher",
+      "identityName": "masaodev.QuickDashLauncher",
       "applicationId": "QuickDashLauncher",
       "displayName": "Quick Dash Launcher",
-      "publisher": "CN=masaodev",
+      "publisher": "CN=15E01E36-EA43-49EC-970A-37E59F7DF013",
       "publisherDisplayName": "masaodev",
       "backgroundColor": "transparent",
       "minVersion": "10.0.17763.0",
       "maxVersionTested": "10.0.26100.0",
       "languages": [
-        "ja-JP",
-        "en-US"
+        "en-US",
+        "ja-JP"
       ],
       "customExtensionsPath": "resources/appx/extensions.xml"
     }

@@ -94,20 +94,21 @@ v0.2.10 で `com.example.quick-dash-launcher` から変えた。App ID は自動
 
 ### Store 版（MSIX）
 
-試作中。Microsoft Store に出すための appx を `npm run dist:appx` で作る（設定は `package.json` の `build.appx`）。
+Microsoft Store に出すための appx を `npm run dist:appx` で作る（設定は `package.json` の `build.appx`）。
 
 - **ロゴ**: `scripts/generate-appx-assets.mjs` が `assets/icon.svg` から拡大率・大きさ別の画像を `build/appx/` に作る（Electron で描くので `electron` コマンドで実行する）
 - **自動起動**: マニフェストに StartupTask を書く（`resources/appx/extensions.xml`。初期値は無効）。アプリからは `@microsoft/dynwinrt`（プレビュー版）で WinRT の StartupTask を切り替える。呼び出しコードは `npm run winrt:generate` で作り、git に入れる。生成物の `index.js` は変数を `require` するのでバンドルできず、クラスのファイルを直接読み込む
 - **Quick Dash Launcher CLI**: マニフェストにアプリ実行エイリアス（`qdl.exe`）を書く（同じ `resources/appx/extensions.xml`。`uap3` の名前空間は electron-builder のひな形に無いので、要素に `xmlns:uap3` を書く）。インストールするとターミナルから `qdl` で呼べる（[Store 版](../features/cli.md#store-版)）
 - **設定フォルダ**: `%APPDATA%` 直下に新しく作るフォルダは、パッケージ専用の場所（`%LOCALAPPDATA%\Packages\<パッケージ>\LocalCache\Roaming\`）に振り替えられる。既にある `%APPDATA%\quick-dash-launcher` は振り替えられず、インストーラー版（とポータブルモードでない ZIP 版）と共有する。振り替えられたフォルダは、本体には振り替え前のパスで見えるが、エクスプローラーや外のターミナルには実際の場所でしか見えない。「設定フォルダを開く」などのフォルダを開く操作と `qdl status` の `configFolder` は、`utils/packagedPath.ts` で実際の場所に直す（パッケージファミリー名は `GetCurrentPackageFamilyName` で取る）
-- **Publisher・Identity**: Partner Center に登録する前の仮の値。提出前に Partner Center の値にする
+- **Publisher・Identity**: `identityName`（`masaodev.QuickDashLauncher`）と `publisher` は Partner Center がこの製品に割り当てた値で、変えると Store に提出できない。`displayName` は Partner Center で予約した名前と同じにする
+- **言語**: `languages` の 1 つ目がパッケージの既定の言語になる。英語を既定にしている（日本語・英語以外の利用者には英語の掲載が出る）。アプリの表示言語は Windows の表示言語から決めるので、この並びには左右されない
 
 ローカルで試すとき（署名なしの appx は実行ファイルを含められないので、開発者モードで展開したフォルダを登録する）:
 
 1. Windows の［設定］→［システム］→［開発者向け］で開発者モードをオンにする
 2. `release/` の appx を展開し、`AppxBlockMap.xml`・`[Content_Types].xml` を消す（unzip では `@scope` のフォルダ名が `%40scope` になるので戻す）
 3. `Add-AppxPackage -Register <展開したフォルダ>\AppxManifest.xml` で登録し、`Start-Process "shell:AppsFolder\<パッケージファミリー名>!QuickDashLauncher"` で起動する
-4. 外すときは `Get-AppxPackage -Name QuickDashLauncher | Remove-AppxPackage`
+4. 外すときは `Get-AppxPackage -Name masaodev.QuickDashLauncher | Remove-AppxPackage`
 
 `%APPDATA%\quick-dash-launcher` を共有しているときは、インストーラー版と同時には起動しない（同じ設定フォルダとホットキーを使う）。
 
