@@ -39,6 +39,8 @@
     "docs:demo-gif-workspace": "npm run build && playwright test -c playwright.demo-gif.config.ts workspace-demo && node scripts/make-demo-gif.mjs workspace",
     "docs:demo-gif-workspace:en": "cross-env DEMO_LANG=en npm run docs:demo-gif-workspace",
     "docs:readme-images:en": "cross-env DEMO_LANG=en npm run docs:readme-images",
+    "docs:store-screenshots": "npm run build && playwright test -c playwright.demo-gif.config.ts store-screenshots",
+    "docs:store-screenshots:en": "cross-env DEMO_LANG=en npm run docs:store-screenshots",
     "test:window-move": "tsx src/test/manual/testWindowMove.ts",
     "test:window-list": "tsx src/test/manual/testWindowList.ts",
     "debug:windows": "node scripts/debug-windows.mjs"
