@@ -20,6 +20,7 @@ npm run docs:screenshots # 画面仕様の画面イメージを撮影（ビル�
 npm run docs:demo-gif    # README のデモ GIF を撮影（ビルド込み。ffmpeg が要る。撮影中は画面を触らない。英語版は docs:demo-gif:en）
 npm run docs:demo-gif-workspace # README のワークスペースのデモ GIF を撮影（同上。撮影中は実際のマウスが動く。英語版は docs:demo-gif-workspace:en）
 npm run docs:readme-images # README の「登録と管理の画面」の画面イメージ（登録画面・管理画面）を撮影（ビルド込み。英語版は docs:readme-images:en）
+npm run docs:store-screenshots # Microsoft Store の掲載に載せるスクリーンショット 6 枚を test-results/store-screenshots/ に撮影（ビルド込み。ffmpeg が要る。撮影中は画面を触らない。英語版は docs:store-screenshots:en）
 ```
 
 詳細は **[開発ガイド - 多重起動](development.md#多重起動)** を参照してください。
