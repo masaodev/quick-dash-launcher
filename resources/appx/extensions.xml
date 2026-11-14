@@ -1,5 +1,5 @@
         <desktop:Extension Category="windows.startupTask" Executable="app\QuickDashLauncher.exe" EntryPoint="Windows.FullTrustApplication">
-          <desktop:StartupTask TaskId="QuickDashLauncherStartup" Enabled="false" DisplayName="QuickDashLauncher" />
+          <desktop:StartupTask TaskId="QuickDashLauncherStartup" Enabled="false" DisplayName="Quick Dash Launcher" />
         </desktop:Extension>
         <uap3:Extension xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3" Category="windows.appExecutionAlias" Executable="app\resources\bin\qdl.exe" EntryPoint="Windows.FullTrustApplication">
           <uap3:AppExecutionAlias>

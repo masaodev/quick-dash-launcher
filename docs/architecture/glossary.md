@@ -26,8 +26,8 @@
 
 - 画面・README・docs・Store の掲載文では、単語をスペースで区切って「Quick Dash Launcher」と書く。略すときは「QDL」
 - インストーラー版のスタートメニューのショートカットとアプリの一覧の名前も「Quick Dash Launcher」（package.json の `nsis.shortcutName`・`nsis.uninstallDisplayName`）。Store の掲載名は `appx.displayName`
-- 名前を変えると既存の利用者に響く識別子は、つなげた「QuickDashLauncher」のまま残す: exe 名（`build.productName`）・自動起動のショートカット `QuickDashLauncher.lnk`・データフォルダ `QuickDashLauncher-data`・エクスポートと配布物のファイル名・Store の `identityName`・CLI の応答の `app`・ログの名前・User-Agent。設定フォルダ `%APPDATA%\quick-dash-launcher` は package.json の `name` から決まる
-- タスク マネージャーや Windows の［設定］→［アプリ］→［スタートアップ］には exe 側の名前（QuickDashLauncher）が出るので、そこを案内する文はつなげた名前で書く
+- 名前を変えると既存の利用者に響く識別子は、つなげた「QuickDashLauncher」のまま残す: exe 名（`build.productName`）・自動起動のショートカット `QuickDashLauncher.lnk`・データフォルダ `QuickDashLauncher-data`・エクスポートと配布物のファイル名・Store の `applicationId`（`identityName` は Partner Center が割り当てた `masaodev.QuickDashLauncher`）・CLI の応答の `app`・ログの名前・User-Agent。設定フォルダ `%APPDATA%\quick-dash-launcher` は package.json の `name` から決まる
+- タスク マネージャーや Windows の［設定］→［アプリ］→［スタートアップ］には exe 側の名前（QuickDashLauncher）が出るので、そこを案内する文はつなげた名前で書く（Store 版は StartupTask の `DisplayName` が出るので「Quick Dash Launcher」）
 
 ### ウィンドウまわりの言葉の決め方
 
