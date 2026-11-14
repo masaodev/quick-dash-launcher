@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@microsoft/dynwinrt-codegen": "0.1.0-preview.23",
+    "@microsoft/dynwinrt-codegen": "0.1.0-preview.24",
     "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.1",
