@@ -4,7 +4,7 @@ English | [日本語](./PRIVACY.ja.md)
 
 This policy explains how Quick Dash Launcher ("the app") handles your information.
 
-Effective date: 2026-11-02
+Effective date: 2026-11-14
 Author: masaodev
 
 ## Summary
@@ -21,19 +21,21 @@ The app reads the following information on your PC to provide its features. It n
 | Browser bookmarks (Google Chrome, Microsoft Edge) | When you import bookmarks, or when you turn on automatic import | To import them as items |
 | Clipboard contents | When you save or check the clipboard | To save them as an item and paste them back later |
 | Titles of open windows | When you use window search | To list them so you can switch windows |
+| List of apps in the Start menu | When you import apps | To import them as items |
+| Names of files and folders in a folder you register | While a folder import item is registered | To show and launch them in the launcher |
 
 ## Where data is stored and how to delete it
 
-The app's data (items, workspaces, settings, saved clipboard contents, favicons, backups, and log files) is stored only in the settings folder on your PC. You can open the settings folder from the app's "Open settings folder" menu item.
+The app's data (items, workspaces, settings, saved clipboard contents, search history, the date and count of item launches, favicons, backups, and log files) is stored only in the settings folder on your PC. You can open the settings folder from the app's "Open settings folder" menu item.
 
-To delete all of the app's data, uninstall the app and delete the settings folder.
+To delete all of the app's data, uninstall the app and delete the settings folder. If you newly install the Microsoft Store version, the settings folder is created in a location that Windows provides for each app, and it is deleted when you uninstall the app.
 
 ## Network communication
 
 The app connects to the internet only for the two purposes below. Neither connection includes the contents of your items or settings.
 
 1. **Downloading favicons (website icons)**
-   When you register a URL item, the app downloads its icon directly from that website. The app connects only to the website you registered and does not use any service run by the author or a third party. As with normal web browsing, the website receives information such as your IP address.
+   When you register a URL item, the app downloads its icon directly from that website. The app connects only to the website you registered and to the location that the website specifies for its icon. It does not use the author's servers or any third-party icon service. As with normal web browsing, the website receives information such as your IP address.
 2. **Checking for new versions (GitHub version only)**
    The version downloaded from GitHub checks GitHub once a day for a new version. You can turn this off in settings. GitHub handles information according to the [GitHub General Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement). The Microsoft Store version does not perform this check, because the Store manages updates. Information related to getting and updating the app through the Store is handled according to the [Microsoft Privacy Statement](https://www.microsoft.com/en-us/privacy/privacystatement).
 
