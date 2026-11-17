@@ -33,7 +33,9 @@ Tired of searching the Start menu or another launcher, only to get a list full o
 
 <!-- Translation of README.ja.md (the source). Change both in the same PR. Re-record the demo GIF with `npm run docs:demo-gif:en` (demo data: tests/demo-gif/demo-content-en.ts and tests/e2e/templates/demo/) -->
 
-It's free and open source (MIT). Try it right away with winget (for other ways, see [Installation](#installation)).
+It's free and open source (MIT). Try it right away from the Microsoft Store or with winget (for other ways, see [Installation](#installation)).
+
+<a href="https://apps.microsoft.com/detail/9N77BCVS7RFK"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="200" /></a>
 
 ```powershell
 winget install masaodev.quick-dash-launcher
@@ -139,6 +141,12 @@ Besides opening files and URLs, you can also do the following.
 
 Runs on Windows 10 or later. The display language follows Windows (English or Japanese), and you can change it in **Settings**.
 
+### Microsoft Store
+
+<a href="https://apps.microsoft.com/detail/9N77BCVS7RFK"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="200" /></a>
+
+If you're new to Quick Dash Launcher, we recommend this option. There's no SmartScreen warning, and the Store keeps the app up to date automatically. Only stable releases are published to the Store.
+
 ### winget
 
 ```powershell
@@ -169,7 +177,7 @@ The installer and ZIP versions aren't signed, so Windows SmartScreen may show a 
 
 ### Updates and backups
 
-When a new version is out, Quick Dash Launcher checks once a day and lets you know with a toast and in the tray menu (it doesn't install anything automatically, and you can turn this off in **Settings**). Your settings and items carry over when you update.
+When a new version is out, Quick Dash Launcher checks once a day and lets you know with a toast and in the tray menu (it doesn't install anything automatically, and you can turn this off in **Settings**). The Microsoft Store version is updated by the Store, so it doesn't show these notifications. Your settings and items carry over when you update.
 
 Once a day at startup, Quick Dash Launcher saves a snapshot of your settings and items (only if something changed). You can restore one from **Settings** > **Backup** > **Snapshots**. To move to another PC, use **Export…** on the same screen to save everything as a single zip, then use **Import…** on the new PC.
 
