@@ -33,7 +33,9 @@
 
 <!-- 日本語版が正本。英語版（README.md）は訳で、同じ PR で両方を直す。メインデモ GIF は `npm run docs:demo-gif` で撮り直す（英語版は docs:demo-gif:en。デモデータ＝tests/demo-gif/demo-content-ja.ts と tests/e2e/templates/demo/） -->
 
-無料のオープンソース（MIT）です。winget ですぐに試せます（ほかの入れ方は[インストール](#インストール)）。
+無料のオープンソース（MIT）です。Microsoft Store か winget ですぐに試せます（ほかの入れ方は[インストール](#インストール)）。
+
+<a href="https://apps.microsoft.com/detail/9N77BCVS7RFK"><img src="https://get.microsoft.com/images/ja%20dark.svg" alt="Microsoft Store から入手" width="200" /></a>
 
 ```powershell
 winget install masaodev.quick-dash-launcher
@@ -140,6 +142,12 @@ PowerToys Run や Command Palette のような多くのランチャーは、イ�
 
 Windows 10 以降で動きます。表示言語は Windows に合わせて日本語か英語になり、「設定」で変えられます。
 
+### Microsoft Store
+
+<a href="https://apps.microsoft.com/detail/9N77BCVS7RFK"><img src="https://get.microsoft.com/images/ja%20dark.svg" alt="Microsoft Store から入手" width="200" /></a>
+
+初めての方にはこの入れ方をおすすめします。SmartScreen の警告が出ず、更新もストアが自動で行います。ストアには正式版だけを公開しています。
+
 ### winget
 
 ```powershell
@@ -170,7 +178,7 @@ winget install masaodev.quick-dash-launcher
 
 ### 更新とバックアップ
 
-新しいバージョンが出ると、1 日 1 回の確認でトーストとトレイのメニューに知らせます（自動ではインストールしません。「設定」でオフにできます）。バージョンを上げても、設定とアイテムはそのまま使えます。
+新しいバージョンが出ると、1 日 1 回の確認でトーストとトレイのメニューに知らせます（自動ではインストールしません。「設定」でオフにできます）。Microsoft Store 版はストアが更新するので、この知らせは出ません。バージョンを上げても、設定とアイテムはそのまま使えます。
 
 設定とアイテムは、起動したときに 1 日 1 回（変わっていれば）スナップショットとして残し、「設定」の「バックアップ」の「スナップショット一覧」から戻せます。別の PC へ移すときは、同じ画面の「エクスポート…」で zip 1 つにまとめ、移した先で「インポート…」します。
 
