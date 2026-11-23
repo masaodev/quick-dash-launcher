@@ -177,7 +177,7 @@ function projectAItems(root: string): DemoItem[] {
     item('Client A minutes folder', path.join(dir, '03_Minutes')),
     item('Client A drawings folder', path.join(dir, '02_Drawings')),
     item('Client A photos folder', path.join(dir, '06_Photos')),
-    item('Client A site map', 'https://www.google.com/maps'),
+    item('Client A site location', 'https://www.google.com/maps'),
     item('Client A schedule (Backlog)', 'https://backlog.com/'),
   ];
 }
@@ -194,7 +194,7 @@ function projectBItems(root: string): DemoItem[] {
     item('Client B minutes folder', path.join(dir, '03_Minutes')),
     item('Client B show days folder', path.join(dir, '04_Show days')),
     item('Client B exhibitor page', 'https://www.bigsight.jp/english/'),
-    item('Client B venue map', 'https://www.google.com/maps'),
+    item('Client B venue location', 'https://www.google.com/maps'),
   ];
 }
 
@@ -406,7 +406,6 @@ function appItems(): DemoItem[] {
     item('Task Manager', 'taskmgr.exe'),
     item('Remote Desktop', 'mstsc.exe'),
     item('Control Panel', 'control.exe'),
-    item('Character Map', 'charmap.exe'),
     item('Resource Monitor', 'resmon.exe'),
     item('Event Viewer', 'eventvwr.msc'),
   ];
@@ -450,8 +449,7 @@ export const enContent: DemoContent = {
     apps: appItems(),
   }),
   demo: {
-    quick: 'goo',
-    quickRefine: ' map',
+    quick: 'map',
     list: 'Teams',
     listDown: 2,
     call: 'sam',
@@ -459,7 +457,7 @@ export const enContent: DemoContent = {
     otherTab: 'Amazon',
     captions: {
       intro: 'Open folders, files, websites, and apps from one place',
-      quick: 'Type part of a name to find it right away',
+      quick: 'Only what you added shows up',
       list: 'Pick from the list with the arrow keys',
       call: 'Type the name you call it, and that is the one',
       tabs: 'Sort clients and bookmarks into tabs',

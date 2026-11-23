@@ -12,6 +12,7 @@ import { ConfigFileHelper } from '../e2e/helpers/config-file-helper';
 
 import { BACKDROP_MARGIN, showBackdrop } from './demo-backdrop';
 import { demoContent, demoLang, writeDemoData } from './demo-data';
+import { Keycast, KEYCAST_HEIGHT } from './demo-keycast';
 
 /**
  * README のメインデモ GIF の素材（ランチャーの動画）を撮る
@@ -22,7 +23,8 @@ import { demoContent, demoLang, writeDemoData } from './demo-data';
  * 圧縮の残像が出るため使わない）。余白には色付きの背景を敷く（demo-backdrop.ts）。
  * 撮影中はウィンドウを最前面に固定するので、その範囲に他の物を重ねないこと。
  * 動画のどこから使うかを test-results/demo-gif/<main か main-en>/meta.json に書き、scripts/make-demo-gif.mjs がその範囲を
- * GIF にする。画面下の説明文（字幕）は既定では出さず、DEMO_CAPTIONS=1 のときだけ出す
+ * GIF にする。画面下の説明文（字幕）は既定では出さず、DEMO_CAPTIONS=1 のときだけ出す。
+ * 押したキーは、撮る範囲の下に足した帯に並べて見せる（demo-keycast.ts）
  */
 
 const LANG = demoLang();
@@ -66,6 +68,55 @@ async function caption(page: Page, text: string): Promise<void> {
   }, text);
 }
 
+/** 押したキーの帯（撮る範囲が決まってから開く） */
+let keycast: Keycast | undefined;
+
+/** 文字を 1 つずつ打ち、打った文字を帯に出す */
+async function typeKeys(page: Page, text: string): Promise<void> {
+  for (const c of text) {
+    await keycast?.char(c);
+    await page.keyboard.type(c);
+    await page.waitForTimeout(TYPE_DELAY_MS);
+  }
+}
+
+/**
+ * 日本語入力（IME）で打ったように見せる。ローマ字を 1 キーずつ打って変換中の文字（下線つき）を出し、
+ * Space で変換、Enter で確定する。Playwright のキー入力は IME を通らないので、CDP の Input.imeSetComposition で
+ * 変換中の文字を置き、Input.insertText で確定する。帯にはローマ字・Space・Enter を出す
+ */
+async function typeIme(
+  page: Page,
+  ime: { keys: string; composing: string[] },
+  result: string
+): Promise<void> {
+  const cdp = await page.context().newCDPSession(page);
+  const compose = (text: string) =>
+    cdp.send('Input.imeSetComposition', {
+      text,
+      selectionStart: text.length,
+      selectionEnd: text.length,
+    });
+  for (let i = 0; i < ime.keys.length; i++) {
+    await keycast?.char(ime.keys[i]);
+    await compose(ime.composing[i]);
+    await page.waitForTimeout(TYPE_DELAY_MS);
+  }
+  await page.waitForTimeout(300);
+  await keycast?.key('Space');
+  await compose(result);
+  await page.waitForTimeout(700);
+  await keycast?.key('Enter');
+  await cdp.send('Input.insertText', { text: result });
+  await cdp.detach();
+}
+
+/** キーを押し、帯に label で出す */
+async function pressKey(page: Page, key: string, label: string): Promise<void> {
+  await keycast?.key(label);
+  await page.keyboard.press(key);
+}
+
 async function clearSearch(page: Page): Promise<void> {
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
@@ -97,6 +148,7 @@ async function nextScene(page: Page, whileDark?: () => Promise<void>): Promise<v
   });
   await page.waitForTimeout(30);
   await clearSearch(page);
+  await keycast?.clear();
   // 暗い間にしておきたいこと（タブをメインに戻すなど）
   if (whileDark) await whileDark();
   await page.waitForTimeout(40);
@@ -163,25 +215,35 @@ test('メインデモ', async () => {
     await caption(win, CONTENT.demo.captions.intro);
 
     // ランチャーを最前面に固定し、周りに余白を足した範囲を撮る。余白には色付きの背景を敷く
-    const { area, scale } = await app.evaluate(({ BrowserWindow, screen }, margin) => {
-      const w = BrowserWindow.getAllWindows().find(
-        (bw) => bw.isVisible() && bw.webContents.getURL().includes('index.html')
-      );
-      if (!w) throw new Error('ランチャーが見つかりません');
-      w.setAlwaysOnTop(true, 'screen-saver');
-      w.focus();
-      const b = w.getContentBounds();
-      return {
-        area: {
-          x: b.x - margin,
-          y: b.y - margin,
-          width: b.width + margin * 2,
-          height: b.height + margin * 2,
-        },
-        scale: screen.getDisplayMatching(b).scaleFactor,
-      };
-    }, BACKDROP_MARGIN);
+    // 撮る範囲は、下に押したキーの帯の分を足す
+    const { area, bottom, scale } = await app.evaluate(
+      ({ BrowserWindow, screen }, { margin, keycastHeight }) => {
+        const w = BrowserWindow.getAllWindows().find(
+          (bw) => bw.isVisible() && bw.webContents.getURL().includes('index.html')
+        );
+        if (!w) throw new Error('ランチャーが見つかりません');
+        w.setAlwaysOnTop(true, 'screen-saver');
+        w.focus();
+        const b = w.getContentBounds();
+        return {
+          area: {
+            x: b.x - margin,
+            y: b.y - margin,
+            width: b.width + margin * 2,
+            height: b.height + margin * 2 + keycastHeight,
+          },
+          bottom: b.y + b.height,
+          scale: screen.getDisplayMatching(b).scaleFactor,
+        };
+      },
+      { margin: BACKDROP_MARGIN, keycastHeight: KEYCAST_HEIGHT }
+    );
     await showBackdrop(app, area, 'Quick Dash Launcher', { pinned: true });
+    keycast = await Keycast.open(
+      app,
+      { x: area.x, y: bottom + 4, width: area.width, height: area.y + area.height - bottom - 4 },
+      'Quick Dash Launcher'
+    );
     const rect = {
       logicalWidth: area.width,
       x: Math.round(area.x * scale),
@@ -238,26 +300,26 @@ test('メインデモ', async () => {
       });
       document.body.appendChild(el);
     });
+    await keycast.marker(true);
     await win.waitForTimeout(500);
     await win.evaluate(() => document.getElementById('demo-marker')?.remove());
+    await keycast.marker(false);
     const markerGone = Date.now();
     // 動き始める前に、空のランチャーを約 2 秒見せる
     await win.waitForTimeout(2000);
 
-    // 1. README の検索の例と同じ「goo」→「goo map」で、名前の一部で並び、足すと 1 件に絞れるのを見せる
+    // 1. README の冒頭の例と同じ「map」で、登録した Google Maps だけが出るのを見せる
     await caption(win, CONTENT.demo.captions.quick);
-    await win.keyboard.type(CONTENT.demo.quick, { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1200);
-    await win.keyboard.type(CONTENT.demo.quickRefine, { delay: TYPE_DELAY_MS });
-    await win.waitForTimeout(1600);
+    await typeKeys(win, CONTENT.demo.quick);
+    await win.waitForTimeout(2400);
     await nextScene(win);
 
     // 2. 種類の名前（Teams）で並べ、矢印キーで探して選ぶ
     await caption(win, CONTENT.demo.captions.list);
-    await win.keyboard.type(CONTENT.demo.list, { delay: TYPE_DELAY_MS });
+    await typeKeys(win, CONTENT.demo.list);
     await win.waitForTimeout(900);
     for (let i = 0; i < CONTENT.demo.listDown; i++) {
-      await win.keyboard.press('ArrowDown');
+      await pressKey(win, 'ArrowDown', '↓');
       await win.waitForTimeout(450);
     }
     await win.waitForTimeout(1000);
@@ -265,23 +327,23 @@ test('メインデモ', async () => {
 
     // 3. 同じ相手でも、付けた呼び名（sato）なら打つだけで 1 件に決まる
     await caption(win, CONTENT.demo.captions.call);
-    await win.keyboard.type(CONTENT.demo.call, { delay: TYPE_DELAY_MS });
+    await typeKeys(win, CONTENT.demo.call);
     await win.waitForTimeout(1600);
     await nextScene(win);
 
     // 4. タブを一巡して、案件・ブックマーク・アプリに分けて整理している様子を見せる（目で追えるよう 1 タブ 1 秒）
     await caption(win, CONTENT.demo.captions.tabs);
     for (let i = 0; i < CONTENT.tabs.length; i++) {
-      await win.keyboard.press('Tab');
+      await pressKey(win, 'Tab', 'Tab');
       await win.waitForTimeout(1000);
     }
     await nextScene(win);
 
     // 5. 案件のタブに Tab で移り、そのタブの中で議事録を日付で出す
     await caption(win, CONTENT.demo.captions.minutes);
-    await win.keyboard.press('Tab');
+    await pressKey(win, 'Tab', 'Tab');
     await win.waitForTimeout(1200);
-    await win.keyboard.type(CONTENT.demo.minutes, { delay: TYPE_DELAY_MS });
+    await typeKeys(win, CONTENT.demo.minutes);
     await win.waitForTimeout(2000);
     // 暗い間にタブをメインへ戻す（案件のタブから残りのタブを送って一巡させる）
     await nextScene(win, async () => {
@@ -293,9 +355,13 @@ test('メインデモ', async () => {
 
     // 6. メインに無いものは 0 件になり、件数の出たほかのタブ（ブックマーク）へ Tab で見に行く
     await caption(win, CONTENT.demo.captions.otherTab);
-    await win.keyboard.type(CONTENT.demo.otherTab, { delay: TYPE_DELAY_MS });
+    if (CONTENT.demo.otherTabIme) {
+      await typeIme(win, CONTENT.demo.otherTabIme, CONTENT.demo.otherTab);
+    } else {
+      await typeKeys(win, CONTENT.demo.otherTab);
+    }
     await win.waitForTimeout(1400);
-    await win.keyboard.press('Tab');
+    await pressKey(win, 'Tab', 'Tab');
     await win.waitForTimeout(2200);
 
     // 目印が消えてから最後までの長さ（GIF の長さ）

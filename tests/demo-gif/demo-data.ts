@@ -40,9 +40,8 @@ export interface DemoContent {
   };
   /** メインデモ GIF で打つ言葉と、画面下の説明文（DEMO_CAPTIONS=1 のときだけ出す） */
   demo: {
-    /** 最初の場面で打つ言葉（README の検索の例と同じ。quick で並び、quickRefine を足すと 1 件に絞れる） */
+    /** 最初の場面で打つ言葉（README の冒頭の例と同じ。ファイルまで探すランチャーなら関係のないファイルが並ぶ語で、登録したもの 1 件だけが出る） */
     quick: string;
-    quickRefine: string;
     /** 種類の名前で並べ、↓ を listDown 回押して選ぶ（探して選ぶ場面） */
     list: string;
     listDown: number;
@@ -52,6 +51,11 @@ export interface DemoContent {
     minutes: string;
     /** メインに無く、ブックマークにだけある（メインで 0 件になり、Tab で見に行く） */
     otherTab: string;
+    /**
+     * otherTab を日本語入力（IME）で打つときの、キーごとの変換中の文字（keys の 1 文字に 1 つ）。
+     * 無ければ otherTab をそのまま打つ。あればローマ字で打って変換中の文字を出し、Space で otherTab に変換、Enter で確定する
+     */
+    otherTabIme?: { keys: string; composing: string[] };
     captions: Record<'intro' | 'quick' | 'list' | 'call' | 'tabs' | 'minutes' | 'otherTab', string>;
   };
   /** ワークスペースのデモ GIF（アイテムは parts の displayName で指す） */
