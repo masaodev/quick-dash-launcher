@@ -12,6 +12,22 @@
 
 Tired of searching the Start menu or another launcher, only to get a list full of files that have nothing to do with what you want? In Quick Dash Launcher, only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project, so your launcher grows with you as you use it.
 
+<table align="center">
+  <tr>
+    <th>Type "map" in a search that also covers files</th>
+    <th>Type "map" in Quick Dash Launcher</th>
+  </tr>
+  <tr>
+    <td valign="top"><pre>index.js.map
+ajv.js.map
+source-map.js
+mapping-list.js
+placementMap.ts
+…</pre></td>
+    <td valign="top"><pre>Google Maps</pre></td>
+  </tr>
+</table>
+
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
@@ -64,7 +80,7 @@ winget install masaodev.quick-dash-launcher
 
 ## Why you add items yourself
 
-Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. To keep the setup effort low, it comes with drag-and-drop adding, bulk import of apps, bookmarks, and folders, and a dedicated [settings window](#adding-and-managing-items) where you can edit everything you've added in a list.
+Many launchers, such as PowerToys Run and Command Palette, index every installed app and file automatically out of the box, so things you never use end up in the results. The author built Quick Dash Launcher to get rid of that noise: you choose and add the things you use. Because only those items show up, a few keystrokes get you there. To keep the setup effort low, it comes with drag-and-drop adding, bulk import of apps, bookmarks, and folders, and a dedicated [settings window](#adding-and-managing-items) where you can edit everything you've added in a list.
 
 | | Launchers that index everything (PowerToys Run and others) | Quick Dash Launcher |
 | --- | --- | --- |
@@ -219,4 +235,4 @@ Released under the [MIT License](./LICENSE).
 
 ## Support
 
-If you like Quick Dash Launcher, you can support its development through [GitHub Sponsors](https://github.com/sponsors/masaodev).
+If you like Quick Dash Launcher, you can support its development through [GitHub Sponsors](https://github.com/sponsors/masaodev). A star on GitHub helps too.
