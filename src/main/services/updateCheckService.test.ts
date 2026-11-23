@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   UpdateCheckService,
   fetchGitHubReleases,
+  fetchLatestStableRelease,
+  fetchReleasesForUpdateCheck,
   type UpdateCheckDeps,
 } from './updateCheckService';
 
@@ -241,5 +243,73 @@ describe('fetchGitHubReleases', () => {
 
     const failing = vi.fn(async () => new Response('rate limited', { status: 403 }));
     await expect(fetchGitHubReleases(failing, 'x')).rejects.toThrow('403');
+  });
+});
+
+describe('fetchLatestStableRelease', () => {
+  const yml = (version: string) =>
+    `version: ${version}\nfiles:\n  - url: QuickDashLauncher-Setup-${version}.exe\n    size: 1\npath: x.exe\n`;
+
+  it('latest.yml の version を、releases API と同じ形の 1 件にして返す', async () => {
+    const fetchImpl = vi.fn(async () => new Response(yml('1.0.2'), { status: 200 }));
+    await expect(fetchLatestStableRelease(fetchImpl, 'QuickDashLauncher/1.0.1')).resolves.toEqual([
+      {
+        tag_name: 'v1.0.2',
+        html_url: `${REPO_URL}v1.0.2`,
+        draft: false,
+        prerelease: false,
+      },
+    ]);
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe(
+      'https://github.com/masaodev/quick-dash-launcher/releases/latest/download/latest.yml'
+    );
+    expect((init.headers as Record<string, string>)['User-Agent']).toBe('QuickDashLauncher/1.0.1');
+  });
+
+  it('失敗の応答と、版が読めない中身は例外にする', async () => {
+    const failing = vi.fn(async () => new Response('not found', { status: 404 }));
+    await expect(fetchLatestStableRelease(failing, 'x')).rejects.toThrow('404');
+    const html = vi.fn(async () => new Response('<html>version: oops</html>', { status: 200 }));
+    await expect(fetchLatestStableRelease(html, 'x')).rejects.toThrow('latest.yml');
+  });
+
+  it('返した 1 件で、新しい版の知らせが出る', async () => {
+    const fetchImpl = vi.fn(async () => new Response(yml('0.8.1'), { status: 200 }));
+    const { service } = makeService({
+      fetchReleases: (options) => fetchReleasesForUpdateCheck(fetchImpl, 'x', options),
+    });
+    const status = await service.checkNow();
+    expect(status.available).toEqual({ version: '0.8.1', url: `${REPO_URL}v0.8.1` });
+  });
+});
+
+describe('fetchReleasesForUpdateCheck', () => {
+  it('正式版だけを見るときは latest.yml、ベータ版も見るときは API を読む', async () => {
+    const fetchImpl = vi.fn(async (url: string) =>
+      url.includes('api.github.com')
+        ? new Response(JSON.stringify([]), { status: 200 })
+        : new Response('version: 1.0.1\n', { status: 200 })
+    );
+    await fetchReleasesForUpdateCheck(fetchImpl, 'x', { includePrerelease: false });
+    expect(fetchImpl.mock.calls[0][0]).toContain('/releases/latest/download/latest.yml');
+    await fetchReleasesForUpdateCheck(fetchImpl, 'x', { includePrerelease: true });
+    expect(fetchImpl.mock.calls[1][0]).toContain('api.github.com');
+  });
+
+  it('サービスは、設定と今の版からベータ版も見るかを渡す', async () => {
+    const stable = makeService();
+    await stable.service.checkNow();
+    expect(stable.deps.fetchReleases).toHaveBeenCalledWith({ includePrerelease: false });
+
+    const beta = makeService({ currentVersion: '0.8.1-beta.1' });
+    await beta.service.checkNow();
+    expect(beta.deps.fetchReleases).toHaveBeenCalledWith({ includePrerelease: true });
+
+    const optIn = makeService({
+      getSettings: vi.fn(async () => ({ enabled: true, includeBeta: true })),
+    });
+    await optIn.service.checkNow();
+    expect(optIn.deps.fetchReleases).toHaveBeenCalledWith({ includePrerelease: true });
   });
 });
