@@ -6,7 +6,7 @@
 
 <p align="center"><b>English</b> | <a href="README.ja.md">日本語</a></p>
 
-<p align="center"><b>Open it by the name you call it, no second-guessing</b><br /><sub>A search launcher for what you've added</sub></p>
+<p align="center"><b>The launcher that only shows what you've added</b></p>
 
 **A launcher where you add your apps, files, folders, and URLs, then open them by typing a keyword.**
 
