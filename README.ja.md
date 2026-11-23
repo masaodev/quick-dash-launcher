@@ -12,6 +12,22 @@
 
 スタートメニューやほかのランチャーで検索すると、関係のないファイルまで並んでうんざりしたことはありませんか。Quick Dash Launcher の候補に出るのは、自分で登録したものだけです。キーワードは付けた名前の一部でよく、「毎日使うもの」「案件ごと」のように自由にタブで分けて、使いながら育てていけます。
 
+<table align="center">
+  <tr>
+    <th>ファイルまで探す検索で「map」と打つと</th>
+    <th>Quick Dash Launcher で「map」と打つと</th>
+  </tr>
+  <tr>
+    <td valign="top"><pre>index.js.map
+ajv.js.map
+source-map.js
+mapping-list.js
+placementMap.ts
+…</pre></td>
+    <td valign="top"><pre>Google Maps</pre></td>
+  </tr>
+</table>
+
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
@@ -65,7 +81,7 @@ winget install masaodev.quick-dash-launcher
 
 ## なぜ登録型なのか
 
-PowerToys Run や Command Palette のような多くのランチャーは、インストール済みのアプリやファイルを自動で全部読み込むので、使わないものまで候補に並びます。Quick Dash Launcher は、このノイズを嫌った作者が作った「登録型」のランチャーです。登録したものだけが候補に出るので、数文字で目当てにたどり着けます。登録の手間を減らすために、ドラッグ＆ドロップでの登録、アプリ・ブックマーク・フォルダのまとめての取り込み、登録したものを一覧で直せる[専用の管理ウィンドウ](#登録と管理の画面)など、機能を揃えています。
+PowerToys Run や Command Palette のような多くのランチャーは、入れたままの設定ではインストール済みのアプリやファイルを自動で全部読み込むので、使わないものまで候補に並びます。Quick Dash Launcher は、このノイズを嫌った作者が作った「登録型」のランチャーです。登録したものだけが候補に出るので、数文字で目当てにたどり着けます。登録の手間を減らすために、ドラッグ＆ドロップでの登録、アプリ・ブックマーク・フォルダのまとめての取り込み、登録したものを一覧で直せる[専用の管理ウィンドウ](#登録と管理の画面)など、機能を揃えています。
 
 | 観点 | 全部読み込む型（PowerToys Run など） | Quick Dash Launcher |
 | --- | --- | --- |
@@ -220,4 +236,4 @@ Quick Dash Launcher は、利用者の情報を作者やほかの誰かに送り
 
 ## 支援
 
-Quick Dash Launcher を気に入っていただけたら、[GitHub Sponsors](https://github.com/sponsors/masaodev) で開発を支援できます。
+Quick Dash Launcher を気に入っていただけたら、[GitHub Sponsors](https://github.com/sponsors/masaodev) で開発を支援できます。GitHub のスターも励みになります。

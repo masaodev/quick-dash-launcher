@@ -101,12 +101,18 @@ jobs:
             cat <<EOF
           ## Installation
 
+          New to Quick Dash Launcher? See what it does in the [README](https://github.com/masaodev/quick-dash-launcher#readme).
+
+          ### Microsoft Store or winget
+          Stable releases are also on the [Microsoft Store](https://apps.microsoft.com/detail/9N77BCVS7RFK) (no SmartScreen warning, automatic updates) and winget (\`winget install masaodev.quick-dash-launcher\`). A new release can take a few days to appear there.
+
           ### Installer
           Download and run \`QuickDashLauncher.Setup.$VERSION.exe\`.
 
-          ### Portable
-          Download \`QuickDashLauncher-$VERSION-portable.zip\`, extract it to any folder, and run \`QuickDashLauncher.exe\`. No installation is needed. Settings and data are saved in the \`QuickDashLauncher-data\` folder next to the exe.
-          To update, extract the new ZIP to another folder and move \`QuickDashLauncher-data\` into it.
+          ### ZIP
+          Download \`QuickDashLauncher-$VERSION-portable.zip\`, extract it to any folder, and run \`QuickDashLauncher.exe\`. No installation is needed. Settings and data are saved in \`%APPDATA%\\quick-dash-launcher\`, the same place the installer uses, so a new version extracted to another folder reads the same data. To keep the data next to the exe instead (portable mode), check the option on the first-launch screen.
+
+          The installer and the ZIP aren't code-signed, so Windows SmartScreen may show a warning the first time you run them. Select "More info" and then "Run anyway."
 
           ## License
           This software is released under the MIT License.
@@ -117,12 +123,18 @@ jobs:
 
           ## インストール方法
 
+          初めての方は、何をするソフトかを [README](https://github.com/masaodev/quick-dash-launcher/blob/main/README.ja.md) でご覧ください。
+
+          ### Microsoft Store・winget
+          正式版は [Microsoft Store](https://apps.microsoft.com/detail/9N77BCVS7RFK)（SmartScreen の警告が出ず、更新も自動）と winget（\`winget install masaodev.quick-dash-launcher\`）からも入れられます。新しい版が載るまで数日かかることがあります。
+
           ### インストーラー版
           \`QuickDashLauncher.Setup.$VERSION.exe\` をダウンロードして実行してください。
 
-          ### ポータブル版
-          \`QuickDashLauncher-$VERSION-portable.zip\` をダウンロードし、好きなフォルダに展開して \`QuickDashLauncher.exe\` を実行してください。インストールは要りません。設定とデータは exe の横の \`QuickDashLauncher-data\` フォルダに保存されます。
-          新しい版にするときは、新しい ZIP を別のフォルダに展開し、\`QuickDashLauncher-data\` をそちらへ移してください。
+          ### ZIP 版
+          \`QuickDashLauncher-$VERSION-portable.zip\` をダウンロードし、好きなフォルダに展開して \`QuickDashLauncher.exe\` を実行してください。インストールは要りません。設定とデータはインストーラー版と同じ \`%APPDATA%\\quick-dash-launcher\` に保存されるので、新しい版を別のフォルダに展開しても同じデータを使えます。データを exe の横に保存したいとき（ポータブルモード）は、初回起動の画面でチェックを付けてください。
+
+          インストーラー版と ZIP 版は署名していないため、初回の実行時に Windows SmartScreen の警告が出ることがあります。そのときは「詳細情報」→「実行」で起動できます。
 
           ## ライセンス情報
           このソフトウェアはMITライセンスの下で公開されています。
