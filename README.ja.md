@@ -12,22 +12,6 @@
 
 スタートメニューやほかのランチャーで検索すると、関係のないファイルまで並んでうんざりしたことはありませんか。Quick Dash Launcher の候補に出るのは、自分で登録したものだけです。キーワードは付けた名前の一部でよく、「毎日使うもの」「案件ごと」のように自由にタブで分けて、使いながら育てていけます。
 
-<table align="center">
-  <tr>
-    <th>ファイルまで探す検索で「map」と打つと</th>
-    <th>Quick Dash Launcher で「map」と打つと</th>
-  </tr>
-  <tr>
-    <td valign="top"><pre>index.js.map
-ajv.js.map
-source-map.js
-mapping-list.js
-placementMap.ts
-…</pre></td>
-    <td valign="top"><pre>Google Maps</pre></td>
-  </tr>
-</table>
-
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>

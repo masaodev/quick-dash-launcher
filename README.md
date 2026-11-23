@@ -12,22 +12,6 @@
 
 Tired of searching the Start menu or another launcher, only to get a list full of files that have nothing to do with what you want? In Quick Dash Launcher, only what you've added shows up. A keyword can be any part of the name you gave it, and you can sort items into tabs such as "Daily" or one per project, so your launcher grows with you as you use it.
 
-<table align="center">
-  <tr>
-    <th>Type "map" in a search that also covers files</th>
-    <th>Type "map" in Quick Dash Launcher</th>
-  </tr>
-  <tr>
-    <td valign="top"><pre>index.js.map
-ajv.js.map
-source-map.js
-mapping-list.js
-placementMap.ts
-…</pre></td>
-    <td valign="top"><pre>Google Maps</pre></td>
-  </tr>
-</table>
-
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
