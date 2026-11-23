@@ -368,7 +368,7 @@ export const en: LocaleMessages = {
   },
   splash: {
     windowTitle: 'Quick Dash Launcher - Starting…',
-    subtitle: 'Open it by the name you call it, no second-guessing',
+    subtitle: "The launcher that only shows what you've added",
     category: "A search launcher for what you've added",
     starting: 'Starting',
     loadingSettings: 'Loading settings',

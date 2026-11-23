@@ -21,6 +21,9 @@ const UPDATE_CHECK_VERSION = 1;
 export const UPDATE_CHECK_REPOSITORY = 'masaodev/quick-dash-launcher';
 // 新しい順に返る。ベータ版が続いても正式版を取りこぼさないよう、1 回で読める最大の 100 件を読む
 const RELEASES_API_URL = `https://api.github.com/repos/${UPDATE_CHECK_REPOSITORY}/releases?per_page=100`;
+// 最新の正式版に添付している latest.yml（版の番号が入っている）。GitHub がダウンロード数に数えるので、
+// 1 日あたりの増え方が「動いている台数」の目安になる（PRIVACY に書いてある）
+const LATEST_YML_URL = `https://github.com/${UPDATE_CHECK_REPOSITORY}/releases/latest/download/latest.yml`;
 
 /** 起動してから最初に確かめるまで */
 const FIRST_CHECK_DELAY_MS = 60 * 1000;
@@ -48,8 +51,8 @@ export interface UpdateCheckDeps {
   filePath: string;
   /** 設定「新しい版を確かめる」「ベータ版も知らせる」 */
   getSettings: () => Promise<{ enabled: boolean; includeBeta: boolean }>;
-  /** GitHub の releases API の返事（JSON） */
-  fetchReleases: () => Promise<unknown>;
+  /** リリースの一覧（GitHub の releases API の形）。ベータ版も見るときは includePrerelease が true */
+  fetchReleases: (options: { includePrerelease: boolean }) => Promise<unknown>;
   /** 新しい版を初めて見つけたとき（トースト） */
   notify: (release: AvailableRelease) => void;
   /** 知らせる版が変わったとき（トレイのメニューを作り直す） */
@@ -60,7 +63,7 @@ export interface UpdateCheckDeps {
 }
 
 /**
- * 更新の知らせ。GitHub のリリース一覧を起動の 1 分後と 24 時間ごとに読み、
+ * 更新の知らせ。GitHub の最新の正式版（ベータ版も見るときはリリース一覧）を起動の 1 分後と 24 時間ごとに読み、
  * 今の版より新しい版があればトースト（1 回）・トレイ・ヘルプタブで知らせる。
  * 入れ替えはしない（リリースのページを開くだけ）。Store 版は Store が更新するので確かめない
  */
@@ -193,7 +196,9 @@ export class UpdateCheckService {
     const { includeBeta } = await this.deps.getSettings();
     const before = this.state.latest?.version ?? null;
     try {
-      const releases = await this.deps.fetchReleases();
+      const releases = await this.deps.fetchReleases({
+        includePrerelease: includeBeta || isPrereleaseVersion(this.deps.currentVersion),
+      });
       if (!Array.isArray(releases)) throw new Error('Unexpected releases response');
       this.state.latest = pickAvailableRelease(releases, this.deps.currentVersion, {
         includePrerelease: includeBeta,
@@ -289,4 +294,53 @@ export async function fetchGitHubReleases(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * 最新の正式版を latest.yml から読み、releases API と同じ形の 1 件にして返す。
+ * 版が読めなければ失敗にする（返事をそのまま信じない）
+ */
+export async function fetchLatestStableRelease(
+  fetchImpl: (url: string, init: RequestInit) => Promise<Response>,
+  userAgent: string
+): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetchImpl(LATEST_YML_URL, {
+      headers: { 'User-Agent': userAgent },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`GitHub responded ${response.status}`);
+    const text = await response.text();
+    const match = /^version:\s*['"]?([0-9A-Za-z.+-]+)['"]?\s*$/m.exec(text);
+    if (!match || !/^\d+\.\d+\.\d+/.test(match[1])) {
+      throw new Error('Unexpected latest.yml');
+    }
+    const tag = `v${match[1]}`;
+    return [
+      {
+        tag_name: tag,
+        html_url: `https://github.com/${UPDATE_CHECK_REPOSITORY}/releases/tag/${tag}`,
+        draft: false,
+        prerelease: isPrereleaseVersion(match[1]),
+      },
+    ];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * 更新の知らせが読む先を選ぶ。正式版だけを見るときは latest.yml、ベータ版も見るときはリリース一覧
+ * （latest.yml には正式版しか出ない）
+ */
+export function fetchReleasesForUpdateCheck(
+  fetchImpl: (url: string, init: RequestInit) => Promise<Response>,
+  userAgent: string,
+  options: { includePrerelease: boolean }
+): Promise<unknown> {
+  return options.includePrerelease
+    ? fetchGitHubReleases(fetchImpl, userAgent)
+    : fetchLatestStableRelease(fetchImpl, userAgent);
 }

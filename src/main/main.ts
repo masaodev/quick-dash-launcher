@@ -66,7 +66,7 @@ import {
   scheduleMemoryMetrics,
   scheduleStartupReport,
 } from './services/perfMetrics.js';
-import { UpdateCheckService, fetchGitHubReleases } from './services/updateCheckService.js';
+import { UpdateCheckService, fetchReleasesForUpdateCheck } from './services/updateCheckService.js';
 import { getAppDistribution } from './utils/appDistribution.js';
 import {
   isPortableModeAvailable,
@@ -405,7 +405,7 @@ app.whenReady().then(async () => {
     }
   }
 
-  // 更新の知らせ（起動の 1 分後と 24 時間ごとに GitHub のリリース一覧を読む。Store 版・開発版では動かない）
+  // 更新の知らせ（起動の 1 分後と 24 時間ごとに GitHub の最新の正式版かリリース一覧を読む。Store 版・開発版では動かない）
   const updateCheckService = new UpdateCheckService({
     currentVersion: app.getVersion(),
     distribution: getAppDistribution(),
@@ -414,10 +414,11 @@ app.whenReady().then(async () => {
       enabled: (await settingsService.get('updateCheckEnabled')) !== false,
       includeBeta: (await settingsService.get('updateCheckIncludeBeta')) === true,
     }),
-    fetchReleases: () =>
-      fetchGitHubReleases(
+    fetchReleases: (options) =>
+      fetchReleasesForUpdateCheck(
         (url, init) => net.fetch(url, init),
-        `QuickDashLauncher/${app.getVersion()}`
+        `QuickDashLauncher/${app.getVersion()}`,
+        options
       ),
     notify: (release) => {
       showToastWindow({

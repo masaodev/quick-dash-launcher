@@ -4,12 +4,12 @@ English | [日本語](./PRIVACY.ja.md)
 
 This policy explains how Quick Dash Launcher ("the app") handles your information.
 
-Effective date: 2026-11-14
+Effective date: 2026-11-23
 Author: masaodev
 
 ## Summary
 
-The app does not send your information to the author or anyone else. The author does not operate any servers, and the app does not collect usage statistics or crash reports. The app shows no ads and contains no analytics or advertising components. All data that the app reads and writes is stored on your PC.
+The app does not send your information to the author or anyone else. The author does not operate any servers, and the app does not collect usage statistics or crash reports. (The one exception is the number of new-version checks, which the author can see through GitHub's download counts, as described under "Connections to the internet" below.) The app shows no ads and contains no analytics or advertising components. All data that the app reads and writes is stored on your PC.
 
 ## Information the app reads on your PC
 
@@ -37,7 +37,7 @@ The app connects to the internet only for the two purposes below. Neither connec
 1. **Downloading favicons (website icons)**
    When you register a URL item, the app downloads its icon directly from that website. The app connects only to the website you registered and to the location that the website specifies for its icon. It does not use the author's servers or any third-party icon service. As with normal web browsing, the website receives information such as your IP address.
 2. **Checking for new versions (GitHub version only)**
-   The version downloaded from GitHub checks GitHub once a day for a new version. You can turn this off in settings. GitHub handles information according to the [GitHub General Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement). The Microsoft Store version does not perform this check, because the Store manages updates. Information related to getting and updating the app through the Store is handled according to the [Microsoft Privacy Statement](https://www.microsoft.com/en-us/privacy/privacystatement).
+   The version downloaded from GitHub checks GitHub once a day for a new version. You can turn this off in settings. GitHub counts and publishes how many times each release file is downloaded, and this check is included in that count. The author looks at the count as a rough measure of how many PCs are running the app. Apart from the count, no information that identifies you or your PC reaches the author. GitHub handles information according to the [GitHub General Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement). The Microsoft Store version does not perform this check, because the Store manages updates. Information related to getting and updating the app through the Store is handled according to the [Microsoft Privacy Statement](https://www.microsoft.com/en-us/privacy/privacystatement).
 
 When you launch an item, that item (such as a browser or another app) may connect to the internet. Those connections are handled by the app you launched.
 
