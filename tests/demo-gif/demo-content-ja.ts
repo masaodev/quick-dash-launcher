@@ -489,16 +489,19 @@ export const jaContent: DemoContent = {
     apps: appItems(),
   }),
   demo: {
-    quick: 'goo',
-    quickRefine: ' map',
+    quick: 'map',
     list: 'Teams',
     listDown: 2,
     call: 'sato',
     minutes: '10-10',
     otherTab: '楽天',
+    otherTabIme: {
+      keys: 'rakuten',
+      composing: ['r', 'ら', 'らk', 'らく', 'らくt', 'らくて', 'らくてn', 'らくてん'],
+    },
     captions: {
       intro: 'フォルダも資料も Web もアプリも、ここから開く',
-      quick: '名前の一部を打てば、すぐ絞り込める',
+      quick: '出るのは、登録したものだけ',
       list: '並んだ候補から、矢印キーで選ぶ',
       call: 'いつもの呼び名なら、打つだけで決まる',
       tabs: '案件・ブックマークは、タブで分けて整理',
