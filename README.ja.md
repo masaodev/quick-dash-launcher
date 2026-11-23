@@ -10,7 +10,7 @@
 
 **アプリ・ファイル・フォルダ・URL を登録して、キーワードを打って開くランチャーです。**
 
-PowerToys Run のような検索ランチャーは、標準では PC の中のファイルも候補に出すので、「map」と打つと index.js.map のような関係のないファイルまで並びます。Quick Dash Launcher が探すのは自分で登録したものだけなので、出るのは登録しておいた Google マップだけです。付けた名前の一部を打てば開け、「毎日使うもの」「案件ごと」のようにタブで分けておけます。
+PowerToys Run のような検索ランチャーは、標準では PC の中のファイルも候補に出すので、「map」と打つと index.js.map のような関係のないファイルまで並びます。Quick Dash Launcher が探すのは自分で登録したものだけなので、出るのは登録しておいた Google Maps だけです。付けた名前の一部を打てば開け、「毎日使うもの」「案件ごと」のようにタブで分けておけます。
 
 <p align="center">
   <a href="https://github.com/masaodev/quick-dash-launcher/releases"><img src="https://img.shields.io/github/release/masaodev/quick-dash-launcher.svg" alt="GitHub Release" /></a>
