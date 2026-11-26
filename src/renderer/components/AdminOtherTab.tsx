@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppInfo, UpdateCheckStatus } from '@common/types';
 
+import { useToast } from '../hooks/useToast';
+
 import ConfirmDialog from './ConfirmDialog';
 import { Button } from './ui';
 
@@ -23,6 +25,7 @@ const FIXED_SHORTCUTS = [
 
 const AdminOtherTab: React.FC = () => {
   const { t } = useTranslation();
+  const { showSuccess, showError } = useToast();
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [quitConfirmOpen, setQuitConfirmOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateCheckStatus | null>(null);
@@ -82,6 +85,16 @@ const AdminOtherTab: React.FC = () => {
   const handleOpenGitHub = () => {
     if (appInfo?.repository) {
       window.electronAPI.openExternalUrl(appInfo.repository);
+    }
+  };
+
+  // 不具合の報告に貼ってもらう診断情報（個人のパスは main 側で伏せる）
+  const handleCopyDiagnostics = async () => {
+    try {
+      await window.electronAPI.copyDiagnostics();
+      showSuccess(t('help.diagnosticsCopied'), { long: true });
+    } catch {
+      showError(t('help.diagnosticsCopyFailed'));
     }
   };
 
@@ -191,9 +204,14 @@ const AdminOtherTab: React.FC = () => {
                   <span className="app-info-value">{appInfo?.license || t('help.loading')}</span>
                 </div>
               </div>
-              <Button variant="secondary" onClick={handleOpenGitHub} disabled={!appInfo}>
-                🔗 GitHub
-              </Button>
+              <div className="help-card-actions">
+                <Button variant="secondary" onClick={handleOpenGitHub} disabled={!appInfo}>
+                  🔗 GitHub
+                </Button>
+                <Button variant="secondary" onClick={handleCopyDiagnostics}>
+                  {t('help.copyDiagnostics')}
+                </Button>
+              </div>
             </div>
           </div>
 

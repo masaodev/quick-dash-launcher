@@ -101,6 +101,7 @@ export interface IpcInvokeMap {
   [IPC_CHANNELS.ADD_SEARCH_HISTORY_ENTRY]: ElectronAPI['addSearchHistoryEntry'];
   [IPC_CHANNELS.CLEAR_SEARCH_HISTORY]: ElectronAPI['clearSearchHistory'];
   [IPC_CHANNELS.GET_APP_INFO]: ElectronAPI['getAppInfo'];
+  [IPC_CHANNELS.COPY_DIAGNOSTICS]: ElectronAPI['copyDiagnostics'];
   [IPC_CHANNELS.GET_UPDATE_STATUS]: ElectronAPI['getUpdateStatus'];
   [IPC_CHANNELS.CHECK_FOR_UPDATES]: ElectronAPI['checkForUpdates'];
   [IPC_CHANNELS.OPEN_EXTERNAL_URL]: ElectronAPI['openExternalUrl'];

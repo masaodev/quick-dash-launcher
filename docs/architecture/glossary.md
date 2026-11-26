@@ -152,6 +152,7 @@
 | エクスポート | export | — | データと設定（アイテム・ワークスペース・設定など）をまとめて zip 1 つにすること。別の PC や別の配布形式の QDL へ移すときに使う。CSV は「CSV に書き出す」と呼び、分ける | `buildDataExport`・`backupAPI.exportAll` |
 | インポート | import | — | エクスポートした zip で、設定フォルダをまるごと置き換えること（そのあと再起動する）。アイテムを足す「取込」（ブックマーク取込・アプリ取込・CSV から取り込む）とは分ける | `readDataImport`・`backupAPI.applyImport` |
 | 設定フォルダ | settings folder | 設定ディレクトリ、config folder | 設定とデータを保存するフォルダ | `PathManager.getConfigFolder()` |
+| 診断情報 | diagnostic info | 診断データ、システム情報（コピーする中身を指すとき） | 不具合の報告に貼るための、版・配布形式・OS・設定フォルダ・直近の警告とエラーをまとめた文。ヘルプタブの「診断情報をコピー」で作る | `buildDiagnosticsText` |
 | トースト | notification | トースト通知、toast | 画面の下に少しの間だけ出る知らせ | `showToastWindow` |
 | Quick Dash Launcher CLI | Quick Dash Launcher CLI | コマンドライン（qdl を指す意味で） | ターミナルや AI から使う `qdl` コマンド | `qdl.exe` |
 

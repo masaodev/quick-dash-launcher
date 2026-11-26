@@ -14,7 +14,9 @@ body:
     id: what-happened
     attributes:
       label: What happened? / 何が起きたか
-      description: Describe the problem. Screenshots help. / 起きたことを書いてください。スクリーンショットがあると助かります。
+      description: |
+        Describe the problem. Screenshots help. If you can, also paste the text from "Copy diagnostic info" in the Help tab of the settings window.
+        起きたことを書いてください。スクリーンショットがあると助かります。管理ウィンドウのヘルプタブの「診断情報をコピー」の中身も貼ってもらえると助かります。
     validations:
       required: true
   - type: textarea
