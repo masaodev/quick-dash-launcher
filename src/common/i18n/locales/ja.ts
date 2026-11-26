@@ -1776,6 +1776,10 @@ CLI を使えるようにする（cliEnabled）は読むだけで、画面で変
       dev: '開発版',
     },
     license: 'ライセンス',
+    copyDiagnostics: '📋 診断情報をコピー',
+    diagnosticsCopied:
+      '診断情報をコピーしました。貼る前に、知られたくない内容が無いか確かめてください。',
+    diagnosticsCopyFailed: '診断情報をコピーできませんでした',
     loading: '読み込み中…',
     data: '📁 データ管理',
     dataDescription: '設定ファイルやデータファイルが保存されているフォルダを開きます。',

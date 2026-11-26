@@ -1773,6 +1773,10 @@ and the CLI itself (cliEnabled) are read-only here; change them in the app. Chan
       dev: 'Development',
     },
     license: 'License',
+    copyDiagnostics: '📋 Copy diagnostic info',
+    diagnosticsCopied:
+      'Diagnostic info copied. Before pasting it, check that it contains nothing you want to keep private.',
+    diagnosticsCopyFailed: "Couldn't copy the diagnostic info",
     loading: 'Loading…',
     data: '📁 Data',
     dataDescription: 'Opens the folder where your settings and data files are stored.',

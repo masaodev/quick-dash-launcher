@@ -1,13 +1,16 @@
 import * as fs from 'fs/promises';
+import * as os from 'os';
 import * as path from 'path';
 
-import { app, shell } from 'electron';
+import { app, clipboard, shell } from 'electron';
 import logger from '@common/logger';
 import { IPC_CHANNELS } from '@common/ipcChannels';
 
 import { getAppDistribution } from '../utils/appDistribution';
 import { getPortableDataState, getPortableModeAvailable } from '../utils/portableMode.js';
 import { UpdateCheckService } from '../services/updateCheckService.js';
+import { buildDiagnosticsText, readRecentLogEntries } from '../services/diagnostics.js';
+import { mainI18n } from '../services/mainI18n.js';
 import { handleIpc } from '../utils/ipcWrapper';
 import { resolveRealPath } from '../utils/packagedPath.js';
 
@@ -80,6 +83,24 @@ export function setupConfigHandlers(configFolder: string): void {
       portableData,
       portableModeAvailable,
     };
+  });
+
+  handleIpc(IPC_CHANNELS.COPY_DIAGNOSTICS, async () => {
+    const text = buildDiagnosticsText(
+      {
+        version: app.getVersion(),
+        distribution: getAppDistribution(),
+        portableData: getPortableDataState().kind === 'active',
+        osRelease: os.release(),
+        arch: process.arch,
+        electronVersion: process.versions.electron ?? '-',
+        language: mainI18n.language,
+        settingsFolder: resolveRealPath(configFolder),
+        logEntries: await readRecentLogEntries(path.join(configFolder, 'logs')),
+      },
+      { homeDir: os.homedir(), userName: os.userInfo().username }
+    );
+    clipboard.writeText(text);
   });
 
   const unsupportedStatus = {

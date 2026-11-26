@@ -262,6 +262,7 @@ const electronAPI: ElectronAPI = {
   clearSearchHistory: () => ipcInvoke(IPC_CHANNELS.CLEAR_SEARCH_HISTORY),
   // アプリ情報関連API
   getAppInfo: () => ipcInvoke(IPC_CHANNELS.GET_APP_INFO),
+  copyDiagnostics: () => ipcInvoke(IPC_CHANNELS.COPY_DIAGNOSTICS),
   getUpdateStatus: () => ipcInvoke(IPC_CHANNELS.GET_UPDATE_STATUS),
   checkForUpdates: () => ipcInvoke(IPC_CHANNELS.CHECK_FOR_UPDATES),
   openExternalUrl: (url) => ipcInvoke(IPC_CHANNELS.OPEN_EXTERNAL_URL, url),

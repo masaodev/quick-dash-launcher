@@ -502,3 +502,31 @@ test.describe('QuickDashLauncher - ヘルプタブのアプリを終了', () => 
     await expect(adminWindow.locator('.help-footer')).toBeVisible();
   });
 });
+
+/**
+ * ヘルプタブの「診断情報をコピー」は、版・配布形式などをクリップボードへ入れ、個人のパスを伏せる
+ */
+test.describe('QuickDashLauncher - ヘルプタブの診断情報をコピー', () => {
+  test('診断情報をコピーし、ユーザーのフォルダを伏せてトーストで知らせる', async ({
+    electronApp,
+    mainWindow,
+  }) => {
+    const utils = new TestUtils(mainWindow);
+    const adminWindow = await utils.openAdminWindow(electronApp, 'settings');
+    await adminWindow.locator('button', { hasText: '📖 ヘルプ' }).click();
+    await electronApp.evaluate(({ clipboard }) => clipboard.writeText(''));
+
+    await adminWindow.locator('button', { hasText: '診断情報をコピー' }).click();
+    await expect(
+      adminWindow.getByText('診断情報をコピーしました。', { exact: false })
+    ).toBeVisible();
+
+    const text = await electronApp.evaluate(({ clipboard }) => clipboard.readText());
+    const homeDir = await electronApp.evaluate(({ app }) => app.getPath('home'));
+    expect(text).toContain('Quick Dash Launcher diagnostics');
+    expect(text).toMatch(/- Version: \S+/);
+    expect(text).toContain('- Distribution: ');
+    expect(text).toContain('- Settings folder: ');
+    expect(text.toLowerCase()).not.toContain(homeDir.toLowerCase());
+  });
+});

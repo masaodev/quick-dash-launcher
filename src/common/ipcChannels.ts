@@ -155,6 +155,8 @@ export const IPC_CHANNELS = {
   // 設定ファイル操作
   OPEN_CONFIG_FOLDER: 'open-config-folder',
   GET_APP_INFO: 'get-app-info',
+  /** 診断情報をクリップボードへコピーする（ヘルプタブ） */
+  COPY_DIAGNOSTICS: 'copy-diagnostics',
   GET_UPDATE_STATUS: 'get-update-status',
   CHECK_FOR_UPDATES: 'check-for-updates',
   OPEN_EXTERNAL_URL: 'open-external-url',

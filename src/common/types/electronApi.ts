@@ -353,6 +353,8 @@ export interface ElectronAPI {
   clearSearchHistory: () => Promise<void>;
   // アプリ情報関連API
   getAppInfo: () => Promise<AppInfo>;
+  /** 版・配布形式・OS・設定フォルダ・直近の警告とエラーをクリップボードへコピーする（ヘルプタブ。個人のパスは伏せる） */
+  copyDiagnostics: () => Promise<void>;
   /** 更新の知らせの状態（ヘルプタブ） */
   getUpdateStatus: () => Promise<UpdateCheckStatus>;
   /** 新しい版をすぐに確かめる（ヘルプタブの「今すぐ確かめる」） */
